@@ -3,6 +3,7 @@ import inspect
 import logging
 import sys
 from decimal import Decimal
+from types import ModuleType
 from typing import Any, Dict, List, Set
 
 import numpy as np
@@ -29,6 +30,8 @@ class ScriptStrategyBase(StrategyPyBase):
 
     # This class member defines connectors and their trading pairs needed for the strategy operation,
     markets: Dict[str, Set[str]]
+    script_name: str = None
+    script_module: ModuleType
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
