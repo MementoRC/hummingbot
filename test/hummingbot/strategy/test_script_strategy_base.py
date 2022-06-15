@@ -16,10 +16,6 @@ from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple
 from hummingbot.strategy.script_strategy_base import ScriptStrategyBase
 
 
-class MockScriptStrategy(ScriptStrategyBase):
-    pass
-
-
 class ScriptStrategyBaseTest(unittest.TestCase):
     level = 0
 

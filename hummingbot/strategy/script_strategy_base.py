@@ -29,6 +29,15 @@ class ScriptStrategyBase(StrategyPyBase):
     # This class member defines connectors and their trading pairs needed for the strategy operation,
     markets: Dict[str, Set[str]]
 
+    # We could force the implementation of this method by derived classes with abstractmethod decorator
+    @classmethod
+    # @abstractmethod
+    def initialize_from_yml(cls) -> Dict[str, Set[str]]:
+        try:
+            return cls.markets
+        except AttributeError:
+            raise InvalidScriptModule(f"The module {cls.script_name} does not set 'markets' attribute nor implements 'initialize_from_yml' method")
+
     @classmethod
     def logger(cls) -> HummingbotLogger:
         global lsb_logger
@@ -65,7 +74,7 @@ class ScriptStrategyBase(StrategyPyBase):
                                  issubclass(member, ScriptStrategyBase) and
                                  member is not ScriptStrategyBase))
         except StopIteration:
-            raise InvalidScriptModule(f"The module {script_name} does not contain any subclass of ScriptStrategyBase")
+            raise InvalidScriptModule(f"The module {cls.script_name} does not contain any subclass of ScriptStrategyBase")
         return script_class
 
     def tick(self, timestamp: float):
