@@ -4,6 +4,19 @@ import logging
 import time
 
 
+class EventThreadSafe(asyncio.Event):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self._loop is None:
+            self._loop = asyncio.get_event_loop()
+
+    def set(self):
+        self._loop.call_soon_threadsafe(super().set)
+
+    def clear(self):
+        self._loop.call_soon_threadsafe(super().clear)
+
+
 async def safe_wrapper(c):
     try:
         return await c
