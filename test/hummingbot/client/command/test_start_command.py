@@ -12,7 +12,10 @@ from hummingbot.client.config.global_config_map import global_config_map
 from hummingbot.client.hummingbot_application import HummingbotApplication
 from hummingbot.model.sql_connection_manager import SQLConnectionManager
 from hummingbot.strategy.script_strategy_base import ScriptStrategyBase
+<<<<<<< HEAD
 from scripts.ls_config_file import LiteStrategyConfigFile
+=======
+>>>>>>> 93e492d5b ((feat) Add mechanics to load a config file for ScriptStrategyBase)
 
 
 class StartCommandTest(unittest.TestCase):
