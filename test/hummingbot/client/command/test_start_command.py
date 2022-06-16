@@ -12,10 +12,7 @@ from hummingbot.client.config.global_config_map import global_config_map
 from hummingbot.client.hummingbot_application import HummingbotApplication
 from hummingbot.model.sql_connection_manager import SQLConnectionManager
 from hummingbot.strategy.script_strategy_base import ScriptStrategyBase
-<<<<<<< HEAD
 from scripts.ls_config_file import LiteStrategyConfigFile
-=======
->>>>>>> 93e492d5b ((feat) Add mechanics to load a config file for ScriptStrategyBase)
 
 
 class StartCommandTest(unittest.TestCase):
@@ -89,9 +86,9 @@ class StartCommandTest(unittest.TestCase):
 
     # Test a call with a Lite Strategy script providing the initialize_from_yml method (overriding the base method)
     def test_start_script_strategy_confg(self):
-        class_w_initialize: ModuleType = ScriptStrategyBase.load_script_class("ls_config_file")
+        class_w_initialize: ModuleType = ScriptStrategyBase.load_script_class("dca_example")
 
-        with patch.object(LiteStrategyConfigFile, 'initialize_from_yml') as initialize_from_yml:
+        with patch.object(ScriptStrategyBase, 'initialize_from_yml', create=True) as initialize_from_yml:
             initialize_from_yml.return_value = {'kucoin': {'ALGO-ETH', 'ALGO-USDT', 'AVAX-USDT', 'AVAX-BTC'}}
             with patch.object(HummingbotApplication, 'strategy_file_name') as strategy_file_name:
                 with patch.object(ScriptStrategyBase, 'load_script_class') as load_script_class:
