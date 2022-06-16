@@ -1,6 +1,7 @@
 import importlib
 import inspect
 import logging
+import sys
 from decimal import Decimal
 from typing import Any, Dict, List, Set
 
@@ -36,7 +37,8 @@ class ScriptStrategyBase(StrategyPyBase):
         try:
             return cls.markets
         except AttributeError:
-            raise InvalidScriptModule(f"The module {cls.script_name} does not set 'markets' attribute nor implements 'initialize_from_yml' method")
+            raise InvalidScriptModule(f"The module {cls.script_name} does not set 'markets' attribute nor implements "
+                                      f"'initialize_from_yml' method")
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
