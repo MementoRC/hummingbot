@@ -1,8 +1,5 @@
 import asyncio
-import concurrent.futures
 import os
-import threading
-import time
 from typing import Any, Dict, List, Optional, Set
 
 import numpy as np
@@ -16,39 +13,13 @@ from hummingbot.core.rate_oracle.rate_oracle import RateOracle
 from hummingbot.strategy.script_strategy_base import ScriptStrategyBase
 from hummingbot.user.user_balances import UserBalances
 
+from .ls_markets_init import LiteStrategyMarketsInit
+
 yaml_parser = ruamel.yaml.YAML()
 lsb_logger = None
 
 
-class AsyncioEventLoopThread(threading.Thread):
-    def __init__(self, *args, loop=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.loop = loop or asyncio.new_event_loop()
-        self.running = False
-
-    def run(self):
-        self.running = True
-        self.loop.run_forever()
-
-    def run_coro(self, coro, timeout=1):
-        start_time = time.time()
-        try:
-            coro_result = asyncio.run_coroutine_threadsafe(coro, loop=self.loop).result(timeout=timeout)
-            return coro_result
-        except concurrent.futures.TimeoutError:
-            passed = time.time() - start_time
-            LiteStrategyFundAllocation.notify(f"Timeout after: {passed}s")
-            raise TimeoutError
-        except concurrent.futures.CancelledError:
-            raise
-
-    def stop(self):
-        self.loop.call_soon_threadsafe(self.loop.stop)
-        self.join()
-        self.running = False
-
-
-class LiteStrategyFundAllocation(ScriptStrategyBase):
+class LiteStrategyFundAllocation(ScriptStrategyBase, LiteStrategyMarketsInit):
     """
     Trying to get a better sense of balances and inventory in a common currency (USDT)
     """
@@ -59,14 +30,39 @@ class LiteStrategyFundAllocation(ScriptStrategyBase):
         #: Define markets to instruct Hummingbot to create connectors on the exchanges and markets you need
         super().__init__(connectors)
 
-        # Creating an event loop in a thread to call async hummingbot functions
-        self._thread = AsyncioEventLoopThread()
-        self._thread.start()
-
+        self._last_async_refresh_ts = None
         self._prices = dict()
+        self._data_ready = False
+        self._balance_fut, self._pause_fut, self._prices_fut = None, None, dict()
 
     def stop(self, clock: Clock):
-        self._thread.stop()
+        pass
+
+    def tick(self, timestamp: float):
+        """
+        Clock tick entry point, is run every second (on normal tick setting).
+        Checks if all connectors are ready, if so the strategy is ready to trade.
+
+        :param timestamp: current tick timestamp
+        """
+        self.logger().info("Entering tick()")
+        if not self.ready_to_trade:
+            self.ready_to_trade = all(ex.ready for ex in self.connectors.values())
+
+            if not self.ready_to_trade:
+                for con in [c for c in self.connectors.values() if not c.ready]:
+                    self.logger().warning(f"{con.name} is not ready. Please wait...")
+                return
+        else:
+            if self._last_async_refresh_ts < (self.current_timestamp - self._async_refresh):
+                self._refresh_balances_prices()
+                self._last_async_refresh_ts = self.current_timestamp
+
+            if self._data_ready:
+                self.on_tick()
+            else:
+                self.logger().warning("Strategy is not ready. Please wait...")
+                return
 
     def on_tick(self):
         pass
@@ -83,21 +79,6 @@ class LiteStrategyFundAllocation(ScriptStrategyBase):
         """
         data: List[Any] = list()
         campaign_list = list()
-
-        for exchange_name, connector in self.connectors.items():
-            while True:
-                try:
-                    self._thread.run_coro(UserBalances.instance().update_exchange_balance(exchange_name), 30)
-                    # self._refresh_balance_
-                    break
-                except asyncio.TimeoutError:
-                    self.notify("\nA network error prevented the balances to update ... Retry in 30s")
-
-            if exchange_name == 'kucoin':
-                prices_c = self._thread.run_coro(RateOracle.get_kucoin_prices(), 10)
-            elif exchange_name == 'gate_io':
-                prices_c = self._thread.run_coro(RateOracle.get_gate_io_prices(), 10)
-            self._prices[exchange_name] = prices_c
 
         for exchange_name, connector in self.connectors.items():
             data += self._fetch_balances_prices(exchange_name)
@@ -157,9 +138,32 @@ class LiteStrategyFundAllocation(ScriptStrategyBase):
         else:
             return dict(), dict()
 
+    def _refresh_balances_prices(self) -> None:
+        """
+        Calls async methods for all balance & price
+        """
+        self._data_ready = False
+        loop = asyncio.get_event_loop()
+        # We need balances to be updated and prices for both exchange (rather than use the oracle)
+        # Submit to the main Event loop  - We get the result after a few ticks and wait till then
+        if self._pause_fut is None:
+            for exchange_name, connector in self.connectors.items():
+                self._balance_fut[exchange_name] = asyncio.run_coroutine_threadsafe(
+                    UserBalances.instance().update_exchange_balance(exchange_name), loop)
+                if exchange_name == 'kucoin':
+                    self._prices_fut['kucoin'] = asyncio.run_coroutine_threadsafe(RateOracle.get_kucoin_prices(), loop)
+                elif exchange_name == 'gate_io':
+                    self._prices_fut['gate_io'] = asyncio.run_coroutine_threadsafe(RateOracle.get_gate_io_prices(), loop)
+            self._pause_fut = asyncio.run_coroutine_threadsafe(asyncio.sleep(0.5))
+
+        if all([[self._balance_fut[c].done(), self._prices_fut[c].done(), self._prices_fut[c].done()] for c in self.connectors.keys()]):
+            self._prices['kucoin'] = self._prices_fut['kucoin'].result()
+            self._prices['gate_io'] = self._prices_fut['gate_io'].result()
+            self._data_ready = True
+
     def _fetch_balances_prices(self, exchange_name: str) -> List:
         """
-        Fetch assets balance & price for the assets in the strategy
+        Fetches assets balance & price for the assets in the strategy
 
         param exchange_name; Name of the exchange
         """
@@ -189,7 +193,7 @@ class LiteStrategyFundAllocation(ScriptStrategyBase):
 
     def _reorganize_campaign_info(self, exchange_name: str) -> List[Dict]:
         """
-        Gather campaign information combing balances and prices
+        Gathers campaign information combing balances and prices
 
         param exchange_name; Name of the exchange
         """
