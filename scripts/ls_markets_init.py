@@ -47,8 +47,10 @@ class LiteStrategyMarketsInit(object):
 
         # Have we loaded a hummingbot market definition
         if 'markets' not in cls._config:
-            m_dict = dict(kucoin=dict(assets=set(), quotes=dict(), weights=dict(), hbot=set(), hbot_weights=dict(), inventory_skews=dict()),
-                          gate_io=dict(assets=set(), quotes=dict(), weights=dict(), hbot=set(), hbot_weights=dict(), inventory_skews=dict()))
+            m_dict = dict(kucoin=dict(assets=set(), quotes=dict(), weights=dict(), hbot=set(), hbot_weights=dict(),
+                                      inventory_skews=dict()),
+                          gate_io=dict(assets=set(), quotes=dict(), weights=dict(), hbot=set(), hbot_weights=dict(),
+                                       inventory_skews=dict()))
             m_dict['kucoin']['quotes'] = dict(
                 USDT=["XCAD"],
                 ETH=["NIM"],
@@ -117,7 +119,7 @@ class LiteStrategyMarketsInit(object):
         return markets
 
     @classmethod
-    def _save_config_to_yml(cls, config_filename: str):
+    def _save_config_to_yml(cls, config_filename: str) -> None:
         """
         Saves the Lite Strategy script class configuration into the associated YAML file
 
@@ -130,3 +132,27 @@ class LiteStrategyMarketsInit(object):
                     data[key] = cls._config.get(key)
                 with open(config_filename, "w+") as outfile:
                     yaml_parser.dump(data, outfile)
+
+    def get_assets_from_config(self, exchange: str) -> Set[str]:
+        if exchange in self._config['markets']:
+            return set(self._config['markets'][exchange]['assets'])
+        else:
+            return set()
+
+    def get_campaigns_from_config(self, exchange: str) -> Dict:
+        if exchange in self._config['markets']:
+            return self._config['markets'][exchange]
+        else:
+            return dict()
+
+    @property
+    def base_currency(self) -> str:
+        return self._config['base_currency']
+
+    @property
+    def hbot_weight(self) -> str:
+        return self._config['hbot_weight']
+
+    @property
+    def inventory_skew(self) -> str:
+        return self._config['inventory_skew']
