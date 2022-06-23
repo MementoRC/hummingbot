@@ -6,7 +6,7 @@ import ruamel.yaml
 yaml_parser = ruamel.yaml.YAML()
 
 
-class LiteStrategyMarketsInit(object):
+class MarketsYmlConfig(object):
     """
     Testing a market initialization method for Script Strategies
     Initialize the list of markets prior the market initialization phase in Hummingbot
@@ -126,11 +126,11 @@ class LiteStrategyMarketsInit(object):
         :param config_filename: name of the configuration file
         """
         if hasattr(cls, '_config'):
-            with open(config_filename, "r") as stream:
+            with open(config_filename, "w+") as stream:
                 data = yaml_parser.load(stream) or {}
                 for key in cls._config:
                     data[key] = cls._config.get(key)
-                with open(config_filename, "w+") as outfile:
+                with open(config_filename, "r+") as outfile:
                     yaml_parser.dump(data, outfile)
 
     def get_assets_from_config(self, exchange: str) -> Set[str]:

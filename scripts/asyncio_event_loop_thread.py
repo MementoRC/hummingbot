@@ -9,7 +9,7 @@ from hummingbot.logger import HummingbotLogger
 lsb_logger = None
 
 
-class LiteStrategyAsyncioEventLoopThread(threading.Thread):
+class AsyncioEventLoopThread(threading.Thread):
 
     @classmethod
     def logger(cls) -> HummingbotLogger:

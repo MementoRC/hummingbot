@@ -9,13 +9,13 @@ from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.logger import HummingbotLogger
 from hummingbot.user.user_balances import UserBalances
 
-from .ls_markets_init import LiteStrategyMarketsInit
+from .markets_yml_config import MarketsYmlConfig
 
 yaml_parser = ruamel.yaml.YAML()
 lsb_logger = None
 
 
-class LiteStrategyFundRebalancer(object):
+class FundsBalancer(object):
     """
     Trying to get a better sense of balances and inventory in a common currency (USDT)
     """
@@ -26,32 +26,32 @@ class LiteStrategyFundRebalancer(object):
             lsb_logger = logging.getLogger(__name__)
         return lsb_logger
 
-    def rebalancing_proposal(self,
-                             market_init: LiteStrategyMarketsInit,
-                             prices: Dict,
-                             connectors: Dict[str, ConnectorBase]) -> List[Union[Dict[str, Union[str, float]], Dict[str, Union[str, float]]]]:
+    @staticmethod
+    def balancing_proposal(market_init: MarketsYmlConfig,
+                           prices: Dict,
+                           connectors: Dict[str, ConnectorBase]) -> List[Union[Dict[str, Union[str, float]], Dict[str, Union[str, float]]]]:
 
         data: List[Any] = list()
         campaign_list = list()
 
         for exchange_name, connector in connectors.items():
-            data += self._fetch_balances_prices_to_list(market_init, prices, exchange_name)
-            campaign_list += self._reorganize_campaign_info(market_init, exchange_name)
+            data += FundsBalancer._fetch_balances_prices_to_list(market_init, prices, exchange_name)
+            campaign_list += FundsBalancer._reorganize_campaign_info(market_init, exchange_name)
 
         # Combine balances, prices, campaign info into DataFrame for calculations
-        df = self._combine_assets_campaigns(data, campaign_list)
+        df = FundsBalancer._combine_assets_campaigns(data, campaign_list)
 
         # Calculate the funds allocations
-        funds_df = self._calculate_funds(df)
+        funds_df = FundsBalancer._calculate_funds(df)
 
         # Calculate the funds allocations
-        df = df.groupby('Exchange').apply(self._calculate_asset_funding_per_exchange, 'Exchange', funds_df)
+        df = df.groupby('Exchange').apply(FundsBalancer._calculate_asset_funding_per_exchange, 'Exchange', funds_df)
 
         # Calculate Base/Quote ratio from campaign information, inventory skews, HBOT weights
-        df = self._calculate_base_quote_ratio(df)
+        df = FundsBalancer._calculate_base_quote_ratio(df)
 
         # Compose Sells proposal
-        list_sells = self._compose_sells(df)
+        list_sells = FundsBalancer._compose_sells(df)
         return list_sells
 
     @staticmethod
@@ -66,8 +66,8 @@ class LiteStrategyFundRebalancer(object):
         else:
             return dict(), dict()
 
-    def _fetch_balances_prices_to_list(self,
-                                       market_init: LiteStrategyMarketsInit,
+    @staticmethod
+    def _fetch_balances_prices_to_list(market_init: MarketsYmlConfig,
                                        prices: Dict,
                                        exchange_name: str) -> List:
         """
@@ -86,13 +86,13 @@ class LiteStrategyFundRebalancer(object):
                     asset_price = 1 / prices[exchange_name][opposite_pair]
                 else:
                     # We could add a route finder before giving up
-                    self.logger().error("Ill-configured Lite Strategy with asset not traded in quote currency (no "
-                                        "price found)")
+                    FundsBalancer.logger().error("Ill-configured Lite Strategy with asset not traded in quote "
+                                                 "currency (no price found)")
                     raise ValueError
             else:
                 asset_price = 1
 
-            total, avail = self._get_exchange_balances(exchange_name=exchange_name)
+            total, avail = FundsBalancer._get_exchange_balances(exchange_name=exchange_name)
 
             total_bal = total[asset] if total is not None and asset in total else 0
             avail_bal = avail[asset] if avail is not None and asset in avail else 0
@@ -105,7 +105,8 @@ class LiteStrategyFundRebalancer(object):
                          float(asset_price) * float(total_bal)])
         return data
 
-    def _reorganize_campaign_info(self, market_init: LiteStrategyMarketsInit, exchange_name: str) -> List[Dict]:
+    @staticmethod
+    def _reorganize_campaign_info(market_init: MarketsYmlConfig, exchange_name: str) -> List[Dict]:
         """
         Gathers campaign information combing balances and prices
 
@@ -302,7 +303,7 @@ class LiteStrategyFundRebalancer(object):
         # Both sells and buys are sorted and their largest value should be numerical noise
         if list(sells.values())[0]['Funding Gap (USDT)'] >= 1 or list(sells.values())[0]['Funding Gap (USDT)'] > 1:
             # This is not supposed to happen - There's a bug in the code somewhere :(
-            LiteStrategyFundRebalancer.logger().error("There is an error in matching buys and sells")
+            FundsBalancer.logger().error("There is an error in matching buys and sells")
             raise ValueError
 
         return orders

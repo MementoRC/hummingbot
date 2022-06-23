@@ -81,7 +81,7 @@ class WeightedGraph(object):
         return good_paths
 
 
-class LiteStrategyOrderRoute(object):
+class TradeRouteFinder(object):
 
     def __init__(self, prices: Dict, valid_assets: Set = None) -> None:
         if valid_assets is None:

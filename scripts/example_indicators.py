@@ -7,7 +7,7 @@ from unofficial_addendum.plot_indicators import AddIndicators
 from unofficial_addendum.utils import Plot_OHCL
 
 
-class LiteStrategyIndicators(ScriptStrategyBase):
+class ExampleIndicators(ScriptStrategyBase):
     """
     Testing how to access Indicators
     """

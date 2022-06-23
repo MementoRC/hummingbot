@@ -60,7 +60,7 @@ def request_miner_data():
     return requests.request("GET", url, headers=headers, data=payload)
 
 
-class LiteStrategyMinerIO(ScriptStrategyBase):
+class ExampleMinerIO(ScriptStrategyBase):
     """
     Testing a reload method for Script Strategies
     """

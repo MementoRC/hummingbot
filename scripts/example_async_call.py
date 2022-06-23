@@ -7,24 +7,24 @@ from hummingbot.core.clock import Clock
 from hummingbot.core.rate_oracle.rate_oracle import RateOracle
 from hummingbot.strategy.script_strategy_base import ScriptStrategyBase
 
-from .ls_asyncio_event_loop_thread import LiteStrategyAsyncioEventLoopThread
+from .asyncio_event_loop_thread import AsyncioEventLoopThread
 
 lsb_logger = None
 
 
 async def test_async_method(obj, wait_time):
-    LiteStrategyAsyncCall.logger().info(f"{obj} - 1 execute for {wait_time / 4}s")
+    ExampleAsyncCall.logger().info(f"{obj} - 1 execute for {wait_time / 4}s")
     await asyncio.sleep(wait_time / 4)
-    LiteStrategyAsyncCall.logger().info(f"{obj} - 2 execute for {wait_time / 4}s")
+    ExampleAsyncCall.logger().info(f"{obj} - 2 execute for {wait_time / 4}s")
     await asyncio.sleep(wait_time / 4)
-    LiteStrategyAsyncCall.logger().info(f"{obj} - 3 execute for {wait_time / 4}s")
+    ExampleAsyncCall.logger().info(f"{obj} - 3 execute for {wait_time / 4}s")
     await asyncio.sleep(wait_time / 4)
-    LiteStrategyAsyncCall.logger().info(f"{obj} - 4 execute for {wait_time / 4}s")
+    ExampleAsyncCall.logger().info(f"{obj} - 4 execute for {wait_time / 4}s")
     await asyncio.sleep(wait_time / 4)
     return "Async Result"
 
 
-class LiteStrategyAsyncCall(ScriptStrategyBase):
+class ExampleAsyncCall(ScriptStrategyBase):
     """
     Implementing call to async methods within Lite Strategy sync methods
     """
@@ -46,7 +46,7 @@ class LiteStrategyAsyncCall(ScriptStrategyBase):
         self._async_refresh = 10
 
         # Creating an event loop in a thread to call async methods
-        self._thread = LiteStrategyAsyncioEventLoopThread()
+        self._thread = AsyncioEventLoopThread()
         self._thread.start()
 
     # Testcase for calling an hummingbot async
@@ -99,7 +99,7 @@ class LiteStrategyAsyncCall(ScriptStrategyBase):
                 self.logger().info("HB: 3 Events submitted")
 
                 self.logger().info("Local: Starting event loop in a thread local to tick()")
-                local_thread = LiteStrategyAsyncioEventLoopThread()
+                local_thread = AsyncioEventLoopThread()
                 local_thread.start()
                 self.logger().info("Local: Starting 3 events of different durations")
                 start_time = time.time()
@@ -111,7 +111,7 @@ class LiteStrategyAsyncCall(ScriptStrategyBase):
                 local_thread.stop()
 
                 self.logger().info("Local CC: Starting event loop in a thread local to tick()")
-                local_thread = LiteStrategyAsyncioEventLoopThread()
+                local_thread = AsyncioEventLoopThread()
                 local_thread.start()
                 self.logger().info("Local CC: Starting 3 events via list")
                 start_time = time.time()
