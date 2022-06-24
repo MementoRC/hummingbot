@@ -2,7 +2,6 @@ import asyncio
 import concurrent.futures
 import os
 import threading
-import time
 from datetime import datetime
 from os import getcwd
 from os.path import join, realpath
@@ -21,7 +20,7 @@ from hummingbot.user.user_balances import UserBalances
 
 # This implement the mechanics of importing the configuration from a YML file
 # It is just convenient to have a separate file that all similar classes can import
-from .ls_markets_init import LiteStrategyMarketsInit
+from .markets_yml_config import MarketsYmlConfig
 
 yaml_parser = ruamel.yaml.YAML()
 LOGS_PATH = realpath(join(getcwd(), "logs/"))
@@ -59,7 +58,7 @@ class AsyncioEventLoopThread(threading.Thread):
         self.running = False
 
 
-class ReportBalanceStatus(ScriptStrategyBase, LiteStrategyMarketsInit):
+class ReportBalanceStatus(ScriptStrategyBase, MarketsYmlConfig):
     """
     Trying to get a better sense of balances and inventory in a common currency (USDT)
     """
@@ -69,14 +68,14 @@ class ReportBalanceStatus(ScriptStrategyBase, LiteStrategyMarketsInit):
     @classmethod
     def initialize_from_yml(cls) -> Dict[str, Set[str]]:
         # Load the config
-        LiteStrategyMarketsInit.load_from_yml(cls.config_filename)
+        MarketsYmlConfig.load_from_yml(cls.config_filename)
 
         # Update the markets with local definition
         if cls.markets:
-            LiteStrategyMarketsInit.update_markets(cls.markets)
+            MarketsYmlConfig.update_markets(cls.markets)
 
         # Return the markets for initialization of the connectors
-        return LiteStrategyMarketsInit.initialize_markets(cls.config_filename)
+        return MarketsYmlConfig.initialize_markets(cls.config_filename)
 
     def __init__(self, connectors: Dict[str, ConnectorBase]):
         #: Define markets to instruct Hummingbot to create connectors on the exchanges and markets you need
@@ -117,6 +116,13 @@ class ReportBalanceStatus(ScriptStrategyBase, LiteStrategyMarketsInit):
                 raise ValueError
 
     def tick(self, timestamp: float):
+        """
+        Clock tick entry point, is run every second (on normal tick setting).
+        Checks if all connectors are ready, if so the strategy is ready to trade.
+
+        :param timestamp: current tick timestamp
+        """
+        self.logger().info("Entering tick()")
         if not self.ready_to_trade:
             self.ready_to_trade = all(ex.ready for ex in self.connectors.values())
 
@@ -126,19 +132,13 @@ class ReportBalanceStatus(ScriptStrategyBase, LiteStrategyMarketsInit):
                 return
         else:
             if self._last_async_refresh_ts < (self.current_timestamp - self._async_refresh):
-                while True:
-                    try:
-                        self._thread.run_coro(self._async_calls(), timeout=10)
-                        self.data_ready = True
-                        break
-                    except TimeoutError:
-                        self.logger().notify("Could not update balance and prices in 5s, retrying in 5s")
-                        time.sleep(5)
+                self._refresh_balances_prices()
                 self._last_async_refresh_ts = self.current_timestamp
 
-            if self.data_ready:
+            if self._data_ready:
                 self.on_tick()
             else:
+                self.logger().warning("Strategy is not ready. Please wait...")
                 return
 
     def on_tick(self):
@@ -215,6 +215,29 @@ class ReportBalanceStatus(ScriptStrategyBase, LiteStrategyMarketsInit):
                     UserBalances.instance().all_available_balances(exchange_name)]
         else:
             return dict(), dict()
+
+    def _refresh_balances_prices(self) -> None:
+        """
+        Calls async methods for all balance & price
+        """
+        self._data_ready = False
+        loop = asyncio.get_event_loop()
+        # We need balances to be updated and prices for both exchange (rather than use the oracle)
+        # Submit to the main Event loop  - We get the result after a few ticks and wait till then
+        if self._pause_fut is None:
+            for exchange_name, connector in self.connectors.items():
+                self._balance_fut[exchange_name] = asyncio.run_coroutine_threadsafe(
+                    UserBalances.instance().update_exchange_balance(exchange_name), loop)
+                if exchange_name == 'kucoin':
+                    self._prices_fut['kucoin'] = asyncio.run_coroutine_threadsafe(RateOracle.get_kucoin_prices(), loop)
+                elif exchange_name == 'gate_io':
+                    self._prices_fut['gate_io'] = asyncio.run_coroutine_threadsafe(RateOracle.get_gate_io_prices(), loop)
+            self._pause_fut = asyncio.run_coroutine_threadsafe(asyncio.sleep(0.5))
+
+        if all([[self._balance_fut[c].done(), self._prices_fut[c].done(), self._prices_fut[c].done()] for c in self.connectors.keys()]):
+            self._prices['kucoin'] = self._prices_fut['kucoin'].result()
+            self._prices['gate_io'] = self._prices_fut['gate_io'].result()
+            self._data_ready = True
 
     def _fetch_balances_prices(self, exchange_name: str) -> List:
         """

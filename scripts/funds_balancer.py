@@ -29,14 +29,18 @@ class FundsBalancer(object):
     @staticmethod
     def balancing_proposal(market_init: MarketsYmlConfig,
                            prices: Dict,
-                           connectors: Dict[str, ConnectorBase]) -> List[Union[Dict[str, Union[str, float]], Dict[str, Union[str, float]]]]:
+                           connectors: Union[Dict[str, ConnectorBase], ConnectorBase]) -> List[Union[Dict[str, Union[str, float]], Dict[str, Union[str, float]]]]:
 
         data: List[Any] = list()
         campaign_list = list()
 
-        for exchange_name, connector in connectors.items():
-            data += FundsBalancer._fetch_balances_prices_to_list(market_init, prices, exchange_name)
-            campaign_list += FundsBalancer._reorganize_campaign_info(market_init, exchange_name)
+        if isinstance(connectors, ConnectorBase):
+            data += FundsBalancer._fetch_balances_prices_to_list(market_init, prices, connectors.name)
+            campaign_list += FundsBalancer._reorganize_campaign_info(market_init, connectors.name)
+        else:
+            for exchange_name, connector in connectors.items():
+                data += FundsBalancer._fetch_balances_prices_to_list(market_init, prices, exchange_name)
+                campaign_list += FundsBalancer._reorganize_campaign_info(market_init, exchange_name)
 
         # Combine balances, prices, campaign info into DataFrame for calculations
         df = FundsBalancer._combine_assets_campaigns(data, campaign_list)
@@ -62,7 +66,7 @@ class FundsBalancer(object):
             return [connector.get_all_balances(), connector.available_balances]
         elif exchange_name is not None:
             return [UserBalances.instance().all_balances(exchange_name),
-                    UserBalances.instance().all_available_balances_all_exchanges[exchange_name]]
+                    UserBalances.instance().all_available_balances_all_exchanges()[exchange_name]]
         else:
             return dict(), dict()
 

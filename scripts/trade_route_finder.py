@@ -1,7 +1,7 @@
 import operator
 import queue
 from functools import partial, reduce
-from typing import Dict, List, Set, TypeVar
+from typing import Any, Dict, List, Set, TypeVar, Union
 
 from pandas import DataFrame, concat
 
@@ -12,11 +12,12 @@ WG = TypeVar('WG', bound='WeightedGraph')
 # Sourced from:
 # https://iprokin.github.io/posts/2017-12-24-find-best-deal-with-BFS.html
 class WeightedGraph(object):
-    def __init__(self, graph: Dict = {}, weights_func=lambda f, t: 1) -> None:
+    def __init__(self, graph: Dict = {}, weights_func=lambda f, t: 1, edges: Set = {}) -> None:
         self.get_weight = weights_func
         self._graph = graph
+        self._edges = edges
 
-    def best_route(self, start_asset: str, goal_asset: str) -> List:
+    def best_route(self, start_asset: str, goal_asset: str) -> [List, Dict]:
         """
         Provides the best path available in the graph
 
@@ -26,9 +27,9 @@ class WeightedGraph(object):
         if start_asset in self._graph.keys() and goal_asset in self._graph.keys():
             paths = self._all_paths_bfs(start_asset, goal_asset)
             paths = self._sort_paths_by_reduced_weight(paths)
-            return paths[0]
+            return paths[0], self._recombine(paths[0])
         else:
-            return []
+            return [], {}
 
     def _sort_paths_by_reduced_weight(self, paths, how: operator = operator.mul) -> List:
         """
@@ -40,13 +41,13 @@ class WeightedGraph(object):
         path_reducer = partial(self._walk_and_reduce, how=how)
         path_conversion = list(zip(paths, map(path_reducer, paths)))
         # sort by conversion coefficient
-        path_conversion_sorted = sorted(path_conversion, key=lambda x: x[1], reverse=False)
+        path_conversion_sorted = sorted(path_conversion, key=lambda x: x[1], reverse=True)
         return path_conversion_sorted
 
     def _get_neighbours(self, node: str) -> List:
         return self._graph[node]
 
-    def _walk_and_reduce(self, path, how=operator.add):
+    def _walk_and_reduce(self, path, how=operator.add) -> Union[List, Any]:
         """
         Applies the operator to compute the weight of the path
 
@@ -55,6 +56,31 @@ class WeightedGraph(object):
         """
         costs = map(self.get_weight, path[:-1], path[1:])
         return reduce(how, costs)
+
+    def _recombine(self, wpath) -> Dict[str, List]:
+        """
+        Applies the operator to compute the weight of the path
+
+        ;param path: Path to analyze
+        ;param how: operator to use to weigh the path
+        """
+        edges = dict(edge=[], weight=[], trade=[])
+        path = wpath[0]
+        for index in range(0, len(path) - 1):
+            f = path[index]
+            t = path[index + 1]
+            ft = f"{f}-{t}"
+            ss = set(self._edges)
+
+            if ft in ss:
+                edges['edge'].append(f"{f}-{t}")
+                edges['weight'].append(self.get_weight(f, t))
+                edges['trade'].append("sell")
+            else:
+                edges['edge'].append(f"{t}-{f}")
+                edges['weight'].append(self.get_weight(t, f))
+                edges['trade'].append("buy")
+        return edges
 
     def _all_paths_bfs(self, start_asset: str, goal_asset: str) -> List:
         """
@@ -97,9 +123,9 @@ class TradeRouteFinder(object):
         gh, df = self._prices_to_graph_df(routes)
 
         # Combines the graph and prices into a weighted graph
-        self._weighted_routes = WeightedGraph(graph=gh, weights_func=partial(self._get_price_w_fees, df))
+        self._weighted_routes = WeightedGraph(graph=gh, weights_func=partial(self._get_price_w_fees, df), edges = set(df.columns.get_level_values(0)))
 
-    def best_route(self, start_asset: str, goal_asset: str) -> List:
+    def best_route(self, start_asset: str, goal_asset: str) -> [List, Dict]:
         """
         Provides the lower cost route between 2 assets in the form of list of intermediate assets
 
@@ -138,7 +164,7 @@ class TradeRouteFinder(object):
         return graph, concat({'ask': df, 'bid': df}).unstack(level=0)
 
     @staticmethod
-    def _get_price_w_fees(df: DataFrame, f: str, t: str, fee: float = 0.2) -> float:
+    def _get_price_w_fees(df: DataFrame, f: str, t: str, fee: float = 0) -> float:
         """
         Get price of a trade. Used to weigh the graph
         """

@@ -23,17 +23,17 @@ class ExampleBalancedLM(ScriptStrategyBase, MarketsYmlConfig):
     Trying to get a better sense of balances and inventory in a common currency (USDT)
     """
     config_filename: str = CONF_FILE_PATH + CONF_PREFIX + os.path.split(__file__)[1].split('.')[0] + ".yml"
-    valid_asset_route = {'BTC', 'USDT', 'ETH', 'USDC', 'DAI'}
 
     def __init__(self, connectors: Dict[str, ConnectorBase]):
         super().__init__(connectors)
-        self._balancing_trades = list()
+        self._balancing_trades = dict()
+        self._valid_asset_route = dict(_default_={"BTC", "USDT", "USDC", "KCS", "GT", "DAI", "ADA", "ETH", "AVAX"})
         self._prices = dict()
 
         self._async_refresh = 45
         self._last_async_refresh_ts = 0
 
-        self._trade_route_finder = None
+        self._trade_route_finder = dict()
 
         # Futures reference called with async on the main event loop (executed after the strategy tick())
         self._prices_fut = dict()
@@ -69,12 +69,12 @@ class ExampleBalancedLM(ScriptStrategyBase, MarketsYmlConfig):
                     self.logger().warning(f"{con.name} is not ready. Please wait...")
                 return
         else:
-            if self._last_async_refresh_ts < (self.current_timestamp - self._async_refresh):
+            if self._last_async_refresh_ts == 0 or self._last_async_refresh_ts < (
+                    self.current_timestamp - self._async_refresh):
                 self._refresh_balances_prices_routes()
-                self._last_async_refresh_ts = self.current_timestamp
 
             if self._data_ready:
-                FundsBalancer.balancing_proposal(self, )
+                self._last_async_refresh_ts = self.current_timestamp
                 self.on_tick()
             else:
                 self.logger().warning("Strategy is not ready. Please wait...")
@@ -95,18 +95,35 @@ class ExampleBalancedLM(ScriptStrategyBase, MarketsYmlConfig):
                 if exchange_name == 'kucoin':
                     self._prices_fut['kucoin'] = asyncio.run_coroutine_threadsafe(RateOracle.get_kucoin_prices(), loop)
                 elif exchange_name == 'gate_io':
-                    self._prices_fut['gate_io'] = asyncio.run_coroutine_threadsafe(RateOracle.get_gate_io_prices(), loop)
-            self._pause_fut = asyncio.run_coroutine_threadsafe(asyncio.sleep(0.5))
+                    self._prices_fut['gate_io'] = asyncio.run_coroutine_threadsafe(RateOracle.get_gate_io_prices(),
+                                                                                   loop)
+            self._pause_fut = asyncio.run_coroutine_threadsafe(asyncio.sleep(0.5), loop)
 
         for name, conn in self.connectors.items():
-            if self._prices_fut[name].done():
-
+            if self._prices_fut[name].done() and name not in self._prices:
+                # Retrieve the prices for the exchange from the completed future
                 self._prices[name] = self._prices_fut[name].result()
-                self._balancing_trades[name] = FundsBalancer.balancing_proposal(self, self._prices[name], conn)
-                self._trade_route_finder[name] = TradeRouteFinder(self._prices[name], self.valid_asset_route)
-                for trade in self._balancing_trades[name]:
-                    trade['route'] = self._trade_route_finder[name].best_route(self._balancing_trades[name]['asset'],
-                                                                               self._balancing_trades[name]['to'])
 
-        if all([[self._balance_fut[c].done(), self._prices_fut[c].done()] for c in self.connectors.keys()]):
+                # Compute the balancing proposal
+                self._balancing_trades[name] = FundsBalancer.balancing_proposal(self, self._prices, conn)
+
+                # Add the campaign assets as valid routes
+                self._valid_asset_route[name] = self._valid_asset_route['_default_'].copy()
+                self._valid_asset_route[name].update(self.get_assets_from_config(name))
+
+                # Initialize the route finder
+                self._trade_route_finder[name] = TradeRouteFinder(self._prices[name], self._valid_asset_route[name])
+
+                # Find the best route for each trade
+                for trade_index, trade in enumerate(self._balancing_trades[name]):
+                    self._balancing_trades[name][trade_index]['route'], self._balancing_trades[name][trade_index]['trades'] =\
+                        self._trade_route_finder[name].best_route(trade['asset'], trade['to'])
+
+                    asset = self._prices[name][f"{trade['asset']}-USDT"]
+                    to = self._prices[name][f"{trade['to']}-USDT"]
+                    self.logger().info(f"{trade['asset']}-USDT / {trade['to']}-USDT {asset / to}:{self._balancing_trades[name][trade_index]['route']}")
+                    self.logger().info(f"{asset / to}:{self._balancing_trades[name][trade_index]['trades']}")
+
+        if all([all([self._balance_fut[c].done(), self._prices_fut[c].done()]) for c in self.connectors.keys()]):
+            self._pause_fut = None
             self._data_ready = True

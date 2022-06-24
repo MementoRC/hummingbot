@@ -48,13 +48,14 @@ class TestTradeRouteFinder(unittest.TestCase):
         valid_routes = {'BTC', 'USDT', 'ETH', 'USDC', 'DAI'}
         routes_inst = TradeRouteFinder(self.prices, valid_routes)
         br = routes_inst.best_route('ALGO', 'USDT')
-        self.assertEqual(br, [])
+        self.assertEqual(br, ([], {}))
 
     def test_best_route(self):
         valid_routes = {'BTC', 'USDT', 'ALGO', 'ETH', 'USDC', 'DAI'}
         routes_inst = TradeRouteFinder(self.prices, valid_routes)
-        br = routes_inst.best_route('ALGO', 'USDT')
-        self.assertEqual(br, (['ALGO', 'USDT'], 8.0))
+        br, t = routes_inst.best_route('ALGO', 'USDT')
+        # Fee defaulted to 0 gives 10, if set to 0.2 gives 8
+        self.assertEqual(br, (['ALGO', 'USDT'], 10.0))
 
     def test_wg_from_dict_and_func(self):
         gh, df = TradeRouteFinder._prices_to_graph_df(self.prices)
@@ -92,6 +93,20 @@ class TestTradeRouteFinder(unittest.TestCase):
         paths = graph._all_paths_bfs("ALGO", "USDT")
         paths = graph._sort_paths_by_reduced_weight(paths)
         self.assertEqual(paths, expected)
+
+    def test_wg__recombine(self):
+        expected = {'edge': ['BTC-ALGO', 'ETH-BTC', 'ADA-ETH', 'USDT-ADA'],
+                    'trade': ['buy', 'buy', 'buy', 'buy'],
+                    'weight': [30000.0,
+                               3.3333333333333335e-05,
+                               3.3333333333333335e-05,
+                               3.3333333333333335e-05]}
+        gh, df = TradeRouteFinder._prices_to_graph_df(self.prices)
+        graph = WeightedGraph(graph=gh, weights_func=partial(TradeRouteFinder._get_price_w_fees, df))
+        paths = graph._all_paths_bfs("ALGO", "USDT")
+        paths = graph._sort_paths_by_reduced_weight(paths)
+        path = graph._recombine(paths[0])
+        self.assertEqual(path, expected)
 
     def test_wg_best_route(self):
         expected = (['ALGO', 'USDT'], 8.0)
