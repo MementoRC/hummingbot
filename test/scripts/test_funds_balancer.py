@@ -42,7 +42,7 @@ class TestFundsBalancer(unittest.TestCase):
         self.mocked_user_balances._UserBalances__instance.all_available_balances_all_exchanges.__getitem__ = \
             dict(ALGO=Decimal("1000.8"), AVAX=Decimal("300.8"), BTC=Decimal("0.15"), ETH=Decimal("0.3"), )
 
-        self.fund_rebalancer = FundsBalancer()
+        self.fund_balancer = FundsBalancer()
 
         self.expected_campaigns = \
             [{'Asset': 'ALGO', 'Exchange': 'kucoin', 'ETH Campaign': 1, 'ETH Skew': 50, 'USDT Campaign': 2.25,
@@ -121,7 +121,7 @@ class TestFundsBalancer(unittest.TestCase):
         return mocked_user_balances, prices, market_init
 
     def test__get_exchange_balances_w_connector(self):
-        total, avail = self.fund_rebalancer._get_exchange_balances(connector=self.mocked_connector)
+        total, avail = self.fund_balancer._get_exchange_balances(connector=self.mocked_connector)
         self.assertEqual(total, self.total_bal)
         self.assertEqual(avail, self.avail_bal)
 
@@ -131,7 +131,7 @@ class TestFundsBalancer(unittest.TestCase):
             dict(ALGO=Decimal("2000.8"), AVAX=Decimal("300.8"), BTC=Decimal("0.15"), ETH=Decimal("0.3"), )
         mocked_user_balances._UserBalances__instance.all_available_balances_all_exchanges.__getitem__.return_value = \
             dict(ALGO=Decimal("1000.8"), AVAX=Decimal("300.8"), BTC=Decimal("0.15"), ETH=Decimal("0.3"), )
-        total, avail = self.fund_rebalancer._get_exchange_balances(exchange_name='kucoin')
+        total, avail = self.fund_balancer._get_exchange_balances(exchange_name='kucoin')
         self.assertEqual(total, self.total_bal)
         self.assertEqual(avail, self.avail_bal)
 
@@ -142,8 +142,8 @@ class TestFundsBalancer(unittest.TestCase):
             dict(ALGO=Decimal("2000.8"), AVAX=Decimal("300.8"), BTC=Decimal("0.15"), ETH=Decimal("0.3"), )
         mocked_user_balances._UserBalances__instance.all_available_balances_all_exchanges.__getitem__.return_value = \
             dict(ALGO=Decimal("1000.8"), AVAX=Decimal("300.8"), BTC=Decimal("0.15"), ETH=Decimal("0.3"), )
-        data = self.fund_rebalancer._fetch_balances_prices_to_list(self.market_init, self.prices,
-                                                                   exchange_name=exchange_name)
+        data = self.fund_balancer._fetch_balances_prices_to_list(self.market_init, self.prices,
+                                                                 exchange_name=exchange_name)
         self.assertEqual(sorted(data), sorted(self.expected_balances))
 
         # Saving for later tests
@@ -152,7 +152,7 @@ class TestFundsBalancer(unittest.TestCase):
     def test__reorganize_campaign_info_2quotes(self):
         exchange_name = "kucoin"
 
-        data = self.fund_rebalancer._reorganize_campaign_info(self.market_init, exchange_name)
+        data = self.fund_balancer._reorganize_campaign_info(self.market_init, exchange_name)
         self.assertEqual(sorted(data, key=lambda d: d['Asset']),
                          sorted(self.expected_campaigns, key=lambda d: d['Asset']))
 
@@ -170,7 +170,7 @@ class TestFundsBalancer(unittest.TestCase):
         except (IOError, EOFError):
             campaigns = self.expected_campaigns
 
-        data = self.fund_rebalancer._combine_assets_campaigns(balances, campaigns)
+        data = self.fund_balancer._combine_assets_campaigns(balances, campaigns)
 
         exp_columns = sorted(
             ["Exchange", "Asset", "Balance", "Available Balance", "Price (USDT)", "Capital (USDT)",
@@ -188,7 +188,7 @@ class TestFundsBalancer(unittest.TestCase):
         except (IOError, EOFError):
             print("Run test__combine_assets_campaigns to create a valid input DataFrame for this test")
 
-        data = self.fund_rebalancer._calculate_funds(input_df)
+        data = self.fund_balancer._calculate_funds(input_df)
 
         exp_columns = sorted(
             ["Exchange", "Capital (USDT)", 'ETH Campaign', 'USDT Campaign', 'BTC Campaign', 'Total Campaigns',
@@ -208,7 +208,7 @@ class TestFundsBalancer(unittest.TestCase):
         data_df = pd.read_pickle('logs/data_data_df.pickle')
         funds_df = pd.read_pickle('logs/data_funds_df.pickle')
 
-        data = self.fund_rebalancer._calculate_asset_funding_per_exchange(data_df, 'Exchange', funds_df)
+        data = self.fund_balancer._calculate_asset_funding_per_exchange(data_df, 'Exchange', funds_df)
 
         exp_columns = sorted(
             ['Asset', 'Available Balance', 'Capital (USDT)', 'ETH Campaign', 'Total ETH Funds (USDT)', 'ETH Skew',
@@ -231,7 +231,7 @@ class TestFundsBalancer(unittest.TestCase):
 
         with pd.option_context('display.max_rows', None, 'display.max_columns',
                                None):  # more options can be specified also
-            data = self.fund_rebalancer._calculate_base_quote_ratio(data_df)
+            data = self.fund_balancer._calculate_base_quote_ratio(data_df)
 
         exp_columns = sorted(['Exchange', 'Asset', 'Balance', 'Available Balance', 'Price (USDT)',
                               'Capital (USDT)', 'USDT Campaign', 'USDT Skew', 'ETH Campaign',
@@ -258,7 +258,7 @@ class TestFundsBalancer(unittest.TestCase):
 
         with pd.option_context('display.max_rows', None, 'display.max_columns',
                                None):  # more options can be specified also
-            data = self.fund_rebalancer._compose_sells(data_df)
+            data = self.fund_balancer._compose_sells(data_df)
 
         expected = [{'amount': 11100.657142857142, 'asset': 'ALGO', 'to': 'USDT'},
                     {'amount': 2341.7142857142853, 'asset': 'ALGO', 'to': 'AVAX'},
@@ -268,13 +268,13 @@ class TestFundsBalancer(unittest.TestCase):
         self.assertEqual(data, expected)
 
     @patch('hummingbot.user.user_balances.UserBalances')
-    def test_rebalancing_proposal_one_asset(self, mocked_user_balances):
+    def test_balancing_proposal_one_asset(self, mocked_user_balances):
 
         # One asset without inventory, price of 1 no modificators, 50-50
         mocked_user_balances, prices, market_init = self.reset_mocking_one_asset(mocked_user_balances)
         expected = [{'amount': 500.0, 'asset': 'USDT', 'to': 'ETH'}]
-        data = self.fund_rebalancer.balancing_proposal(market_init, prices,
-                                                       connectors={'kucoin': self.mocked_connector})
+        data = self.fund_balancer.balancing_proposal(market_init, prices,
+                                                     connectors={'kucoin': self.mocked_connector})
         diff = [i for i in data + expected if i not in data or i not in expected]
         self.assertEqual(len(diff), 0)
 
@@ -282,8 +282,8 @@ class TestFundsBalancer(unittest.TestCase):
         mocked_user_balances, prices, market_init = self.reset_mocking_one_asset(mocked_user_balances)
         market_init.inventory_skew = 30
         expected = [{'amount': 300.0, 'asset': 'USDT', 'to': 'ETH'}]
-        data = self.fund_rebalancer.balancing_proposal(market_init, prices,
-                                                       connectors={'kucoin': self.mocked_connector})
+        data = self.fund_balancer.balancing_proposal(market_init, prices,
+                                                     connectors={'kucoin': self.mocked_connector})
         diff = [i for i in data + expected if i not in data or i not in expected]
         self.assertEqual(len(diff), 0)
 
@@ -291,8 +291,8 @@ class TestFundsBalancer(unittest.TestCase):
         mocked_user_balances, prices, market_init = self.reset_mocking_one_asset(mocked_user_balances)
         market_init.base_currency = 'ETH'
         expected = [{'amount': 500.0, 'asset': 'USDT', 'to': 'ETH'}]
-        data = self.fund_rebalancer.balancing_proposal(market_init, prices,
-                                                       connectors={'kucoin': self.mocked_connector})
+        data = self.fund_balancer.balancing_proposal(market_init, prices,
+                                                     connectors={'kucoin': self.mocked_connector})
         diff = [i for i in data + expected if i not in data or i not in expected]
         self.assertEqual(diff, [])
 
@@ -301,83 +301,83 @@ class TestFundsBalancer(unittest.TestCase):
         market_init.get_assets_from_config.return_value = {'USDT', 'ALGO'}
         market_init._config['markets']['kucoin']['quotes'] = dict(USDT={'ALGO'})
         with self.assertRaises(ValueError):
-            self.fund_rebalancer.balancing_proposal(market_init, prices,
-                                                    connectors={'kucoin': self.mocked_connector})
+            self.fund_balancer.balancing_proposal(market_init, prices,
+                                                  connectors={'kucoin': self.mocked_connector})
 
     @patch('hummingbot.user.user_balances.UserBalances')
-    def test_rebalancing_proposal_two_asset_default(self, mocked_user_balances):
+    def test_balancing_proposal_two_asset_default(self, mocked_user_balances):
         # Two assets without inventory, price of 1 no modificators, 50-50
         mocked_user_balances, prices, market_init = self.reset_mocking_two_assets(mocked_user_balances)
         # 50-50, thus 50% USDT, 50% ETH and ALGO
         expected = [{'amount': 250.0, 'asset': 'USDT', 'to': 'ETH'},
                     {'amount': 250.0, 'asset': 'USDT', 'to': 'ALGO'}]
-        data = self.fund_rebalancer.balancing_proposal(market_init, prices,
-                                                       connectors={'kucoin': self.mocked_connector})
+        data = self.fund_balancer.balancing_proposal(market_init, prices,
+                                                     connectors={'kucoin': self.mocked_connector})
         diff = [i for i in data + expected if i not in data or i not in expected]
         self.assertEqual(diff, [])
 
-    def test_rebalancing_proposal_two_asset_skew(self, mocked_user_balances):
+    def test_balancing_proposal_two_asset_skew(self, mocked_user_balances):
         # Two assets without inventory, price of 1, inventory skew, 70-30
         mocked_user_balances, prices, market_init = self.reset_mocking_two_assets(mocked_user_balances)
         market_init.inventory_skew = 30
         # 70-30, thus 70% USDT, 30% ETH and ALGO
         expected = [{'amount': 150.0, 'asset': 'USDT', 'to': 'ETH'},
                     {'amount': 150.0, 'asset': 'USDT', 'to': 'ALGO'}]
-        data = self.fund_rebalancer.balancing_proposal(market_init, prices,
-                                                       connectors={'kucoin': self.mocked_connector})
+        data = self.fund_balancer.balancing_proposal(market_init, prices,
+                                                     connectors={'kucoin': self.mocked_connector})
         diff = [i for i in data + expected if i not in data or i not in expected]
         self.assertEqual(diff, [])
 
-    def test_rebalancing_proposal_two_asset_specific_skew(self, mocked_user_balances):
+    def test_balancing_proposal_two_asset_specific_skew(self, mocked_user_balances):
         # Two assets without inventory, price of 1, specific inventory skew, 70-30
         mocked_user_balances, prices, market_init = self.reset_mocking_two_assets(mocked_user_balances)
         market_init._config['markets']['kucoin']['inventory_skews'] = {"ALGO-USDT": 30}
         # 50-50 ETH and 70-30 ALGO
         expected = [{'amount': 250.0, 'asset': 'USDT', 'to': 'ETH'},
                     {'amount': 150.0, 'asset': 'USDT', 'to': 'ALGO'}]
-        data = self.fund_rebalancer.balancing_proposal(market_init, prices,
-                                                       connectors={'kucoin': self.mocked_connector})
+        data = self.fund_balancer.balancing_proposal(market_init, prices,
+                                                     connectors={'kucoin': self.mocked_connector})
         diff = [i for i in data + expected if i not in data or i not in expected]
         self.assertEqual(diff, [])
 
-    def test_rebalancing_proposal_two_asset_base_currency(self, mocked_user_balances):
+    def test_balancing_proposal_two_asset_base_currency(self, mocked_user_balances):
         # Two assets without inventory, price of 1, inventory skew, 50-50, base currency ETH
         mocked_user_balances, prices, market_init = self.reset_mocking_two_assets(mocked_user_balances)
         market_init.base_currency = 'ETH'
         # No change, there is an error if an asset does not have a ETH price
         expected = [{'amount': 250.0, 'asset': 'USDT', 'to': 'ETH'},
                     {'amount': 250.0, 'asset': 'USDT', 'to': 'ALGO'}]
-        data = self.fund_rebalancer.balancing_proposal(market_init, prices,
-                                                       connectors={'kucoin': self.mocked_connector})
+        data = self.fund_balancer.balancing_proposal(market_init, prices,
+                                                     connectors={'kucoin': self.mocked_connector})
         diff = [i for i in data + expected if i not in data or i not in expected]
         self.assertEqual(diff, [])
 
-    def test_rebalancing_proposal_two_asset_hbot(self, mocked_user_balances):
+    def test_balancing_proposal_two_asset_hbot(self, mocked_user_balances):
         # Two assets without inventory, price of 1, inventory skew, 50-50, hbot_weight 1.5x
         mocked_user_balances, prices, market_init = self.reset_mocking_two_assets(mocked_user_balances)
         market_init.hbot_weight = 1.5
         # 50-500, thus 50% USDT, but different ALGO is 1.5x ETH using global hbot weight
         expected = [{'amount': 300.0, 'asset': 'USDT', 'to': 'ALGO'},
                     {'amount': 200.0, 'asset': 'USDT', 'to': 'ETH'}]
-        data = self.fund_rebalancer.balancing_proposal(market_init, prices,
-                                                       connectors={'kucoin': self.mocked_connector})
+        data = self.fund_balancer.balancing_proposal(market_init, prices,
+                                                     connectors={'kucoin': self.mocked_connector})
         diff = [i for i in data + expected if i not in data or i not in expected]
         self.assertEqual(diff, [])
 
-    def test_rebalancing_proposal_two_asset_specific_hbot(self, mocked_user_balances):
+    def test_balancing_proposal_two_asset_specific_hbot(self, mocked_user_balances):
         # Two assets without inventory, price of 1, inventory skew, 50-50, specific hbot_weights 1.5x
         mocked_user_balances, prices, market_init = self.reset_mocking_two_assets(mocked_user_balances)
         market_init._config['markets']['kucoin']['hbot_weights'] = {"ALGO-USDT": 1.5}
         # 50-500, thus 50% USDT, but different ALGO is 1.5x ETH using global hbot weight
         expected = [{'amount': 300.0, 'asset': 'USDT', 'to': 'ALGO'},
                     {'amount': 200.0, 'asset': 'USDT', 'to': 'ETH'}]
-        data = self.fund_rebalancer.balancing_proposal(market_init, prices,
-                                                       connectors={'kucoin': self.mocked_connector})
+        data = self.fund_balancer.balancing_proposal(market_init, prices,
+                                                     connectors={'kucoin': self.mocked_connector})
         diff = [i for i in data + expected if i not in data or i not in expected]
         self.assertEqual(diff, [])
 
     @patch('hummingbot.user.user_balances.UserBalances')
-    def test_rebalancing_proposal(self, mocked_user_balances):
+    def test_balancing_proposal(self, mocked_user_balances):
         mocked_user_balances._UserBalances__instance.all_balances.return_value = \
             dict(ALGO=Decimal("2000.8"), AVAX=Decimal("300.8"), BTC=Decimal("0.15"), ETH=Decimal("0.3"), )
         mocked_user_balances._UserBalances__instance.all_available_balances_all_exchanges.__getitem__.return_value = \
@@ -387,6 +387,6 @@ class TestFundsBalancer(unittest.TestCase):
                     {'amount': 2341.7142857142853, 'asset': 'ALGO', 'to': 'AVAX'},
                     {'amount': 1825.1428571428573, 'asset': 'BTC', 'to': 'ETH'},
                     {'amount': 279.7142857142853, 'asset': 'ALGO', 'to': 'ETH'}]
-        data = self.fund_rebalancer.balancing_proposal(self.market_init, self.prices,
-                                                       connectors={'kucoin': self.mocked_connector})
+        data = self.fund_balancer.balancing_proposal(self.market_init, self.prices,
+                                                     connectors={'kucoin': self.mocked_connector})
         self.assertEqual(data, expected)
