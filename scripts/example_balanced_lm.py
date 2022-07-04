@@ -151,12 +151,14 @@ class ExampleBalancedLM(ScriptStrategyBase, MarketsYmlConfig):
         Method called when the connector notifies a buy order has been completed (fully filled)
         """
         self.logger().info(f"The buy order {event.order_id} has been completed")
+        self._dequeue_execute_proposal(event.order_id)
 
     def did_complete_sell_order(self, event: SellOrderCompletedEvent):
         """
         Method called when the connector notifies a sell order has been completed (fully filled)
         """
         self.logger().info(f"The sell order {event.order_id} has been completed")
+        self._dequeue_execute_proposal(event.order_id)
 
     def _place_order(self, exchange: str, order_candidate: OrderCandidate) -> str:
         """
@@ -182,15 +184,15 @@ class ExampleBalancedLM(ScriptStrategyBase, MarketsYmlConfig):
         Execute the proposals one after the other
         """
         for exchange, list_orders in self._trade_proposals.items():
-            self._order_ids[exchange] = list() if exchange not in self._order_ids else self._order_ids[exchange]
+            self._order_ids[exchange] = 0 if exchange not in self._order_ids else self._order_ids[exchange]
 
-            if preceding_order_id == "0" or preceding_order_id in self._order_ids[exchange]:
+            if preceding_order_id == "0" or preceding_order_id == self._order_ids[exchange]:
                 try:
-                    order_candidate = list_orders.pop()
-                    self._order_ids[exchange] = self._place_order(exchange, order_candidate)
+                    order_candidate = list_orders.pop(0)
                 except IndexError:
                     # We have emptied our queue orders
-                    pass
+                    return
+                self._order_ids[exchange] = self._place_order(exchange, order_candidate)
 
     def _create_proposal(self, adjust_budget: bool = False) -> None:
         """

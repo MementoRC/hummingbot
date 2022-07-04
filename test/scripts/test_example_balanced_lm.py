@@ -289,9 +289,31 @@ class TestExampleBalancedLM(unittest.TestCase):
         lod = [OrderCandidate("T-T0", False, OrderType.LIMIT, TradeType.BUY, 1, 0),
                OrderCandidate("T-T1", False, OrderType.LIMIT, TradeType.SELL, 1, 0)]
         self.strategy._trade_proposals = {'kucoin': lod.copy(), 'kraken': lod.copy()}
-        with patch.object(ExampleBalancedLM, '_place_order') as mocked_order:
-            mocked_order.return_value = "buy_id"
-            self.strategy._dequeue_execute_proposal("0")
 
-        #
+        # First call, preceding_order_id set to 0
+        with patch.object(ExampleBalancedLM, '_place_order') as mocked_order:
+            mocked_order.side_effect = ["buy_id_0", "buy_id_1"]
+            self.strategy._dequeue_execute_proposal("0")
+        mocked_order.assert_called_with('kraken', lod[0])
+        self.assertEqual(self.strategy._order_ids, {'kraken': 'buy_id_1', 'kucoin': 'buy_id_0'})
+
+        # Second call, kraken first order is completed, placing second kraken order
+        with patch.object(ExampleBalancedLM, '_place_order') as mocked_order:
+            mocked_order.return_value = "buy_id_2"
+            self.strategy._dequeue_execute_proposal("buy_id_1")
         mocked_order.assert_called_with('kraken', lod[1])
+        self.assertEqual(self.strategy._order_ids, {'kraken': 'buy_id_2', 'kucoin': 'buy_id_0'})
+
+        # Third call, kucoin first order is completed, placing second kucoin order
+        with patch.object(ExampleBalancedLM, '_place_order') as mocked_order:
+            mocked_order.return_value = "buy_id_3"
+            self.strategy._dequeue_execute_proposal("buy_id_0")
+        mocked_order.assert_called_with('kucoin', lod[1])
+        self.assertEqual(self.strategy._order_ids, {'kraken': 'buy_id_2', 'kucoin': 'buy_id_3'})
+
+        # Fourth call, kucoin second order is completed, we should have emptied the order queue
+        with patch.object(ExampleBalancedLM, '_place_order') as mocked_order:
+            mocked_order.return_value = "_not_orders_in_queue_"
+            self.strategy._dequeue_execute_proposal("buy_id_3")
+        assert not mocked_order.called, 'method should not have been called'
+        self.assertEqual(self.strategy._order_ids, {'kraken': 'buy_id_2', 'kucoin': 'buy_id_3'})
