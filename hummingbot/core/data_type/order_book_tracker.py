@@ -75,8 +75,17 @@ class OrderBookTracker:
             for trading_pair, order_book in self._order_books.items()
         }
 
+    def add_orderbook_pairs(self, added_pairs: List[str]):
+        if all([a for a in added_pairs if a not in self._trading_pairs]):
+            safe_ensure_future(self._order_books_initialized.wait())
+            safe_ensure_future(self._add_order_books(added_pairs))
+
+    def remove_orderbook_pairs(self, removed_pairs: List[str]):
+        if [a for a in self._trading_pairs if a in removed_pairs]:
+            safe_ensure_future(self._order_books_initialized.wait())
+            safe_ensure_future(self._remove_order_books(removed_pairs))
+
     def start(self):
-        self.stop()
         self._init_order_books_task = safe_ensure_future(
             self._init_order_books()
         )
@@ -183,6 +192,36 @@ class OrderBookTracker:
             self.logger().info(f"Initialized order book for {trading_pair}. "
                                f"{index + 1}/{len(self._trading_pairs)} completed.")
             await self._sleep(delay=1)
+        self._order_books_initialized.set()
+
+    async def _add_order_books(self, added_pairs):
+        """
+        Adds pairs to order book
+        """
+        self._order_books_initialized.clear()
+        for index, trading_pair in enumerate(added_pairs):
+            self._trading_pairs.append(trading_pair)
+            self._order_books[trading_pair] = await self._initial_order_book_for_trading_pair(trading_pair)
+            self._tracking_message_queues[trading_pair] = asyncio.Queue()
+            self._tracking_tasks[trading_pair] = safe_ensure_future(self._track_single_book(trading_pair))
+            self.logger().info(f"Initialized order book for added {trading_pair}. "
+                               f"{index + 1}/{len(added_pairs)} completed. Pairs: {len(self._trading_pairs)}")
+            await asyncio.sleep(1)
+        self._order_books_initialized.set()
+
+    async def _remove_order_books(self, removed_pairs):
+        """
+        Adds pairs to order book
+        """
+        self._order_books_initialized.clear()
+        for index, trading_pair in enumerate(removed_pairs):
+            self._trading_pairs.remove(trading_pair)
+            del self._order_books[trading_pair]
+            del self._tracking_message_queues[trading_pair]
+            del self._tracking_tasks[trading_pair]
+            self.logger().info(f"Removed order book for {trading_pair}. "
+                               f"{index + 1}/{len(removed_pairs)} completed. Pairs: {len(self._trading_pairs)}")
+            await asyncio.sleep(1)
         self._order_books_initialized.set()
 
     async def _order_book_diff_router(self):
