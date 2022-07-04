@@ -239,7 +239,7 @@ class TestExampleBalancedLM(unittest.TestCase):
                     OrderCandidate("ETH-USDT", False, OrderType.LIMIT, TradeType.BUY, Decimal('0.00025'),
                                    Decimal('0.0005'))]
 
-                orders_l = self.strategy._create_proposal()
+                orders_l = self.strategy._create_proposal(adjust_budget=True)
         mocked_price.assert_called_with(mocked_price.return_value, self.connector)
         mocked_budget.assert_called_with(mocked_price.return_value, all_or_none=False)
         self.assertEqual(orders_l[0].trading_pair, 'ALGO-USDT')
@@ -251,7 +251,7 @@ class TestExampleBalancedLM(unittest.TestCase):
         self.assertEqual(orders_l[1].price, Decimal('0.0005'))
         self.assertEqual(orders_l[1].is_maker, False)
 
-    def test_update_proposal_prices(self):
+    def test__update_proposal_prices(self):
         lod = [OrderCandidate("T-T0", False, OrderType.LIMIT, TradeType.BUY, 0, 0),
                OrderCandidate("T-T1", False, OrderType.LIMIT, TradeType.BUY, 0, 0)]
         with patch('hummingbot.connector.connector_base.ConnectorBase') as mocked_price:
@@ -259,3 +259,39 @@ class TestExampleBalancedLM(unittest.TestCase):
             self.strategy._update_proposal_prices(lod, mocked_price)
         self.assertEqual(lod[0].amount, Decimal(12345))
         self.assertEqual(lod[1].amount, Decimal(12345))
+
+    def test__place_order(self):
+        lod = [OrderCandidate("T-T0", False, OrderType.LIMIT, TradeType.BUY, 0, 0),
+               OrderCandidate("T-T1", False, OrderType.LIMIT, TradeType.SELL, 0, 0)]
+        with patch.object(ExampleBalancedLM, 'buy') as mocked_buy:
+            mocked_buy.return_value = "buy_id"
+            buy = self.strategy._place_order('kucoin', lod[0])
+        with patch.object(ExampleBalancedLM, 'sell') as mocked_sell:
+            mocked_sell.return_value = "sell_id"
+            sell = self.strategy._place_order('kucoin', lod[1])
+        self.assertEqual(buy, "_amount_not_positive_")
+        self.assertEqual(sell, "_amount_not_positive_")
+
+        lod = [OrderCandidate("T-T0", False, OrderType.LIMIT, TradeType.BUY, 1, 0),
+               OrderCandidate("T-T1", False, OrderType.LIMIT, TradeType.SELL, 1, 0)]
+        with patch.object(ExampleBalancedLM, 'buy') as mocked_buy:
+            mocked_buy.return_value = "buy_id"
+            buy = self.strategy._place_order('kucoin', lod[0])
+        with patch.object(ExampleBalancedLM, 'sell') as mocked_sell:
+            mocked_sell.return_value = "sell_id"
+            sell = self.strategy._place_order('kucoin', lod[1])
+        mocked_buy.assert_called_with('kucoin', 'T-T0', 1, OrderType.LIMIT, 0)
+        mocked_sell.assert_called_with('kucoin', 'T-T1', 1, OrderType.LIMIT, 0)
+        self.assertEqual(buy, "buy_id")
+        self.assertEqual(sell, "sell_id")
+
+    def test__dequeue_execute_proposal(self):
+        lod = [OrderCandidate("T-T0", False, OrderType.LIMIT, TradeType.BUY, 1, 0),
+               OrderCandidate("T-T1", False, OrderType.LIMIT, TradeType.SELL, 1, 0)]
+        self.strategy._trade_proposals = {'kucoin': lod.copy(), 'kraken': lod.copy()}
+        with patch.object(ExampleBalancedLM, '_place_order') as mocked_order:
+            mocked_order.return_value = "buy_id"
+            self.strategy._dequeue_execute_proposal("0")
+
+        #
+        mocked_order.assert_called_with('kraken', lod[1])

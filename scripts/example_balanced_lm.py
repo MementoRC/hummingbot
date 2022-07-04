@@ -41,6 +41,8 @@ class ExampleBalancedLM(ScriptStrategyBase, MarketsYmlConfig):
     def __init__(self, connectors: Dict[str, ConnectorBase]):
         super().__init__(connectors)
         self._balancing_trades: Dict = dict()
+        self._trade_proposals: Dict = dict()
+        self._order_ids: Dict = dict()
         self._valid_asset_route: Dict[str, Set] = dict(
             _default_={"BTC", "USDT", "USDC", "KCS", "GT", "DAI", "ADA", "ETH", "AVAX"})
         self._prices: Dict = dict()
@@ -82,9 +84,10 @@ class ExampleBalancedLM(ScriptStrategyBase, MarketsYmlConfig):
         - Check the account balance and adjust the proposal accordingly (lower order amount if needed)
         - Lastly, execute the proposal on the exchange
         """
-        proposals: Dict[str, List[OrderCandidate]] = self._create_proposal()
-        if proposals:
-            self._execute_proposal(proposals)
+        self._create_proposal()
+        if self._trade_proposals:
+            # Place the first order of each exchange
+            self._dequeue_execute_proposal("0")
 
     def tick(self, timestamp: float):
         """
@@ -155,29 +158,47 @@ class ExampleBalancedLM(ScriptStrategyBase, MarketsYmlConfig):
         """
         self.logger().info(f"The sell order {event.order_id} has been completed")
 
-    def _execute_proposal(self, proposals: Dict[str, List[OrderCandidate]]) -> None:
+    def _place_order(self, exchange: str, order_candidate: OrderCandidate) -> str:
         """
-        Execute the proposals
-        """
-        for name, list_orders in proposals.items():
-            for order_candidate in list_orders:
-                if order_candidate.amount > Decimal("0"):
-                    if order_candidate.order_side == TradeType.BUY:
-                        self.buy(name, order_candidate.trading_pair, order_candidate.amount, order_candidate.order_type,
-                                 order_candidate.price)
-                    else:
-                        self.sell(name, order_candidate.trading_pair, order_candidate.amount,
-                                  order_candidate.order_type,
-                                  order_candidate.price)
+        Place the order and returns the order_id
 
-    def _create_proposal(self) -> Dict[str, List[OrderCandidate]]:
+        ;param exchange: Exchange name
+        ;param order_candidate: Order candidate
+        """
+        if order_candidate.amount > Decimal("0"):
+            if order_candidate.order_side == TradeType.BUY:
+                return self.buy(exchange, order_candidate.trading_pair, order_candidate.amount,
+                                order_candidate.order_type,
+                                order_candidate.price)
+            else:
+                return self.sell(exchange, order_candidate.trading_pair, order_candidate.amount,
+                                 order_candidate.order_type,
+                                 order_candidate.price)
+        else:
+            return "_amount_not_positive_"
+
+    def _dequeue_execute_proposal(self, preceding_order_id: str = "-1") -> None:
+        """
+        Execute the proposals one after the other
+        """
+        for exchange, list_orders in self._trade_proposals.items():
+            self._order_ids[exchange] = list() if exchange not in self._order_ids else self._order_ids[exchange]
+
+            if preceding_order_id == "0" or preceding_order_id in self._order_ids[exchange]:
+                try:
+                    order_candidate = list_orders.pop()
+                    self._order_ids[exchange] = self._place_order(exchange, order_candidate)
+                except IndexError:
+                    # We have emptied our queue orders
+                    pass
+
+    def _create_proposal(self, adjust_budget: bool = False) -> None:
         """
         Creates and returns a proposal (a list of order candidate)
         """
-        proposal = dict()
         # If the current price (the last close) is below the dip, add a new order candidate to the proposal
         for name, conn in self.connectors.items():
-            proposal[name] = list()
+            self._trade_proposals[name] = list()
             new_pairs = list()
             for trade in self._balancing_trades[name]:
                 d = trade['trades']
@@ -189,18 +210,21 @@ class ExampleBalancedLM(ScriptStrategyBase, MarketsYmlConfig):
                         # Add new pair to the list of orderbooks
                         new_pairs.append(sub_t['pairs'])
                         price = sub_t['rates']
-                    proposal[name].append(OrderCandidate(sub_t['pairs'],
-                                                         False,
-                                                         OrderType.LIMIT,
-                                                         TradeType.BUY,
-                                                         sub_t['amounts'],
-                                                         price))
+                    self._trade_proposals[name].append(OrderCandidate(sub_t['pairs'],
+                                                                      False,
+                                                                      OrderType.LIMIT,
+                                                                      TradeType.BUY,
+                                                                      sub_t['amounts'],
+                                                                      price))
             # Add order books for the new pairs
             self._add_orderbook_pairs(conn, new_pairs)
-            self._update_proposal_prices(proposal[name], conn)
-            proposal = conn.budget_checker.adjust_candidates(proposal[name], all_or_none=False)
+            # Update the price of the pairs added to the connector
+            self._update_proposal_prices(self._trade_proposals[name], conn)
 
-        return proposal
+            # The budget of some trades may depend on preceding trades
+            if adjust_budget:
+                self._trade_proposals[name] = conn.budget_checker.adjust_candidates(self._trade_proposals[name],
+                                                                                    all_or_none=False)
 
     def _update_proposal_prices(self, proposal: List[OrderCandidate], connector: ConnectorBase) -> None:
         """

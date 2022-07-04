@@ -40,7 +40,9 @@ class ExampleAddedPair(ScriptStrategyBase):
         An event which is called on every tick, a sub class implements this to define what operation the strategy needs
         to operate on a regular tick basis.
         """
-        # self.logger().info("on_tick()")
+        self.logger().info(f"{self.current_timestamp}")
+        self.logger().info(f"{self.clock.tick_size}")
+        self.clock.tick_size = 0.5
         pairs = ['ETH-BTC', 'DOT-BTC']
         for pair in pairs:
             if pair in self.connectors['kucoin'].trading_pairs:
