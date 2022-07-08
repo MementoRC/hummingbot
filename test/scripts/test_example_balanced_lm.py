@@ -1,24 +1,42 @@
 import unittest
 from decimal import Decimal
-from unittest.mock import AsyncMock, MagicMock, patch
+from typing import Dict, List
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pandas as pd
+from numpy import double
 from sqlalchemy.util import asyncio
 
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
+from hummingbot.connector.exchange.paper_trade.paper_trade_exchange import QuantizationParams
 from hummingbot.connector.test_support.mock_paper_exchange import MockPaperExchange
 from hummingbot.core.clock import Clock
 from hummingbot.core.clock_mode import ClockMode
 from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.data_type.order_candidate import OrderCandidate
-from hummingbot.core.event.events import OrderType
-from scripts.example_balanced_lm import ExampleBalancedLM
+from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee
+from hummingbot.core.event.event_logger import EventLogger
+from hummingbot.core.event.events import (
+    BuyOrderCompletedEvent,
+    MarketEvent,
+    OrderFilledEvent,
+    OrderType,
+    SellOrderCompletedEvent,
+)
+from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple
+from scripts.example_balanced_lm import ExampleBalancedLM, OrderStage
 from scripts.funds_balancer import FundsBalancer
 
 
 class TestExampleBalancedLM(unittest.TestCase):
     level = 0
+    start: pd.Timestamp = pd.Timestamp("2019-01-01", tz="UTC")
+    end: pd.Timestamp = pd.Timestamp("2019-01-01 01:00:00", tz="UTC")
+    start_timestamp: float = start.timestamp()
+    end_timestamp: float = end.timestamp()
+    maker_trading_pairs: List[str] = ["COINALPHA-WETH", "COINALPHA", "WETH"]
+    clock_tick_size = 10
 
     def handle(self, record):
         self.log_records.append(record)
@@ -28,6 +46,7 @@ class TestExampleBalancedLM(unittest.TestCase):
                    for record in self.log_records)
 
     def setUp(self):
+        self.clock: Clock = Clock(ClockMode.BACKTEST, self.clock_tick_size, self.start_timestamp, self.end_timestamp)
         self.ev_loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
 
         self.log_records = []
@@ -37,8 +56,22 @@ class TestExampleBalancedLM(unittest.TestCase):
         self.end_timestamp: float = self.end.timestamp()
         self.connector_name: str = "kucoin"
         self.clock_tick_size = 1
-        self.clock: Clock = Clock(ClockMode.BACKTEST, self.clock_tick_size, self.start_timestamp, self.end_timestamp)
         self.connector: MockPaperExchange = MockPaperExchange(client_config_map=ClientConfigAdapter(ClientConfigMap()))
+
+        self.markets: Dict[str, MockPaperExchange] = dict()
+        self.markets_infos: Dict[str, Dict[str, MarketTradingPairTuple]] = dict()
+        self.markets['kucoin_paper_trade'], self.markets_infos['kucoin_paper_trade'] = self.create_market(
+            ['ALGO-USDT', 'AVAX-USDT', 'ADA-USDT', 'BTC-USDT', 'ETH-USDT', 'ALGO-AVAX', 'BTC-ALGO', 'BTC-ETH',
+             'ETH-ADA'],
+            [Decimal('0.5'), Decimal('0.25'), Decimal('1'), Decimal('20000'), Decimal('2000'),
+             Decimal('0.5') / Decimal('0.25'), Decimal('20000') / Decimal('0.5'), Decimal('20000') / Decimal('2000'),
+             Decimal('2000') / Decimal('1')], dict(ALGO=2000, AVAX=300, BTC=0.15, ETH=0.3, USDT=0.0))
+        self.markets['binance_paper_trade'], self.markets_infos['binance_paper_trade'] = self.create_market(
+            ['ALGO-USDT', 'AVAX-USDT', 'ADA-USDT', 'BTC-USDT', 'ETH-USDT', 'ALGO-AVAX', 'BTC-ALGO', 'BTC-ETH',
+             'ETH-ADA'],
+            [Decimal('0.5'), Decimal('0.25'), Decimal('1'), Decimal('20000'), Decimal('2000'),
+             Decimal('0.5') / Decimal('0.25'), Decimal('20000') / Decimal('0.5'), Decimal('20000') / Decimal('2000'),
+             Decimal('2000') / Decimal('1')], dict(ALGO=2000, AVAX=300, BTC=0.15, ETH=0.3, USDT=0.0))
 
         self.mocked_connector = MagicMock()
         self.mocked_connector.name = "kucoin"
@@ -56,7 +89,19 @@ class TestExampleBalancedLM(unittest.TestCase):
              ]
         for asset in self.expected_balances:
             self.connector.set_balance(asset[1], float(asset[2]))
-        self.clock.add_iterator(self.connector)
+
+        self.maker_order_fill_logger: EventLogger = EventLogger()
+        self.cancel_order_logger: EventLogger = EventLogger()
+        self.buy_order_completed_logger: EventLogger = EventLogger()
+        self.sell_order_completed_logger: EventLogger = EventLogger()
+
+        for c, v in self.markets.items():
+            self.clock.add_iterator(v)
+            v.add_listener(MarketEvent.BuyOrderCompleted, self.buy_order_completed_logger)
+            v.add_listener(MarketEvent.SellOrderCompleted, self.sell_order_completed_logger)
+            v.add_listener(MarketEvent.OrderFilled, self.maker_order_fill_logger)
+            v.add_listener(MarketEvent.OrderCancelled, self.cancel_order_logger)
+
         ExampleBalancedLM._config = \
             dict(
                 markets=dict(kucoin=dict(quotes=dict(USDT={'ALGO', 'AVAX'}, ETH={'ALGO'}, BTC={'AVAX'}),
@@ -82,6 +127,82 @@ class TestExampleBalancedLM(unittest.TestCase):
                                             }}
         self.strategy.logger().setLevel(1)
         self.strategy.logger().addHandler(self)
+
+        self.multi_strategy = ExampleBalancedLM(self.markets)
+        self.multi_strategy.logger().setLevel(1)
+        self.multi_strategy.logger().addHandler(self)
+        self.multi_strategy.order_tracker._set_current_timestamp(1640001112.223)
+
+    @staticmethod
+    def create_market(trading_pairs: List[str], mid_price: List[Decimal], balances: Dict[str, int]) -> \
+            (MockPaperExchange, Dict[str, MarketTradingPairTuple]):
+        """
+        Create a BacktestMarket and marketinfo dictionary to be used by the liquidity mining strategy
+        """
+        market: MockPaperExchange = MockPaperExchange(
+            client_config_map=ClientConfigAdapter(ClientConfigMap())
+        )
+        market_infos: Dict[str, MarketTradingPairTuple] = {}
+
+        for index, trading_pair in enumerate(trading_pairs):
+            base_asset = trading_pair.split("-")[0]
+            quote_asset = trading_pair.split("-")[1]
+            market.set_balanced_order_book(trading_pair=trading_pair,
+                                           mid_price=double(mid_price[index]),
+                                           min_price=1,
+                                           max_price=200,
+                                           price_step_size=1,
+                                           volume_step_size=10)
+            market.set_quantization_param(QuantizationParams(trading_pair, 6, 6, 6, 6))
+            market_infos[trading_pair] = MarketTradingPairTuple(market, trading_pair, base_asset, quote_asset)
+
+        for asset, value in balances.items():
+            market.set_balance(asset, value)
+
+        return market, market_infos
+
+    @staticmethod
+    def simulate_limit_order_fill(market: MockPaperExchange, order_candidate: OrderCandidate, order_id: str = "0"):
+        if order_candidate.order_side == TradeType.BUY:
+            market.trigger_event(MarketEvent.OrderFilled, OrderFilledEvent(
+                market.current_timestamp,
+                order_id,
+                order_candidate.trading_pair,
+                TradeType.BUY,
+                OrderType.LIMIT,
+                order_candidate.price,
+                order_candidate.amount,
+                AddedToCostTradeFee(Decimal("0"))
+            ))
+            market.trigger_event(MarketEvent.BuyOrderCompleted, BuyOrderCompletedEvent(
+                market.current_timestamp,
+                order_id,
+                "ETH",
+                "USDT",
+                Decimal("1"),
+                Decimal("1000"),
+                OrderType.LIMIT
+            ))
+        else:
+            market.trigger_event(MarketEvent.OrderFilled, OrderFilledEvent(
+                market.current_timestamp,
+                order_id,
+                order_candidate.trading_pair,
+                TradeType.BUY,
+                OrderType.LIMIT,
+                order_candidate.price,
+                order_candidate.amount,
+                AddedToCostTradeFee(Decimal("0"))
+            ))
+            market.trigger_event(MarketEvent.SellOrderCompleted, SellOrderCompletedEvent(
+                market.current_timestamp,
+                order_id,
+                "ETH",
+                "USDT",
+                Decimal("1"),
+                Decimal("1000"),
+                OrderType.LIMIT
+            ))
 
     @patch('hummingbot.user.user_balances.UserBalances')
     def test__call_asyncs(self, mocked_user_balances):
@@ -285,35 +406,130 @@ class TestExampleBalancedLM(unittest.TestCase):
         self.assertEqual(buy, "buy_id")
         self.assertEqual(sell, "sell_id")
 
-    def test__dequeue_execute_proposal(self):
-        lod = [OrderCandidate("T-T0", False, OrderType.LIMIT, TradeType.BUY, 1, 0),
-               OrderCandidate("T-T1", False, OrderType.LIMIT, TradeType.SELL, 1, 0)]
+    def test__dequeue_proposal_exchange(self):
+        lod = [OrderCandidate("T-T0", False, OrderType.LIMIT, TradeType.BUY, Decimal("10"), Decimal("10"))]
         self.strategy._trade_proposals = {'kucoin': lod.copy(), 'kraken': lod.copy()}
+
+        with patch.object(ExampleBalancedLM, '_place_order') as mocked_order:
+            mocked_order.side_effect = ["buy_id_0", "buy_id_0"]
+            self.strategy._dequeue_proposal_exchange('kucoin', lod.copy())
+            self.assertEqual(1, mocked_order.call_count)
+            mocked_order.assert_called_with('kucoin', lod[0])
+            self.assertEqual({'kucoin': 'buy_id_0'}, self.strategy._order_id)
+            self.assertEqual({'kucoin': lod[0]}, self.strategy._order_data)
+            self.assertEqual({'kucoin': OrderStage.PLACED}, self.strategy._order_stage)
+
+    def test__dequeue_proposal_all_exchanges(self):
+        lod = [OrderCandidate("T-T0", False, OrderType.LIMIT, TradeType.BUY, Decimal("10"), Decimal("10"))]
+        self.strategy._trade_proposals = {'kucoin': lod.copy(), 'kraken': lod.copy()}
+
+        with patch.object(ExampleBalancedLM, '_place_order') as mocked_order:
+            mocked_order.side_effect = ["buy_id_0", "buy_id_0"]
+            self.strategy._dequeue_proposal_all_exchanges()
+            self.assertEqual(2, mocked_order.call_count)
+            mocked_order.assert_called_with('kraken', lod[0])
+            self.assertEqual({'kraken': 'buy_id_0', 'kucoin': 'buy_id_0'}, self.strategy._order_id)
+            self.assertEqual({'kraken': lod[0], 'kucoin': lod[0]}, self.strategy._order_data)
+            self.assertEqual({'kraken': OrderStage.PLACED, 'kucoin': OrderStage.PLACED}, self.strategy._order_stage)
+
+    def test__dequeue_proposal_all_exchanges_amount_0(self):
+        lod = [OrderCandidate("T-T0", False, OrderType.LIMIT, TradeType.BUY, Decimal("10"), Decimal("0")),
+               OrderCandidate("ETH-USDT", False, OrderType.LIMIT, TradeType.SELL, Decimal("10"), Decimal("10"))]
+        self.strategy._trade_proposals = {'kucoin': lod.copy(), 'kraken': lod.copy()}
+
+        with patch.object(ExampleBalancedLM, '_place_order') as mocked_order:
+            mocked_order.side_effect = ["", "buy_id_kucoin_1", "buy_id_kraken_0"]
+            self.strategy._dequeue_proposal_all_exchanges()
+            self.assertEqual(3, mocked_order.call_count)
+            mocked_order.assert_has_calls([call('kucoin', lod[0]), call('kucoin', lod[1]), call('kraken', lod[0])])
+            self.assertEqual({'kraken': 'buy_id_kraken_0', 'kucoin': 'buy_id_kucoin_1'}, self.strategy._order_id)
+            self.assertEqual({'kraken': lod[0], 'kucoin': lod[1]}, self.strategy._order_data)
+            self.assertEqual({'kraken': OrderStage.PLACED, 'kucoin': OrderStage.PLACED}, self.strategy._order_stage)
+
+    def test__dequeue_proposal_on_order_id(self):
+        lod = [OrderCandidate("T-T0", False, OrderType.LIMIT, TradeType.BUY, Decimal("10"), Decimal("10")),
+               OrderCandidate("ETH-USDT", False, OrderType.LIMIT, TradeType.SELL, Decimal("10"), Decimal("10"))]
+        self.strategy._trade_proposals = {'kucoin': [lod.copy()[1]], 'kraken': [lod.copy()[1]]}
+        self.strategy._order_id = {'kucoin': 'buy_kucoin_0', 'kraken': 'buy_kraken_0'}
+        self.strategy._order_data = {'kucoin': lod[0], 'kraken': lod[0]}
+        self.strategy._order_stage = {'kraken': OrderStage.PLACED, 'kucoin': OrderStage.PLACED}
+
+        with patch.object(ExampleBalancedLM, '_place_order') as mocked_order:
+            mocked_order.side_effect = ["buy_kucoin_1", "buy_kraken1"]
+            self.strategy._dequeue_proposal_on_order_id('buy_kucoin_0')
+            self.assertEqual(1, mocked_order.call_count)
+            mocked_order.assert_called_with('kucoin', lod[1])
+            self.assertEqual({'kraken': 'buy_kraken_0', 'kucoin': 'buy_kucoin_1'}, self.strategy._order_id)
+            self.assertEqual({'kraken': lod[0], 'kucoin': lod[1]}, self.strategy._order_data)
+            self.assertEqual({'kraken': OrderStage.PLACED, 'kucoin': OrderStage.PLACED}, self.strategy._order_stage)
+
+    def test_did_complete_buy_order_single(self):
+        self.clock.add_iterator(self.strategy)
+        order_time_1 = self.start_timestamp + self.clock_tick_size
+        self.clock.backtest_til(order_time_1)
+
+        lod = [OrderCandidate("ALGO-USDT", False, OrderType.LIMIT, TradeType.BUY, Decimal("10"), Decimal("10")),
+               OrderCandidate("ETH-USDT", False, OrderType.LIMIT, TradeType.SELL, Decimal("10"), Decimal("10"))]
+        self.multi_strategy._trade_proposals = {'binance_paper_trade': lod.copy()}
 
         # First call, preceding_order_id set to 0
         with patch.object(ExampleBalancedLM, '_place_order') as mocked_order:
-            mocked_order.side_effect = ["buy_id_0", "buy_id_1"]
-            self.strategy._dequeue_execute_proposal("0")
-        mocked_order.assert_called_with('kraken', lod[0])
-        self.assertEqual(self.strategy._order_ids, {'kraken': 'buy_id_1', 'kucoin': 'buy_id_0'})
+            mocked_order.side_effect = ["buy_id_0", "sell_id_1"]
+            self.multi_strategy._dequeue_proposal_all_exchanges()
+            self.assertEqual(self.multi_strategy._order_id, {'binance_paper_trade': 'buy_id_0'})
 
-        # Second call, kraken first order is completed, placing second kraken order
-        with patch.object(ExampleBalancedLM, '_place_order') as mocked_order:
-            mocked_order.return_value = "buy_id_2"
-            self.strategy._dequeue_execute_proposal("buy_id_1")
-        mocked_order.assert_called_with('kraken', lod[1])
-        self.assertEqual(self.strategy._order_ids, {'kraken': 'buy_id_2', 'kucoin': 'buy_id_0'})
+            self.simulate_limit_order_fill(self.markets['binance_paper_trade'],
+                                           OrderCandidate("BTC-ETH", False, OrderType.LIMIT, TradeType.BUY,
+                                                          Decimal("10"),
+                                                          Decimal("10")), "5")
+            # Incorrect order filled, the second order is not placed
+            self.assertEqual(self.multi_strategy._trade_proposals['binance_paper_trade'], [lod[1]])
 
-        # Third call, kucoin first order is completed, placing second kucoin order
-        with patch.object(ExampleBalancedLM, '_place_order') as mocked_order:
-            mocked_order.return_value = "buy_id_3"
-            self.strategy._dequeue_execute_proposal("buy_id_0")
-        mocked_order.assert_called_with('kucoin', lod[1])
-        self.assertEqual(self.strategy._order_ids, {'kraken': 'buy_id_2', 'kucoin': 'buy_id_3'})
+            self.simulate_limit_order_fill(self.markets['binance_paper_trade'],
+                                           OrderCandidate("BTC-ETH", False, OrderType.LIMIT, TradeType.BUY,
+                                                          Decimal("10"),
+                                                          Decimal("10")), "buy_id_0")
+            # Correct order filled, the second order placed
+            self.assertEqual(self.multi_strategy._trade_proposals['binance_paper_trade'], [])
+            self.assertEqual(self.multi_strategy._order_id, {'binance_paper_trade': 'sell_id_1'})
 
-        # Fourth call, kucoin second order is completed, we should have emptied the order queue
+            self.simulate_limit_order_fill(self.markets['binance_paper_trade'],
+                                           OrderCandidate("BTC-ETH", False, OrderType.LIMIT, TradeType.BUY,
+                                                          Decimal("10"),
+                                                          Decimal("10")), "sell_id_1")
+            self.assertEqual(self.multi_strategy._order_id, {'binance_paper_trade': 'sell_id_1'})
+
+    def test_did_complete_buy_order_double(self):
+        self.clock.add_iterator(self.strategy)
+        order_time_1 = self.start_timestamp + self.clock_tick_size
+        self.clock.backtest_til(order_time_1)
+
+        lod = [OrderCandidate("ALGO-USDT", False, OrderType.LIMIT, TradeType.BUY, Decimal("10"), Decimal("10")),
+               OrderCandidate("ETH-USDT", False, OrderType.LIMIT, TradeType.SELL, Decimal("10"), Decimal("10"))]
+        print(OrderCandidate("ALGO-USDT", False, OrderType.LIMIT, TradeType.BUY, Decimal("10"), Decimal("10")))
+        self.multi_strategy._trade_proposals = {'binance_paper_trade': lod.copy(), 'kucoin_paper_trade': lod.copy()}
+
         with patch.object(ExampleBalancedLM, '_place_order') as mocked_order:
-            mocked_order.return_value = "_not_orders_in_queue_"
-            self.strategy._dequeue_execute_proposal("buy_id_3")
-        assert not mocked_order.called, 'method should not have been called'
-        self.assertEqual(self.strategy._order_ids, {'kraken': 'buy_id_2', 'kucoin': 'buy_id_3'})
+            mocked_order.side_effect = ["buy_id_binance", "buy_id_kucoin", "sell_id_binance", "sell_id_kucoin"]
+            # First call, preceding_order_id set to 0
+            self.multi_strategy._dequeue_proposal_all_exchanges()
+            self.assertEqual({'binance_paper_trade': [lod[1]], 'kucoin_paper_trade': [lod[1]]},
+                             self.multi_strategy._trade_proposals)
+            self.assertEqual({'binance_paper_trade': 'buy_id_binance', 'kucoin_paper_trade': 'buy_id_kucoin'},
+                             self.multi_strategy._order_id)
+
+            self.simulate_limit_order_fill(self.markets['binance_paper_trade'],
+                                           OrderCandidate("BTC-ETH", False, OrderType.LIMIT, TradeType.BUY,
+                                                          Decimal("10"),
+                                                          Decimal("10")), "buy_id_binance")
+            self.assertEqual({'binance_paper_trade': [], 'kucoin_paper_trade': [lod[1]]},
+                             self.multi_strategy._trade_proposals)
+
+            self.simulate_limit_order_fill(self.markets['kucoin_paper_trade'],
+                                           OrderCandidate("BTC-ETH", False, OrderType.LIMIT, TradeType.BUY,
+                                                          Decimal("10"),
+                                                          Decimal("10")), "buy_id_kucoin")
+            self.assertEqual({'binance_paper_trade': 'sell_id_binance', 'kucoin_paper_trade': 'sell_id_kucoin'},
+                             self.multi_strategy._order_id)
+            self.assertEqual({'binance_paper_trade': [], 'kucoin_paper_trade': []},
+                             self.multi_strategy._trade_proposals)

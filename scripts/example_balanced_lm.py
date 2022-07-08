@@ -2,7 +2,7 @@ import asyncio
 import logging
 import os
 from decimal import Decimal
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set, Tuple, Union
 
 from hummingbot.client.settings import CONF_DIR_PATH, CONF_PREFIX
 from hummingbot.connector.connector_base import ConnectorBase
@@ -32,17 +32,28 @@ from .trade_route_finder import TradeRouteFinder
 lsb_logger = None
 
 
+class OrderStage:
+    FAILED = -1
+    CANCELED = 0
+    CREATED = 1
+    PLACED = 2
+    FILLED = 3
+    COMPLETED = 4
+
+
 class ExampleBalancedLM(ScriptStrategyBase, MarketsYmlConfig):
     """
     Trying to get a better sense of balances and inventory in a common currency (USDT)
     """
-    config_filename: str = f"{CONF_DIR_PATH / CONF_PREFIX / os.path.split(__file__)[1].split('.')[0]}.yml"
+    config_filename: str = f"{CONF_DIR_PATH / CONF_PREFIX}{os.path.split(__file__)[1].split('.')[0]}.yml"
 
     def __init__(self, connectors: Dict[str, ConnectorBase]):
         super().__init__(connectors)
         self._balancing_trades: Dict = dict()
         self._trade_proposals: Dict = dict()
-        self._order_ids: Dict = dict()
+        self._order_id: Dict[str] = dict()
+        self._order_stage: Dict[str, OrderStage()] = dict()
+        self._order_data: Dict[str, OrderCandidate] = dict()
         self._valid_asset_route: Dict[str, Set] = dict(
             _default_={"BTC", "USDT", "USDC", "KCS", "GT", "DAI", "ADA", "ETH", "AVAX"})
         self._prices: Dict = dict()
@@ -87,7 +98,7 @@ class ExampleBalancedLM(ScriptStrategyBase, MarketsYmlConfig):
         self._create_proposal()
         if self._trade_proposals:
             # Place the first order of each exchange
-            self._dequeue_execute_proposal("0")
+            self._execute_first_proposal()
 
     def tick(self, timestamp: float):
         """
@@ -121,44 +132,77 @@ class ExampleBalancedLM(ScriptStrategyBase, MarketsYmlConfig):
         Method called when the connector notifies a buy order has been created
         """
         self.logger().info(logging.INFO, f"The buy order {event.order_id} has been created")
+        exchange = [exchange for exchange, order_id in self._order_id.items() if order_id == event.order_id]
+        if exchange:
+            self._order_stage[exchange[0]] = OrderStage.CREATED
 
     def did_create_sell_order(self, event: SellOrderCreatedEvent):
         """
         Method called when the connector notifies a sell order has been created
         """
         self.logger().info(logging.INFO, f"The sell order {event.order_id} has been created")
+        exchange = [exchange for exchange, order_id in self._order_id.items() if order_id == event.order_id]
+        if exchange:
+            self._order_stage[exchange[0]] = OrderStage.CREATED
 
     def did_fill_order(self, event: OrderFilledEvent):
         """
         Method called when the connector notifies that an order has been partially or totally filled (a trade happened)
         """
         self.logger().info(logging.INFO, f"The order {event.order_id} has been filled")
+        exchange = [ex for ex, order_id in self._order_id.items() if order_id == event.order_id]
+        if exchange:
+            self._order_stage[exchange[0]] = OrderStage.FILLED
 
     def did_fail_order(self, event: MarketOrderFailureEvent):
         """
         Method called when the connector notifies an order has failed
         """
         self.logger().info(logging.INFO, f"The order {event.order_id} failed")
+        exchange = [ex for ex, order_id in self._order_id.items() if order_id == event.order_id]
+        if exchange:
+            self._order_stage[exchange[0]] = OrderStage.FAILED
 
     def did_cancel_order(self, event: OrderCancelledEvent):
         """
         Method called when the connector notifies an order has been cancelled
         """
         self.logger().info(f"The order {event.order_id} has been cancelled")
+        exchange = [ex for ex, order_id in self._order_id.items() if order_id == event.order_id]
+        if exchange:
+            self._order_stage[exchange[0]] = OrderStage.CANCELED
 
     def did_complete_buy_order(self, event: BuyOrderCompletedEvent):
         """
         Method called when the connector notifies a buy order has been completed (fully filled)
         """
         self.logger().info(f"The buy order {event.order_id} has been completed")
-        self._dequeue_execute_proposal(event.order_id)
+        self._process_completed_buy_sell_event(event)
 
     def did_complete_sell_order(self, event: SellOrderCompletedEvent):
         """
         Method called when the connector notifies a sell order has been completed (fully filled)
         """
         self.logger().info(f"The sell order {event.order_id} has been completed")
-        self._dequeue_execute_proposal(event.order_id)
+        self._process_completed_buy_sell_event(event)
+
+    def _process_completed_buy_sell_event(self, event: Union[BuyOrderCompletedEvent, SellOrderCompletedEvent]):
+        exchange = [exchange for exchange, order_id in self._order_id.items() if order_id == event.order_id]
+        if not exchange:
+            return
+        if len(exchange) == 1 and self._verify_event(event, exchange[0]):
+            self._order_stage[exchange[0]] = OrderStage.COMPLETED
+            self._dequeue_proposal_on_order_id(event.order_id)
+        else:
+            raise ValueError
+
+    def _verify_event(self,
+                      event: Union[BuyOrderCompletedEvent, SellOrderCompletedEvent, OrderFilledEvent],
+                      exchange: str) -> bool:
+        base, quote = self._order_data[exchange].trading_pair.split('-')
+        return all([event.base_asset == base,
+                    event.quote_asset == quote,
+                    event.base_asset_amount == self._order_data[exchange].amount])
 
     def _place_order(self, exchange: str, order_candidate: OrderCandidate) -> str:
         """
@@ -176,23 +220,41 @@ class ExampleBalancedLM(ScriptStrategyBase, MarketsYmlConfig):
                 return self.sell(exchange, order_candidate.trading_pair, order_candidate.amount,
                                  order_candidate.order_type,
                                  order_candidate.price)
-        else:
-            return "_amount_not_positive_"
+        elif order_candidate.amount < Decimal("0"):
+            self.logger().error(f"The amount of an order was negative:\n"
+                                f"    {exchange}:{order_candidate.trading_pair}:{order_candidate.order_type}")
+            raise ValueError
 
-    def _dequeue_execute_proposal(self, preceding_order_id: str = "-1") -> None:
+        # Returns empty string if the order amount is 0
+        return ""
+
+    def _dequeue_proposal_exchange(self, ex: ConnectorBase, lo: List[OrderCandidate]):
+        if ex and lo:
+            order_candidate = lo.pop(0)
+            # Returns order_id = "" if amount == 0
+            order_id = self._place_order(ex, order_candidate)
+            if order_id:
+                self._order_id[ex] = order_id
+                self._order_stage[ex] = OrderStage.PLACED
+                self._order_data[ex] = order_candidate
+            else:
+                # First order has amount = 0, let's dequeue the next one
+                self._dequeue_proposal_exchange(ex, lo)
+
+    def _dequeue_proposal_all_exchanges(self) -> None:
         """
         Execute the proposals one after the other
         """
         for exchange, list_orders in self._trade_proposals.items():
-            self._order_ids[exchange] = 0 if exchange not in self._order_ids else self._order_ids[exchange]
+            self._dequeue_proposal_exchange(exchange, list_orders)
 
-            if preceding_order_id == "0" or preceding_order_id == self._order_ids[exchange]:
-                try:
-                    order_candidate = list_orders.pop(0)
-                except IndexError:
-                    # We have emptied our queue orders
-                    return
-                self._order_ids[exchange] = self._place_order(exchange, order_candidate)
+    def _dequeue_proposal_on_order_id(self, preceding_order_id: str) -> None:
+        """
+        Execute the proposal following the one with the order_id
+        """
+        for exchange, list_orders in self._trade_proposals.items():
+            if preceding_order_id == self._order_id[exchange]:
+                self._dequeue_proposal_exchange(exchange, list_orders)
 
     def _create_proposal(self, adjust_budget: bool = False) -> None:
         """
