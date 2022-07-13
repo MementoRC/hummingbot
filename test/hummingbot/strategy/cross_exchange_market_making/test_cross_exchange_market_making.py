@@ -1049,3 +1049,47 @@ class HedgedMarketMakingUnitTest(unittest.TestCase):
         self.assertEqual(Decimal("1.006"), ask_order.price)
         self.assertAlmostEqual(Decimal("1"), round(bid_order.quantity, 4))
         self.assertAlmostEqual(Decimal("1"), round(ask_order.quantity, 4))
+
+    def test_empty_balance(self):
+        self.clock.remove_iterator(self.strategy)
+        self.clock.remove_iterator(self.maker_market)
+        self.maker_market: MockPaperExchange = MockPaperExchange(
+            client_config_map=ClientConfigAdapter(ClientConfigMap())
+        )
+
+        # Orderbook is empty
+        self.maker_market.new_empty_order_book(self.trading_pairs_maker[0])
+        self.market_pair: CrossExchangeMarketPair = CrossExchangeMarketPair(
+            MarketTradingPairTuple(self.maker_market, *self.trading_pairs_maker),
+            MarketTradingPairTuple(self.taker_market, *self.trading_pairs_taker),
+        )
+
+        config_map_raw = deepcopy(self.config_map_raw)
+        config_map_raw.min_profitability = Decimal("0.5")
+        config_map_raw.adjust_order_enabled = False
+        config_map_raw.order_amount = Decimal("1")
+
+        config_map = ClientConfigAdapter(
+            config_map_raw
+        )
+
+        self.strategy: CrossExchangeMarketMakingStrategy = CrossExchangeMarketMakingStrategy()
+        self.strategy.init_params(
+            config_map=config_map,
+            market_pairs=[self.market_pair],
+            logging_options=self.logging_options,
+        )
+        self.maker_market.set_balance("COINALPHA", 5)
+        self.maker_market.set_balance("WETH", Decimal("NaN"))
+        self.maker_market.set_quantization_param(QuantizationParams(self.trading_pairs_maker[0], 4, 4, 4, 4))
+
+        self.clock.add_iterator(self.strategy)
+        self.clock.add_iterator(self.maker_market)
+        self.clock.backtest_til(self.start_timestamp + 4)
+
+        self.assertEqual(0, len(self.strategy.active_bids))
+        self.assertEqual(1, len(self.strategy.active_asks))
+        ask_order: LimitOrder = self.strategy.active_asks[0][1]
+        # Places orders based on taker orderbook
+        self.assertEqual(Decimal("1.006"), ask_order.price)
+        self.assertAlmostEqual(Decimal("1"), round(ask_order.quantity, 4))

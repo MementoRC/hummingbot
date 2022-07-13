@@ -163,45 +163,35 @@ class TestExampleBalancedLM(unittest.TestCase):
 
     @staticmethod
     def simulate_limit_order_fill(market: MockPaperExchange, order_candidate: OrderCandidate, order_id: str = "0"):
+        market.trigger_event(MarketEvent.OrderFilled, OrderFilledEvent(
+            timestamp=market.current_timestamp,
+            order_id=order_id,
+            trading_pair=order_candidate.trading_pair,
+            order_type=order_candidate.order_type,
+            trade_type=order_candidate.order_side,
+            price=order_candidate.price,
+            amount=order_candidate.amount,
+            trade_fee=AddedToCostTradeFee(Decimal("0"))
+        ))
         if order_candidate.order_side == TradeType.BUY:
-            market.trigger_event(MarketEvent.OrderFilled, OrderFilledEvent(
-                market.current_timestamp,
-                order_id,
-                order_candidate.trading_pair,
-                TradeType.BUY,
-                OrderType.LIMIT,
-                order_candidate.price,
-                order_candidate.amount,
-                AddedToCostTradeFee(Decimal("0"))
-            ))
             market.trigger_event(MarketEvent.BuyOrderCompleted, BuyOrderCompletedEvent(
-                market.current_timestamp,
-                order_id,
-                "ETH",
-                "USDT",
-                Decimal("1"),
-                Decimal("1000"),
-                OrderType.LIMIT
+                timestamp=market.current_timestamp,
+                order_id=order_id,
+                base_asset=order_candidate.trading_pair.split('-')[0],
+                quote_asset=order_candidate.trading_pair.split('-')[1],
+                base_asset_amount=order_candidate.amount,
+                quote_asset_amount=order_candidate.amount * order_candidate.price,
+                order_type=order_candidate.order_type
             ))
         else:
-            market.trigger_event(MarketEvent.OrderFilled, OrderFilledEvent(
-                market.current_timestamp,
-                order_id,
-                order_candidate.trading_pair,
-                TradeType.BUY,
-                OrderType.LIMIT,
-                order_candidate.price,
-                order_candidate.amount,
-                AddedToCostTradeFee(Decimal("0"))
-            ))
             market.trigger_event(MarketEvent.SellOrderCompleted, SellOrderCompletedEvent(
-                market.current_timestamp,
-                order_id,
-                "ETH",
-                "USDT",
-                Decimal("1"),
-                Decimal("1000"),
-                OrderType.LIMIT
+                timestamp=market.current_timestamp,
+                order_id=order_id,
+                base_asset=order_candidate.trading_pair.split('-')[0],
+                quote_asset=order_candidate.trading_pair.split('-')[1],
+                base_asset_amount=order_candidate.amount,
+                quote_asset_amount=order_candidate.amount * order_candidate.price,
+                order_type=order_candidate.order_type
             ))
 
     @patch('hummingbot.user.user_balances.UserBalances')
@@ -360,7 +350,7 @@ class TestExampleBalancedLM(unittest.TestCase):
                     OrderCandidate("ETH-USDT", False, OrderType.LIMIT, TradeType.BUY, Decimal('0.00025'),
                                    Decimal('0.0005'))]
 
-                orders_l = self.strategy._create_proposal(adjust_budget=True)
+                orders_l = self.strategy._create_market_proposal(adjust_budget=True)
         mocked_price.assert_called_with(mocked_price.return_value, self.connector)
         mocked_budget.assert_called_with(mocked_price.return_value, all_or_none=False)
         self.assertEqual(orders_l[0].trading_pair, 'ALGO-USDT')
@@ -463,6 +453,146 @@ class TestExampleBalancedLM(unittest.TestCase):
             self.assertEqual({'kraken': lod[0], 'kucoin': lod[1]}, self.strategy._order_data)
             self.assertEqual({'kraken': OrderStage.PLACED, 'kucoin': OrderStage.PLACED}, self.strategy._order_stage)
 
+    def test__verify_buy_sel_fill_event(self):
+        buy = [OrderCandidate("ETH-USDT", False, OrderType.LIMIT, TradeType.BUY, Decimal('1'), Decimal('1000'))]
+
+        # Place the order
+        with patch.object(ExampleBalancedLM, '_place_order') as mocked_order:
+            mocked_order.side_effect = ["buy_id_binance"]
+            self.multi_strategy._dequeue_proposal_exchange('binance_paper_trade', buy.copy())
+        fill_event = OrderFilledEvent(
+            timestamp=0,
+            order_id='buy_id_binance',
+            trading_pair='ETH-USDT',
+            trade_type=TradeType.BUY,
+            order_type=OrderType.LIMIT,
+            price=Decimal('1000'),
+            amount=Decimal('1'),
+            trade_fee=AddedToCostTradeFee(percent=Decimal('0'), percent_token=None, flat_fees=[]), exchange_trade_id='',
+            leverage=1,
+            position='NIL')
+        buy_event = BuyOrderCompletedEvent(
+            timestamp=0,
+            order_id='buy_id_binance',
+            base_asset='ETH',
+            quote_asset='USDT',
+            base_asset_amount=Decimal('1'),
+            quote_asset_amount=Decimal('1000'),
+            order_type=OrderType.LIMIT,
+            exchange_order_id=None)
+        self.assertTrue(self.multi_strategy._verify_buy_sell_fill_event('binance_paper_trade', fill_event))
+        self.assertTrue(self.multi_strategy._verify_buy_sell_fill_event('binance_paper_trade', buy_event))
+
+        sell = [OrderCandidate("ETH-USDT", False, OrderType.LIMIT, TradeType.SELL, Decimal('1'), Decimal('1000'))]
+        with patch.object(ExampleBalancedLM, '_place_order') as mocked_order:
+            mocked_order.side_effect = ["sell_id_binance"]
+            self.multi_strategy._dequeue_proposal_exchange('binance_paper_trade', sell.copy())
+        fill_event = OrderFilledEvent(
+            timestamp=0,
+            order_id='sell_id_binance',
+            trading_pair='ETH-USDT',
+            trade_type=TradeType.SELL,
+            order_type=OrderType.LIMIT,
+            price=Decimal('1000'),
+            amount=Decimal('1'),
+            trade_fee=AddedToCostTradeFee(percent=Decimal('0'), percent_token=None, flat_fees=[]), exchange_trade_id='',
+            leverage=1,
+            position='NIL')
+        sell_event = BuyOrderCompletedEvent(
+            timestamp=0,
+            order_id='sell_id_binance',
+            base_asset='ETH',
+            quote_asset='USDT',
+            base_asset_amount=Decimal('1'),
+            quote_asset_amount=Decimal('1000'),
+            order_type=OrderType.LIMIT,
+            exchange_order_id=None)
+        self.assertTrue(self.multi_strategy._verify_buy_sell_fill_event('binance_paper_trade', fill_event))
+        self.assertTrue(self.multi_strategy._verify_buy_sell_fill_event('binance_paper_trade', sell_event))
+
+    def test__verify_buy_sell_fill_event_not_found(self):
+        buy = [OrderCandidate("ETH-USDT", False, OrderType.LIMIT, TradeType.BUY, Decimal('1'), Decimal('1000'))]
+
+        # Place the order
+        with patch.object(ExampleBalancedLM, '_place_order') as mocked_order:
+            mocked_order.side_effect = ["buy_id_binance"]
+            self.multi_strategy._dequeue_proposal_exchange('binance_paper_trade', buy.copy())
+        fill_event = OrderFilledEvent(
+            timestamp=0,
+            order_id='another_buy_id_binance',
+            trading_pair='ETH-USDT',
+            trade_type=TradeType.BUY,
+            order_type=OrderType.LIMIT,
+            price=Decimal('1000'),
+            amount=Decimal('1'),
+            trade_fee=AddedToCostTradeFee(percent=Decimal('0'), percent_token=None, flat_fees=[]), exchange_trade_id='',
+            leverage=1,
+            position='NIL')
+        buy_event = BuyOrderCompletedEvent(
+            timestamp=0,
+            order_id='another_buy_id_binance',
+            base_asset='ETH',
+            quote_asset='USDT',
+            base_asset_amount=Decimal('1'),
+            quote_asset_amount=Decimal('1000'),
+            order_type=OrderType.LIMIT,
+            exchange_order_id=None)
+        self.assertFalse(self.multi_strategy._verify_buy_sell_fill_event('binance_paper_trade', fill_event))
+        self.assertFalse(self.multi_strategy._verify_buy_sell_fill_event('binance_paper_trade', buy_event))
+
+        sell = [OrderCandidate("ETH-USDT", False, OrderType.LIMIT, TradeType.SELL, Decimal('1'), Decimal('1000'))]
+        with patch.object(ExampleBalancedLM, '_place_order') as mocked_order:
+            mocked_order.side_effect = ["sell_id_binance"]
+            self.multi_strategy._dequeue_proposal_exchange('binance_paper_trade', sell.copy())
+        fill_event = OrderFilledEvent(
+            timestamp=0,
+            order_id='another_sell_id_binance',
+            trading_pair='ETH-USDT',
+            trade_type=TradeType.SELL,
+            order_type=OrderType.LIMIT,
+            price=Decimal('1000'),
+            amount=Decimal('1'),
+            trade_fee=AddedToCostTradeFee(percent=Decimal('0'), percent_token=None, flat_fees=[]), exchange_trade_id='',
+            leverage=1,
+            position='NIL')
+        sell_event = BuyOrderCompletedEvent(
+            timestamp=0,
+            order_id='another_sell_id_binance',
+            base_asset='ETH',
+            quote_asset='USDT',
+            base_asset_amount=Decimal('1'),
+            quote_asset_amount=Decimal('1000'),
+            order_type=OrderType.LIMIT,
+            exchange_order_id=None)
+        self.assertFalse(self.multi_strategy._verify_buy_sell_fill_event('binance_paper_trade', fill_event))
+        self.assertFalse(self.multi_strategy._verify_buy_sell_fill_event('binance_paper_trade', sell_event))
+
+    def test__is_event_match_strategy(self):
+        buy = [OrderCandidate("ETH-USDT", False, OrderType.LIMIT, TradeType.BUY, Decimal('1'), Decimal('1000'))]
+        self.strategy._trade_proposals = {'kucoin': buy.copy()}
+        fill_event = OrderFilledEvent(
+            timestamp=self.start_timestamp,
+            order_id="buy_id_0",
+            trading_pair=buy[0].trading_pair,
+            order_type=buy[0].order_type,
+            trade_type=buy[0].order_side,
+            price=buy[0].price,
+            amount=buy[0].amount,
+            trade_fee=AddedToCostTradeFee(Decimal("0"))
+        )
+        # Register the trade
+        with patch.object(ExampleBalancedLM, '_place_order') as mocked_order:
+            mocked_order.side_effect = ["buy_id_0"]
+            self.strategy._dequeue_proposal_exchange('kucoin', buy.copy())
+        self.assertEqual((True, 'kucoin'), self.strategy._is_event_match_strategy(fill_event.order_id))
+        self.assertEqual((False, None), self.strategy._is_event_match_strategy("_nonexistent_order_id_"))
+
+        with patch.object(ExampleBalancedLM, '_place_order') as mocked_order:
+            mocked_order.side_effect = ["buy_id_0", "buy_id_0"]
+            self.strategy._dequeue_proposal_exchange('kucoin', buy.copy())
+            self.strategy._dequeue_proposal_exchange('kraken', buy.copy())
+        self.assertRaises(ValueError, self.strategy._is_event_match_strategy, fill_event.order_id)
+
     def test_did_complete_buy_order_single(self):
         self.clock.add_iterator(self.strategy)
         order_time_1 = self.start_timestamp + self.clock_tick_size
@@ -477,27 +607,22 @@ class TestExampleBalancedLM(unittest.TestCase):
             mocked_order.side_effect = ["buy_id_0", "sell_id_1"]
             self.multi_strategy._dequeue_proposal_all_exchanges()
             self.assertEqual(self.multi_strategy._order_id, {'binance_paper_trade': 'buy_id_0'})
-
+            # Trigger call to did_fill_order and did_complete_buy_order
             self.simulate_limit_order_fill(self.markets['binance_paper_trade'],
                                            OrderCandidate("BTC-ETH", False, OrderType.LIMIT, TradeType.BUY,
                                                           Decimal("10"),
                                                           Decimal("10")), "5")
             # Incorrect order filled, the second order is not placed
-            self.assertEqual(self.multi_strategy._trade_proposals['binance_paper_trade'], [lod[1]])
+            self.assertEqual([lod[1]], self.multi_strategy._trade_proposals['binance_paper_trade'])
 
-            self.simulate_limit_order_fill(self.markets['binance_paper_trade'],
-                                           OrderCandidate("BTC-ETH", False, OrderType.LIMIT, TradeType.BUY,
-                                                          Decimal("10"),
-                                                          Decimal("10")), "buy_id_0")
+            self.simulate_limit_order_fill(self.markets['binance_paper_trade'], lod[0], "buy_id_0")
             # Correct order filled, the second order placed
-            self.assertEqual(self.multi_strategy._trade_proposals['binance_paper_trade'], [])
-            self.assertEqual(self.multi_strategy._order_id, {'binance_paper_trade': 'sell_id_1'})
+            self.assertEqual([], self.multi_strategy._trade_proposals['binance_paper_trade'])
+            self.assertEqual({'binance_paper_trade': 'sell_id_1'}, self.multi_strategy._order_id)
 
-            self.simulate_limit_order_fill(self.markets['binance_paper_trade'],
-                                           OrderCandidate("BTC-ETH", False, OrderType.LIMIT, TradeType.BUY,
-                                                          Decimal("10"),
-                                                          Decimal("10")), "sell_id_1")
-            self.assertEqual(self.multi_strategy._order_id, {'binance_paper_trade': 'sell_id_1'})
+            # Order not placed but filled, does not dequeue
+            self.simulate_limit_order_fill(self.markets['binance_paper_trade'], lod[1], "sell_id_1")
+            self.assertEqual({'binance_paper_trade': 'sell_id_1'}, self.multi_strategy._order_id)
 
     def test_did_complete_buy_order_double(self):
         self.clock.add_iterator(self.strategy)

@@ -33,8 +33,8 @@ lsb_logger = None
 
 
 class OrderStage:
-    FAILED = -1
-    CANCELED = 0
+    FAILED = -2
+    CANCELED = -1
     CREATED = 1
     PLACED = 2
     FILLED = 3
@@ -95,10 +95,10 @@ class ExampleBalancedLM(ScriptStrategyBase, MarketsYmlConfig):
         - Check the account balance and adjust the proposal accordingly (lower order amount if needed)
         - Lastly, execute the proposal on the exchange
         """
-        self._create_proposal()
+        self._create_market_proposal()
         if self._trade_proposals:
             # Place the first order of each exchange
-            self._execute_first_proposal()
+            self._dequeue_proposal_all_exchanges()
 
     def tick(self, timestamp: float):
         """
@@ -132,45 +132,47 @@ class ExampleBalancedLM(ScriptStrategyBase, MarketsYmlConfig):
         Method called when the connector notifies a buy order has been created
         """
         self.logger().info(logging.INFO, f"The buy order {event.order_id} has been created")
-        exchange = [exchange for exchange, order_id in self._order_id.items() if order_id == event.order_id]
-        if exchange:
-            self._order_stage[exchange[0]] = OrderStage.CREATED
+        valid, exchange = self._is_event_match_strategy(event.order_id)
+        if valid:
+            self._order_stage[exchange] = OrderStage.CREATED
 
     def did_create_sell_order(self, event: SellOrderCreatedEvent):
         """
         Method called when the connector notifies a sell order has been created
         """
         self.logger().info(logging.INFO, f"The sell order {event.order_id} has been created")
-        exchange = [exchange for exchange, order_id in self._order_id.items() if order_id == event.order_id]
-        if exchange:
-            self._order_stage[exchange[0]] = OrderStage.CREATED
+        valid, exchange = self._is_event_match_strategy(event.order_id)
+        if valid:
+            self._order_stage[exchange] = OrderStage.CREATED
 
     def did_fill_order(self, event: OrderFilledEvent):
         """
         Method called when the connector notifies that an order has been partially or totally filled (a trade happened)
         """
         self.logger().info(logging.INFO, f"The order {event.order_id} has been filled")
-        exchange = [ex for ex, order_id in self._order_id.items() if order_id == event.order_id]
-        if exchange:
-            self._order_stage[exchange[0]] = OrderStage.FILLED
+        valid, exchange = self._is_event_match_strategy(event.order_id)
+        if valid:
+            self._order_stage[exchange] = OrderStage.FILLED
 
     def did_fail_order(self, event: MarketOrderFailureEvent):
         """
         Method called when the connector notifies an order has failed
         """
+        print(event)
         self.logger().info(logging.INFO, f"The order {event.order_id} failed")
-        exchange = [ex for ex, order_id in self._order_id.items() if order_id == event.order_id]
-        if exchange:
-            self._order_stage[exchange[0]] = OrderStage.FAILED
+        valid, exchange = self._is_event_match_strategy(event.order_id)
+        if valid:
+            self._order_stage[exchange] = OrderStage.FAILED
 
     def did_cancel_order(self, event: OrderCancelledEvent):
         """
         Method called when the connector notifies an order has been cancelled
         """
+        print(event)
         self.logger().info(f"The order {event.order_id} has been cancelled")
-        exchange = [ex for ex, order_id in self._order_id.items() if order_id == event.order_id]
-        if exchange:
-            self._order_stage[exchange[0]] = OrderStage.CANCELED
+        valid, exchange = self._is_event_match_strategy(event.order_id)
+        if valid:
+            self._order_stage[exchange] = OrderStage.CANCELED
 
     def did_complete_buy_order(self, event: BuyOrderCompletedEvent):
         """
@@ -187,22 +189,53 @@ class ExampleBalancedLM(ScriptStrategyBase, MarketsYmlConfig):
         self._process_completed_buy_sell_event(event)
 
     def _process_completed_buy_sell_event(self, event: Union[BuyOrderCompletedEvent, SellOrderCompletedEvent]):
-        exchange = [exchange for exchange, order_id in self._order_id.items() if order_id == event.order_id]
-        if not exchange:
-            return
-        if len(exchange) == 1 and self._verify_event(event, exchange[0]):
-            self._order_stage[exchange[0]] = OrderStage.COMPLETED
+        valid, exchange = self._is_event_match_strategy(event.order_id)
+        if valid:
+            self._order_stage[exchange] = OrderStage.COMPLETED
             self._dequeue_proposal_on_order_id(event.order_id)
-        else:
+
+    def _is_event_match_strategy(self, event_id: str) -> (bool, ConnectorBase):
+        exchange = [exchange for exchange, order_id in self._order_id.items() if order_id == event_id]
+        if not exchange:
+            return False, None
+        if len(exchange) == 1:
+            return True, exchange[0]
+        elif len(exchange) > 1:
+            self.logger().info(f"The event {event_id} is matching several records. Cannot proceed")
             raise ValueError
 
-    def _verify_event(self,
-                      event: Union[BuyOrderCompletedEvent, SellOrderCompletedEvent, OrderFilledEvent],
-                      exchange: str) -> bool:
-        base, quote = self._order_data[exchange].trading_pair.split('-')
-        return all([event.base_asset == base,
-                    event.quote_asset == quote,
-                    event.base_asset_amount == self._order_data[exchange].amount])
+    def _verify_buy_sell_fill_event(self,
+                                    exchange: str,
+                                    event: Union[
+                                        BuyOrderCompletedEvent, SellOrderCompletedEvent, OrderFilledEvent]) -> bool:
+        """
+        Compares the event (Buy/Sell completed) to the placed and pending order at the exchange
+
+        ;param exchange: Exchange name
+        ;param event: Buy/Sell Completed Event or OrderFilledEvent
+        """
+        if hasattr(event, 'base_asset'):
+            base, quote = self._order_data[exchange].trading_pair.split('-')
+            return all([event.base_asset == base,
+                        event.quote_asset == quote,
+                        event.base_asset_amount == self._order_data[exchange].amount,
+                        event.order_type == self._order_data[exchange].order_type,
+                        event.order_id == self._order_id[exchange],
+                        isinstance(event, BuyOrderCompletedEvent) or isinstance(event, SellOrderCompletedEvent)
+                        ])
+        elif hasattr(event, 'trading_pair'):
+            return all([event.trading_pair == self._order_data[exchange].trading_pair,
+                        event.amount == self._order_data[exchange].amount,
+                        event.price == self._order_data[exchange].price,
+                        event.order_type == self._order_data[exchange].order_type,
+                        event.trade_type == self._order_data[exchange].order_side,
+                        event.order_id == self._order_id[exchange],
+                        isinstance(event, OrderFilledEvent)
+                        ])
+        else:
+            self.logger().error(f"Event is not a Buy/Sell nor Filled:\n"
+                                f"    {exchange}:{event}")
+            raise ValueError
 
     def _place_order(self, exchange: str, order_candidate: OrderCandidate) -> str:
         """
@@ -256,7 +289,7 @@ class ExampleBalancedLM(ScriptStrategyBase, MarketsYmlConfig):
             if preceding_order_id == self._order_id[exchange]:
                 self._dequeue_proposal_exchange(exchange, list_orders)
 
-    def _create_proposal(self, adjust_budget: bool = False) -> None:
+    def _create_market_proposal(self, adjust_budget: bool = False) -> None:
         """
         Creates and returns a proposal (a list of order candidate)
         """
@@ -276,7 +309,7 @@ class ExampleBalancedLM(ScriptStrategyBase, MarketsYmlConfig):
                         price = sub_t['rates']
                     self._trade_proposals[name].append(OrderCandidate(sub_t['pairs'],
                                                                       False,
-                                                                      OrderType.LIMIT,
+                                                                      OrderType.MARKET,
                                                                       TradeType.BUY,
                                                                       sub_t['amounts'],
                                                                       price))
