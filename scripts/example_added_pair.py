@@ -13,7 +13,7 @@ class ExampleAddedPair(ScriptStrategyBase):
     """
     Implementing call to async methods within Lite Strategy sync methods
     """
-    markets = {"kucoin": {"ETH-BTC"}}
+    markets = {"gate_io": {"ETH-BTC"}}
 
     last_ts = 0
 
@@ -41,12 +41,15 @@ class ExampleAddedPair(ScriptStrategyBase):
         to operate on a regular tick basis.
         """
         self.logger().info(f"{self.current_timestamp}")
-        self.logger().info(f"{self.clock.tick_size}")
-        self.clock.tick_size = 0.5
+        self.logger().info(f"\tClock{self.clock.tick_size}")
+        self.logger().info(f"\tStrategy: {self.tick_size}")
+        # self.logger().info(f"{dir(self.clock)}")
+        self.tick_size = 0.25
+
         pairs = ['ETH-BTC', 'DOT-BTC']
         for pair in pairs:
-            if pair in self.connectors['kucoin'].trading_pairs:
-                self.logger().info(f"     Price check for {pair}: {self.connectors['kucoin'].get_price(pair, False)}")
+            if pair in self.connectors['gate_io'].trading_pairs:
+                self.logger().info(f"     Price check for {pair}: {self.connectors['gate_io'].get_price(pair, False)}")
 
     def tick(self, timestamp: float):
         """
@@ -59,13 +62,13 @@ class ExampleAddedPair(ScriptStrategyBase):
         pairs = ['DOT-BTC']
         if self._last_async_refresh_ts == 0 or self._last_async_refresh_ts < (
                 self.current_timestamp - self._async_refresh):
-            self.logger().info(f"     Remove: {all([p in self.connectors['kucoin'].trading_pairs for p in pairs])}")
-            if all([p in self.connectors['kucoin'].trading_pairs for p in pairs]):
+            self.logger().info(f"     Remove: {all([p in self.connectors['gate_io'].trading_pairs for p in pairs])}")
+            if all([p in self.connectors['gate_io'].trading_pairs for p in pairs]):
                 self.remove_pairs_subtle(pairs)
                 self.added_pairs = True
 
-            self.logger().info(f"     Add: {all([p not in self.connectors['kucoin'].trading_pairs for p in pairs])}")
-            if all([p not in self.connectors['kucoin'].trading_pairs for p in pairs]):
+            self.logger().info(f"     Add: {all([p not in self.connectors['gate_io'].trading_pairs for p in pairs])}")
+            if all([p not in self.connectors['gate_io'].trading_pairs for p in pairs]):
                 self.add_pairs_subtle(pairs)
                 self.added_pairs = True
 
@@ -81,28 +84,34 @@ class ExampleAddedPair(ScriptStrategyBase):
             self.on_tick()
 
     def add_pairs_brute_force(self, pairs):
-        if self.ready_to_trade and all([p not in self.connectors['kucoin'].trading_pairs for p in pairs]):
+        if self.ready_to_trade and all([p not in self.connectors['gate_io'].trading_pairs for p in pairs]):
             # self.added_pairs = True
             # Stopping the order book tracker to re-initialize it
-            self.connectors['kucoin'].order_book_tracker.stop()
+            self.connectors['gate_io'].order_book_tracker.stop()
             # Adds the pairs
-            self.connectors['kucoin'].trading_pairs.extend(pairs)
+            self.connectors['gate_io'].trading_pairs.extend(pairs)
             # Restart the ordr book tracker - Could this create lost references to carefully prepared bot?
-            self.connectors['kucoin'].order_book_tracker.start()
+            self.connectors['gate_io'].order_book_tracker.start()
 
     def add_pairs_subtle(self, pairs: List[str]):
-        if self.ready_to_trade and all([p not in self.connectors['kucoin'].trading_pairs for p in pairs]):
-            self.connectors['kucoin'].order_book_tracker.add_orderbook_pairs(pairs)
+        if self.ready_to_trade and all([p not in self.connectors['gate_io'].trading_pairs for p in pairs]):
+            self.connectors['gate_io'].order_book_tracker.add_orderbook_pairs(pairs)
 
     def remove_pairs_subtle(self, pairs: List[str]):
-        if self.ready_to_trade and all([p in self.connectors['kucoin'].trading_pairs for p in pairs]):
-            self.connectors['kucoin'].order_book_tracker.remove_orderbook_pairs(pairs)
+        if self.ready_to_trade and all([p in self.connectors['gate_io'].trading_pairs for p in pairs]):
+            self.connectors['gate_io'].order_book_tracker.remove_orderbook_pairs(pairs)
 
     def format_status(self) -> str:
         """
         Test the async execution from the status cmd
         """
         return "Status Done"
+
+    def start(self, clock: Clock, timestamp: float):
+        """
+        Stop the event loop
+        """
+        self.logger().info("Starting AddedPair")
 
     def stop(self, clock: Clock):
         """
