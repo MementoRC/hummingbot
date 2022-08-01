@@ -9,10 +9,12 @@ Here are some of the useful functions provided by this module:
     iterators() Provides the active list of iterators on the timer
     period_s() Provides the period of the timer in seconds
     add_iterator() Adds an iterator to the list
-    remove_iterator() Removes an iterator from the list
-    finished() Provides a boolean indicating if the finished event is set
+    remove_iterator() Removes an iterator from the list. Removing the last iterator pauses the thread
+    finished() Provides a boolean indicating if the thread is finished
+    paused() Provides a boolean indicating if the thread is paused
     cancel() Terminates the timer
-    restart() Restart a timer
+    pause() Pauses the timer
+    unpause() Unpause the timer
 
     run() Internally executes the iterators repeatedly on its period
 """
@@ -21,8 +23,8 @@ Here are some of the useful functions provided by this module:
 
 from __future__ import annotations
 
-__author__ = ('Ka-Ping Yee <ping@lfw.org>',
-              'Yury Selivanov <yselivanov@sprymix.com>')
+__author__ = ('MementoMori',
+              'MementoRC')
 
 import atexit
 import logging
@@ -31,7 +33,7 @@ import time
 import typing
 from typing import List, Tuple
 
-from hummingbot.core.clock_pp import ClockPurePython, ns_s, s_ns
+from hummingbot.core.clock_utils import get_current_tick_ns, get_current_tick_s, ns_s, s_ns
 from hummingbot.logger import HummingbotLogger
 
 if typing.TYPE_CHECKING:
@@ -55,6 +57,7 @@ class IteratorsThreadedTimer(threading.Thread):
         self._kwargs = kwargs
         self._finished = threading.Event()
         self._not_paused = threading.Event()
+        self._lock = threading.Lock()
         self._not_paused.set()
         self._running = False
         self._was_paused = False
@@ -91,12 +94,22 @@ class IteratorsThreadedTimer(threading.Thread):
     @property
     def finished(self) -> bool:
         """
-        Returns the termination event that the loop is awaiting upon in read-only.
+        Returns whether the thread is finished (it cannot be restarted once canceled)
 
         :returns: Whether the finished event is set
         :rtype: bool
        """
         return self._finished.is_set()
+
+    @property
+    def paused(self) -> bool:
+        """
+        Returns whether the thread is paused (it can be restarted with unpause())
+
+        :returns: Whether the finished event is set
+        :rtype: bool
+       """
+        return not self._not_paused.is_set()
 
     def run(self):
         """
@@ -112,14 +125,21 @@ class IteratorsThreadedTimer(threading.Thread):
             # Don't continue to execute if the cancel() is called
             print("\t.", end="")
             # Don't continue to execute if the cancel() is called
-            if not self._finished.is_set() and self._was_paused:
+            if not self._finished.is_set() and not self._was_paused:
                 start_ns = self._timer_ns()
                 # Execute the iterators
-                self._run_iterators()
+                if len(self._s_iterators) > 0:
+                    print(len(self._s_iterators))
+                    self._run_iterators()
+                else:
+                    # No iterators, switch to pause
+                    print(len(self._s_iterators))
+                    self.pause()
                 # Update the duration
-                self._task_duration_ns = self._timer_ns() - start_ns
-                # Checking that the duration takes an appropriate time
-                self._task_duration_ns = self._verify_duration(self._task_duration_ns, period_ns)
+                with self._lock:
+                    self._task_duration_ns = self._timer_ns() - start_ns
+                    # Checking that the duration takes an appropriate time
+                    self._task_duration_ns = self._verify_duration(self._task_duration_ns, period_ns)
             self._was_paused = False
 
     def unpause(self):
@@ -127,7 +147,7 @@ class IteratorsThreadedTimer(threading.Thread):
         if self._running:
             # This is to reset the timer
             self._was_paused = True
-            self._task_duration_ns = time.time_ns() - ClockPurePython.get_current_tick_ns(s_ns(self._period_s))
+            self._task_duration_ns = time.time_ns() - get_current_tick_ns(s_ns(self._period_s))
             print(f"\tUnpausing in {self._period_s - ns_s(self._task_duration_ns)}s")
             self._not_paused.set()
 
@@ -140,6 +160,7 @@ class IteratorsThreadedTimer(threading.Thread):
         """Stops the timer."""
         print("\n\tCanceling the thread")
         self._running = False
+        self._not_paused.set()
         self._finished.set()
 
     def remove_iterator(self, iterator: "TimeIteratorPurePython"):
@@ -148,7 +169,9 @@ class IteratorsThreadedTimer(threading.Thread):
 
         :param TimeIteratorPurePython iterator: Iterator to add to the list of iterators executed
         """
-        self._s_iterators.remove(iterator)
+        if iterator in self._s_iterators:
+            with self._lock:
+                self._s_iterators.remove(iterator)
 
     def add_iterator(self, iterator: "TimeIteratorPurePython"):
         """
@@ -158,7 +181,8 @@ class IteratorsThreadedTimer(threading.Thread):
         :param TimeIteratorPurePython iterator: Iterator to add to the list of iterators executed
         """
         if iterator.tick_size == self._period_s and iterator not in self._s_iterators:
-            self._s_iterators = self._sort_by_priority([iterator] + self._s_iterators)
+            with self._lock:
+                self._s_iterators = self._sort_by_priority([iterator] + self._s_iterators)
 
     @staticmethod
     def _sort_by_priority(iterators: List["TimeIteratorPurePython"]) -> List["TimeIteratorPurePython"]:
@@ -173,7 +197,7 @@ class IteratorsThreadedTimer(threading.Thread):
 
     def _run_iterators(self):
         """Executes the tick() method of the iterator (only if there is such method)."""
-        [it.tick(ClockPurePython.get_current_tick_s(self._period_s)) for it in self._s_iterators if
+        [it.tick(get_current_tick_s(self._period_s)) for it in self._s_iterators if
          hasattr(it, 'tick') and callable(it.tick)]
 
     def _verify_duration(self, duration_ns: int, period_ns: int) -> int:

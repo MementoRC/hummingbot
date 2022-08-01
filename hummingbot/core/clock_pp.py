@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-import functools
 import itertools
 import logging
 import time
@@ -13,6 +12,7 @@ from math import gcd
 from typing import Dict, List, Set, Tuple, Union
 
 from hummingbot.core.clock_mode import ClockMode
+from hummingbot.core.clock_utils import in_executor, ns_s, s_ns
 from hummingbot.core.iterators_threaded_timer import IteratorsThreadedTimer
 from hummingbot.logger import HummingbotLogger
 
@@ -20,57 +20,6 @@ if typing.TYPE_CHECKING:
     from hummingbot.core.time_iterator_pp import TimeIteratorPurePython
 
 s_logger: HummingbotLogger = None
-
-
-def ns_s(timestamp: Union[int, str]) -> float:
-    return float(Decimal(timestamp) * Decimal("1e-9"))
-
-
-def s_ns(timestamp: Union[float, str]) -> int:
-    return int(Decimal(timestamp) * Decimal("1e9"))
-
-
-async def try_except_async(function):
-    async def call_tick(*args, **kwargs):
-        returned_value = None
-        try:
-            returned_value = await function(*args, **kwargs)
-        except StopIteration:
-            ClockPurePython.logger().error("Stop iteration triggered in real time mode. This is not expected.")
-            return
-        except Exception:
-            ClockPurePython.logger().error("Unexpected error running clock tick.", exc_info=True)
-        finally:
-            return returned_value
-
-    return call_tick
-
-
-def try_except(function):
-    def call_tick(*args, **kwargs):
-        returned_value = None
-        try:
-            returned_value = function(*args, **kwargs)
-        except StopIteration:
-            ClockPurePython.logger().error("Stop iteration triggered in real time mode. This is not expected.")
-            return
-        except Exception:
-            ClockPurePython.logger().error("Unexpected error running clock tick.", exc_info=True)
-        finally:
-            return returned_value
-
-    return call_tick
-
-
-@try_except
-def in_executor(function):
-    @functools.wraps(function)
-    def wrapped(*args, **kwargs):
-        loop = asyncio.get_event_loop()
-        func = functools.partial(function, *args, **kwargs)
-        return loop.run_in_executor(executor=None, func=func)
-
-    return wrapped
 
 
 class ClockPurePython:

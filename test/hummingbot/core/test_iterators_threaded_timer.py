@@ -10,7 +10,6 @@ from pstats import Stats
 from unittest.mock import call, patch
 
 from hummingbot import root_path
-from hummingbot.core.clock_pp import ClockPurePython
 from hummingbot.core.iterators_threaded_timer import IteratorsThreadedTimer
 from hummingbot.core.time_iterator_pp import TimeIteratorPurePython
 
@@ -40,13 +39,15 @@ class IteratorsThreadedTimerTest(unittest.TestCase):
         """finish any test"""
         try:
             p = Stats(self.pr)
+            p.strip_dirs()
+            p.sort_stats('cumtime')
+            p.print_stats()
+            p.dump_stats(f"{self.data_dir}/{self.current_test}.pstats")
+            print("\n--->>>")
+        except TypeError:
+            pass
         finally:
             pass
-        p.strip_dirs()
-        p.sort_stats('cumtime')
-        p.print_stats()
-        p.dump_stats(f"{self.data_dir}/{self.current_test}.pstats")
-        print("\n--->>>")
 
     @staticmethod
     def handle(record):
@@ -82,12 +83,22 @@ class IteratorsThreadedTimerTest(unittest.TestCase):
             time_iterator.tick = lambda x: print(f"\tCalled with tick:{x}")
             list_iterators.append(time_iterator)
 
-        timer = IteratorsThreadedTimer(200, list_iterators)
+        timer = IteratorsThreadedTimer(200, list_iterators, args=(1,), kwargs={'test': 1})
 
         self.assertNotEqual(list_iterators, list(timer.iterators))
+        self.assertTrue(isinstance(timer._finished, threading.Event))
+        self.assertFalse(timer._finished.is_set())
+        self.assertTrue(isinstance(timer._not_paused, threading.Event))
+        self.assertTrue(timer._not_paused.is_set())
+        self.assertTrue(isinstance(timer._lock, type(threading.Lock())))
+        self.assertFalse(timer._running)
+        self.assertFalse(timer._was_paused)
         self.assertEqual(200, timer._period_s)
+        self.assertEqual(time.perf_counter_ns, timer._timer_ns)
+        self.assertEqual(0, timer._task_duration_ns)
+
+        # Properties
         self.assertEqual(200, timer.period_s)
-        self.assertTrue(isinstance(timer.done, threading.Event))
         self.assertEqual([list_iterators[2], list_iterators[1]], list(timer.iterators))
 
     def test_iterators(self):
@@ -103,7 +114,7 @@ class IteratorsThreadedTimerTest(unittest.TestCase):
 
         timer = IteratorsThreadedTimer(200, list_iterators)
 
-        self.assertEqual(timer._s_iterators, timer.iterators)
+        self.assertEqual(tuple(timer._s_iterators), timer.iterators)
 
     def test__run_iterators(self):
         list_iterators = []
@@ -116,7 +127,7 @@ class IteratorsThreadedTimerTest(unittest.TestCase):
             list_iterators.append(time_iterator)
         timer = IteratorsThreadedTimer(200, list_iterators)
         with patch.object(TimeIteratorPurePython, 'tick') as mocked_tick:
-            with patch.object(ClockPurePython, 'get_current_tick_s') as mocked_time:
+            with patch('hummingbot.core.iterators_threaded_timer.get_current_tick_s') as mocked_time:
                 mocked_time.return_value = 1234567890
                 timer._run_iterators()
         mocked_tick.assert_has_calls([call(1234567890), call(1234567890)])
@@ -124,18 +135,34 @@ class IteratorsThreadedTimerTest(unittest.TestCase):
 
     def test_remove_iterator(self):
         list_iterators = []
-        ticks = [300, 200, 200]
-        priorities = [0, 1, 2]
+        ticks = [3, 2, 2, 2]
+        priorities = [0, 1, 2, 3]
         for ts, p in zip(ticks, priorities):
             time_iterator: TimeIteratorPurePython = TimeIteratorPurePython()
             time_iterator.tick_size = ts
             time_iterator.priority = p
             list_iterators.append(time_iterator)
-        timer = IteratorsThreadedTimer(200, list_iterators)
+        timer = IteratorsThreadedTimer(2, list_iterators)
 
-        self.assertEqual([list_iterators[2], list_iterators[1]], list(timer.iterators))
-        timer.remove_iterator(list_iterators[-1])
-        self.assertEqual([list_iterators[-2]], list(timer.iterators))
+        self.assertEqual([list_iterators[3], list_iterators[2], list_iterators[1]], list(timer.iterators))
+        timer.remove_iterator(list_iterators[1])
+        self.assertEqual([list_iterators[3], list_iterators[2]], list(timer.iterators))
+
+        # Remove while started
+        timer.start()
+        self.assertTrue(timer.is_alive())
+        self.assertEqual([list_iterators[3], list_iterators[2]], list(timer.iterators))
+        timer.remove_iterator(list_iterators[2])
+        self.assertEqual([list_iterators[3]], list(timer.iterators))
+        self.assertTrue(timer.is_alive())
+
+        # Remove last iterator -> going to pause
+        self.assertTrue(timer._not_paused.is_set())
+        timer.remove_iterator(list_iterators[3])
+        time.sleep(2)
+        self.assertEqual([], list(timer.iterators))
+        self.assertFalse(timer._not_paused.is_set())
+        timer.cancel()
 
     def test_add_iterator(self):
         list_iterators = []
@@ -154,6 +181,18 @@ class IteratorsThreadedTimerTest(unittest.TestCase):
         self.assertEqual([list_iterators[2], list_iterators[1]], list(timer.iterators))
         timer.add_iterator(time_iterator)
         self.assertEqual([time_iterator, list_iterators[2], list_iterators[1]], list(timer.iterators))
+
+        # Add while started
+        new_iterator: TimeIteratorPurePython = TimeIteratorPurePython()
+        new_iterator.tick_size = 200
+        new_iterator.priority = 4
+        timer.start()
+        self.assertTrue(timer.is_alive())
+        self.assertEqual([time_iterator, list_iterators[2], list_iterators[1]], list(timer.iterators))
+        timer.add_iterator(new_iterator)
+        self.assertEqual([new_iterator, time_iterator, list_iterators[2], list_iterators[1]], list(timer.iterators))
+        self.assertTrue(timer.is_alive())
+        timer.cancel()
 
     def test_add_iterator_not_added(self):
         list_iterators = []
@@ -230,6 +269,9 @@ class IteratorsThreadedTimerTest(unittest.TestCase):
         # pprint(vars(timer))
         timer.unpause()
         time.sleep(4)
+        timer.pause()
+        # pprint(vars(timer))
+        timer.unpause()
         timer.cancel()
 
         print(timer)
