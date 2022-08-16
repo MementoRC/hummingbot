@@ -5,7 +5,7 @@ import logging
 import time
 import uuid
 from decimal import Decimal
-from typing import Any, AsyncIterable, Dict, List, Optional, TYPE_CHECKING
+from typing import Any, AsyncIterable, Dict, List, Optional, TYPE_CHECKING, Union
 
 import aiohttp
 from libc.stdint cimport int64_t
@@ -441,7 +441,7 @@ cdef class BitfinexExchange(ExchangeBase):
     async def _api_private_fn(self,
                               http_method: str,
                               path_url,
-                              data: Optional[Dict[Any]] = None) -> Dict[Any]:
+                              data: Optional[Dict[str, Any]] = None) -> Dict[Any]:
         url = f"{BITFINEX_REST_AUTH_URL}/{path_url}"
         data_str = json.dumps(data)
         #  because BITFINEX_REST_AUTH_URL already have v2  postfix, but v2 need
@@ -458,7 +458,7 @@ cdef class BitfinexExchange(ExchangeBase):
     async def _api_private(self,
                            http_method: str,
                            path_url,
-                           data: Optional[Dict[Any]] = None) -> Dict[Any]:
+                           data: Optional[Dict[str, Any]] = None) -> Dict[Any]:
 
         id = uuid.uuid4()
         self._pending_requests.append(id)
@@ -475,7 +475,7 @@ cdef class BitfinexExchange(ExchangeBase):
                               http_method: str,
                               url,
                               headers,
-                              data_str: Optional[str, list] = None) -> list:
+                              data_str: Optional[Union[str, List[str]]] = None) -> list:
         """
         A wrapper for submitting API requests to Bitfinex
         :returns: json data from the endpoints
@@ -1154,7 +1154,7 @@ cdef class BitfinexExchange(ExchangeBase):
 
     # sqlite
     @property
-    def tracking_states(self) -> Dict[str, any]:
+    def tracking_states(self) -> Dict[str, Any]:
         """
         *required
         :return: Dict[client_order_id: InFlightOrder]
@@ -1165,7 +1165,7 @@ cdef class BitfinexExchange(ExchangeBase):
             for key, value in self._in_flight_orders.items()
         }
 
-    def restore_tracking_states(self, saved_states: Dict[str, any]):
+    def restore_tracking_states(self, saved_states: Dict[str, Any]):
         """
         *required
         Updates inflight order statuses from API results
