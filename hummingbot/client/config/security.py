@@ -1,4 +1,3 @@
-import asyncio
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -15,14 +14,14 @@ from hummingbot.client.config.config_helpers import (
     update_connector_hb_config,
 )
 from hummingbot.core.utils.async_call_scheduler import AsyncCallScheduler
-from hummingbot.core.utils.async_utils import safe_ensure_future
+from hummingbot.core.utils.async_utils import EventThreadSafe, safe_ensure_future
 
 
 class Security:
     __instance = None
     secrets_manager: Optional[BaseSecretsManager] = None
     _secure_configs = {}
-    _decryption_done = asyncio.Event()
+    _decryption_done = EventThreadSafe()
 
     @staticmethod
     def new_password_required() -> bool:
