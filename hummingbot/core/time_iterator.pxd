@@ -8,6 +8,7 @@ cdef class TimeIterator(PubSub):
     cdef:
         double _current_timestamp
         Clock _clock
+        double _current_tick_size
 
     cdef c_start(self, Clock clock, double timestamp)
     cdef c_stop(self, Clock clock)
