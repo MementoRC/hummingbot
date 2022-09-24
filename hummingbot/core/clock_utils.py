@@ -22,8 +22,10 @@ __author__ = ('MementoMori',
 import asyncio
 import functools
 import time
+from asyncio import AbstractEventLoop
+from concurrent.futures import Future
 from decimal import Decimal
-from typing import Callable, Union
+from typing import Any, Awaitable, Callable, Coroutine, Dict, ParamSpec, Tuple, TypeVar, Union
 
 
 def ns_s(nanounit: Union[int, str]) -> float:
@@ -91,28 +93,39 @@ def get_current_tick_ns(period_ns: int) -> int:
     return tick_formula_ns(time.time_ns(), period_ns)
 
 
-async def try_except_async(function: Callable):
-    """
-    Decorator wrapping an async function with exception handling
+T = TypeVar('T')  # the callable/awaitable return type
+P = ParamSpec('P')  # the callable parameters
 
-    :param Callable function: Period in nanosecond
-    """
-    async def call(*args, **kwargs):
-        returned_value = None
-        try:
-            returned_value = await function(*args, **kwargs)
-        except StopIteration:
-            if 'logger' in kwargs:
-                kwargs['logger']().error("Stop iteration triggered in real time mode. This is not expected.")
-            raise StopIteration
-        except Exception:
-            if 'logger' in kwargs:
-                kwargs['logger']().error("Unexpected error running clock tick.", exc_info=True)
-            raise
-        finally:
-            return returned_value
 
-    return call
+def async_try_except(message: Any) -> Callable[[Callable[P, Awaitable[T]]], Callable[P, Awaitable[T]]]:
+    def wrapped(f: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]:
+        if asyncio.iscoroutinefunction(f):
+            async def wrapper(*args: Any, **kwargs: Any) -> T:
+                print(message)
+                out: T = None
+                try:
+                    out: T = await f(*args, **kwargs)
+                except Exception:
+                    if 'logger' in kwargs:
+                        kwargs['logger']().error("Unexpected error running clock tick.", exc_info=True)
+                    raise
+                finally:
+                    return out
+        else:
+            async def wrapper(*args: Any, **kwargs: Any) -> T:
+                loop: AbstractEventLoop = asyncio.get_event_loop()
+                out: T = None
+                try:
+                    out: T = await loop.run_in_executor(None, functools.partial(f, *args, **kwargs))
+                except Exception:
+                    if 'logger' in kwargs:
+                        kwargs['logger']().error("Unexpected error running clock tick.", exc_info=True)
+                    raise
+                finally:
+                    return out
+        return wrapper
+
+    return wrapped
 
 
 def try_except(function: Callable):
@@ -121,6 +134,7 @@ def try_except(function: Callable):
 
     :param Callable function: Period in nanosecond
     """
+
     def call(*args, **kwargs):
         returned_value = None
         try:
@@ -135,20 +149,22 @@ def try_except(function: Callable):
             raise
         finally:
             return returned_value
+
     return call
 
 
 @try_except
-def in_executor(function: Callable):
+def in_executor(function: Callable) -> Callable[[Tuple[Any, ...], Dict[str, Any]], Coroutine[Any, Any, Future[Any]]]:
     """
     Decorator wrapping a function with a call within an asyncio executor
 
     :param Callable function: Period in nanosecond
     """
+
     @functools.wraps(function)
-    def wrapped(*args, **kwargs):
-        loop = asyncio.get_event_loop()
-        func = functools.partial(function, *args, **kwargs)
-        return loop.run_in_executor(executor=None, func=func)
+    async def wrapped(*args, **kwargs) -> Future[Any]:
+        loop: AbstractEventLoop = asyncio.get_event_loop()
+        func: Any = functools.partial(function, *args, **kwargs)
+        return await loop.run_in_executor(executor=None, func=func)
 
     return wrapped

@@ -5,6 +5,7 @@ import itertools
 import logging
 import time
 import typing
+from asyncio import create_task
 from collections import OrderedDict, defaultdict
 from decimal import Decimal
 from functools import reduce
@@ -12,7 +13,7 @@ from math import gcd
 from typing import Dict, List, Set, Tuple, Union
 
 from hummingbot.core.clock_mode import ClockMode
-from hummingbot.core.clock_utils import in_executor, ns_s, s_ns
+from hummingbot.core.clock_utils import async_try_except, ns_s, s_ns
 from hummingbot.core.iterators_threaded_timer import IteratorsThreadedTimer
 from hummingbot.logger import HummingbotLogger
 
@@ -429,12 +430,57 @@ class ClockPurePython:
                 start_timer = time.perf_counter_ns()
                 for iterator in self._ticks_cycle['iterators_cycle'][relative_tick_time]:
                     start_exec_timer = time.perf_counter_ns()
-                    await in_executor(iterator.tick(self._current_tick))
+                    await async_try_except(iterator.tick(self._current_tick))()
                     slew['iterators'].append({f"{iterator.display_name}": time.perf_counter_ns() - start_exec_timer})
                 slew['iterators_cycle'] = time.perf_counter_ns() - start_timer
 
                 # Key iteration procedure
                 interval_to_next_tick = next(self._ticks_cycle['tick_intervals'])
+                wait_time = interval_to_next_tick - slew['iterators_cycle'] - slew['previous_loop_adjust']
+
+                start_timer = time.perf_counter_ns()
+                await ClockPurePython._sleep_ns(wait_time)
+                slew['asyncio.sleep'] = wait_time - start_timer
+                slew['previous_loop_adjust'] = - (time.perf_counter_ns() - slew['asyncio.sleep'])
+
+                # Advance to the next tick, the time offset should be adjusted at the next sleep
+                self._current_tick = self._current_tick + interval_to_next_tick
+
+                # Recording cycle duration
+                slew['cycle'] = time.perf_counter_ns()
+        finally:
+            [ci.stop(self) for ci in self._current_context]
+
+    async def run_till_async_tick(self, timestamp: float):
+        if self._current_context is None:
+            self.logger().error("run() and run_til() can only be used within the context of a `with...` statement.")
+            raise EnvironmentError("run() and run_til() can only be used within the context of a `with...` statement.")
+
+        self._construct_iterators_timetable()
+
+        slew: Dict[str, Union[int, List[Dict[str, int]]]] = {'asyncio.sleep': 0,
+                                                             'total_cycle': 0,
+                                                             'iterators': [],
+                                                             'iterators_cycle': 0,
+                                                             'previous_loop_adjust': 0,
+                                                             }
+        #
+        relative_tick_time = 0
+        self._start_clocking_in_context()
+        try:
+            while True:
+                # Exit condition
+                if self._current_tick > timestamp:
+                    return
+                start_timer = time.perf_counter_ns()
+                tasks: List[asyncio.Task] = []
+                for iterator in self._ticks_cycle['iterators_cycle'][relative_tick_time]:
+                    tasks.append(async_try_except(iterator.tick(self._current_tick))())
+
+                # Key iteration procedure
+                interval_to_next_tick = next(self._ticks_cycle['tick_intervals'])
+                tasks.append(create_task(asyncio.sleep(interval_to_next_tick)))
+                await asyncio.gather(*tasks)
                 wait_time = interval_to_next_tick - slew['iterators_cycle'] - slew['previous_loop_adjust']
 
                 start_timer = time.perf_counter_ns()
@@ -485,7 +531,7 @@ class ClockPurePython:
                 self._current_tick = self._current_tick + wait_time
 
                 # Recording cycle duration
-                slew['cycle'] = time.perf_counter_ns()
+                slew['cycle'] = time.perf_counter_ns() - start_timer - wait_time
         finally:
             # Stopping all the timers
             [t.cancel() for t in self._ticks_cycle['iterators_timers']]
