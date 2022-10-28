@@ -1,16 +1,14 @@
 import asyncio
 from collections import deque
+from typing import List, Optional
 
 from async_timeout import timeout
-from typing import (
-    List,
-    Optional,
-)
 
-from hummingbot.core.event.event_listener cimport EventListener
+from hummingbot.core.event.event_listener import EventListener
 from hummingbot.core.event.events import OrderFilledEvent
 
-cdef class EventLogger(EventListener):
+
+class EventLogger(EventListener):
     def __init__(self, event_source: Optional[str] = None):
         super().__init__()
         self._event_source = event_source
@@ -50,7 +48,7 @@ cdef class EventLogger(EventListener):
     def __call__(self, event_object):
         self.c_call(event_object)
 
-    cdef c_call(self, object event_object):
+    def c_call(self, event_object):
         self._logged_events.get(type(event_object), self._generic_logged_events).append(event_object)
         event_object_type = type(event_object)
 
