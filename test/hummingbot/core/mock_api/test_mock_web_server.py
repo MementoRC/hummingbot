@@ -1,20 +1,27 @@
 import asyncio
-from aiohttp import ClientSession
-import unittest.mock
-import requests
 import json
+import unittest.mock
+
+import requests
+from aiohttp import ClientSession
+
 from hummingbot.core.mock_api.mock_web_server import MockWebServer
 
 
-class MockWebServerTest(unittest.TestCase):
+class MockWebServerTest(unittest.IsolatedAsyncioTestCase):
+    _req_url_mock = None
+    _req_patcher = None
+    _url_mock = None
+    web_app: MockWebServer
+    host: str
+    _patcher: unittest.mock.patch
+
     @classmethod
     def setUpClass(cls) -> None:
-        cls.ev_loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
         cls.web_app: MockWebServer = MockWebServer.get_instance()
         cls.host = "www.google.com"
         cls.web_app.add_host_to_mock(cls.host)
         cls.web_app.start()
-        cls.ev_loop.run_until_complete(cls.web_app.wait_til_started())
         cls._patcher = unittest.mock.patch("aiohttp.client.URL")
         cls._url_mock = cls._patcher.start()
         cls._url_mock.side_effect = MockWebServer.reroute_local
@@ -22,6 +29,10 @@ class MockWebServerTest(unittest.TestCase):
         cls._req_patcher = unittest.mock.patch.object(requests.Session, "request", autospec=True)
         cls._req_url_mock = cls._req_patcher.start()
         cls._req_url_mock.side_effect = MockWebServer.reroute_request
+
+    async def asyncSetUp(self) -> None:
+        # need to wait a bit for the server to be available
+        await asyncio.wait_for(MockWebServerTest.web_app.wait_til_started(), 1)
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -38,8 +49,8 @@ class MockWebServerTest(unittest.TestCase):
                 print(text)
                 self.assertEqual(self.web_app.TEST_RESPONSE, text)
 
-    def test_web_app_response(self):
-        self.ev_loop.run_until_complete(asyncio.wait_for(self._test_web_app_response(), 20))
+    async def test_web_app_response(self):
+        await asyncio.wait_for(self._test_web_app_response(), 20)
 
     def test_get_request_response(self):
         self.web_app.clear_responses()

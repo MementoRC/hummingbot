@@ -1,4 +1,5 @@
 import time
+from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from enum import Enum
 from typing import Any, Callable, Dict, Generator, Optional, Type, cast
@@ -100,12 +101,28 @@ class HttpRecorderClientResponse(ClientResponse):
         return response_obj
 
 
-class HttpPlayerBase(TransactionBase):
+class HttpPlayerBase(TransactionBase, ABC):
+    __slots__ = (
+        '_original_func_request',
+        '_db_path',
+        '_db_engine',
+        '_session_factory'
+    )
+
     def __init__(self, db_path: str):
         self._db_path: str = db_path
         self._db_engine: Engine = create_engine(f"sqlite:///{db_path}")
         self._session_factory: Callable[[], Session] = sessionmaker(bind=self._db_engine)
         Base.metadata.create_all(self._db_engine)
+
+    @abstractmethod
+    async def aiohttp_request_method(
+            self,
+            client: ClientSession,
+            method: str,
+            url: str,
+            **kwargs) -> HttpRecorderClientResponse:
+        pass
 
     def get_new_session(self) -> Session:
         return self._session_factory()
@@ -135,6 +152,7 @@ class HttpRecorder(HttpPlayerBase):
           data = await resp.json()      # the request and response are recorded to test.db
           ...
     """
+
     async def aiohttp_request_method(
             self,
             client: ClientSession,
@@ -269,7 +287,6 @@ class HttpPlayer(HttpPlayerBase):
                 playback_entry = (
                     session.query(HttpPlayback).filter(query).first()
                 )
-
             return HttpPlayerResponse(
                 method,
                 url,
