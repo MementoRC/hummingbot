@@ -1,9 +1,10 @@
 import asyncio
 import time
 import unittest
-from contextlib import ExitStack
+from contextlib import AsyncExitStack
 from decimal import Decimal
 from os.path import join, realpath
+from pprint import pprint
 from test.mock.http_recorder import HttpPlayer
 from typing import Dict, List
 from unittest.mock import patch
@@ -35,17 +36,19 @@ s_decimal_0: Decimal = Decimal(0)
 
 class GatewayEVMAMMLPConnectorUnitTest(unittest.IsolatedAsyncioTestCase):
     _db_path: str
-    _http_player: HttpPlayer = None
-    _patch_stack: ExitStack = None
-    _clock: Clock = None
     _connector: GatewayEVMAMMLP = None
-    _session: ClientSession = None
     _client_config_map: ClientConfigAdapter = None
+
+    __slots__ = (
+        '_clock',
+        '_patch_stack',
+        '_http_player',
+        '_session',
+    )
 
     @classmethod
     def setUpClass(cls) -> None:
         cls._db_path = realpath(join(__file__, "../fixtures/gateway_evm_amm_lp_fixture.db"))
-        cls._clock: Clock = Clock(ClockMode.REALTIME)
         cls._client_config_map = ClientConfigAdapter(ClientConfigMap())
         cls._connector: GatewayEVMAMMLP = GatewayEVMAMMLP(
             client_config_map=cls._client_config_map,
@@ -56,48 +59,51 @@ class GatewayEVMAMMLPConnectorUnitTest(unittest.IsolatedAsyncioTestCase):
             trading_pairs=["COIN1-COIN3"],
             trading_required=True
         )
-        cls._clock.add_iterator(cls._connector)
-        cls._patch_stack = ExitStack()
-        cls._patch_stack.enter_context(cls._clock)
         GatewayHttpClient.get_instance(client_config_map=cls._client_config_map).base_url = "https://localhost:5000"
-        GatewayEVMAMMLPConnectorUnitTest._http_player = HttpPlayer(cls._db_path)
 
     def setUp(self) -> None:
+        self._clock: Clock = Clock(ClockMode.REALTIME)
+        self._clock.add_iterator(GatewayEVMAMMLPConnectorUnitTest._connector)
+
+        self._http_player = HttpPlayer(GatewayEVMAMMLPConnectorUnitTest._db_path)
         self._http_player.replay_timestamp_ms = None
 
     async def asyncSetUp(self):
-        GatewayEVMAMMLPConnectorUnitTest._session = ClientSession()
-        GatewayEVMAMMLPConnectorUnitTest._patch_stack.enter_context(
+        self._session = ClientSession()
+        self._patch_stack = AsyncExitStack()
+        self._patch_stack.enter_context(self._clock)
+        self._patch_stack.enter_context(
             patch(
                 "hummingbot.core.gateway.gateway_http_client.GatewayHttpClient._http_client",
-                return_value=GatewayEVMAMMLPConnectorUnitTest._session
+                return_value=self._session
             )
         )
-        GatewayEVMAMMLPConnectorUnitTest._patch_stack.enter_context(
-            GatewayEVMAMMLPConnectorUnitTest._http_player.patch_aiohttp_client())
+        await self._patch_stack.enter_async_context(self._http_player.patch_aiohttp_client())
         await GatewayEVMAMMLPConnectorUnitTest._connector.load_token_data()
-        await GatewayEVMAMMLPConnectorUnitTest.wait_til_ready()
+        await self.wait_til_ready()
 
     async def asyncTearDown(self):
-        await GatewayEVMAMMLPConnectorUnitTest._session.close()
+        await self._session.close()
+        await self._patch_stack.aclose()
+
+    def tearDown(self) -> None:
+        pass
 
     @classmethod
     def tearDownClass(cls) -> None:
         pass  # cls._patch_stack.close()
 
-    @classmethod
-    async def wait_til_ready(cls):
+    async def wait_til_ready(self):
         while True:
             now: float = time.time()
             next_iteration = now // 1.0 + 1
-            if cls._connector.ready:
+            if GatewayEVMAMMLPConnectorUnitTest._connector.ready:
                 break
             else:
-                await cls._clock.run_til(next_iteration + 0.1)
+                await self._clock.run_til(next_iteration + 0.1)
 
     async def run_clock(self):
         while True:
-            print(time.time())
             now: float = time.time()
             next_iteration = now // 1.0 + 1
             await self._clock.run_til(next_iteration + 0.1)
@@ -195,16 +201,15 @@ class GatewayEVMAMMLPConnectorUnitTest(unittest.IsolatedAsyncioTestCase):
         )
 
         clock_task: asyncio.Task = safe_ensure_future(self.run_clock())
-        # await self.run_clock()
         event_logger: EventLogger = EventLogger()
         self._connector.add_listener(TokenApprovalEvent.ApprovalSuccessful, event_logger)
 
-        self._http_player.replay_timestamp_ms = 1652728282963  # 1652728338292
+        self._http_player.replay_timestamp_ms = 1652728338291
         try:
-            async with timeout(120):
+            async with timeout(5):
                 while len(event_logger.event_log) < 2:
                     await event_logger.wait_for(TokenApprovalSuccessEvent)
-                    print(time.time())
+                    print("Played:", int(time.time() * 1000))
             self.assertEqual(2, len(event_logger.event_log))
             self.assertEqual(
                 {"uniswapLP_COIN1", "uniswapLP_COIN3"},
@@ -215,6 +220,7 @@ class GatewayEVMAMMLPConnectorUnitTest(unittest.IsolatedAsyncioTestCase):
             try:
                 await clock_task
             except asyncio.CancelledError:
+                print("Clock cancelled")
                 pass
 
     async def test_add_liquidity(self):
@@ -246,11 +252,13 @@ class GatewayEVMAMMLPConnectorUnitTest(unittest.IsolatedAsyncioTestCase):
             try:
                 await clock_task
             except asyncio.CancelledError:
+                print("Clock cancelled")
                 pass
 
     async def test_remove_liquidity(self):
         self._http_player.replay_timestamp_ms = 1652728331046
         clock_task: asyncio.Task = safe_ensure_future(self.run_clock())
+        print(clock_task)
         event_logger: EventLogger = EventLogger()
         self._connector.add_listener(MarketEvent.RangePositionUpdate, event_logger)
         self._connector.add_listener(MarketEvent.RangePositionLiquidityRemoved, event_logger)
@@ -261,10 +269,12 @@ class GatewayEVMAMMLPConnectorUnitTest(unittest.IsolatedAsyncioTestCase):
                 RangePositionUpdateEvent,
                 timeout_seconds=5
             )
+            pprint(pos_update_event)
             self.assertEqual(
                 "0x84c2e5633ea6f5aaa8fe19464a65b2a30d1fce66513db4b11439c09288962e7a",  # noqa: mock
                 pos_update_event.exchange_order_id
             )
+
             self._http_player.replay_timestamp_ms = 1652728338292
             liquidity_removed_event: RangePositionLiquidityRemovedEvent = await event_logger.wait_for(
                 RangePositionLiquidityRemovedEvent, timeout_seconds=5)
@@ -277,6 +287,7 @@ class GatewayEVMAMMLPConnectorUnitTest(unittest.IsolatedAsyncioTestCase):
             try:
                 await clock_task
             except asyncio.CancelledError:
+                print("Clock cancelled")
                 pass
 
     async def test_collect_fees(self):
@@ -296,9 +307,9 @@ class GatewayEVMAMMLPConnectorUnitTest(unittest.IsolatedAsyncioTestCase):
                 "0x74ae9ae03e8bee4d6954dfb4944c87dae5de5f63f4932be3b16dfc93601f0fdc",  # noqa: mock
                 pos_update_event.exchange_order_id
             )
-            self._http_player.replay_timestamp_ms = 1652728328486 - 20000
+            self._http_player.replay_timestamp_ms = 1652728328486
             fees_collected_event: RangePositionFeeCollectedEvent = await event_logger.wait_for(
-                RangePositionFeeCollectedEvent, timeout_seconds=50)
+                RangePositionFeeCollectedEvent, timeout_seconds=5)
             self.assertEqual(
                 "0x74ae9ae03e8bee4d6954dfb4944c87dae5de5f63f4932be3b16dfc93601f0fdc",  # noqa: mock
                 fees_collected_event.exchange_order_id

@@ -1,8 +1,9 @@
 import time
 from abc import ABC, abstractmethod
-from contextlib import contextmanager
+from contextlib import asynccontextmanager
 from enum import Enum
-from typing import Any, Callable, Dict, Generator, Optional, Type, cast
+from pprint import pprint
+from typing import Any, AsyncContextManager, Callable, Coroutine, Dict, Optional, Type, Union, cast
 from weakref import ReferenceType, ref
 
 from aiohttp import ClientResponse, ClientSession
@@ -104,12 +105,17 @@ class HttpRecorderClientResponse(ClientResponse):
 class HttpPlayerBase(TransactionBase, ABC):
     __slots__ = (
         '_original_func_request',
+        '_original_response_class',
+        '_reentrant_ref_count',
         '_db_path',
         '_db_engine',
         '_session_factory'
     )
 
     def __init__(self, db_path: str):
+        self._original_request_func: Callable[[], Coroutine[Any, Any, ClientResponse]] = None
+        self._original_response_class: ClientResponse
+        self._reentrant_ref_count: int = 0
         self._db_path: str = db_path
         self._db_engine: Engine = create_engine(f"sqlite:///{db_path}")
         self._session_factory: Callable[[], Session] = sessionmaker(bind=self._db_engine)
@@ -121,22 +127,34 @@ class HttpPlayerBase(TransactionBase, ABC):
             client: ClientSession,
             method: str,
             url: str,
-            **kwargs) -> HttpRecorderClientResponse:
+            **kwargs) -> Union[HttpRecorderClientResponse, "HttpPlayerResponse", ClientResponse]:
         pass
 
     def get_new_session(self) -> Session:
         return self._session_factory()
 
-    @contextmanager
-    def patch_aiohttp_client(self) -> Generator[Type[ClientSession], None, None]:
+    @asynccontextmanager
+    async def patch_aiohttp_client(self) -> AsyncContextManager[Union[Type[ClientSession], Type[HttpRecorderClientResponse]]]:
         try:
-            ClientSession._original_request_func = ClientSession._request
+            self._original_request_func: Callable[[], Coroutine[Any, Any, ClientResponse]] = ClientSession._request
             ClientSession._request = lambda s, *args, **kwargs: self.aiohttp_request_method(s, *args, **kwargs)
             yield ClientSession
         finally:
-            ClientSession._request = ClientSession._original_request_func
-            del ClientSession._original_request_func
+            ClientSession._request = self._original_request_func
 
+    # @contextmanager
+    # async def patch_aiohttp_client(self) -> ContextManager[Union[Type[ClientSession],
+    #                                                        Type[HttpRecorderClientResponse]]]:
+    #    try:
+    #        self._original_request_func: Callable[[], Coroutine[Any, Any, ClientResponse]] = ClientSession._request
+    #        ClientSession._request = lambda s, *args, **kwargs: self.aiohttp_request_method(s, *args, **kwargs)
+    #        yield ClientSession
+    #    finally:
+    #        ClientSession._request = self._original_request_func
+    #        del self._original_request_func
+
+
+#
 
 class HttpRecorder(HttpPlayerBase):
     """
@@ -158,14 +176,14 @@ class HttpRecorder(HttpPlayerBase):
             client: ClientSession,
             method: str,
             url: str,
-            **kwargs) -> HttpRecorderClientResponse:
+            **kwargs) -> ClientResponse:
         try:
-            if hasattr(client, "_reentrant_ref_count"):
-                client._reentrant_ref_count += 1
+            if self._reentrant_ref_count > 0:
+                self._reentrant_ref_count += 1
             else:
-                client._reentrant_ref_count = 1
-                client._original_response_class = client._response_class
+                self._reentrant_ref_count = 1
                 client._response_class = HttpRecorderClientResponse
+
             request_type: HttpRequestType = HttpRequestType.PLAIN
             request_params: Optional[Dict[str, str]] = None
             request_json: Optional[Any] = None
@@ -175,8 +193,10 @@ class HttpRecorder(HttpPlayerBase):
             if "json" in kwargs:
                 request_type = HttpRequestType.WITH_JSON
                 request_json = kwargs.get("json")
-            response: HttpRecorderClientResponse = await client._original_request_func(method, url, **kwargs)
+
+            response: ClientResponse = await self._original_request_func()
             response.parent_recorder = self
+
             with self.begin() as session:
                 session: Session = session
                 playback_entry: HttpPlayback = HttpPlayback(
@@ -189,16 +209,19 @@ class HttpRecorder(HttpPlayerBase):
                     response_type=HttpResponseType.HEADER_ONLY,
                     response_code=response.status
                 )
+                if playback_entry is None:
+                    pprint(f"   +: {int(time.time() * 1e3)}:{url}:{playback_entry}")
+                else:
+                    pprint(f"   +: {int(time.time() * 1e3)}:{url}:Found:{playback_entry.timestamp}")
                 session.add(playback_entry)
                 session.flush()
                 response.database_id = playback_entry.id
+
             return response
         finally:
-            client._reentrant_ref_count -= 1
-            if client._reentrant_ref_count < 1:
-                client._response_class = client._original_response_class
-                del client._original_response_class
-                del client._reentrant_ref_count
+            self._reentrant_ref_count -= 1
+            if self._reentrant_ref_count < 1:
+                client._response_class = self._original_response_class
 
 
 class HttpPlayerResponse:
@@ -277,7 +300,6 @@ class HttpPlayer(HttpPlayerBase):
             playback_entry: Optional[HttpPlayback] = (
                 session.query(HttpPlayback).filter(query).first()
             )
-
             # Loosen the query conditions if the first, precise query didn't work.
             if playback_entry is None:
                 query = (HttpPlayback.url == url)
@@ -287,10 +309,23 @@ class HttpPlayer(HttpPlayerBase):
                 playback_entry = (
                     session.query(HttpPlayback).filter(query).first()
                 )
+            if playback_entry is None:
+                pprint(f"   -: {self._replay_timestamp_ms}:{url}:{playback_entry}")
+            else:
+                pprint(f"   -: {self._replay_timestamp_ms}:{url}:Found:{playback_entry.timestamp}")
+
+            if playback_entry is not None:
+                return HttpPlayerResponse(
+                    method,
+                    url,
+                    playback_entry.response_code,
+                    playback_entry.response_text,
+                    playback_entry.response_json
+                )
             return HttpPlayerResponse(
                 method,
                 url,
-                playback_entry.response_code,
-                playback_entry.response_text,
-                playback_entry.response_json
+                400,
+                "",
+                None
             )
