@@ -489,4 +489,4 @@ cdef class OrderBook(PubSub):
         replay_diffs = diffs[replay_position:]
         self.apply_snapshot(snapshot.bids, snapshot.asks, snapshot.update_id)
         for diff in replay_diffs:
-            self.apply_diffs(diff.bids, diff.asks, diff.update_id)
+            self.apply_diffs(diff.bids, diff.asks, int(diff.update_id))
