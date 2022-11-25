@@ -1,6 +1,6 @@
 import asyncio
 from typing import Awaitable
-from unittest import TestCase
+from unittest import IsolatedAsyncioTestCase
 from unittest.mock import MagicMock, patch
 
 import hummingbot.connector.derivative.dydx_perpetual.dydx_perpetual_constants as CONSTANTS
@@ -8,7 +8,7 @@ from hummingbot.connector.derivative.dydx_perpetual.dydx_perpetual_auth import D
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest, WSJSONRequest
 
 
-class DydxPerpetualAuthTests(TestCase):
+class DydxPerpetualAuthTests(IsolatedAsyncioTestCase):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
@@ -25,12 +25,12 @@ class DydxPerpetualAuthTests(TestCase):
             self.api_key, self.api_secret, self.passphrase, self.ethereum_address, self.stark_private_key
         )
 
-    def async_run_with_timeout(self, coroutine: Awaitable, timeout: int = 1):
-        ret = asyncio.get_event_loop().run_until_complete(asyncio.wait_for(coroutine, timeout))
+    async def async_run_with_timeout(self, coroutine: Awaitable, timeout: int = 1):
+        ret = await asyncio.wait_for(coroutine, timeout)
         return ret
 
     @patch("hummingbot.connector.derivative.dydx_perpetual.dydx_perpetual_auth.DydxPerpetualAuth._get_iso_timestamp")
-    def test_add_auth_to_rest_request(self, ts_mock: MagicMock):
+    async def test_add_auth_to_rest_request(self, ts_mock: MagicMock):
         params = {"one": "1"}
         request = RESTRequest(
             method=RESTMethod.GET,
@@ -41,7 +41,7 @@ class DydxPerpetualAuthTests(TestCase):
         )
         ts_mock.return_value = "2022-07-06T12:20:53.000Z"
 
-        self.async_run_with_timeout(self.auth.rest_authenticate(request))
+        await self.async_run_with_timeout(self.auth.rest_authenticate(request))
 
         self.assertEqual("f9KTZzueyS1MazebIiorgGnZ5aOsVB3o7N2mRaW520g=", request.headers["DYDX-SIGNATURE"])
         self.assertEqual("someApiKey", request.headers["DYDX-API-KEY"])
@@ -49,7 +49,7 @@ class DydxPerpetualAuthTests(TestCase):
         self.assertEqual("somePassphrase", request.headers["DYDX-PASSPHRASE"])
 
     @patch("hummingbot.connector.derivative.dydx_perpetual.dydx_perpetual_auth.DydxPerpetualAuth._get_iso_timestamp")
-    def test_add_auth_to_ws_request(self, ts_mock: MagicMock):
+    async def test_add_auth_to_ws_request(self, ts_mock: MagicMock):
         ts_mock.return_value = "2022-07-06T12:20:53.000Z"
 
         request = WSJSONRequest(
@@ -57,7 +57,7 @@ class DydxPerpetualAuthTests(TestCase):
             is_auth_required=True,
         )
 
-        self.async_run_with_timeout(self.auth.ws_authenticate(request))
+        await self.async_run_with_timeout(self.auth.ws_authenticate(request))
 
         self.assertEqual("someApiKey", request.payload["apiKey"])
         self.assertEqual("somePassphrase", request.payload["passphrase"])

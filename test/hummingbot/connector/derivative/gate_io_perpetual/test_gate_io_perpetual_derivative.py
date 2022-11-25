@@ -340,11 +340,11 @@ class GateIoPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         return mock_response
 
     @aioresponses()
-    def test_update_balances(self, mock_api):
+    async def test_update_balances(self, mock_api):
         response = self.balance_request_mock_response_for_base_and_quote
         self._configure_balance_response(response=response, mock_api=mock_api)
 
-        self.async_run_with_timeout(self.exchange._update_balances())
+        await self.async_run_with_timeout(self.exchange._update_balances())
 
         available_balances = self.exchange.available_balances
         total_balances = self.exchange.get_all_balances()
@@ -482,8 +482,8 @@ class GateIoPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
     def latest_trade_hist_timestamp(self) -> int:
         return 1234
 
-    def async_run_with_timeout(self, coroutine, timeout: int = 1):
-        ret = asyncio.get_event_loop().run_until_complete(asyncio.wait_for(coroutine, timeout))
+    async def async_run_with_timeout(self, coroutine, timeout: int = 1):
+        ret = await asyncio.wait_for(coroutine, timeout)
         return ret
 
     def exchange_symbol_for_tokens(self, base_token: str, quote_token: str) -> str:
@@ -1047,20 +1047,18 @@ class GateIoPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
             ]
         }
 
-    def test_create_order_with_invalid_position_action_raises_value_error(self):
+    async def test_create_order_with_invalid_position_action_raises_value_error(self):
         self._simulate_trading_rules_initialized()
 
         with self.assertRaises(ValueError) as exception_context:
-            asyncio.get_event_loop().run_until_complete(
-                self.exchange._create_order(
-                    trade_type=TradeType.BUY,
-                    order_id="C1",
-                    trading_pair=self.trading_pair,
-                    amount=Decimal("1"),
-                    order_type=OrderType.LIMIT,
-                    price=Decimal("46000"),
-                    position_action=PositionAction.NIL,
-                ),
+            await self.exchange._create_order(
+                trade_type=TradeType.BUY,
+                order_id="C1",
+                trading_pair=self.trading_pair,
+                amount=Decimal("1"),
+                order_type=OrderType.LIMIT,
+                price=Decimal("46000"),
+                position_action=PositionAction.NIL,
             )
 
         self.assertEqual(
@@ -1068,7 +1066,7 @@ class GateIoPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
             str(exception_context.exception)
         )
 
-    def test_user_stream_update_for_new_order(self):
+    async def test_user_stream_update_for_new_order(self):
         self.exchange._set_current_timestamp(1640780000)
         self.exchange.start_tracking_order(
             order_id="11",
@@ -1089,14 +1087,14 @@ class GateIoPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self.exchange._user_stream_tracker._user_stream = mock_queue
 
         try:
-            self.async_run_with_timeout(self.exchange._user_stream_event_listener())
+            await self.async_run_with_timeout(self.exchange._user_stream_event_listener())
         except asyncio.CancelledError:
             pass
 
         self.assertEqual(0, len(self.buy_order_created_logger.event_log))
         self.assertTrue(order.is_open)
 
-    def test_user_stream_balance_update(self):
+    async def test_user_stream_balance_update(self):
         client_config_map = ClientConfigAdapter(ClientConfigMap())
         connector = GateIoPerpetualDerivative(
             client_config_map=client_config_map,
@@ -1114,7 +1112,7 @@ class GateIoPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self.exchange._user_stream_tracker._user_stream = mock_queue
 
         try:
-            self.async_run_with_timeout(self.exchange._user_stream_event_listener())
+            await self.async_run_with_timeout(self.exchange._user_stream_event_listener())
         except asyncio.CancelledError:
             pass
 
@@ -1142,7 +1140,7 @@ class GateIoPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self.assertEqual(self.quote_asset, sell_collateral_token)
 
     @aioresponses()
-    def test_resolving_trading_pair_symbol_duplicates_on_trading_rules_update_first_is_good(self, mock_api):
+    async def test_resolving_trading_pair_symbol_duplicates_on_trading_rules_update_first_is_good(self, mock_api):
         self.exchange._set_current_timestamp(1000)
 
         url = self.trading_rules_url
@@ -1155,14 +1153,14 @@ class GateIoPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         results.append(duplicate)
         mock_api.get(url, body=json.dumps(response))
 
-        self.async_run_with_timeout(coroutine=self.exchange._update_trading_rules())
+        await self.async_run_with_timeout(coroutine=self.exchange._update_trading_rules())
 
         self.assertEqual(1, len(self.exchange.trading_rules))
         self.assertIn(self.trading_pair, self.exchange.trading_rules)
         self.assertEqual(repr(self.expected_trading_rule), repr(self.exchange.trading_rules[self.trading_pair]))
 
     @aioresponses()
-    def test_resolving_trading_pair_symbol_duplicates_on_trading_rules_update_second_is_good(self, mock_api):
+    async def test_resolving_trading_pair_symbol_duplicates_on_trading_rules_update_second_is_good(self, mock_api):
         self.exchange._set_current_timestamp(1000)
 
         url = self.trading_rules_url
@@ -1175,14 +1173,14 @@ class GateIoPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         results.insert(0, duplicate)
         mock_api.get(url, body=json.dumps(response))
 
-        self.async_run_with_timeout(coroutine=self.exchange._update_trading_rules())
+        await self.async_run_with_timeout(coroutine=self.exchange._update_trading_rules())
 
         self.assertEqual(1, len(self.exchange.trading_rules))
         self.assertIn(self.trading_pair, self.exchange.trading_rules)
         self.assertEqual(repr(self.expected_trading_rule), repr(self.exchange.trading_rules[self.trading_pair]))
 
     @aioresponses()
-    def test_resolving_trading_pair_symbol_duplicates_on_trading_rules_update_cannot_resolve(self, mock_api):
+    async def test_resolving_trading_pair_symbol_duplicates_on_trading_rules_update_cannot_resolve(self, mock_api):
         self.exchange._set_current_timestamp(1000)
 
         url = self.trading_rules_url
@@ -1204,7 +1202,7 @@ class GateIoPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         results.append(second_duplicate)
         mock_api.get(url, body=json.dumps(response))
 
-        self.async_run_with_timeout(coroutine=self.exchange._update_trading_rules())
+        await self.async_run_with_timeout(coroutine=self.exchange._update_trading_rules())
 
         self.assertEqual(0, len(self.exchange.trading_rules))
         self.assertNotIn(self.trading_pair, self.exchange.trading_rules)
@@ -1220,7 +1218,7 @@ class GateIoPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         )
 
     @aioresponses()
-    def test_cancel_lost_order_raises_failure_event_when_request_fails(self, mock_api):
+    async def test_cancel_lost_order_raises_failure_event_when_request_fails(self, mock_api):
         request_sent_event = asyncio.Event()
         self.exchange._set_current_timestamp(1640780000)
 
@@ -1238,7 +1236,7 @@ class GateIoPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         order = self.exchange.in_flight_orders["11"]
 
         for _ in range(self.exchange._order_tracker._lost_order_count_limit + 1):
-            self.async_run_with_timeout(
+            await self.async_run_with_timeout(
                 self.exchange._order_tracker.process_order_not_found(client_order_id=order.client_order_id))
 
         self.assertNotIn(order.client_order_id, self.exchange.in_flight_orders)
@@ -1248,8 +1246,8 @@ class GateIoPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
             mock_api=mock_api,
             callback=lambda *args, **kwargs: request_sent_event.set())
 
-        self.async_run_with_timeout(self.exchange._cancel_lost_orders())
-        self.async_run_with_timeout(request_sent_event.wait())
+        await self.async_run_with_timeout(self.exchange._cancel_lost_orders())
+        await self.async_run_with_timeout(request_sent_event.wait())
 
         cancel_request = self._all_executed_requests(mock_api, url)[0]
         self.validate_auth_credentials_present(cancel_request)
@@ -1261,7 +1259,7 @@ class GateIoPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self.assertEqual(0, len(self.order_cancelled_logger.event_log))
 
     @aioresponses()
-    def test_user_stream_update_for_order_full_fill(self, mock_api):
+    async def test_user_stream_update_for_order_full_fill(self, mock_api):
         self.exchange._set_current_timestamp(1640780000)
         leverage = 2
         self.exchange._perpetual_trading.set_leverage(self.trading_pair, leverage)
@@ -1295,11 +1293,11 @@ class GateIoPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
                 mock_api=mock_api)
 
         try:
-            self.async_run_with_timeout(self.exchange._user_stream_event_listener())
+            await self.async_run_with_timeout(self.exchange._user_stream_event_listener())
         except asyncio.CancelledError:
             pass
         # Execute one more synchronization to ensure the async task that processes the update is finished
-        self.async_run_with_timeout(order.wait_until_completely_filled())
+        await self.async_run_with_timeout(order.wait_until_completely_filled())
 
         fill_event = self.order_filled_logger.event_log[0]
         self.assertEqual(self.exchange.current_timestamp, fill_event.timestamp)

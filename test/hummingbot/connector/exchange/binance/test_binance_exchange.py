@@ -684,7 +684,7 @@ class BinanceExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
 
     @aioresponses()
     @patch("hummingbot.connector.time_synchronizer.TimeSynchronizer._current_seconds_counter")
-    def test_update_time_synchronizer_successfully(self, mock_api, seconds_counter_mock):
+    async def test_update_time_synchronizer_successfully(self, mock_api, seconds_counter_mock):
         request_sent_event = asyncio.Event()
         seconds_counter_mock.side_effect = [0, 0, 0]
 
@@ -698,12 +698,12 @@ class BinanceExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
                      body=json.dumps(response),
                      callback=lambda *args, **kwargs: request_sent_event.set())
 
-        self.async_run_with_timeout(self.exchange._update_time_synchronizer())
+        await self.async_run_with_timeout(self.exchange._update_time_synchronizer())
 
         self.assertEqual(response["serverTime"] * 1e-3, self.exchange._time_synchronizer.time())
 
     @aioresponses()
-    def test_update_time_synchronizer_failure_is_logged(self, mock_api):
+    async def test_update_time_synchronizer_failure_is_logged(self, mock_api):
         request_sent_event = asyncio.Event()
 
         url = web_utils.private_rest_url(CONSTANTS.SERVER_TIME_PATH_URL)
@@ -715,24 +715,23 @@ class BinanceExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
                      body=json.dumps(response),
                      callback=lambda *args, **kwargs: request_sent_event.set())
 
-        self.async_run_with_timeout(self.exchange._update_time_synchronizer())
+        await self.async_run_with_timeout(self.exchange._update_time_synchronizer())
 
         self.assertTrue(self.is_logged("NETWORK", "Error getting server time."))
 
     @aioresponses()
-    def test_update_time_synchronizer_raises_cancelled_error(self, mock_api):
+    async def test_update_time_synchronizer_raises_cancelled_error(self, mock_api):
         url = web_utils.private_rest_url(CONSTANTS.SERVER_TIME_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
 
         mock_api.get(regex_url,
                      exception=asyncio.CancelledError)
 
-        self.assertRaises(
-            asyncio.CancelledError,
-            self.async_run_with_timeout, self.exchange._update_time_synchronizer())
+        with self.assertRaises(asyncio.CancelledError):
+            await self.async_run_with_timeout(self.exchange._update_time_synchronizer())
 
     @aioresponses()
-    def test_update_order_fills_from_trades_triggers_filled_event(self, mock_api):
+    async def test_update_order_fills_from_trades_triggers_filled_event(self, mock_api):
         self.exchange._set_current_timestamp(1640780000)
         self.exchange._last_poll_timestamp = (self.exchange.current_timestamp -
                                               self.exchange.UPDATE_ORDER_STATUS_MIN_INTERVAL - 1)
@@ -789,7 +788,7 @@ class BinanceExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         self.exchange.add_exchange_order_ids_from_market_recorder(
             {str(trade_fill_non_tracked_order["orderId"]): "OID99"})
 
-        self.async_run_with_timeout(self.exchange._update_order_fills_from_trades())
+        await self.async_run_with_timeout(self.exchange._update_order_fills_from_trades())
 
         request = self._all_executed_requests(mock_api, url)[0]
         self.validate_auth_credentials_present(request)
@@ -828,7 +827,7 @@ class BinanceExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         ))
 
     @aioresponses()
-    def test_update_order_fills_request_parameters(self, mock_api):
+    async def test_update_order_fills_request_parameters(self, mock_api):
         self.exchange._set_current_timestamp(0)
         self.exchange._last_poll_timestamp = -1
 
@@ -838,7 +837,7 @@ class BinanceExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         mock_response = []
         mock_api.get(regex_url, body=json.dumps(mock_response))
 
-        self.async_run_with_timeout(self.exchange._update_order_fills_from_trades())
+        await self.async_run_with_timeout(self.exchange._update_order_fills_from_trades())
 
         request = self._all_executed_requests(mock_api, url)[0]
         self.validate_auth_credentials_present(request)
@@ -850,7 +849,7 @@ class BinanceExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         self.exchange._last_poll_timestamp = (self.exchange.current_timestamp -
                                               self.exchange.UPDATE_ORDER_STATUS_MIN_INTERVAL - 1)
         self.exchange._last_trades_poll_binance_timestamp = 10
-        self.async_run_with_timeout(self.exchange._update_order_fills_from_trades())
+        await self.async_run_with_timeout(self.exchange._update_order_fills_from_trades())
 
         request = self._all_executed_requests(mock_api, url)[1]
         self.validate_auth_credentials_present(request)
@@ -859,7 +858,7 @@ class BinanceExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         self.assertEqual(10 * 1e3, request_params["startTime"])
 
     @aioresponses()
-    def test_update_order_fills_from_trades_with_repeated_fill_triggers_only_one_event(self, mock_api):
+    async def test_update_order_fills_from_trades_with_repeated_fill_triggers_only_one_event(self, mock_api):
         self.exchange._set_current_timestamp(1640780000)
         self.exchange._last_poll_timestamp = (self.exchange.current_timestamp -
                                               self.exchange.UPDATE_ORDER_STATUS_MIN_INTERVAL - 1)
@@ -889,7 +888,7 @@ class BinanceExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         self.exchange.add_exchange_order_ids_from_market_recorder(
             {str(trade_fill_non_tracked_order["orderId"]): "OID99"})
 
-        self.async_run_with_timeout(self.exchange._update_order_fills_from_trades())
+        await self.async_run_with_timeout(self.exchange._update_order_fills_from_trades())
 
         request = self._all_executed_requests(mock_api, url)[0]
         self.validate_auth_credentials_present(request)
@@ -916,7 +915,7 @@ class BinanceExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         ))
 
     @aioresponses()
-    def test_update_order_status_when_failed(self, mock_api):
+    async def test_update_order_status_when_failed(self, mock_api):
         self.exchange._set_current_timestamp(1640780000)
         self.exchange._last_poll_timestamp = (self.exchange.current_timestamp -
                                               self.exchange.UPDATE_ORDER_STATUS_MIN_INTERVAL - 1)
@@ -959,7 +958,7 @@ class BinanceExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         mock_response = order_status
         mock_api.get(regex_url, body=json.dumps(mock_response))
 
-        self.async_run_with_timeout(self.exchange._update_order_status())
+        await self.async_run_with_timeout(self.exchange._update_order_status())
 
         request = self._all_executed_requests(mock_api, url)[0]
         self.validate_auth_credentials_present(request)
@@ -981,7 +980,7 @@ class BinanceExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
                 "misc_updates=None)")
         )
 
-    def test_user_stream_update_for_order_failure(self):
+    async def test_user_stream_update_for_order_failure(self):
         self.exchange._set_current_timestamp(1640780000)
         self.exchange.start_tracking_order(
             order_id="OID1",
@@ -1034,7 +1033,7 @@ class BinanceExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         self.exchange._user_stream_tracker._user_stream = mock_queue
 
         try:
-            self.async_run_with_timeout(self.exchange._user_stream_event_listener())
+            await self.async_run_with_timeout(self.exchange._user_stream_event_listener())
         except asyncio.CancelledError:
             pass
 

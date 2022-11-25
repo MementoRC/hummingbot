@@ -1,3 +1,4 @@
+import asyncio
 import unittest
 from decimal import Decimal
 from test.mock.mock_perp_connector import MockPerpConnector
@@ -12,7 +13,7 @@ from hummingbot.core.data_type.order_candidate import PerpetualOrderCandidate
 from hummingbot.core.data_type.trade_fee import TradeFeeSchema
 
 
-class PerpetualBudgetCheckerTest(unittest.TestCase):
+class PerpetualBudgetCheckerTest(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         super().setUp()
 
@@ -20,6 +21,7 @@ class PerpetualBudgetCheckerTest(unittest.TestCase):
         self.quote_asset = "HBOT"
         self.trading_pair = f"{self.base_asset}-{self.quote_asset}"
 
+    async def asyncSetUp(self) -> None:
         trade_fee_schema = TradeFeeSchema(
             maker_percent_fee_decimal=Decimal("0.01"), taker_percent_fee_decimal=Decimal("0.02")
         )
@@ -27,6 +29,7 @@ class PerpetualBudgetCheckerTest(unittest.TestCase):
             client_config_map=ClientConfigAdapter(ClientConfigMap()),
             trade_fee_schema=trade_fee_schema)
         self.budget_checker = self.exchange.budget_checker
+        await asyncio.sleep(0)
 
     def test_populate_collateral_fields_buy_order(self):
         order_candidate = PerpetualOrderCandidate(

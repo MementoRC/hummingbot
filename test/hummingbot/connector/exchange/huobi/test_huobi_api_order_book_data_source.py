@@ -17,37 +17,34 @@ from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_message import OrderBookMessage
 
 
-class HuobiAPIOrderBookDataSourceUnitTests(unittest.TestCase):
+class HuobiAPIOrderBookDataSourceUnitTests(unittest.IsolatedAsyncioTestCase):
     # logging.Level required to receive logs from the data source logger
     level = 0
 
     @classmethod
     def setUpClass(cls) -> None:
-        super().setUpClass()
-        cls.ev_loop = asyncio.get_event_loop()
-
         cls.base_asset = "COINALPHA"
         cls.quote_asset = "HBOT"
         cls.trading_pair = f"{cls.base_asset}-{cls.quote_asset}"
         cls.ex_trading_pair = f"{cls.base_asset}{cls.quote_asset}".lower()
 
     def setUp(self) -> None:
-        super().setUp()
         self.log_records = []
-        self.async_tasks: List[asyncio.Task] = []
 
+    async def asyncSetUp(self) -> None:
+        self.async_tasks: List[asyncio.Task] = []
         self.data_source = HuobiAPIOrderBookDataSource(trading_pairs=[self.trading_pair])
 
         self.data_source.logger().setLevel(1)
         self.data_source.logger().addHandler(self)
-
         self.mocking_assistant = NetworkMockingAssistant()
         self.resume_test_event = asyncio.Event()
+        await asyncio.sleep(0)
 
-    def tearDown(self) -> None:
+    async def asyncTearDown(self) -> None:
         for task in self.async_tasks:
             task.cancel()
-        super().tearDown()
+        await asyncio.sleep(0)
 
     def handle(self, record):
         self.log_records.append(record)
@@ -55,8 +52,8 @@ class HuobiAPIOrderBookDataSourceUnitTests(unittest.TestCase):
     def _is_logged(self, log_level: str, message: str) -> bool:
         return any(record.levelname == log_level and record.getMessage() == message for record in self.log_records)
 
-    def async_run_with_timeout(self, coroutine: Awaitable, timeout: float = 1):
-        ret = self.ev_loop.run_until_complete(asyncio.wait_for(coroutine, timeout))
+    async def async_run_with_timeout(self, coroutine: Awaitable, timeout: float = 5):
+        ret = await asyncio.wait_for(coroutine, timeout)
         return ret
 
     def _create_exception_and_unlock_test_with_event(self, exception):
@@ -67,7 +64,7 @@ class HuobiAPIOrderBookDataSourceUnitTests(unittest.TestCase):
         return gzip.compress(json.dumps(message).encode())
 
     @aioresponses()
-    def test_last_traded_prices(self, mock_api):
+    async def test_last_traded_prices(self, mock_api):
         url = CONSTANTS.REST_URL + CONSTANTS.TICKER_URL
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
 
@@ -94,25 +91,26 @@ class HuobiAPIOrderBookDataSourceUnitTests(unittest.TestCase):
 
         mock_api.get(regex_url, body=ujson.dumps(mock_response))
 
-        result = self.async_run_with_timeout(self.data_source.get_last_traded_prices(trading_pairs=[self.trading_pair]))
+        result = await self.async_run_with_timeout(
+            self.data_source.get_last_traded_prices(trading_pairs=[self.trading_pair]))
 
         self.assertEqual(1, len(result))
         self.assertIn(self.trading_pair, result)
         self.assertEqual(1.5, result[self.trading_pair])
 
     @aioresponses()
-    def test_fetch_trading_pairs_failed(self, mock_api):
+    async def test_fetch_trading_pairs_failed(self, mock_api):
         url = CONSTANTS.REST_URL + CONSTANTS.API_VERSION + CONSTANTS.SYMBOLS_URL
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
 
         mock_api.get(regex_url, status=400, body=ujson.dumps({}))
 
-        result = self.async_run_with_timeout(self.data_source.fetch_trading_pairs())
+        result = await self.async_run_with_timeout(self.data_source.fetch_trading_pairs())
 
         self.assertEqual(0, len(result))
 
     @aioresponses()
-    def test_fetch_trading_pairs_successful(self, mock_api):
+    async def test_fetch_trading_pairs_successful(self, mock_api):
         url = CONSTANTS.REST_URL + CONSTANTS.API_VERSION + CONSTANTS.SYMBOLS_URL
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
 
@@ -146,12 +144,12 @@ class HuobiAPIOrderBookDataSourceUnitTests(unittest.TestCase):
 
         mock_api.get(regex_url, body=ujson.dumps(mock_response))
 
-        result = self.async_run_with_timeout(self.data_source.fetch_trading_pairs())
+        result = await self.async_run_with_timeout(self.data_source.fetch_trading_pairs())
 
         self.assertEqual(1, len(result))
 
     @aioresponses()
-    def test_get_snapshot_raises_error(self, mock_api):
+    async def test_get_snapshot_raises_error(self, mock_api):
         url = CONSTANTS.REST_URL + CONSTANTS.DEPTH_URL
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
 
@@ -160,10 +158,10 @@ class HuobiAPIOrderBookDataSourceUnitTests(unittest.TestCase):
         expected_error_msg = f"Error fetching Huobi market snapshot for {self.trading_pair}. HTTP status is 400"
 
         with self.assertRaisesRegex(IOError, expected_error_msg):
-            self.async_run_with_timeout(self.data_source.get_snapshot(self.trading_pair))
+            await self.async_run_with_timeout(self.data_source.get_snapshot(self.trading_pair))
 
     @aioresponses()
-    def test_get_snapshot_successful(self, mock_api):
+    async def test_get_snapshot_successful(self, mock_api):
         url = CONSTANTS.REST_URL + CONSTANTS.DEPTH_URL
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
 
@@ -185,7 +183,7 @@ class HuobiAPIOrderBookDataSourceUnitTests(unittest.TestCase):
 
         mock_api.get(regex_url, body=ujson.dumps(mock_response))
 
-        result = self.async_run_with_timeout(self.data_source.get_snapshot(self.trading_pair))
+        result = await self.async_run_with_timeout(self.data_source.get_snapshot(self.trading_pair))
 
         self.assertEqual(mock_response["ch"], result["ch"])
         self.assertEqual(mock_response["status"], result["status"])
@@ -193,7 +191,7 @@ class HuobiAPIOrderBookDataSourceUnitTests(unittest.TestCase):
         self.assertEqual(1, len(result["tick"]["asks"]))
 
     @aioresponses()
-    def test_get_new_order_book(self, mock_api):
+    async def test_get_new_order_book(self, mock_api):
         url = CONSTANTS.REST_URL + CONSTANTS.DEPTH_URL
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
 
@@ -215,7 +213,7 @@ class HuobiAPIOrderBookDataSourceUnitTests(unittest.TestCase):
 
         mock_api.get(regex_url, body=ujson.dumps(mock_response))
 
-        result = self.async_run_with_timeout(self.data_source.get_new_order_book(self.trading_pair))
+        result = await self.async_run_with_timeout(self.data_source.get_new_order_book(self.trading_pair))
 
         self.assertIsInstance(result, OrderBook)
         self.assertEqual(1637255180700, result.snapshot_uid)
@@ -227,26 +225,28 @@ class HuobiAPIOrderBookDataSourceUnitTests(unittest.TestCase):
         self.assertEqual(0.007019, list(result.ask_entries())[0].amount)
 
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
-    def test_listen_for_subscriptions_when_subscribing_raised_cancelled(self, ws_connect_mock):
+    async def test_listen_for_subscriptions_when_subscribing_raised_cancelled(self, ws_connect_mock):
         ws_connect_mock.side_effect = asyncio.CancelledError
 
         with self.assertRaises(asyncio.CancelledError):
-            self.async_run_with_timeout(self.data_source.listen_for_subscriptions())
+            await self.async_run_with_timeout(self.data_source.listen_for_subscriptions())
 
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
     @patch("hummingbot.connector.exchange.huobi.huobi_api_order_book_data_source.HuobiAPIOrderBookDataSource._sleep")
-    def test_listen_for_subscriptions_raises_logs_exception(self, sleep_mock, ws_connect_mock):
-        sleep_mock.side_effect = lambda *_: (
-            # Allows listen_for_subscriptions to yield control over thread
-            self.ev_loop.run_until_complete(asyncio.sleep(0.0))
-        )
+    async def test_listen_for_subscriptions_raises_logs_exception(self, sleep_mock, ws_connect_mock):
+        # sleep_mock.side_effect = lambda *_: (
+        #    # Allows listen_for_subscriptions to yield control over thread
+        #    await asyncio.sleep(0.0)
+        # )
+        sleep_mock.side_effect = asyncio.sleep(0.0)
+
         ws_connect_mock.return_value = self.mocking_assistant.create_websocket_mock()
         ws_connect_mock.return_value.receive.side_effect = lambda *_: self._create_exception_and_unlock_test_with_event(
             Exception("TEST ERROR")
         )
-        self.async_tasks.append(self.ev_loop.create_task(self.data_source.listen_for_subscriptions()))
+        self.async_tasks.append(asyncio.create_task(self.data_source.listen_for_subscriptions()))
 
-        self.async_run_with_timeout(self.resume_test_event.wait())
+        await self.async_run_with_timeout(self.resume_test_event.wait())
 
         self.assertTrue(
             self._is_logged(
@@ -255,7 +255,7 @@ class HuobiAPIOrderBookDataSourceUnitTests(unittest.TestCase):
         )
 
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
-    def test_listen_for_subscriptions_successful_subbed(self, ws_connect_mock):
+    async def test_listen_for_subscriptions_successful_subbed(self, ws_connect_mock):
         ws_connect_mock.return_value = self.mocking_assistant.create_websocket_mock()
 
         subbed_message = {
@@ -269,15 +269,15 @@ class HuobiAPIOrderBookDataSourceUnitTests(unittest.TestCase):
             ws_connect_mock.return_value, message=self._compress(subbed_message), message_type=aiohttp.WSMsgType.BINARY
         )
 
-        self.async_tasks.append(self.ev_loop.create_task(self.data_source.listen_for_subscriptions()))
+        self.async_tasks.append(asyncio.create_task(self.data_source.listen_for_subscriptions()))
 
-        self.mocking_assistant.run_until_all_aiohttp_messages_delivered(ws_connect_mock.return_value)
+        await self.mocking_assistant.async_run_until_all_aiohttp_messages_delivered(ws_connect_mock.return_value)
 
         self.assertEqual(0, self.data_source._message_queue[self.data_source.TRADE_CHANNEL_SUFFIX].qsize())
         self.assertEqual(0, self.data_source._message_queue[self.data_source.ORDERBOOK_CHANNEL_SUFFIX].qsize())
 
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
-    def test_listen_for_subscriptions_handle_ping_successful(self, ws_connect_mock):
+    async def test_listen_for_subscriptions_handle_ping_successful(self, ws_connect_mock):
         ws_connect_mock.return_value = self.mocking_assistant.create_websocket_mock()
 
         ping_message = {"ping": 1637333569837}
@@ -291,9 +291,9 @@ class HuobiAPIOrderBookDataSourceUnitTests(unittest.TestCase):
             ws_connect_mock.return_value, message=self._compress(dummy_message), message_type=aiohttp.WSMsgType.BINARY
         )
 
-        self.async_tasks.append(self.ev_loop.create_task(self.data_source.listen_for_subscriptions()))
+        self.async_tasks.append(asyncio.create_task(self.data_source.listen_for_subscriptions()))
 
-        self.mocking_assistant.run_until_all_aiohttp_messages_delivered(ws_connect_mock.return_value)
+        await self.mocking_assistant.async_run_until_all_aiohttp_messages_delivered(ws_connect_mock.return_value)
 
         self.assertEqual(0, self.data_source._message_queue[self.data_source.TRADE_CHANNEL_SUFFIX].qsize())
         self.assertEqual(0, self.data_source._message_queue[self.data_source.ORDERBOOK_CHANNEL_SUFFIX].qsize())
@@ -304,7 +304,7 @@ class HuobiAPIOrderBookDataSourceUnitTests(unittest.TestCase):
         self.assertTrue(any(["pong" in str(payload) for payload in sent_json]))
 
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
-    def test_listen_for_subscriptions_successfully_append_trade_and_orderbook_messages(self, ws_connect_mock):
+    async def test_listen_for_subscriptions_successfully_append_trade_and_orderbook_messages(self, ws_connect_mock):
         ws_connect_mock.return_value = self.mocking_assistant.create_websocket_mock()
 
         trade_message = {
@@ -344,25 +344,25 @@ class HuobiAPIOrderBookDataSourceUnitTests(unittest.TestCase):
             message_type=aiohttp.WSMsgType.BINARY,
         )
 
-        self.async_tasks.append(self.ev_loop.create_task(self.data_source.listen_for_subscriptions()))
+        self.async_tasks.append(asyncio.create_task(self.data_source.listen_for_subscriptions()))
 
-        self.mocking_assistant.run_until_all_aiohttp_messages_delivered(ws_connect_mock.return_value)
+        await self.mocking_assistant.async_run_until_all_aiohttp_messages_delivered(ws_connect_mock.return_value)
 
         self.assertEqual(1, self.data_source._message_queue[self.data_source.TRADE_CHANNEL_SUFFIX].qsize())
         self.assertEqual(1, self.data_source._message_queue[self.data_source.ORDERBOOK_CHANNEL_SUFFIX].qsize())
 
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
-    def test_listen_for_trades_logs_exception(self, ws_connect_mock):
+    async def test_listen_for_trades_logs_exception(self, ws_connect_mock):
         ws_connect_mock.return_value = self.mocking_assistant.create_websocket_mock()
 
         trade_message = {"ch": f"market.{self.ex_trading_pair}.trade.detail", "err": "INCOMPLETE MESSAGE"}
         self.mocking_assistant.add_websocket_aiohttp_message(
             ws_connect_mock.return_value, message=self._compress(trade_message), message_type=aiohttp.WSMsgType.BINARY
         )
-        self.async_tasks.append(self.ev_loop.create_task(self.data_source.listen_for_subscriptions()))
+        self.async_tasks.append(asyncio.create_task(self.data_source.listen_for_subscriptions()))
         msg_queue = asyncio.Queue()
-        self.async_tasks.append(self.ev_loop.create_task(self.data_source.listen_for_trades(self.ev_loop, msg_queue)))
-        self.mocking_assistant.run_until_all_aiohttp_messages_delivered(ws_connect_mock.return_value)
+        self.async_tasks.append(asyncio.create_task(self.data_source.listen_for_trades(None, msg_queue)))
+        await self.mocking_assistant.async_run_until_all_aiohttp_messages_delivered(ws_connect_mock.return_value)
 
         self.assertEqual(0, msg_queue.qsize())
         self.assertTrue(
@@ -370,7 +370,7 @@ class HuobiAPIOrderBookDataSourceUnitTests(unittest.TestCase):
         )
 
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
-    def test_listen_for_trades_successful(self, ws_connect_mock):
+    async def test_listen_for_trades_successful(self, ws_connect_mock):
         ws_connect_mock.return_value = self.mocking_assistant.create_websocket_mock()
 
         trade_message = {
@@ -394,17 +394,17 @@ class HuobiAPIOrderBookDataSourceUnitTests(unittest.TestCase):
         self.mocking_assistant.add_websocket_aiohttp_message(
             ws_connect_mock.return_value, message=self._compress(trade_message), message_type=aiohttp.WSMsgType.BINARY
         )
-        self.async_tasks.append(self.ev_loop.create_task(self.data_source.listen_for_subscriptions()))
+        self.async_tasks.append(asyncio.create_task(self.data_source.listen_for_subscriptions()))
 
         msg_queue = asyncio.Queue()
-        self.async_tasks.append(self.ev_loop.create_task(self.data_source.listen_for_trades(self.ev_loop, msg_queue)))
+        self.async_tasks.append(asyncio.create_task(self.data_source.listen_for_trades(None, msg_queue)))
 
-        self.mocking_assistant.run_until_all_aiohttp_messages_delivered(ws_connect_mock.return_value)
+        await self.mocking_assistant.async_run_until_all_aiohttp_messages_delivered(ws_connect_mock.return_value)
 
         self.assertEqual(1, msg_queue.qsize())
 
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
-    def test_listen_for_order_book_diffs_logs_exception(self, ws_connect_mock):
+    async def test_listen_for_order_book_diffs_logs_exception(self, ws_connect_mock):
         ws_connect_mock.return_value = self.mocking_assistant.create_websocket_mock()
 
         orderbook_message = {"ch": f"market.{self.ex_trading_pair}.depth.step0", "err": "INCOMPLETE MESSAGE"}
@@ -413,12 +413,12 @@ class HuobiAPIOrderBookDataSourceUnitTests(unittest.TestCase):
             message=self._compress(orderbook_message),
             message_type=aiohttp.WSMsgType.BINARY,
         )
-        self.async_tasks.append(self.ev_loop.create_task(self.data_source.listen_for_subscriptions()))
+        self.async_tasks.append(asyncio.create_task(self.data_source.listen_for_subscriptions()))
         msg_queue = asyncio.Queue()
         self.async_tasks.append(
-            self.ev_loop.create_task(self.data_source.listen_for_order_book_diffs(self.ev_loop, msg_queue))
+            asyncio.create_task(self.data_source.listen_for_order_book_diffs(None, msg_queue))
         )
-        self.mocking_assistant.run_until_all_aiohttp_messages_delivered(ws_connect_mock.return_value)
+        await self.mocking_assistant.async_run_until_all_aiohttp_messages_delivered(ws_connect_mock.return_value)
 
         self.assertEqual(0, msg_queue.qsize())
         self.assertTrue(
@@ -426,7 +426,7 @@ class HuobiAPIOrderBookDataSourceUnitTests(unittest.TestCase):
         )
 
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
-    def test_listen_for_order_book_diffs_successful(self, ws_connect_mock):
+    async def test_listen_for_order_book_diffs_successful(self, ws_connect_mock):
         ws_connect_mock.return_value = self.mocking_assistant.create_websocket_mock()
 
         orderbook_message = {
@@ -444,20 +444,20 @@ class HuobiAPIOrderBookDataSourceUnitTests(unittest.TestCase):
             message=self._compress(orderbook_message),
             message_type=aiohttp.WSMsgType.BINARY,
         )
-        self.async_tasks.append(self.ev_loop.create_task(self.data_source.listen_for_subscriptions()))
+        self.async_tasks.append(asyncio.create_task(self.data_source.listen_for_subscriptions()))
 
         msg_queue = asyncio.Queue()
         self.async_tasks.append(
-            self.ev_loop.create_task(self.data_source.listen_for_order_book_diffs(self.ev_loop, msg_queue))
+            asyncio.create_task(self.data_source.listen_for_order_book_diffs(None, msg_queue))
         )
 
-        self.mocking_assistant.run_until_all_aiohttp_messages_delivered(ws_connect_mock.return_value)
+        await self.mocking_assistant.async_run_until_all_aiohttp_messages_delivered(ws_connect_mock.return_value)
 
         self.assertEqual(1, msg_queue.qsize())
 
     @aioresponses()
     @patch("hummingbot.connector.exchange.huobi.huobi_api_order_book_data_source.HuobiAPIOrderBookDataSource._sleep")
-    def test_listen_for_order_book_snapshots_successful(self, mock_api, _):
+    async def test_listen_for_order_book_snapshots_successful(self, mock_api, _):
         url = CONSTANTS.REST_URL + CONSTANTS.DEPTH_URL
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
 
@@ -485,8 +485,8 @@ class HuobiAPIOrderBookDataSourceUnitTests(unittest.TestCase):
 
         # Purposefully raised error to exit task loop
         with self.assertRaises(asyncio.CancelledError):
-            self.async_run_with_timeout(self.data_source.listen_for_order_book_snapshots(self.ev_loop, msg_queue))
+            await self.async_run_with_timeout(self.data_source.listen_for_order_book_snapshots(None, msg_queue))
 
-        result = self.async_run_with_timeout(coroutine=msg_queue.get())
+        result = await self.async_run_with_timeout(coroutine=msg_queue.get())
 
         self.assertIsInstance(result, OrderBookMessage)

@@ -1134,11 +1134,11 @@ class DydxPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDer
         self.assertEqual(self.quote_asset, linear_sell_collateral_token)
 
     @aioresponses()
-    def test_update_balances(self, mock_api):
+    async def test_update_balances(self, mock_api):
         response = self.balance_request_mock_response_only_quote
 
         self._configure_balance_response(response=response, mock_api=mock_api)
-        self.async_run_with_timeout(self.exchange._update_balances())
+        await self.async_run_with_timeout(self.exchange._update_balances())
 
         available_balances = self.exchange.available_balances
         total_balances = self.exchange.get_all_balances()
@@ -1148,7 +1148,7 @@ class DydxPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDer
         self.assertEqual(Decimal("10000"), available_balances["USD"])
         self.assertEqual(Decimal("10000"), total_balances["USD"])
 
-    def test_user_stream_balance_update(self):
+    async def test_user_stream_balance_update(self):
         if self.exchange.real_time_balance_update:
             self.exchange._set_current_timestamp(1640780000)
 
@@ -1159,7 +1159,7 @@ class DydxPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDer
             self.exchange._user_stream_tracker._user_stream = mock_queue
 
             try:
-                self.async_run_with_timeout(self.exchange._user_stream_event_listener())
+                await self.async_run_with_timeout(self.exchange._user_stream_event_listener())
             except asyncio.CancelledError:
                 pass
 

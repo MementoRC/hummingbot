@@ -209,7 +209,7 @@ class AbstractPerpetualDerivativeTests:
             self.assertFalse(self.exchange.ready)
 
         @aioresponses()
-        def test_create_buy_limit_order_successfully(self, mock_api):
+        async def test_create_buy_limit_order_successfully(self, mock_api):
             """Open long position"""
             self._simulate_trading_rules_initialized()
             request_sent_event = asyncio.Event()
@@ -226,7 +226,7 @@ class AbstractPerpetualDerivativeTests:
             leverage = 2
             self.exchange._perpetual_trading.set_leverage(self.trading_pair, leverage)
             order_id = self.place_buy_order()
-            self.async_run_with_timeout(request_sent_event.wait())
+            await self.async_run_with_timeout(request_sent_event.wait())
 
             order_request = self._all_executed_requests(mock_api, url)[0]
             self.validate_auth_credentials_present(order_request)
@@ -257,7 +257,7 @@ class AbstractPerpetualDerivativeTests:
             )
 
         @aioresponses()
-        def test_create_sell_limit_order_successfully(self, mock_api):
+        async def test_create_sell_limit_order_successfully(self, mock_api):
             """Open short position"""
             self._simulate_trading_rules_initialized()
             request_sent_event = asyncio.Event()
@@ -272,7 +272,7 @@ class AbstractPerpetualDerivativeTests:
             leverage = 3
             self.exchange._perpetual_trading.set_leverage(self.trading_pair, leverage)
             order_id = self.place_sell_order()
-            self.async_run_with_timeout(request_sent_event.wait())
+            await self.async_run_with_timeout(request_sent_event.wait())
 
             order_request = self._all_executed_requests(mock_api, url)[0]
             self.validate_auth_credentials_present(order_request)
@@ -301,7 +301,7 @@ class AbstractPerpetualDerivativeTests:
             )
 
         @aioresponses()
-        def test_create_order_to_close_short_position(self, mock_api):
+        async def test_create_order_to_close_short_position(self, mock_api):
             self._simulate_trading_rules_initialized()
             request_sent_event = asyncio.Event()
             self.exchange._set_current_timestamp(1640780000)
@@ -316,7 +316,7 @@ class AbstractPerpetualDerivativeTests:
             leverage = 4
             self.exchange._perpetual_trading.set_leverage(self.trading_pair, leverage)
             order_id = self.place_buy_order(position_action=PositionAction.CLOSE)
-            self.async_run_with_timeout(request_sent_event.wait())
+            await self.async_run_with_timeout(request_sent_event.wait())
 
             order_request = self._all_executed_requests(mock_api, url)[0]
             self.validate_auth_credentials_present(order_request)
@@ -347,7 +347,7 @@ class AbstractPerpetualDerivativeTests:
             )
 
         @aioresponses()
-        def test_create_order_to_close_long_position(self, mock_api):
+        async def test_create_order_to_close_long_position(self, mock_api):
             self._simulate_trading_rules_initialized()
             request_sent_event = asyncio.Event()
             self.exchange._set_current_timestamp(1640780000)
@@ -361,7 +361,7 @@ class AbstractPerpetualDerivativeTests:
             leverage = 5
             self.exchange._perpetual_trading.set_leverage(self.trading_pair, leverage)
             order_id = self.place_sell_order(position_action=PositionAction.CLOSE)
-            self.async_run_with_timeout(request_sent_event.wait())
+            await self.async_run_with_timeout(request_sent_event.wait())
 
             order_request = self._all_executed_requests(mock_api, url)[0]
             self.validate_auth_credentials_present(order_request)
@@ -390,7 +390,7 @@ class AbstractPerpetualDerivativeTests:
             )
 
         @aioresponses()
-        def test_update_order_status_when_filled(self, mock_api):
+        async def test_update_order_status_when_filled(self, mock_api):
             self.exchange._set_current_timestamp(1640780000)
             request_sent_event = asyncio.Event()
 
@@ -421,16 +421,16 @@ class AbstractPerpetualDerivativeTests:
                 # If the fill events will not be requested with the order status, we need to manually set the event
                 # to allow the ClientOrderTracker to process the last status update
                 order.completely_filled_event.set()
-            self.async_run_with_timeout(self.exchange._update_order_status())
+            await self.async_run_with_timeout(self.exchange._update_order_status())
             # Execute one more synchronization to ensure the async task that processes the update is finished
-            self.async_run_with_timeout(request_sent_event.wait())
+            await self.async_run_with_timeout(request_sent_event.wait())
 
             for url in (urls if isinstance(urls, list) else [urls]):
                 order_status_request = self._all_executed_requests(mock_api, url)[0]
                 self.validate_auth_credentials_present(order_status_request)
                 self.validate_order_status_request(order=order, request_call=order_status_request)
 
-            self.async_run_with_timeout(order.wait_until_completely_filled())
+            await self.async_run_with_timeout(order.wait_until_completely_filled())
             self.assertTrue(order.is_done)
             if self.is_order_fill_http_update_included_in_status_update:
                 self.assertTrue(order.is_filled)
@@ -478,7 +478,7 @@ class AbstractPerpetualDerivativeTests:
             )
 
         @aioresponses()
-        def test_user_stream_update_for_order_full_fill(self, mock_api):
+        async def test_user_stream_update_for_order_full_fill(self, mock_api):
             self.exchange._set_current_timestamp(1640780000)
             leverage = 2
             self.exchange._perpetual_trading.set_leverage(self.trading_pair, leverage)
@@ -519,11 +519,11 @@ class AbstractPerpetualDerivativeTests:
                     mock_api=mock_api)
 
             try:
-                self.async_run_with_timeout(self.exchange._user_stream_event_listener())
+                await self.async_run_with_timeout(self.exchange._user_stream_event_listener())
             except asyncio.CancelledError:
                 pass
             # Execute one more synchronization to ensure the async task that processes the update is finished
-            self.async_run_with_timeout(order.wait_until_completely_filled())
+            await self.async_run_with_timeout(order.wait_until_completely_filled())
 
             fill_event: OrderFilledEvent = self.order_filled_logger.event_log[0]
             self.assertEqual(self.exchange.current_timestamp, fill_event.timestamp)
@@ -573,7 +573,7 @@ class AbstractPerpetualDerivativeTests:
             self.assertEqual(self.expected_supported_position_modes, supported_modes)
 
         @aioresponses()
-        def test_set_position_mode_failure(self, mock_api):
+        async def test_set_position_mode_failure(self, mock_api):
             request_sent_event = asyncio.Event()
             _, error_msg = self.configure_failed_set_position_mode(
                 position_mode=PositionMode.HEDGE,
@@ -581,7 +581,7 @@ class AbstractPerpetualDerivativeTests:
                 callback=lambda *args, **kwargs: request_sent_event.set(),
             )
             self.exchange.set_position_mode(PositionMode.HEDGE)
-            self.async_run_with_timeout(request_sent_event.wait())
+            await self.async_run_with_timeout(request_sent_event.wait())
 
             self.assertTrue(
                 self.is_logged(
@@ -591,7 +591,7 @@ class AbstractPerpetualDerivativeTests:
             )
 
         @aioresponses()
-        def test_set_position_mode_success(self, mock_api):
+        async def test_set_position_mode_success(self, mock_api):
             request_sent_event = asyncio.Event()
             self.configure_successful_set_position_mode(
                 position_mode=PositionMode.HEDGE,
@@ -599,7 +599,7 @@ class AbstractPerpetualDerivativeTests:
                 callback=lambda *args, **kwargs: request_sent_event.set(),
             )
             self.exchange.set_position_mode(PositionMode.HEDGE)
-            self.async_run_with_timeout(request_sent_event.wait())
+            await self.async_run_with_timeout(request_sent_event.wait())
 
             self.assertTrue(
                 self.is_logged(
@@ -615,7 +615,7 @@ class AbstractPerpetualDerivativeTests:
                 callback=lambda *args, **kwargs: request_sent_event.set(),
             )
             self.exchange.set_position_mode(PositionMode.ONEWAY)
-            self.async_run_with_timeout(request_sent_event.wait())
+            await self.async_run_with_timeout(request_sent_event.wait())
 
             self.assertTrue(
                 self.is_logged(
@@ -625,7 +625,7 @@ class AbstractPerpetualDerivativeTests:
             )
 
         @aioresponses()
-        def test_set_leverage_failure(self, mock_api):
+        async def test_set_leverage_failure(self, mock_api):
             request_sent_event = asyncio.Event()
             target_leverage = 2
             _, message = self.configure_failed_set_leverage(
@@ -634,7 +634,7 @@ class AbstractPerpetualDerivativeTests:
                 callback=lambda *args, **kwargs: request_sent_event.set(),
             )
             self.exchange.set_leverage(trading_pair=self.trading_pair, leverage=target_leverage)
-            self.async_run_with_timeout(request_sent_event.wait())
+            await self.async_run_with_timeout(request_sent_event.wait())
 
             self.assertTrue(
                 self.is_logged(
@@ -644,7 +644,7 @@ class AbstractPerpetualDerivativeTests:
             )
 
         @aioresponses()
-        def test_set_leverage_success(self, mock_api):
+        async def test_set_leverage_success(self, mock_api):
             request_sent_event = asyncio.Event()
             target_leverage = 2
             self.configure_successful_set_leverage(
@@ -653,7 +653,7 @@ class AbstractPerpetualDerivativeTests:
                 callback=lambda *args, **kwargs: request_sent_event.set(),
             )
             self.exchange.set_leverage(trading_pair=self.trading_pair, leverage=target_leverage)
-            self.async_run_with_timeout(request_sent_event.wait())
+            await self.async_run_with_timeout(request_sent_event.wait())
 
             self.assertTrue(
                 self.is_logged(
@@ -664,7 +664,7 @@ class AbstractPerpetualDerivativeTests:
 
         @aioresponses()
         @patch("asyncio.Queue.get")
-        def test_listen_for_funding_info_update_initializes_funding_info(self, mock_api, mock_queue_get):
+        async def test_listen_for_funding_info_update_initializes_funding_info(self, mock_api, mock_queue_get):
             url = self.funding_info_url
 
             response = self.funding_info_mock_response
@@ -674,7 +674,7 @@ class AbstractPerpetualDerivativeTests:
             mock_queue_get.side_effect = event_messages
 
             try:
-                self.async_run_with_timeout(self.exchange._listen_for_funding_info())
+                await self.async_run_with_timeout(self.exchange._listen_for_funding_info())
             except asyncio.CancelledError:
                 pass
 
@@ -690,7 +690,7 @@ class AbstractPerpetualDerivativeTests:
 
         @aioresponses()
         @patch("asyncio.Queue.get")
-        def test_listen_for_funding_info_update_updates_funding_info(self, mock_api, mock_queue_get):
+        async def test_listen_for_funding_info_update_updates_funding_info(self, mock_api, mock_queue_get):
             url = self.funding_info_url
 
             response = self.funding_info_mock_response
@@ -702,7 +702,7 @@ class AbstractPerpetualDerivativeTests:
             mock_queue_get.side_effect = event_messages
 
             try:
-                self.async_run_with_timeout(
+                await self.async_run_with_timeout(
                     self.exchange._listen_for_funding_info())
             except asyncio.CancelledError:
                 pass
@@ -710,7 +710,7 @@ class AbstractPerpetualDerivativeTests:
             self.assertEqual(1, self.exchange._perpetual_trading.funding_info_stream.qsize())  # rest in OB DS tests
 
         @aioresponses()
-        def test_funding_payment_polling_loop_sends_update_event(self, mock_api):
+        async def test_funding_payment_polling_loop_sends_update_event(self, mock_api):
             self._simulate_trading_rules_initialized()
             request_sent_event = asyncio.Event()
             url = self.funding_payment_url
@@ -720,19 +720,19 @@ class AbstractPerpetualDerivativeTests:
             response = self.empty_funding_payment_mock_response
             mock_api.get(url, body=json.dumps(response), callback=lambda *args, **kwargs: request_sent_event.set())
             self.exchange._funding_fee_poll_notifier.set()
-            self.async_run_with_timeout(request_sent_event.wait())
+            await self.async_run_with_timeout(request_sent_event.wait())
 
             request_sent_event.clear()
             response = self.funding_payment_mock_response
             mock_api.get(url, body=json.dumps(response), callback=lambda *args, **kwargs: request_sent_event.set())
             self.exchange._funding_fee_poll_notifier.set()
-            self.async_run_with_timeout(request_sent_event.wait())
+            await self.async_run_with_timeout(request_sent_event.wait())
 
             request_sent_event.clear()
             response = self.funding_payment_mock_response
             mock_api.get(url, body=json.dumps(response), callback=lambda *args, **kwargs: request_sent_event.set())
             self.exchange._funding_fee_poll_notifier.set()
-            self.async_run_with_timeout(request_sent_event.wait())
+            await self.async_run_with_timeout(request_sent_event.wait())
 
             self.assertEqual(1, len(self.funding_payment_logger.event_log))
             funding_event: FundingPaymentCompletedEvent = self.funding_payment_logger.event_log[0]

@@ -3,7 +3,7 @@ import hashlib
 import hmac
 from collections import OrderedDict
 from typing import Any, Awaitable, Dict, Mapping, Optional
-from unittest import TestCase
+from unittest import IsolatedAsyncioTestCase
 from unittest.mock import MagicMock
 from urllib.parse import urlencode
 
@@ -12,7 +12,7 @@ from hummingbot.connector.exchange.btc_markets.btc_markets_auth import BtcMarket
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest, WSJSONRequest
 
 
-class BtcMarketsAuthTest(TestCase):
+class BtcMarketsAuthTest(IsolatedAsyncioTestCase):
 
     def setUp(self) -> None:
         super().setUp()
@@ -28,8 +28,8 @@ class BtcMarketsAuthTest(TestCase):
             time_provider=self.mock_time_provider,
         )
 
-    def async_run_with_timeout(self, coroutine: Awaitable, timeout: int = 1):
-        ret = asyncio.get_event_loop().run_until_complete(asyncio.wait_for(coroutine, timeout))
+    async def async_run_with_timeout(self, coroutine: Awaitable, timeout: int = 1):
+        ret = await asyncio.wait_for(coroutine, timeout)
         return ret
 
     def _get_request(self, params: Dict[str, Any]) -> RESTRequest:
@@ -41,17 +41,17 @@ class BtcMarketsAuthTest(TestCase):
             throttler_limit_id="/api/endpoint"
         )
 
-    def test_add_auth_params_to_get_request_without_params(self):
+    async def test_add_auth_params_to_get_request_without_params(self):
         request = self._get_request({})
         params_expected = self._params_expected(request.params)
 
-        self.async_run_with_timeout(self.auth.rest_authenticate(request))
+        await self.async_run_with_timeout(self.auth.rest_authenticate(request))
 
         self.assertIn("BM-AUTH-TIMESTAMP", params_expected)
         self.assertEqual(self.api_key, params_expected["BM-AUTH-APIKEY"])
         self.assertIn("BM-AUTH-SIGNATURE", params_expected)
 
-    def test_add_auth_params_to_get_request_with_params(self):
+    async def test_add_auth_params_to_get_request_with_params(self):
         params = {
             "param_z": "value_param_z",
             "param_a": "value_param_a"
@@ -60,7 +60,7 @@ class BtcMarketsAuthTest(TestCase):
 
         params_expected = self._params_expected(request.params)
 
-        self.async_run_with_timeout(self.auth.rest_authenticate(request))
+        await self.async_run_with_timeout(self.auth.rest_authenticate(request))
 
         self.assertIn("BM-AUTH-TIMESTAMP", params_expected)
         self.assertEqual(self.api_key, params_expected["BM-AUTH-APIKEY"])
@@ -68,7 +68,7 @@ class BtcMarketsAuthTest(TestCase):
         self.assertEqual(params_expected['param_z'], request.params["param_z"])
         self.assertEqual(params_expected['param_a'], request.params["param_a"])
 
-    def test_add_auth_params_to_post_request(self):
+    async def test_add_auth_params_to_post_request(self):
         params = {"param_z": "value_param_z", "param_a": "value_param_a"}
         request = RESTRequest(
             method=RESTMethod.POST,
@@ -81,7 +81,7 @@ class BtcMarketsAuthTest(TestCase):
         params_auth = self._params_expected(request.params)
         params_request = self._params_expected(request.data)
 
-        self.async_run_with_timeout(self.auth.rest_authenticate(request))
+        await self.async_run_with_timeout(self.auth.rest_authenticate(request))
 
         self.assertIn("BM-AUTH-TIMESTAMP", params_auth)
         self.assertEqual(self.api_key, params_auth["BM-AUTH-APIKEY"])
@@ -89,10 +89,10 @@ class BtcMarketsAuthTest(TestCase):
         self.assertEqual(params_request['param_z'], request.data["param_z"])
         self.assertEqual(params_request['param_a'], request.data["param_a"])
 
-    def test_no_auth_added_to_wsrequest(self):
+    async def test_no_auth_added_to_wsrequest(self):
         payload = {"param1": "value_param_1"}
         request = WSJSONRequest(payload=payload, is_auth_required=True)
-        self.async_run_with_timeout(self.auth.ws_authenticate(request))
+        await self.async_run_with_timeout(self.auth.ws_authenticate(request))
         self.assertEqual(payload, request.payload)
 
     def _generate_signature(self, params: Dict[str, Any]) -> str:

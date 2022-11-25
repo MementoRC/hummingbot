@@ -15,11 +15,10 @@ from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RES
 MOCK_TS = 1648733370.792768
 
 
-class BitmexPerpetualAuthUnitTests(unittest.TestCase):
+class BitmexPerpetualAuthUnitTests(unittest.IsolatedAsyncioTestCase):
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
-        cls.ev_loop = asyncio.get_event_loop()
         cls.api_key = "TEST_API_KEY"
         cls.secret_key = "TEST_SECRET_KEY"
 
@@ -43,8 +42,8 @@ class BitmexPerpetualAuthUnitTests(unittest.TestCase):
             hashlib.sha256
         ).hexdigest()
 
-    def async_run_with_timeout(self, coroutine: Awaitable, timeout: float = 1):
-        ret = self.ev_loop.run_until_complete(asyncio.wait_for(coroutine, timeout))
+    async def async_run_with_timeout(self, coroutine: Awaitable, timeout: float = 1):
+        ret = await asyncio.wait_for(coroutine, timeout)
         return ret
 
     def test_generate_signature_from_payload(self):
@@ -54,14 +53,14 @@ class BitmexPerpetualAuthUnitTests(unittest.TestCase):
         self.assertEqual(signature, self._get_signature_from_test_payload(payload))
 
     @patch("time.time")
-    def test_rest_authenticate_no_parameters_provided(self, mock_ts):
+    async def test_rest_authenticate_no_parameters_provided(self, mock_ts):
         mock_ts.return_value = MOCK_TS
         mock_path = "/TEST_PATH_URL"
         payload = 'GET' + mock_path + str(int(MOCK_TS) + EXPIRATION)
         request: RESTRequest = RESTRequest(
             method=RESTMethod.GET, url=mock_path, is_auth_required=True
         )
-        signed_request: RESTRequest = self.async_run_with_timeout(self.auth.rest_authenticate(request))
+        signed_request: RESTRequest = await self.async_run_with_timeout(self.auth.rest_authenticate(request))
 
         self.assertIn("api-key", signed_request.headers)
         self.assertEqual(signed_request.headers["api-key"], self.api_key)
@@ -69,7 +68,7 @@ class BitmexPerpetualAuthUnitTests(unittest.TestCase):
         self.assertEqual(signed_request.headers["api-signature"], self._get_signature_from_test_payload(payload))
 
     @patch("time.time")
-    def test_rest_authenticate_parameters_provided(self, mock_ts):
+    async def test_rest_authenticate_parameters_provided(self, mock_ts):
         mock_ts.return_value = MOCK_TS
         mock_path = "/TEST_PATH_URL"
         mock_query = "?test_param=param"
@@ -77,7 +76,7 @@ class BitmexPerpetualAuthUnitTests(unittest.TestCase):
         request: RESTRequest = RESTRequest(
             method=RESTMethod.GET, url=mock_path, params={"test_param": "param"}, is_auth_required=True
         )
-        signed_request: RESTRequest = self.async_run_with_timeout(self.auth.rest_authenticate(request))
+        signed_request: RESTRequest = await self.async_run_with_timeout(self.auth.rest_authenticate(request))
 
         self.assertIn("api-key", signed_request.headers)
         self.assertEqual(signed_request.headers["api-key"], self.api_key)
@@ -85,7 +84,7 @@ class BitmexPerpetualAuthUnitTests(unittest.TestCase):
         self.assertEqual(signed_request.headers["api-signature"], self._get_signature_from_test_payload(payload))
 
     @patch("time.time")
-    def test_rest_authenticate_data_provided(self, mock_ts):
+    async def test_rest_authenticate_data_provided(self, mock_ts):
         mock_ts.return_value = MOCK_TS
         mock_path = "/TEST_PATH_URL"
         mock_data = json.dumps(self.test_params)
@@ -94,15 +93,15 @@ class BitmexPerpetualAuthUnitTests(unittest.TestCase):
             method=RESTMethod.POST, url="/TEST_PATH_URL", data=self.test_params, is_auth_required=True
         )
 
-        signed_request: RESTRequest = self.async_run_with_timeout(self.auth.rest_authenticate(request))
+        signed_request: RESTRequest = await self.async_run_with_timeout(self.auth.rest_authenticate(request))
 
         self.assertIn("api-key", signed_request.headers)
         self.assertEqual(signed_request.headers["api-key"], self.api_key)
         self.assertIn("api-signature", signed_request.headers)
         self.assertEqual(signed_request.headers["api-signature"], self._get_signature_from_test_payload(payload))
 
-    def test_generate_ws_signature(self):
+    async def test_generate_ws_signature(self):
         payload = 'GET/realtime' + str(int(MOCK_TS))
 
-        signature = self.async_run_with_timeout(self.auth.generate_ws_signature(str(int(MOCK_TS))))
+        signature = await self.async_run_with_timeout(self.auth.generate_ws_signature(str(int(MOCK_TS))))
         self.assertEqual(signature, self._get_signature_from_test_payload(payload))

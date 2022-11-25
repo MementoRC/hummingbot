@@ -649,7 +649,7 @@ class BtcMarketsExchangeTest(AbstractExchangeConnectorTests.ExchangeConnectorTes
         ]
 
     @aioresponses()
-    def test_place_cancel(self, mock_api):
+    async def test_place_cancel(self, mock_api):
         order = InFlightOrder(
             client_order_id = 123,
             exchange_order_id = 11223344,
@@ -673,7 +673,7 @@ class BtcMarketsExchangeTest(AbstractExchangeConnectorTests.ExchangeConnectorTes
 
         mock_api.delete(regex_url, body=json.dumps(response))
 
-        cancelled = self.async_run_with_timeout(self.exchange._place_cancel(orderId, order))
+        cancelled = await self.async_run_with_timeout(self.exchange._place_cancel(orderId, order))
 
         self.assertTrue(cancelled)
 
@@ -701,7 +701,7 @@ class BtcMarketsExchangeTest(AbstractExchangeConnectorTests.ExchangeConnectorTes
         self.assertFalse(result)
 
     @aioresponses()
-    def test_request_order_fills(self, mock_api):
+    async def test_request_order_fills(self, mock_api):
         order = InFlightOrder(
             client_order_id = 123,
             exchange_order_id = 36014819,
@@ -735,12 +735,12 @@ class BtcMarketsExchangeTest(AbstractExchangeConnectorTests.ExchangeConnectorTes
 
         mock_api.get(regex_url, body=json.dumps(response))
 
-        order_response = self.async_run_with_timeout(self.exchange._request_order_fills(order))
+        order_response = await self.async_run_with_timeout(self.exchange._request_order_fills(order))
 
         self.assertEqual(order_response[0]["id"], response[0]["id"])
 
     @aioresponses()
-    def test_place_order(self, mock_api):
+    async def test_place_order(self, mock_api):
         order = InFlightOrder(
             client_order_id = 123,
             trading_pair = self.exchange_symbol_for_tokens(self.base_asset, self.quote_asset),
@@ -761,12 +761,12 @@ class BtcMarketsExchangeTest(AbstractExchangeConnectorTests.ExchangeConnectorTes
 
         mock_api.post(regex_url, body=json.dumps(response))
 
-        order_response = self.async_run_with_timeout(self.exchange._place_order(
+        order_response = await self.async_run_with_timeout(self.exchange._place_order(
             order.client_order_id, order.trading_pair, 10.0, order.trade_type, order.order_type, 9999.9))
 
         self.assertEqual(order_response[0], response["orderId"])
 
-    def test_format_trading_rules(self):
+    async def test_format_trading_rules(self):
         exchange_info = [
             {
                 "marketId": self.exchange_symbol_for_tokens(self.base_asset, self.quote_asset),
@@ -790,7 +790,7 @@ class BtcMarketsExchangeTest(AbstractExchangeConnectorTests.ExchangeConnectorTes
             }
         ]
 
-        trade_rules = self.async_run_with_timeout(self.exchange._format_trading_rules(exchange_info))
+        trade_rules = await self.async_run_with_timeout(self.exchange._format_trading_rules(exchange_info))
 
         self.assertEqual(trade_rules[0].trading_pair, self.exchange_symbol_for_tokens(self.base_asset, self.quote_asset))
         self.assertEqual(trade_rules[0].min_order_size, Decimal(str(0.0001)))
@@ -798,7 +798,7 @@ class BtcMarketsExchangeTest(AbstractExchangeConnectorTests.ExchangeConnectorTes
         self.assertEqual(trade_rules[0].min_price_increment, Decimal("1") / Decimal(str(math.pow(10, 2))))
         self.assertEqual(trade_rules[0].min_base_amount_increment, Decimal("1") / Decimal(str(math.pow(10, 8))))
 
-    def test_format_trading_rules_exception(self):
+    async def test_format_trading_rules_exception(self):
         exchange_info = [
             {
                 # "marketId": self.exchange_symbol_for_tokens(self.base_asset, self.quote_asset),
@@ -812,7 +812,7 @@ class BtcMarketsExchangeTest(AbstractExchangeConnectorTests.ExchangeConnectorTes
             }
         ]
 
-        self.async_run_with_timeout(self.exchange._format_trading_rules(exchange_info))
+        await self.async_run_with_timeout(self.exchange._format_trading_rules(exchange_info))
 
         self.assertTrue(
             self._is_logged("ERROR", f"Error parsing the trading pair rule {exchange_info[0]}. Skipping."))
@@ -881,7 +881,7 @@ class BtcMarketsExchangeTest(AbstractExchangeConnectorTests.ExchangeConnectorTes
         self.assertEqual(order.trading_pair, self.exchange_symbol_for_tokens(self.base_asset, self.quote_asset))
 
     @aioresponses()
-    def test_update_balances(self, mock_api):
+    async def test_update_balances(self, mock_api):
         response = [
             {
                 "assetName": self.base_asset,
@@ -895,13 +895,13 @@ class BtcMarketsExchangeTest(AbstractExchangeConnectorTests.ExchangeConnectorTes
 
         mock_api.get(regex_url, body=json.dumps(response))
 
-        self.async_run_with_timeout(self.exchange._update_balances())
+        await self.async_run_with_timeout(self.exchange._update_balances())
 
         self.assertEqual(self.exchange._account_available_balances[self.base_asset], 900)
         self.assertEqual(self.exchange._account_balances[self.base_asset], 1000)
 
     @aioresponses()
-    def test_get_last_traded_price(self, mock_api):
+    async def test_get_last_traded_price(self, mock_api):
         response = {
             "lastPrice": "9999.00"
         }
@@ -911,12 +911,12 @@ class BtcMarketsExchangeTest(AbstractExchangeConnectorTests.ExchangeConnectorTes
 
         mock_api.get(regex_url, body=json.dumps(response))
 
-        lastprice_response = self.async_run_with_timeout(self.exchange._get_last_traded_price(self.trading_pair))
+        lastprice_response = await self.async_run_with_timeout(self.exchange._get_last_traded_price(self.trading_pair))
 
         self.assertEqual(lastprice_response, 9999.00)
 
     @aioresponses()
-    def test_get_fee_returns_fee_from_exchange_if_available_and_default_if_not(self, mocked_api):
+    async def test_get_fee_returns_fee_from_exchange_if_available_and_default_if_not(self, mocked_api):
         url = web_utils.private_rest_url(CONSTANTS.FEES_URL)
         regex_url = re.compile(f"^{url}")
         resp = {
@@ -931,7 +931,7 @@ class BtcMarketsExchangeTest(AbstractExchangeConnectorTests.ExchangeConnectorTes
         }
         mocked_api.get(regex_url, body=json.dumps(resp))
 
-        self.async_run_with_timeout(self.exchange._update_trading_fees())
+        await self.async_run_with_timeout(self.exchange._update_trading_fees())
 
         # Maker fee
         fee = self.exchange.get_fee(

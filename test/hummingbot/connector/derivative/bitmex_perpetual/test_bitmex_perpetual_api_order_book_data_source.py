@@ -22,14 +22,13 @@ from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 
 
-class BitmexPerpetualAPIOrderBookDataSourceUnitTests(unittest.TestCase):
+class BitmexPerpetualAPIOrderBookDataSourceUnitTests(unittest.IsolatedAsyncioTestCase):
     # logging.Level required to receive logs from the data source logger
     level = 0
 
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
-        cls.ev_loop = asyncio.get_event_loop()
         cls.base_asset = "ETH"
         cls.quote_asset = "USD"
         cls.trading_pair = f"{cls.base_asset}-{cls.quote_asset}"
@@ -67,8 +66,8 @@ class BitmexPerpetualAPIOrderBookDataSourceUnitTests(unittest.TestCase):
     def handle(self, record):
         self.log_records.append(record)
 
-    def async_run_with_timeout(self, coroutine: Awaitable, timeout: float = 60):
-        ret = self.ev_loop.run_until_complete(asyncio.wait_for(coroutine, timeout))
+    async def async_run_with_timeout(self, coroutine: Awaitable, timeout: float = 60):
+        ret = await asyncio.wait_for(coroutine, timeout)
         return ret
 
     def resume_test_callback(self, *_, **__):
@@ -112,7 +111,7 @@ class BitmexPerpetualAPIOrderBookDataSourceUnitTests(unittest.TestCase):
         return resp
 
     @aioresponses()
-    def test_get_last_traded_prices(self, mock_api):
+    async def test_get_last_traded_prices(self, mock_api):
         url = web_utils.rest_url(
             CONSTANTS.TICKER_PRICE_URL, domain=self.domain
         )
@@ -123,7 +122,7 @@ class BitmexPerpetualAPIOrderBookDataSourceUnitTests(unittest.TestCase):
         }]
         mock_api.get(regex_url, body=json.dumps(mock_response))
 
-        result: Dict[str, Any] = self.async_run_with_timeout(
+        result: Dict[str, Any] = await self.async_run_with_timeout(
             self.data_source.get_last_traded_prices(trading_pairs=[self.trading_pair], domain=self.domain)
         )
         self.assertTrue(self.trading_pair in result)
@@ -133,7 +132,7 @@ class BitmexPerpetualAPIOrderBookDataSourceUnitTests(unittest.TestCase):
         self.assertTrue(isinstance(self.data_source._get_throttler_instance(), AsyncThrottler))
 
     @aioresponses()
-    def test_init_trading_pair_symbols_failure(self, mock_api):
+    async def test_init_trading_pair_symbols_failure(self, mock_api):
         BitmexPerpetualAPIOrderBookDataSource._trading_pair_symbol_map = {}
         url = web_utils.rest_url(
             CONSTANTS.EXCHANGE_INFO_URL, domain=self.domain
@@ -142,11 +141,11 @@ class BitmexPerpetualAPIOrderBookDataSourceUnitTests(unittest.TestCase):
 
         mock_api.get(regex_url, status=400, body=json.dumps(["ERROR"]))
 
-        map = self.async_run_with_timeout(self.data_source.trading_pair_symbol_map(domain=self.domain))
+        map = await self.async_run_with_timeout(self.data_source.trading_pair_symbol_map(domain=self.domain))
         self.assertEqual(0, len(map))
 
     @aioresponses()
-    def test_init_trading_pair_symbols_successful(self, mock_api):
+    async def test_init_trading_pair_symbols_successful(self, mock_api):
         url = web_utils.rest_url(
             CONSTANTS.EXCHANGE_INFO_URL, domain=self.domain
         )
@@ -159,11 +158,11 @@ class BitmexPerpetualAPIOrderBookDataSourceUnitTests(unittest.TestCase):
             },
         ]
         mock_api.get(regex_url, status=200, body=json.dumps(mock_response))
-        self.async_run_with_timeout(self.data_source.init_trading_pair_symbols(domain=self.domain))
+        await self.async_run_with_timeout(self.data_source.init_trading_pair_symbols(domain=self.domain))
         self.assertEqual(1, len(self.data_source._trading_pair_symbol_map))
 
     @aioresponses()
-    def test_trading_pair_symbol_map_dictionary_not_initialized(self, mock_api):
+    async def test_trading_pair_symbol_map_dictionary_not_initialized(self, mock_api):
         BitmexPerpetualAPIOrderBookDataSource._trading_pair_symbol_map = {}
         url = web_utils.rest_url(
             CONSTANTS.EXCHANGE_INFO_URL, domain=self.domain
@@ -177,37 +176,37 @@ class BitmexPerpetualAPIOrderBookDataSourceUnitTests(unittest.TestCase):
             },
         ]
         mock_api.get(regex_url, status=200, body=json.dumps(mock_response))
-        self.async_run_with_timeout(self.data_source.trading_pair_symbol_map(domain=self.domain))
+        await self.async_run_with_timeout(self.data_source.trading_pair_symbol_map(domain=self.domain))
         self.assertEqual(1, len(self.data_source._trading_pair_symbol_map))
 
-    def test_trading_pair_symbol_map_dictionary_initialized(self):
-        result = self.async_run_with_timeout(self.data_source.trading_pair_symbol_map(domain=self.domain))
+    async def test_trading_pair_symbol_map_dictionary_initialized(self):
+        result = await self.async_run_with_timeout(self.data_source.trading_pair_symbol_map(domain=self.domain))
         self.assertEqual(1, len(result))
 
-    def test_convert_from_exchange_trading_pair_not_found(self):
+    async def test_convert_from_exchange_trading_pair_not_found(self):
         unknown_pair = "UNKNOWN-PAIR"
         with self.assertRaisesRegex(ValueError, f"There is no symbol mapping for exchange trading pair {unknown_pair}"):
-            self.async_run_with_timeout(
+            await self.async_run_with_timeout(
                 self.data_source.convert_from_exchange_trading_pair(unknown_pair, domain=self.domain))
 
-    def test_convert_from_exchange_trading_pair_successful(self):
-        result = self.async_run_with_timeout(
+    async def test_convert_from_exchange_trading_pair_successful(self):
+        result = await self.async_run_with_timeout(
             self.data_source.convert_from_exchange_trading_pair(self.ex_trading_pair, domain=self.domain))
         self.assertEqual(result, self.trading_pair)
 
-    def test_convert_to_exchange_trading_pair_not_found(self):
+    async def test_convert_to_exchange_trading_pair_not_found(self):
         unknown_pair = "UNKNOWN-PAIR"
         with self.assertRaisesRegex(ValueError, f"There is no symbol mapping for trading pair {unknown_pair}"):
-            self.async_run_with_timeout(
+            await self.async_run_with_timeout(
                 self.data_source.convert_to_exchange_trading_pair(unknown_pair, domain=self.domain))
 
-    def test_convert_to_exchange_trading_pair_successful(self):
-        result = self.async_run_with_timeout(
+    async def test_convert_to_exchange_trading_pair_successful(self):
+        result = await self.async_run_with_timeout(
             self.data_source.convert_to_exchange_trading_pair(self.trading_pair, domain=self.domain))
         self.assertEqual(result, self.ex_trading_pair)
 
     @aioresponses()
-    def test_get_snapshot_exception_raised(self, mock_api):
+    async def test_get_snapshot_exception_raised(self, mock_api):
         url = web_utils.rest_url(
             CONSTANTS.SNAPSHOT_REST_URL, domain=self.domain
         )
@@ -215,14 +214,14 @@ class BitmexPerpetualAPIOrderBookDataSourceUnitTests(unittest.TestCase):
         mock_api.get(regex_url, status=400, body=json.dumps(["ERROR"]))
 
         with self.assertRaises(IOError) as context:
-            self.async_run_with_timeout(
+            await self.async_run_with_timeout(
                 self.data_source.get_snapshot(trading_pair=self.trading_pair, domain=self.domain)
             )
 
         self.assertEqual(str(context.exception), "Error executing request GET /orderBook/L2. HTTP status is 400. Error: [\"ERROR\"]")
 
     @aioresponses()
-    def test_get_snapshot_successful(self, mock_api):
+    async def test_get_snapshot_successful(self, mock_api):
         url = web_utils.rest_url(
             CONSTANTS.SNAPSHOT_REST_URL, domain=self.domain
         )
@@ -235,13 +234,13 @@ class BitmexPerpetualAPIOrderBookDataSourceUnitTests(unittest.TestCase):
         }]
         mock_api.get(regex_url, status=200, body=json.dumps(mock_response))
 
-        result: Dict[str, Any] = self.async_run_with_timeout(
+        result: Dict[str, Any] = await self.async_run_with_timeout(
             self.data_source.get_snapshot(trading_pair=self.trading_pair, domain=self.domain)
         )
         self.assertEqual(mock_response, result)
 
     @aioresponses()
-    def test_get_new_order_book(self, mock_api):
+    async def test_get_new_order_book(self, mock_api):
         url = web_utils.rest_url(
             CONSTANTS.SNAPSHOT_REST_URL, domain=self.domain
         )
@@ -263,11 +262,11 @@ class BitmexPerpetualAPIOrderBookDataSourceUnitTests(unittest.TestCase):
             }
         ]
         mock_api.get(regex_url, status=200, body=json.dumps(mock_response))
-        result = self.async_run_with_timeout(self.data_source.get_new_order_book(trading_pair=self.trading_pair))
+        result = await self.async_run_with_timeout(self.data_source.get_new_order_book(trading_pair=self.trading_pair))
         self.assertIsInstance(result, OrderBook)
 
     @aioresponses()
-    def test_get_funding_info_from_exchange_error_response(self, mock_api):
+    async def test_get_funding_info_from_exchange_error_response(self, mock_api):
         url = web_utils.rest_url(
             CONSTANTS.EXCHANGE_INFO_URL, domain=self.domain
         )
@@ -275,14 +274,14 @@ class BitmexPerpetualAPIOrderBookDataSourceUnitTests(unittest.TestCase):
 
         mock_api.get(regex_url, status=400)
         try:
-            self.async_run_with_timeout(self.data_source._get_funding_info_from_exchange(self.trading_pair))
+            await self.async_run_with_timeout(self.data_source._get_funding_info_from_exchange(self.trading_pair))
         except Exception:
             pass
 
         self._is_logged("ERROR", f"Unable to fetch FundingInfo for {self.trading_pair}. Error: None")
 
     @aioresponses()
-    def test_get_funding_info_from_exchange_successful(self, mock_api):
+    async def test_get_funding_info_from_exchange_successful(self, mock_api):
         url = web_utils.rest_url(
             CONSTANTS.EXCHANGE_INFO_URL, domain=self.domain
         )
@@ -296,14 +295,14 @@ class BitmexPerpetualAPIOrderBookDataSourceUnitTests(unittest.TestCase):
         }]
         mock_api.get(regex_url, body=json.dumps(mock_response))
 
-        result = self.async_run_with_timeout(self.data_source._get_funding_info_from_exchange(self.trading_pair))
+        result = await self.async_run_with_timeout(self.data_source._get_funding_info_from_exchange(self.trading_pair))
 
         self.assertIsInstance(result, FundingInfo)
         self.assertEqual(result.trading_pair, self.trading_pair)
         self.assertEqual(result.rate, Decimal(mock_response[0]["fundingRate"]))
 
     @aioresponses()
-    def test_get_funding_info(self, mock_api):
+    async def test_get_funding_info(self, mock_api):
         self.assertNotIn(self.trading_pair, self.data_source._funding_info)
 
         url = web_utils.rest_url(
@@ -319,7 +318,7 @@ class BitmexPerpetualAPIOrderBookDataSourceUnitTests(unittest.TestCase):
         }]
         mock_api.get(regex_url, body=json.dumps(mock_response))
 
-        result = self.async_run_with_timeout(self.data_source.get_funding_info(trading_pair=self.trading_pair))
+        result = await self.async_run_with_timeout(self.data_source.get_funding_info(trading_pair=self.trading_pair))
 
         self.assertIsInstance(result, FundingInfo)
         self.assertEqual(result.trading_pair, self.trading_pair)
@@ -328,17 +327,17 @@ class BitmexPerpetualAPIOrderBookDataSourceUnitTests(unittest.TestCase):
 
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
     @patch("hummingbot.core.data_type.order_book_tracker_data_source.OrderBookTrackerDataSource._sleep")
-    def test_listen_for_subscriptions_cancelled_when_connecting(self, _, mock_ws):
+    async def test_listen_for_subscriptions_cancelled_when_connecting(self, _, mock_ws):
         msg_queue: asyncio.Queue = asyncio.Queue()
         mock_ws.side_effect = asyncio.CancelledError
 
         with self.assertRaises(asyncio.CancelledError):
-            self.listening_task = self.ev_loop.create_task(self.data_source.listen_for_subscriptions())
-            self.async_run_with_timeout(self.listening_task)
+            self.listening_task = asyncio.create_task(self.data_source.listen_for_subscriptions())
+            await self.async_run_with_timeout(self.listening_task)
         self.assertEqual(msg_queue.qsize(), 0)
 
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
-    def test_listen_for_subscriptions_successful(self, mock_ws):
+    async def test_listen_for_subscriptions_successful(self, mock_ws):
         msg_queue_diffs: asyncio.Queue = asyncio.Queue()
         msg_queue_trades: asyncio.Queue = asyncio.Queue()
         mock_ws.return_value = self.mocking_assistant.create_websocket_mock()
@@ -351,16 +350,16 @@ class BitmexPerpetualAPIOrderBookDataSourceUnitTests(unittest.TestCase):
             mock_ws.return_value, json.dumps(self._orderbook_trade_event())
         )
 
-        self.listening_task = self.ev_loop.create_task(self.data_source.listen_for_subscriptions())
-        self.listening_task_diffs = self.ev_loop.create_task(
-            self.data_source.listen_for_order_book_diffs(self.ev_loop, msg_queue_diffs)
+        self.listening_task = asyncio.create_task(self.data_source.listen_for_subscriptions())
+        self.listening_task_diffs = asyncio.create_task(
+            self.data_source.listen_for_order_book_diffs(None, msg_queue_diffs)
         )
-        self.listening_task_trades = self.ev_loop.create_task(
-            self.data_source.listen_for_trades(self.ev_loop, msg_queue_trades)
+        self.listening_task_trades = asyncio.create_task(
+            self.data_source.listen_for_trades(None, msg_queue_trades)
         )
 
         try:
-            result: OrderBookMessage = self.async_run_with_timeout(msg_queue_diffs.get())
+            result: OrderBookMessage = await self.async_run_with_timeout(msg_queue_diffs.get())
         except Exception as e:
             print(e)
 
@@ -371,7 +370,7 @@ class BitmexPerpetualAPIOrderBookDataSourceUnitTests(unittest.TestCase):
         self.assertEqual(0, len(result.content["bids"]))
         self.assertEqual(1, len(result.content["asks"]))
 
-        result: OrderBookMessage = self.async_run_with_timeout(msg_queue_trades.get())
+        result: OrderBookMessage = await self.async_run_with_timeout(msg_queue_trades.get())
 
         self.assertIsInstance(result, OrderBookMessage)
         self.assertEqual(OrderBookMessageType.TRADE, result.type)
@@ -381,7 +380,7 @@ class BitmexPerpetualAPIOrderBookDataSourceUnitTests(unittest.TestCase):
         self.listening_task.cancel()
 
     @aioresponses()
-    def test_listen_for_order_book_snapshots_cancelled_error_raised(self, mock_api):
+    async def test_listen_for_order_book_snapshots_cancelled_error_raised(self, mock_api):
         url = web_utils.rest_url(
             CONSTANTS.SNAPSHOT_REST_URL, domain=self.domain
         )
@@ -392,15 +391,15 @@ class BitmexPerpetualAPIOrderBookDataSourceUnitTests(unittest.TestCase):
         msg_queue: asyncio.Queue = asyncio.Queue()
 
         with self.assertRaises(asyncio.CancelledError):
-            self.listening_task = self.ev_loop.create_task(
-                self.data_source.listen_for_order_book_snapshots(self.ev_loop, msg_queue)
+            self.listening_task = asyncio.create_task(
+                self.data_source.listen_for_order_book_snapshots(None, msg_queue)
             )
-            self.async_run_with_timeout(self.listening_task)
+            await self.async_run_with_timeout(self.listening_task)
 
         self.assertEqual(0, msg_queue.qsize())
 
     @aioresponses()
-    def test_listen_for_order_book_snapshots_logs_exception_error_with_response(self, mock_api):
+    async def test_listen_for_order_book_snapshots_logs_exception_error_with_response(self, mock_api):
         url = web_utils.rest_url(
             CONSTANTS.SNAPSHOT_REST_URL, domain=self.domain
         )
@@ -414,18 +413,18 @@ class BitmexPerpetualAPIOrderBookDataSourceUnitTests(unittest.TestCase):
 
         msg_queue: asyncio.Queue = asyncio.Queue()
 
-        self.listening_task = self.ev_loop.create_task(
-            self.data_source.listen_for_order_book_snapshots(self.ev_loop, msg_queue)
+        self.listening_task = asyncio.create_task(
+            self.data_source.listen_for_order_book_snapshots(None, msg_queue)
         )
 
-        self.async_run_with_timeout(self.resume_test_event.wait())
+        await self.async_run_with_timeout(self.resume_test_event.wait())
 
         self.assertTrue(
             self._is_logged("ERROR", "Unexpected error occurred fetching orderbook snapshots. Retrying in 5 seconds...")
         )
 
     @aioresponses()
-    def test_listen_for_order_book_snapshots_successful(self, mock_api):
+    async def test_listen_for_order_book_snapshots_successful(self, mock_api):
         url = web_utils.rest_url(
             CONSTANTS.SNAPSHOT_REST_URL, domain=self.domain
         )
@@ -440,11 +439,11 @@ class BitmexPerpetualAPIOrderBookDataSourceUnitTests(unittest.TestCase):
         mock_api.get(regex_url, status=200, body=json.dumps(mock_response))
 
         msg_queue: asyncio.Queue = asyncio.Queue()
-        self.listening_task = self.ev_loop.create_task(
-            self.data_source.listen_for_order_book_snapshots(self.ev_loop, msg_queue)
+        self.listening_task = asyncio.create_task(
+            self.data_source.listen_for_order_book_snapshots(None, msg_queue)
         )
 
-        result = self.async_run_with_timeout(msg_queue.get())
+        result = await self.async_run_with_timeout(msg_queue.get())
 
         self.assertIsInstance(result, OrderBookMessage)
         self.assertEqual(OrderBookMessageType.SNAPSHOT, result.type)

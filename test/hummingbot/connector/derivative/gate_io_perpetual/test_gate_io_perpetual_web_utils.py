@@ -7,7 +7,7 @@ from hummingbot.connector.derivative.gate_io_perpetual import (
 from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
-class GateIoPerpetualWebUtilsTest(unittest.TestCase):
+class GateIoPerpetualWebUtilsTest(unittest.IsolatedAsyncioTestCase):
 
     def test_public_rest_url(self):
         url = web_utils.public_rest_url(CONSTANTS.ORDER_BOOK_PATH_URL)

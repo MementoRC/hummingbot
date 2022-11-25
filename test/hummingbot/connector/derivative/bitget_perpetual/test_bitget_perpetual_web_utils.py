@@ -11,10 +11,10 @@ from hummingbot.connector.derivative.bitget_perpetual import (
 )
 
 
-class BitgetPerpetualWebUtilsTest(unittest.TestCase):
+class BitgetPerpetualWebUtilsTest(unittest.IsolatedAsyncioTestCase):
 
-    def async_run_with_timeout(self, coroutine: Awaitable, timeout: float = 1):
-        ret = asyncio.get_event_loop().run_until_complete(asyncio.wait_for(coroutine, timeout))
+    async def async_run_with_timeout(self, coroutine: Awaitable, timeout: float = 1):
+        ret = await asyncio.wait_for(coroutine, timeout)
         return ret
 
     def test_get_rest_url_for_endpoint(self):
@@ -23,7 +23,7 @@ class BitgetPerpetualWebUtilsTest(unittest.TestCase):
         self.assertEqual("https://api.bitget.com/testEndpoint", url)
 
     @aioresponses()
-    def test_get_current_server_time(self, api_mock):
+    async def test_get_current_server_time(self, api_mock):
         url = web_utils.public_rest_url(path_url=CONSTANTS.SERVER_TIME_PATH_URL)
         data = {
             "flag": True,
@@ -31,6 +31,6 @@ class BitgetPerpetualWebUtilsTest(unittest.TestCase):
 
         api_mock.get(url=url, status=400, body=json.dumps(data))
 
-        time = self.async_run_with_timeout(web_utils.get_current_server_time())
+        time = await self.async_run_with_timeout(web_utils.get_current_server_time())
 
         self.assertEqual(data["requestTime"], time)

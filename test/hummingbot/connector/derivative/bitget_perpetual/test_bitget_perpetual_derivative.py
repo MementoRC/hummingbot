@@ -1016,20 +1016,18 @@ class BitgetPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
 
         return all_urls
 
-    def test_create_order_with_invalid_position_action_raises_value_error(self):
+    async def test_create_order_with_invalid_position_action_raises_value_error(self):
         self._simulate_trading_rules_initialized()
 
         with self.assertRaises(ValueError) as exception_context:
-            asyncio.get_event_loop().run_until_complete(
-                self.exchange._create_order(
-                    trade_type=TradeType.BUY,
-                    order_id="C1",
-                    trading_pair=self.trading_pair,
-                    amount=Decimal("1"),
-                    order_type=OrderType.LIMIT,
-                    price=Decimal("46000"),
-                    position_action=PositionAction.NIL,
-                ),
+            await self.exchange._create_order(
+                trade_type=TradeType.BUY,
+                order_id="C1",
+                trading_pair=self.trading_pair,
+                amount=Decimal("1"),
+                order_type=OrderType.LIMIT,
+                price=Decimal("46000"),
+                position_action=PositionAction.NIL,
             )
 
         self.assertEqual(
@@ -1073,7 +1071,7 @@ class BitgetPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         exception = IOError(f"{error_code_str} - Failed to cancel order because it was not found.")
         self.assertFalse(self.exchange._is_request_exception_related_to_time_synchronizer(exception))
 
-    def test_user_stream_empty_position_event_removes_current_position(self):
+    async def test_user_stream_empty_position_event_removes_current_position(self):
         self.exchange._set_current_timestamp(1640780000)
         leverage = 2
         self.exchange._perpetual_trading.set_leverage(self.trading_pair, leverage)
@@ -1119,7 +1117,7 @@ class BitgetPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self.exchange._user_stream_tracker._user_stream = mock_queue
 
         try:
-            self.async_run_with_timeout(self.exchange._user_stream_event_listener())
+            await self.async_run_with_timeout(self.exchange._user_stream_event_listener())
         except asyncio.CancelledError:
             pass
 
@@ -1127,7 +1125,7 @@ class BitgetPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
 
     @aioresponses()
     @patch("asyncio.Queue.get")
-    def test_listen_for_funding_info_update_updates_funding_info(self, mock_api, mock_queue_get):
+    async def test_listen_for_funding_info_update_updates_funding_info(self, mock_api, mock_queue_get):
         rate_regex_url = re.compile(
             f"^{web_utils.get_rest_url_for_endpoint(CONSTANTS.GET_LAST_FUNDING_RATE_PATH_URL)}".replace(".",
                                                                                                         r"\.").replace(
@@ -1158,7 +1156,7 @@ class BitgetPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         mock_queue_get.side_effect = event_messages
 
         try:
-            self.async_run_with_timeout(
+            await self.async_run_with_timeout(
                 self.exchange._listen_for_funding_info())
         except asyncio.CancelledError:
             pass
@@ -1167,7 +1165,7 @@ class BitgetPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
 
     @aioresponses()
     @patch("asyncio.Queue.get")
-    def test_listen_for_funding_info_update_initializes_funding_info(self, mock_api, mock_queue_get):
+    async def test_listen_for_funding_info_update_initializes_funding_info(self, mock_api, mock_queue_get):
         rate_regex_url = re.compile(
             f"^{web_utils.get_rest_url_for_endpoint(CONSTANTS.GET_LAST_FUNDING_RATE_PATH_URL)}".replace(".",
                                                                                                         r"\.").replace(
@@ -1196,7 +1194,7 @@ class BitgetPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         mock_queue_get.side_effect = event_messages
 
         try:
-            self.async_run_with_timeout(self.exchange._listen_for_funding_info())
+            await self.async_run_with_timeout(self.exchange._listen_for_funding_info())
         except asyncio.CancelledError:
             pass
 
@@ -1210,7 +1208,7 @@ class BitgetPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         )
         self.assertEqual(self.target_funding_info_rate, funding_info.rate)
 
-    def test_exchange_symbol_associated_to_pair_without_product_type(self):
+    async def test_exchange_symbol_associated_to_pair_without_product_type(self):
         self.exchange._set_trading_pair_symbol_map(
             bidict({
                 self.exchange_symbol_for_tokens(self.base_asset, self.quote_asset): self.trading_pair,
@@ -1218,29 +1216,29 @@ class BitgetPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
                 "ETHPERP_CMCBL": "ETH-USDC",
             }))
 
-        trading_pair = self.async_run_with_timeout(
+        trading_pair = await self.async_run_with_timeout(
             self.exchange.trading_pair_associated_to_exchange_instrument_id(
                 instrument_id=f"{self.base_asset}{self.quote_asset}"))
         self.assertEqual(self.trading_pair, trading_pair)
 
-        trading_pair = self.async_run_with_timeout(
+        trading_pair = await self.async_run_with_timeout(
             self.exchange.trading_pair_associated_to_exchange_instrument_id(
                 instrument_id="BTCUSD"))
         self.assertEqual("BTC-USD", trading_pair)
 
-        trading_pair = self.async_run_with_timeout(
+        trading_pair = await self.async_run_with_timeout(
             self.exchange.trading_pair_associated_to_exchange_instrument_id(
                 instrument_id="ETHPERP"))
         self.assertEqual("ETH-USDC", trading_pair)
 
         with self.assertRaises(ValueError) as context:
-            self.async_run_with_timeout(
+            await self.async_run_with_timeout(
                 self.exchange.trading_pair_associated_to_exchange_instrument_id(
                     instrument_id="XMRPERP"))
         self.assertEqual("No trading pair associated to instrument ID XMRPERP", str(context.exception))
 
     @aioresponses()
-    def test_update_trading_fees(self, mock_api):
+    async def test_update_trading_fees(self, mock_api):
         self.exchange._set_trading_pair_symbol_map(
             bidict(
                 {
@@ -1255,7 +1253,7 @@ class BitgetPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         url = urls[0]
         resp = self.all_symbols_request_mock_response
 
-        self.async_run_with_timeout(self.exchange._update_trading_fees())
+        await self.async_run_with_timeout(self.exchange._update_trading_fees())
 
         fees_request = self._all_executed_requests(mock_api, url)[0]
         request_params = fees_request.kwargs["params"]
@@ -1268,7 +1266,7 @@ class BitgetPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
 
         self.assertEqual(expected_trading_fees, self.exchange._trading_fees[self.trading_pair])
 
-    def test_collateral_token_balance_updated_when_processing_order_creation_update(self):
+    async def test_collateral_token_balance_updated_when_processing_order_creation_update(self):
         self.exchange._set_current_timestamp(1640780000)
         self.exchange._account_balances[self.quote_asset] = Decimal(10_000)
         self.exchange._account_available_balances[self.quote_asset] = Decimal(10_000)
@@ -1308,14 +1306,14 @@ class BitgetPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self.exchange._user_stream_tracker._user_stream = mock_queue
 
         try:
-            self.async_run_with_timeout(self.exchange._user_stream_event_listener())
+            await self.async_run_with_timeout(self.exchange._user_stream_event_listener())
         except asyncio.CancelledError:
             pass
 
         self.assertEqual(Decimal(9_000), self.exchange.available_balances[self.quote_asset])
         self.assertEqual(Decimal(10_000), self.exchange.get_balance(self.quote_asset))
 
-    def test_collateral_token_balance_updated_when_processing_order_cancelation_update(self):
+    async def test_collateral_token_balance_updated_when_processing_order_cancelation_update(self):
         self.exchange._set_current_timestamp(1640780000)
         self.exchange._account_balances[self.quote_asset] = Decimal(10_000)
         self.exchange._account_available_balances[self.quote_asset] = Decimal(9_000)
@@ -1355,14 +1353,14 @@ class BitgetPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self.exchange._user_stream_tracker._user_stream = mock_queue
 
         try:
-            self.async_run_with_timeout(self.exchange._user_stream_event_listener())
+            await self.async_run_with_timeout(self.exchange._user_stream_event_listener())
         except asyncio.CancelledError:
             pass
 
         self.assertEqual(Decimal(10_000), self.exchange.available_balances[self.quote_asset])
         self.assertEqual(Decimal(10_000), self.exchange.get_balance(self.quote_asset))
 
-    def test_collateral_token_balance_updated_when_processing_order_creation_update_considering_leverage(self):
+    async def test_collateral_token_balance_updated_when_processing_order_creation_update_considering_leverage(self):
         self.exchange._set_current_timestamp(1640780000)
         self.exchange._account_balances[self.quote_asset] = Decimal(10_000)
         self.exchange._account_available_balances[self.quote_asset] = Decimal(10_000)
@@ -1402,14 +1400,14 @@ class BitgetPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self.exchange._user_stream_tracker._user_stream = mock_queue
 
         try:
-            self.async_run_with_timeout(self.exchange._user_stream_event_listener())
+            await self.async_run_with_timeout(self.exchange._user_stream_event_listener())
         except asyncio.CancelledError:
             pass
 
         self.assertEqual(Decimal(9_900), self.exchange.available_balances[self.quote_asset])
         self.assertEqual(Decimal(10_000), self.exchange.get_balance(self.quote_asset))
 
-    def test_collateral_token_balance_not_updated_for_order_creation_event_to_not_open_position(self):
+    async def test_collateral_token_balance_not_updated_for_order_creation_event_to_not_open_position(self):
         self.exchange._set_current_timestamp(1640780000)
         self.exchange._account_balances[self.quote_asset] = Decimal(10_000)
         self.exchange._account_available_balances[self.quote_asset] = Decimal(10_000)
@@ -1449,7 +1447,7 @@ class BitgetPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self.exchange._user_stream_tracker._user_stream = mock_queue
 
         try:
-            self.async_run_with_timeout(self.exchange._user_stream_event_listener())
+            await self.async_run_with_timeout(self.exchange._user_stream_event_listener())
         except asyncio.CancelledError:
             pass
 
@@ -1457,7 +1455,7 @@ class BitgetPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self.assertEqual(Decimal(10_000), self.exchange.get_balance(self.quote_asset))
 
     @aioresponses()
-    def test_update_balances_for_tokens_in_several_product_type_markets(self, mock_api):
+    async def test_update_balances_for_tokens_in_several_product_type_markets(self, mock_api):
         self.exchange._trading_pairs = []
         url = self.balance_url + f"?productType={CONSTANTS.USDT_PRODUCT_TYPE.lower()}"
         response = self.balance_request_mock_response_for_base_and_quote
@@ -1493,7 +1491,7 @@ class BitgetPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         }
         mock_api.get(url, body=json.dumps(response))
 
-        self.async_run_with_timeout(self.exchange._update_balances())
+        await self.async_run_with_timeout(self.exchange._update_balances())
 
         available_balances = self.exchange.available_balances
         total_balances = self.exchange.get_all_balances()
@@ -1506,7 +1504,7 @@ class BitgetPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         response = self.balance_request_mock_response_only_base
 
         self._configure_balance_response(response=response, mock_api=mock_api)
-        self.async_run_with_timeout(self.exchange._update_balances())
+        await self.async_run_with_timeout(self.exchange._update_balances())
 
         available_balances = self.exchange.available_balances
         total_balances = self.exchange.get_all_balances()

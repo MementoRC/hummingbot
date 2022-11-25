@@ -3,7 +3,7 @@ import json
 import re
 from decimal import Decimal
 from typing import Awaitable, Dict
-from unittest import TestCase
+from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses import aioresponses
@@ -22,14 +22,13 @@ from hummingbot.core.data_type.funding_info import FundingInfo
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 
 
-class GateIoPerpetualAPIOrderBookDataSourceTests(TestCase):
+class GateIoPerpetualAPIOrderBookDataSourceTests(IsolatedAsyncioTestCase):
     # logging.Level required to receive logs from the data source logger
     level = 0
 
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
-        cls.ev_loop = asyncio.get_event_loop()
         cls.base_asset = "BTC"
         cls.quote_asset = "USDT"
         cls.trading_pair = f"{cls.base_asset}-{cls.quote_asset}"
@@ -82,8 +81,8 @@ class GateIoPerpetualAPIOrderBookDataSourceTests(TestCase):
         self.resume_test_event.set()
         raise exception
 
-    def async_run_with_timeout(self, coroutine: Awaitable, timeout: float = 1):
-        ret = self.ev_loop.run_until_complete(asyncio.wait_for(coroutine, timeout))
+    async def async_run_with_timeout(self, coroutine: Awaitable, timeout: float = 1):
+        ret = await asyncio.wait_for(coroutine, timeout)
         return ret
 
     def get_rest_snapshot_msg(self) -> Dict:
@@ -264,14 +263,14 @@ class GateIoPerpetualAPIOrderBookDataSourceTests(TestCase):
         }
 
     @aioresponses()
-    def test_get_new_order_book_successful(self, mock_api):
+    async def test_get_new_order_book_successful(self, mock_api):
         endpoint = CONSTANTS.ORDER_BOOK_PATH_URL
         url = web_utils.public_rest_url(endpoint)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
         resp = self.get_rest_snapshot_msg()
         mock_api.get(regex_url, body=json.dumps(resp))
 
-        order_book = self.async_run_with_timeout(
+        order_book = await self.async_run_with_timeout(
             self.data_source.get_new_order_book(self.trading_pair)
         )
 
@@ -286,19 +285,19 @@ class GateIoPerpetualAPIOrderBookDataSourceTests(TestCase):
         self.assertEqual(100, asks[0].amount)
 
     @aioresponses()
-    def test_get_new_order_book_raises_exception(self, mock_api):
+    async def test_get_new_order_book_raises_exception(self, mock_api):
         endpoint = CONSTANTS.ORDER_BOOK_PATH_URL
         url = web_utils.public_rest_url(endpoint)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
 
         mock_api.get(regex_url, status=400)
         with self.assertRaises(IOError):
-            self.async_run_with_timeout(
+            await self.async_run_with_timeout(
                 self.data_source.get_new_order_book(self.trading_pair)
             )
 
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
-    def test_listen_for_subscriptions_subscribes_to_trades_diffs_and_orderbooks(self, ws_connect_mock):
+    async def test_listen_for_subscriptions_subscribes_to_trades_diffs_and_orderbooks(self, ws_connect_mock):
         ws_connect_mock.return_value = self.mocking_assistant.create_websocket_mock()
 
         result_subscribe_diffs = self.get_ws_snapshot_msg()
@@ -307,9 +306,9 @@ class GateIoPerpetualAPIOrderBookDataSourceTests(TestCase):
             websocket_mock=ws_connect_mock.return_value,
             message=json.dumps(result_subscribe_diffs),
         )
-        self.listening_task = self.ev_loop.create_task(self.data_source.listen_for_subscriptions())
+        self.listening_task = asyncio.create_task(self.data_source.listen_for_subscriptions())
 
-        self.mocking_assistant.run_until_all_aiohttp_messages_delivered(ws_connect_mock.return_value)
+        await self.mocking_assistant.async_run_until_all_aiohttp_messages_delivered(ws_connect_mock.return_value)
 
         sent_subscription_messages = self.mocking_assistant.json_messages_sent_through_websocket(
             websocket_mock=ws_connect_mock.return_value
@@ -331,22 +330,22 @@ class GateIoPerpetualAPIOrderBookDataSourceTests(TestCase):
 
     @patch("hummingbot.core.data_type.order_book_tracker_data_source.OrderBookTrackerDataSource._sleep")
     @patch("aiohttp.ClientSession.ws_connect")
-    def test_listen_for_subscriptions_raises_cancel_exception(self, mock_ws, _: AsyncMock):
+    async def test_listen_for_subscriptions_raises_cancel_exception(self, mock_ws, _: AsyncMock):
         mock_ws.side_effect = asyncio.CancelledError
 
         with self.assertRaises(asyncio.CancelledError):
-            self.listening_task = self.ev_loop.create_task(self.data_source.listen_for_subscriptions())
-            self.async_run_with_timeout(self.listening_task)
+            self.listening_task = asyncio.create_task(self.data_source.listen_for_subscriptions())
+            await self.async_run_with_timeout(self.listening_task)
 
     @patch("hummingbot.core.data_type.order_book_tracker_data_source.OrderBookTrackerDataSource._sleep")
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
-    def test_listen_for_subscriptions_logs_exception_details(self, mock_ws, sleep_mock):
+    async def test_listen_for_subscriptions_logs_exception_details(self, mock_ws, sleep_mock):
         mock_ws.side_effect = Exception("TEST ERROR.")
         sleep_mock.side_effect = lambda _: self._create_exception_and_unlock_test_with_event(asyncio.CancelledError())
 
-        self.listening_task = self.ev_loop.create_task(self.data_source.listen_for_subscriptions())
+        self.listening_task = asyncio.create_task(self.data_source.listen_for_subscriptions())
 
-        self.async_run_with_timeout(self.resume_test_event.wait())
+        await self.async_run_with_timeout(self.resume_test_event.wait())
 
         self.assertTrue(
             self._is_logged(
@@ -355,31 +354,31 @@ class GateIoPerpetualAPIOrderBookDataSourceTests(TestCase):
             )
         )
 
-    def test_subscribe_to_channels_raises_cancel_exception(self):
+    async def test_subscribe_to_channels_raises_cancel_exception(self):
         mock_ws = MagicMock()
         mock_ws.send.side_effect = asyncio.CancelledError
 
         with self.assertRaises(asyncio.CancelledError):
-            self.listening_task = self.ev_loop.create_task(
+            self.listening_task = asyncio.create_task(
                 self.data_source._subscribe_channels(mock_ws)
             )
-            self.async_run_with_timeout(self.listening_task)
+            await self.async_run_with_timeout(self.listening_task)
 
-    def test_subscribe_to_channels_raises_exception_and_logs_error(self):
+    async def test_subscribe_to_channels_raises_exception_and_logs_error(self):
         mock_ws = MagicMock()
         mock_ws.send.side_effect = Exception("Test Error")
 
         with self.assertRaises(Exception):
-            self.listening_task = self.ev_loop.create_task(
+            self.listening_task = asyncio.create_task(
                 self.data_source._subscribe_channels(mock_ws)
             )
-            self.async_run_with_timeout(self.listening_task)
+            await self.async_run_with_timeout(self.listening_task)
 
         self.assertTrue(
             self._is_logged("ERROR", "Unexpected error occurred subscribing to order book data streams.")
         )
 
-    def test_listen_for_trades_cancelled_when_listening(self):
+    async def test_listen_for_trades_cancelled_when_listening(self):
         mock_queue = MagicMock()
         mock_queue.get.side_effect = asyncio.CancelledError()
         self.data_source._message_queue[self.data_source._trade_messages_queue_key] = mock_queue
@@ -387,12 +386,12 @@ class GateIoPerpetualAPIOrderBookDataSourceTests(TestCase):
         msg_queue: asyncio.Queue = asyncio.Queue()
 
         with self.assertRaises(asyncio.CancelledError):
-            self.listening_task = self.ev_loop.create_task(
-                self.data_source.listen_for_trades(self.ev_loop, msg_queue)
+            self.listening_task = asyncio.create_task(
+                self.data_source.listen_for_trades(None, msg_queue)
             )
-            self.async_run_with_timeout(self.listening_task)
+            await self.async_run_with_timeout(self.listening_task)
 
-    def test_listen_for_trades_logs_exception(self):
+    async def test_listen_for_trades_logs_exception(self):
         incomplete_resp = {
             "channel": "futures.trades",
             "event": "update",
@@ -415,19 +414,19 @@ class GateIoPerpetualAPIOrderBookDataSourceTests(TestCase):
 
         msg_queue: asyncio.Queue = asyncio.Queue()
 
-        self.listening_task = self.ev_loop.create_task(
-            self.data_source.listen_for_trades(self.ev_loop, msg_queue)
+        self.listening_task = asyncio.create_task(
+            self.data_source.listen_for_trades(None, msg_queue)
         )
 
         try:
-            self.async_run_with_timeout(self.listening_task)
+            await self.async_run_with_timeout(self.listening_task)
         except asyncio.CancelledError:
             pass
 
         self.assertTrue(
             self._is_logged("ERROR", "Unexpected error when processing public trade updates from exchange"))
 
-    def test_listen_for_trades_successful(self):
+    async def test_listen_for_trades_successful(self):
         mock_queue = AsyncMock()
         trade_event = {
             "channel": "futures.trades",
@@ -449,16 +448,16 @@ class GateIoPerpetualAPIOrderBookDataSourceTests(TestCase):
 
         msg_queue: asyncio.Queue = asyncio.Queue()
 
-        self.listening_task = self.ev_loop.create_task(
-            self.data_source.listen_for_trades(self.ev_loop, msg_queue))
+        self.listening_task = asyncio.create_task(
+            self.data_source.listen_for_trades(None, msg_queue))
 
-        msg: OrderBookMessage = self.async_run_with_timeout(msg_queue.get())
+        msg: OrderBookMessage = await self.async_run_with_timeout(msg_queue.get())
 
         self.assertEqual(OrderBookMessageType.TRADE, msg.type)
         self.assertEqual(trade_event["result"][0]["id"], msg.trade_id)
         self.assertEqual(trade_event["result"][0]["create_time"], msg.timestamp)
 
-    def test_listen_for_order_book_diffs_cancelled(self):
+    async def test_listen_for_order_book_diffs_cancelled(self):
         mock_queue = AsyncMock()
         mock_queue.get.side_effect = asyncio.CancelledError()
         self.data_source._message_queue[self.data_source._diff_messages_queue_key] = mock_queue
@@ -466,12 +465,12 @@ class GateIoPerpetualAPIOrderBookDataSourceTests(TestCase):
         msg_queue: asyncio.Queue = asyncio.Queue()
 
         with self.assertRaises(asyncio.CancelledError):
-            self.listening_task = self.ev_loop.create_task(
-                self.data_source.listen_for_order_book_diffs(self.ev_loop, msg_queue)
+            self.listening_task = asyncio.create_task(
+                self.data_source.listen_for_order_book_diffs(None, msg_queue)
             )
-            self.async_run_with_timeout(self.listening_task)
+            await self.async_run_with_timeout(self.listening_task)
 
-    def test_listen_for_order_book_diffs_logs_exception(self):
+    async def test_listen_for_order_book_diffs_logs_exception(self):
         incomplete_resp = self.get_ws_diff_msg()
         del incomplete_resp["result"]["u"]
 
@@ -481,19 +480,19 @@ class GateIoPerpetualAPIOrderBookDataSourceTests(TestCase):
 
         msg_queue: asyncio.Queue = asyncio.Queue()
 
-        self.listening_task = self.ev_loop.create_task(
-            self.data_source.listen_for_order_book_diffs(self.ev_loop, msg_queue)
+        self.listening_task = asyncio.create_task(
+            self.data_source.listen_for_order_book_diffs(None, msg_queue)
         )
 
         try:
-            self.async_run_with_timeout(self.listening_task)
+            await self.async_run_with_timeout(self.listening_task)
         except asyncio.CancelledError:
             pass
 
         self.assertTrue(
             self._is_logged("ERROR", "Unexpected error when processing public order book updates from exchange"))
 
-    def test_listen_for_order_book_diffs_successful(self):
+    async def test_listen_for_order_book_diffs_successful(self):
         mock_queue = AsyncMock()
         diff_event = self.get_ws_diff_msg()
         mock_queue.get.side_effect = [diff_event, asyncio.CancelledError()]
@@ -501,10 +500,10 @@ class GateIoPerpetualAPIOrderBookDataSourceTests(TestCase):
 
         msg_queue: asyncio.Queue = asyncio.Queue()
 
-        self.listening_task = self.ev_loop.create_task(
-            self.data_source.listen_for_order_book_diffs(self.ev_loop, msg_queue))
+        self.listening_task = asyncio.create_task(
+            self.data_source.listen_for_order_book_diffs(None, msg_queue))
 
-        msg: OrderBookMessage = self.async_run_with_timeout(msg_queue.get())
+        msg: OrderBookMessage = await self.async_run_with_timeout(msg_queue.get())
 
         self.assertEqual(OrderBookMessageType.DIFF, msg.type)
         self.assertEqual(-1, msg.trade_id)
@@ -521,7 +520,7 @@ class GateIoPerpetualAPIOrderBookDataSourceTests(TestCase):
         self.assertEqual(0, asks[0].amount)
 
     @aioresponses()
-    def test_listen_for_order_book_snapshots_cancelled_when_fetching_snapshot(self, mock_api):
+    async def test_listen_for_order_book_snapshots_cancelled_when_fetching_snapshot(self, mock_api):
         endpoint = CONSTANTS.ORDER_BOOK_PATH_URL
         url = web_utils.public_rest_url(
             endpoint=endpoint)
@@ -530,13 +529,13 @@ class GateIoPerpetualAPIOrderBookDataSourceTests(TestCase):
         mock_api.get(regex_url, exception=asyncio.CancelledError)
 
         with self.assertRaises(asyncio.CancelledError):
-            self.async_run_with_timeout(
-                self.data_source.listen_for_order_book_snapshots(self.ev_loop, asyncio.Queue())
+            await self.async_run_with_timeout(
+                self.data_source.listen_for_order_book_snapshots(None, asyncio.Queue())
             )
 
     @aioresponses()
     @patch("hummingbot.core.data_type.order_book_tracker_data_source.OrderBookTrackerDataSource._sleep")
-    def test_listen_for_order_book_snapshots_log_exception(self, mock_api, sleep_mock):
+    async def test_listen_for_order_book_snapshots_log_exception(self, mock_api, sleep_mock):
         msg_queue: asyncio.Queue = asyncio.Queue()
         sleep_mock.side_effect = lambda _: self._create_exception_and_unlock_test_with_event(asyncio.CancelledError())
 
@@ -547,17 +546,17 @@ class GateIoPerpetualAPIOrderBookDataSourceTests(TestCase):
 
         mock_api.get(regex_url, exception=Exception)
 
-        self.listening_task = self.ev_loop.create_task(
-            self.data_source.listen_for_order_book_snapshots(self.ev_loop, msg_queue)
+        self.listening_task = asyncio.create_task(
+            self.data_source.listen_for_order_book_snapshots(None, msg_queue)
         )
-        self.async_run_with_timeout(self.resume_test_event.wait())
+        await self.async_run_with_timeout(self.resume_test_event.wait())
 
         self.assertTrue(
             self._is_logged("ERROR", f"Unexpected error fetching order book snapshot for {self.trading_pair}.")
         )
 
     @aioresponses()
-    def test_listen_for_order_book_snapshots_successful(self, mock_api):
+    async def test_listen_for_order_book_snapshots_successful(self, mock_api):
         msg_queue: asyncio.Queue = asyncio.Queue()
         endpoint = CONSTANTS.ORDER_BOOK_PATH_URL
         url = web_utils.public_rest_url(
@@ -568,11 +567,11 @@ class GateIoPerpetualAPIOrderBookDataSourceTests(TestCase):
 
         mock_api.get(regex_url, body=json.dumps(resp))
 
-        self.listening_task = self.ev_loop.create_task(
-            self.data_source.listen_for_order_book_snapshots(self.ev_loop, msg_queue)
+        self.listening_task = asyncio.create_task(
+            self.data_source.listen_for_order_book_snapshots(None, msg_queue)
         )
 
-        msg: OrderBookMessage = self.async_run_with_timeout(msg_queue.get())
+        msg: OrderBookMessage = await self.async_run_with_timeout(msg_queue.get())
 
         self.assertEqual(OrderBookMessageType.SNAPSHOT, msg.type)
         self.assertEqual(-1, msg.trade_id)
@@ -589,14 +588,14 @@ class GateIoPerpetualAPIOrderBookDataSourceTests(TestCase):
         self.assertEqual(100, asks[0].amount)
 
     @aioresponses()
-    def test_get_funding_info(self, mock_api):
+    async def test_get_funding_info(self, mock_api):
         endpoint = CONSTANTS.MARK_PRICE_URL.format(id=self.ex_trading_pair)
         url = web_utils.public_rest_url(endpoint)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
         resp = self.get_funding_info_rest_msg()
         mock_api.get(regex_url, body=json.dumps(resp))
 
-        funding_info: FundingInfo = self.async_run_with_timeout(
+        funding_info: FundingInfo = await self.async_run_with_timeout(
             self.data_source.get_funding_info(self.trading_pair)
         )
         msg_result = resp

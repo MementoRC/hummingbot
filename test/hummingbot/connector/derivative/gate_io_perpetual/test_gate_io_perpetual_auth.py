@@ -30,7 +30,7 @@ class GateIoPerpetualAuthTests(TestCase):
 
     @patch(
         "hummingbot.connector.derivative.gate_io_perpetual.gate_io_perpetual_auth.GateIoPerpetualAuth._get_timestamp")
-    def test_add_auth_to_rest_request(self, ts_mock: MagicMock):
+    async def test_add_auth_to_rest_request(self, ts_mock: MagicMock):
         params = {"one": "1"}
         request = RESTRequest(
             method=RESTMethod.GET,
@@ -41,7 +41,7 @@ class GateIoPerpetualAuthTests(TestCase):
         timestamp = self._get_timestamp()
         ts_mock.return_value = timestamp
 
-        self.async_run_with_timeout(self.auth.rest_authenticate(request))
+        await self.async_run_with_timeout(self.auth.rest_authenticate(request))
         m = hashlib.sha512()
         body_hash = m.hexdigest()
 
@@ -71,7 +71,7 @@ class GateIoPerpetualAuthTests(TestCase):
         request = WSJSONRequest(payload=payload, is_auth_required=False)
         self.assertNotIn("auth", request.payload)
 
-    def test_ws_authenticate(self):
+    async def test_ws_authenticate(self):
         request: WSJSONRequest = WSJSONRequest(
             payload={
                 "time": 1611541000,
@@ -84,6 +84,6 @@ class GateIoPerpetualAuthTests(TestCase):
             }, is_auth_required=True
         )
 
-        signed_request: WSJSONRequest = self.async_run_with_timeout(self.auth.ws_authenticate(request))
+        signed_request: WSJSONRequest = await self.async_run_with_timeout(self.auth.ws_authenticate(request))
 
         self.assertEqual(request, signed_request)

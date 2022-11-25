@@ -30,7 +30,7 @@ from hummingbot.core.event.event_logger import EventLogger
 from hummingbot.core.event.events import MarketEvent, OrderFilledEvent
 
 
-class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
+class BitmexPerpetualDerivativeUnitTest(unittest.IsolatedAsyncioTestCase):
     # the level is required to receive logs from the data source logger
     level = 0
 
@@ -45,7 +45,6 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
         cls.symbol = f"{cls.base_asset}{cls.quote_asset}"
         cls.domain = CONSTANTS.TESTNET_DOMAIN
         cls.listen_key = "TEST_LISTEN_KEY"
-        cls.ev_loop = asyncio.get_event_loop()
         utils.TRADING_PAIR_SIZE_CURRENCY["COINALPHAHBOT"] = utils.TRADING_PAIR_SIZE("COINALPHA", True, 1)
         utils.TRADING_PAIR_SIZE_CURRENCY["XBTUSD"] = utils.TRADING_PAIR_SIZE("USD", False, None)
 
@@ -122,8 +121,8 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
         self.resume_test_event.set()
         raise exception
 
-    def async_run_with_timeout(self, coroutine: Awaitable, timeout: float = 1):
-        ret = self.ev_loop.run_until_complete(asyncio.wait_for(coroutine, timeout))
+    async def async_run_with_timeout(self, coroutine: Awaitable, timeout: float = 1):
+        ret = await asyncio.wait_for(coroutine, timeout)
         return ret
 
     def _return_calculation_and_set_done_event(self, calculation: Callable, *args, **kwargs):
@@ -235,15 +234,15 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
         positions = self._get_position_risk_api_endpoint_single_position_list()
         req_mock.get(regex_url, body=json.dumps(positions))
 
-        task = self.ev_loop.create_task(self.exchange._update_positions())
-        self.async_run_with_timeout(task)
+        task = asyncio.create_task(self.exchange._update_positions())
+        await self.async_run_with_timeout(task)
 
         self.assertEqual(len(self.exchange.account_positions), 1)
         pos = list(self.exchange.account_positions.values())[0]
         self.assertEqual(pos.trading_pair.replace("-", ""), self.symbol)
 
     @aioresponses()
-    def test_account_position_updated_on_positions_update(self, req_mock):
+    async def test_account_position_updated_on_positions_update(self, req_mock):
         url = web_utils.rest_url(
             CONSTANTS.POSITION_INFORMATION_URL, domain=self.domain
         )
@@ -252,8 +251,8 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
         positions = self._get_position_risk_api_endpoint_single_position_list()
         req_mock.get(regex_url, body=json.dumps(positions))
 
-        task = self.ev_loop.create_task(self.exchange._update_positions())
-        self.async_run_with_timeout(task)
+        task = asyncio.create_task(self.exchange._update_positions())
+        await self.async_run_with_timeout(task)
 
         self.assertEqual(len(self.exchange.account_positions), 1)
         pos = list(self.exchange.account_positions.values())[0]
@@ -261,14 +260,14 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
 
         positions[0]["currentQty"] = "2"
         req_mock.get(regex_url, body=json.dumps(positions))
-        task = self.ev_loop.create_task(self.exchange._update_positions())
-        self.async_run_with_timeout(task)
+        task = asyncio.create_task(self.exchange._update_positions())
+        await self.async_run_with_timeout(task)
 
         pos = list(self.exchange.account_positions.values())[0]
         self.assertEqual(pos.amount, 2)
 
     @aioresponses()
-    def test_new_account_position_detected_on_positions_update(self, req_mock):
+    async def test_new_account_position_detected_on_positions_update(self, req_mock):
         url = web_utils.rest_url(
             CONSTANTS.POSITION_INFORMATION_URL, domain=self.domain
         )
@@ -277,20 +276,20 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
         positions = self._get_position_risk_api_endpoint_single_position_closed_list()
         req_mock.get(regex_url, body=json.dumps(positions))
 
-        task = self.ev_loop.create_task(self.exchange._update_positions())
-        self.async_run_with_timeout(task)
+        task = asyncio.create_task(self.exchange._update_positions())
+        await self.async_run_with_timeout(task)
 
         self.assertEqual(len(self.exchange.account_positions), 0)
 
         positions = self._get_position_risk_api_endpoint_single_position_list()
         req_mock.get(regex_url, body=json.dumps(positions))
-        task = self.ev_loop.create_task(self.exchange._update_positions())
-        self.async_run_with_timeout(task)
+        task = asyncio.create_task(self.exchange._update_positions())
+        await self.async_run_with_timeout(task)
 
         self.assertEqual(len(self.exchange.account_positions), 1)
 
     @aioresponses()
-    def test_closed_account_position_removed_on_positions_update(self, req_mock):
+    async def test_closed_account_position_removed_on_positions_update(self, req_mock):
         url = web_utils.rest_url(
             CONSTANTS.POSITION_INFORMATION_URL, domain=self.domain
         )
@@ -299,23 +298,23 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
         positions = self._get_position_risk_api_endpoint_single_position_list()
         req_mock.get(regex_url, body=json.dumps(positions))
 
-        task = self.ev_loop.create_task(self.exchange._update_positions())
-        self.async_run_with_timeout(task)
+        task = asyncio.create_task(self.exchange._update_positions())
+        await self.async_run_with_timeout(task)
 
         self.assertEqual(len(self.exchange.account_positions), 1)
 
         positions[0]["currentQty"] = "0"
         req_mock.get(regex_url, body=json.dumps(positions))
-        task = self.ev_loop.create_task(self.exchange._update_positions())
-        self.async_run_with_timeout(task)
+        task = asyncio.create_task(self.exchange._update_positions())
+        await self.async_run_with_timeout(task)
 
         self.assertEqual(len(self.exchange.account_positions), 0)
 
     @aioresponses()
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
-    def test_new_account_position_detected_on_stream_event(self, mock_api, ws_connect_mock):
+    async def test_new_account_position_detected_on_stream_event(self, mock_api, ws_connect_mock):
         ws_connect_mock.return_value = self.mocking_assistant.create_websocket_mock()
-        self.ev_loop.create_task(self.exchange._user_stream_tracker.start())
+        asyncio.create_task(self.exchange._user_stream_tracker.start())
 
         self.assertEqual(len(self.exchange.account_positions), 0)
 
@@ -329,14 +328,14 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
         positions = self._get_position_risk_api_endpoint_single_position_list()
         mock_api.get(regex_url, body=json.dumps(positions))
 
-        self.ev_loop.create_task(self.exchange._user_stream_event_listener())
-        self.mocking_assistant.run_until_all_aiohttp_messages_delivered(ws_connect_mock.return_value)
+        asyncio.create_task(self.exchange._user_stream_event_listener())
+        await self.mocking_assistant.async_run_until_all_aiohttp_messages_delivered(ws_connect_mock.return_value)
 
         self.assertEqual(len(self.exchange.account_positions), 1)
 
     @aioresponses()
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
-    def test_account_position_updated_on_stream_event(self, mock_api, ws_connect_mock):
+    async def test_account_position_updated_on_stream_event(self, mock_api, ws_connect_mock):
         url = web_utils.rest_url(
             CONSTANTS.POSITION_INFORMATION_URL, domain=self.domain
         )
@@ -344,11 +343,11 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
         positions = self._get_position_risk_api_endpoint_single_position_list()
         mock_api.get(regex_url, body=json.dumps(positions))
 
-        task = self.ev_loop.create_task(self.exchange._update_positions())
-        self.async_run_with_timeout(task)
+        task = asyncio.create_task(self.exchange._update_positions())
+        await self.async_run_with_timeout(task)
 
         ws_connect_mock.return_value = self.mocking_assistant.create_websocket_mock()
-        self.ev_loop.create_task(self.exchange._user_stream_tracker.start())
+        asyncio.create_task(self.exchange._user_stream_tracker.start())
 
         self.assertEqual(len(self.exchange.account_positions), 1)
         pos = list(self.exchange.account_positions.values())[0]
@@ -358,8 +357,8 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
         account_update["data"][0]["currentQty"] = 2
         self.mocking_assistant.add_websocket_aiohttp_message(ws_connect_mock.return_value, json.dumps(account_update))
 
-        self.ev_loop.create_task(self.exchange._user_stream_event_listener())
-        self.mocking_assistant.run_until_all_aiohttp_messages_delivered(ws_connect_mock.return_value)
+        asyncio.create_task(self.exchange._user_stream_event_listener())
+        await self.mocking_assistant.async_run_until_all_aiohttp_messages_delivered(ws_connect_mock.return_value)
 
         self.assertEqual(len(self.exchange.account_positions), 1)
         pos = list(self.exchange.account_positions.values())[0]
@@ -367,7 +366,7 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
 
     @aioresponses()
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
-    def test_closed_account_position_removed_on_stream_event(self, mock_api, ws_connect_mock):
+    async def test_closed_account_position_removed_on_stream_event(self, mock_api, ws_connect_mock):
         url = web_utils.rest_url(
             CONSTANTS.POSITION_INFORMATION_URL, domain=self.domain
         )
@@ -375,12 +374,12 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
         positions = self._get_position_risk_api_endpoint_single_position_list()
         mock_api.get(regex_url, body=json.dumps(positions))
 
-        task = self.ev_loop.create_task(self.exchange._update_positions())
-        self.async_run_with_timeout(task)
+        task = asyncio.create_task(self.exchange._update_positions())
+        await self.async_run_with_timeout(task)
 
         ws_connect_mock.return_value = self.mocking_assistant.create_websocket_mock()
 
-        self.ev_loop.create_task(self.exchange._user_stream_tracker.start())
+        asyncio.create_task(self.exchange._user_stream_tracker.start())
 
         self.assertEqual(len(self.exchange.account_positions), 1)
 
@@ -388,8 +387,8 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
         account_update["data"][0]["currentQty"] = 0
         self.mocking_assistant.add_websocket_aiohttp_message(ws_connect_mock.return_value, json.dumps(account_update))
 
-        self.ev_loop.create_task(self.exchange._user_stream_event_listener())
-        self.mocking_assistant.run_until_all_aiohttp_messages_delivered(ws_connect_mock.return_value)
+        asyncio.create_task(self.exchange._user_stream_event_listener())
+        await self.mocking_assistant.async_run_until_all_aiohttp_messages_delivered(ws_connect_mock.return_value)
 
         self.assertEqual(len(self.exchange.account_positions), 0)
 
@@ -402,7 +401,7 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
         self.assertEqual(PositionMode.ONEWAY, self.exchange.position_mode)
 
     @aioresponses()
-    def test_update_trading_rules(self, mock_api):
+    async def test_update_trading_rules(self, mock_api):
         self.exchange._trading_pairs.append("XBT-USD")
         url = web_utils.rest_url(
             CONSTANTS.EXCHANGE_INFO_URL, domain=self.domain
@@ -452,7 +451,7 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
             }
         ]
         mock_api.get(regex_url_3, body=json.dumps(mock_response_3))
-        self.async_run_with_timeout(self.exchange._update_trading_rules())
+        await self.async_run_with_timeout(self.exchange._update_trading_rules())
         self.assertTrue(len(self.exchange._trading_rules) > 0)
         quant_amount = self.exchange.quantize_order_amount('XBT-USD', Decimal('0.00001'), Decimal('10000'))
         self.assertEqual(quant_amount, Decimal('0'))
@@ -462,15 +461,15 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
         self.assertEqual(quant_amount, Decimal('0'))
         self.exchange._trading_pairs.remove("XBT-USD")
 
-    def test_format_trading_rules(self):
+    async def test_format_trading_rules(self):
         margin_asset = self.quote_asset
         min_order_size = 1
         min_price_increment = 2
         min_base_amount_increment = 1
         mocked_response = self._get_exchange_info_mock_response()
 
-        task = self.ev_loop.create_task(self.exchange._format_trading_rules(mocked_response))
-        trading_rules = self.async_run_with_timeout(task)
+        task = asyncio.create_task(self.exchange._format_trading_rules(mocked_response))
+        trading_rules = await self.async_run_with_timeout(task)
 
         self.assertEqual(1, len(trading_rules))
 
@@ -482,17 +481,17 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
         self.assertEqual(margin_asset, trading_rule.buy_order_collateral_token)
         self.assertEqual(margin_asset, trading_rule.sell_order_collateral_token)
 
-    def test_get_collateral_token(self):
+    async def test_get_collateral_token(self):
         margin_asset = self.quote_asset
         mocked_response = self._get_exchange_info_mock_response(margin_asset)
-        task = self.ev_loop.create_task(self.exchange._format_trading_rules(mocked_response))
-        trading_rules = self.async_run_with_timeout(task)
+        task = asyncio.create_task(self.exchange._format_trading_rules(mocked_response))
+        trading_rules = await self.async_run_with_timeout(task)
         self.exchange._trading_rules[self.trading_pair] = trading_rules[0]
 
         self.assertEqual(margin_asset, self.exchange.get_buy_collateral_token(self.trading_pair))
         self.assertEqual(margin_asset, self.exchange.get_sell_collateral_token(self.trading_pair))
 
-    def test_buy_order_fill_event_takes_fee_from_update_event(self):
+    async def test_buy_order_fill_event_takes_fee_from_update_event(self):
         self.exchange.start_tracking_order(
             order_side=TradeType.BUY,
             client_order_id="OID1",
@@ -526,7 +525,7 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
         self.exchange._user_stream_tracker._user_stream = mock_user_stream
 
         self.test_task = asyncio.get_event_loop().create_task(self.exchange._user_stream_event_listener())
-        self.async_run_with_timeout(self.resume_test_event.wait())
+        await self.async_run_with_timeout(self.resume_test_event.wait())
 
         self.assertEqual(logger_len + 1, len(self.order_filled_logger.event_log))
         fill_event: OrderFilledEvent = self.order_filled_logger.event_log[0]
@@ -549,7 +548,7 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
                                                              lambda: complete_fill)
 
         self.test_task = asyncio.get_event_loop().create_task(self.exchange._user_stream_event_listener())
-        self.async_run_with_timeout(self.resume_test_event.wait())
+        await self.async_run_with_timeout(self.resume_test_event.wait())
 
         self.assertEqual(logger_len + 2, len(self.order_filled_logger.event_log))
         fill_event: OrderFilledEvent = self.order_filled_logger.event_log[1]
@@ -557,7 +556,7 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
 
         self.assertEqual(1, len(self.buy_order_completed_logger.event_log))
 
-    def test_sell_order_fill_event_takes_fee_from_update_event(self):
+    async def test_sell_order_fill_event_takes_fee_from_update_event(self):
         self.exchange.start_tracking_order(
             order_side=TradeType.SELL,
             client_order_id="OID1",
@@ -590,7 +589,7 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
         self.exchange._user_stream_tracker._user_stream = mock_user_stream
 
         self.test_task = asyncio.get_event_loop().create_task(self.exchange._user_stream_event_listener())
-        self.async_run_with_timeout(self.resume_test_event.wait())
+        await self.async_run_with_timeout(self.resume_test_event.wait())
         self.assertEqual(logger_len + 1, len(self.order_filled_logger.event_log))
         fill_event: OrderFilledEvent = self.order_filled_logger.event_log[0]
         self.assertEqual(Decimal("0.0002"), fill_event.trade_fee.percent)
@@ -612,7 +611,7 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
                                                              lambda: complete_fill)
 
         self.test_task = asyncio.get_event_loop().create_task(self.exchange._user_stream_event_listener())
-        self.async_run_with_timeout(self.resume_test_event.wait())
+        await self.async_run_with_timeout(self.resume_test_event.wait())
 
         self.assertEqual(logger_len + 2, len(self.order_filled_logger.event_log))
         fill_event: OrderFilledEvent = self.order_filled_logger.event_log[1]
@@ -620,7 +619,7 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
 
         self.assertEqual(1, len(self.sell_order_completed_logger.event_log))
 
-    def test_order_event_with_cancelled_status_marks_order_as_cancelled(self):
+    async def test_order_event_with_cancelled_status_marks_order_as_cancelled(self):
         self.exchange.start_tracking_order(
             order_side=TradeType.SELL,
             client_order_id="OID1",
@@ -654,7 +653,7 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
         self.exchange._user_stream_tracker._user_stream = mock_user_stream
 
         self.test_task = asyncio.get_event_loop().create_task(self.exchange._user_stream_event_listener())
-        self.async_run_with_timeout(self.resume_test_event.wait())
+        await self.async_run_with_timeout(self.resume_test_event.wait())
 
         self.assertEqual(1, len(self.order_cancelled_logger.event_log))
 
@@ -662,19 +661,20 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
 
         self.assertEqual(event.order_id, order.client_order_id)
 
-    def test_user_stream_event_listener_raises_cancelled_error(self):
+    async def test_user_stream_event_listener_raises_cancelled_error(self):
         mock_user_stream = AsyncMock()
         mock_user_stream.get.side_effect = asyncio.CancelledError
 
         self.exchange._user_stream_tracker._user_stream = mock_user_stream
 
         self.test_task = asyncio.get_event_loop().create_task(self.exchange._user_stream_event_listener())
-        self.assertRaises(asyncio.CancelledError, self.async_run_with_timeout, self.test_task)
+        with self.assertRaises(asyncio.CancelledError):
+            await self.async_run_with_timeout(self.test_task)
 
     @aioresponses()
     @patch("hummingbot.connector.derivative.bitmex_perpetual.bitmex_perpetual_derivative."
            "BitmexPerpetualDerivative.current_timestamp")
-    def test_update_order_status_successful(self, req_mock, mock_timestamp):
+    async def test_update_order_status_successful(self, req_mock, mock_timestamp):
         self.exchange._last_poll_timestamp = 0
         mock_timestamp.return_value = 1
 
@@ -707,7 +707,7 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
 
         req_mock.get(regex_url, body=json.dumps(order))
 
-        self.async_run_with_timeout(self.exchange._update_order_status())
+        await self.async_run_with_timeout(self.exchange._update_order_status())
 
         in_flight_orders = self.exchange._in_flight_orders
 
@@ -730,7 +730,7 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
     @aioresponses()
     @patch("hummingbot.connector.derivative.bitmex_perpetual.bitmex_perpetual_derivative."
            "BitmexPerpetualDerivative.current_timestamp")
-    def test_update_order_status_failure_old_order(self, req_mock, mock_timestamp):
+    async def test_update_order_status_failure_old_order(self, req_mock, mock_timestamp):
         self.exchange._last_poll_timestamp = 0
         mock_timestamp.return_value = 1
 
@@ -763,7 +763,7 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
 
         req_mock.get(regex_url, body=json.dumps(order))
 
-        self.async_run_with_timeout(self.exchange._update_order_status())
+        await self.async_run_with_timeout(self.exchange._update_order_status())
         self.assertEqual(len(self.exchange.in_flight_orders), 0)
 
     @aioresponses()
@@ -778,7 +778,7 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
     @aioresponses()
     @patch("hummingbot.connector.derivative.bitmex_perpetual.bitmex_perpetual_derivative."
            "LatchingEventResponder.wait_for_completion")
-    def test_cancel_all_successful(self, mocked_api, mock_wait):
+    async def test_cancel_all_successful(self, mocked_api, mock_wait):
         mock_wait.return_value = True
         url = web_utils.rest_url(
             CONSTANTS.ORDER_URL, domain=self.domain
@@ -817,7 +817,7 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
         self.assertTrue("OID1" in self.exchange._in_flight_orders)
         self.assertTrue("OID2" in self.exchange._in_flight_orders)
 
-        cancellation_results = self.async_run_with_timeout(self.exchange.cancel_all(timeout_seconds=1))
+        cancellation_results = await self.async_run_with_timeout(self.exchange.cancel_all(timeout_seconds=1))
 
         order_cancelled_events = self.order_cancelled_logger.event_log
 
@@ -827,7 +827,7 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
         self.assertEqual("OID2", cancellation_results[1].order_id)
 
     @aioresponses()
-    def test_cancel_unknown_new_order(self, req_mock):
+    async def test_cancel_unknown_new_order(self, req_mock):
         url = web_utils.rest_url(
             CONSTANTS.ORDER_URL, domain=self.domain
         )
@@ -855,12 +855,13 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
         self.assertTrue("OID1" in self.exchange._in_flight_orders)
 
         try:
-            self.async_run_with_timeout(self.exchange.cancel_order("OID1"))
+            await self.async_run_with_timeout(self.exchange.cancel_order("OID1"))
         except Exception as e:
-            self.assertEqual(str(e), f"order {tracked_order.client_order_id} does not yet exist on the exchange and could not be cancelled.")
+            self.assertEqual(str(e),
+                             f"order {tracked_order.client_order_id} does not yet exist on the exchange and could not be cancelled.")
 
     @aioresponses()
-    def test_cancel_unknown_old_order(self, req_mock):
+    async def test_cancel_unknown_old_order(self, req_mock):
         url = web_utils.rest_url(
             CONSTANTS.ORDER_URL, domain=self.domain
         )
@@ -887,7 +888,7 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
 
         self.assertTrue("OID1" in self.exchange._in_flight_orders)
         try:
-            cancellation_result = self.async_run_with_timeout(self.exchange.cancel_order("OID1"))
+            cancellation_result = await self.async_run_with_timeout(self.exchange.cancel_order("OID1"))
         except Exception:
             pass
 
@@ -896,7 +897,7 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
         self.assertTrue("OID1" not in self.exchange._in_flight_orders)
 
     @aioresponses()
-    def test_create_order_successful(self, req_mock):
+    async def test_create_order_successful(self, req_mock):
         url = web_utils.rest_url(
             CONSTANTS.ORDER_URL, domain=self.domain
         )
@@ -909,20 +910,20 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
 
         margin_asset = self.quote_asset
         mocked_response = self._get_exchange_info_mock_response(margin_asset)
-        trading_rules = self.async_run_with_timeout(self.exchange._format_trading_rules(mocked_response))
+        trading_rules = await self.async_run_with_timeout(self.exchange._format_trading_rules(mocked_response))
         self.exchange._trading_rules[self.trading_pair] = trading_rules[0]
 
-        self.async_run_with_timeout(self.exchange.execute_buy(order_id="OID1",
-                                                              trading_pair=self.trading_pair,
-                                                              amount=Decimal("100"),
-                                                              order_type=OrderType.LIMIT,
-                                                              position_action=PositionAction.OPEN,
-                                                              price=Decimal("10000")))
+        await self.async_run_with_timeout(self.exchange.execute_buy(order_id="OID1",
+                                                                    trading_pair=self.trading_pair,
+                                                                    amount=Decimal("100"),
+                                                                    order_type=OrderType.LIMIT,
+                                                                    position_action=PositionAction.OPEN,
+                                                                    price=Decimal("10000")))
 
         self.assertTrue("OID1" in self.exchange._in_flight_orders)
 
     @aioresponses()
-    def test_create_order_exception(self, req_mock):
+    async def test_create_order_exception(self, req_mock):
         url = web_utils.rest_url(
             CONSTANTS.ORDER_URL, domain=self.domain
         )
@@ -936,15 +937,15 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
 
         margin_asset = self.quote_asset
         mocked_response = self._get_exchange_info_mock_response(margin_asset)
-        trading_rules = self.async_run_with_timeout(self.exchange._format_trading_rules(mocked_response))
+        trading_rules = await self.async_run_with_timeout(self.exchange._format_trading_rules(mocked_response))
         self.exchange._trading_rules[self.trading_pair] = trading_rules[0]
 
-        self.async_run_with_timeout(self.exchange.execute_sell(order_id="OID1",
-                                                               trading_pair=self.trading_pair,
-                                                               amount=Decimal("10000"),
-                                                               order_type=OrderType.LIMIT,
-                                                               position_action=PositionAction.OPEN,
-                                                               price=Decimal("1010")))
+        await self.async_run_with_timeout(self.exchange.execute_sell(order_id="OID1",
+                                                                     trading_pair=self.trading_pair,
+                                                                     amount=Decimal("10000"),
+                                                                     order_type=OrderType.LIMIT,
+                                                                     position_action=PositionAction.OPEN,
+                                                                     price=Decimal("1010")))
 
         self.assertTrue("OID1" not in self.exchange._in_flight_orders)
 
@@ -1040,7 +1041,7 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
         self.assertEqual(result, expected_client_order_id)
 
     @aioresponses()
-    def test_update_balances(self, mock_api):
+    async def test_update_balances(self, mock_api):
         url = web_utils.rest_url(CONSTANTS.ACCOUNT_INFO_URL, domain=self.domain)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
 
@@ -1076,7 +1077,7 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
         ]
 
         mock_api.get(regex_url_2, body=json.dumps(response_2))
-        self.async_run_with_timeout(self.exchange._update_balances())
+        await self.async_run_with_timeout(self.exchange._update_balances())
 
         available_balances = self.exchange.available_balances
         total_balances = self.exchange.get_all_balances()
@@ -1086,12 +1087,12 @@ class BitmexPerpetualDerivativeUnitTest(unittest.TestCase):
         self.assertEqual(Decimal("100"), total_balances["USDT"])
         self.assertEqual(Decimal("10"), total_balances["XBT"])
 
-    def test_adjust_quote_based_amounts(self):
+    async def test_adjust_quote_based_amounts(self):
         self.exchange._trading_pairs.append("XBT-USD")
         mocked_response = self._get_exchange_info_mock_response()
 
-        task = self.ev_loop.create_task(self.exchange._format_trading_rules(mocked_response))
-        trading_rules = self.async_run_with_timeout(task)
+        task = asyncio.create_task(self.exchange._format_trading_rules(mocked_response))
+        trading_rules = await self.async_run_with_timeout(task)
         self.exchange._trading_rules["XBT-USD"] = trading_rules[1]
         base, quote = self.exchange.adjust_quote_based_amounts("XBT-USD", Decimal('1000'), Decimal('10'))
         self.exchange._trading_pairs.remove("XBT-USD")
