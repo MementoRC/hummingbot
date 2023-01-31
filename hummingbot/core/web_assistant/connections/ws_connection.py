@@ -6,6 +6,7 @@ from typing import Any, Dict, Mapping, Optional
 import aiohttp
 
 from hummingbot.core.web_assistant.connections.data_types import WSRequest, WSResponse
+from hummingbot.core.web_assistant.connections.persistent_client_session import PersistentClientSession
 
 
 class WSConnection:
@@ -32,14 +33,16 @@ class WSConnection:
         ws_headers: Optional[Dict] = {},
     ):
         self._ensure_not_connected()
-        self._connection = await self._client_session.ws_connect(
-            ws_url,
-            headers=ws_headers,
-            autoping=False,
-            heartbeat=ping_timeout,
-        )
-        self._message_timeout = message_timeout
-        self._connected = True
+        # This polls or starts the client session for a connection
+        async with PersistentClientSession() as client_session:
+            self._connection = await client_session.ws_connect(
+                ws_url,
+                headers=ws_headers,
+                autoping=False,
+                heartbeat=ping_timeout,
+            )
+            self._message_timeout = message_timeout
+            self._connected = True
 
     async def disconnect(self):
         if self._connection is not None and not self._connection.closed:

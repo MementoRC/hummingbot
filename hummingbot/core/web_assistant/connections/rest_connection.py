@@ -1,5 +1,7 @@
 import aiohttp
+
 from hummingbot.core.web_assistant.connections.data_types import RESTRequest, RESTResponse
+from hummingbot.core.web_assistant.connections.persistent_client_session import PersistentClientSession
 
 
 class RESTConnection:
@@ -7,16 +9,18 @@ class RESTConnection:
         self._client_session = aiohttp_client_session
 
     async def call(self, request: RESTRequest) -> RESTResponse:
-        aiohttp_resp = await self._client_session.request(
-            method=request.method.value,
-            url=request.url,
-            params=request.params,
-            data=request.data,
-            headers=request.headers,
-        )
+        # This polls or starts the client session for a connection
+        async with PersistentClientSession() as client_session:
+            aiohttp_resp = await client_session.request(
+                method=request.method.value,
+                url=request.url,
+                params=request.params,
+                data=request.data,
+                headers=request.headers,
+            )
 
-        resp = await self._build_resp(aiohttp_resp)
-        return resp
+            resp = await self._build_resp(aiohttp_resp)
+            return resp
 
     @staticmethod
     async def _build_resp(aiohttp_resp: aiohttp.ClientResponse) -> RESTResponse:
