@@ -1,4 +1,7 @@
-from hummingbot.core.web_assistant.connections.persistent_client_session import PersistentClientSession
+from typing import Optional
+
+import aiohttp
+
 from hummingbot.core.web_assistant.connections.rest_connection import RESTConnection
 from hummingbot.core.web_assistant.connections.ws_connection import WSConnection
 
@@ -14,12 +17,20 @@ class ConnectionsFactory:
     a separate third-party library. In that case, a factory can be created that returns `RESTConnection`s using
     `aiohttp` and `WSConnection`s using `signalr_aio`.
     """
-    @staticmethod
-    async def get_rest_connection() -> RESTConnection:
-        session = await PersistentClientSession().get_context_client()
-        return RESTConnection(aiohttp_client_session=session)
 
-    @staticmethod
-    async def get_ws_connection() -> WSConnection:
-        session = await PersistentClientSession().get_context_client()
-        return WSConnection(aiohttp_client_session=session)
+    def __init__(self):
+        self._shared_client: Optional[aiohttp.ClientSession] = None
+
+    async def get_rest_connection(self) -> RESTConnection:
+        shared_client = await self._get_shared_client()
+        connection = RESTConnection(aiohttp_client_session=shared_client)
+        return connection
+
+    async def get_ws_connection(self) -> WSConnection:
+        shared_client = await self._get_shared_client()
+        connection = WSConnection(aiohttp_client_session=shared_client)
+        return connection
+
+    async def _get_shared_client(self) -> aiohttp.ClientSession:
+        self._shared_client = self._shared_client or aiohttp.ClientSession()
+        return self._shared_client
