@@ -16,7 +16,7 @@ from hummingbot.client.config.strategy_config_data_types import BaseStrategyConf
 from hummingbot.client.hummingbot_application import HummingbotApplication
 
 
-class ConfigCommandTest(unittest.TestCase):
+class TestConfigCommand(unittest.TestCase):
     @patch("hummingbot.core.utils.trading_pair_fetcher.TradingPairFetcher")
     def setUp(self, _: MagicMock) -> None:
         super().setUp()

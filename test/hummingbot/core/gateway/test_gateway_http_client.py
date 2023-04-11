@@ -4,26 +4,29 @@ from contextlib import ExitStack
 from decimal import Decimal
 from os.path import join, realpath
 from test.mock.http_recorder import HttpPlayer
+from test.utilities_for_async_tests import async_to_sync
 from typing import Any, Dict, List
 from unittest.mock import patch
 
 from aiohttp import ClientSession
-from aiounittest import async_test
 
 from hummingbot.core.event.events import TradeType
 from hummingbot.core.gateway.gateway_http_client import GatewayHttpClient
-
-ev_loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
 
 
 class GatewayHttpClientUnitTest(unittest.TestCase):
     _db_path: str
     _http_player: HttpPlayer
     _patch_stack: ExitStack
+    _main_loop: asyncio.AbstractEventLoop
+    _ev_loop: asyncio.AbstractEventLoop
 
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
+        cls._main_loop = asyncio.get_event_loop()
+        cls._ev_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(cls._ev_loop)
         cls._db_path = realpath(join(__file__, "../fixtures/gateway_http_client_fixture.db"))
         cls._http_player = HttpPlayer(cls._db_path)
         cls._patch_stack = ExitStack()
@@ -36,13 +39,16 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls) -> None:
         cls._patch_stack.close()
+        cls._ev_loop.close()
+        asyncio.set_event_loop(cls._main_loop)
+        super().tearDownClass()
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_ping_gateway(self):
         result: bool = await GatewayHttpClient.get_instance().ping_gateway()
         self.assertTrue(result)
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_get_gateway_status(self):
         result: List[Dict[str, Any]] = await GatewayHttpClient.get_instance().get_gateway_status()
         self.assertIsInstance(result, list)
@@ -51,7 +57,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
         first_entry: Dict[str, Any] = result[0]
         self.assertEqual(3, first_entry["chainId"])
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_add_wallet(self):
         result: Dict[str, Any] = await GatewayHttpClient.get_instance().add_wallet(
             "ethereum",
@@ -61,7 +67,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
         self.assertTrue(isinstance(result, dict))
         self.assertEqual("0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf", result["address"])
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_get_wallets(self):
         result: List[Dict[str, Any]] = await GatewayHttpClient.get_instance().get_wallets()
         self.assertIsInstance(result, list)
@@ -70,7 +76,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
         self.assertIn("chain", first_entry)
         self.assertIn("walletAddresses", first_entry)
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_get_connectors(self):
         result: Dict[str, Any] = await GatewayHttpClient.get_instance().get_connectors()
         self.assertIn("connectors", result)
@@ -79,18 +85,18 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
         self.assertEqual("uniswap", uniswap["name"])
         self.assertEqual(["EVM_AMM"], uniswap["trading_type"])
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_get_configuration(self):
         result: Dict[str, Any] = await GatewayHttpClient.get_instance().get_configuration()
         self.assertIn("avalanche", result)
         self.assertIn("ethereum", result)
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_update_configuration(self):
         result: Dict[str, Any] = await GatewayHttpClient.get_instance().update_config("telemetry.enabled", False)
         self.assertIn("message", result)
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_get_tokens(self):
         result: Dict[str, Any] = await GatewayHttpClient.get_instance().get_tokens("ethereum", "ropsten")
         self.assertIn("tokens", result)
@@ -98,13 +104,13 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
         self.assertEqual("WETH", result["tokens"][0]["symbol"])
         self.assertEqual("DAI", result["tokens"][1]["symbol"])
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_get_network_status(self):
         result: Dict[str, Any] = await GatewayHttpClient.get_instance().get_network_status("ethereum", "ropsten")
         self.assertEqual(3, result["chainId"])
         self.assertEqual(12067035, result["currentBlockNumber"])
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_get_price(self):
         result: Dict[str, Any] = await GatewayHttpClient.get_instance().get_price(
             "ethereum",
@@ -119,7 +125,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
         self.assertEqual("1000000000000000000000", result["rawAmount"])
         self.assertEqual("0.00262343", result["price"])
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_get_balances(self):
         result: Dict[str, Any] = await GatewayHttpClient.get_instance().get_balances(
             "ethereum",
@@ -131,7 +137,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
         self.assertEqual("21.000000000000000000", result["balances"]["WETH"])
         self.assertEqual("0.000000000000000000", result["balances"]["DAI"])
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_successful_get_transaction(self):
         result: Dict[str, Any] = await GatewayHttpClient.get_instance().get_transaction_status(
             "ethereum",
@@ -141,7 +147,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
         self.assertEqual(1, result["txStatus"])
         self.assertIsNotNone(result["txData"])
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_failed_get_transaction(self):
         result: Dict[str, Any] = await GatewayHttpClient.get_instance().get_transaction_status(
             "ethereum",
@@ -151,7 +157,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
         self.assertEqual(-1, result["txStatus"])
         self.assertIsNone(result["txData"])
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_get_evm_nonce(self):
         result: Dict[str, Any] = await GatewayHttpClient.get_instance().get_evm_nonce(
             "ethereum",
@@ -160,7 +166,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
         )
         self.assertEqual(2, result["nonce"])
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_approve_token(self):
         result: Dict[str, Any] = await GatewayHttpClient.get_instance().approve_token(
             "ethereum",
@@ -174,7 +180,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
         self.assertEqual("0x66b533792f45780fc38573bfd60d6043ab266471607848fb71284cd0d9eecff9",      # noqa: mock
                          result["approval"]["hash"])
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_get_allowances(self):
         result: Dict[str, Any] = await GatewayHttpClient.get_instance().get_allowances(
             "ethereum",
@@ -189,7 +195,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
         self.assertEqual("115792089237316195423570985008687907853269984665640564039457.584007913129639935",
                          result["approvals"]["WETH"])
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_amm_trade(self):
         result: Dict[str, Any] = await GatewayHttpClient.get_instance().amm_trade(
             "ethereum",
@@ -208,7 +214,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
         self.assertEqual("0xc7287236f64484b476cfbec0fd21bc49d85f8850c8885665003928a122041e18",      # noqa: mock
                          result["txHash"])
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_solana_get_root(self):
         network = 'testnet'
 
@@ -221,7 +227,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
         self.assertTrue(result["connection"])
         self.assertGreater(result["timestamp"], 0)
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_solana_get_balances(self):
         network = 'testnet'
         address = ''
@@ -235,7 +241,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
 
         self.assertTrue(len(result) > 0)
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_solana_get_token(self):
         network = 'testnet'
         address = ''
@@ -249,7 +255,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
 
         self.assertTrue(len(result) > 0)
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_solana_post_token(self):
         network = 'testnet'
         address = ''
@@ -263,7 +269,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
 
         self.assertTrue(len(result) > 0)
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_solana_post_poll(self):
         network = 'testnet'
         tx_hash = ''
@@ -275,7 +281,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
 
         self.assertTrue(len(result) > 0)
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_serum_get_root(self):
         chain = 'solana'
         network = 'testnet'
@@ -293,7 +299,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
         self.assertTrue(result["connection"])
         self.assertGreater(result["timestamp"], 0)
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_serum_get_markets(self):
         chain = 'solana'
         network = 'testnet'
@@ -307,7 +313,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
 
         self.assertTrue(len(result) > 0)
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_serum_get_order_books(self):
         chain = 'solana'
         network = 'testnet'
@@ -321,7 +327,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
 
         self.assertTrue(len(result) > 0)
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_serum_get_tickers(self):
         chain = 'solana'
         network = 'testnet'
@@ -335,7 +341,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
 
         self.assertTrue(len(result) > 0)
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_serum_get_orders(self):
         chain = 'solana'
         network = 'testnet'
@@ -349,7 +355,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
 
         self.assertTrue(len(result) > 0)
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_serum_post_orders(self):
         chain = 'solana'
         network = 'testnet'
@@ -366,7 +372,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
 
         self.assertTrue(len(result) > 0)
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_serum_delete_orders(self):
         chain = 'solana'
         network = 'testnet'
@@ -380,7 +386,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
 
         self.assertTrue(len(result) > 0)
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_serum_get_open_orders(self):
         chain = 'solana'
         network = 'testnet'
@@ -394,7 +400,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
 
         self.assertTrue(len(result) > 0)
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_serum_get_filled_orders(self):
         chain = 'solana'
         network = 'testnet'
@@ -408,7 +414,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
 
         self.assertTrue(len(result) > 0)
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_serum_post_settle_funds(self):
         chain = 'solana'
         network = 'testnet'
@@ -422,7 +428,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
 
         self.assertTrue(len(result) > 0)
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_successful_wallet_sign(self):
         result: Dict[str, Any] = await GatewayHttpClient.get_instance().wallet_sign(
             chain="avalanche",

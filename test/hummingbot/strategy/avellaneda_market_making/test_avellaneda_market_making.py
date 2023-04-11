@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import math
 import unittest
@@ -52,10 +53,16 @@ class AvellanedaMarketMakingUnitTests(unittest.TestCase):
     end: pd.Timestamp = pd.Timestamp("2019-01-01 01:00:00", tz="UTC")
     start_timestamp: float = start.timestamp()
     end_timestamp: float = end.timestamp()
+    _main_loop: asyncio.AbstractEventLoop
+    _ev_loop: asyncio.AbstractEventLoop
 
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
+        # This to mitigate the amount of work needed to clean all the mis-use of the Main event loop
+        cls._main_loop = asyncio.get_event_loop()
+        cls._ev_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(cls._ev_loop)
         cls.trading_pair: str = "COINALPHA-HBOT"
         cls.base_asset, cls.quote_asset = cls.trading_pair.split("-")
         cls.initial_mid_price: int = 100
@@ -150,6 +157,13 @@ class AvellanedaMarketMakingUnitTests(unittest.TestCase):
         if self._original_paper_trade_exchanges is not None:
             settings.PAPER_TRADE_EXCHANGES = self._original_paper_trade_exchanges
         super().tearDown()
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls._ev_loop.stop()
+        cls._ev_loop.close()
+        asyncio.set_event_loop(cls._main_loop)
+        super().tearDownClass()
 
     def get_default_map(self) -> Dict[str, str]:
         config_settings = {

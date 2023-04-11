@@ -36,6 +36,23 @@ class MockConnector2(ConnectorBase):
 
 
 class AmmArbUtilsUnitTest(unittest.TestCase):
+    _main_loop: asyncio.AbstractEventLoop
+    _ev_loop: asyncio.AbstractEventLoop
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        # This to mitigate the amount of work needed to clean all the mis-use of the Main event loop
+        cls._main_loop = asyncio.get_event_loop()
+        cls._ev_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(cls._ev_loop)
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls._ev_loop.stop()
+        cls._ev_loop.close()
+        asyncio.set_event_loop(cls._main_loop)
+        super().tearDownClass()
 
     def test_create_arb_proposals(self):
         asyncio.get_event_loop().run_until_complete(self._test_create_arb_proposals())

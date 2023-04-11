@@ -1,3 +1,4 @@
+import asyncio
 import unittest
 from decimal import Decimal
 from test.mock.mock_asset_price_delegate import MockAssetPriceDelegate
@@ -51,6 +52,23 @@ class PMMUnitTest(unittest.TestCase):
     trading_pair = "HBOT-ETH"
     base_asset = trading_pair.split("-")[0]
     quote_asset = trading_pair.split("-")[1]
+    _main_loop: asyncio.AbstractEventLoop
+    _ev_loop: asyncio.AbstractEventLoop
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        # This to mitigate the amount of work needed to clean all the mis-use of the Main event loop
+        cls._main_loop = asyncio.get_event_loop()
+        cls._ev_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(cls._ev_loop)
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls._ev_loop.stop()
+        cls._ev_loop.close()
+        asyncio.set_event_loop(cls._main_loop)
+        super().tearDownClass()
 
     def setUp(self):
         self.clock_tick_size = 1

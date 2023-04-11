@@ -20,18 +20,29 @@ class ExpectedException(Exception):
 
 
 class InterfaceUtilsTest(unittest.TestCase):
+    _main_loop: asyncio.AbstractEventLoop
+    _ev_loop: asyncio.AbstractEventLoop
+
     @classmethod
     def setUpClass(cls) -> None:
-        ev_loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
-        for task in asyncio.all_tasks(ev_loop):
+        super().setUpClass()
+        # This to mitigate the amount of work needed to clean all the mis-use of the Main event loop
+        cls._main_loop = asyncio.get_event_loop()
+        cls._ev_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(cls._ev_loop)
+        for task in asyncio.all_tasks(cls._ev_loop):
             task.cancel()
 
-    def setUp(self) -> None:
-        super().setUp()
-        self.ev_loop = asyncio.get_event_loop()
+    @classmethod
+    def tearDownClass(cls) -> None:
+        for task in asyncio.all_tasks(cls._ev_loop):
+            task.cancel()
+        cls._ev_loop.stop()
+        cls._ev_loop.close()
+        asyncio.set_event_loop(cls._main_loop)
 
     def async_run_with_timeout(self, coroutine: Awaitable, timeout: float = 1):
-        ret = self.ev_loop.run_until_complete(asyncio.wait_for(coroutine, timeout))
+        ret = self._ev_loop.run_until_complete(asyncio.wait_for(coroutine, timeout))
         return ret
 
     def test_format_bytes(self):

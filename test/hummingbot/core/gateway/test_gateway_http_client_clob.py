@@ -4,11 +4,11 @@ from contextlib import ExitStack
 from decimal import Decimal
 from os.path import join, realpath
 from test.mock.http_recorder import HttpPlayer
+from test.utilities_for_async_tests import async_to_sync
 from typing import Any, Dict
 from unittest.mock import patch
 
 from aiohttp import ClientSession
-from aiounittest import async_test
 
 from hummingbot.connector.gateway.gateway_in_flight_order import GatewayInFlightOrder
 from hummingbot.connector.utils import combine_to_hb_trading_pair
@@ -16,17 +16,22 @@ from hummingbot.core.data_type.common import OrderType
 from hummingbot.core.event.events import TradeType
 from hummingbot.core.gateway.gateway_http_client import GatewayHttpClient
 
-ev_loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
-
 
 class GatewayHttpClientUnitTest(unittest.TestCase):
     _db_path: str
     _http_player: HttpPlayer
     _patch_stack: ExitStack
+    _main_loop: asyncio.AbstractEventLoop
+    _ev_loop: asyncio.AbstractEventLoop
 
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
+        # This to mitigate the amount of work needed to clean all the mis-use of the Main event loop
+        cls._main_loop = asyncio.get_event_loop()
+        cls._ev_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(cls._ev_loop)
+
         cls._db_path = realpath(join(__file__, "../fixtures/gateway_http_client_clob_fixture.db"))
         cls._http_player = HttpPlayer(cls._db_path)
         cls._patch_stack = ExitStack()
@@ -42,8 +47,12 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls) -> None:
         cls._patch_stack.close()
+        cls._ev_loop.stop()
+        cls._ev_loop.close()
+        asyncio.set_event_loop(cls._main_loop)
+        super().tearDownClass()
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_clob_place_order(self):
         result: Dict[str, Any] = await GatewayHttpClient.get_instance().clob_place_order(
             connector="injective",
@@ -62,7 +71,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
         self.assertEqual(2, result["latency"])
         self.assertEqual("0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf", result["txHash"])  # noqa: mock
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_clob_cancel_order(self):
         result: Dict[str, Any] = await GatewayHttpClient.get_instance().clob_cancel_order(
             connector="injective",
@@ -78,7 +87,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
         self.assertEqual(2, result["latency"])
         self.assertEqual("0x7E5F4552091A69125d5DfCb7b8C2659029395Bdf", result["txHash"])  # noqa: mock
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_clob_order_status_updates(self):
         result = await GatewayHttpClient.get_instance().get_clob_order_status_updates(
             trading_pair="COIN-ALPHA",
@@ -104,7 +113,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
         self.assertEqual(1, len(result["orders"]))
         self.assertEqual("EOID1", result["orders"][0]["exchangeID"])
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_get_clob_all_markets(self):
         result = await GatewayHttpClient.get_instance().get_clob_markets(
             connector="dexalot", chain="avalanche", network="mainnet"
@@ -113,7 +122,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
         self.assertEqual(2, len(result["markets"]))
         self.assertEqual("COIN-ALPHA", result["markets"][1]["tradingPair"])
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_get_clob_single_market(self):
         result = await GatewayHttpClient.get_instance().get_clob_markets(
             connector="dexalot", chain="avalanche", network="mainnet", trading_pair="COIN-ALPHA"
@@ -122,7 +131,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
         self.assertEqual(1, len(result["markets"]))
         self.assertEqual("COIN-ALPHA", result["markets"][0]["tradingPair"])
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_get_clob_orderbook(self):
         result = await GatewayHttpClient.get_instance().get_clob_orderbook_snapshot(
             trading_pair="COIN-ALPHA", connector="dexalot", chain="avalanche", network="mainnet"
@@ -134,7 +143,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
         }
         self.assertEqual(expected_orderbook, result["orderbook"])
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_get_clob_ticker(self):
         result = await GatewayHttpClient.get_instance().get_clob_ticker(
             connector="dexalot", chain="avalanche", network="mainnet"
@@ -164,7 +173,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
 
         self.assertEqual(expected_markets, result["markets"])
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_clob_batch_order_update(self):
         trading_pair = combine_to_hb_trading_pair(base="COIN", quote="ALPHA")
         order_to_create = GatewayInFlightOrder(

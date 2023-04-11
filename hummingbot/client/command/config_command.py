@@ -241,7 +241,7 @@ class ConfigCommand:
                     return
                 else:
                     config_map = self.strategy_config_map
-                    file_path = STRATEGIES_CONF_DIR_PATH / self.strategy_file_name
+                    file_path = STRATEGIES_CONF_DIR_PATH / str(self.strategy_file_name)
                 if input_value is None:
                     self.notify("Please follow the prompt to complete configurations: ")
                 if key == "inventory_target_base_pct":
@@ -259,7 +259,7 @@ class ConfigCommand:
                     self.list_client_configs()
                 else:
                     self.list_strategy_configs()
-                self.app.app.style = load_style(self.client_config_map)
+                self.app.style = load_style(self.client_config_map)
         except asyncio.TimeoutError:
             self.logger().error("Prompt timeout")
         except Exception as err:
@@ -301,7 +301,7 @@ class ConfigCommand:
         save_to_yml_legacy(str(file_path), config_map)
         self.notify("\nNew configuration saved:")
         self.notify(f"{key}: {str(config_var.value)}")
-        self.app.app.style = load_style(self.client_config_map)
+        self.app.style = load_style(self.client_config_map)
         for config in missings:
             self.notify(f"{config.key}: {str(config.value)}")
         if (

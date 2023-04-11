@@ -56,11 +56,23 @@ class MockStrategy(StrategyBase):
 
 
 class StrategyBaseUnitTests(unittest.TestCase):
+    _main_loop: asyncio.AbstractEventLoop
+    _ev_loop: asyncio.AbstractEventLoop
 
     @classmethod
-    def setUpClass(cls):
-        cls.ev_loop = asyncio.get_event_loop()
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        # This to mitigate the amount of work needed to clean all the mis-use of the Main event loop
+        cls._main_loop = asyncio.get_event_loop()
+        cls._ev_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(cls._ev_loop)
         cls.trading_pair = "COINALPHA-HBOT"
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls._ev_loop.close()
+        asyncio.set_event_loop(cls._main_loop)
+        super().tearDownClass()
 
     def setUp(self):
         self.market: ExtendedMockPaperExchange = ExtendedMockPaperExchange(

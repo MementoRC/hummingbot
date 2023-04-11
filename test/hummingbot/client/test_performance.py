@@ -6,7 +6,7 @@ from typing import Awaitable
 from unittest.mock import MagicMock, patch
 
 from hummingbot.client.performance import PerformanceMetrics
-from hummingbot.core.data_type.common import PositionAction, OrderType, TradeType
+from hummingbot.core.data_type.common import OrderType, PositionAction, TradeType
 from hummingbot.core.data_type.trade import Trade
 from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee, TokenAmount
 from hummingbot.core.rate_oracle.rate_oracle import RateOracle
@@ -19,6 +19,25 @@ base, quote = trading_pair.split("-")
 
 
 class PerformanceMetricsUnitTest(unittest.TestCase):
+    _main_loop: asyncio.AbstractEventLoop
+    _ev_loop: asyncio.AbstractEventLoop
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        # This to mitigate the amount of work needed to clean all the mis-use of the Main event loop
+        cls._main_loop = asyncio.get_event_loop()
+        cls._ev_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(cls._ev_loop)
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        for task in asyncio.all_tasks(cls._ev_loop):
+            task.cancel()
+        cls._ev_loop.stop()
+        cls._ev_loop.close()
+        asyncio.set_event_loop(cls._main_loop)
+        super().tearDownClass()
 
     def tearDown(self) -> None:
         RateOracle._shared_instance = None
@@ -37,7 +56,7 @@ class PerformanceMetricsUnitTest(unittest.TestCase):
         return trade
 
     def async_run_with_timeout(self, coroutine: Awaitable, timeout: int = 1):
-        ret = asyncio.get_event_loop().run_until_complete(asyncio.wait_for(coroutine, timeout))
+        ret = self._ev_loop.run_until_complete(asyncio.wait_for(coroutine, timeout))
         return ret
 
     def test_position_order_returns_nothing_when_no_open_and_no_close_orders(self):

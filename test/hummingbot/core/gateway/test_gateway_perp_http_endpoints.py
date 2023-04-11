@@ -4,26 +4,29 @@ from contextlib import ExitStack
 from decimal import Decimal
 from os.path import join, realpath
 from test.mock.http_recorder import HttpPlayer
+from test.utilities_for_async_tests import async_to_sync
 from typing import Any, Dict
 from unittest.mock import patch
 
 from aiohttp import ClientSession
-from aiounittest import async_test
 
 from hummingbot.core.data_type.common import PositionSide
 from hummingbot.core.gateway.gateway_http_client import GatewayHttpClient
-
-ev_loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
 
 
 class GatewayHttpClientUnitTest(unittest.TestCase):
     _db_path: str
     _http_player: HttpPlayer
     _patch_stack: ExitStack
+    _main_loop: asyncio.AbstractEventLoop
+    _ev_loop: asyncio.AbstractEventLoop
 
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
+        cls._main_loop = asyncio.get_event_loop()
+        cls._ev_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(cls._ev_loop)
         cls._db_path = realpath(join(__file__, "../fixtures/gateway_perp_http_client_fixture.db"))
         cls._http_player = HttpPlayer(cls._db_path)
         cls._patch_stack = ExitStack()
@@ -36,8 +39,12 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls) -> None:
         cls._patch_stack.close()
+        cls._ev_loop.stop()
+        cls._ev_loop.close()
+        asyncio.set_event_loop(cls._main_loop)
+        super().tearDownClass()
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_gateway_list(self):
         result: Dict[str, Any] = await GatewayHttpClient.get_instance().get_perp_markets(
             "ethereum",
@@ -46,7 +53,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
         )
         self.assertTrue(isinstance(result["pairs"], list))
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_gateway_status(self):
         result: Dict[str, Any] = await GatewayHttpClient.get_instance().get_perp_market_status(
             "ethereum",
@@ -58,7 +65,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
         self.assertTrue(isinstance(result, dict))
         self.assertTrue(result["isActive"])
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_gateway_price(self):
         result: Dict[str, Any] = await GatewayHttpClient.get_instance().get_perp_market_price(
             "ethereum",
@@ -74,7 +81,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
         self.assertEqual("72.46", result["indexPrice"])
         self.assertEqual("72.71790773", result["indexTwapPrice"])
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_perp_balance(self):
         result: Dict[str, Any] = await GatewayHttpClient.get_instance().amm_perp_balance(
             "ethereum",
@@ -84,7 +91,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
         )
         self.assertEqual("209.992983", result["balance"])
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_perp_open(self):
         result: Dict[str, Any] = await GatewayHttpClient.get_instance().amm_perp_open(
             "ethereum",
@@ -101,7 +108,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
         self.assertEqual("0x48e65c8888282f268154146aa810a0da9bf10a3ffc2f98a298cf48a0fee864ac",      # noqa: mock
                          result["txHash"])
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_gateway_perp_position(self):
         result: Dict[str, Any] = await GatewayHttpClient.get_instance().get_perp_position(
             "ethereum",
@@ -116,7 +123,7 @@ class GatewayHttpClientUnitTest(unittest.TestCase):
         self.assertEqual("AAVEUSD", result["tickerSymbol"])
         self.assertEqual("72.54886162448166764354", result["entryPrice"])
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
     async def test_perp_close(self):
         result: Dict[str, Any] = await GatewayHttpClient.get_instance().amm_perp_close(
             "ethereum",

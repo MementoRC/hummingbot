@@ -2,10 +2,9 @@ import asyncio
 import contextlib
 import unittest
 from decimal import Decimal
+from test.utilities_for_async_tests import async_run_with_concurrent_tasks, async_to_sync
 from typing import List
 from unittest.mock import patch
-
-from aiounittest import async_test
 
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
@@ -22,7 +21,6 @@ from hummingbot.core.event.events import (
     SellOrderCreatedEvent,
 )
 from hummingbot.core.network_iterator import NetworkStatus
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.core.utils.fixed_rate_source import FixedRateSource
 from hummingbot.core.utils.tracking_nonce import get_tracking_nonce
 from hummingbot.strategy.amm_arb.amm_arb import AmmArbStrategy
@@ -33,7 +31,6 @@ TRADING_PAIR: str = "HBOT-USDT"
 BASE_ASSET: str = TRADING_PAIR.split("-")[0]
 QUOTE_ASSET: str = TRADING_PAIR.split("-")[1]
 
-ev_loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
 s_decimal_0 = Decimal(0)
 
 
@@ -128,9 +125,30 @@ class MockAMM(ConnectorBase):
         return []
 
 
+_clock: Clock = Clock(ClockMode.REALTIME)
+
+
 class AmmArbUnitTest(unittest.TestCase):
+    _main_loop: asyncio.AbstractEventLoop
+    _ev_loop: asyncio.AbstractEventLoop
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        # This to mitigate the amount of work needed to clean all the mis-use of the Main event loop
+        cls._main_loop = asyncio.get_event_loop()
+        cls._ev_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(cls._ev_loop)
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls._ev_loop.stop()
+        cls._ev_loop.close()
+        asyncio.set_event_loop(cls._main_loop)
+        super().tearDownClass()
+
     def setUp(self):
-        self.clock: Clock = Clock(ClockMode.REALTIME)
+        self.clock: Clock = _clock
         self.stack: contextlib.ExitStack = contextlib.ExitStack()
         self.amm_1: MockAMM = MockAMM(
             name="onion",
@@ -176,17 +194,12 @@ class AmmArbUnitTest(unittest.TestCase):
             "hummingbot.client.config.trade_fee_schema_loader.TradeFeeSchemaLoader.configured_schema_for_exchange",
             return_value=TradeFeeSchema()
         ))
-        self.clock_task: asyncio.Task = safe_ensure_future(self.clock.run())
 
     def tearDown(self) -> None:
         self.stack.close()
-        self.clock_task.cancel()
-        try:
-            ev_loop.run_until_complete(self.clock_task)
-        except asyncio.CancelledError:
-            pass
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
+    @async_run_with_concurrent_tasks(_clock.run)
     async def test_arbitrage_not_profitable(self):
         self.amm_1.set_prices(TRADING_PAIR, True, 101)
         self.amm_1.set_prices(TRADING_PAIR, False, 100)
@@ -196,7 +209,8 @@ class AmmArbUnitTest(unittest.TestCase):
         taker_orders = self.strategy.tracked_limit_orders + self.strategy.tracked_market_orders
         self.assertTrue(len(taker_orders) == 0)
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
+    @async_run_with_concurrent_tasks(_clock.run)
     async def test_arb_buy_amm_1_sell_amm_2(self):
         self.amm_1.set_prices(TRADING_PAIR, True, 101)
         self.amm_1.set_prices(TRADING_PAIR, False, 100)
@@ -232,7 +246,8 @@ class AmmArbUnitTest(unittest.TestCase):
         self.assertEqual(amm_1_order.client_order_id, new_amm_1_order.client_order_id)
         self.assertEqual(amm_2_order.client_order_id, new_amm_2_order.client_order_id)
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
+    @async_run_with_concurrent_tasks(_clock.run)
     async def test_arb_buy_amm_2_sell_amm_1(self):
         self.amm_1.set_prices(TRADING_PAIR, True, 105)
         self.amm_1.set_prices(TRADING_PAIR, False, 104)
@@ -255,7 +270,8 @@ class AmmArbUnitTest(unittest.TestCase):
         self.assertEqual(exp_price, amm_2_order.price)
         self.assertEqual(TRADING_PAIR, amm_2_order.trading_pair)
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
+    @async_run_with_concurrent_tasks(_clock.run)
     async def test_insufficient_balance(self):
         self.amm_1.set_prices(TRADING_PAIR, True, 105)
         self.amm_1.set_prices(TRADING_PAIR, False, 104)
@@ -284,7 +300,8 @@ class AmmArbUnitTest(unittest.TestCase):
                                 event_class(connector.current_timestamp, order_id, BASE_ASSET, QUOTE_ASSET,
                                             amount, amount * price, OrderType.LIMIT))
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
+    @async_run_with_concurrent_tasks(_clock.run)
     async def test_non_concurrent_orders_submission(self):
         # On non concurrent orders submission, the second leg of the arb trade has to wait for the first leg order gets
         # filled.
@@ -323,7 +340,8 @@ class AmmArbUnitTest(unittest.TestCase):
         # Check if new order is submitted when arb opportunity still presents
         self.assertNotEqual(amm_1_order.client_order_id, new_amm_1_order.client_order_id)
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
+    @async_run_with_concurrent_tasks(_clock.run)
     async def test_format_status(self):
         first_side = ArbProposalSide(
             self.market_info_1,
@@ -369,7 +387,8 @@ class AmmArbUnitTest(unittest.TestCase):
         current_status = await self.strategy.format_status()
         self.assertTrue(expected_status in current_status)
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
+    @async_run_with_concurrent_tasks(_clock.run)
     async def test_arb_not_profitable_from_gas_prices(self):
         self.amm_1.set_prices(TRADING_PAIR, True, 101)
         self.amm_1.set_prices(TRADING_PAIR, False, 100)
@@ -380,7 +399,8 @@ class AmmArbUnitTest(unittest.TestCase):
         taker_orders = self.strategy.tracked_limit_orders + self.strategy.tracked_market_orders
         self.assertTrue(len(taker_orders) == 0)
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
+    @async_run_with_concurrent_tasks(_clock.run)
     async def test_arb_profitable_after_gas_prices(self):
         self.amm_1.set_prices(TRADING_PAIR, True, 101)
         self.amm_1.set_prices(TRADING_PAIR, False, 100)
@@ -391,13 +411,15 @@ class AmmArbUnitTest(unittest.TestCase):
         placed_orders = self.strategy.tracked_limit_orders + self.strategy.tracked_market_orders
         self.assertEqual(2, len(placed_orders))
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
+    @async_run_with_concurrent_tasks(_clock.run)
     @unittest.mock.patch("hummingbot.strategy.amm_arb.amm_arb.AmmArbStrategy.apply_gateway_transaction_cancel_interval")
     async def test_apply_cancel_interval(self, patched_func: unittest.mock.AsyncMock):
         await asyncio.sleep(2)
         patched_func.assert_awaited()
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
+    @async_run_with_concurrent_tasks(_clock.run)
     @unittest.mock.patch("hummingbot.strategy.amm_arb.amm_arb.AmmArbStrategy.is_gateway_market", return_value=True)
     @unittest.mock.patch.object(MockAMM, "cancel_outdated_orders")
     async def test_cancel_outdated_orders(
@@ -408,7 +430,8 @@ class AmmArbUnitTest(unittest.TestCase):
         await asyncio.sleep(2)
         cancel_outdated_orders_func.assert_awaited()
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
+    @async_run_with_concurrent_tasks(_clock.run)
     async def test_set_order_failed(self):
         self.amm_1.set_prices(TRADING_PAIR, True, 101)
         self.amm_1.set_prices(TRADING_PAIR, False, 100)
@@ -421,7 +444,8 @@ class AmmArbUnitTest(unittest.TestCase):
         self.strategy.set_order_failed(new_amm_1_order.client_order_id)
         self.assertEqual(2, len(self.strategy.tracked_limit_orders))
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
+    @async_run_with_concurrent_tasks(_clock.run)
     async def test_market_ready(self):
         self.amm_1.ready = False
         await asyncio.sleep(10)

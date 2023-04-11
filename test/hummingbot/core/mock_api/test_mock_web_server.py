@@ -1,20 +1,34 @@
 import asyncio
-from aiohttp import ClientSession
-import unittest.mock
-import requests
 import json
+import unittest.mock
+
+import requests
+from aiohttp import ClientSession
+
 from hummingbot.core.mock_api.mock_web_server import MockWebServer
 
 
 class MockWebServerTest(unittest.TestCase):
+    _req_url_mock = None
+    _req_patcher = None
+    _url_mock = None
+    _patcher = None
+    host = None
+    web_app = None
+    _main_loop: asyncio.AbstractEventLoop
+    _ev_loop: asyncio.AbstractEventLoop
+
     @classmethod
     def setUpClass(cls) -> None:
-        cls.ev_loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
+        super().setUpClass()
+        cls._main_loop = asyncio.get_event_loop()
+        cls._ev_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(cls._ev_loop)
         cls.web_app: MockWebServer = MockWebServer.get_instance()
         cls.host = "www.google.com"
         cls.web_app.add_host_to_mock(cls.host)
         cls.web_app.start()
-        cls.ev_loop.run_until_complete(cls.web_app.wait_til_started())
+        cls._ev_loop.run_until_complete(cls.web_app.wait_til_started())
         cls._patcher = unittest.mock.patch("aiohttp.client.URL")
         cls._url_mock = cls._patcher.start()
         cls._url_mock.side_effect = MockWebServer.reroute_local
@@ -28,6 +42,10 @@ class MockWebServerTest(unittest.TestCase):
         cls.web_app.stop()
         cls._patcher.stop()
         cls._req_patcher.stop()
+        cls._ev_loop.stop()
+        cls._ev_loop.close()
+        asyncio.set_event_loop(cls._main_loop)
+        super().tearDownClass()
 
     async def _test_web_app_response(self):
         self.web_app.clear_responses()
@@ -39,7 +57,7 @@ class MockWebServerTest(unittest.TestCase):
                 self.assertEqual(self.web_app.TEST_RESPONSE, text)
 
     def test_web_app_response(self):
-        self.ev_loop.run_until_complete(asyncio.wait_for(self._test_web_app_response(), 20))
+        self._ev_loop.run_until_complete(asyncio.wait_for(self._test_web_app_response(), 20))
 
     def test_get_request_response(self):
         self.web_app.clear_responses()

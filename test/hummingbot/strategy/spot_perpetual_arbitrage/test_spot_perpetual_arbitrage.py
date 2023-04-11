@@ -40,6 +40,22 @@ class TestSpotPerpetualArbitrage(unittest.TestCase):
     end_timestamp: float = end.timestamp()
     level = 0
     log_records = []
+    _main_loop: asyncio.AbstractEventLoop
+    _ev_loop: asyncio.AbstractEventLoop
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        # This to mitigate the amount of work needed to clean all the mis-use of the Main event loop
+        cls._main_loop = asyncio.get_event_loop()
+        cls._ev_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(cls._ev_loop)
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls._ev_loop.close()
+        asyncio.set_event_loop(cls._main_loop)
+        super().tearDownClass()
 
     def handle(self, record):
         self.log_records.append(record)
@@ -124,7 +140,8 @@ class TestSpotPerpetualArbitrage(unittest.TestCase):
         self.clock.backtest_til(self.start_timestamp + 2)
         self.assertTrue(self._is_logged("INFO", "Markets are ready."))
         self.assertTrue(self._is_logged("INFO", "Trading started."))
-        self.assertTrue(self._is_logged("INFO", "This strategy supports only Oneway position mode. Attempting to switch ..."))
+        self.assertTrue(
+            self._is_logged("INFO", "This strategy supports only Oneway position mode. Attempting to switch ..."))
         # assert the strategy stopped here
         # self.assertIsNone(self.strategy.clock)
 
@@ -405,9 +422,11 @@ class TestSpotPerpetualArbitrage(unittest.TestCase):
         # asyncio.get_event_loop().run_until_complete(asyncio.sleep(0.01))
         self.assertTrue(self._is_logged("INFO", "Arbitrage position opening opportunity found."))
         self.assertTrue(self._is_logged("INFO", "Profitability (9.94%) is now above min_opening_arbitrage_pct."))
-        self.assertTrue(self._is_logged("INFO", "Placing SELL order for 1 HBOT at mock_paper_exchange at 99.5000 price"))
-        self.assertTrue(self._is_logged("INFO", "Placing BUY order for 1 HBOT at mock_perp_connector at 90.5000 price to "
-                                                "OPEN position."))
+        self.assertTrue(
+            self._is_logged("INFO", "Placing SELL order for 1 HBOT at mock_paper_exchange at 99.5000 price"))
+        self.assertTrue(
+            self._is_logged("INFO", "Placing BUY order for 1 HBOT at mock_perp_connector at 90.5000 price to "
+                                    "OPEN position."))
         placed_orders = self.strategy.tracked_market_orders
         self.assertEqual(2, len(placed_orders))
         spot_order = [order for market, order in placed_orders if market == self.spot_connector][0]

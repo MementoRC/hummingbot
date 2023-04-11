@@ -25,14 +25,26 @@ from hummingbot.strategy.avellaneda_market_making.avellaneda_market_making_confi
 
 
 class AvellanedaMarketMakingConfigMapPydanticTest(unittest.TestCase):
+    _main_loop: asyncio.AbstractEventLoop
+    _ev_loop: asyncio.AbstractEventLoop
+
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
-        cls.ev_loop = asyncio.get_event_loop()
+        # This to mitigate the amount of work needed to clean all the mis-use of the Main event loop
+        cls._main_loop = asyncio.get_event_loop()
+        cls._ev_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(cls._ev_loop)
         cls.exchange = "binance"
         cls.base_asset = "COINALPHA"
         cls.quote_asset = "HBOT"
         cls.trading_pair = f"{cls.base_asset}-{cls.quote_asset}"
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls._ev_loop.close()
+        asyncio.set_event_loop(cls._main_loop)
+        super().tearDownClass()
 
     def setUp(self) -> None:
         super().setUp()
@@ -43,7 +55,7 @@ class AvellanedaMarketMakingConfigMapPydanticTest(unittest.TestCase):
             self.config_map = ClientConfigAdapter(AvellanedaMarketMakingConfigMap(**config_settings))
 
     def async_run_with_timeout(self, coroutine: Awaitable, timeout: int = 1):
-        ret = self.ev_loop.run_until_complete(asyncio.wait_for(coroutine, timeout))
+        ret = self._ev_loop.run_until_complete(asyncio.wait_for(coroutine, timeout))
         return ret
 
     def get_default_map(self) -> Dict[str, str]:

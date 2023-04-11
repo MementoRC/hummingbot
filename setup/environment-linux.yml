@@ -1,9 +1,8 @@
-name: hummingbot
+name: hummingbot-py3.9
 channels:
   - conda-forge
   - defaults
 dependencies:
-  - aiounittest=1.4.1
   - bidict
   - certifi=2021.5.30
   - coverage=5.5
@@ -41,9 +40,10 @@ dependencies:
     - dydx-v3-python==1.0.10
     - ethsnarks-loopring==0.1.5
     - flake8==3.7.9
-    - injective-py>=0.5.9.3
+    - injective-py>=0.6.0.7
     - pandas_ta==0.3.14b
     - pre-commit==2.18.1
+    - protobuf>=3.19.4
     - psutil==5.7.2
     - ptpython==3.0.20
     - pyperclip==1.7.0
@@ -58,4 +58,3 @@ dependencies:
     - web3==5.23.0
     - websockets==9.1
     - yarl==1.4.2
-prefix: /home/paul/anaconda3/envs/hummingbot

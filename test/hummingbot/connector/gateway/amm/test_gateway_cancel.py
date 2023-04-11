@@ -5,11 +5,11 @@ from contextlib import ExitStack, asynccontextmanager
 from decimal import Decimal
 from os.path import join, realpath
 from test.mock.http_recorder import HttpPlayer
+from test.utilities_for_async_tests import async_run_with_concurrent_tasks, async_to_sync
 from typing import Generator, Optional, Set
 from unittest.mock import patch
 
 from aiohttp import ClientSession
-from aiounittest import async_test
 from async_timeout import timeout
 
 from bin import path_util  # noqa: F401
@@ -29,19 +29,21 @@ from hummingbot.core.event.events import (
 from hummingbot.core.gateway.gateway_http_client import GatewayHttpClient
 from hummingbot.core.utils.async_utils import safe_ensure_future
 
+_clock: Clock = Clock(ClockMode.REALTIME)
+
 WALLET_ADDRESS = "0x5821715133bB451bDE2d5BC6a4cE3430a4fdAF92"
 NETWORK = "ropsten"
 TRADING_PAIR = "WETH-DAI"
 MAX_FEE_PER_GAS = 2000
 MAX_PRIORITY_FEE_PER_GAS = 200
 
-ev_loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
-
 
 class GatewayCancelUnitTest(unittest.TestCase):
     _db_path: str
     _http_player: HttpPlayer
     _patch_stack: ExitStack
+    _main_loop: asyncio.AbstractEventLoop
+    _ev_loop: asyncio.AbstractEventLoop
     _clock: Clock
     _clock_task: Optional[asyncio.Task]
     _connector: GatewayEVMAMM
@@ -50,7 +52,11 @@ class GatewayCancelUnitTest(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls._db_path = realpath(join(__file__, "../fixtures/gateway_cancel_fixture.db"))
         cls._http_player = HttpPlayer(cls._db_path)
-        cls._clock: Clock = Clock(ClockMode.REALTIME)
+        # This to mitigate the amount of work needed to clean all the mis-use of the Main event loop
+        cls._main_loop = asyncio.get_event_loop()
+        cls._ev_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(cls._ev_loop)
+        cls._clock: Clock = _clock
         cls._client_config_map = ClientConfigAdapter(ClientConfigMap())
         cls._connector: GatewayEVMAMM = GatewayEVMAMM(
             client_config_map=cls._client_config_map,
@@ -73,11 +79,14 @@ class GatewayCancelUnitTest(unittest.TestCase):
         )
         cls._patch_stack.enter_context(cls._clock)
         GatewayHttpClient.get_instance().base_url = "https://localhost:5000"
-        ev_loop.run_until_complete(cls.wait_til_ready())
 
     @classmethod
     def tearDownClass(cls) -> None:
         cls._patch_stack.close()
+        cls._ev_loop.stop()
+        cls._ev_loop.close()
+        asyncio.set_event_loop(cls._main_loop)
+        super().tearDownClass()
 
     def tearDown(self) -> None:
         self._connector._order_tracker.all_orders.clear()
@@ -105,7 +114,8 @@ class GatewayCancelUnitTest(unittest.TestCase):
                 pass
             self._clock_task = None
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
+    @async_run_with_concurrent_tasks(lambda: GatewayCancelUnitTest.wait_til_ready())
     async def test_cancel_order(self):
         amount: Decimal = Decimal("0.001")
         connector: GatewayEVMAMM = self._connector
@@ -174,7 +184,8 @@ class GatewayCancelUnitTest(unittest.TestCase):
         finally:
             connector.remove_listener(MarketEvent.OrderCancelled, event_logger)
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
+    @async_run_with_concurrent_tasks(lambda: GatewayCancelUnitTest.wait_til_ready())
     async def test_cancel_approval(self):
         connector: GatewayEVMAMM = self._connector
         event_logger: EventLogger = EventLogger()

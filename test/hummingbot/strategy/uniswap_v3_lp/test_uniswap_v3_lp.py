@@ -2,10 +2,9 @@ import asyncio
 import contextlib
 import unittest
 from decimal import Decimal
+from test.utilities_for_async_tests import async_run_with_concurrent_tasks, async_to_sync
 from typing import List, Optional
 from unittest.mock import patch
-
-from aiounittest import async_test
 
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
@@ -16,7 +15,6 @@ from hummingbot.core.data_type.in_flight_order import OrderState
 from hummingbot.core.data_type.trade_fee import TokenAmount, TradeFeeSchema
 from hummingbot.core.event.events import LPType
 from hummingbot.core.network_iterator import NetworkStatus
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.core.utils.tracking_nonce import get_tracking_nonce
 from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple
 from hummingbot.strategy.uniswap_v3_lp.uniswap_v3_lp import UniswapV3LpStrategy
@@ -25,7 +23,6 @@ TRADING_PAIR: str = "HBOT-USDT"
 BASE_ASSET: str = TRADING_PAIR.split("-")[0]
 QUOTE_ASSET: str = TRADING_PAIR.split("-")[1]
 
-ev_loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
 s_decimal_0 = Decimal(0)
 
 
@@ -62,8 +59,7 @@ class MockAMMLP(ConnectorBase):
         return [
             in_flight_order
             for in_flight_order in self._in_flight_orders.values()
-            if not self.is_approval_order(in_flight_order)
-            and not in_flight_order.is_pending_cancel_confirmation
+            if not self.is_approval_order(in_flight_order) and not in_flight_order.is_pending_cancel_confirmation
         ]
 
     async def get_price(self, trading_pair: str, fee: str) -> Decimal:
@@ -76,7 +72,8 @@ class MockAMMLP(ConnectorBase):
         self._account_balances[token] = Decimal(str(balance))
         self._account_available_balances[token] = Decimal(str(balance))
 
-    def add_liquidity(self, trading_pair: str, amount_0: Decimal, amount_1: Decimal, lower_price: Decimal, upper_price: Decimal, fee: str, **request_args) -> str:
+    def add_liquidity(self, trading_pair: str, amount_0: Decimal, amount_1: Decimal, lower_price: Decimal,
+                      upper_price: Decimal, fee: str, **request_args) -> str:
         order_id = f"add-{trading_pair}-{get_tracking_nonce()}"
         self._in_flight_orders[order_id] = GatewayInFlightLPOrder(client_order_id=order_id,
                                                                   exchange_order_id="",
@@ -92,7 +89,8 @@ class MockAMMLP(ConnectorBase):
         self._in_flight_orders[order_id].current_state = OrderState.CREATED
         return order_id
 
-    def remove_liquidity(self, trading_pair: str, token_id: int, reduce_percent: Optional[int] = 100, **request_args) -> str:
+    def remove_liquidity(self, trading_pair: str, token_id: int, reduce_percent: Optional[int] = 100,
+                         **request_args) -> str:
         order_id = f"remove-{trading_pair}-{get_tracking_nonce()}"
         self._in_flight_orders[order_id] = GatewayInFlightLPOrder(client_order_id=order_id,
                                                                   exchange_order_id="",
@@ -138,9 +136,30 @@ class MockAMMLP(ConnectorBase):
         return []
 
 
+_clock: Clock = Clock(ClockMode.REALTIME)
+
+
 class UniswapV3LpUnitTest(unittest.TestCase):
+    _main_loop: asyncio.AbstractEventLoop
+    _ev_loop: asyncio.AbstractEventLoop
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        # This to mitigate the amount of work needed to clean all the mis-use of the Main event loop
+        cls._main_loop = asyncio.get_event_loop()
+        cls._ev_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(cls._ev_loop)
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls._ev_loop.stop()
+        cls._ev_loop.close()
+        asyncio.set_event_loop(cls._main_loop)
+        super().tearDownClass()
+
     def setUp(self):
-        self.clock: Clock = Clock(ClockMode.REALTIME)
+        self.clock: Clock = _clock
         self.stack: contextlib.ExitStack = contextlib.ExitStack()
         self.lp: MockAMMLP = MockAMMLP("onion")
         self.lp.set_balance(BASE_ASSET, 500)
@@ -165,23 +184,19 @@ class UniswapV3LpUnitTest(unittest.TestCase):
             "hummingbot.client.config.trade_fee_schema_loader.TradeFeeSchemaLoader.configured_schema_for_exchange",
             return_value=TradeFeeSchema()
         ))
-        self.clock_task: asyncio.Task = safe_ensure_future(self.clock.run())
 
     def tearDown(self) -> None:
         self.stack.close()
-        self.clock_task.cancel()
-        try:
-            ev_loop.run_until_complete(self.clock_task)
-        except asyncio.CancelledError:
-            pass
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
+    @async_run_with_concurrent_tasks(_clock.run)
     async def test_propose_position_boundary(self):
         lower_price, upper_price = await self.strategy.propose_position_boundary()
         self.assertEqual(lower_price, Decimal("0.9"))
         self.assertEqual(upper_price, Decimal("1.1"))
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
+    @async_run_with_concurrent_tasks(_clock.run)
     async def test_format_status(self):
         self.lp.set_price(TRADING_PAIR, 0)
         await asyncio.sleep(2)
@@ -199,12 +214,14 @@ class UniswapV3LpUnitTest(unittest.TestCase):
         print(current_status)
         self.assertTrue(expected_status in current_status)
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
+    @async_run_with_concurrent_tasks(_clock.run)
     async def test_any_active_position(self):
         await asyncio.sleep(2)
         self.assertTrue(self.strategy.any_active_position(Decimal("1")))
 
-    @async_test(loop=ev_loop)
+    @async_to_sync
+    @async_run_with_concurrent_tasks(_clock.run)
     async def test_positions_are_created_with_price(self):
         await asyncio.sleep(2)
         self.assertEqual(len(self.strategy.active_positions), 1)
@@ -216,4 +233,5 @@ class UniswapV3LpUnitTest(unittest.TestCase):
         self.assertEqual(len(self.strategy.active_positions), 3)
         self.lp.set_price(TRADING_PAIR, 2)  # price falls back
         await asyncio.sleep(2)
-        self.assertEqual(len(self.strategy.active_positions), 3)  # no new position created when there's an active position
+        self.assertEqual(len(self.strategy.active_positions),
+                         3)  # no new position created when there's an active position

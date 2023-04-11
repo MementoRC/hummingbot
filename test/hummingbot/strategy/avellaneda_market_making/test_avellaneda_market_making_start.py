@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import logging
 import unittest.mock
@@ -19,6 +20,22 @@ from hummingbot.strategy.avellaneda_market_making.avellaneda_market_making_confi
 class AvellanedaStartTest(unittest.TestCase):
     # the level is required to receive logs from the data source logger
     level = 0
+    _main_loop: asyncio.AbstractEventLoop
+    _ev_loop: asyncio.AbstractEventLoop
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        # This to mitigate the amount of work needed to clean all the mis-use of the Main event loop
+        cls._main_loop = asyncio.get_event_loop()
+        cls._ev_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(cls._ev_loop)
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls._ev_loop.close()
+        asyncio.set_event_loop(cls._main_loop)
+        super().tearDownClass()
 
     def setUp(self) -> None:
         super().setUp()
