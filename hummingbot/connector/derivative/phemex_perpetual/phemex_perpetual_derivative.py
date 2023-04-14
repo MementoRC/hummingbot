@@ -511,10 +511,7 @@ class PhemexPerpetualDerivative(PerpetualDerivativePyBase):
         """
         Queries the necessary API endpoint and initialize the TradingRule object for each trading pair being traded.
 
-        Parameters
-        ----------
-        exchange_info_dict:
-            Trading rules dictionary response from the exchange
+        :param exchange_info_dict: Trading rules dictionary response from the exchange
         """
         rules: list = exchange_info_dict.get("data", {}).get("perpProductsV2", [])
         return_val: list = []
