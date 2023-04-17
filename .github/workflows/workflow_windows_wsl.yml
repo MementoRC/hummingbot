@@ -27,23 +27,26 @@ jobs:
           echo "is_set=true" >> $GITHUB_OUTPUT
 
   build_hummingbot:
-    name: build/tests ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    name: build/test WSL:${{ matrix.os }}
+    runs-on: windows-latest
     strategy:
-      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, macos-11, ubuntu-20.04]
+        os: [Ubuntu-22.04]
+        #os: [Debian, Alpine, kali-linux, openSUSE-Leap-15.2, Ubuntu-22.04]
     needs: run_client
     if: github.event.pull_request.draft == false && needs.run_client.outputs.is_set == 'true'
 
     defaults:
       run:
-        shell: bash -l {0}
+        shell: wsl-bash {0}
 
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - uses: Vampire/setup-wsl@v2
+        with:
+            distribution: ${{ matrix.os }}
 
       # Use cache's hashFiles function to check for changes in core code
       - name: Check for code changes
@@ -54,7 +57,7 @@ jobs:
           CACHE_NUMBER: 0
         with:
           path: README.md # placeholder file
-          key: ${{ runner.os }}-build-${{ env.CACHE_NUMBER }}-${{ hashFiles('hummingbot/*', '**/*.py', '**/*.py*', '**/*.pxd', 'test/*') }}
+          key: WSL-${{ matrix.os }}-build-${{ env.CACHE_NUMBER }}-${{ hashFiles('hummingbot/*', '**/*.py', '**/*.py*', '**/*.pxd', 'test/*') }}
 
       # Check for setup/environment-linux.yml changes
       - name: Cache conda dependencies
@@ -64,10 +67,21 @@ jobs:
           # Increase this value to manually reset cache if setup/environment-linux.yml has not changed
           CONDA_CACHE_NUMBER: 0
         with:
-          path: |
-            /home/runner/conda_pkgs_dir/
-            /usr/share/miniconda/envs/hummingbot
-          key: ${{ runner.os }}-conda-${{ env.CONDA_CACHE_NUMBER }}-${{ hashFiles('setup/environment-linux.yml') }}
+          path: /usr/share/miniconda/envs/hummingbot
+          key: WSL-${{ matrix.os }}-conda-${{ env.CONDA_CACHE_NUMBER }}-${{ hashFiles('setup/environment-linux.yml') }}
+
+      # Install Conda
+      - name: Install conda
+        run: |
+          apt-get update
+          apt-get install -y wget
+          wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+          sh miniconda.sh -b -p $CONDA
+          source $CONDA/etc/profile.d/conda.sh
+          conda init
+          conda config --set always_yes yes --set changeps1 no
+          conda update -q conda
+          conda info -a
 
       # Install environment and Hummingbot
       - name: Install environment and Hummingbot
@@ -75,11 +89,10 @@ jobs:
         with:
           program-cache-hit: ${{steps.program-changes.outputs.cache-hit}}
           dependencies-cache-hit: ${{steps.conda-dependencies.outputs.cache-hit}}
-          shell: bash -l {0}
+          shell: wsl-bash {0}
 
       # Compile and run tests if code has changed
       - name: Run pre-commit hooks on diff
-        shell: bash
         if: steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true'
         run: |
           source $CONDA/etc/profile.d/conda.sh
@@ -88,7 +101,6 @@ jobs:
 
       - name: Run stable tests and calculate coverage
         if: steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true'
-        shell: bash
         run: |
           source $CONDA/etc/profile.d/conda.sh
           conda activate hummingbot
@@ -96,7 +108,6 @@ jobs:
 
       - name: Check and report global coverage
         if: steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true'
-        shell: bash
         run: |
           source $CONDA/etc/profile.d/conda.sh
           conda activate hummingbot
@@ -104,7 +115,6 @@ jobs:
 
       - name: Validate coverage for the changes
         if: github.event_name == 'pull_request' && (steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true')
-        shell: bash
         run: |
           source $CONDA/etc/profile.d/conda.sh
           conda activate hummingbot
