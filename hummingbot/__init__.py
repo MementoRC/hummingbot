@@ -86,6 +86,7 @@ def check_dev_mode():
         current_branch = subprocess.check_output(["git", "symbolic-ref", "--short", "HEAD"]).decode("utf8").rstrip()
         if current_branch != "master":
             return True
+
     except Exception:
         return False
 
