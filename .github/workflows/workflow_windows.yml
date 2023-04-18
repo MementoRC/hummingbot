@@ -32,7 +32,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, macos-11, ubuntu-20.04]
+        os: [windows-latest]
+        python-version: ["3.8.2"]
     needs: run_client
     if: github.event.pull_request.draft == false && needs.run_client.outputs.is_set == 'true'
 
@@ -56,6 +57,16 @@ jobs:
           path: README.md # placeholder file
           key: ${{ runner.os }}-build-${{ env.CACHE_NUMBER }}-${{ hashFiles('hummingbot/*', '**/*.py', '**/*.py*', '**/*.pxd', 'test/*') }}
 
+      # Setup Miniconda and create environment ($CONDA)
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+          channels: conda-forge, defaults
+          use-only-tar-bz2: true  # IMPORTANT: This needs to be set for caching to work properly!
+          auto-update-conda: true
+          auto-activate-base: true
+          python-version: ${{ matrix.python-version }}
+
       # Check for setup/environment-linux.yml changes
       - name: Cache conda dependencies
         id: conda-dependencies
@@ -65,8 +76,7 @@ jobs:
           CONDA_CACHE_NUMBER: 0
         with:
           path: |
-            /home/runner/conda_pkgs_dir/
-            /usr/share/miniconda/envs/hummingbot
+            $CONDA/envs/hummingbot
           key: ${{ runner.os }}-conda-${{ env.CONDA_CACHE_NUMBER }}-${{ hashFiles('setup/environment-linux.yml') }}
 
       # Install environment and Hummingbot
@@ -79,7 +89,6 @@ jobs:
 
       # Compile and run tests if code has changed
       - name: Run pre-commit hooks on diff
-        shell: bash
         if: steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true'
         run: |
           source $CONDA/etc/profile.d/conda.sh
@@ -88,15 +97,18 @@ jobs:
 
       - name: Run stable tests and calculate coverage
         if: steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true'
-        shell: bash
         run: |
           source $CONDA/etc/profile.d/conda.sh
           conda activate hummingbot
-          make test
+          coverage run -m pytest \
+            --ignore="test/connector" \
+            --ignore="test/debug" \
+            --ignore="test/mock" \
+            --ignore="test/hummingbot/connector/gateway/amm" \
+            --ignore="test/hummingbot/connector/gateway/clob"
 
       - name: Check and report global coverage
         if: steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true'
-        shell: bash
         run: |
           source $CONDA/etc/profile.d/conda.sh
           conda activate hummingbot
@@ -104,7 +116,6 @@ jobs:
 
       - name: Validate coverage for the changes
         if: github.event_name == 'pull_request' && (steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true')
-        shell: bash
         run: |
           source $CONDA/etc/profile.d/conda.sh
           conda activate hummingbot
