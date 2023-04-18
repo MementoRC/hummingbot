@@ -8,45 +8,33 @@ on:
     types: [ready_for_review, opened, synchronize, reopened]
 
 jobs:
-  run_client:
-    name: Check if client files changed
-    outputs:
-      is_set: ${{ steps.check_files.outputs.is_set }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: technote-space/get-diff-action@v6
-        with:
-          PATTERNS: |
-            **/*.+(py|pyx|pyd|yml)
-      - name: Check if client files are modified
-        id: check_files
-        if: env.GIT_DIFF
-        run: |
-          echo ${{ env.GIT_DIFF }}
-          echo "is_set=true" >> $GITHUB_OUTPUT
-
   build_hummingbot:
-    name: build/test WSL:${{ matrix.os }}
-    runs-on: windows-latest
+    name: build/tests ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [Ubuntu-22.04]
-        #os: [Debian, Alpine, kali-linux, openSUSE-Leap-15.2, Ubuntu-22.04]
-    needs: run_client
+        os: [windows-latest, windows-2019]
+        python-version: ["3.8.2"]
     if: github.event.pull_request.draft == false && needs.run_client.outputs.is_set == 'true'
 
     defaults:
       run:
-        shell: wsl-bash {0}
+        shell: bash -l {0}
 
     steps:
+      # Wait on whether updates require to run the tests
+      - name: Wait for tests to succeed
+        uses: lewagon/wait-on-check-action@v1.3.1
+        with:
+          ref: ${{ github.ref }}
+          check-name: 'Check if client files changed'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
+
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - uses: Vampire/setup-wsl@v2
-        with:
-            distribution: ${{ matrix.os }}
 
       # Use cache's hashFiles function to check for changes in core code
       - name: Check for code changes
@@ -57,7 +45,17 @@ jobs:
           CACHE_NUMBER: 0
         with:
           path: README.md # placeholder file
-          key: WSL-${{ matrix.os }}-build-${{ env.CACHE_NUMBER }}-${{ hashFiles('hummingbot/*', '**/*.py', '**/*.py*', '**/*.pxd', 'test/*') }}
+          key: ${{ runner.os }}-build-${{ env.CACHE_NUMBER }}-${{ hashFiles('hummingbot/*', '**/*.py', '**/*.py*', '**/*.pxd', 'test/*') }}
+
+      # Setup Miniconda and create environment ($CONDA)
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+          channels: conda-forge, defaults
+          use-only-tar-bz2: true  # IMPORTANT: This needs to be set for caching to work properly!
+          auto-update-conda: true
+          auto-activate-base: true
+          python-version: ${{ matrix.python-version }}
 
       # Check for setup/environment-linux.yml changes
       - name: Cache conda dependencies
@@ -67,28 +65,9 @@ jobs:
           # Increase this value to manually reset cache if setup/environment-linux.yml has not changed
           CONDA_CACHE_NUMBER: 0
         with:
-          path: /usr/share/miniconda/envs/hummingbot
-          key: WSL-${{ matrix.os }}-conda-${{ env.CONDA_CACHE_NUMBER }}-${{ hashFiles('setup/environment-linux.yml') }}
-
-      # Set miniconda install directory
-      - name: Set Environment Variables
-        uses: ./.github/actions/set_env_vars
-        with:
-          varFilePath: ./.github/variables/conda.env
-
-      # Install Conda
-      - name: Install conda
-        run: |
-          apt-get update
-          apt-get install -y wget
-          wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-          echo "$MINICONDA"
-          sh miniconda.sh -b -p $MINICONDA_PATH
-          source $MINICONDA_PATH/etc/profile.d/conda.sh
-          conda init
-          conda config --set always_yes yes --set changeps1 no
-          conda update -q conda
-          conda info -a
+          path: |
+            $CONDA/envs/hummingbot
+          key: ${{ runner.os }}-conda-${{ env.CONDA_CACHE_NUMBER }}-${{ hashFiles('setup/environment-linux.yml') }}
 
       # Install environment and Hummingbot
       - name: Install environment and Hummingbot
@@ -96,34 +75,39 @@ jobs:
         with:
           program-cache-hit: ${{steps.program-changes.outputs.cache-hit}}
           dependencies-cache-hit: ${{steps.conda-dependencies.outputs.cache-hit}}
-          shell: wsl-bash {0}
+          shell: bash -l {0}
 
       # Compile and run tests if code has changed
       - name: Run pre-commit hooks on diff
         if: steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true'
         run: |
-          source $MINICONDA_PATH/etc/profile.d/conda.sh
+          source $CONDA/etc/profile.d/conda.sh
           conda activate hummingbot
           pre-commit run --files $(git diff --name-only origin/$GITHUB_BASE_REF)
 
       - name: Run stable tests and calculate coverage
         if: steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true'
         run: |
-          source $MINICONDA_PATH/etc/profile.d/conda.sh
+          source $CONDA/etc/profile.d/conda.sh
           conda activate hummingbot
-          make test
+          coverage run -m pytest \
+            --ignore="test/connector" \
+            --ignore="test/debug" \
+            --ignore="test/mock" \
+            --ignore="test/hummingbot/connector/gateway/amm" \
+            --ignore="test/hummingbot/connector/gateway/clob"
 
       - name: Check and report global coverage
         if: steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true'
         run: |
-          source $MINICONDA_PATH/etc/profile.d/conda.sh
+          source $CONDA/etc/profile.d/conda.sh
           conda activate hummingbot
           make report_coverage
 
       - name: Validate coverage for the changes
         if: github.event_name == 'pull_request' && (steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true')
         run: |
-          source $MINICONDA_PATH/etc/profile.d/conda.sh
+          source $CONDA/etc/profile.d/conda.sh
           conda activate hummingbot
           git fetch --all -q
           git checkout -b $GITHUB_SHA

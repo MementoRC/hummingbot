@@ -1,0 +1,27 @@
+name: ci
+
+on:
+  push:
+    branches: [master, development, development_unofficial, 'refactor/unit_tests**', 'epic/**']
+  pull_request:
+    branches: [master, development, development_unofficial, 'refactor/unit_tests**', 'epic/**']
+    types: [ready_for_review, opened, synchronize, reopened]
+
+jobs:
+  run_client:
+    name: Check if client files changed
+    outputs:
+      is_set: ${{ steps.check_files.outputs.is_set }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: technote-space/get-diff-action@v6
+        with:
+          PATTERNS: |
+            **/*.+(py|pyx|pyd|yml)
+      - name: Check if client files are modified
+        id: check_files
+        if: env.GIT_DIFF
+        run: |
+          echo ${{ env.GIT_DIFF }}
+          echo "is_set=true" >> $GITHUB_OUTPUT
