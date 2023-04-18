@@ -15,22 +15,12 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, ubuntu-20.04]
-    if: github.event.pull_request.draft == false && needs.run_client.outputs.is_set == 'true'
 
     defaults:
       run:
         shell: bash -l {0}
 
     steps:
-      # Wait on whether updates require to run the tests
-      - name: Wait on updates to run
-        uses: lewagon/wait-on-check-action@v1.3.1
-        with:
-          ref: ${{ github.ref }}
-          check-name: 'Check if client files changed'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          wait-interval: 10
-
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
