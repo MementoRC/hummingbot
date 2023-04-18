@@ -1,11 +1,14 @@
 name: ci
 
 on:
-  push:
-    branches: [master, development, development_unofficial, 'refactor/unit_tests**', 'epic/**']
-  pull_request:
-    branches: [master, development, development_unofficial, 'refactor/unit_tests**', 'epic/**']
-    types: [ready_for_review, opened, synchronize, reopened]
+  workflow_call:
+    # inputs:
+    #   config-path:
+    #     required: true
+    #     type: string
+    # secrets:
+    #   envPAT:
+    #     required: true
 
 jobs:
   build_hummingbot:
