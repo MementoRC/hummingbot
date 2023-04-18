@@ -1,13 +1,45 @@
 name: ci
 
 on:
-  push:
-    branches: [master, development, development_unofficial, 'refactor/unit_tests**', 'epic/**']
-  pull_request:
-    branches: [master, development, development_unofficial, 'refactor/unit_tests**', 'epic/**']
-    types: [ready_for_review, opened, synchronize, reopened]
+  workflow_call:
+    # inputs:
+    #   config-path:
+    #     required: true
+    #     type: string
+    # secrets:
+    #   envPAT:
+    #     required: true
 
 jobs:
+  build_needed:
+    name: Check if build is needed
+    outputs:
+      is_set: ${{ steps.check_files.outputs.is_set }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Waiting
+        run: echo 'Awaiting check for client files changes...'
+
+      # Wait on whether updates require to run the tests
+      - name: Wait for tests to succeed
+        uses: lewagon/wait-on-check-action@v1.3.1
+        with:
+          ref: ${{ github.ref }}
+          check-name: 'Check if client files changed'
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          wait-interval: 10
+
+      - name: Waiting
+        run: echo 'Awaiting check for client files changes...'
+
+      - name: Check if client files are modified
+        id: check_files
+        if: env.GIT_DIFF
+        run: |
+          echo ${{ env.GIT_DIFF }}
+          echo "is_set=true" >> $GITHUB_OUTPUT
+
+
   build_hummingbot:
     name: build/tests RasPi ${{ matrix.cpu }}
     runs-on: ubuntu-latest
@@ -56,15 +88,6 @@ jobs:
         shell: bash -l {0}
 
     steps:
-      # Wait on whether updates require to run the tests
-      - name: Wait for tests to succeed
-        uses: lewagon/wait-on-check-action@v1.3.1
-        with:
-          ref: ${{ github.ref }}
-          check-name: 'Check if client files changed'
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          wait-interval: 10
-
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
