@@ -13,6 +13,12 @@ inputs:
 runs:
   using: "composite"
   steps:
+    # Set miniconda install directory
+    - name: Set Environment Variables
+      uses: ./.github/actions/set_env_vars
+      with:
+        varFilePath: ./.github/variables/conda.env
+
     # Install python/conda to check if core code has changed
     - uses: actions/setup-python@v3
       if: ${{inputs.program-cache-hit}} != 'true' || ${{inputs.dependencies-cache-hit}} != 'true'
@@ -34,8 +40,8 @@ runs:
           apt install -y wget
           apt-get install build-essential libssl-dev libffi-dev gcc python3-dev python-dev python3 git-all -y
           wget https://github.com/conda-forge/miniforge/releases/download/4.11.0-4/Miniforge3-4.11.0-4-Linux-aarch64.sh
-          sh Miniforge3-4.11.0-4-Linux-aarch64.sh -b -p /home/user/miniconda3
-          source /home/user/miniconda3/etc/profile.d/conda.sh
+          sh Miniforge3-4.11.0-4-Linux-aarch64.sh -b -p $MINICONDA_PATH
+          source $MINICONDA_PATH/etc/profile.d/conda.sh
           conda init
           conda config --set always_yes yes --set changeps1 no
           conda update -q conda

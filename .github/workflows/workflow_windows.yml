@@ -42,17 +42,10 @@ jobs:
         shell: bash -l {0}
 
     steps:
-      - uses: conda-incubator/setup-miniconda@v2
-        with:
-          miniconda-version: "latest"
-          channels: conda-forge, defaults
-          use-only-tar-bz2: true  # IMPORTANT: This needs to be set for caching to work properly!
-          auto-update-conda: true
-          auto-activate-base: true
-          python-version: ${{ matrix.python-version }}
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+
       # Use cache's hashFiles function to check for changes in core code
       - name: Check for code changes
         id: program-changes
@@ -64,6 +57,16 @@ jobs:
           path: README.md # placeholder file
           key: ${{ runner.os }}-build-${{ env.CACHE_NUMBER }}-${{ hashFiles('hummingbot/*', '**/*.py', '**/*.py*', '**/*.pxd', 'test/*') }}
 
+      # Setup Miniconda and create environment ($CONDA)
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+          channels: conda-forge, defaults
+          use-only-tar-bz2: true  # IMPORTANT: This needs to be set for caching to work properly!
+          auto-update-conda: true
+          auto-activate-base: true
+          python-version: ${{ matrix.python-version }}
+
       # Check for setup/environment-linux.yml changes
       - name: Cache conda dependencies
         id: conda-dependencies
@@ -73,7 +76,7 @@ jobs:
           CONDA_CACHE_NUMBER: 0
         with:
           path: |
-            /usr/share/miniconda/envs/hummingbot
+            $CONDA/envs/hummingbot
           key: ${{ runner.os }}-conda-${{ env.CONDA_CACHE_NUMBER }}-${{ hashFiles('setup/environment-linux.yml') }}
 
       # Install environment and Hummingbot
