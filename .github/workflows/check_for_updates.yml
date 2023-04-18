@@ -26,9 +26,9 @@ jobs:
           echo ${{ env.GIT_DIFF }}
           echo "is_set=true" >> $GITHUB_OUTPUT
 
-  # dispatch_builds:
-  #   name: Dispatch builds
-  #   runs-on: ubuntu-latest
-  #   needs: run_client
-  #   if: github.event.pull_request.draft == false && needs.run_client.outputs.is_set == 'true'
-  #   uses: ./.github/workflows/install_x86_Linux.yml@main
+  build_on_Linux:
+    name: Dispatch builds
+    runs-on: ubuntu-latest
+    needs: run_client
+    if: github.event.pull_request.draft == false && needs.run_client.outputs.is_set == 'true'
+    uses: ./.github/workflows/install_x86_Linux.yml
