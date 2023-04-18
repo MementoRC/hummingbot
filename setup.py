@@ -1,4 +1,5 @@
 import os
+import pathlib
 import subprocess
 import sys
 from typing import List
@@ -19,7 +20,25 @@ if is_posix:
         os.environ["CFLAGS"] = "-std=c++11"
 
 if os.environ.get('WITHOUT_CYTHON_OPTIMIZATIONS'):
-    os.environ["CFLAGS"] += " -O0"
+    if "CFLAGS" in os.environ:
+        os.environ["CFLAGS"] = os.environ.get("CFLAGS") + " -O0"
+    else:
+        os.environ["CFLAGS"] = "-O0"
+
+IS_PY_DEBUG = os.getenv('EXT_BUILD_PY_DEBUG', False)
+
+coverage_macros = []
+coverage_compiler_directives = dict()
+coverage_include_path = []
+
+if not IS_PY_DEBUG:
+    print('Extension IS_CYTHON_COVERAGE=True!')
+    # Adding cython line trace for coverage report
+    coverage_macros += ("CYTHON_TRACE_NOGIL", 1), ("CYTHON_TRACE", 1)
+    # Adding upper directory for supporting code coverage when running tests inside the cython package
+    coverage_include_path += ['..']
+    # Some extra info for cython compiler
+    coverage_compiler_directives = dict(linetrace=True, profile=True, binding=True)
 
 IS_PY_DEBUG = os.getenv('EXT_BUILD_PY_DEBUG', False)
 
@@ -55,7 +74,7 @@ def find_py_with_cython_inline() -> List[Extension]:
         parent = str(py_file.parent).replace("/", ".")
         obj = py_file.stem
 
-        with open(py_file, "r") as f:
+        with open(py_file, "r", encoding="utf8") as f:
             for i, line in enumerate(f):
                 if " cython " in line:
                     extensions.append(Extension(parent + "." + obj,
@@ -101,65 +120,6 @@ def main():
             "templates/*TEMPLATE.yml"
         ],
     }
-    install_requires = [
-        "0x-contract-addresses",
-        "0x-contract-wrappers",
-        "0x-order-utils",
-        "aioconsole",
-        "aiohttp",
-        "aiokafka",
-        "appdirs",
-        "appnope",
-        "async-timeout",
-        "bidict",
-        "cachetools",
-        "certifi",
-        "cryptography",
-        "cython",
-        "cytoolz",
-        "docker",
-        "diff-cover",
-        "dydx-python",
-        "dydx-v3-python",
-        "eth-abi",
-        "eth-account",
-        "eth-bloom",
-        "eth-keyfile",
-        "eth-typing",
-        "eth-utils",
-        "ethsnarks-loopring",
-        "flake8",
-        "hexbytes",
-        "importlib-metadata",
-        "mypy-extensions",
-        "nose",
-        "nose-exclude",
-        "numpy",
-        "pandas",
-        "pip",
-        "pre-commit",
-        "prompt-toolkit",
-        "psutil",
-        "pydantic",
-        "pyjwt",
-        "pyperclip",
-        "python-dateutil",
-        "python-telegram-bot",
-        "requests",
-        "rsa",
-        "ruamel-yaml",
-        "scipy",
-        "signalr-client-aio",
-        "simplejson",
-        "six",
-        "sqlalchemy",
-        "tabulate",
-        "tzlocal",
-        "ujson",
-        "web3",
-        "websockets",
-        "yarl",
-    ]
 
     cython_kwargs = {
         "language_level": '3',
@@ -196,8 +156,9 @@ def main():
 
     cythonized_pyx = cythonize(Extension("*",
                                          sources=["hummingbot/**/*.pyx"],
-                                         language="c++",
-                                         define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")]),
+                                         # This is no longer needed with the prod version of Cython - If we could use it :/
+                                         define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")],
+                                         language="c++"),
                                compiler_directives=compiler_directives, **cython_kwargs)
 
     setup(name="hummingbot",
@@ -209,7 +170,6 @@ def main():
           license="Apache 2.0",
           packages=packages,
           package_data=package_data,
-          install_requires=install_requires,
           zip_safe=False,
           ext_modules=[*cythonized_py, *cythonized_pyx],
           include_dirs=[

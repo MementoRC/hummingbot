@@ -7,11 +7,14 @@ inputs:
    dependencies-cache-hit:
      required: true
      description: "Value of truth regarding the program cache being hit or not"
+   shell:
+     required: true
+     description: "Shell to use for the run step"
 runs:
   using: "composite"
   steps:
     # Install python/conda to check if core code has changed
-    - uses: actions/setup-python@v2
+    - uses: actions/setup-python@v3
       if: ${{inputs.program-cache-hit}} != 'true' || ${{inputs.dependencies-cache-hit}} != 'true'
       with:
         python-version: 3.x
@@ -19,20 +22,21 @@ runs:
     # Install pre_commit if code has changed
     - name: Install pre_commit
       if: ${{inputs.program-cache-hit}} != 'true' || ${{inputs.dependencies-cache-hit}} != 'true'
-      shell: bash
+      shell: ${{inputs.shell}}
       run: |
+        source $CONDA/etc/profile.d/conda.sh
         conda install -c conda-forge pre_commit
 
     # Install hummingbot env if environment-linux.yml has changed
     - name: Install Hummingbot
       if: ${{inputs.dependencies-cache-hit}} != 'true'
-      shell: bash -l {0}
+      shell: ${{inputs.shell}}
       run: |
         ./install
 
     # Compile and run tests if code has changed
     - name: Compile Hummingbot
-      shell: bash
+      shell: ${{inputs.shell}}
       if: ${{inputs.program-cache-hit}} != 'true' || ${{inputs.dependencies-cache-hit}} != 'true'
       env:
         WITHOUT_CYTHON_OPTIMIZATIONS: 'true'

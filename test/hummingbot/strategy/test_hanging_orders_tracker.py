@@ -1,8 +1,7 @@
 import unittest
 from datetime import datetime
 from decimal import Decimal
-
-from mock import MagicMock, PropertyMock
+from unittest.mock import MagicMock, PropertyMock
 
 from hummingbot.core.data_type.limit_order import LimitOrder
 from hummingbot.core.event.events import (
