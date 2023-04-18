@@ -26,9 +26,19 @@ jobs:
           echo ${{ env.GIT_DIFF }}
           echo "is_set=true" >> $GITHUB_OUTPUT
 
-  build_on_Linux:
+  should_build:
+    name: Check if build is needed
     needs: run_client
     if: github.event.pull_request.draft == false && needs.run_client.outputs.is_set == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if build is needed
+        id: check_build
+        run: |
+          echo "is_set=true" >> $GITHUB_OUTPUT
+
+  build_on_Linux:
+    needs: should_build
     uses: ./.github/workflows/install_x86_Linux.yml
 
   # build_on_macOS:
