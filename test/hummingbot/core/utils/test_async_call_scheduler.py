@@ -296,43 +296,41 @@ class TestAsyncCallScheduler(unittest.TestCase):
 
             # Schedule coroutines with different timeouts, exceptions, and intervals
             coro_queue = acs.coro_queue
-            coro1 = self.sleep_2x_coroutine(x=1, delay=0.1)
-            coro2 = self.sleep_2x_coroutine(x=2, delay=0.2)
-            coro3 = self.sleep_2x_coroutine(x=3, delay=0.3)
-            coro4 = self.sleep_2x_coroutine_with_exception(delay=0.4)
+            coro1 = self.sleep_2x_coroutine(x=1)
+            coro2 = self.sleep_2x_coroutine(x=2)
+            coro3 = self.sleep_2x_coroutine(x=3)
+            coro4 = self.sleep_2x_coroutine_with_exception()
 
             fut1 = asyncio.get_event_loop().create_future()
             fut2 = asyncio.get_event_loop().create_future()
             fut3 = asyncio.get_event_loop().create_future()
             fut4 = asyncio.get_event_loop().create_future()
 
-            coro_queue.put_nowait((fut1, coro1, 0.3))
-            coro_queue.put_nowait((fut2, coro2, 0.3))
-            coro_queue.put_nowait((fut3, coro3, 0.1))
-            coro_queue.put_nowait((fut4, coro4, 0.2))
+            coro_queue.put_nowait((fut1, coro1, 3))
+            coro_queue.put_nowait((fut2, coro2, 3))
+            coro_queue.put_nowait((fut3, coro3, 1))
+            coro_queue.put_nowait((fut4, coro4, 2))
 
             # Start the _coro_scheduler with a custom interval
             scheduler = asyncio.create_task(acs._coro_scheduler(coro_queue, interval=0.1))
-            results = []
 
             try:
                 # Set a timeout to prevent the test from blocking indefinitely
-                # TODO: This test is flaky, sometimes it fails with a TimeoutError
-                # TODO: It maybe due to a future not returning when itself times-out
                 await asyncio.wait_for(asyncio.gather(fut1,
                                                       fut2,
                                                       fut3,
                                                       fut4,
                                                       return_exceptions=True),
-                                       timeout=1)
-            except asyncio.TimeoutError:
-                results = [fut1, fut2, fut3, fut4]
+                                       timeout=5)
             finally:
                 # Cancel the _coro_scheduler task
                 scheduler.cancel()
                 await asyncio.gather(scheduler, return_exceptions=True)
 
-            self.assertEqual(len(results), 4, "The number of results does not match the number of futures")
+            # Cancel the _coro_scheduler task
+            scheduler.cancel()
+            await asyncio.gather(scheduler, return_exceptions=True)
+
             if not fut1.cancelled():
                 self.assertEqual(fut1.result(), 2, "Coroutine 1 did not return the expected result")
             if not fut2.cancelled():
