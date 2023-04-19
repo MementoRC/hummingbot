@@ -10,6 +10,8 @@ inputs:
    shell:
      required: true
      description: "Shell to use for the run step"
+     default: bash -eo pipefail
+
 runs:
   using: "composite"
   steps:
@@ -26,7 +28,7 @@ runs:
         cpu: ${{ matrix.cpu }}
         cpu_info: ${{ matrix.cpu_info }}
         bind_mount_repository: true
-        shell: /bin/bash -eo pipefail
+        shell: ${{ inputs.shell }}
         import_github_env: true
         commands: |
           apt update

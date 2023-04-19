@@ -15,6 +15,10 @@ on:
         required: false
         type: string
         default: "['ubuntu-latest', 'ubuntu-20.04']"
+      shell:
+        required: false
+        type: string
+        default: bash -l {0}
 
 jobs:
   build_hummingbot:
@@ -28,7 +32,7 @@ jobs:
 
     defaults:
       run:
-        shell: bash -l {0}
+        shell: $${{ inputs.shell }}
 
     steps:
       # Checkout Hummingbot - not much can be done without that!
@@ -64,7 +68,6 @@ jobs:
         with:
           program-cache-hit: ${{steps.checkout-hb-cache-hit.outputs.hb-cache-hit}}
           dependencies-cache-hit: ${{steps.checkout-hb-cache-hit.outputs.conda-cache-hit}}
-          shell: ${{ build_hummingbot.defaults.run.shell }}
 
       # Compile and run tests if code has changed
       - name: Run pre-commit hooks on diff

@@ -10,7 +10,8 @@ inputs:
    shell:
      required: false
      description: "Shell to use for the run step"
-     default: bash
+     default: bash -l {0]
+
 runs:
   using: "composite"
   steps:
