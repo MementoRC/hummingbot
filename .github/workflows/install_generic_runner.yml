@@ -60,7 +60,6 @@ jobs:
       # Verify conda environment
       - name: Verify conda environment
         run: |
-          echo "${{ inputs.shell }}"
           conda --version
 
       # Install environment and Hummingbot
