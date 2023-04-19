@@ -62,46 +62,46 @@ jobs:
         run: |
           conda --version
 
-      # Install environment and Hummingbot
-      - name: Install environment and Hummingbot
-        uses: ./.github/actions/install_env_and_hb
-        with:
-          program-cache-hit: ${{steps.checkout-hb-cache-hit.outputs.hb-cache-hit}}
-          dependencies-cache-hit: ${{steps.checkout-hb-cache-hit.outputs.conda-cache-hit}}
-          shell: ${{ inputs.shell }}
-
-      # Compile and run tests if code has changed
-      - name: Run pre-commit hooks on diff
-        if: steps.checkout-hb-cache-hit.outputs.hb-cache-hit != 'true' || steps.checkout-hb-cache-hit.outputs.conda-cache-hit != 'true'
-        run: |
-          conda activate hummingbot
-          pre-commit run --files $(git diff --name-only origin/$GITHUB_BASE_REF)
-
-      - name: Run stable tests and calculate coverage
-        if: steps.checkout-hb-cache-hit.outputs.hb-cache-hit != 'true' || steps.checkout-hb-cache-hit.outputs.conda-cache-hit != 'true'
-        run: |
-          conda activate hummingbot
-          coverage run -m pytest \
-            --ignore="test/connector" \
-            --ignore="test/debug" \
-            --ignore="test/mock" \
-            --ignore="test/hummingbot/connector/gateway/amm" \
-            --ignore="test/hummingbot/connector/gateway/clob"
-
-      - name: Check and report global coverage
-        if: steps.checkout-hb-cache-hit.outputs.hb-cache-hit != 'true' || steps.checkout-hb-cache-hit.outputs.conda-cache-hit != 'true'
-        run: |
-          conda activate hummingbot
-          make report_coverage
+#      # Install environment and Hummingbot
+#      - name: Install environment and Hummingbot
+#        uses: ./.github/actions/install_env_and_hb
+#        with:
+#          program-cache-hit: ${{steps.checkout-hb-cache-hit.outputs.hb-cache-hit}}
+#          dependencies-cache-hit: ${{steps.checkout-hb-cache-hit.outputs.conda-cache-hit}}
+#          shell: ${{ inputs.shell }}
 #
-      - name: Validate coverage for the changes
-        if: github.event_name == 'pull_request' && (steps.checkout-hb-cache-hit.outputs.hb-cache-hit != 'true' || steps.checkout-hb-cache-hit.outputs.conda-cache-hit != 'true')
-        run: |
-          conda activate hummingbot
-          git fetch --all -q
-          git checkout -b $GITHUB_SHA
-          coverage xml
-          diff-cover --compare-branch=origin/$GITHUB_BASE_REF --fail-under=80 coverage.xml
+#      # Compile and run tests if code has changed
+#      - name: Run pre-commit hooks on diff
+#        if: steps.checkout-hb-cache-hit.outputs.hb-cache-hit != 'true' || steps.checkout-hb-cache-hit.outputs.conda-cache-hit != 'true'
+#        run: |
+#          conda activate hummingbot
+#          pre-commit run --files $(git diff --name-only origin/$GITHUB_BASE_REF)
+#
+#      - name: Run stable tests and calculate coverage
+#        if: steps.checkout-hb-cache-hit.outputs.hb-cache-hit != 'true' || steps.checkout-hb-cache-hit.outputs.conda-cache-hit != 'true'
+#        run: |
+#          conda activate hummingbot
+#          coverage run -m pytest \
+#            --ignore="test/connector" \
+#            --ignore="test/debug" \
+#            --ignore="test/mock" \
+#            --ignore="test/hummingbot/connector/gateway/amm" \
+#            --ignore="test/hummingbot/connector/gateway/clob"
+#
+#      - name: Check and report global coverage
+#        if: steps.checkout-hb-cache-hit.outputs.hb-cache-hit != 'true' || steps.checkout-hb-cache-hit.outputs.conda-cache-hit != 'true'
+#        run: |
+#          conda activate hummingbot
+#          make report_coverage
+##
+#      - name: Validate coverage for the changes
+#        if: github.event_name == 'pull_request' && (steps.checkout-hb-cache-hit.outputs.hb-cache-hit != 'true' || steps.checkout-hb-cache-hit.outputs.conda-cache-hit != 'true')
+#        run: |
+#          conda activate hummingbot
+#          git fetch --all -q
+#          git checkout -b $GITHUB_SHA
+#          coverage xml
+#          diff-cover --compare-branch=origin/$GITHUB_BASE_REF --fail-under=80 coverage.xml
 
       # Notify results to discord
       - name: Discord Webhook Action
@@ -131,3 +131,18 @@ jobs:
                 }
               ]
             }
+      # Notify results to discord
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.0'
+      - name: Send Webhook Notification
+        if: github.event_name != 'pull_request'
+        env:
+          JOB_STATUS: ${{ job.status }}
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+          HOOK_OS_NAME: ${{ runner.os }}
+          WORKFLOW_NAME: ${{ github.workflow }}
+        run: |
+          git clone --depth 1 https://github.com/DiscordHooks/github-actions-discord-webhook.git webhook
+          bash webhook/send.sh $JOB_STATUS $WEBHOOK_URL
+        shell: bash

@@ -10,16 +10,16 @@ inputs:
    shell:
      required: false
      description: "Shell to use for the run step"
-     default: bash -l {0]
+     default: bash -l {0}
 
 runs:
   using: "composite"
   steps:
     # Install python/conda to check if core code has changed
     - uses: actions/setup-python@v4
-      if: ${{inputs.program-cache-hit}} != 'true' || ${{inputs.dependencies-cache-hit}} != 'true'
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: ${{ github.env.PYTHON_VERSION }}
+      if: ${{inputs.program-cache-hit}} != 'true' || ${{inputs.dependencies-cache-hit}} != 'true'
 
     # Install pre_commit if code has changed
     - name: Install pre_commit

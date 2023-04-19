@@ -26,7 +26,7 @@ jobs:
           echo ${{ env.GIT_DIFF }}
           echo "is_set=true" >> $GITHUB_OUTPUT
 
-  build_on_generic_runner:
+  build_on_Linux:
     name: I/B/T x86 Linux
     needs: run_client
     uses: ./.github/workflows/install_generic_runner.yml
@@ -37,31 +37,26 @@ jobs:
       os-matrix: "['ubuntu-latest']"
       shell: 'bash -l {0}'
 
-  build_on_Linux:
-    name: I/B/T x86 Linux
-    needs: run_client
-    uses: ./.github/workflows/install_x86_Linux.yml
-    with:
-      should_run: true
-  #    should_run: ${{ needs.run_client.outputs.is_set }}
-      env-yml-file: setup/environment-linux.yml
-      os-matrix: "['ubuntu-latest', 'ubuntu-20.04']"
-
   build_on_macOS:
     name: I/B/T x86 MacOS
     needs: run_client
-    uses: ./.github/workflows/install_x86_macOs.yml
+    uses: ./.github/workflows/install_generic_runner.yml
     with:
       should_run: true
+      env-yml-file: setup/environment.yml
+      os-matrix: "['macos-latest']"
+      shell: 'bash -l {0}'
       #should_run: ${{ needs.run_client.outputs.is_set }}
 
   build_on_windows:
     name: I/B/T x86 Windows
     needs: run_client
-    uses: ./.github/workflows/install_x86_windows.yml
+    uses: ./.github/workflows/install_generic_runner.yml
     with:
       should_run: true
-      #should_run: ${{ needs.run_client.outputs.is_set }}
+      env-yml-file: setup/environment-win64.yml
+      os-matrix: "['windows-latest']"
+      shell: 'bash -l {0}'
   #
   # build_on_arm:
   #   needs: run_client
