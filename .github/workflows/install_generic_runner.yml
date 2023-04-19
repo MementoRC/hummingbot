@@ -117,6 +117,21 @@ jobs:
             }
 
       # Notify results to discord
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.0'
+      - name: Send Webhook Notification
+        if: github.event_name != 'pull_request'
+        env:
+          JOB_STATUS: ${{ job.status }}
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+          HOOK_OS_NAME: ${{ runner.os }}
+          WORKFLOW_NAME: ${{ github.workflow }}
+        run: |
+          git clone --depth 1 https://github.com/DiscordHooks/github-actions-discord-webhook.git webhook
+          bash webhook/send.sh $JOB_STATUS $WEBHOOK_URL
+        shell: bash
+      # Notify results to discord
       - name: Discord Webhook Action
         uses: tsickert/discord-webhook@v5.2.0
         with:
