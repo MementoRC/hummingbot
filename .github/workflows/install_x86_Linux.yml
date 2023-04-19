@@ -29,7 +29,8 @@ jobs:
           fetch-depth: 0
 
       # Checkout Hummingbot, set HB env variables and check cache
-      - id: checkout-hb-cache-hit
+      - name: Set Project Env. vars and check cache
+        id: checkout-hb-cache-hit
         uses: ./.github/actions/set_hb_env_cache
         with:
           runner: ${{ runner.os }}
