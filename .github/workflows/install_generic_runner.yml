@@ -108,15 +108,12 @@ jobs:
         uses: tsickert/discord-webhook@v5.2.0
         with:
           webhook-url: ${{ secrets.WEBHOOK_URL }}
-          raw-data: |
-            {
-              "content": "Build ${{ github.run_number }} for ${{ github.repository }} on ${{ matrix.os }} has finished.",
-              "embeds": [
-                {
-                  "title": "Build ${{ github.run_number }} for ${{ github.repository }} on ${{ matrix.os }} has finished.",
-                  "description": "Build ${{ github.run_number }} for ${{ github.repository }} on ${{ matrix.os }} has finished.",
-                  "color": 16711680,
-                  "fields": [
+          username: 'Hummingbot CI'
+          avatar-url: 'https://avatars.githubusercontent.com/u/77006982?s=200&v=4'
+          embed-title: "Build ${{ github.run_number }} for ${{ github.repository }} on ${{ matrix.os }} has finished.",
+          embed-description: "Build ${{ github.run_number }} for ${{ github.repository }} on ${{ matrix.os }} has finished.",
+          embed-color: 16711680,
+          embed-fields: '[
                     {
                       "name": "Build Status",
                       "value": "${{ job.status }}",
@@ -127,10 +124,7 @@ jobs:
                       "value": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
                       "inline": true
                     }
-                  ]
-                }
-              ]
-            }
+                  ]'
       # Notify results to discord
       - uses: ruby/setup-ruby@v1
         with:
