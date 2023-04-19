@@ -22,6 +22,12 @@ runs:
       with:
         fetch-depth: 0
 
+    # Read HB env variables
+    - name: Set Environment Variables
+      uses: ./.github/actions/set_env_vars
+      with:
+        varFilePath: ./.github/variables/hb_env_variables.env
+
     # Use cache's hashFiles function to check for changes in core code
     - name: Check for code changes
       id: program-changes

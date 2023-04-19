@@ -23,28 +23,21 @@ jobs:
         shell: bash -l {0}
 
     steps:
-      # Read HB env variables
-      - name: Set Environment Variables
-        uses: ./.github/actions/set_env_vars
+      # Checkout Hummingbot, set HB env variables and check cache
+      - id: checkout-hb-cache-hit
+        uses: ./github/actions/checkout_hb_cache
         with:
-          varFilePath: ./.github/variables/hb_env_variables.env
+          runner: ${{ runner.os }}
+          conda_env_hash: ${{ hashFiles('setup/environment-linux.yml') }}
 
-      - run: echo ${{ env.HB_PYTHON_VERSION }}
-      ## Checkout Hummingbot
-      #- id: checkout-hb-cache-hit
-      #  uses: ./github/actions/checkout_hb_cache
-      #  with:
-      #    runner: ${{ runner.os }}
-      #    conda_env_hash: ${{ hashFiles('setup/environment-linux.yml') }}
-#
-      ## Double-check Conda environment
-      #- uses: conda-incubator/setup-miniconda@v2
-      #  with:
-      #    miniconda-version: "latest"
-      #    python-version: ${{ github.env.HB_PYTHON_VERSION }}
-      #    auto-update-conda: true
-      #    auto-activate-base: true
-      #    use-only-tar-bz2: true
+      # Double-check Conda environment
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+          python-version: ${{ github.env.HB_PYTHON_VERSION }}
+          auto-update-conda: true
+          auto-activate-base: true
+          use-only-tar-bz2: true
 #
       ## Install environment and Hummingbot
       #- name: Install environment and Hummingbot
