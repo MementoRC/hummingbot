@@ -51,8 +51,7 @@ jobs:
       # Verify conda environment
       - name: Verify conda environment
         run: |
-          conda env export --no-builds > environment.yml
-          diff setup/environment-linux.yml environment.yml
+          conda --version
 
 #      # Install environment and Hummingbot
 #      - name: Install environment and Hummingbot

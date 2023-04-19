@@ -26,7 +26,18 @@ jobs:
           echo ${{ env.GIT_DIFF }}
           echo "is_set=true" >> $GITHUB_OUTPUT
 
+  build_on_generic_runner:
+    name: I/B/T x86 Linux
+    needs: run_client
+    uses: ./.github/workflows/install_generic_runner.yml
+    with:
+      should_run: true
+  #    should_run: ${{ needs.run_client.outputs.is_set }}
+      env-yml-file: setup/environment-linux.yml
+      os-matrix: "['ubuntu-latest']"
+
   build_on_Linux:
+    name: I/B/T x86 Linux
     needs: run_client
     uses: ./.github/workflows/install_x86_Linux.yml
     with:
@@ -36,6 +47,7 @@ jobs:
       os-matrix: "['ubuntu-latest', 'ubuntu-20.04']"
 
   build_on_macOS:
+    name: I/B/T x86 MacOS
     needs: run_client
     uses: ./.github/workflows/install_x86_macOs.yml
     with:
@@ -43,6 +55,7 @@ jobs:
       #should_run: ${{ needs.run_client.outputs.is_set }}
 
   build_on_windows:
+    name: I/B/T x86 Windows
     needs: run_client
     uses: ./.github/workflows/install_x86_windows.yml
     with:
