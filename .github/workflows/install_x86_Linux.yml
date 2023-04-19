@@ -1,4 +1,4 @@
-name: Install x86 Linux
+name: ci
 
 on:
   workflow_call:
@@ -13,8 +13,8 @@ on:
         default: setup/environment-linux.yml
       os-matrix:
         required: false
-        type: array
-        default: [ubuntu-latest, ubuntu-20.04]
+        type: string
+        default: "['ubuntu-latest', 'ubuntu-20.04']"
 
 jobs:
   build_hummingbot:
@@ -24,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ${{ inputs.os-matrix }}
+        os: ${{ fromJson(inputs.os-matrix) }}
 
     defaults:
       run:

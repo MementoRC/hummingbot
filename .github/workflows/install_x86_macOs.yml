@@ -1,4 +1,4 @@
-name: Install x64 macOs
+name: ci
 
 on:
   workflow_call:

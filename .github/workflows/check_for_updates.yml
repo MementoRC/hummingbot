@@ -33,7 +33,7 @@ jobs:
       should_run: true
   #    should_run: ${{ needs.run_client.outputs.is_set }}
       env-yml-file: setup/environment-linux.yml
-      os-matrix: [ubuntu-latest, ubuntu-20.04]
+      os-matrix: "['ubuntu-latest', 'ubuntu-20.04']"
 
   build_on_macOS:
     needs: run_client
