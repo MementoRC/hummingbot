@@ -17,11 +17,6 @@ outputs:
 runs:
   using: "composite"
   steps:
-    # Checkout Hummingbot
-    - uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-
     # Read HB env variables
     - name: Set Environment Variables
       uses: ./.github/actions/set_env_vars

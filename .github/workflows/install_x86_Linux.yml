@@ -23,9 +23,14 @@ jobs:
         shell: bash -l {0}
 
     steps:
+      # Checkout Hummingbot - not much can be done without that!
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
       # Checkout Hummingbot, set HB env variables and check cache
       - id: checkout-hb-cache-hit
-        uses: ./github/actions/checkout_hb_cache
+        uses: ./github/actions/hb_env_cache
         with:
           runner: ${{ runner.os }}
           conda_env_hash: ${{ hashFiles('setup/environment-linux.yml') }}

@@ -4,13 +4,14 @@ on:
   workflow_call:
     inputs:
       should_run:
-        required: true
+        required: false
         type: boolean
+        default: false
 
 jobs:
   build_hummingbot:
     name: build/tests ${{ matrix.os }}
-    if: ${{ github.event.inputs.should_run == 'true' }}
+    if: ${{ inputs.should_run == true }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -23,9 +24,14 @@ jobs:
         shell: bash -l {0}
 
     steps:
+      # Checkout Hummingbot - not much can be done without that!
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
       # Checkout Hummingbot, set HB env variables and check cache
       - id: checkout-hb-cache-hit
-        uses: ./github/actions/checkout_hb_cache
+        uses: ./github/actions/hb_env_cache
         with:
           runner: ${{ runner.os }}
           conda_env_hash: ${{ hashFiles('setup/environment-win64.yml') }}
