@@ -23,27 +23,27 @@ runs:
       with:
         varFilePath: ./.github/variables/hb_env_variables.env
 
-    # Use cache's hashFiles function to check for changes in core code
-    - name: Check for code changes
-      id: program-changes
-      uses: actions/cache@v3
-      env:
-        # Increase this value to manually reset cache if program files have not changed
-        CACHE_NUMBER: 0
-      with:
-        path: README.md # placeholder file
-        key: ${{ inputs.runner }}-build-${{ env.CONDA_CACHE_NUMBER }}-${{ hashFiles('hummingbot/*', '**/*.py', '**/*.py*', '**/*.pxd', 'test/*') }}
-
-    # Check for inputs.hash changes
-    - name: Cache conda dependencies
-      id: conda-dependencies
-      uses: actions/cache@v3
-      env:
-        # Increase this value to manually reset cache if setup/environment-linux.yml has not changed
-        CONDA_CACHE_NUMBER: 0
-      with:
-        path: |
-          ~/conda_pkgs_dir/
-          ${{ env.CONDA }}/envs/hummingbot
-        key: ${{ inputs.runner }}-conda-${{ env.CONDA_CACHE_NUMBER }}-${{ inputs.conda-env-hash }}
+#    # Use cache's hashFiles function to check for changes in core code
+#    - name: Check for code changes
+#      id: program-changes
+#      uses: actions/cache@v3
+#      env:
+#        # Increase this value to manually reset cache if program files have not changed
+#        CACHE_NUMBER: 0
+#      with:
+#        path: README.md # placeholder file
+#        key: ${{ inputs.runner }}-build-${{ env.CONDA_CACHE_NUMBER }}-${{ hashFiles('hummingbot/*', '**/*.py', '**/*.py*', '**/*.pxd', 'test/*') }}
+#
+#    # Check for inputs.hash changes
+#    - name: Cache conda dependencies
+#      id: conda-dependencies
+#      uses: actions/cache@v3
+#      env:
+#        # Increase this value to manually reset cache if setup/environment-linux.yml has not changed
+#        CONDA_CACHE_NUMBER: 0
+#      with:
+#        path: |
+#          ~/conda_pkgs_dir/
+#          ${{ env.CONDA }}/envs/hummingbot
+#        key: ${{ inputs.runner }}-conda-${{ env.CONDA_CACHE_NUMBER }}-${{ inputs.conda-env-hash }}
 
