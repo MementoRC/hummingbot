@@ -64,7 +64,7 @@ jobs:
         with:
           program-cache-hit: ${{steps.checkout-hb-cache-hit.outputs.hb-cache-hit}}
           dependencies-cache-hit: ${{steps.checkout-hb-cache-hit.outputs.conda-cache-hit}}
-          shell: ${{ defaults.run.shell }}
+          shell: ${{ run.shell }}
 
       # Compile and run tests if code has changed
       - name: Run pre-commit hooks on diff
