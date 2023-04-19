@@ -15,10 +15,10 @@ runs:
   using: "composite"
   steps:
     # Install python/conda to check if core code has changed
-    - uses: actions/setup-python@v3
+    - uses: actions/setup-python@v4
       if: ${{inputs.program-cache-hit}} != 'true' || ${{inputs.dependencies-cache-hit}} != 'true'
       with:
-        python-version: 3.x
+        python-version: '3.8'
 
     # Install pre_commit if code has changed
     - name: Install pre_commit

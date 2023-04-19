@@ -2,17 +2,15 @@ name: ci
 
 on:
   workflow_call:
-    # inputs:
-    #   config-path:
-    #     required: true
-    #     type: string
-    # secrets:
-    #   envPAT:
-    #     required: true
+    inputs:
+      should_run:
+        required: true
+        type: boolean
 
 jobs:
   build_hummingbot:
     name: build/tests ${{ matrix.os }}
+    if: ${{ github.event.inputs.should_run == 'true' }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -24,72 +22,58 @@ jobs:
         shell: bash -l {0}
 
     steps:
-      - uses: actions/checkout@v3
+      # Read HB env variables
+      - name: Set Environment Variables
+        uses: ./.github/actions/set_env_vars
         with:
-          fetch-depth: 0
+          varFilePath: ./.github/variables/hb_env_variables.env
 
-      # Use cache's hashFiles function to check for changes in core code
-      - name: Check for code changes
-        id: program-changes
-        uses: actions/cache@v3
-        env:
-          # Increase this value to manually reset cache if program files have not changed
-          CACHE_NUMBER: 0
+      # Checkout Hummingbot
+      - id: checkout-hb-cache-hit
+        uses: ./github/actions/checkout_hb_cache
         with:
-          path: README.md # placeholder file
-          key: ${{ runner.os }}-build-${{ env.CACHE_NUMBER }}-${{ hashFiles('hummingbot/*', '**/*.py', '**/*.py*', '**/*.pxd', 'test/*') }}
+          runner: ${{ runner.os }}
+          conda_env_hash: ${{ hashFiles('setup/environment-linux.yml') }}
 
-      # Check for setup/environment-linux.yml changes
-      - name: Cache conda dependencies
-        id: conda-dependencies
-        uses: actions/cache@v3
-        env:
-          # Increase this value to manually reset cache if setup/environment-linux.yml has not changed
-          CONDA_CACHE_NUMBER: 0
+      # Double-check Conda environment
+      - uses: conda-incubator/setup-miniconda@v2
         with:
-          path: |
-            /home/runner/conda_pkgs_dir/
-            /usr/share/miniconda/envs/hummingbot
-          key: ${{ runner.os }}-conda-${{ env.CONDA_CACHE_NUMBER }}-${{ hashFiles('setup/environment-linux.yml') }}
+          miniconda-version: "latest"
+          python-version: ${{ github.env.HB_PYTHON_VERSION }}
+          auto-update-conda: true
+          auto-activate-base: true
+          use-only-tar-bz2: true
 
       # Install environment and Hummingbot
       - name: Install environment and Hummingbot
         uses: ./.github/actions/install_env_and_hb
         with:
-          program-cache-hit: ${{steps.program-changes.outputs.cache-hit}}
-          dependencies-cache-hit: ${{steps.conda-dependencies.outputs.cache-hit}}
-          shell: bash -l {0}
+          program-cache-hit: ${{steps.checkout-hb-cache-hit.outputs.hb-cache-hit}}
+          dependencies-cache-hit: ${{steps.checkout-hb-cache-hit.outputs.conda-cache-hit}}
+          shell: ${{ defaults.run.shell }}
 
       # Compile and run tests if code has changed
       - name: Run pre-commit hooks on diff
-        shell: bash
-        if: steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true'
+        if: steps.checkout-hb-cache-hit.outputs.hb-cache-hit != 'true' || steps.checkout-hb-cache-hit.outputs.conda-cache-hit != 'true'
         run: |
-          source $CONDA/etc/profile.d/conda.sh
           conda activate hummingbot
           pre-commit run --files $(git diff --name-only origin/$GITHUB_BASE_REF)
 
       - name: Run stable tests and calculate coverage
-        if: steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true'
-        shell: bash
+        if: steps.checkout-hb-cache-hit.outputs.hb-cache-hit != 'true' || steps.checkout-hb-cache-hit.outputs.conda-cache-hit != 'true'
         run: |
-          source $CONDA/etc/profile.d/conda.sh
           conda activate hummingbot
           make test
 
       - name: Check and report global coverage
-        if: steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true'
-        shell: bash
+        if: steps.checkout-hb-cache-hit.outputs.hb-cache-hit != 'true' || steps.checkout-hb-cache-hit.outputs.conda-cache-hit != 'true'
         run: |
-          source $CONDA/etc/profile.d/conda.sh
           conda activate hummingbot
           make report_coverage
 
       - name: Validate coverage for the changes
-        if: github.event_name == 'pull_request' && (steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true')
-        shell: bash
+        if: github.event_name == 'pull_request' && (steps.checkout-hb-cache-hit.outputs.hb-cache-hit != 'true' || steps.checkout-hb-cache-hit.outputs.conda-cache-hit != 'true')
         run: |
-          source $CONDA/etc/profile.d/conda.sh
           conda activate hummingbot
           git fetch --all -q
           git checkout -b $GITHUB_SHA

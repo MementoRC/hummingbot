@@ -13,19 +13,11 @@ inputs:
 runs:
   using: "composite"
   steps:
-    # Set miniconda install directory
+    # Set HB and miniconda install directory (when not using conda-incubator/setup-miniconda - WSL and ARM)
     - name: Set Environment Variables
       uses: ./.github/actions/set_env_vars
       with:
-        varFilePath: ./.github/variables/conda.env
-
-    # Install python/conda to check if core code has changed
-    - uses: actions/setup-python@v3
-      if: ${{inputs.program-cache-hit}} != 'true' || ${{inputs.dependencies-cache-hit}} != 'true'
-      env:
-        WITHOUT_CYTHON_OPTIMIZATIONS: 'true'
-      with:
-        python-version: 3.x
+        varFilePath: ./.github/variables/hb_env_variables.env
 
     - uses: pguyot/arm-runner-action@v2
       with:
@@ -35,6 +27,7 @@ runs:
         cpu_info: ${{ matrix.cpu_info }}
         bind_mount_repository: true
         shell: /bin/bash -eo pipefail
+        import_github_env: true
         commands: |
           apt update
           apt install -y wget

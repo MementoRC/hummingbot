@@ -26,34 +26,31 @@ jobs:
           echo ${{ env.GIT_DIFF }}
           echo "is_set=true" >> $GITHUB_OUTPUT
 
-  should_build:
-    name: Check if build is needed
-    needs: run_client
-    if: github.event.pull_request.draft == false && needs.run_client.outputs.is_set == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check if build is needed
-        id: check_build
-        run: |
-          echo "is_set=true" >> $GITHUB_OUTPUT
-
   build_on_Linux:
-    needs: should_build
+    needs: run_client
     uses: ./.github/workflows/install_x86_Linux.yml
+    with:
+      should_run: ${{ needs.run_client.outputs.is_set }}
 
-  # build_on_macOS:
-  #   needs: should_build
-  #   uses: ./.github/workflows/install_x86_macOS.yml
+  build_on_macOS:
+    needs: run_client
+    uses: ./.github/workflows/install_x86_macOS.yml
+    with:
+      should_run: ${{ needs.run_client.outputs.is_set }}
   #
   # build_on_arm:
-  #   needs: should_build
+  #   needs: run_client
   #   uses: ./.github/workflows/install_arm_macOS.yml
+  #  with:
+  #    should_run: ${{ needs.run_client.outputs.is_set }}
   #
   # build_on_WSL:
   #   needs: should_build
   #   uses: ./.github/workflows/install_x86_wsl.yml
   #
   # build_on_windows:
-  #   needs: should_build
+  #   needs: run_client
   #   uses: ./.github/workflows/install_x86_windows.yml
+  #   with:
+  #     should_run: ${{ needs.run_client.outputs.is_set }}
   #
