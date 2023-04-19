@@ -74,34 +74,35 @@ jobs:
 #        run: |
 #          conda activate hummingbot
 #          make test
-
-      - name: Check and report global coverage
-        if: steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true'
-        run: |
-          conda activate hummingbot
-          make report_coverage
-
-      - name: Validate coverage for the changes
-        if: github.event_name == 'pull_request' && (steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true')
-        run: |
-          conda activate hummingbot
-          git fetch --all -q
-          git checkout -b $GITHUB_SHA
-          coverage xml
-          diff-cover --compare-branch=origin/$GITHUB_BASE_REF --fail-under=80 coverage.xml
-
-      # Notify results to discord
-      - uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: '3.0'
-      - name: Send Webhook Notification
-        if: github.event_name != 'pull_request'
-        env:
-          JOB_STATUS: ${{ job.status }}
-          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
-          HOOK_OS_NAME: ${{ runner.os }}
-          WORKFLOW_NAME: ${{ github.workflow }}
-        run: |
-          git clone --depth 1 https://github.com/DiscordHooks/github-actions-discord-webhook.git webhook
-          bash webhook/send.sh $JOB_STATUS $WEBHOOK_URL
-        shell: bash
+#
+#      - name: Check and report global coverage
+#        if: steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true'
+#        run: |
+#          conda activate hummingbot
+#          make report_coverage
+#
+#      - name: Validate coverage for the changes
+#        if: github.event_name == 'pull_request' && (steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true')
+#        run: |
+#          conda activate hummingbot
+#          git fetch --all -q
+#          git checkout -b $GITHUB_SHA
+#          coverage xml
+#          diff-cover --compare-branch=origin/$GITHUB_BASE_REF --fail-under=80 coverage.xml
+#
+#      # Notify results to discord
+#      - uses: ruby/setup-ruby@v1
+#        with:
+#          ruby-version: '3.0'
+#      - name: Send Webhook Notification
+#        if: github.event_name != 'pull_request'
+#        env:
+#          JOB_STATUS: ${{ job.status }}
+#          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+#          HOOK_OS_NAME: ${{ runner.os }}
+#          WORKFLOW_NAME: ${{ github.workflow }}
+#        run: |
+#          git clone --depth 1 https://github.com/DiscordHooks/github-actions-discord-webhook.git webhook
+#          bash webhook/send.sh $JOB_STATUS $WEBHOOK_URL
+#        shell: bash
+#

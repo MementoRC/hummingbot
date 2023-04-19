@@ -17,7 +17,8 @@ on:
         default: "['ubuntu-latest', 'ubuntu-20.04']"
       shell:
         required: false
-        default: bash -l {0}
+        type: string
+        default: 'bash -l {0}'
 
 jobs:
   build_hummingbot:
@@ -31,7 +32,7 @@ jobs:
 
     defaults:
       run:
-        shell: $${{ inputs.shell }}
+        shell: $${{ fromJSON(inputs.shell) }}
 
     steps:
       # Checkout Hummingbot - not much can be done without that!
