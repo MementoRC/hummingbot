@@ -123,7 +123,7 @@ jobs:
           webhook-url: ${{ secrets.WEBHOOK_URL }}
           username: 'Hummingbot CI'
           avatar-url: 'https://avatars.githubusercontent.com/u/77006982?s=200&v=4'
-          raw_data: ${{ runner.os }}-build_report.json
+          raw-data: ${{ runner.os }}-build_report.json
 
       # Notify results to discord
       - name: Discord Webhook Action
