@@ -103,6 +103,19 @@ jobs:
 #          coverage xml
 #          diff-cover --compare-branch=origin/$GITHUB_BASE_REF --fail-under=80 coverage.xml
 
+      # Create JSON report
+      - name: Create JSON report
+        uses: jsdaniell/create-json@v1.2.2
+        with:
+          name: ${{ runner.os }}-build_report.json
+          json: |
+            {
+              "build_number": "${{ github.run_number }}",
+              "build_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+              "build_status": "${{ job.status }}",
+              "build_os": "${{ runner.os }}"
+            }
+
       # Notify results to discord
       - name: Discord Webhook Action
         uses: tsickert/discord-webhook@v5.2.0
@@ -110,9 +123,18 @@ jobs:
           webhook-url: ${{ secrets.WEBHOOK_URL }}
           username: 'Hummingbot CI'
           avatar-url: 'https://avatars.githubusercontent.com/u/77006982?s=200&v=4'
-          embed-title: "Build ${{ github.run_number }} for ${{ github.repository }} on ${{ matrix.os }} has finished.",
-          embed-description: "Build ${{ github.run_number }} for ${{ github.repository }} on ${{ matrix.os }} has finished.",
-          embed-color: 16711680,
+          raw_data: ${{ runner.os }}-build_report.json
+
+      # Notify results to discord
+      - name: Discord Webhook Action
+        uses: tsickert/discord-webhook@v5.2.0
+        with:
+          webhook-url: ${{ secrets.WEBHOOK_URL }}
+          username: 'Hummingbot CI'
+          avatar-url: 'https://avatars.githubusercontent.com/u/77006982?s=200&v=4'
+          embed-title: "Build ${{ github.run_number }} for ${{ github.repository }} on ${{ matrix.os }} has finished."
+          embed-description: "Build ${{ github.run_number }} for ${{ github.repository }} on ${{ matrix.os }} has finished."
+          embed-color: 16711680
           embed-fields: '[
                     {
                       "name": "Build Status",
