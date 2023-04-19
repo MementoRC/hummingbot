@@ -26,11 +26,11 @@ jobs:
           echo ${{ env.GIT_DIFF }}
           echo "is_set=true" >> $GITHUB_OUTPUT
 
-  build_on_Linux:
-    needs: run_client
-    uses: ./.github/workflows/install_x86_Linux.yml
-    with:
-      should_run: ${{ needs.run_client.outputs.is_set }}
+  #build_on_Linux:
+  #  needs: run_client
+  #  uses: ./.github/workflows/install_x86_Linux.yml
+  #  with:
+  #    should_run: ${{ needs.run_client.outputs.is_set }}
 
   # build_on_macOS:
   #   needs: run_client
