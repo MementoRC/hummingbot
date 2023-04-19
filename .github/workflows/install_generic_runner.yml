@@ -17,7 +17,6 @@ on:
         default: "['ubuntu-latest', 'ubuntu-20.04']"
       shell:
         required: false
-        type: string
         default: bash -l {0}
 
 jobs:

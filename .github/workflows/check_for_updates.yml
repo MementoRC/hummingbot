@@ -35,7 +35,7 @@ jobs:
   #    should_run: ${{ needs.run_client.outputs.is_set }}
       env-yml-file: setup/environment-linux.yml
       os-matrix: "['ubuntu-latest']"
-      shell: 'bash -l {0}'
+      shell: bash -l {0}
 
   build_on_Linux:
     name: I/B/T x86 Linux
