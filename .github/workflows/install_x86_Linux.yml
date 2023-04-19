@@ -6,11 +6,12 @@ on:
       should_run:
         required: true
         type: boolean
+        default: true
 
 jobs:
   build_hummingbot:
     name: build/tests ${{ matrix.os }}
-    if: ${{ github.event.inputs.should_run == 'true' }}
+    if: ${{ inputs.should_run == 'true' }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
