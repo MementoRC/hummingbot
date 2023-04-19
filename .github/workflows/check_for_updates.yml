@@ -37,7 +37,7 @@ jobs:
 
   build_on_macOS:
     needs: run_client
-    uses: ./.github/workflows/install_x86_macOS.yml
+    uses: ./.github/workflows/install_x86_macOs.yml
     with:
       should_run: true
       #should_run: ${{ needs.run_client.outputs.is_set }}
