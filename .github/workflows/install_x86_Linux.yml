@@ -42,7 +42,7 @@ jobs:
         uses: ./.github/actions/set_hb_env_cache
         with:
           runner: ${{ runner.os }}
-          conda-env-hash: ${{ hashFiles(${{ inputs.env-yml-file }}) }}
+          conda-env-hash: ${{ hashFiles(inputs.env-yml-file) }}
 
       # Double-check Conda environment
       - uses: conda-incubator/setup-miniconda@v2
