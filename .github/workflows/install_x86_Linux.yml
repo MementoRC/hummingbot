@@ -11,7 +11,7 @@ on:
 jobs:
   build_hummingbot:
     name: build/tests ${{ matrix.os }}
-    if: ${{ inputs.should_run == 'true' }}
+    if: ${{ inputs.should_run == true }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -29,6 +29,7 @@ jobs:
         with:
           varFilePath: ./.github/variables/hb_env_variables.env
 
+      - run: echo ${{ env.HB_PYTHON_VERSION }}
       ## Checkout Hummingbot
       #- id: checkout-hb-cache-hit
       #  uses: ./github/actions/checkout_hb_cache
