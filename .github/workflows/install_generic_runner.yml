@@ -32,7 +32,7 @@ jobs:
 
     defaults:
       run:
-        shell: $${{ inputs.shell }}
+        shell: ${{ inputs.shell }}
 
     steps:
       # Checkout Hummingbot - not much can be done without that!
