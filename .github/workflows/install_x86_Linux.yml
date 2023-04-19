@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       should_run:
-        required: true
+        required: false
         type: boolean
         default: true
 
