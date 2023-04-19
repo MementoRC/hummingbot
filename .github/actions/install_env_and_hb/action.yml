@@ -18,7 +18,7 @@ runs:
     - uses: actions/setup-python@v4
       if: ${{inputs.program-cache-hit}} != 'true' || ${{inputs.dependencies-cache-hit}} != 'true'
       with:
-        python-version: '3.8'
+        python-version: ${{ matrix.python-version }}
 
     # Install pre_commit if code has changed
     - name: Install pre_commit
