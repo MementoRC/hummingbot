@@ -1,4 +1,4 @@
-name: ci
+name: Install x86 Linux
 
 on:
   workflow_call:
@@ -7,6 +7,14 @@ on:
         required: false
         type: boolean
         default: false
+      env-yml-path:
+        required: false
+        type: string
+        default: setup/environment-linux.yml
+      os-matrix:
+        required: false
+        type: string
+        default: [ubuntu-latest, ubuntu-20.04]
 
 jobs:
   build_hummingbot:
@@ -16,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, ubuntu-20.04]
+        os: ${{ inputs.os-matrix }}
 
     defaults:
       run:
@@ -34,7 +42,7 @@ jobs:
         uses: ./.github/actions/set_hb_env_cache
         with:
           runner: ${{ runner.os }}
-          conda_env_hash: ${{ hashFiles('setup/environment-linux.yml') }}
+          conda-env-hash: ${{ hashFiles(${{ inputs.env-yml-file }}) }}
 
       # Double-check Conda environment
       - uses: conda-incubator/setup-miniconda@v2
@@ -44,7 +52,13 @@ jobs:
           auto-update-conda: true
           auto-activate-base: true
           use-only-tar-bz2: true
-#
+
+      # Verify conda environment
+      - name: Verify conda environment
+        run: |
+          conda env export --no-builds > environment.yml
+          diff setup/environment-linux.yml environment.yml
+
       ## Install environment and Hummingbot
       #- name: Install environment and Hummingbot
       #  uses: ./.github/actions/install_env_and_hb

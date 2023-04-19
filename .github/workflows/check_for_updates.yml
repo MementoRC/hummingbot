@@ -32,12 +32,22 @@ jobs:
     with:
       should_run: true
   #    should_run: ${{ needs.run_client.outputs.is_set }}
+      env-yml-file: setup/environment-linux.yml
+      os-matrix: [ubuntu-latest, ubuntu-20.04]
 
-  # build_on_macOS:
-  #   needs: run_client
-  #   uses: ./.github/workflows/install_x86_macOS.yml
-  #   with:
-  #     should_run: ${{ needs.run_client.outputs.is_set }}
+  build_on_macOS:
+    needs: run_client
+    uses: ./.github/workflows/install_x86_macOS.yml
+    with:
+      should_run: true
+      #should_run: ${{ needs.run_client.outputs.is_set }}
+
+  build_on_windows:
+    needs: run_client
+    uses: ./.github/workflows/install_x86_windows.yml
+    with:
+      should_run: true
+      #should_run: ${{ needs.run_client.outputs.is_set }}
   #
   # build_on_arm:
   #   needs: run_client
@@ -48,10 +58,4 @@ jobs:
   # build_on_WSL:
   #   needs: should_build
   #   uses: ./.github/workflows/install_x86_wsl.yml
-  #
-  # build_on_windows:
-  #   needs: run_client
-  #   uses: ./.github/workflows/install_x86_windows.yml
-  #   with:
-  #     should_run: ${{ needs.run_client.outputs.is_set }}
   #

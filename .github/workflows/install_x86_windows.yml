@@ -7,6 +7,10 @@ on:
         required: false
         type: boolean
         default: false
+      env-yml-path:
+        required: false
+        type: string
+        default: setup/environment-win64.yml
 
 jobs:
   build_hummingbot:
@@ -33,7 +37,7 @@ jobs:
         uses: ./.github/actions/set_hb_env_cache
         with:
           runner: ${{ runner.os }}
-          conda_env_hash: ${{ hashFiles('setup/environment-win64.yml') }}
+          conda-env-hash: ${{ hashFiles('setup/environment-win64.yml') }}
 
       # Double-check Conda environment
       - uses: conda-incubator/setup-miniconda@v2
@@ -43,6 +47,12 @@ jobs:
           auto-update-conda: true
           auto-activate-base: true
           use-only-tar-bz2: true
+
+      # Verify conda environment
+      - name: Verify conda environment
+        run: |
+          conda env export --no-builds > environment.yml
+          diff setup/environment-linux.yml environment.yml
 
 #      # Install environment and Hummingbot
 #      - name: Install environment and Hummingbot
