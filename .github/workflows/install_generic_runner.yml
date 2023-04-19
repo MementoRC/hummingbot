@@ -18,7 +18,7 @@ on:
       shell:
         required: false
         type: string
-        default: 'bash -l {0}'
+        default: "bash -l {0}"
 
 jobs:
   build_hummingbot:
@@ -32,7 +32,7 @@ jobs:
 
     defaults:
       run:
-        shell: $${{ fromJSON(inputs.shell) }}
+        shell: $${{ inputs.shell }}
 
     steps:
       # Checkout Hummingbot - not much can be done without that!
@@ -60,6 +60,7 @@ jobs:
       # Verify conda environment
       - name: Verify conda environment
         run: |
+          echo "${{ inputs.shell }}"
           conda --version
 
       # Install environment and Hummingbot
