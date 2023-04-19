@@ -32,11 +32,11 @@ jobs:
     with:
       should_run: ${{ needs.run_client.outputs.is_set }}
 
-  build_on_macOS:
-    needs: run_client
-    uses: ./.github/workflows/install_x86_macOS.yml
-    with:
-      should_run: ${{ needs.run_client.outputs.is_set }}
+  # build_on_macOS:
+  #   needs: run_client
+  #   uses: ./.github/workflows/install_x86_macOS.yml
+  #   with:
+  #     should_run: ${{ needs.run_client.outputs.is_set }}
   #
   # build_on_arm:
   #   needs: run_client
