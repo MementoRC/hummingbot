@@ -61,7 +61,7 @@ jobs:
   build_on_WSL:
     name: I/B/T x86 WSL
     needs: run_client
-    uses: ./.github/workflows/install_generic_runner.yml
+    uses: ./.github/workflows/install_x86_wsl.yml
     with:
       should_run: true
       os-matrix: "['Debian', 'Ubuntu-22.04']"

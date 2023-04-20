@@ -18,6 +18,7 @@ jobs:
     if: ${{ inputs.should_run == true }}
     runs-on: windows-latest
     strategy:
+      fail-fast: false
       matrix:
         os: ${{ fromJson(inputs.os-matrix) }}
         #os: [Debian, Alpine, kali-linux, openSUSE-Leap-15.2, Ubuntu-22.04]

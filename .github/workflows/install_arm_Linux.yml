@@ -2,6 +2,7 @@ name: ci
 
 on:
   workflow_call:
+    inputs:
       should_run:
         required: false
         type: boolean
@@ -19,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: [zero2_64_raspios, zero2_64_dietpi]
+        target: ${{ fromJson(inputs.os-matrix) }}
         #target: [zero_raspbian, zero_raspios, zero_dietpi, zero2_raspios, zero2_dietpi, zero2_64_raspios]
         include:
         - target: zero2_64_raspios
