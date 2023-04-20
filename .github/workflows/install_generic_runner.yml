@@ -116,14 +116,8 @@ jobs:
               "build_os": "${{ runner.os }}"
             }
 
-      - env:
-          SUPER_SECRET: ${{ secrets.WEBHOOK_URL }}
-        run: |
-          echo "$SUPER_SECRET"
-
       # Notify results to discord
       - name: Discord Webhook Action
-        if: ${{ failure() }}
         uses: tsickert/discord-webhook@v5.2.0
         with:
           webhook-url: ${{ secrets.WEBHOOK_URL }}
@@ -132,7 +126,6 @@ jobs:
 
       # Notify results to discord
       - name: Discord Webhook Action
-        if: ${{ failure() }}
         uses: tsickert/discord-webhook@v5.2.0
         with:
           webhook-url: ${{ secrets.WEBHOOK_URL }}
@@ -154,7 +147,6 @@ jobs:
                   ]'
       # Notify results to discord
       - uses: ruby/setup-ruby@v1
-        if: ${{ failure() }}
         with:
           ruby-version: '3.0'
       - name: Send Webhook Notification

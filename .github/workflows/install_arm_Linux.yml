@@ -14,7 +14,7 @@ on:
 
 jobs:
   build_hummingbot:
-    name: build/tests RasPi ${{ matrix.cpu }}
+    name: build/tests RasPi [${{ matrix.cpu }}]
     if: ${{ inputs.should_run == true }}
     runs-on: ubuntu-latest
     strategy:
@@ -31,6 +31,10 @@ jobs:
           cpu: cortex-a7
           cpu_info: cpuinfo/raspberrypi_zero2_w
           base_image: dietpi:rpi_armv7_bullseye
+        - target: zero2_64_dietpi
+          cpu: cortex-a53
+          cpu_info: cpuinfo/raspberrypi_zero2_w_arm64
+          base_image: dietpi:rpi_armv8_bullseye
         #- target: zero_raspbian
         #  cpu: arm1176
         #  cpu_info: cpuinfo/raspberrypi_zero_w
@@ -51,10 +55,6 @@ jobs:
         #  cpu: cortex-a7
         #  cpu_info: cpuinfo/raspberrypi_zero2_w
         #  base_image: dietpi:rpi_armv7_bullseye
-        #- target: zero2_64_dietpi
-        #  cpu: cortex-a53
-        #  cpu_info: cpuinfo/raspberrypi_zero2_w_arm64
-        #  base_image: dietpi:rpi_armv8_bullseye
 
     defaults:
       run:
