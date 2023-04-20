@@ -118,7 +118,7 @@ jobs:
                     "name": "Hummingbot CI ♫",
                     "url": "https://hummingbot.io/",
                     "icon_url": "https://docs.hummingbot.org/assets/img/logo.png"
-                  },
+                  }
                 }]
             }
 
