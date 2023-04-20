@@ -21,7 +21,7 @@ runs:
     - name: Set Environment Variables
       uses: ./.github/actions/set_env_vars
       with:
-        varFilePath: ./.github/variables/hb_env_variables.env
+        envFilePath: ./.github/variables/hb_env_variables.env
 
     # Use cache's hashFiles function to check for changes in core code
     - name: Check for code changes
@@ -44,6 +44,7 @@ runs:
       with:
         path: |
           ~/conda_pkgs_dir/
+          ${{ github.env.MINICONDA_PATH }}/envs/hummingbot
           ${{ env.CONDA }}/envs/hummingbot
         key: ${{ inputs.runner }}-conda-${{ env.CONDA_CACHE_NUMBER }}-${{ inputs.conda-env-hash }}
 
