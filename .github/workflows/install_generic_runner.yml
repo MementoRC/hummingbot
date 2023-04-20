@@ -110,30 +110,21 @@ jobs:
           name: ${{ runner.os }}-build_report.json
           json: |
             {
-              "build_number": "${{ github.run_number }}",
-              "build_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
-              "build_status": "${{ job.status }}",
-              "build_os": "${{ runner.os }}"
-            }
-
-      # Notify results to discord
-      - name: Discord Webhook Action
-        uses: tsickert/discord-webhook@v5.2.0
-        with:
-          webhook-url: ${{ secrets.WEBHOOK_URL }}
-          username: 'Hummingbot CI'
-          raw-data: ${{ runner.os }}-build_report.json
-
-      # Notify results to discord
-      - name: Discord Webhook Action
-        uses: tsickert/discord-webhook@v5.2.0
-        with:
-          webhook-url: ${{ secrets.WEBHOOK_URL }}
-          username: 'Hummingbot CI'
-          embed-title: "Build ${{ github.run_number }} for ${{ github.repository }} on ${{ matrix.os }} has finished."
-          embed-description: "Build ${{ github.run_number }} for ${{ github.repository }} on ${{ matrix.os }} has finished."
-          embed-color: 16711680
-          embed-fields: '[
+              "username": "Hummingbot Bot",
+              "avatar_url": "https://i.imgur.com/4M34hi2.png",
+              "content": "Build ${{ github.run_number }} for ${{ github.repository }} on ${{ matrix.os }} has finished.",
+              "embeds": [
+                {
+                  "author": {
+                    "name": "Hummingbot CI ♫",
+                    "url": "https://hummingbot.io/",
+                    "icon_url": "https://docs.hummingbot.org/assets/img/logo.png"
+                  },
+                  "title": "Build ${{ github.run_number }} for ${{ github.repository }} on ${{ matrix.os }} has finished.",
+                  "url": "https://${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+                  "description": "",
+                  "color": 15258703,
+                  "fields": [
                     {
                       "name": "Build Status",
                       "value": "${{ job.status }}",
@@ -144,19 +135,15 @@ jobs:
                       "value": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
                       "inline": true
                     }
-                  ]'
+                  ]
+                }
+              ]
+            }
+
+
       # Notify results to discord
-      - uses: ruby/setup-ruby@v1
+      - name: Discord Webhook Action
+        uses: tsickert/discord-webhook@v5.2.0
         with:
-          ruby-version: '3.0'
-      - name: Send Webhook Notification
-        if: github.event_name != 'pull_request'
-        env:
-          JOB_STATUS: ${{ job.status }}
-          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
-          HOOK_OS_NAME: ${{ runner.os }}
-          WORKFLOW_NAME: ${{ github.workflow }}
-        run: |
-          git clone --depth 1 https://github.com/DiscordHooks/github-actions-discord-webhook.git webhook
-          bash webhook/send.sh $JOB_STATUS $WEBHOOK_URL
-        shell: bash
+          webhook-url: ${{ secrets.WEBHOOK_URL }}
+          raw-data: ${{ runner.os }}-build_report.json
