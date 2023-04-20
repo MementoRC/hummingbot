@@ -119,10 +119,18 @@ jobs:
                     "url": "https://hummingbot.io/",
                     "icon_url": "https://docs.hummingbot.org/assets/img/logo.png"
                   },
-                  "title": "Build ${{ github.run_number }} for ${{ github.repository }} on ${{ matrix.os }} has finished.",
-                  "url": "https://${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
                   "description": "Build has finished.",
-                  "color": 1127128
+                  "color": 1127128,
+                  "fields": [{
+                      "name": "Build Status",
+                      "value": "${{ job.status }}",
+                      "inline": true
+                    },
+                    {
+                      "name": "Build URL",
+                      "value": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+                      "inline": true
+                    }]
                 }]
             }
 
