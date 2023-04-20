@@ -60,7 +60,7 @@ jobs:
       # Verify conda environment
       - name: Verify conda environment
         run: |
-          conda --version
+          conda info --json |jq ".user_agent"
 
 #      # Install environment and Hummingbot
 #      - name: Install environment and Hummingbot
