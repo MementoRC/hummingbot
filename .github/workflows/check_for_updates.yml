@@ -36,6 +36,7 @@ jobs:
       env-yml-file: setup/environment-linux.yml
       os-matrix: "['ubuntu-latest']"
       shell: 'bash -l {0}'
+    secrets: inherit
 
   build_on_macOS:
     name: I/B/T x86 MacOS
@@ -47,6 +48,7 @@ jobs:
       env-yml-file: setup/environment.yml
       os-matrix: "['macos-latest']"
       shell: 'bash -l {0}'
+    secrets: inherit
 
   build_on_windows:
     name: I/B/T x86 Windows
@@ -57,6 +59,7 @@ jobs:
       env-yml-file: setup/environment-win64.yml
       os-matrix: "['windows-latest']"
       shell: 'bash -l {0}'
+    secrets: inherit
 
   build_on_WSL:
     name: I/B/T x86 WSL
@@ -65,6 +68,7 @@ jobs:
     with:
       should_run: true
       os-matrix: "['Debian', 'Ubuntu-22.04']"
+    secrets: inherit
 
   build_on_arm:
     name: I/B/T RasPi
@@ -74,3 +78,4 @@ jobs:
       should_run: true
       # should_run: ${{ needs.run_client.outputs.is_set }}
       os-matrix: "['zero2_64_raspios', 'zero2_64_dietpi']"
+    secrets: inherit
