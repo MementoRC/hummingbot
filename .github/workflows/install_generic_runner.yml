@@ -124,6 +124,11 @@ jobs:
           username: 'Hummingbot CI'
           raw-data: ${{ runner.os }}-build_report.json
 
+      - env:
+          SUPER_SECRET: ${{ secrets.WEBHOOK_URL }}
+        run: |
+          echo "$SUPER_SECRET"
+
       # Notify results to discord
       - name: Discord Webhook Action
         uses: tsickert/discord-webhook@v5.2.0
