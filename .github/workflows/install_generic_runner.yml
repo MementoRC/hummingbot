@@ -113,32 +113,42 @@ jobs:
               "username": "Hummingbot Bot",
               "avatar_url": "https://i.imgur.com/4M34hi2.png",
               "content": "Build ${{ github.run_number }} for ${{ github.repository }} on ${{ matrix.os }} has finished.",
-              "embeds": [
-                {
-                  "author": {
-                    "name": "Hummingbot CI ♫",
-                    "url": "https://hummingbot.io/",
-                    "icon_url": "https://docs.hummingbot.org/assets/img/logo.png"
-                  },
-                  "title": "Build ${{ github.run_number }} for ${{ github.repository }} on ${{ matrix.os }} has finished.",
-                  "url": "https://${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
-                  "description": "",
-                  "color": 15258703,
-                  "fields": [
-                    {
-                      "name": "Build Status",
-                      "value": "${{ job.status }}",
-                      "inline": true
-                    },
-                    {
-                      "name": "Build URL",
-                      "value": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
-                      "inline": true
-                    }
-                  ]
-                }
-              ]
+              "embeds": [ \
+                { \
+                  "author": { \
+                    "name": "Hummingbot CI ♫", \
+                    "url": "https://hummingbot.io/", \
+                    "icon_url": "https://docs.hummingbot.org/assets/img/logo.png" \
+                  }, \
+                  "title": "Build ${{ github.run_number }} for ${{ github.repository }} on ${{ matrix.os }} has finished.", \
+                  "url": "https://${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", \
+                  "description": "", \
+                  "color": 15258703, \
+                  "fields": [   \
+                    { \
+                      "name": "Build Number", \
+                      "value": "${{ github.run_number }}",  \
+                      "inline": true \
+                    }, \
+                    { \
+                      "name": "Build Status", \
+                      "value": "${{ job.status }}", \
+                      "inline": true \
+                    }, \
+                    { \
+                      "name": "Build URL", \
+                      "value": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}", \
+                      "inline": true \
+                    } \
+                  ] \
+                } \
+              ] \
             }
+
+      # Verify conda environment
+      - name: Verify JSON Report
+        run: |
+          jq ".user_agent" ${{ runner.os }}-build_report.json
 
 
       # Notify results to discord
