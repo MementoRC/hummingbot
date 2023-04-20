@@ -116,14 +116,14 @@ jobs:
               "embeds": [
                 {
                   "author": {
-                    "name": "Hummingbot CI ♫",
+                    "name": "Hummingbot CI",
                     "url": "https://hummingbot.io/",
                     "icon_url": "https://docs.hummingbot.org/assets/img/logo.png"
                   },
                   "title": "Build ${{ github.run_number }} for ${{ github.repository }} on ${{ matrix.os }} has finished.",
                   "url": "https://${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
                   "description": "Build ${{ github.run_number }} for ${{ github.repository }} on ${{ matrix.os }} has finished.",
-                  "color": 15258703,
+                  "color": "15258703",
                   "fields": [  
                     {
                       "name": "Build Number",
