@@ -141,7 +141,6 @@ jobs:
         run: |
           cat ${{ runner.os }}-build_report.json
 
-
       # Notify results to discord
       - name: Discord Webhook Action
         uses: tsickert/discord-webhook@v5.2.0

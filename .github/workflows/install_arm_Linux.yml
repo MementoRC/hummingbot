@@ -86,18 +86,47 @@ jobs:
 #          dependencies-cache-hit: ${{steps.conda-dependencies.outputs.cache-hit}}
 #          shell: bash -l {0}
 #
-#      # Notify results to discord
-#      - uses: ruby/setup-ruby@v1
-#        with:
-#          ruby-version: '3.0'
-#      - name: Send Webhook Notification
-#        if: github.event_name != 'pull_request'
-#        env:
-#          JOB_STATUS: ${{ job.status }}
-#          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
-#          HOOK_OS_NAME: ${{ runner.os }}
-#          WORKFLOW_NAME: ${{ github.workflow }}
-#        run: |
-#          git clone --depth 1 https://github.com/DiscordHooks/github-actions-discord-webhook.git webhook
-#          bash webhook/send.sh $JOB_STATUS $WEBHOOK_URL
-#        shell: bash
+      # Create JSON report
+      - name: Create JSON report
+        uses: jsdaniell/create-json@v1.2.2
+        with:
+          name: ${{ runner.os }}-build_report.json
+          json: |
+            {
+              "username": "Hummingbot Bot",
+              "avatar_url": "https://i.imgur.com/4M34hi2.png",
+              "content": "Build ${{ github.run_number }} for ${{ github.repository }} on ${{ matrix.os }} has finished.",
+              "embeds": [{
+                  "author": {
+                    "name": "Hummingbot CI ♫",
+                    "url": "https://hummingbot.io/",
+                    "icon_url": "https://docs.hummingbot.org/assets/img/logo.png"
+                  },
+                  "title": "I/B/T for ${{ github.event.pull_request.title }} on **${{ matrix.os }}** has finished.",
+                  "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+                  "description": "I/B/T for ${{ github.event.pull_request.title }} on **${{ matrix.os }}** has finished.",
+                  "color": 1127128,
+                  "fields": [{
+                      "name": "Build Status",
+                      "value": "${{ job.status }}",
+                      "inline": true
+                    },
+                    {
+                      "name": "Build URL",
+                      "value": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+                      "inline": true
+                    }]
+                }]
+            }
+
+      # Verify conda environment
+      - name: Verify JSON Report
+        run: |
+          cat ${{ runner.os }}-build_report.json
+
+      # Notify results to discord
+      - name: Discord Webhook Action
+        uses: tsickert/discord-webhook@v5.2.0
+        with:
+          webhook-url: ${{ secrets.WEBHOOK_URL }}
+          raw-data: ${{ runner.os }}-build_report.json

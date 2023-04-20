@@ -38,8 +38,8 @@ jobs:
         id: checkout-hb-cache-hit
         uses: ./.github/actions/set_hb_env_cache
         with:
-          runner: WSL-${{ runner.os }}
-          conda-env-hash: ${{ hashFiles(inputs.env-yml-file) }}
+          runner: WSL-${{ matrix.os }}
+          conda-env-hash: ${{ hashFiles(setup/environment-linux.yml) }}
 
       # Set up WSL
       - uses: Vampire/setup-wsl@v2
