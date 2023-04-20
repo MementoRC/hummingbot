@@ -21,6 +21,7 @@ runs:
       with:
         varFilePath: ./.github/variables/hb_env_variables.env
 
+    # Install python, git, conda environment - This likely needs to be done every time (can we use artifact? how?)
     - uses: pguyot/arm-runner-action@v2
       with:
         image_additional_mb: 2048
@@ -35,21 +36,60 @@ runs:
           apt install -y wget
           apt-get install build-essential libssl-dev libffi-dev gcc python3-dev python-dev python3 -y
           apt-get install git -y
-          wget https://github.com/conda-forge/miniforge/releases/download/4.11.0-4/Miniforge3-4.11.0-4-Linux-aarch64.sh
-          sh Miniforge3-4.11.0-4-Linux-aarch64.sh -b -p $MINICONDA_PATH
+          wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-aarch64.sh
+          sh Miniforge3-Linux-aarch64.sh -b -p $MINICONDA_PATH
           source $MINICONDA_PATH/etc/profile.d/conda.sh
           conda init
           conda config --set always_yes yes --set changeps1 no
           conda update -q conda
           conda info -a
+
+    # Verify the artifacts directory exists
+    - name: Verify artifacts directory exists
+      shell: ${{ inputs.shell }}
+      run: |
+        test -d ${{ github.env.MINICONDA_PATH }}
+
+    - uses: pguyot/arm-runner-action@v2
+      if: ${{inputs.dependencies-cache-hit}} != 'true'
+      with:
+        image_additional_mb: 2048
+        base_image: ${{ matrix.base_image }}
+        cpu: ${{ matrix.cpu }}
+        cpu_info: ${{ matrix.cpu_info }}
+        bind_mount_repository: true
+        shell: ${{ inputs.shell }}
+        import_github_env: true
+        commands: |
+          source $MINICONDA_PATH/etc/profile.d/conda.sh
           conda install -c conda-forge pre_commit
           ./install
+
+    # Compile and run tests if code has changed
+    - name: Compile Hummingbot
+      uses: pguyot/arm-runner-action@v2
+      if: ${{inputs.program-cache-hit}} != 'true' || ${{inputs.dependencies-cache-hit}} != 'true'
+      with:
+        image_additional_mb: 2048
+        base_image: ${{ matrix.base_image }}
+        cpu: ${{ matrix.cpu }}
+        cpu_info: ${{ matrix.cpu_info }}
+        bind_mount_repository: true
+        shell: ${{ inputs.shell }}
+        import_github_env: true
+        commands: |
+          source $MINICONDA_PATH/etc/profile.d/conda.sh
           conda info --envs
           conda activate hummingbot
           conda env export
           ./compile
           pre-commit run --files $(git diff --name-only origin/$GITHUB_BASE_REF)
-          make test
+          coverage run -m pytest \
+            --ignore="test/connector" \
+            --ignore="test/debug" \
+            --ignore="test/mock" \
+            --ignore="test/hummingbot/connector/gateway/amm" \
+            --ignore="test/hummingbot/connector/gateway/clob"
           make report_coverage
           git fetch --all -q
           git checkout -b $GITHUB_SHA

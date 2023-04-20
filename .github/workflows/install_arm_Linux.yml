@@ -75,36 +75,36 @@ jobs:
           CACHE_NUMBER: 0
         with:
           path: README.md # placeholder file
-          key: ARM-${{ runner.os }}-build-${{ env.CACHE_NUMBER }}-${{ hashFiles('hummingbot/*', '**/*.py', '**/*.py*', '**/*.pxd', 'test/*') }}
+          key: ARM-${{ matrix.target }}-build-${{ env.CACHE_NUMBER }}-${{ hashFiles('hummingbot/*', '**/*.py', '**/*.py*', '**/*.pxd', 'test/*') }}
 
-#      # Install environment and Hummingbot
-#      # Given that this uses an emulation, everything is done in the same step
-#      - name: Install environment and Hummingbot
-#        uses: ./.github/actions/install_env_and_hb_arm
-#        with:
-#          program-cache-hit: ${{steps.program-changes.outputs.cache-hit}}
-#          dependencies-cache-hit: ${{steps.conda-dependencies.outputs.cache-hit}}
-#          shell: bash -l {0}
-#
+      # Install environment and Hummingbot
+      # Given that this uses an emulation, everything is done in the same step
+      - name: Install environment and Hummingbot
+        uses: ./.github/actions/install_env_and_hb_arm
+        with:
+          program-cache-hit: ${{steps.program-changes.outputs.cache-hit}}
+          dependencies-cache-hit: ${{steps.conda-dependencies.outputs.cache-hit}}
+          shell: bash -l {0}
+
       # Create JSON report
       - name: Create JSON report
         uses: jsdaniell/create-json@v1.2.2
         with:
-          name: ${{ runner.os }}-build_report.json
+          name: ${{ matrix.target }}-build_report.json
           json: |
             {
               "username": "Hummingbot Bot",
               "avatar_url": "https://i.imgur.com/4M34hi2.png",
-              "content": "Build ${{ github.run_number }} for ${{ github.repository }} on ${{ matrix.os }} has finished.",
+              "content": "Build ${{ github.run_number }} for ${{ github.repository }} on ${{ matrix.target }} has finished.",
               "embeds": [{
                   "author": {
                     "name": "Hummingbot CI ♫",
                     "url": "https://hummingbot.io/",
                     "icon_url": "https://docs.hummingbot.org/assets/img/logo.png"
                   },
-                  "title": "I/B/T for ${{ github.event.pull_request.title }} on **${{ matrix.os }}** has finished.",
+                  "title": "I/B/T for ${{ github.event.pull_request.title }} on **${{ matrix.target }}** has finished.",
                   "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
-                  "description": "I/B/T for ${{ github.event.pull_request.title }} on **${{ matrix.os }}** has finished.",
+                  "description": "I/B/T for ${{ github.event.pull_request.title }} on **${{ matrix.target }}** has finished.",
                   "color": 1127128,
                   "fields": [{
                       "name": "Build Status",
@@ -122,11 +122,11 @@ jobs:
       # Verify conda environment
       - name: Verify JSON Report
         run: |
-          cat ${{ runner.os }}-build_report.json
+          cat ${{ matrix.target }}-build_report.json
 
       # Notify results to discord
       - name: Discord Webhook Action
         uses: tsickert/discord-webhook@v5.2.0
         with:
           webhook-url: ${{ secrets.WEBHOOK_URL }}
-          raw-data: ${{ runner.os }}-build_report.json
+          raw-data: ${{ matrix.target }}-build_report.json

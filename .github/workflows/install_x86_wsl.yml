@@ -39,7 +39,7 @@ jobs:
         uses: ./.github/actions/set_hb_env_cache
         with:
           runner: WSL-${{ matrix.os }}
-          conda-env-hash: ${{ hashFiles(setup/environment-linux.yml) }}
+          conda-env-hash: ${{ hashFiles('setup/environment-linux.yml') }}
 
       # Set up WSL
       - uses: Vampire/setup-wsl@v2
@@ -62,59 +62,88 @@ jobs:
       - name: Verify conda environment
         run: |
           conda info --json |jq ".user_agent"
-#
-#      # Install environment and Hummingbot
-#      - name: Install environment and Hummingbot
-#        uses: ./.github/actions/install_env_and_hb
-#        with:
-#          program-cache-hit: ${{steps.program-changes.outputs.cache-hit}}
-#          dependencies-cache-hit: ${{steps.conda-dependencies.outputs.cache-hit}}
-#          shell: ${{ defaults.run.shell }}
-#
-#      # Compile and run tests if code has changed
-#      - name: Run pre-commit hooks on diff
-#        if: steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true'
-#        run: |
-#          source $MINICONDA_PATH/etc/profile.d/conda.sh
-#          conda activate hummingbot
-#          pre-commit run --files $(git diff --name-only origin/$GITHUB_BASE_REF)
-#
-#      - name: Run stable tests and calculate coverage
-#        if: steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true'
-#        run: |
-#          source $MINICONDA_PATH/etc/profile.d/conda.sh
-#          conda activate hummingbot
-#          make test
-#
-#      - name: Check and report global coverage
-#        if: steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true'
-#        run: |
-#          source $MINICONDA_PATH/etc/profile.d/conda.sh
-#          conda activate hummingbot
-#          make report_coverage
-#
-#      - name: Validate coverage for the changes
-#        if: github.event_name == 'pull_request' && (steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true')
-#        run: |
-#          source $MINICONDA_PATH/etc/profile.d/conda.sh
-#          conda activate hummingbot
-#          git fetch --all -q
-#          git checkout -b $GITHUB_SHA
-#          coverage xml
-#          diff-cover --compare-branch=origin/$GITHUB_BASE_REF --fail-under=80 coverage.xml
-#
-#      # Notify results to discord
-#      - uses: ruby/setup-ruby@v1
-#        with:
-#          ruby-version: '3.0'
-#      - name: Send Webhook Notification
-#        if: github.event_name != 'pull_request'
-#        env:
-#          JOB_STATUS: ${{ job.status }}
-#          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
-#          HOOK_OS_NAME: ${{ runner.os }}
-#          WORKFLOW_NAME: ${{ github.workflow }}
-#        run: |
-#          git clone --depth 1 https://github.com/DiscordHooks/github-actions-discord-webhook.git webhook
-#          bash webhook/send.sh $JOB_STATUS $WEBHOOK_URL
-#        shell: bash
+
+      # Install environment and Hummingbot
+      - name: Install environment and Hummingbot
+        uses: ./.github/actions/install_env_and_hb
+        with:
+          program-cache-hit: ${{steps.program-changes.outputs.cache-hit}}
+          dependencies-cache-hit: ${{steps.conda-dependencies.outputs.cache-hit}}
+          shell: ${{ defaults.run.shell }}
+
+      # Compile and run tests if code has changed
+      - name: Run pre-commit hooks on diff
+        if: steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true'
+        run: |
+          source $MINICONDA_PATH/etc/profile.d/conda.sh
+          conda activate hummingbot
+          pre-commit run --files $(git diff --name-only origin/$GITHUB_BASE_REF)
+
+      - name: Run stable tests and calculate coverage
+        if: steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true'
+        run: |
+          source $MINICONDA_PATH/etc/profile.d/conda.sh
+          conda activate hummingbot
+          make test
+
+      - name: Check and report global coverage
+        if: steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true'
+        run: |
+          source $MINICONDA_PATH/etc/profile.d/conda.sh
+          conda activate hummingbot
+          make report_coverage
+
+      - name: Validate coverage for the changes
+        if: github.event_name == 'pull_request' && (steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true')
+        run: |
+          source $MINICONDA_PATH/etc/profile.d/conda.sh
+          conda activate hummingbot
+          git fetch --all -q
+          git checkout -b $GITHUB_SHA
+          coverage xml
+          diff-cover --compare-branch=origin/$GITHUB_BASE_REF --fail-under=80 coverage.xml
+
+      # Create JSON report
+      - name: Create JSON report
+        uses: jsdaniell/create-json@v1.2.2
+        with:
+          name: ${{ runner.os }}-build_report.json
+          json: |
+            {
+              "username": "Hummingbot Bot",
+              "avatar_url": "https://i.imgur.com/4M34hi2.png",
+              "content": "Build ${{ github.run_number }} for ${{ github.repository }} on ${{ matrix.os }} has finished.",
+              "embeds": [{
+                  "author": {
+                    "name": "Hummingbot CI ♫",
+                    "url": "https://hummingbot.io/",
+                    "icon_url": "https://docs.hummingbot.org/assets/img/logo.png"
+                  },
+                  "title": "I/B/T for ${{ github.event.pull_request.title }} on **${{ matrix.os }}** has finished.",
+                  "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+                  "description": "I/B/T for ${{ github.event.pull_request.title }} on **${{ matrix.os }}** has finished.",
+                  "color": 1127128,
+                  "fields": [{
+                      "name": "Build Status",
+                      "value": "${{ job.status }}",
+                      "inline": true
+                    },
+                    {
+                      "name": "Build URL",
+                      "value": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+                      "inline": true
+                    }]
+                }]
+            }
+
+      # Verify conda environment
+      - name: Verify JSON Report
+        run: |
+          cat ${{ matrix.os }}-build_report.json
+
+      # Notify results to discord
+      - name: Discord Webhook Action
+        uses: tsickert/discord-webhook@v5.2.0
+        with:
+          webhook-url: ${{ secrets.WEBHOOK_URL }}
+          raw-data: ${{ matrix.os }}-build_report.json
