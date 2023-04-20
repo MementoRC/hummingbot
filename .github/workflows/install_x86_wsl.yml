@@ -69,7 +69,7 @@ jobs:
         with:
           program-cache-hit: ${{steps.program-changes.outputs.cache-hit}}
           dependencies-cache-hit: ${{steps.conda-dependencies.outputs.cache-hit}}
-          shell: ${{ defaults.run.shell }}
+          shell: ${{ inputs.shell }}
 
       # Compile and run tests if code has changed
       - name: Run pre-commit hooks on diff
@@ -107,7 +107,7 @@ jobs:
       - name: Create JSON report
         uses: jsdaniell/create-json@v1.2.2
         with:
-          name: ${{ runner.os }}-build_report.json
+          name: WSL-${{ matrix.os }}-build_report.json
           json: |
             {
               "username": "Hummingbot Bot",
@@ -139,11 +139,11 @@ jobs:
       # Verify conda environment
       - name: Verify JSON Report
         run: |
-          cat ${{ matrix.os }}-build_report.json
+          cat WSL-${{ matrix.os }}-build_report.json
 
       # Notify results to discord
       - name: Discord Webhook Action
         uses: tsickert/discord-webhook@v5.2.0
         with:
           webhook-url: ${{ secrets.WEBHOOK_URL }}
-          raw-data: ${{ matrix.os }}-build_report.json
+          raw-data: WSL-${{ matrix.os }}-build_report.json

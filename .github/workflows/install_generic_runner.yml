@@ -45,7 +45,7 @@ jobs:
         id: checkout-hb-cache-hit
         uses: ./.github/actions/set_hb_env_cache
         with:
-          runner: ${{ runner.os }}
+          runner: ${{ matrix.os }}
           conda-env-hash: ${{ hashFiles(inputs.env-yml-file) }}
 
       # Double-check Conda environment
@@ -107,7 +107,7 @@ jobs:
       - name: Create JSON report
         uses: jsdaniell/create-json@v1.2.2
         with:
-          name: ${{ runner.os }}-build_report.json
+          name: ${{ matrix.os }}-build_report.json
           json: |
             {
               "username": "Hummingbot Bot",

@@ -90,7 +90,7 @@ jobs:
       - name: Create JSON report
         uses: jsdaniell/create-json@v1.2.2
         with:
-          name: ${{ matrix.target }}-build_report.json
+          name: ARM-${{ matrix.target }}-build_report.json
           json: |
             {
               "username": "Hummingbot Bot",
@@ -122,11 +122,11 @@ jobs:
       # Verify conda environment
       - name: Verify JSON Report
         run: |
-          cat ${{ matrix.target }}-build_report.json
+          cat ARM-${{ matrix.target }}-build_report.json
 
       # Notify results to discord
       - name: Discord Webhook Action
         uses: tsickert/discord-webhook@v5.2.0
         with:
           webhook-url: ${{ secrets.WEBHOOK_URL }}
-          raw-data: ${{ matrix.target }}-build_report.json
+          raw-data: ARM-${{ matrix.target }}-build_report.json
