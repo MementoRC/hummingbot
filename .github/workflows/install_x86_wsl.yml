@@ -41,7 +41,7 @@ jobs:
       # Loading Custom Environment variables
       - name: Set Environment Variables
         env:
-          ENVIRONMENT: ${{ GITHUB_ENV }}
+          ENVIRONMENT: $GITHUB_ENV
         run: |
           echo "ENVIRONMENT=$ENVIRONMENT"
           sed "/#/d" ./.github/variables/hb_env_variables.env >> "$ENVIRONMENT"
@@ -49,7 +49,7 @@ jobs:
       # Double-check Conda environment
       - name: Verify environment variables
         env:
-          ENVIRONMENT: ${{ GITHUB_ENV }}
+          ENVIRONMENT: $GITHUB_ENV
           MINICONDA_PATH: ${{ env.MINICONDA_PATH }}
           HB_PYTHON_VERSION: ${{ env.HB_PYTHON_VERSION }}
           RELATIVE_MINICONDA_PATH: ${{ env.RELATIVE_MINICONDA_PATH }}
