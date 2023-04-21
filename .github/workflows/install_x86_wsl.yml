@@ -41,8 +41,10 @@ jobs:
       # Loading Custom Environment variables
       - name: Set Environment Variables
         env:
-          GITHUB_ENVIRONMENT: $GITHUB_ENV
-        run: sed "/#/d" ./.github/variables/hb_env_variables.env >> "GITHUB_ENVIRONMENT"
+          GITHUB_ENVIRONMENT: ${{ GITHUB_ENV }}
+        run: |
+          echo "GITHUB_ENVIRONMENT=$GITHUB_ENVIRONMENT"
+          sed "/#/d" ./.github/variables/hb_env_variables.env >> "GITHUB_ENVIRONMENT"
 
       # Double-check Conda environment
       - name: Verify environment variables
