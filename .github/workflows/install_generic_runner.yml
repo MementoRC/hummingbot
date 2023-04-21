@@ -42,7 +42,8 @@ jobs:
 
       # Loading Custom Environment variables
       - name: Set Environment Variables
-        run: sed "/#/d" ${{ inputs.envFilePath }} >> "$GITHUB_ENV"
+        run: sed "/#/d" ./github/variables/hb_env_variables.env >> "$GITHUB_ENV"
+        shell: bash
 
       # Checkout Hummingbot, set HB env variables and check cache
       - name: Set Project Env. vars and check cache
