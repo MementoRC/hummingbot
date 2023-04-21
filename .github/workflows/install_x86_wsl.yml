@@ -52,7 +52,7 @@ jobs:
           runner: WSL-${{ matrix.os }}
           conda-env-hash: ${{ hashFiles('setup/environment-linux.yml') }}
           conda-inst-hash: ${{ hashFiles('miniconda_latest.html') }}
-          shell: ${{ inputs.shell }}
+          shell: wsl-bash {0}
 
       # Double-check Conda environment
       - name: Verify environment variables
