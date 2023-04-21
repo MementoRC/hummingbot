@@ -40,16 +40,12 @@ jobs:
 
       # Loading Custom Environment variables
       - name: Set Environment Variables
-        env:
-          ENVIRONMENT: $GITHUB_ENV
         run: |
-          echo "ENVIRONMENT=$ENVIRONMENT"
-          sed "/#/d" ./.github/variables/hb_env_variables.env >> "$ENVIRONMENT"
+          sed "/#/d" ./.github/variables/hb_env_variables.env >> "$GITHUB_ENV"
 
       # Double-check Conda environment
       - name: Verify environment variables
         env:
-          ENVIRONMENT: $GITHUB_ENV
           MINICONDA_PATH: ${{ env.MINICONDA_PATH }}
           HB_PYTHON_VERSION: ${{ env.HB_PYTHON_VERSION }}
           RELATIVE_MINICONDA_PATH: ${{ env.RELATIVE_MINICONDA_PATH }}
@@ -57,7 +53,6 @@ jobs:
           echo "MINICONDA_PATH=$MINICONDA_PATH"
           echo "HB_PYTHON_VERSION=$HB_PYTHON_VERSION"
           echo "RELATIVE_MINICONDA_PATH=$RELATIVE_MINICONDA_PATH"
-          echo "ENVIRONMENT=$ENVIRONMENT"
 
       # Register new Miniconda custom installation for cache
       - run: |
