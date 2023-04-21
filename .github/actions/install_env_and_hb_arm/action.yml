@@ -45,8 +45,8 @@ runs:
           conda info -a
 
     # Verify the artifacts directory exists
-    - name: Verify artifacts directory exists
-      shell: ${{ inputs.shell }}
+    - name: Verify artifact Miniconda directory exists
+      shell: bash
       run: |
         test -d ${{ github.env.MINICONDA_PATH }}
 

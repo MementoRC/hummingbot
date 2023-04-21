@@ -35,6 +35,7 @@ jobs:
 
       # Register new Miniconda custom installation for cache
       - run: wget https://repo.anaconda.com/miniconda/index.html -O miniconda_latest.html
+        shell: bash
 
       # Checkout Hummingbot, set HB env variables and check cache
       - name: Set Project Env. vars and check cache
