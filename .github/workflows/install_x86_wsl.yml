@@ -40,7 +40,19 @@ jobs:
 
       # Loading Custom Environment variables
       - name: Set Environment Variables
-        run: sed "/#/d" ./.github/variables/hb_env_variables.env >> "$GITHUB_ENV"
+        env:
+          GITHUB_ENVIRONMENT: $GITHUB_ENV
+        run: sed "/#/d" ./.github/variables/hb_env_variables.env >> "GITHUB_ENVIRONMENT"
+
+      # Double-check Conda environment
+      - name: Verify environment variables
+        env:
+          MINICONDA_PATH: ${{ github.env.MINICONDA_PATH }}
+          HB_PYTHON_VERSION: ${{ github.env.HB_PYTHON_VERSION }}
+          RELATIVE_MINICONDA_PATH: ${{ github.env.RELATIVE_MINICONDA_PATH }}
+        run: |
+          echo "MINICONDA_PATH=$MINICONDA_PATH"
+          echo "HB_PYTHON_VERSION=$HB_PYTHON_VERSION"
 
       # Register new Miniconda custom installation for cache
       - run: |
@@ -56,16 +68,6 @@ jobs:
           runner: WSL-${{ matrix.os }}
           conda-env-hash: ${{ hashFiles('setup/environment-linux.yml') }}
           conda-inst-hash: ${{ hashFiles('miniconda_latest.html') }}
-
-      # Double-check Conda environment
-      - name: Verify environment variables
-        env:
-          MINICONDA_PATH: ${{ github.env.MINICONDA_PATH }}
-          HB_PYTHON_VERSION: ${{ github.env.HB_PYTHON_VERSION }}
-          RELATIVE_MINICONDA_PATH: ${{ github.env.RELATIVE_MINICONDA_PATH }}
-        run: |
-          echo "MINICONDA_PATH=$MINICONDA_PATH"
-          echo "HB_PYTHON_VERSION=$HB_PYTHON_VERSION"
 
       # Install Custom Conda to work under WSL
       - name: Install conda
