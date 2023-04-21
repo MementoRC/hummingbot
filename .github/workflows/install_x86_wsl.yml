@@ -35,7 +35,7 @@ jobs:
 
       # Loading Custom Environment variables
       - name: Set Environment Variables
-        run: sed "/#/d" ./github/variables/hb_env_variables.env >> "$GITHUB_ENV"
+        run: sed "/#/d" ./.github/variables/hb_env_variables.env >> "$GITHUB_ENV"
         shell: bash
 
       # Set up WSL
