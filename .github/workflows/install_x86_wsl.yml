@@ -23,6 +23,10 @@ jobs:
         os: ${{ fromJson(inputs.os-matrix) }}
         #os: [Debian, Alpine, kali-linux, openSUSE-Leap-15.2, Ubuntu-22.04]
 
+    env:
+      # colon separated list of env vars to be passed to wsl-bash:
+      WSLENV: MINICONDA_PATH:HB_PYTHON_VERSION:RELATIVE_MINICONDA_PATH
+
     defaults:
       run:
         shell: wsl-bash {0}
@@ -39,24 +43,12 @@ jobs:
         run: |
           sed "/#/d" ./.github/variables/hb_env_variables.env >> $GITHUB_ENV
 
-      # Double-check Conda environment
-      - name: Verify environment variables
-        shell: bash
-        env:
-          MINICONDA_PATH: ${{ env.MINICONDA_PATH }}
-          HB_PYTHON_VERSION: ${{ env.HB_PYTHON_VERSION }}
-          RELATIVE_MINICONDA_PATH: ${{ env.RELATIVE_MINICONDA_PATH }}
-        run: |
-          echo "MINICONDA_PATH=$MINICONDA_PATH"
-          echo "HB_PYTHON_VERSION=$HB_PYTHON_VERSION"
-          echo "RELATIVE_MINICONDA_PATH=$RELATIVE_MINICONDA_PATH"
-
       # Set up WSL
       - uses: Vampire/setup-wsl@v2
         with:
             distribution: ${{ matrix.os }}
 
-      # Double-check Conda environment
+      # Double-check Conda environment variables under WSL
       - name: Verify environment variables
         env:
           MINICONDA_PATH: ${{ env.MINICONDA_PATH }}
