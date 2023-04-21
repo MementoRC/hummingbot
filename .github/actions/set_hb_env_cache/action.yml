@@ -66,7 +66,7 @@ runs:
       if: inputs.conda-inst-hash != '' && inputs.conda-inst-hash != '0'
       with:
         path: |
-          $MINICONDA_PATH/{bin,etc,include,lib,share}
-          $RELATIVE_MINICONDA_PATH/{bin,etc,include,lib,share}
+          $MINICONDA_PATH
+          $RELATIVE_MINICONDA_PATH
         key: ${{ inputs.runner }}-conda-install-${{ env.CONDA_INST_CACHE_NUMBER }}-${{ inputs.conda-inst-hash }}
 

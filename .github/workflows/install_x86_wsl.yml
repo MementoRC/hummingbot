@@ -54,9 +54,14 @@ jobs:
           conda-inst-hash: ${{ hashFiles('miniconda_latest.html') }}
 
       # Double-check Conda environment
-      - run: |
-          echo "MINICONDA_PATH=$MINICONDA_PATH (${{ github.env.MINICONDA_PATH }})"
-          echo "HB_PYTHON_VERSION=$HB_PYTHON_VERSION (${{ github.env.HB_PYTHON_VERSION }})"
+      - name: Verify environment variables
+        env:
+          MINICONDA_PATH: ${{ github.env.MINICONDA_PATH }}
+          HB_PYTHON_VERSION: ${{ github.env.HB_PYTHON_VERSION }}
+          RELATIVE_MINICONDA_PATH: ${{ github.env.RELATIVE_MINICONDA_PATH }}
+        run: |
+          echo "MINICONDA_PATH=$MINICONDA_PATH"
+          echo "HB_PYTHON_VERSION=$HB_PYTHON_VERSION"
 
       # Install Custom Conda to work under WSL
       - name: Install conda

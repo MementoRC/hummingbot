@@ -64,6 +64,7 @@ runs:
         shell: ${{ inputs.shell }}
         import_github_env: true
         commands: |
+          apt-get update
           apt-get install git -y
           source $RELATIVE_MINICONDA_PATH/etc/profile.d/conda.sh
           conda install -c conda-forge pre_commit
