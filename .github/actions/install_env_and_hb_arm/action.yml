@@ -21,8 +21,9 @@ runs:
       with:
         envFilePath: ./.github/variables/hb_env_variables.env
 
-    # Install python, git, conda environment - This likely needs to be done every time (can we use artifact? how?)
-    - uses: pguyot/arm-runner-action@v2
+    # Install Miniconda3 - This likely needs to be done every time (can we use artifact? how?)
+    - name: Install Miniconda
+      uses: pguyot/arm-runner-action@v2
       with:
         image_additional_mb: 2048
         base_image: ${{ matrix.base_image }}
@@ -35,9 +36,9 @@ runs:
           apt update
           apt install -y wget
           apt-get install build-essential libssl-dev libffi-dev gcc python3-dev python-dev python3 -y
-          apt-get install git -y
           wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-aarch64.sh
           sh Miniforge3-Linux-aarch64.sh -b -p $MINICONDA_PATH
+          ls -l $MINICONDA_PATH
           source $MINICONDA_PATH/etc/profile.d/conda.sh
           conda init
           conda config --set always_yes yes --set changeps1 no
@@ -48,9 +49,11 @@ runs:
     - name: Verify artifact Miniconda directory exists
       shell: bash
       run: |
-        test -d ${{ github.env.MINICONDA_PATH }}
+        echo "MINICONDA_PATH: $MINICONDA_PATH"
+        ls -l $MINICONDA_PATH
 
-    - uses: pguyot/arm-runner-action@v2
+    - name: Install Hummingbot dependencies
+      uses: pguyot/arm-runner-action@v2
       if: ${{inputs.dependencies-cache-hit}} != 'true'
       with:
         image_additional_mb: 2048
@@ -61,6 +64,7 @@ runs:
         shell: ${{ inputs.shell }}
         import_github_env: true
         commands: |
+          apt-get install git -y
           source $MINICONDA_PATH/etc/profile.d/conda.sh
           conda install -c conda-forge pre_commit
           ./install

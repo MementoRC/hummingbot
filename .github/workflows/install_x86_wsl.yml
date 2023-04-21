@@ -34,7 +34,9 @@ jobs:
           fetch-depth: 0
 
       # Register new Miniconda custom installation for cache
-      - run: wget https://repo.anaconda.com/miniconda/index.html -O miniconda_latest.html
+      - run: |
+          apt-get install -y wget
+          wget https://repo.anaconda.com/miniconda/index.html -O miniconda_latest.html
         shell: bash
 
       # Checkout Hummingbot, set HB env variables and check cache
@@ -63,7 +65,6 @@ jobs:
           MINICONDA_PATH: ${{ github.env.MINICONDA_PATH }}
         run: |
           apt-get update
-          apt-get install -y wget
           wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
           sh miniconda.sh -b -p $MINICONDA_PATH
           source $MINICONDA_PATH/etc/profile.d/conda.sh
