@@ -52,8 +52,8 @@ runs:
         CONDA_CACHE_NUMBER: 0
       with:
         path: |
-          ${{ github.env.MINICONDA_PATH }}/envs/hummingbot
-          ${{ env.CONDA }}/envs/hummingbot
+          $MINICONDA_PATH/envs/$HB_ENV_NAME
+          CONDA/envs/$HB_ENV_NAME
         key: ${{ inputs.runner }}-conda-${{ env.CONDA_CACHE_NUMBER }}-${{ inputs.conda-env-hash }}
 
     # Check for installation changes
@@ -66,6 +66,7 @@ runs:
       if: inputs.conda-inst-hash != '' && inputs.conda-inst-hash != '0'
       with:
         path: |
-          ${{ github.env.MINICONDA_PATH }}
+          $MINICONDA_PATH/{bin,etc,include,lib,share}
+          $RELATIVE_MINICONDA_PATH/{bin,etc,include,lib,share}
         key: ${{ inputs.runner }}-conda-install-${{ env.CONDA_INST_CACHE_NUMBER }}-${{ inputs.conda-inst-hash }}
 

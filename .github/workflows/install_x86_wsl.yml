@@ -33,11 +33,16 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Set up WSL
+      - uses: Vampire/setup-wsl@v2
+        with:
+            distribution: ${{ matrix.os }}
+
       # Register new Miniconda custom installation for cache
       - run: |
+          apt-get update
           apt-get install -y wget
           wget https://repo.anaconda.com/miniconda/index.html -O miniconda_latest.html
-        shell: bash
 
       # Checkout Hummingbot, set HB env variables and check cache
       - name: Set Project Env. vars and check cache
@@ -53,18 +58,12 @@ jobs:
           echo "MINICONDA_PATH=$MINICONDA_PATH (${{ github.env.MINICONDA_PATH }})"
           echo "HB_PYTHON_VERSION=$HB_PYTHON_VERSION (${{ github.env.HB_PYTHON_VERSION }})"
 
-      # Set up WSL
-      - uses: Vampire/setup-wsl@v2
-        with:
-            distribution: ${{ matrix.os }}
-
       # Install Custom Conda to work under WSL
       - name: Install conda
         if: steps.set-env-hb-cache-hit.outputs.cache-hit != 'true'
         env:
           MINICONDA_PATH: ${{ github.env.MINICONDA_PATH }}
         run: |
-          apt-get update
           wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
           sh miniconda.sh -b -p $MINICONDA_PATH
           source $MINICONDA_PATH/etc/profile.d/conda.sh

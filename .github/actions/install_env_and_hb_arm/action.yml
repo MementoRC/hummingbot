@@ -33,13 +33,13 @@ runs:
         import_github_env: true
         shell: ${{ inputs.shell }}
         commands: |
-          apt update
-          apt install -y wget
+          apt-get update
           apt-get install build-essential libssl-dev libffi-dev gcc python3-dev python-dev python3 -y
+          apt-get install -y wget
           wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-aarch64.sh
-          sh Miniforge3-Linux-aarch64.sh -b -p $MINICONDA_PATH
-          ls -l $MINICONDA_PATH
-          source $MINICONDA_PATH/etc/profile.d/conda.sh
+          sh Miniforge3-Linux-aarch64.sh -b -p $RELATIVE_MINICONDA_PATH
+          ls -l $RELATIVE_MINICONDA_PATH
+          source $RELATIVE_MINICONDA_PATH/etc/profile.d/conda.sh
           conda init
           conda config --set always_yes yes --set changeps1 no
           conda update -q conda
@@ -49,8 +49,8 @@ runs:
     - name: Verify artifact Miniconda directory exists
       shell: bash
       run: |
-        echo "MINICONDA_PATH: $MINICONDA_PATH"
-        ls -l $MINICONDA_PATH
+        echo "MINICONDA_PATH: $RELATIVE_MINICONDA_PATH"
+        ls -l $RELATIVE_MINICONDA_PATH
 
     - name: Install Hummingbot dependencies
       uses: pguyot/arm-runner-action@v2
@@ -65,7 +65,7 @@ runs:
         import_github_env: true
         commands: |
           apt-get install git -y
-          source $MINICONDA_PATH/etc/profile.d/conda.sh
+          source $RELATIVE_MINICONDA_PATH/etc/profile.d/conda.sh
           conda install -c conda-forge pre_commit
           ./install
 
@@ -82,7 +82,7 @@ runs:
         shell: ${{ inputs.shell }}
         import_github_env: true
         commands: |
-          source $MINICONDA_PATH/etc/profile.d/conda.sh
+          source $RELATIVE_MINICONDA_PATH/etc/profile.d/conda.sh
           conda info --envs
           conda activate hummingbot
           conda env export
