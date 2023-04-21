@@ -12,8 +12,8 @@ inputs:
      description: "Environment file to use"
      default: "0"
    shell:
-     description: 'Shell to use for the run step'
      required: false
+     description: 'Shell to use for the run step'
      default: bash -l {0}
 
 outputs:
@@ -21,28 +21,34 @@ outputs:
      description: "Value of truth regarding the program cache being hit or not"
      value: ${{ steps.program-changes.outputs.cache-hit }}
    conda-cache-hit:
-        description: "Value of truth regarding the conda cache being hit or not"
-        value: ${{ steps.conda-dependencies.outputs.cache-hit }}
+     description: "Value of truth regarding the conda cache being hit or not"
+     value: ${{ steps.conda-dependencies.outputs.cache-hit }}
    conda-install-cache-hit:
-        description: "Value of truth regarding the conda installation cache being hit or not"
-        value: ${{ steps.conda-installation.outputs.cache-hit }}
+     description: "Value of truth regarding the conda installation cache being hit or not"
+     value: ${{ steps.conda-installation.outputs.cache-hit }}
 
 runs:
   using: "composite"
   steps:
+    - run: echo "$SHELL"
+      env:
+        SHELL: ${{ inputs.shell }}
+      shell: ${{ inputs.shell }}
+
     # Read HB env variables
     - name: Set Environment Variables
       uses: ./.github/actions/set_env_vars
       with:
         envFilePath: ./.github/variables/hb_env_variables.env
+        shell: ${{ inputs.shell }}
 
     # Use cache's hashFiles function to check for changes in core code
     - name: Check for code changes
       id: program-changes
-      uses: actions/cache@v3
       env:
         # Increase this value to manually reset cache if program files have not changed
         CACHE_NUMBER: 0
+      uses: actions/cache@v3
       with:
         path: README.md # placeholder file
         key: ${{ inputs.runner }}-build-${{ env.CONDA_CACHE_NUMBER }}-${{ hashFiles('hummingbot/*', '**/*.py', '**/*.py*', '**/*.pxd', 'test/*') }}
@@ -50,10 +56,10 @@ runs:
     # Check for dependencies changes
     - name: Cache conda dependencies
       id: conda-dependencies
-      uses: actions/cache@v3
       env:
         # Increase this value to manually reset cache if inputs.conda-env-hash has not changed
         CONDA_CACHE_NUMBER: 0
+      uses: actions/cache@v3
       with:
         path: |
           $MINICONDA_PATH/envs/$HB_ENV_NAME
@@ -62,12 +68,12 @@ runs:
 
     # Check for installation changes
     - name: Cache conda installation
-      id: conda-installation
-      uses: actions/cache@v3
-      env:
-        # Increase this value to manually reset cache if inputs.conda-inst-hash has not changed
-        CONDA_INST_CACHE_NUMBER: 0
       if: inputs.conda-inst-hash != '' && inputs.conda-inst-hash != '0'
+      id: conda-installation
+      env:
+        # Increase this value to manually reset cache if inputs.conda-env-hash has not changed
+        CONDA_CACHE_NUMBER: 0
+      uses: actions/cache@v3
       with:
         path: |
           $MINICONDA_PATH
