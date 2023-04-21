@@ -48,12 +48,14 @@ jobs:
 
       # Install Custom Conda to work under WSL
       - name: Install conda
+        env:
+          MINICONDA_PATH: ${{ github.env.MINICONDA_PATH }}
         run: |
           apt-get update
           apt-get install -y wget
           wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-          sh miniconda.sh -b -p ${{ github.env.MINICONDA_PATH }}
-          source ${{ github.env.MINICONDA_PATH }}/etc/profile.d/conda.sh
+          sh miniconda.sh -b -p $MINICONDA_PATH
+          source $MINICONDA_PATH/etc/profile.d/conda.sh
           conda init
           conda config --set always_yes yes --set changeps1 no
           conda update -q conda
