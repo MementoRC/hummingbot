@@ -16,4 +16,4 @@ runs:
         sed "/#/d" ${{ inputs.envFilePath }} >> $ENV
       shell: ${{ inputs.shell }}
       env:
-        ENV: $GITHUB_ENV
+        ENV: ${{ github.env.GITHUB_ENV }}
