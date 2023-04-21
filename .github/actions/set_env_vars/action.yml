@@ -13,7 +13,5 @@ runs:
   using: "composite"
   steps:
     - run: |
-        sed "/#/d" ${{ inputs.envFilePath }} >> $ENV
+        sed "/#/d" ${{ inputs.envFilePath }} >> "$GITHUB_ENV"
       shell: ${{ inputs.shell }}
-      env:
-        ENV: ${{ github.env.GITHUB_ENV }}
