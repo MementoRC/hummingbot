@@ -27,10 +27,6 @@ jobs:
           cpu: cortex-a53
           cpu_info: cpuinfo/raspberrypi_zero2_w_arm64
           base_image: raspios_lite_arm64:latest
-        - target: zero2_dietpi
-          cpu: cortex-a7
-          cpu_info: cpuinfo/raspberrypi_zero2_w
-          base_image: dietpi:rpi_armv7_bullseye
         - target: zero2_64_dietpi
           cpu: cortex-a53
           cpu_info: cpuinfo/raspberrypi_zero2_w_arm64

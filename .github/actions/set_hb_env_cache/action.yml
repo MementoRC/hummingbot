@@ -11,6 +11,10 @@ inputs:
      required: false
      description: "Environment file to use"
      default: "0"
+   shell:
+     description: 'Shell to use for the run step'
+     required: false
+     default: bash -l {0}
 
 outputs:
    hb-cache-hit:

@@ -46,12 +46,13 @@ jobs:
 
       # Checkout Hummingbot, set HB env variables and check cache
       - name: Set Project Env. vars and check cache
-        id: set-env-hb-cache-hit
+        id: set-hb-env-cache-hit
         uses: ./.github/actions/set_hb_env_cache
         with:
           runner: WSL-${{ matrix.os }}
           conda-env-hash: ${{ hashFiles('setup/environment-linux.yml') }}
           conda-inst-hash: ${{ hashFiles('miniconda_latest.html') }}
+          shell: ${{ inputs.shell }}
 
       # Double-check Conda environment
       - name: Verify environment variables

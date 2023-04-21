@@ -47,6 +47,7 @@ jobs:
         with:
           runner: ${{ matrix.os }}
           conda-env-hash: ${{ hashFiles(inputs.env-yml-file) }}
+          shell: ${{ inputs.shell }}
 
       # Double-check Conda environment
       - uses: conda-incubator/setup-miniconda@v2
