@@ -60,7 +60,7 @@ jobs:
       # Double-check Conda environment
       - name: Verify environment variables
         env:
-          MINICONDA_PATH: ${{ MINICONDA_PATH }}
+          MINICONDA_PATH: ${{ github.env.MINICONDA_PATH }}
           HB_PYTHON_VERSION: ${{ github.env.HB_PYTHON_VERSION }}
           RELATIVE_MINICONDA_PATH: ${{ github.env.RELATIVE_MINICONDA_PATH }}
         run: |
