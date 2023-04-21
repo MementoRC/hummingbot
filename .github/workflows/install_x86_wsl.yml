@@ -33,6 +33,10 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Loading Custom Environment variables
+      - name: Set Environment Variables
+        run: sed "/#/d" ${{ inputs.envFilePath }} >> "$GITHUB_ENV"
+
       # Set up WSL
       - uses: Vampire/setup-wsl@v2
         with:
@@ -46,13 +50,12 @@ jobs:
 
       # Checkout Hummingbot, set HB env variables and check cache
       - name: Set Project Env. vars and check cache
-        id: set-hb-env-cache-hit
+        id: set-hb-cache-hit
         uses: ./.github/actions/set_hb_env_cache
         with:
           runner: WSL-${{ matrix.os }}
           conda-env-hash: ${{ hashFiles('setup/environment-linux.yml') }}
           conda-inst-hash: ${{ hashFiles('miniconda_latest.html') }}
-          shell: wsl-bash {0}
 
       # Double-check Conda environment
       - name: Verify environment variables

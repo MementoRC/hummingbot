@@ -62,6 +62,10 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Loading Custom Environment variables
+      - name: Set Environment Variables
+        run: sed "/#/d" ${{ inputs.envFilePath }} >> "$GITHUB_ENV"
+
       # Use cache's hashFiles function to check for changes in core code
       - name: Check for code changes
         id: program-changes

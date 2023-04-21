@@ -15,12 +15,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    # Set HB and miniconda install directory (when not using conda-incubator/setup-miniconda - WSL and ARM)
-    - name: Set Environment Variables
-      uses: ./.github/actions/set_env_vars
-      with:
-        envFilePath: ./.github/variables/hb_env_variables.env
-
     # Install Miniconda3 - This likely needs to be done every time (can we use artifact? how?)
     - name: Install Miniconda
       uses: pguyot/arm-runner-action@v2

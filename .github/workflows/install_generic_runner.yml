@@ -40,6 +40,10 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Loading Custom Environment variables
+      - name: Set Environment Variables
+        run: sed "/#/d" ${{ inputs.envFilePath }} >> "$GITHUB_ENV"
+
       # Checkout Hummingbot, set HB env variables and check cache
       - name: Set Project Env. vars and check cache
         id: set-env-hb-cache-hit
@@ -47,7 +51,6 @@ jobs:
         with:
           runner: ${{ matrix.os }}
           conda-env-hash: ${{ hashFiles(inputs.env-yml-file) }}
-          shell: ${{ inputs.shell }}
 
       # Double-check Conda environment
       - uses: conda-incubator/setup-miniconda@v2
