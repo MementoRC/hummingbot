@@ -33,15 +33,26 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Loading Custom Environment variables
+      - name: Set Environment Variables
+        run: |
+          sed "/#/d" ./.github/variables/hb_env_variables.env >> $GITHUB_ENV
+
+      # Double-check Conda environment
+      - name: Verify environment variables
+        env:
+          MINICONDA_PATH: ${{ env.MINICONDA_PATH }}
+          HB_PYTHON_VERSION: ${{ env.HB_PYTHON_VERSION }}
+          RELATIVE_MINICONDA_PATH: ${{ env.RELATIVE_MINICONDA_PATH }}
+        run: |
+          echo "MINICONDA_PATH=$MINICONDA_PATH"
+          echo "HB_PYTHON_VERSION=$HB_PYTHON_VERSION"
+          echo "RELATIVE_MINICONDA_PATH=$RELATIVE_MINICONDA_PATH"
+
       # Set up WSL
       - uses: Vampire/setup-wsl@v2
         with:
             distribution: ${{ matrix.os }}
-
-      # Loading Custom Environment variables
-      - name: Set Environment Variables
-        run: |
-          sed "/#/d" ./.github/variables/hb_env_variables.env >> "$GITHUB_ENV"
 
       # Double-check Conda environment
       - name: Verify environment variables
