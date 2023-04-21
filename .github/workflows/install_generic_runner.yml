@@ -42,7 +42,7 @@ jobs:
 
       # Checkout Hummingbot, set HB env variables and check cache
       - name: Set Project Env. vars and check cache
-        id: checkout-hb-cache-hit
+        id: set-env-hb-cache-hit
         uses: ./.github/actions/set_hb_env_cache
         with:
           runner: ${{ matrix.os }}

@@ -8,7 +8,7 @@ inputs:
      required: true
      description: "Value of truth regarding the program cache being hit or not"
    shell:
-     required: true
+     required: false
      description: "Shell to use for the run step"
      default: bash -eo pipefail
 
@@ -30,6 +30,7 @@ runs:
         cpu_info: ${{ matrix.cpu_info }}
         bind_mount_repository: true
         import_github_env: true
+        shell: ${{ inputs.shell }}
         commands: |
           apt update
           apt install -y wget

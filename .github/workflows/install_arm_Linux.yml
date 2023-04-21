@@ -84,7 +84,6 @@ jobs:
         with:
           program-cache-hit: ${{steps.program-changes.outputs.cache-hit}}
           dependencies-cache-hit: ${{steps.conda-dependencies.outputs.cache-hit}}
-          shell: bash -l {0}
 
       # Create JSON report
       - name: Create JSON report

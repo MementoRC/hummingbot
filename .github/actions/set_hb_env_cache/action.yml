@@ -7,6 +7,11 @@ inputs:
    conda-env-hash:
      required: true
      description: "Environment file to use"
+   conda-inst-hash:
+     required: false
+     description: "Environment file to use"
+     default: "0"
+
 outputs:
    hb-cache-hit:
      description: "Value of truth regarding the program cache being hit or not"
@@ -14,6 +19,10 @@ outputs:
    conda-cache-hit:
         description: "Value of truth regarding the conda cache being hit or not"
         value: ${{ steps.conda-dependencies.outputs.cache-hit }}
+   conda-install-cache-hit:
+        description: "Value of truth regarding the conda installation cache being hit or not"
+        value: ${{ steps.conda-installation.outputs.cache-hit }}
+
 runs:
   using: "composite"
   steps:
@@ -34,17 +43,29 @@ runs:
         path: README.md # placeholder file
         key: ${{ inputs.runner }}-build-${{ env.CONDA_CACHE_NUMBER }}-${{ hashFiles('hummingbot/*', '**/*.py', '**/*.py*', '**/*.pxd', 'test/*') }}
 
-    # Check for inputs.hash changes
+    # Check for dependencies changes
     - name: Cache conda dependencies
       id: conda-dependencies
       uses: actions/cache@v3
       env:
-        # Increase this value to manually reset cache if setup/environment-linux.yml has not changed
+        # Increase this value to manually reset cache if inputs.conda-env-hash has not changed
         CONDA_CACHE_NUMBER: 0
       with:
         path: |
-          ~/conda_pkgs_dir/
           ${{ github.env.MINICONDA_PATH }}/envs/hummingbot
           ${{ env.CONDA }}/envs/hummingbot
         key: ${{ inputs.runner }}-conda-${{ env.CONDA_CACHE_NUMBER }}-${{ inputs.conda-env-hash }}
+
+    # Check for installation changes
+    - name: Cache conda installation
+      id: conda-installation
+      uses: actions/cache@v3
+      env:
+        # Increase this value to manually reset cache if inputs.conda-inst-hash has not changed
+        CONDA_INST_CACHE_NUMBER: 0
+      if: inputs.conda-inst-hash != '' && inputs.conda-inst-hash != '0'
+      with:
+        path: |
+          ${{ github.env.MINICONDA_PATH }}
+        key: ${{ inputs.runner }}-conda-install-${{ env.CONDA_INST_CACHE_NUMBER }}-${{ inputs.conda-inst-hash }}
 
