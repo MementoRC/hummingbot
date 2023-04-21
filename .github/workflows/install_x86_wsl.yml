@@ -35,6 +35,7 @@ jobs:
 
       # Loading Custom Environment variables
       - name: Set Environment Variables
+        shell: bash
         run: |
           sed "/#/d" ./.github/variables/hb_env_variables.env >> $GITHUB_ENV
 
