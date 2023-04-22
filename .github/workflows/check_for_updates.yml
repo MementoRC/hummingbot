@@ -12,7 +12,8 @@ jobs:
     name: Validate inputs
     runs-on: ubuntu-latest
     outputs:
-      matrix: [x86-ubuntu-latest, x86-ubuntu-20.04]
+      matrix:
+        target: [x86-ubuntu-latest, x86-ubuntu-20.04]
 
     steps:
       # Checkout Hummingbot - not much can be done without that!
