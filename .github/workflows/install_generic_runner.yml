@@ -35,7 +35,7 @@ jobs:
           content="${content//$'\r'/'%0D'}"
           echo "::set-output name=packageJson::$content"
       - run: |
-          echo "${{fromJson(steps.initialize-runner.outputs.packageJson).${{ matrix.target }}}}}"
+          echo "${{fromJson(steps.initialize-runner.outputs.packageJson)}}}"
           
 
 #  build_hummingbot:
