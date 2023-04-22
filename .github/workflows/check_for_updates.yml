@@ -29,7 +29,7 @@ jobs:
   build_on_Linux:
     name: I/B/T x86 Linux
     needs: run_client
-    uses: .github/workflows/install_generic_runner.yml
+    uses: ./.github/workflows/install_generic_runner.yml
     with:
       should_run: true
   #    should_run: ${{ needs.run_client.outputs.is_set }}
