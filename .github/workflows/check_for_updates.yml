@@ -8,65 +8,35 @@ on:
     types: [ready_for_review, opened, synchronize, reopened]
 
 jobs:
-  validate_inputs:
-    name: Validate inputs
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        target: [ubuntu-latest, ubuntu-20.04]
-        # MqTT tests fail on macos
-        # os: [ubuntu-latest, macos-latest, macos-11, ubuntu-20.04]
+  run_client:
+    name: Check if client files changed
     outputs:
-      matrix: ${{ steps.initialize-runner.outputs.matrix }}
-
+      is_set: ${{ steps.check_files.outputs.is_set }}
+    runs-on: ubuntu-latest
     steps:
-      # Checkout Hummingbot - not much can be done without that!
       - uses: actions/checkout@v3
+      - uses: technote-space/get-diff-action@v6
         with:
-          fetch-depth: 0
-
-      # Set up the selected runner
-      - name: Upload pre-defined runners
-        id: initialize-runner
+          PATTERNS: |
+            **/*.+(py|pyx|pyd|yml)
+      - name: Check if client files are modified
+        id: check_files
+        if: env.GIT_DIFF
         run: |
-          for target in ${{ matrix.target }}; do
-            matrix=$(jq --arg target "$target" 'map(. | select((.target==$target)))' ./.github/variables/architectures.json)
-            echo "matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
-          done
-      - name: Display matrix
-        run: |
-          echo "${{ toJson(steps.initialize-runner.outputs.matrix) }}"
+          echo ${{ env.GIT_DIFF }}
+          echo "is_set=true" >> $GITHUB_OUTPUT
 
-#  run_client:
-#    name: Check if client files changed
-#    outputs:
-#      is_set: ${{ steps.check_files.outputs.is_set }}
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v3
-#      - uses: technote-space/get-diff-action@v6
-#        with:
-#          PATTERNS: |
-#            **/*.+(py|pyx|pyd|yml)
-#      - name: Check if client files are modified
-#        id: check_files
-#        if: env.GIT_DIFF
-#        run: |
-#          echo ${{ env.GIT_DIFF }}
-#          echo "is_set=true" >> $GITHUB_OUTPUT
-#
-#  build_on_Linux:
-#    name: I/B/T x86 Linux
-#    needs: run_client
-#    uses: ./.github/workflows/install_generic_runner.yml
-#    with:
-#      should_run: true
-#  #    should_run: ${{ needs.run_client.outputs.is_set }}
-#      env-yml-file: setup/environment-linux.yml
-#      os-matrix: "['x86-ubuntu-latest', 'x86-ubuntu-20.04']"
-#      shell: 'bash -l {0}'
-#    secrets: inherit
+  build_on_Linux:
+    name: I/B/T x86 Linux
+    needs: run_client
+    uses: ./.github/workflows/install_generic_runner.yml
+    with:
+      should_run: true
+  #    should_run: ${{ needs.run_client.outputs.is_set }}
+      env-yml-file: setup/environment-linux.yml
+      os-matrix: "['x86-ubuntu-latest', 'x86-ubuntu-20.04']"
+      shell: 'bash -l {0}'
+    secrets: inherit
 #
 #  build_on_macOS:
 #    name: I/B/T x86 MacOS

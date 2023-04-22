@@ -25,6 +25,11 @@ jobs:
     name: Validate inputs
     runs-on: ubuntu-latest
     if: ${{ inputs.should_run == true }}
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJson(inputs.os-matrix) }}
+      max-parallel: 1
     outputs:
       matrix: ${{ steps.initialize-runner.outputs.matrix }}
 
@@ -39,10 +44,8 @@ jobs:
         id: initialize-runner
         run: |
           target=$(echo ${{ matrix.target }})
-          for target in ${{ inputs.os-matrix }}; do
-            matrix=$(jq --arg target "$target" 'map(. | select((.target==$target)))' ./.github/variables/architectures.json)
-            echo "matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
-          done
+          matrix=$(jq --arg target "$target" 'map(. | select((.target==$target)))' ./.github/variables/architectures.json)
+          echo "matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
 
   build_hummingbot:
     needs: validate_inputs
