@@ -36,7 +36,7 @@ jobs:
           echo "matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
       - name: Inspect package.json
         run: |
-          echo "${{ fromJson(steps.initialize-runner.outputs.packageJson) }}"
+          echo "${{ fromJson(steps.initialize-runner.outputs.matrix) }}"
 
 #  build_on_Linux:
 #    name: I/B/T x86 Linux
