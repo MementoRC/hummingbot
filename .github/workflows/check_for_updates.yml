@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        target: ${{ fromJson("['x86-ubuntu-latest', 'x86-windows-latest']") }}
+        target: [x86-ubuntu-latest', x86-windows-latest]
     outputs:
       matrix: ${{ steps.initialize-runner.outputs.matrix }}
 
