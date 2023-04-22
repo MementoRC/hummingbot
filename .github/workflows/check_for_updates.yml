@@ -29,7 +29,7 @@ jobs:
   build_on_Linux:
     name: I/B/T x86 Linux
     needs: run_client
-    uses: ./.github/workflows/install_generic_runner.yml
+    uses: .github/workflows/install_generic_runner.yml
     with:
       should_run: true
   #    should_run: ${{ needs.run_client.outputs.is_set }}
@@ -41,7 +41,7 @@ jobs:
 #  build_on_macOS:
 #    name: I/B/T x86 MacOS
 #    needs: run_client
-#    uses: ./.github/workflows/install_generic_runner.yml
+#    uses: .github/workflows/install_generic_runner.yml
 #    with:
 #      should_run: true
 #      #should_run: ${{ needs.run_client.outputs.is_set }}
@@ -53,7 +53,7 @@ jobs:
 #  build_on_windows:
 #    name: I/B/T x86 Windows
 #    needs: run_client
-#    uses: ./.github/workflows/install_generic_runner.yml
+#    uses: .github/workflows/install_generic_runner.yml
 #    with:
 #      should_run: true
 #      env-yml-file: setup/environment-win64.yml
@@ -64,7 +64,7 @@ jobs:
 #  build_on_ARM:
 #    name: I/B/T ARM64 MacOS
 #    needs: run_client
-#    uses: ./.github/workflows/install_generic_runner.yml
+#    uses: .github/workflows/install_generic_runner.yml
 #    with:
 #      should_run: true
 #      #should_run: ${{ needs.run_client.outputs.is_set }}
@@ -77,7 +77,7 @@ jobs:
 #  build_on_WSL:
 #    name: I/B/T x86 WSL
 #    needs: run_client
-#    uses: ./.github/workflows/install_x86_wsl.yml
+#    uses: .github/workflows/install_x86_wsl.yml
 #    with:
 #      should_run: true
 #      os-matrix: "['Debian', 'Ubuntu-22.04']"
@@ -86,7 +86,7 @@ jobs:
 #  build_on_raspi:
 #    name: I/B/T RasPi
 #    needs: run_client
-#    uses: ./.github/workflows/install_raspi_Linux.yml
+#    uses: .github/workflows/install_raspi_Linux.yml
 #    with:
 #      should_run: true
 #      # should_run: ${{ needs.run_client.outputs.is_set }}
@@ -96,7 +96,7 @@ jobs:
   # build_on_Rosetta:
   #   name: I/B/T ARM64 Rosetta
   #   needs: run_client
-  #   uses: ./.github/workflows/install_arm_linux.yml
+  #   uses: .github/workflows/install_arm_linux.yml
   #   with:
   #     should_run: true
   #     env-yml-file: setup/environment.yml
