@@ -33,7 +33,6 @@ jobs:
           content="${content//'%'/'%25'}"
           content="${content//$'\n'/'%0A'}"
           content="${content//$'\r'/'%0D'}"
-          architectures=${{ fromJson(content) }}
           echo "::set-output name=packageJson::$content"
       - run: |
           echo "${{fromJson(steps.initialize-runner.outputs.packageJson).${{ matrix.target }}}}}"
