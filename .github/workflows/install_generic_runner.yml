@@ -21,7 +21,26 @@ on:
         default: "bash -l {0}"
 
 jobs:
+  validate_inputs:
+    name: Validate inputs
+    runs-on: ubuntu-latest
+    if: ${{ inputs.should_run == true }}
+    steps:
+      # Set up the selected runner
+      - id: initialize-runner
+        run: |
+          content=`cat .github/variables/package.json`
+          content="${content//'%'/'%25'}"
+          content="${content//$'\n'/'%0A'}"
+          content="${content//$'\r'/'%0D'}"
+          architectures=${{ fromJson($content) }}
+          echo "::set-output name=packageJson::$content"
+      - run: |
+          echo "${{fromJson(steps.initialize-runner.outputs.packageJson).${{ matrix.target }}}}}"
+          
+
   build_hummingbot:
+    needs: validate_inputs
     name: build/tests ${{ matrix.uname }}
     if: ${{ inputs.should_run == true }}
     runs-on: ${{ matrix.runner }}
@@ -29,27 +48,6 @@ jobs:
       fail-fast: false
       matrix:
         target: ${{ fromJson(inputs.os-matrix) }}
-        include:
-        - target: x86-ubuntu-latest
-          runner: ubuntu-latest
-          uname: x86 Ubuntu 22.04
-          cache-label: x86-ubuntu-latest
-        - target: x86-ubuntu-2004
-          runner: ubuntu-20.04
-          uname: x86 Ubuntu 20.04
-          cache-label: x86-ubuntu-2004
-        - target: x86-macos-latest
-          runner: macos-latest
-          uname: x86 MacOS 12.0
-          cache-label: x86-macos-latest
-        - target: x86-windows-latest
-          runner: windows-latest
-          uname: x86 Windows 11
-          cache-label: x86-windows-latest
-        - target: arm64-ubuntu-latest
-          runner: buildjet-2vcpu-ubuntu-2204-arm
-          uname: ARM64 Ubuntu 22.04
-          cache-label: arm64-ubuntu-latest
 
     defaults:
       run:
@@ -61,15 +59,26 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Set up the selected runner
+      - id: initialize-runner
+        run: |
+          content=`cat .github/variables/package.json`
+          content="${content//'%'/'%25'}"
+          content="${content//$'\n'/'%0A'}"
+          content="${content//$'\r'/'%0D'}"
+          echo "::set-output name=packageJson::$content"
+      - run: |
+          echo "${{fromJson(steps.initialize-runner.outputs.packageJson).version}}"
+
       # Loading Custom Environment variables
       - name: Set Environment Variables
-        run: sed "/#/d" ./.github/variables/hb_env_variables.env >> "$GITHUB_ENV"
+        run: sed "/#/d" .github/variables/hb_env_variables.env >> "$GITHUB_ENV"
         shell: bash
 
       # Checkout Hummingbot, set HB env variables and check cache
       - name: Set Project Env. vars and check cache
         id: set-env-hb-cache-hit
-        uses: ./.github/actions/set_hb_env_cache
+        uses: .github/actions/set_hb_env_cache
         with:
           runner: ${{ matrix.cache-label }}
           conda-env-hash: ${{ hashFiles(inputs.env-yml-file) }}
@@ -90,7 +99,7 @@ jobs:
 
       # Install environment and Hummingbot
       - name: Install environment and Hummingbot
-        uses: ./.github/actions/install_env_and_hb
+        uses: .github/actions/install_env_and_hb
         with:
           program-cache-hit: ${{steps.checkout-hb-cache-hit.outputs.hb-cache-hit}}
           dependencies-cache-hit: ${{steps.checkout-hb-cache-hit.outputs.conda-cache-hit}}

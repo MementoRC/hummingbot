@@ -1,0 +1,37 @@
+{
+  "name": "config",
+  "version": "0.1",
+  "variables": {
+    "MINICONDA_PATH": "/home/hummingbot/miniconda3",
+    "RELATIVE_MINICONDA_PATH": "./miniconda3",
+    "HB_PYTHON_VERSION": "3.8",
+    "HB_ENV_NAME": "hummingbot"
+  },
+  "architectures": {
+    "x86-ubuntu-latest": {
+      "name": "x86 Ubuntu Latest",
+      "runner": "ubuntu-latest",
+      "extra_cmake_args": "-DCMAKE_CXX_FLAGS=-m64 -DCMAKE_C_FLAGS=-m64"
+    },
+    "x86-ubuntu-2004": {
+      "name": "x86 Ubuntu 20.04",
+      "runner": "ubuntu-20.04",
+      "extra_cmake_args": "-DCMAKE_CXX_FLAGS=-m64 -DCMAKE_C_FLAGS=-m64"
+    },
+    "x86-macos-latest": {
+      "name": "x86 MacOS Latest",
+      "runner": "macos-latest",
+      "extra_cmake_args": ""
+    },
+    "x86-windows-latest": {
+      "name": "x86 Windows Latest",
+      "runner": "windows-latest",
+      "extra_cmake_args": ""
+    },
+    "arm64-ubuntu-latest": {
+      "name": "ARM64 Ubuntu Latest",
+      "runner": "buildjet-2vcpu-ubuntu-2204-arm",
+      "extra_cmake_args": ""
+    }
+  }
+}
