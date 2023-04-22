@@ -18,7 +18,7 @@ runs:
     # Install python/conda to check if core code has changed
     - uses: actions/setup-python@v4
       with:
-        python-version: ${{ github.env.PYTHON_VERSION }}
+        python-version: ${{ env.PYTHON_VERSION }}
       if: ${{inputs.program-cache-hit}} != 'true' || ${{inputs.dependencies-cache-hit}} != 'true'
 
     # Install pre_commit if code has changed
@@ -26,13 +26,14 @@ runs:
       if: ${{inputs.program-cache-hit}} != 'true' || ${{inputs.dependencies-cache-hit}} != 'true'
       shell: ${{inputs.shell}}
       run: |
-        conda install -c conda-forge pre_commit
+        ${CONDA_EXECUTABLE:-conda} install -c conda-forge pre_commit
 
     # Install hummingbot env if environment-linux.yml has changed
     - name: Install Hummingbot
       if: ${{inputs.dependencies-cache-hit}} != 'true'
       shell: ${{inputs.shell}}
       run: |
+        CONDA_EXE=${CONDA_EXECUTABLE:-conda}
         ./install
 
     # Compile and run tests if code has changed
@@ -42,7 +43,7 @@ runs:
       env:
         WITHOUT_CYTHON_OPTIMIZATIONS: 'true'
       run: |
-        conda info --envs
-        conda activate hummingbot
-        conda env export
+        ${CONDA_EXECUTABLE:-conda} info --envs
+        ${CONDA_EXECUTABLE:-conda} activate hummingbot
+        ${CONDA_EXECUTABLE:-conda} env export
         ./compile

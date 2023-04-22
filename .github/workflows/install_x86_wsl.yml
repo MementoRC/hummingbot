@@ -25,7 +25,7 @@ jobs:
 
     env:
       # colon separated list of env vars to be passed to wsl-bash:
-      WSLENV: MINICONDA_PATH:HB_PYTHON_VERSION:RELATIVE_MINICONDA_PATH
+      WSLENV: MINICONDA_PATH:HB_PYTHON_VERSION:RELATIVE_MINICONDA_PATH:HB_ENV_NAME:CONDA_EXECUTABLE
 
     defaults:
       run:
@@ -53,10 +53,12 @@ jobs:
         env:
           MINICONDA_PATH: ${{ env.MINICONDA_PATH }}
           HB_PYTHON_VERSION: ${{ env.HB_PYTHON_VERSION }}
+          HB_ENV_NAME: ${{ env.HB_ENV_NAME }}
           RELATIVE_MINICONDA_PATH: ${{ env.RELATIVE_MINICONDA_PATH }}
         run: |
           echo "MINICONDA_PATH=${MINICONDA_PATH}"
           echo "HB_PYTHON_VERSION=${HB_PYTHON_VERSION}"
+          echo "HB_ENV_NAME=${HB_ENV_NAME}"
           echo "RELATIVE_MINICONDA_PATH=${RELATIVE_MINICONDA_PATH}"
 
       # Register new Miniconda custom installation for cache
@@ -78,22 +80,25 @@ jobs:
       - name: Install conda
         if: steps.set-env-hb-cache-hit.outputs.cache-hit != 'true'
         env:
-          MINICONDA_PATH: ${{ github.env.MINICONDA_PATH }}
+          RELATIVE_MINICONDA_PATH: ${{ env.RELATIVE_MINICONDA_PATH }}
         run: |
           wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-          sh miniconda.sh -b -p $MINICONDA_PATH
-          source $MINICONDA_PATH/etc/profile.d/conda.sh
+          sh miniconda.sh -b -p ${RELATIVE_MINICONDA_PATH}
+          source ${RELATIVE_MINICONDA_PATH}/etc/profile.d/conda.sh
           conda init
           conda config --set always_yes yes --set changeps1 no
           conda update -q conda
 
       # Verify conda environment
       - name: Verify conda environment
-        run: |
-          conda info --json |jq ".user_agent"
+        env:
+          CONDA_EXECUTABLE: ${{ env.RELATIVE_MINICONDA_PATH }}/condabin/conda
+        run: ${CONDA_EXECUTABLE} info --json |jq ".user_agent"
 
       # Install environment and Hummingbot
       - name: Install environment and Hummingbot
+        env:
+          CONDA_EXECUTABLE: ${{ env.RELATIVE_MINICONDA_PATH }}/condabin/conda
         uses: ./.github/actions/install_env_and_hb
         with:
           program-cache-hit: ${{steps.program-changes.outputs.cache-hit}}
@@ -103,26 +108,39 @@ jobs:
       # Compile and run tests if code has changed
       - name: Run pre-commit hooks on diff
         if: steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true'
+        env:
+          CONDA_EXECUTABLE: ${{ env.RELATIVE_MINICONDA_PATH }}/condabin/conda
         run: |
-          conda activate hummingbot
+          ${CONDA_EXECUTABLE} activate hummingbot
           pre-commit run --files $(git diff --name-only origin/$GITHUB_BASE_REF)
 
       - name: Run stable tests and calculate coverage
         if: steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true'
+        env:
+          CONDA_EXECUTABLE: ${{ env.RELATIVE_MINICONDA_PATH }}/condabin/conda
         run: |
-          conda activate hummingbot
-          make test
+          ${CONDA_EXECUTABLE} activate hummingbot
+          coverage run -m pytest \
+            --ignore="test/connector" \
+            --ignore="test/debug" \
+            --ignore="test/mock" \
+            --ignore="test/hummingbot/connector/gateway/amm" \
+            --ignore="test/hummingbot/connector/gateway/clob"
 
       - name: Check and report global coverage
         if: steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true'
+        env:
+          CONDA_EXECUTABLE: ${{ env.RELATIVE_MINICONDA_PATH }}/condabin/conda
         run: |
-          conda activate hummingbot
+          ${CONDA_EXECUTABLE} activate hummingbot
           make report_coverage
 
       - name: Validate coverage for the changes
         if: github.event_name == 'pull_request' && (steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true')
+        env:
+          CONDA_EXECUTABLE: ${{ env.RELATIVE_MINICONDA_PATH }}/condabin/conda
         run: |
-          conda activate hummingbot
+          ${CONDA_EXECUTABLE} activate hummingbot
           git fetch --all -q
           git checkout -b $GITHUB_SHA
           coverage xml
