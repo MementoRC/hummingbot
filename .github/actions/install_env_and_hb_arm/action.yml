@@ -59,9 +59,10 @@ runs:
         import_github_env: true
         commands: |
           apt-get update
+          apt-get install build-essential libssl-dev libffi-dev gcc python3-dev python-dev python3 -y
           apt-get install git -y
           source $RELATIVE_MINICONDA_PATH/etc/profile.d/conda.sh
-          conda install -c conda-forge pre_commit
+          conda install -c conda-forge pre-commit
           ./install
 
     # Compile and run tests if code has changed
@@ -77,6 +78,8 @@ runs:
         shell: ${{ inputs.shell }}
         import_github_env: true
         commands: |
+          apt-get update
+          apt-get install build-essential libssl-dev libffi-dev gcc python3-dev python-dev python3 -y
           source $RELATIVE_MINICONDA_PATH/etc/profile.d/conda.sh
           conda info --envs
           conda activate hummingbot

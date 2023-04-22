@@ -88,19 +88,17 @@ jobs:
           conda init
           conda config --set always_yes yes --set changeps1 no
           conda update -q conda
+          echo "${RELATIVE_MINICONDA_PATH}/bin" >> $GITHUB_PATH
+          echo "${RELATIVE_MINICONDA_PATH}/condabin" >> $GITHUB_PATH
 
       # Verify conda environment
       - name: Verify conda environment
         env:
-          CONDA_EXECUTABLE: ${{ env.RELATIVE_MINICONDA_PATH }}/condabin/conda
         run: |
-          ${CONDA_EXECUTABLE} install -c conda-forge jq
-          ${CONDA_EXECUTABLE} info --json |jq ".user_agent"
+          conda info | grep "user_agent"
 
       # Install environment and Hummingbot
       - name: Install environment and Hummingbot
-        env:
-          CONDA_EXECUTABLE: ${{ env.RELATIVE_MINICONDA_PATH }}/condabin/conda
         uses: ./.github/actions/install_env_and_hb
         with:
           program-cache-hit: ${{steps.program-changes.outputs.cache-hit}}
@@ -110,18 +108,14 @@ jobs:
       # Compile and run tests if code has changed
       - name: Run pre-commit hooks on diff
         if: steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true'
-        env:
-          CONDA_EXECUTABLE: ${{ env.RELATIVE_MINICONDA_PATH }}/condabin/conda
         run: |
-          ${CONDA_EXECUTABLE} activate hummingbot
+          conda activate hummingbot
           pre-commit run --files $(git diff --name-only origin/$GITHUB_BASE_REF)
 
       - name: Run stable tests and calculate coverage
         if: steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true'
-        env:
-          CONDA_EXECUTABLE: ${{ env.RELATIVE_MINICONDA_PATH }}/condabin/conda
         run: |
-          ${CONDA_EXECUTABLE} activate hummingbot
+          conda activate hummingbot
           coverage run -m pytest \
             --ignore="test/connector" \
             --ignore="test/debug" \
@@ -131,18 +125,14 @@ jobs:
 
       - name: Check and report global coverage
         if: steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true'
-        env:
-          CONDA_EXECUTABLE: ${{ env.RELATIVE_MINICONDA_PATH }}/condabin/conda
         run: |
-          ${CONDA_EXECUTABLE} activate hummingbot
+          conda activate hummingbot
           make report_coverage
 
       - name: Validate coverage for the changes
         if: github.event_name == 'pull_request' && (steps.program-changes.outputs.cache-hit != 'true' || steps.conda-dependencies.outputs.cache-hit != 'true')
-        env:
-          CONDA_EXECUTABLE: ${{ env.RELATIVE_MINICONDA_PATH }}/condabin/conda
         run: |
-          ${CONDA_EXECUTABLE} activate hummingbot
+          conda activate hummingbot
           git fetch --all -q
           git checkout -b $GITHUB_SHA
           coverage xml

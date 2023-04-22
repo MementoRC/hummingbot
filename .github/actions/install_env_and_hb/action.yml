@@ -18,15 +18,15 @@ runs:
     # Install python/conda to check if core code has changed
     - uses: actions/setup-python@v4
       with:
-        python-version: ${{ env.PYTHON_VERSION }}
+        python-version: ${{ env.HB_PYTHON_VERSION }}
       if: ${{inputs.program-cache-hit}} != 'true' || ${{inputs.dependencies-cache-hit}} != 'true'
 
-    # Install pre_commit if code has changed
-    - name: Install pre_commit
+    # Install pre-commit if code has changed
+    - name: Install pre-commit
       if: ${{inputs.program-cache-hit}} != 'true' || ${{inputs.dependencies-cache-hit}} != 'true'
       shell: ${{inputs.shell}}
       run: |
-        ${CONDA_EXECUTABLE:-conda} install -c conda-forge pre_commit
+        ${CONDA_EXECUTABLE:-conda} install -c conda-forge pre-commit
 
     # Install hummingbot env if environment-linux.yml has changed
     - name: Install Hummingbot
