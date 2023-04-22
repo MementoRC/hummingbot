@@ -30,7 +30,7 @@ jobs:
       - name: Upload pre-defined runners
         id: initialize-runner
         run: |
-          matrix=$(jq --arg architectures "x86-ubuntu-latest" 'map( . | select((.runOn==$branchName) or (.runOn=="always")))' ./.github/variables/package.json)
+          matrix=$(jq "x86-ubuntu-latest" ./.github/variables/package.json)
           echo "matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
       - name: Inspect package.json
         run: |
