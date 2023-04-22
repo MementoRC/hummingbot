@@ -10,13 +10,13 @@ on:
 jobs:
   validate_inputs:
     name: Validate inputs
-    runs-on:
-      strategy:
-        fail-fast: false
-        matrix:
-          target: [ubuntu-latest, ubuntu-20.04]
-          # MqTT tests fail on macos
-          # os: [ubuntu-latest, macos-latest, macos-11, ubuntu-20.04]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [ubuntu-latest, ubuntu-20.04]
+        # MqTT tests fail on macos
+        # os: [ubuntu-latest, macos-latest, macos-11, ubuntu-20.04]
     outputs:
       matrix: ${{ steps.initialize-runner.outputs.matrix }}
 
