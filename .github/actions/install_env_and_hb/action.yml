@@ -26,14 +26,13 @@ runs:
       if: ${{inputs.program-cache-hit}} != 'true' || ${{inputs.dependencies-cache-hit}} != 'true'
       shell: ${{inputs.shell}}
       run: |
-        ${CONDA_EXECUTABLE:-conda} install -c conda-forge pre-commit
+        conda install -c conda-forge pre-commit
 
     # Install hummingbot env if environment-linux.yml has changed
     - name: Install Hummingbot
       if: ${{inputs.dependencies-cache-hit}} != 'true'
       shell: ${{inputs.shell}}
       run: |
-        CONDA_EXE=${CONDA_EXECUTABLE:-$CONDA/bin/conda}
         ./install
 
     # Compile and run tests if code has changed
@@ -43,7 +42,7 @@ runs:
       env:
         WITHOUT_CYTHON_OPTIMIZATIONS: 'true'
       run: |
-        ${CONDA_EXECUTABLE:-conda} info --envs
-        ${CONDA_EXECUTABLE:-conda} activate hummingbot
-        ${CONDA_EXECUTABLE:-conda} env export
+        conda info --envs
+        conda activate hummingbot
+        conda env export
         ./compile

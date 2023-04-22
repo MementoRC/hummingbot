@@ -70,12 +70,31 @@ jobs:
       os-matrix: "['Debian', 'Ubuntu-22.04']"
     secrets: inherit
 
-  build_on_arm:
+  build_on_raspi:
     name: I/B/T RasPi
     needs: run_client
-    uses: ./.github/workflows/install_arm_Linux.yml
+    uses: ./.github/workflows/install_raspi_Linux.yml
     with:
       should_run: true
       # should_run: ${{ needs.run_client.outputs.is_set }}
       os-matrix: "['zero2_64_raspios', 'zero2_64_dietpi']"
     secrets: inherit
+
+  build_on_ARM:
+    name: I/B/T ARM64
+    needs: run_client
+    uses: ./.github/workflows/install_arm_linux.yml
+    with:
+      should_run: true
+      env-yml-file: setup/environment.yml
+    secrets: inherit
+
+  # build_on_Rosetta:
+  #   name: I/B/T ARM64 Rosetta
+  #   needs: run_client
+  #   uses: ./.github/workflows/install_arm_linux.yml
+  #   with:
+  #     should_run: true
+  #     env-yml-file: setup/environment.yml
+  #   secrets: inherit
+
