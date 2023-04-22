@@ -46,21 +46,23 @@ jobs:
           matrix=$(jq --arg target "$target" 'map(. | select((.target==$target)))' ./.github/variables/architectures.json)
           echo "matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
 
-#  build_hummingbot:
-#    needs: validate_inputs
-#    name: build/tests ${{ matrix.uname }}
-#    if: ${{ inputs.should_run == true }}
-#    runs-on: ${{ matrix.runner }}
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        target: ${{ fromJson(inputs.os-matrix) }}
-#
-#    defaults:
-#      run:
-#        shell: ${{ inputs.shell }}
-#
-#    steps:
+  build_hummingbot:
+    needs: validate_inputs
+    name: build/tests ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.validate_inputs.outputs.matrix) }}
+
+    defaults:
+      run:
+        shell: ${{ inputs.shell }}
+
+    steps:
+      - name: Display matrix
+        run: |
+          echo "${{ matrix }}"
+
 #      # Checkout Hummingbot - not much can be done without that!
 #      - uses: actions/checkout@v3
 #        with:
@@ -76,7 +78,7 @@ jobs:
 #        id: set-env-hb-cache-hit
 #        uses: .github/actions/set_hb_env_cache
 #        with:
-#          runner: ${{ matrix.cache-label }}
+#          runner: ${{ matrix.target }}
 #          conda-env-hash: ${{ hashFiles(inputs.env-yml-file) }}
 #
 #      # Double-check Conda environment
@@ -138,21 +140,21 @@ jobs:
 #      - name: Create JSON report
 #        uses: jsdaniell/create-json@v1.2.2
 #        with:
-#          name: ${{ matrix.cache-label }}-build_report.json
+#          name: ${{ matrix.target }}-build_report.json
 #          json: |
 #            {
 #              "username": "Hummingbot Bot",
 #              "avatar_url": "https://i.imgur.com/4M34hi2.png",
-#              "content": "Build ${{ github.run_number }} for ${{ github.repository }} on ${{ matrix.uname }} has finished.",
+#              "content": "Build ${{ github.run_number }} for ${{ github.repository }} on ${{ matrix.name }} has finished.",
 #              "embeds": [{
 #                  "author": {
 #                    "name": "Hummingbot CI ♫",
 #                    "url": "https://hummingbot.io/",
 #                    "icon_url": "https://docs.hummingbot.org/assets/img/logo.png"
 #                  },
-#                  "title": "I/B/T for ${{ github.event.pull_request.title }} on **${{ matrix.uname }}** has finished.",
+#                  "title": "I/B/T for ${{ github.event.pull_request.title }} on **${{ matrix.name }}** has finished.",
 #                  "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
-#                  "description": "I/B/T for ${{ github.event.pull_request.title }} on **$${{ matrix.uname }}** has finished.",
+#                  "description": "I/B/T for ${{ github.event.pull_request.title }} on **$${{ matrix.name }}** has finished.",
 #                  "color": 1127128,
 #                  "fields": [{
 #                      "name": "Build Status",
@@ -170,12 +172,11 @@ jobs:
 #      # Verify conda environment
 #      - name: Verify JSON Report
 #        run: |
-#          cat ${{ matrix.cache-label }}-build_report.json
+#          cat ${{ matrix.target }}-build_report.json
 #
 #      # Notify results to discord
 #      - name: Discord Webhook Action
 #        uses: tsickert/discord-webhook@v5.2.0
 #        with:
 #          webhook-url: ${{ secrets.WEBHOOK_URL }}
-#          raw-data: ${{ matrix.cache-label }}-build_report.json
-#
+#          raw-data: ${{ matrix.target }}-build_report.json
