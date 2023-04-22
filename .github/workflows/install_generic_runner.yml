@@ -26,10 +26,14 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ inputs.should_run == true }}
     steps:
+      # Checkout Hummingbot - not much can be done without that!
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
       # Set up the selected runner
       - id: initialize-runner
         run: |
-          content=`cat .github/variables/package.json`
+          content=`cat ./.github/variables/package.json`
           content="${content//'%'/'%25'}"
           content="${content//$'\n'/'%0A'}"
           content="${content//$'\r'/'%0D'}"
