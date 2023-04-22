@@ -33,7 +33,7 @@ runs:
       if: ${{inputs.dependencies-cache-hit}} != 'true'
       shell: ${{inputs.shell}}
       run: |
-        CONDA_EXE=${CONDA_EXECUTABLE:-conda}
+        CONDA_EXE=${CONDA_EXECUTABLE:-$CONDA/bin/conda}
         ./install
 
     # Compile and run tests if code has changed

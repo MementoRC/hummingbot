@@ -93,7 +93,9 @@ jobs:
       - name: Verify conda environment
         env:
           CONDA_EXECUTABLE: ${{ env.RELATIVE_MINICONDA_PATH }}/condabin/conda
-        run: ${CONDA_EXECUTABLE} info --json |jq ".user_agent"
+        run: |
+          ${CONDA_EXECUTABLE} install -c conda-forge jq
+          ${CONDA_EXECUTABLE} info --json |jq ".user_agent"
 
       # Install environment and Hummingbot
       - name: Install environment and Hummingbot
