@@ -25,7 +25,7 @@ jobs:
 
     env:
       # colon separated list of env vars to be passed to wsl-bash:
-      WSLENV: MINICONDA_PATH:HB_PYTHON_VERSION:RELATIVE_MINICONDA_PATH:HB_ENV_NAME:GITHUB_PATH
+      WSLENV: MINICONDA_PATH:HB_PYTHON_VERSION:RELATIVE_MINICONDA_PATH:HB_ENV_NAME:LOCAL_PATH
 
     defaults:
       run:
@@ -81,7 +81,7 @@ jobs:
         if: steps.set-env-hb-cache-hit.outputs.cache-hit != 'true'
         env:
           RELATIVE_MINICONDA_PATH: ${{ env.RELATIVE_MINICONDA_PATH }}
-          GITHUB_PATH: ${{ env.GITHUB_PATH }}
+          LOCAL_PATH: ${{ env.GITHUB_PATH }}
         run: |
           wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
           sh miniconda.sh -b -p ${RELATIVE_MINICONDA_PATH}
@@ -89,8 +89,8 @@ jobs:
           conda init
           conda config --set always_yes yes --set changeps1 no
           conda update -q conda
-          echo "${RELATIVE_MINICONDA_PATH}/bin" >> $GITHUB_PATH
-          echo "${RELATIVE_MINICONDA_PATH}/condabin" >> $GITHUB_PATH
+          echo "${RELATIVE_MINICONDA_PATH}/bin" >> "$LOCAL_PATH"
+          echo "${RELATIVE_MINICONDA_PATH}/condabin" >> "$LOCAL_PATH"
 
       # Verify conda environment
       - name: Verify conda environment

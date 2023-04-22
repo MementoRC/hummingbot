@@ -14,7 +14,7 @@ on:
       os-matrix:
         required: false
         type: string
-        default: "['ubuntu-latest', 'ubuntu-20.04']"
+        default: "['x86-ubuntu-latest', 'x86-ubuntu-20.04']"
       shell:
         required: false
         type: string
@@ -22,13 +22,34 @@ on:
 
 jobs:
   build_hummingbot:
-    name: build/tests ${{ matrix.os }}
+    name: build/tests ${{ matrix.uname }}
     if: ${{ inputs.should_run == true }}
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
-        os: ${{ fromJson(inputs.os-matrix) }}
+        target: ${{ fromJson(inputs.os-matrix) }}
+        include:
+        - target: x86-ubuntu-latest
+          runner: ubuntu-latest
+          uname: x86 Ubuntu 22.04
+          cache-label: x86-ubuntu-latest
+        - target: x86-ubuntu-2004
+          runner: ubuntu-20.04
+          uname: x86 Ubuntu 20.04
+          cache-label: x86-ubuntu-2004
+        - target: x86-macos-latest
+          runner: macos-latest
+          uname: x86 MacOS 12.0
+          cache-label: x86-macos-latest
+        - target: x86-windows-latest
+          runner: windows-latest
+          uname: x86 Windows 11
+          cache-label: x86-windows-latest
+        - target: arm64-ubuntu-latest
+          runner: buildjet-2vcpu-ubuntu-2204-arm
+          uname: ARM64 Ubuntu 22.04
+          cache-label: arm64-ubuntu-latest
 
     defaults:
       run:
@@ -50,7 +71,7 @@ jobs:
         id: set-env-hb-cache-hit
         uses: ./.github/actions/set_hb_env_cache
         with:
-          runner: ${{ matrix.os }}
+          runner: ${{ matrix.cache-label }}
           conda-env-hash: ${{ hashFiles(inputs.env-yml-file) }}
 
       # Double-check Conda environment
@@ -112,21 +133,21 @@ jobs:
       - name: Create JSON report
         uses: jsdaniell/create-json@v1.2.2
         with:
-          name: ${{ matrix.os }}-build_report.json
+          name: ${{ matrix.cache-label }}-build_report.json
           json: |
             {
               "username": "Hummingbot Bot",
               "avatar_url": "https://i.imgur.com/4M34hi2.png",
-              "content": "Build ${{ github.run_number }} for ${{ github.repository }} on ${{ matrix.os }} has finished.",
+              "content": "Build ${{ github.run_number }} for ${{ github.repository }} on ${{ matrix.uname }} has finished.",
               "embeds": [{
                   "author": {
                     "name": "Hummingbot CI ♫",
                     "url": "https://hummingbot.io/",
                     "icon_url": "https://docs.hummingbot.org/assets/img/logo.png"
                   },
-                  "title": "I/B/T for ${{ github.event.pull_request.title }} on **${{ matrix.os }}** has finished.",
+                  "title": "I/B/T for ${{ github.event.pull_request.title }} on **${{ matrix.uname }}** has finished.",
                   "url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
-                  "description": "I/B/T for ${{ github.event.pull_request.title }} on **${{ matrix.os }}** has finished.",
+                  "description": "I/B/T for ${{ github.event.pull_request.title }} on **$${{ matrix.uname }}** has finished.",
                   "color": 1127128,
                   "fields": [{
                       "name": "Build Status",
@@ -144,11 +165,11 @@ jobs:
       # Verify conda environment
       - name: Verify JSON Report
         run: |
-          cat ${{ matrix.os }}-build_report.json
+          cat ${{ matrix.cache-label }}-build_report.json
 
       # Notify results to discord
       - name: Discord Webhook Action
         uses: tsickert/discord-webhook@v5.2.0
         with:
           webhook-url: ${{ secrets.WEBHOOK_URL }}
-          raw-data: ${{ matrix.os }}-build_report.json
+          raw-data: ${{ matrix.cache-label }}-build_report.json

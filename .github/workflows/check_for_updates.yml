@@ -34,7 +34,7 @@ jobs:
       should_run: true
   #    should_run: ${{ needs.run_client.outputs.is_set }}
       env-yml-file: setup/environment-linux.yml
-      os-matrix: "['ubuntu-latest']"
+      os-matrix: "['x86-ubuntu-latest']"
       shell: 'bash -l {0}'
     secrets: inherit
 
@@ -46,7 +46,7 @@ jobs:
       should_run: true
       #should_run: ${{ needs.run_client.outputs.is_set }}
       env-yml-file: setup/environment.yml
-      os-matrix: "['macos-latest']"
+      os-matrix: "['x86-macos-latest']"
       shell: 'bash -l {0}'
     secrets: inherit
 
@@ -57,10 +57,23 @@ jobs:
     with:
       should_run: true
       env-yml-file: setup/environment-win64.yml
-      os-matrix: "['windows-latest']"
+      os-matrix: "['x86-windows-latest']"
       shell: 'bash -l {0}'
     secrets: inherit
 
+  build_on_ARM:
+    name: I/B/T ARM64 MacOS
+    needs: run_client
+    uses: ./.github/workflows/install_generic_runner.yml
+    with:
+      should_run: true
+      #should_run: ${{ needs.run_client.outputs.is_set }}
+      env-yml-file: setup/environment.yml
+      os-matrix: "['arm64-ubuntu-latest']"
+      shell: 'bash -l {0}'
+    secrets: inherit
+
+  # Custom Flows
   build_on_WSL:
     name: I/B/T x86 WSL
     needs: run_client
@@ -78,15 +91,6 @@ jobs:
       should_run: true
       # should_run: ${{ needs.run_client.outputs.is_set }}
       os-matrix: "['zero2_64_raspios', 'zero2_64_dietpi']"
-    secrets: inherit
-
-  build_on_ARM:
-    name: I/B/T ARM64
-    needs: run_client
-    uses: ./.github/workflows/install_arm_Linux.yml
-    with:
-      should_run: true
-      env-yml-file: setup/environment.yml
     secrets: inherit
 
   # build_on_Rosetta:

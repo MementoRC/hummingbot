@@ -26,6 +26,7 @@ runs:
       if: ${{inputs.program-cache-hit}} != 'true' || ${{inputs.dependencies-cache-hit}} != 'true'
       shell: ${{inputs.shell}}
       run: |
+        source $CONDA/etc/profile.d/conda.sh
         conda install -c conda-forge pre-commit
 
     # Install hummingbot env if environment-linux.yml has changed
@@ -33,6 +34,7 @@ runs:
       if: ${{inputs.dependencies-cache-hit}} != 'true'
       shell: ${{inputs.shell}}
       run: |
+        source $CONDA/etc/profile.d/conda.sh
         ./install
 
     # Compile and run tests if code has changed
@@ -42,6 +44,7 @@ runs:
       env:
         WITHOUT_CYTHON_OPTIMIZATIONS: 'true'
       run: |
+        source $CONDA/etc/profile.d/conda.sh
         conda info --envs
         conda activate hummingbot
         conda env export
