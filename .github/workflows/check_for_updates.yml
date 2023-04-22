@@ -31,6 +31,7 @@ jobs:
         id: initialize-runner
         run: |
           matrix=$(jq ".architectures.x86_ubuntu_latest" ./.github/variables/package.json)
+          echo "$matrix"
           echo "matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
       - name: Inspect package.json
         run: |
