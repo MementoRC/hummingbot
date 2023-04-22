@@ -25,22 +25,26 @@ jobs:
     name: Validate inputs
     runs-on: ubuntu-latest
     if: ${{ inputs.should_run == true }}
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJson(inputs.os-matrix) }}
+    outputs:
+      matrix: ${{ steps.initialize-runner.outputs.matrix }}
+
     steps:
       # Checkout Hummingbot - not much can be done without that!
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+
       # Set up the selected runner
-      - id: initialize-runner
+      - name: Upload pre-defined runners
+        id: initialize-runner
         run: |
-          content=`cat ./.github/variables/package.json`
-          content="${content//'%'/'%25'}"
-          content="${content//$'\n'/'%0A'}"
-          content="${content//$'\r'/'%0D'}"
-          echo "::set-output name=packageJson::$content"
-      - run: |
-          echo "${{ fromJson(steps.initialize-runner.outputs.packageJson) }}"
-          
+          target=$(echo ${{ matrix.target }})
+          matrix=$(jq --arg target "$target" 'map(. | select((.target==$target)))' ./.github/variables/architectures.json)
+          echo "matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
 
 #  build_hummingbot:
 #    needs: validate_inputs

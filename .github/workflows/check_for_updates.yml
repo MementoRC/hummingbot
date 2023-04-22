@@ -8,13 +8,36 @@ on:
     types: [ready_for_review, opened, synchronize, reopened]
 
 jobs:
-  run_client:
-    name: Check if client files changed
-    outputs:
-      is_set: ${{ steps.check_files.outputs.is_set }}
+  validate_inputs:
+    name: Validate inputs
     runs-on: ubuntu-latest
+    if: ${{ inputs.should_run == true }}
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJson("['x86-ubuntu-latest', 'x86-windows-latest']") }}
+    outputs:
+      matrix: ${{ steps.initialize-runner.outputs.matrix }}
+
     steps:
-      - uses: actions/checkout@v3
+      # Set up the pre-defined runners
+      - name: Upload pre-defined runners
+        id: initialize-runner
+        run: |
+          target="x86-ubuntu-latest"
+          matrix=$(jq --arg target "$target" 'map(. | select((.target==$target)))' ./.github/variables/architectures.json)
+          echo "matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
+      - name: Inspect package.json
+        run: |
+          echo "${{ fromJson(steps.initialize-runner.outputs.matrix) }}"
+
+#  run_client:
+#    name: Check if client files changed
+#    outputs:
+#      is_set: ${{ steps.check_files.outputs.is_set }}
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v3
 #      - uses: technote-space/get-diff-action@v6
 #        with:
 #          PATTERNS: |
@@ -25,18 +48,6 @@ jobs:
 #        run: |
 #          echo ${{ env.GIT_DIFF }}
 #          echo "is_set=true" >> $GITHUB_OUTPUT
-
-      # Set up the pre-defined runners
-      - name: Upload pre-defined runners
-        id: initialize-runner
-        run: |
-          target="x86-ubuntu-latest"
-          matrix=$(jq --arg target "$target" 'map(. | select((.target==$target)))' ./.github/variables/architectures.json)
-          echo "\"include\":$(echo $matrix)"
-          echo "matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
-      - name: Inspect package.json
-        run: |
-          echo "${{ fromJson(steps.initialize-runner.outputs.matrix) }}"
 
 #  build_on_Linux:
 #    name: I/B/T x86 Linux
