@@ -94,7 +94,7 @@ jobs:
       # Verify conda environment
       - name: Verify conda environment
         run: |
-          conda info | grep "user_agent"
+          conda info | grep "user-agent"
 
       # Install environment and Hummingbot
       - name: Install environment and Hummingbot
