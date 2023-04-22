@@ -15,16 +15,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: technote-space/get-diff-action@v6
-        with:
-          PATTERNS: |
-            **/*.+(py|pyx|pyd|yml)
-      - name: Check if client files are modified
-        id: check_files
-        if: env.GIT_DIFF
-        run: |
-          echo ${{ env.GIT_DIFF }}
-          echo "is_set=true" >> $GITHUB_OUTPUT
+#      - uses: technote-space/get-diff-action@v6
+#        with:
+#          PATTERNS: |
+#            **/*.+(py|pyx|pyd|yml)
+#      - name: Check if client files are modified
+#        id: check_files
+#        if: env.GIT_DIFF
+#        run: |
+#          echo ${{ env.GIT_DIFF }}
+#          echo "is_set=true" >> $GITHUB_OUTPUT
 
       # Set up the pre-defined runners
       - name: Upload pre-defined runners
