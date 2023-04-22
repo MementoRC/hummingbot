@@ -30,12 +30,8 @@ jobs:
       - name: Upload pre-defined runners
         id: initialize-runner
         run: |
-          content=`cat ./.github/variables/package.json`
-          content="${content//'%'/'%25'}"
-          content="${content//$'\n'/'%0A'}"
-          content="${content//$'\r'/'%0D'}"
-          echo "$content"
-          echo "packageJson=${content}" >> "$GITHUB_OUTPUT"
+          matrix=$(jq --arg architectures "x86-ubuntu-latest" 'map( . | select((.runOn==$branchName) or (.runOn=="always")))' ./.github/variables/package.json)
+          echo "matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
       - name: Inspect package.json
         run: |
           echo "${{ fromJson(steps.initialize-runner.outputs.packageJson) }}"
