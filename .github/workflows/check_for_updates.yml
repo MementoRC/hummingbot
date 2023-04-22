@@ -83,7 +83,7 @@ jobs:
   build_on_ARM:
     name: I/B/T ARM64
     needs: run_client
-    uses: ./.github/workflows/install_arm_linux.yml
+    uses: ./.github/workflows/install_arm_Linux.yml
     with:
       should_run: true
       env-yml-file: setup/environment.yml
