@@ -93,7 +93,6 @@ jobs:
 
       # Verify conda environment
       - name: Verify conda environment
-        env:
         run: |
           conda info | grep "user_agent"
 
