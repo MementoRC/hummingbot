@@ -11,7 +11,6 @@ jobs:
   validate_inputs:
     name: Validate inputs
     runs-on: ubuntu-latest
-    if: ${{ inputs.should_run == true }}
     strategy:
       fail-fast: false
       matrix:
