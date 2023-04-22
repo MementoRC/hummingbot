@@ -25,10 +25,6 @@ jobs:
     name: Validate inputs
     runs-on: ubuntu-latest
     if: ${{ inputs.should_run == true }}
-    strategy:
-      fail-fast: false
-      matrix:
-        target: ${{ fromJson(inputs.os-matrix) }}
     outputs:
       matrix: ${{ steps.initialize-runner.outputs.matrix }}
 
@@ -43,8 +39,10 @@ jobs:
         id: initialize-runner
         run: |
           target=$(echo ${{ matrix.target }})
-          matrix=$(jq --arg target "$target" 'map(. | select((.target==$target)))' ./.github/variables/architectures.json)
-          echo "matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
+          for target in $(echo ${{ inputs.os-matrix }}; do
+            matrix=$(jq --arg target "$target" 'map(. | select((.target==$target)))' ./.github/variables/architectures.json)
+            echo "matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
+          done
 
   build_hummingbot:
     needs: validate_inputs
@@ -61,7 +59,7 @@ jobs:
     steps:
       - name: Display matrix
         run: |
-          echo "${{ matrix }}"
+          echo "${{ toJson(matrix) }}"
 
 #      # Checkout Hummingbot - not much can be done without that!
 #      - uses: actions/checkout@v3
