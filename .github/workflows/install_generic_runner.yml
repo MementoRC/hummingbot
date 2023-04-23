@@ -46,19 +46,22 @@ jobs:
             m=$(jq --arg target "$target" 'map(. | select((.target==$target)))' ./.github/variables/architectures.json)
             m=$(echo $m | tr -d '[]')
             if [ "$m" != "" ]; then
-              if [ "$matrix" != "" ]; then  matrix+=',';  fi
+              if [ "$matrix" != "" ]; then
+                matrix+=','
+              fi
               matrix+=$m
             fi
           done
+          echo "matrix={\"include\":$(echo "[$matrix]")}"
           echo "matrix={\"include\":$(echo "[$matrix]")}" >> $GITHUB_OUTPUT
 
   build_hummingbot:
     needs: validate_inputs
     name: build/tests ${{ matrix.name }}
     runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJson(needs.validate_inputs.outputs.matrix) }}
+    #strategy:
+    #  fail-fast: false
+    #  matrix: ${{ fromJson(needs.validate_inputs.outputs.matrix) }}
 
     defaults:
       run:
@@ -67,7 +70,7 @@ jobs:
     steps:
       - name: Display matrix
         run: |
-          echo "${{ toJson(matrix) }}"
+          echo "${{ fromJson(needs.validate_inputs.outputs.matrix) }}"
 
 #      # Checkout Hummingbot - not much can be done without that!
 #      - uses: actions/checkout@v3
