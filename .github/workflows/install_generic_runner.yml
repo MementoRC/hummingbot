@@ -46,7 +46,10 @@ jobs:
             if [ "$matrix" != "" ]; then
               matrix+=','
             fi
+            echo $matrix
+            echo $m
             matrix+=$m
+            echo $matrix
           done
           echo "matrix={\"include\":$(echo $matrix)}"
           echo "matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
