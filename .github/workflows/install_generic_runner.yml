@@ -44,7 +44,7 @@ jobs:
           matrix=""
           targets=$(printf "$TARGETS" | tr "'" '"' | jq -c '.[]'  | tr -d '"')
           while read target; do
-            m=$(jq --arg target "$target" 'map(. | select((.target==$target)))' ./.github/variables/architectures.json)
+            m=$(jq --arg target "$target" 'map(. | select((.target==$target)))' ././.github/variables/architectures.json)
             m=$(echo $m | tr -d '[]')
             if [ "$m" != "" ]; then
               if [ "$matrix" != "" ]; then
@@ -79,13 +79,13 @@ jobs:
 
       # Loading Custom Environment variables
       - name: Set Environment Variables
-        run: sed "/#/d" .github/variables/hb_env_variables.env >> "$GITHUB_ENV"
+        run: sed "/#/d" ./.github/variables/hb_env_variables.env >> "$GITHUB_ENV"
         shell: bash
 
       # Checkout Hummingbot, set HB env variables and check cache
       - name: Enabling cache for HB, Conda environment and Python dependencies
         id: set-hb-cache-hit
-        uses: .github/actions/set_hb_env_cache
+        uses: ./.github/actions/set_hb_env_cache
         with:
           runner: ${{ matrix.target }}
           conda-env-hash: ${{ hashFiles(inputs.env-yml-file) }}
@@ -106,7 +106,7 @@ jobs:
 #
 #      # Install environment and Hummingbot
 #      - name: Install environment and Hummingbot
-#        uses: .github/actions/install_env_and_hb
+#        uses: ./.github/actions/install_env_and_hb
 #        with:
 #          program-cache-hit: ${{steps.checkout-hb-cache-hit.outputs.hb-cache-hit}}
 #          dependencies-cache-hit: ${{steps.checkout-hb-cache-hit.outputs.conda-cache-hit}}
