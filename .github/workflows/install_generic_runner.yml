@@ -1,4 +1,4 @@
-name: ci
+name: Parameterized Install/Buils/Test
 
 on:
   workflow_call:
