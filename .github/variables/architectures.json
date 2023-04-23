@@ -6,7 +6,7 @@
     "extra_cmake_args": "-DCMAKE_CXX_FLAGS=-m64 -DCMAKE_C_FLAGS=-m64"
   },
   {
-    "target": "x86-ubuntu-2004",
+    "target": "x86-ubuntu-20.04",
     "name": "x86 Ubuntu 20.04",
     "runner": "ubuntu-20.04",
     "extra_cmake_args": "-DCMAKE_CXX_FLAGS=-m64 -DCMAKE_C_FLAGS=-m64"
