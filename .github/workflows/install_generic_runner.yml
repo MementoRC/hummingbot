@@ -44,6 +44,7 @@ jobs:
           targets=$(printf "$TARGETS" | tr "'" '"' | jq -c '.[]'  | tr -d '"')
           echo "$targets"
           for target in "$targets"; do
+            echo "  ->$target"
             m=$(jq --arg target "$target" 'map(. | select((.target==$target)))' ./.github/variables/architectures.json)
             m=$(echo $m | tr -d '[]')
             if [ "$m" != "" ]; then
@@ -59,7 +60,8 @@ jobs:
   build_hummingbot:
     needs: validate_inputs
     name: build/tests ${{ matrix.name }}
-    runs-on: ${{ matrix.runner }}
+    runs-on: ubuntu-latest
+    #runs-on: ${{ matrix.runner }}
     #strategy:
     #  fail-fast: false
     #  matrix: ${{ fromJson(needs.validate_inputs.outputs.matrix) }}
