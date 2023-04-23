@@ -44,7 +44,6 @@ jobs:
           matrix=""
           targets=$(printf "$TARGETS" | tr "'" '"' | jq -c '.[]'  | tr -d '"')
           while read target; do
-            echo "  ->$target"
             m=$(jq --arg target "$target" 'map(. | select((.target==$target)))' ./.github/variables/architectures.json)
             m=$(echo $m | tr -d '[]')
             if [ "$m" != "" ]; then
@@ -54,17 +53,15 @@ jobs:
               matrix+=$m
             fi
           done < <(echo -e "$targets")
-          echo "matrix={\"include\":$(echo "[$matrix]")}"
           echo "matrix={\"include\":$(echo "[$matrix]")}" >> $GITHUB_OUTPUT
 
   build_hummingbot:
     needs: validate_inputs
     name: build/tests ${{ matrix.name }}
-    runs-on: ubuntu-latest
-    #runs-on: ${{ matrix.runner }}
-    #strategy:
-    #  fail-fast: false
-    #  matrix: ${{ fromJson(needs.validate_inputs.outputs.matrix) }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.validate_inputs.outputs.matrix) }}
 
     defaults:
       run:
@@ -73,7 +70,7 @@ jobs:
     steps:
       - name: Display matrix
         run: |
-          echo "${{ fromJson(needs.validate_inputs.outputs.matrix) }}"
+          echo "${{ needs.validate_inputs.outputs.matrix }}"
 
 #      # Checkout Hummingbot - not much can be done without that!
 #      - uses: actions/checkout@v3
