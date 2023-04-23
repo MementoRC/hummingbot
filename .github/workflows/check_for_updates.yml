@@ -38,60 +38,60 @@ jobs:
       shell: 'bash -l {0}'
     secrets: inherit
 
-  build_on_macOS:
-    name: I/B/T x86 MacOS
-    needs: run_client
-    uses: ./.github/workflows/install_generic_runner.yml
-    with:
-      should_run: true
-      #should_run: ${{ needs.run_client.outputs.is_set }}
-      env-yml-file: setup/environment.yml
-      os-matrix: "['x86-macos-latest']"
-      shell: 'bash -l {0}'
-    secrets: inherit
-
-  build_on_windows:
-    name: I/B/T x86 Windows
-    needs: run_client
-    uses: ./.github/workflows/install_generic_runner.yml
-    with:
-      should_run: true
-      env-yml-file: setup/environment-win64.yml
-      os-matrix: "['x86-windows-latest']"
-      shell: 'bash -l {0}'
-    secrets: inherit
-
-  build_on_ARM:
-    name: I/B/T ARM64 MacOS
-    needs: run_client
-    uses: ./.github/workflows/install_generic_runner.yml
-    with:
-      should_run: true
-      #should_run: ${{ needs.run_client.outputs.is_set }}
-      env-yml-file: setup/environment.yml
-      os-matrix: "['arm64-ubuntu-latest']"
-      shell: 'bash -l {0}'
-    secrets: inherit
-
-  # Custom Flows
-  build_on_WSL:
-    name: I/B/T x86 WSL
-    needs: run_client
-    uses: ./.github/workflows/install_x86_wsl.yml
-    with:
-      should_run: true
-      os-matrix: "['Debian']"
-    secrets: inherit
-
-  build_on_raspi:
-    name: I/B/T RasPi
-    needs: run_client
-    uses: ./.github/workflows/install_raspi_Linux.yml
-    with:
-      should_run: true
-      # should_run: ${{ needs.run_client.outputs.is_set }}
-      os-matrix: "['zero2_64_raspios']"
-    secrets: inherit
+#  build_on_macOS:
+#    name: I/B/T x86 MacOS
+#    needs: run_client
+#    uses: ./.github/workflows/install_generic_runner.yml
+#    with:
+#      should_run: true
+#      #should_run: ${{ needs.run_client.outputs.is_set }}
+#      env-yml-file: setup/environment.yml
+#      os-matrix: "['x86-macos-latest']"
+#      shell: 'bash -l {0}'
+#    secrets: inherit
+#
+#  build_on_windows:
+#    name: I/B/T x86 Windows
+#    needs: run_client
+#    uses: ./.github/workflows/install_generic_runner.yml
+#    with:
+#      should_run: true
+#      env-yml-file: setup/environment-win64.yml
+#      os-matrix: "['x86-windows-latest']"
+#      shell: 'bash -l {0}'
+#    secrets: inherit
+#
+#  build_on_ARM:
+#    name: I/B/T ARM64 MacOS
+#    needs: run_client
+#    uses: ./.github/workflows/install_generic_runner.yml
+#    with:
+#      should_run: true
+#      #should_run: ${{ needs.run_client.outputs.is_set }}
+#      env-yml-file: setup/environment.yml
+#      os-matrix: "['arm64-ubuntu-latest']"
+#      shell: 'bash -l {0}'
+#    secrets: inherit
+#
+#  # Custom Flows
+#  build_on_WSL:
+#    name: I/B/T x86 WSL
+#    needs: run_client
+#    uses: ./.github/workflows/install_x86_wsl.yml
+#    with:
+#      should_run: true
+#      os-matrix: "['Debian']"
+#    secrets: inherit
+#
+#  build_on_raspi:
+#    name: I/B/T RasPi
+#    needs: run_client
+#    uses: ./.github/workflows/install_raspi_Linux.yml
+#    with:
+#      should_run: true
+#      # should_run: ${{ needs.run_client.outputs.is_set }}
+#      os-matrix: "['zero2_64_raspios']"
+#    secrets: inherit
 
   # build_on_Rosetta:
   #   name: I/B/T ARM64 Rosetta
