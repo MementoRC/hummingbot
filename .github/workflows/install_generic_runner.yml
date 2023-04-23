@@ -43,7 +43,7 @@ jobs:
         run: |
           matrix=""
           targets=$(printf "$TARGETS" | tr "'" '"' | jq -c '.[]'  | tr -d '"')
-          for target in "$targets"; do
+          while read target; do
             echo "  ->$target"
             m=$(jq --arg target "$target" 'map(. | select((.target==$target)))' ./.github/variables/architectures.json)
             m=$(echo $m | tr -d '[]')
@@ -53,7 +53,7 @@ jobs:
               fi
               matrix+=$m
             fi
-          done
+          done < <(echo -e "$targets")
           echo "matrix={\"include\":$(echo "[$matrix]")}"
           echo "matrix={\"include\":$(echo "[$matrix]")}" >> $GITHUB_OUTPUT
 
