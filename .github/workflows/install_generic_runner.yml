@@ -82,28 +82,28 @@ jobs:
         run: sed "/#/d" .github/variables/hb_env_variables.env >> "$GITHUB_ENV"
         shell: bash
 
-#      # Checkout Hummingbot, set HB env variables and check cache
-#      - name: Set Project Env. vars and check cache
-#        id: set-env-hb-cache-hit
-#        uses: .github/actions/set_hb_env_cache
-#        with:
-#          runner: ${{ matrix.target }}
-#          conda-env-hash: ${{ hashFiles(inputs.env-yml-file) }}
-#
-#      # Double-check Conda environment
-#      - uses: conda-incubator/setup-miniconda@v2
-#        with:
-#          miniconda-version: "latest"
-#          python-version: ${{ env.HB_PYTHON_VERSION }}
-#          auto-update-conda: true
-#          auto-activate-base: true
-#          use-only-tar-bz2: true
-#
-#      # Verify conda environment
-#      - name: Verify conda environment
-#        run: |
-#          conda info | grep "user-agent"
-#
+      # Checkout Hummingbot, set HB env variables and check cache
+      - name: Enabling cache for HB, Conda environment and Python dependencies
+        id: set-hb-cache-hit
+        uses: .github/actions/set_hb_env_cache
+        with:
+          runner: ${{ matrix.target }}
+          conda-env-hash: ${{ hashFiles(inputs.env-yml-file) }}
+
+      # Double-check Conda environment, adds a path to Miniconda (needs bash -l {0})
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+          python-version: ${{ env.HB_PYTHON_VERSION }}
+          auto-update-conda: true
+          auto-activate-base: true
+          use-only-tar-bz2: true
+
+      # Verify conda environment
+      - name: Verify conda environment
+        run: |
+          conda info | grep "user-agent"
+
 #      # Install environment and Hummingbot
 #      - name: Install environment and Hummingbot
 #        uses: .github/actions/install_env_and_hb

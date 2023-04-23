@@ -1,15 +1,15 @@
-name: "Install environment and Hummingbot"
-description: "Installs conda environment, all libraries and compiles Hummingbot"
+name: "Enable Cache"
+description: "Register the cache for the HB, conda environment and installation"
 inputs:
    runner:
      required: true
      description: "Runner to use for the run step"
    conda-env-hash:
      required: true
-     description: "Environment file to use"
+     description: "Cache Key to use for the conda environment"
    conda-inst-hash:
      required: false
-     description: "Environment file to use"
+     description: "Cache Key to use for the conda installation (When using custom Miniconda installation)"
      default: "0"
 
 outputs:
