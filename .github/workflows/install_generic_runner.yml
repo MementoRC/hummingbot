@@ -48,6 +48,7 @@ jobs:
             fi
             matrix+=$(echo $m)
           done
+          echo "matrix={\"include\":$(echo $matrix)}"
           echo "matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
 
   build_hummingbot:
