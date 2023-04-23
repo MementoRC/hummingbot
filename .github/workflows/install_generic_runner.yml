@@ -38,17 +38,13 @@ jobs:
       - name: Upload pre-defined runners
         id: initialize-runner
         env:
-          T0: ${{ toJson(inputs.os-matrix) }}
-          T1: ${{ inputs.os-matrix }}
+          TARGETS: ${{ inputs.os-matrix }}
         run: |
-          printf "$T1" | tr "'" '"' | jq -c '.[]'  | while read target; do
+          echo "target=$target" >> $GITHUB_OUTPUT
+          printf "$TARGETS" | tr "'" '"' | jq -c '.[]'  | while read target; do
             echo "target=$target"
             matrix=$(jq --arg target "$target" 'map(. | select((.target==$target)))' ./.github/variables/architectures.json)
-            echo "matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
-          done
-          printf "$T0" | tr "'" '"' | jq -c '.[]'  | while read target; do
-            echo "target=$target"
-            matrix=$(jq --arg target "$target" 'map(. | select((.target==$target)))' ./.github/variables/architectures.json)
+            echo "matrix={\"include\":$(echo $matrix)}"
             echo "matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
           done
 
