@@ -42,6 +42,7 @@ jobs:
         run: |
           matrix=""
           targets=$(printf "$TARGETS" | tr "'" '"' | jq -c '.[]'  | tr -d '"')
+          echo "$targets"
           for target in "$targets"; do
             m=$(jq --arg target "$target" 'map(. | select((.target==$target)))' ./.github/variables/architectures.json)
             m=$(echo $m | tr -d '[]')
