@@ -90,20 +90,20 @@ jobs:
           runner: ${{ matrix.target }}
           conda-env-hash: ${{ hashFiles(inputs.env-yml-file) }}
 
-      # Double-check Conda environment, adds a path to Miniconda (needs bash -l {0})
-      - uses: conda-incubator/setup-miniconda@v2
-        with:
-          miniconda-version: "latest"
-          python-version: ${{ env.HB_PYTHON_VERSION }}
-          auto-update-conda: true
-          auto-activate-base: true
-          use-only-tar-bz2: true
-
-      # Verify conda environment
-      - name: Verify conda environment
-        run: |
-          conda info | grep "user-agent"
-
+#      # Double-check Conda environment, adds a path to Miniconda (needs bash -l {0})
+#      - uses: conda-incubator/setup-miniconda@v2
+#        with:
+#          miniconda-version: "latest"
+#          python-version: ${{ env.HB_PYTHON_VERSION }}
+#          auto-update-conda: true
+#          auto-activate-base: true
+#          use-only-tar-bz2: true
+#
+#      # Verify conda environment
+#      - name: Verify conda environment
+#        run: |
+#          conda info | grep "user-agent"
+#
 #      # Install environment and Hummingbot
 #      - name: Install environment and Hummingbot
 #        uses: .github/actions/install_env_and_hb
