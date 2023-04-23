@@ -38,8 +38,11 @@ jobs:
       - name: Upload pre-defined runners
         id: initialize-runner
         env:
-          TARGETS: ${{ toJson(inputs.os-matrix) }}
+          T0: ${{ toJson(inputs.os-matrix) }}
+          T1: ${{ inputs.os-matrix }}
         run: |
+          echo "T0=$T0"
+          echo "T1=$T1"
           for target in "${TARGETS[@]}"; do
             echo "target=$target"
             matrix=$(jq --arg target "$target" 'map(. | select((.target==$target)))' ./.github/variables/architectures.json)
