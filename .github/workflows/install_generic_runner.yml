@@ -40,7 +40,7 @@ jobs:
         env:
           TARGETS: ${{ inputs.os-matrix }}
         run: |
-          printf "$TARGETS" | tr "'" '"' | jq -c '.[]'  | tr '"' '' | while read target; do
+          printf "$TARGETS" | tr "'" '"' | jq -c '.[]'  | tr -d '"' | while read target; do
             matrix=$(jq --arg target "$target" 'map(. | select((.target==$target)))' ./.github/variables/architectures.json)
             echo "matrix={\"include\":$(echo $matrix)}"
             echo "matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
