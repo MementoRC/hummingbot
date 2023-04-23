@@ -39,11 +39,11 @@ jobs:
         id: initialize-runner
         run: |
           target=$(echo ${{ inputs.os-matrix }})
-          echo "target=$target"
-          target=$(echo ${{ fromJson(inputs.os-matrix) }})
-          echo "target=$target"
-          matrix=$(jq --arg target "$target" 'map(. | select((.target==$target)))' ./.github/variables/architectures.json)
-          echo "matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
+          for target in "${{ fromJson(inputs.os-matrix) }}"; do
+            echo "target=$target"
+            matrix=$(jq --arg target "$target" 'map(. | select((.target==$target)))' ./.github/variables/architectures.json)
+            echo "matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
+          done
 
   build_hummingbot:
     needs: validate_inputs
