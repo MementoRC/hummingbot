@@ -90,61 +90,61 @@ jobs:
           runner: ${{ matrix.target }}
           conda-env-hash: ${{ hashFiles(inputs.env-yml-file) }}
 
-#      # Double-check Conda environment, adds a path to Miniconda (needs bash -l {0})
-#      - uses: conda-incubator/setup-miniconda@v2
-#        with:
-#          miniconda-version: "latest"
-#          python-version: ${{ env.HB_PYTHON_VERSION }}
-#          auto-update-conda: true
-#          auto-activate-base: true
-#          use-only-tar-bz2: true
-#
-#      # Verify conda environment
-#      - name: Verify conda environment
-#        run: |
-#          conda info | grep "user-agent"
-#
-#      # Install environment and Hummingbot
-#      - name: Install environment and Hummingbot
-#        uses: ./.github/actions/install_env_and_hb
-#        with:
-#          program-cache-hit: ${{steps.checkout-hb-cache-hit.outputs.hb-cache-hit}}
-#          dependencies-cache-hit: ${{steps.checkout-hb-cache-hit.outputs.conda-cache-hit}}
-#          shell: ${{ inputs.shell }}
-#
-#      # Compile and run tests if code has changed
-#      - name: Run pre-commit hooks on diff
-#        if: steps.checkout-hb-cache-hit.outputs.hb-cache-hit != 'true' || steps.checkout-hb-cache-hit.outputs.conda-cache-hit != 'true'
-#        run: |
-#          conda activate hummingbot
-#          pre-commit run --files $(git diff --name-only origin/$GITHUB_BASE_REF)
-#
-#      - name: Run stable tests and calculate coverage
-#        if: steps.checkout-hb-cache-hit.outputs.hb-cache-hit != 'true' || steps.checkout-hb-cache-hit.outputs.conda-cache-hit != 'true'
-#        run: |
-#          conda activate hummingbot
-#          coverage run -m pytest \
-#            --ignore="test/connector" \
-#            --ignore="test/debug" \
-#            --ignore="test/mock" \
-#            --ignore="test/hummingbot/connector/gateway/amm" \
-#            --ignore="test/hummingbot/connector/gateway/clob"
-#
-#      - name: Check and report global coverage
-#        if: steps.checkout-hb-cache-hit.outputs.hb-cache-hit != 'true' || steps.checkout-hb-cache-hit.outputs.conda-cache-hit != 'true'
-#        run: |
-#          conda activate hummingbot
-#          make report_coverage
-#
-#      - name: Validate coverage for the changes
-#        if: github.event_name == 'pull_request' && (steps.checkout-hb-cache-hit.outputs.hb-cache-hit != 'true' || steps.checkout-hb-cache-hit.outputs.conda-cache-hit != 'true')
-#        run: |
-#          conda activate hummingbot
-#          git fetch --all -q
-#          git checkout -b $GITHUB_SHA
-#          coverage xml
-#          diff-cover --compare-branch=origin/$GITHUB_BASE_REF --fail-under=80 coverage.xml
-#
+      # Double-check Conda environment, adds a path to Miniconda (needs bash -l {0})
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          miniconda-version: "latest"
+          python-version: ${{ env.HB_PYTHON_VERSION }}
+          auto-update-conda: true
+          auto-activate-base: true
+          use-only-tar-bz2: true
+
+      # Verify conda environment
+      - name: Verify conda environment
+        run: |
+          conda info | grep "user-agent"
+
+      # Install environment and Hummingbot
+      - name: Install environment and Hummingbot
+        uses: ./.github/actions/install_env_and_hb
+        with:
+          program-cache-hit: ${{steps.checkout-hb-cache-hit.outputs.hb-cache-hit}}
+          dependencies-cache-hit: ${{steps.checkout-hb-cache-hit.outputs.conda-cache-hit}}
+          shell: ${{ inputs.shell }}
+
+      # Compile and run tests if code has changed
+      - name: Run pre-commit hooks on diff
+        if: steps.checkout-hb-cache-hit.outputs.hb-cache-hit != 'true' || steps.checkout-hb-cache-hit.outputs.conda-cache-hit != 'true'
+        run: |
+          conda activate hummingbot
+          pre-commit run --files $(git diff --name-only origin/$GITHUB_BASE_REF)
+
+      - name: Run stable tests and calculate coverage
+        if: steps.checkout-hb-cache-hit.outputs.hb-cache-hit != 'true' || steps.checkout-hb-cache-hit.outputs.conda-cache-hit != 'true'
+        run: |
+          conda activate hummingbot
+          coverage run -m pytest \
+            --ignore="test/connector" \
+            --ignore="test/debug" \
+            --ignore="test/mock" \
+            --ignore="test/hummingbot/connector/gateway/amm" \
+            --ignore="test/hummingbot/connector/gateway/clob"
+
+      - name: Check and report global coverage
+        if: steps.checkout-hb-cache-hit.outputs.hb-cache-hit != 'true' || steps.checkout-hb-cache-hit.outputs.conda-cache-hit != 'true'
+        run: |
+          conda activate hummingbot
+          make report_coverage
+
+      - name: Validate coverage for the changes
+        if: github.event_name == 'pull_request' && (steps.checkout-hb-cache-hit.outputs.hb-cache-hit != 'true' || steps.checkout-hb-cache-hit.outputs.conda-cache-hit != 'true')
+        run: |
+          conda activate hummingbot
+          git fetch --all -q
+          git checkout -b $GITHUB_SHA
+          coverage xml
+          diff-cover --compare-branch=origin/$GITHUB_BASE_REF --fail-under=80 coverage.xml
+
       # Create JSON report
       - name: Create JSON report
         uses: jsdaniell/create-json@v1.2.2
