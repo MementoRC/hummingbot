@@ -40,11 +40,12 @@ jobs:
         env:
           TARGETS: ${{ inputs.os-matrix }}
         run: |
+          matrix=''
           printf "$TARGETS" | tr "'" '"' | jq -c '.[]'  | tr -d '"' | while read target; do
-            matrix=$(jq --arg target "$target" 'map(. | select((.target==$target)))' ./.github/variables/architectures.json)
-            echo "matrix={\"include\":$(echo $matrix)}"
-            echo "matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
+            m=$(jq --arg target "$target" 'map(. | select((.target==$target)))' ./.github/variables/architectures.json)
+            matrix+=$(echo $m)
           done
+          echo "matrix={\"include\":$(echo $matrix)}" >> $GITHUB_OUTPUT
 
   build_hummingbot:
     needs: validate_inputs
