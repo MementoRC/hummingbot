@@ -37,7 +37,7 @@ jobs:
       # Set up the selected runner
       - name: Upload pre-defined runners
         id: initialize-runner
-        shell: bash
+        shell: zsh
         env:
           TARGETS: ${{ inputs.os-matrix }}
         run: |
