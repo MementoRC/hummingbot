@@ -41,8 +41,8 @@ jobs:
           T0: ${{ toJson(inputs.os-matrix) }}
           T1: ${{ inputs.os-matrix }}
         run: |
-          echo "T0=$T0"
-          echo "T1=$T1"
+          echo "T0=$T0 -> $(echo $T0 | jq -r '.[]') -> ${T0[@]}"
+          echo "T1=$T1 -> $(echo $T1 | jq -r '.[]') -> ${T1[@]}"
           for target in "${TARGETS[@]}"; do
             echo "target=$target"
             matrix=$(jq --arg target "$target" 'map(. | select((.target==$target)))' ./.github/variables/architectures.json)
