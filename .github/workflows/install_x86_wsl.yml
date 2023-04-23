@@ -1,4 +1,4 @@
-name: ci
+name: Custom Install/Build/Test for WSL
 
 on:
   workflow_call:

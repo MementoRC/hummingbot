@@ -72,16 +72,16 @@ jobs:
         run: |
           echo "I/B/T on ${{ matrix.runner }} for ${{ matrix.name }}"
 
-#      # Checkout Hummingbot - not much can be done without that!
-#      - uses: actions/checkout@v3
-#        with:
-#          fetch-depth: 0
-#
-#      # Loading Custom Environment variables
-#      - name: Set Environment Variables
-#        run: sed "/#/d" .github/variables/hb_env_variables.env >> "$GITHUB_ENV"
-#        shell: bash
-#
+      # Checkout Hummingbot - not much can be done without that!
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      # Loading Custom Environment variables
+      - name: Set Environment Variables
+        run: sed "/#/d" .github/variables/hb_env_variables.env >> "$GITHUB_ENV"
+        shell: bash
+
 #      # Checkout Hummingbot, set HB env variables and check cache
 #      - name: Set Project Env. vars and check cache
 #        id: set-env-hb-cache-hit
