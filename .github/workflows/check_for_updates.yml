@@ -38,28 +38,28 @@ jobs:
       shell: 'bash -l {0}'
     secrets: inherit
 
-#  build_on_macOS:
-#    name: I/B/T x86 MacOS
-#    needs: run_client
-#    uses: ./.github/workflows/install_generic_runner.yml
-#    with:
-#      should_run: true
-#      #should_run: ${{ needs.run_client.outputs.is_set }}
-#      env-yml-file: setup/environment.yml
-#      os-matrix: "['x86-macos-latest']"
-#      shell: 'bash -l {0}'
-#    secrets: inherit
-#
-#  build_on_windows:
-#    name: I/B/T x86 Windows
-#    needs: run_client
-#    uses: ./.github/workflows/install_generic_runner.yml
-#    with:
-#      should_run: true
-#      env-yml-file: setup/environment-win64.yml
-#      os-matrix: "['x86-windows-latest']"
-#      shell: 'bash -l {0}'
-#    secrets: inherit
+  build_on_macOS:
+    name: I/B/T x86 MacOS
+    needs: run_client
+    uses: ./.github/workflows/install_generic_runner.yml
+    with:
+      should_run: true
+      #should_run: ${{ needs.run_client.outputs.is_set }}
+      env-yml-file: setup/environment.yml
+      os-matrix: "['x86-macos-latest']"
+      shell: 'bash -l {0}'
+    secrets: inherit
+
+  build_on_windows:
+    name: I/B/T x86 Windows
+    needs: run_client
+    uses: ./.github/workflows/install_generic_runner.yml
+    with:
+      should_run: true
+      env-yml-file: setup/environment-win64.yml
+      os-matrix: "['x86-windows-latest']"
+      shell: 'bash -l {0}'
+    secrets: inherit
 #
 #  build_on_ARM:
 #    name: I/B/T ARM64 MacOS
