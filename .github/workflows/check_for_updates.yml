@@ -67,18 +67,6 @@ jobs:
       shell: 'bash -l {0}'
     secrets: inherit
 
-  build_on_Linux:
-    name: I/B/T x86 Linux
-    needs: run_client
-    uses: ./.github/workflows/install_generic_runner.yml
-    with:
-      should_run: true
-  #    should_run: ${{ needs.run_client.outputs.is_set }}
-      env-yml-file: setup/environment-linux.yml
-      os-matrix: "['x86-ubuntu-20.04']"
-      shell: 'bash -l {0}'
-    secrets: inherit
-
   build_on_macOS:
     name: I/B/T x86 MacOS
     needs: run_client
