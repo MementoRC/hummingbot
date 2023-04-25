@@ -172,13 +172,6 @@ jobs:
           coverage xml
           diff-cover --compare-branch=origin/$GITHUB_BASE_REF --fail-under=80 coverage.xml
 
-      # Register the failed coverage check as a comment on the PR
-      - uses: mainmatter/continue-on-error-comment@v1
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          outcome: ${{ steps.coverage-check.outcome }}
-          test-id: Error code FailedCoverage
-
       # Color the discord message based on the outcome of the build
       - name: Color JSON report
         run: |
