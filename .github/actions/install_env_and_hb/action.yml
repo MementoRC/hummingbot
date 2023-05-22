@@ -29,7 +29,7 @@ runs:
         source $CONDA/etc/profile.d/conda.sh
         conda install -c conda-forge pre-commit
 
-    # Install hummingbot env if environment-linux.yml has changed
+    # Install hummingbot env if environment.yml has changed
     - name: Install Hummingbot
       if: ${{inputs.dependencies-cache-hit}} != 'true'
       shell: ${{inputs.shell}}
