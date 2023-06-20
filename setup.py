@@ -50,7 +50,6 @@ def main():
         "0x-order-utils",
         "aioconsole",
         "aiohttp",
-        "aiokafka",
         "appdirs",
         "appnope",
         "async-timeout",
