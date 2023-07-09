@@ -7,39 +7,32 @@ inputs:
    dependencies-cache-hit:
      required: true
      description: "Value of truth regarding the program cache being hit or not"
-   shell:
-     required: false
-     description: "Shell to use for the run step"
-     default: bash -l {0}
-
 runs:
   using: "composite"
   steps:
     # Install python/conda to check if core code has changed
     - uses: actions/setup-python@v4
+      if: ${{inputs.program-cache-hit}} != 'true' || ${{inputs.dependencies-cache-hit}} != 'true'
       with:
-        python-version: ${{ env.HB_PYTHON_VERSION }}
-      if: ${{inputs.program-cache-hit}} != 'true' || ${{inputs.dependencies-cache-hit}} != 'true'
+        python-version: 3.x
 
-    # Install pre-commit if code has changed
-    - name: Install pre-commit
+    # Install pre_commit if code has changed
+    - name: Install pre_commit
       if: ${{inputs.program-cache-hit}} != 'true' || ${{inputs.dependencies-cache-hit}} != 'true'
-      shell: ${{inputs.shell}}
+      shell: bash
       run: |
-        source $CONDA/etc/profile.d/conda.sh
-        conda install -c conda-forge pre-commit
+        conda install -c conda-forge pre_commit
 
     # Install hummingbot env if environment.yml has changed
     - name: Install Hummingbot
       if: ${{inputs.dependencies-cache-hit}} != 'true'
-      shell: ${{inputs.shell}}
+      shell: bash -l {0}
       run: |
-        source $CONDA/etc/profile.d/conda.sh
         ./install
 
     # Compile and run tests if code has changed
     - name: Compile Hummingbot
-      shell: ${{inputs.shell}}
+      shell: bash
       if: ${{inputs.program-cache-hit}} != 'true' || ${{inputs.dependencies-cache-hit}} != 'true'
       env:
         WITHOUT_CYTHON_OPTIMIZATIONS: 'true'
