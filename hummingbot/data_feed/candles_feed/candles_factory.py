@@ -1,7 +1,7 @@
+from hummingbot.data_feed.candles_feed.ascend_ex_spot_candles.ascend_ex_spot_candles import AscendExSpotCandles
 from hummingbot.data_feed.candles_feed.binance_perpetual_candles import BinancePerpetualCandles
 from hummingbot.data_feed.candles_feed.binance_spot_candles import BinanceSpotCandles
 from hummingbot.data_feed.candles_feed.kucoin_spot_candles.kucoin_spot_candles import KucoinSpotCandles
-from hummingbot.data_feed.candles_feed.ascend_ex_spot_candles.ascend_ex_spot_candles import AscendExSpotCandles
 
 
 class CandlesFactory:
