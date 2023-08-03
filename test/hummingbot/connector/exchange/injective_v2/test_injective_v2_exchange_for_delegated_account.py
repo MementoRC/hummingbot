@@ -176,7 +176,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         return ("INVALID_MARKET", response)
 
     @property
-    def network_status_request_successful_mock_response(self):
+    def ƒ(self):
         return {}
 
     @property
