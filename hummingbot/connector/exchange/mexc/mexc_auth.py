@@ -55,7 +55,9 @@ class MexcAuth(AuthBase):
         return request_params
 
     def header_for_authentication(self) -> Dict[str, str]:
-        return {"X-MEXC-APIKEY": self.api_key}
+        return {"X-MEXC-APIKEY": self.api_key,
+                # "Content-Type":"application/x-www-form-urlencoded"
+                }
 
     def _generate_signature(self, params: Dict[str, Any]) -> str:
 
