@@ -406,7 +406,12 @@ class DexalotAPIDataSource(GatewayCLOBAPIDataSourceBase):
                 or transaction_data.get("txReceipt", {}).get("status") == 0
             )
         ):
-            raise ValueError(f"Transaction {in_flight_order.creation_transaction_hash} not found.")
+            order_update = OrderUpdate(
+                trading_pair=in_flight_order.trading_pair,
+                update_timestamp=self._time(),
+                new_state=OrderState.FAILED,
+                client_order_id=in_flight_order.client_order_id,
+            )
         else:  # transaction is still being processed
             order_update = OrderUpdate(
                 trading_pair=in_flight_order.trading_pair,
@@ -574,13 +579,15 @@ class DexalotAPIDataSource(GatewayCLOBAPIDataSourceBase):
                 await self._sleep(1.0)
 
     async def _connected_websocket_assistant(self) -> WSAssistant:
-        auth_response = await self._api_get(
-            path_url=CONSTANTS.WS_AUTH_PATH,
-            throttler_limit_id=CONSTANTS.WS_AUTH_RATE_LIMIT_ID,
-            is_auth_required=True,
-        )
-        token = auth_response["token"]
-        ws_url = f"{CONSTANTS.WS_PATH_URL[self._network]}?wstoken={token}"
+        ws_url = CONSTANTS.WS_PATH_URL[self._network]
+        if self._api_key is not None and len(self._api_key) > 0:
+            auth_response = await self._api_get(
+                path_url=CONSTANTS.WS_AUTH_PATH,
+                throttler_limit_id=CONSTANTS.WS_AUTH_RATE_LIMIT_ID,
+                is_auth_required=True,
+            )
+            token = auth_response["token"]
+            ws_url = f"{CONSTANTS.WS_PATH_URL[self._network]}?wstoken={token}"
         ws: WSAssistant = await self._api_factory.get_ws_assistant()
         await ws.connect(ws_url=ws_url, ping_timeout=CONSTANTS.HEARTBEAT_TIME_INTERVAL)
         return ws
