@@ -34,6 +34,7 @@ connector_status = {
     'ndax_testnet': 'bronze',
     'okx': 'bronze',
     'perpetual_finance': 'bronze',
+    'whitebit': 'bronze',
     'uniswap': 'gold',
     'uniswapLP': 'gold',
     'pancakeswap': 'silver',
@@ -59,11 +60,6 @@ connector_status = {
     'phemex_perpetual': 'bronze',
     'phemex_perpetual_testnet': 'bronze',
     'polkadex': 'bronze',
-    'vertex': 'bronze',
-    'vertex_testnet': 'bronze',
-    'injective_v2': 'bronze',
-    'injective_v2_perpetual': 'bronze',
-    'plenty': 'bronze',
 }
 
 warning_messages = {
