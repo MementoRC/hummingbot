@@ -2,9 +2,9 @@ name: ci
 
 on:
   push:
-    branches: [master, development, development_unofficial, 'refactor/unit_tests**', 'epic/**']
+    branches: [master, development, 'development_*']
   pull_request:
-    branches: [master, development, development_unofficial, 'refactor/unit_tests**', 'epic/**']
+    branches: [master, development, 'development_*']
     types: [ready_for_review, opened, synchronize, reopened]
 
 jobs:
@@ -49,7 +49,8 @@ jobs:
     needs: run_client
     uses: ./.github/workflows/install_generic_runner.yml
     with:
-      should_run: ${{ needs.run_client.outputs.is_set == 'true' }}
+      #should_run: ${{ needs.run_client.outputs.is_set == 'true' }}
+      should_run: true
       env-yml-file: setup/environment-linux.yml
       os-matrix: "['x86-ubuntu-latest']"
       must-succeed: "['x86-ubuntu-latest']"
