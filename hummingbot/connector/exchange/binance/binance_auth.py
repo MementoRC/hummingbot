@@ -60,5 +60,8 @@ class BinanceAuth(AuthBase):
     def _generate_signature(self, params: Dict[str, Any]) -> str:
 
         encoded_params_str = urlencode(params)
-        digest = hmac.new(self.secret_key.encode("utf8"), encoded_params_str.encode("utf8"), hashlib.sha256).hexdigest()
-        return digest
+        return hmac.new(
+            self.secret_key.encode("utf8"),
+            encoded_params_str.encode("utf8"),
+            hashlib.sha256,
+        ).hexdigest()

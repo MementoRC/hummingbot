@@ -101,7 +101,7 @@ class BitmartAPIUserStreamDataSource(UserStreamTrackerDataSource):
             await self._process_event_message(event_message=json_data, queue=queue)
 
     async def _process_event_message(self, event_message: Dict[str, Any], queue: asyncio.Queue):
-        if len(event_message) > 0 and "table" in event_message and "data" in event_message:
+        if event_message and "table" in event_message and "data" in event_message:
             queue.put_nowait(event_message)
 
     async def _get_ws_assistant(self) -> WSAssistant:

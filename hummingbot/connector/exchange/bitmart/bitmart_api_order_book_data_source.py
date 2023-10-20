@@ -97,14 +97,14 @@ class BitmartAPIOrderBookDataSource(OrderBookTrackerDataSource):
         }
 
         rest_assistant = await self._api_factory.get_rest_assistant()
-        data = await rest_assistant.execute_request(
-            url=web_utils.public_rest_url(path_url=CONSTANTS.GET_ORDER_BOOK_PATH_URL),
+        return await rest_assistant.execute_request(
+            url=web_utils.public_rest_url(
+                path_url=CONSTANTS.GET_ORDER_BOOK_PATH_URL
+            ),
             params=params,
             method=RESTMethod.GET,
             throttler_limit_id=CONSTANTS.GET_ORDER_BOOK_PATH_URL,
         )
-
-        return data
 
     async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
         trade_updates = raw_message["data"]

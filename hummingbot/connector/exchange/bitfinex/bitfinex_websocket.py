@@ -80,8 +80,7 @@ class BitfinexWebsocket():
     # listen to consumer's queue updates
     async def _listen_to_queue(self, consumer_id: str) -> AsyncIterable[Any]:
         try:
-            msg = self._consumers[consumer_id].get_nowait()
-            yield msg
+            yield self._consumers[consumer_id].get_nowait()
         except asyncio.QueueEmpty:
             yield None
         except Exception as e:

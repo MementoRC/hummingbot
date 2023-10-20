@@ -25,7 +25,9 @@ class DydxPerpetualAuth(AuthBase):
         self._dydx_perpetual_ethereum_address = dydx_perpetual_ethereum_address
         self._dydx_perpetual_stark_private_key = dydx_perpetual_stark_private_key
         self._dydx_stark_private_key = (
-            None if dydx_perpetual_stark_private_key == "" else dydx_perpetual_stark_private_key
+            None
+            if not dydx_perpetual_stark_private_key
+            else dydx_perpetual_stark_private_key
         )
 
         self._dydx_client = None
@@ -125,5 +127,4 @@ class DydxPerpetualAuth(AuthBase):
             limit_fee=limit_fee,
             expiration_epoch_seconds=expiration_epoch_seconds,
         )
-        order_signature = order_to_sign.sign(self._dydx_perpetual_stark_private_key)
-        return order_signature
+        return order_to_sign.sign(self._dydx_perpetual_stark_private_key)
