@@ -137,9 +137,10 @@ class BinancePerpetualDerivative(PerpetualDerivativePyBase):
 
     def _is_request_exception_related_to_time_synchronizer(self, request_exception: Exception):
         error_description = str(request_exception)
-        is_time_synchronizer_related = ("-1021" in error_description
-                                        and "Timestamp for this request" in error_description)
-        return is_time_synchronizer_related
+        return (
+            "-1021" in error_description
+            and "Timestamp for this request" in error_description
+        )
 
     def _is_order_not_found_during_status_update_error(self, status_update_exception: Exception) -> bool:
         return str(CONSTANTS.ORDER_NOT_EXIST_ERROR_CODE) in str(
@@ -183,7 +184,7 @@ class BinancePerpetualDerivative(PerpetualDerivativePyBase):
                  price: Decimal = s_decimal_NaN,
                  is_maker: Optional[bool] = None) -> TradeFeeBase:
         is_maker = is_maker or False
-        fee = build_trade_fee(
+        return build_trade_fee(
             self.name,
             is_maker,
             base_currency=base_currency,
@@ -193,7 +194,6 @@ class BinancePerpetualDerivative(PerpetualDerivativePyBase):
             amount=amount,
             price=price,
         )
-        return fee
 
     async def _update_trading_fees(self):
         """
@@ -219,14 +219,15 @@ class BinancePerpetualDerivative(PerpetualDerivativePyBase):
             path_url=CONSTANTS.ORDER_URL,
             params=api_params,
             is_auth_required=True)
-        if cancel_result.get("code") == -2011 and "Unknown order sent." == cancel_result.get("msg", ""):
+        if (
+            cancel_result.get("code") == -2011
+            and cancel_result.get("msg", "") == "Unknown order sent."
+        ):
             self.logger().debug(f"The order {order_id} does not exist on Binance Perpetuals. "
                                 f"No cancelation needed.")
             await self._order_tracker.process_order_not_found(order_id)
             raise IOError(f"{cancel_result.get('code')} - {cancel_result['msg']}")
-        if cancel_result.get("status") == "CANCELED":
-            return True
-        return False
+        return cancel_result.get("status") == "CANCELED"
 
     async def _place_order(
             self,
@@ -271,11 +272,10 @@ class BinancePerpetualDerivative(PerpetualDerivativePyBase):
             error_description = str(e)
             is_server_overloaded = ("status is 503" in error_description
                                     and "Unknown error, please check your request or try again later." in error_description)
-            if is_server_overloaded:
-                o_id = "UNKNOWN"
-                transact_time = time.time()
-            else:
+            if not is_server_overloaded:
                 raise
+            o_id = "UNKNOWN"
+            transact_time = time.time()
         return o_id, transact_time
 
     async def _all_trade_updates_for_order(self, tracked_order: InFlightOrder) -> List[TradeUpdate]:
@@ -334,13 +334,12 @@ class BinancePerpetualDerivative(PerpetualDerivativePyBase):
             is_auth_required=True)
         if "code" in order_update:
             if self._is_request_exception_related_to_time_synchronizer(request_exception=order_update):
-                _order_update = OrderUpdate(
+                return OrderUpdate(
                     trading_pair=tracked_order.trading_pair,
                     update_timestamp=self.current_timestamp,
                     new_state=tracked_order.current_state,
                     client_order_id=tracked_order.client_order_id,
                 )
-                return _order_update
         _order_update: OrderUpdate = OrderUpdate(
             trading_pair=tracked_order.trading_pair,
 
@@ -547,8 +546,7 @@ class BinancePerpetualDerivative(PerpetualDerivativePyBase):
         response = await self._api_get(
             path_url=CONSTANTS.TICKER_PRICE_CHANGE_URL,
             params=params)
-        price = float(response["lastPrice"])
-        return price
+        return float(response["lastPrice"])
 
     def _resolve_trading_pair_symbols_duplicate(self, mapping: bidict, new_exchange_symbol: str, base: str, quote: str):
         """Resolves name conflicts provoked by futures contracts.
@@ -750,7 +748,7 @@ class BinancePerpetualDerivative(PerpetualDerivativePyBase):
                 limit_id=CONSTANTS.POST_POSITION_MODE_LIMIT_ID,
                 return_err=True
             )
-            if not (response["msg"] == "success" and response["code"] == 200):
+            if response["msg"] != "success" or response["code"] != 200:
                 success = False
                 return success, str(response)
             self._position_mode = mode

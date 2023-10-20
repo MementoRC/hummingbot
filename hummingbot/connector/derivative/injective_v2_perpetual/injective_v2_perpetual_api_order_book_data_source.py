@@ -50,8 +50,9 @@ class InjectiveV2PerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource
 
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBookMessage:
         symbol = await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
-        snapshot = await self._data_source.perpetual_order_book_snapshot(market_id=symbol, trading_pair=trading_pair)
-        return snapshot
+        return await self._data_source.perpetual_order_book_snapshot(
+            market_id=symbol, trading_pair=trading_pair
+        )
 
     async def _parse_order_book_diff_message(self, raw_message: OrderBookMessage, message_queue: asyncio.Queue):
         # In Injective 'raw_message' is not a raw message, but the OrderBookMessage with type Trade created

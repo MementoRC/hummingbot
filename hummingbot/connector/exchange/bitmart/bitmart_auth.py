@@ -48,14 +48,13 @@ class BitmartAuth(AuthBase):
 
     def _generate_signature(self, timestamp: str, body: Optional[str] = None) -> str:
         body = body or ""
-        unsigned_signature = f"{str(timestamp)}#{self.memo}#{body}"
+        unsigned_signature = f"{timestamp}#{self.memo}#{body}"
 
-        signature = hmac.new(
+        return hmac.new(
             self.secret_key.encode("utf-8"),
             unsigned_signature.encode("utf-8"),
-            hashlib.sha256).hexdigest()
-
-        return signature
+            hashlib.sha256,
+        ).hexdigest()
 
     def authentication_headers(self, request: RESTRequest) -> Dict[str, Any]:
         timestamp = str(int(self.time_provider.time() * 1e3))
@@ -64,14 +63,12 @@ class BitmartAuth(AuthBase):
 
         sign = self._generate_signature(timestamp=timestamp, body=params)
 
-        header = {
+        return {
             "X-BM-KEY": self.api_key,
             "X-BM-SIGN": sign,
             "X-BM-TIMESTAMP": timestamp,
             "X-BM-BROKER-ID": CONSTANTS.BROKER_ID,
         }
-
-        return header
 
     def websocket_login_parameters(self) -> List[str]:
         timestamp = str(int(self.time_provider.time() * 1e3))

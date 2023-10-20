@@ -250,7 +250,7 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
                 incomplete_orders[order.client_order_id] = order
                 limit_orders.append(order.to_limit_order())
 
-        if len(limit_orders) > 0:
+        if limit_orders:
             try:
                 async with timeout(timeout_seconds):
                     cancellation_results = await self._execute_batch_cancel(orders_to_cancel=limit_orders)
@@ -264,7 +264,9 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
                     exc_info=True,
                     app_warning_msg="Failed to cancel order. Check API key and network connection."
                 )
-        failed_cancellations = [CancellationResult(oid, False) for oid in incomplete_orders.keys()]
+        failed_cancellations = [
+            CancellationResult(oid, False) for oid in incomplete_orders
+        ]
         return successful_cancellations + failed_cancellations
 
     async def cancel_all_subaccount_orders(self):
@@ -586,7 +588,7 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
             else:
                 results.append(CancellationResult(order_id=order.client_order_id, success=False))
 
-        if len(tracked_orders_to_cancel) > 0:
+        if tracked_orders_to_cancel:
             results.extend(await self._execute_batch_order_cancel(orders_to_cancel=tracked_orders_to_cancel))
 
         return results
@@ -666,17 +668,8 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
     ) -> TradeFeeBase:
         is_maker = is_maker or (order_type is OrderType.LIMIT_MAKER)
         trading_pair = combine_to_hb_trading_pair(base=base_currency, quote=quote_currency)
-        if trading_pair in self._trading_fees:
-            fee_schema: TradeFeeSchema = self._trading_fees[trading_pair]
-            fee_rate = fee_schema.maker_percent_fee_decimal if is_maker else fee_schema.taker_percent_fee_decimal
-            fee = TradeFeeBase.new_perpetual_fee(
-                fee_schema=fee_schema,
-                position_action=position_action,
-                percent=fee_rate,
-                percent_token=fee_schema.percent_fee_token,
-            )
-        else:
-            fee = build_perpetual_trade_fee(
+        if trading_pair not in self._trading_fees:
+            return build_perpetual_trade_fee(
                 self.name,
                 is_maker,
                 position_action=position_action,
@@ -687,7 +680,14 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
                 amount=amount,
                 price=price,
             )
-        return fee
+        fee_schema: TradeFeeSchema = self._trading_fees[trading_pair]
+        fee_rate = fee_schema.maker_percent_fee_decimal if is_maker else fee_schema.taker_percent_fee_decimal
+        return TradeFeeBase.new_perpetual_fee(
+            fee_schema=fee_schema,
+            position_action=position_action,
+            percent=fee_rate,
+            percent_token=fee_schema.percent_fee_token,
+        )
 
     async def _update_trading_fees(self):
         self._trading_fees = await self._data_source.get_derivative_trading_fees()
@@ -783,9 +783,10 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
         await self._data_source.update_markets()
         await self._initialize_trading_pair_symbol_map()
         trading_rules_list = await self._data_source.derivative_trading_rules()
-        trading_rules = {}
-        for trading_rule in trading_rules_list:
-            trading_rules[trading_rule.trading_pair] = trading_rule
+        trading_rules = {
+            trading_rule.trading_pair: trading_rule
+            for trading_rule in trading_rules_list
+        }
         self._trading_rules.clear()
         self._trading_rules.update(trading_rules)
 
@@ -901,7 +902,7 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
                     except Exception as ex:
                         await error_handler(tracked_order, ex)
 
-            if len(orders_by_hash) > 0:
+            if orders_by_hash:
                 # await self._data_source.check_order_hashes_synchronization(orders=orders_by_hash.values())
                 for order in orders_by_hash.values():
                     not_found_error = RuntimeError(
@@ -919,8 +920,7 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
         return WebAssistantsFactory(throttler=self._throttler)
 
     def _create_order_tracker(self) -> ClientOrderTracker:
-        tracker = GatewayOrderTracker(connector=self)
-        return tracker
+        return GatewayOrderTracker(connector=self)
 
     def _create_order_book_data_source(self) -> PerpetualAPIOrderBookDataSource:
         return InjectiveV2PerpetualAPIOrderBookDataSource(
@@ -951,13 +951,12 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
         raise NotImplementedError()  # pragma: no cover
 
     async def _initialize_trading_pair_symbol_map(self):
-        exchange_info = None
         try:
             mapping = await self._data_source.derivative_market_and_trading_pair_map()
             self._set_trading_pair_symbol_map(mapping)
         except Exception:
             self.logger().exception("There was an error requesting exchange info.")
-        return exchange_info
+        return None
 
     def _configure_event_forwarders(self):
         event_forwarder = EventForwarder(to_function=self._process_user_trade_update)
@@ -1061,7 +1060,7 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
             except ValueError:
                 self.logger().debug(f"Transaction not included in a block yet ({transaction_hash})")
 
-        if len(orders_with_inconsistent_hash) > 0:
+        if orders_with_inconsistent_hash:
             async with self._data_source.order_creation_lock:
                 active_orders = [
                     order for order in self._order_tracker.active_orders.values()
@@ -1070,13 +1069,13 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
                 await self._data_source.reset_order_hash_generator(active_orders=active_orders)
 
     async def _check_created_orders_status_for_transaction(self, transaction_hash: str):
-        transaction_orders = []
         order: GatewayPerpetualInFlightOrder
-        for order in self.in_flight_orders.values():
-            if order.creation_transaction_hash == transaction_hash and order.is_pending_create:
-                transaction_orders.append(order)
-
-        if len(transaction_orders) > 0:
+        if transaction_orders := [
+            order
+            for order in self.in_flight_orders.values()
+            if order.creation_transaction_hash == transaction_hash
+            and order.is_pending_create
+        ]:
             order_updates = await self._data_source.order_updates_for_transaction(
                 transaction_hash=transaction_hash, perpetual_orders=transaction_orders
             )
@@ -1125,9 +1124,8 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
 
     def _get_poll_interval(self, timestamp: float) -> float:
         last_recv_diff = timestamp - self._last_received_message_timestamp
-        poll_interval = (
+        return (
             self.SHORT_POLL_INTERVAL
             if last_recv_diff > self.TICK_INTERVAL_LIMIT
             else self.LONG_POLL_INTERVAL
         )
-        return poll_interval

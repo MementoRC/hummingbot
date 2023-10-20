@@ -125,9 +125,9 @@ class BitmartExchange(ExchangePyBase):
 
     def _is_request_exception_related_to_time_synchronizer(self, request_exception: Exception):
         error_description = str(request_exception)
-        is_time_synchronizer_related = ("Header X-BM-TIMESTAMP" in error_description
-                                        and ("30007" in error_description or "30008" in error_description))
-        return is_time_synchronizer_related
+        return "Header X-BM-TIMESTAMP" in error_description and (
+            "30007" in error_description or "30008" in error_description
+        )
 
     def _is_order_not_found_during_status_update_error(self, status_update_exception: Exception) -> bool:
         # TODO: implement this method correctly for the connector
@@ -321,8 +321,9 @@ class BitmartExchange(ExchangePyBase):
     async def _request_order_status(self, tracked_order: InFlightOrder) -> OrderUpdate:
         updated_order_data = await self._request_order_update(order=tracked_order)
 
-        order_update = self._create_order_update(order=tracked_order, order_update=updated_order_data)
-        return order_update
+        return self._create_order_update(
+            order=tracked_order, order_update=updated_order_data
+        )
 
     def _create_order_fill_updates(self, order: InFlightOrder, fill_update: Dict[str, Any]) -> List[TradeUpdate]:
         updates = []
@@ -353,14 +354,13 @@ class BitmartExchange(ExchangePyBase):
     def _create_order_update(self, order: InFlightOrder, order_update: Dict[str, Any]) -> OrderUpdate:
         order_data = order_update["data"]
         new_state = CONSTANTS.ORDER_STATE[order_data["status"]]
-        update = OrderUpdate(
+        return OrderUpdate(
             client_order_id=order.client_order_id,
             exchange_order_id=str(order_data["order_id"]),
             trading_pair=order.trading_pair,
             update_timestamp=self.current_timestamp,
             new_state=new_state,
         )
-        return update
 
     async def _user_stream_event_listener(self):
         async for event_message in self._iter_user_event_queue():
