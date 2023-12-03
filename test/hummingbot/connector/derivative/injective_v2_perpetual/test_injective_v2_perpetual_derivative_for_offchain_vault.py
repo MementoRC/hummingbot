@@ -2059,7 +2059,7 @@ class InjectiveV2PerpetualDerivativeForOffChainVaultTests(AbstractPerpetualDeriv
         )
         self.exchange._data_source.query_executor._funding_rates_responses = mock_queue
 
-        self.exchange._funding_fee_poll_notifier.set()
+        # self.exchange._funding_fee_poll_notifier.set()
         self.async_run_with_timeout(request_sent_event.wait())
 
         request_sent_event.clear()
@@ -2097,7 +2097,7 @@ class InjectiveV2PerpetualDerivativeForOffChainVaultTests(AbstractPerpetualDeriv
         )
         self.exchange._data_source.query_executor._funding_rates_responses = mock_queue
 
-        self.exchange._funding_fee_poll_notifier.set()
+        # self.exchange._funding_fee_poll_notifier.set()
         self.async_run_with_timeout(request_sent_event.wait())
 
         self.assertEqual(1, len(self.funding_payment_logger.event_log))
