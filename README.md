@@ -70,6 +70,7 @@ Exchanges may be centralized (**CEX**), or decentralized (**DEX**), in which cas
 | ![](https://img.shields.io/static/v1?label=Hummingbot&message=BRONZE&color=green) | [Bybit](https://docs.hummingbot.org/exchanges/bybit/) | SPOT CEX |
 | ![](https://img.shields.io/static/v1?label=Hummingbot&message=BRONZE&color=green) | [Bybit (perp)](https://docs.hummingbot.org/exchanges/bitmex-perpetual/) | PERP CEX |
 | ![](https://img.shields.io/static/v1?label=Hummingbot&message=BRONZE&color=green) | [Coinbase](https://docs.hummingbot.org/exchanges/coinbase/) | SPOT CEX |
+| ![](https://img.shields.io/static/v1?label=Hummingbot&message=BRONZE&color=green) | [Coinbase Advanced Trade](https://docs.hummingbot.org/exchanges/coinbase/) | SPOT CEX |
 | ![](https://img.shields.io/static/v1?label=Hummingbot&message=BRONZE&color=green) | [HitBTC](https://docs.hummingbot.org/exchanges/hitbtc/) | SPOT CEX |
 | ![](https://img.shields.io/static/v1?label=Hummingbot&message=BRONZE&color=green) | [Kraken](https://docs.hummingbot.org/exchanges/kraken/) | SPOT CEX |
 | ![](https://img.shields.io/static/v1?label=Hummingbot&message=BRONZE&color=green) | [MEXC](https://docs.hummingbot.org/exchanges/mexc/) | SPOT CEX |
