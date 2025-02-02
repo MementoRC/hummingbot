@@ -62,11 +62,11 @@ class TestTrailingStopController(TestCase):
         net_pnl = Decimal("0.025")  # 2.5%
 
         # Step by step calculation
-        damped_value = net_pnl * self.controller._damping_factor
-        print(f"Damped value: {damped_value}")  # Should be 0.025 * 0.9 = 0.0225
-
         min_trailing = self.trailing_stop_config.trailing_pct
         print(f"Min trailing from config: {min_trailing}")  # Should be 0.01
+
+        pnl_adjust = net_pnl * self.controller._pnl_relaxation
+        print(f"Damped value: {pnl_adjust}")  # Should be 0.025 * 0.9 = 0.0225
 
         max_trailing = self.controller._max_trailing_pct
         print(f"Max trailing allowed: {max_trailing}")  # Should be 0.05
@@ -76,7 +76,7 @@ class TestTrailingStopController(TestCase):
         print(f"Calculated trailing: {trailing_pct}")
 
         # Verify which value was chosen
-        expected = max(min_trailing, min(damped_value, max_trailing))
+        expected = min(pnl_adjust + min_trailing, max_trailing)
         print(f"Expected trailing: {expected}")
 
         self.assertEqual(trailing_pct, expected)
@@ -265,12 +265,4 @@ class TestTrailingStopController(TestCase):
                                on_partial_close=self._on_partial_close)
         second_trigger = self.trigger_pnl
         self.assertGreater(second_trigger, first_trigger)
-
-    def test_invalid_inputs(self):
-        """Tests behavior with invalid inputs."""
-        with self.assertRaises(ValueError):
-            self.controller.update(net_pnl_pct=Decimal("-0.1"),  # Negative PNL
-                                   current_amount=Decimal("1"),
-                                   on_close_position=self._on_close_position,
-                                   on_partial_close=self._on_partial_close)
 

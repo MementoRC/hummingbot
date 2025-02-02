@@ -19,6 +19,8 @@ from hummingbot.strategy_v2.executors.grid_executor.data_types import GridExecut
 from hummingbot.strategy_v2.executors.grid_executor.grid_executor import GridExecutor
 from hummingbot.strategy_v2.executors.position_executor.data_types import PositionExecutorConfig
 from hummingbot.strategy_v2.executors.position_executor.position_executor import PositionExecutor
+from hummingbot.strategy_v2.executors.progressive_executor.data_types import ProgressiveExecutorConfig
+from hummingbot.strategy_v2.executors.progressive_executor.progressive_executor import ProgressiveExecutor
 from hummingbot.strategy_v2.executors.twap_executor.data_types import TWAPExecutorConfig
 from hummingbot.strategy_v2.executors.twap_executor.twap_executor import TWAPExecutor
 from hummingbot.strategy_v2.executors.xemm_executor.data_types import XEMMExecutorConfig
@@ -232,6 +234,8 @@ class ExecutorOrchestrator:
             executor = PositionExecutor(self.strategy, executor_config, self.executors_update_interval)
         elif isinstance(executor_config, GridExecutorConfig):
             executor = GridExecutor(self.strategy, executor_config, self.executors_update_interval)
+        elif isinstance(executor_config, ProgressiveExecutorConfig):
+            executor = ProgressiveExecutor(self.strategy, executor_config, self.executors_update_interval)
         elif isinstance(executor_config, DCAExecutorConfig):
             executor = DCAExecutor(self.strategy, executor_config, self.executors_update_interval)
         elif isinstance(executor_config, ArbitrageExecutorConfig):

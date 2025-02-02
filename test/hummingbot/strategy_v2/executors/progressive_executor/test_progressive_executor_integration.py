@@ -82,6 +82,7 @@ class TestProgressiveExecutorIntegration(ExecutorIntegrationTestBase):
         await self.executor.control_task()
         self.advance_clock(5)
 
+        print(self.executor.close_type)
         self.assertEqual(CloseType.STOP_LOSS, self.executor.close_type)
         self.assertEqual(RunnableStatus.SHUTTING_DOWN, self.executor.status)
 

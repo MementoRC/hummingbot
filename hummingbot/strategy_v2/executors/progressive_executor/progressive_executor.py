@@ -313,14 +313,6 @@ class ProgressiveExecutor(
         else:
             return order_price > close_price * (1 + activation_bounds[1])
 
-    def early_stop(self):
-        """
-        This method allows strategy to stop the executor early.
-
-        :return: None
-        """
-        self.place_close_order_and_cancel_open_orders(close_type=CloseType.EARLY_STOP)
-
     def update_live(self, update_data: ProgressiveExecutorUpdates):
         """
         This method allows strategy to stop the executor early.

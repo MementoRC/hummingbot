@@ -25,7 +25,7 @@ class TrailingStopManager:
         self._config = trailing_stop_config
         self._get_trigger_pnl = get_trigger_pnl
         self._set_trigger_pnl = set_trigger_pnl
-        self._damping_factor = damping_factor
+        self._pnl_relaxation = damping_factor
         self._max_trailing_pct = max_trailing_pct
 
     def update(
@@ -48,7 +48,7 @@ class TrailingStopManager:
         trailing_pct = self._calculate_trailing_percentage(net_pnl_pct)
         trigger_pnl = self._get_trigger_pnl()
 
-        if not trigger_pnl:
+        if trigger_pnl is None:
             if net_pnl_pct >= self._config.activation_pnl_pct:
                 self._set_trigger_pnl(net_pnl_pct - trailing_pct)
             return
@@ -71,8 +71,7 @@ class TrailingStopManager:
         :return: The trailing percentage.
         """
         base_trailing = self._config.trailing_pct
-        excess_pnl = max(net_pnl_pct - base_trailing, Decimal("0"))
-        extra_trailing = excess_pnl * self._damping_factor
+        extra_trailing = net_pnl_pct * self._pnl_relaxation if net_pnl_pct > base_trailing else Decimal("0")
 
         return min(
             base_trailing + extra_trailing,

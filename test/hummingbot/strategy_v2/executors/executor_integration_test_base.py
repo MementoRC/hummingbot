@@ -1,6 +1,6 @@
 import time
 from decimal import Decimal
-from unittest.mock import patch, PropertyMock
+from unittest.mock import patch, PropertyMock, MagicMock
 
 import pandas as pd
 
@@ -24,6 +24,7 @@ from hummingbot.strategy.strategy_v2_base import StrategyV2ConfigBase, StrategyV
 from hummingbot.strategy_v2.executors.data_types import ExecutorConfigBase
 from hummingbot.strategy_v2.executors.progressive_executor.data_types import ProgressiveExecutorConfig, \
     YieldTripleBarrierConfig, LadderedTrailingStop
+from hummingbot.strategy_v2.models.executor_actions import ExecutorAction, CreateExecutorAction
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from test.logger_mixin_for_test import LoggerMixinForTest
 
@@ -72,6 +73,12 @@ class MockStrategyV2(StrategyV2Base):
     def init_markets(cls, config: MockStrategyV2Config):
         """Initialize markets from config."""
         cls.markets = config.markets
+    def create_actions_proposal(self) -> list[CreateExecutorAction]:
+        return MagicMock(return_value=[MagicMock(spec=CreateExecutorAction)])
+    def stop_actions_proposal(self) -> list[ExecutorAction]:
+        return MagicMock(return_value=[MagicMock(spec=ExecutorAction)])
+    def update_actions_proposal(self) -> list[ExecutorAction]:
+        return MagicMock(return_value=[MagicMock(spec=ExecutorAction)])
 
 
 class ExecutorIntegrationTestBase(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
