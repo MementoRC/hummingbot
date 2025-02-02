@@ -6,6 +6,8 @@ from hummingbot.strategy_v2.executors.arbitrage_executor.data_types import Arbit
 from hummingbot.strategy_v2.executors.dca_executor.data_types import DCAExecutorConfig
 from hummingbot.strategy_v2.executors.grid_executor.data_types import GridExecutorConfig
 from hummingbot.strategy_v2.executors.position_executor.data_types import PositionExecutorConfig
+from hummingbot.strategy_v2.executors.progressive_executor.data_types import ProgressiveExecutorConfig, \
+    ProgressiveExecutorUpdates
 from hummingbot.strategy_v2.executors.twap_executor.data_types import TWAPExecutorConfig
 from hummingbot.strategy_v2.executors.xemm_executor.data_types import XEMMExecutorConfig
 
@@ -21,7 +23,7 @@ class CreateExecutorAction(ExecutorAction):
     """
     Action to create an executor.
     """
-    executor_config: Union[PositionExecutorConfig, DCAExecutorConfig, XEMMExecutorConfig, ArbitrageExecutorConfig, TWAPExecutorConfig, GridExecutorConfig]
+    executor_config: Union[PositionExecutorConfig, DCAExecutorConfig, XEMMExecutorConfig, ArbitrageExecutorConfig, TWAPExecutorConfig, ProgressiveExecutorConfig, GridExecutorConfig]
 
 
 class StopExecutorAction(ExecutorAction):
@@ -30,6 +32,16 @@ class StopExecutorAction(ExecutorAction):
     """
     executor_id: str
     keep_position: Optional[bool] = False
+
+
+class UpdateExecutorAction(ExecutorAction):
+    """
+    Action to update an executor.
+    """
+    executor_id: str
+    update_data: Union[
+        ProgressiveExecutorUpdates
+    ]
 
 
 class StoreExecutorAction(ExecutorAction):

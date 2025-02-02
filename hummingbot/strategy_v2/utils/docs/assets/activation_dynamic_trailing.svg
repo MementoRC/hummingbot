@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500">
+  <!-- Background with grid -->
+  <rect width="800" height="500" fill="#ffffff"/>
+  <g stroke="#f0f0f0" stroke-width="1">
+    <path d="M100,50 L100,450 M150,50 L150,450 M200,50 L200,450 M250,50 L250,450 M300,50 L300,450 M350,50 L350,450 M400,50 L400,450 M450,50 L450,450 M500,50 L500,450 M550,50 L550,450 M600,50 L600,450 M650,50 L650,450 M700,50 L700,450"/>
+    <path d="M100,50 L700,50 M100,100 L700,100 M100,150 L700,150 M100,200 L700,200 M100,250 L700,250 M100,300 L700,300 M100,350 L700,350 M100,400 L700,400 M100,450 L700,450"/>
+  </g>
+
+  <!-- Original price curve -->
+  <path d="M100,450 C150,450 200,440 250,425 C300,400 350,300 400,200 C450,100 500,100 550,100 L700,150"
+        stroke="#2196f3" stroke-width="3" fill="none"/>
+  <!-- Activation measurement lines -->
+  <g stroke="#794bc4" stroke-width="1.5">
+    <line x1="100" y1="425" x2="250" y2="425"/>
+    <text x="080" y="425" font-family="Arial" font-size="12">1%</text>
+
+    <line x1="250" y1="425" x2="250" y2="465"/>
+    <text x="215" y="465" font-family="Arial" font-size="12">1.5%</text>
+  </g>
+
+  <!-- Offset trailing stop curve -->
+  <path d="M250,465 C300,440 350,400 400,325 C450,225 500,225 550,225 L700,225"
+        stroke="#4caf50" stroke-width="2.5" fill="none" stroke-dasharray="5,5"/>
+
+  <!-- Control points visualization -->
+  <g stroke="#ff9800" stroke-width="1" fill="white">
+    <!-- Price curve control points -->
+    <circle cx="250" cy="425" r="3"/>
+    <circle cx="400" cy="200" r="3"/>
+    <circle cx="550" cy="100" r="3"/>
+  </g>
+
+  <!-- Offset control points -->
+  <g stroke="#66bb6a" stroke-width="1" fill="white">
+    <circle cx="250" cy="465" r="3"/>
+    <circle cx="400" cy="325" r="3"/>
+    <circle cx="550" cy="225" r="3"/>
+  </g>
+
+  <!-- Vertical measurement lines -->
+  <g stroke="#794bc4" stroke-width="1.5" stroke-dasharray="3,3">
+    <line x1="400" y1="200" x2="400" y2="325"/>
+    <text x="415" y="225" font-family="Arial" font-size="12">5%</text>
+
+    <line x1="550" y1="100" x2="550" y2="225"/>
+    <text x="560" y="150" font-family="Arial" font-size="12">5%</text>
+  </g>
+
+  <!-- Region markers -->
+  <g font-family="Arial" font-size="12" fill="#666">
+    <text x="150" y="420">Activation</text>
+    <text x="300" y="350">Dynamic Trail</text>
+    <text x="450" y="180">Max Trail 5%</text>
+    <text x="575" y="180">Flat Trail</text>
+  </g>
+
+  <!-- Axes -->
+  <g stroke="#000" stroke-width="2">
+    <line x1="100" y1="450" x2="700" y2="450"/>
+    <line x1="100" y1="50" x2="100" y2="450"/>
+  </g>
+
+  <!-- X-axis labels -->
+  <g font-family="Arial" font-size="12" text-anchor="middle">
+    <text x="100" y="470">t₀</text>
+    <text x="250" y="470">t₁</text>
+    <text x="400" y="470">t₂</text>
+    <text x="550" y="470">t₃</text>
+    <text x="700" y="470">t₄</text>
+    <!-- Axis title -->
+    <text x="400" y="490" font-weight="bold">Time</text>
+  </g>
+
+  <!-- Y-axis labels -->
+  <g font-family="Arial" font-size="12" text-anchor="end">
+    <text x="90" y="450">0%</text>
+    <text x="90" y="400">2%</text>
+    <text x="90" y="350">4%</text>
+    <text x="90" y="300">6%</text>
+    <text x="90" y="250">8%</text>
+    <text x="90" y="200">10%</text>
+    <text x="90" y="150">12%</text>
+    <text x="90" y="100">14%</text>
+    <text x="90" y="50">16%</text>
+    <!-- Axis title -->
+    <text x="50" y="250" font-weight="bold" transform="rotate(-90, 50, 250)">PnL %</text>
+  </g>
+
+  <!-- Legend -->
+  <g transform="translate(150,80)">
+    <line x1="0" y1="0" x2="30" y2="0" stroke="#2196f3" stroke-width="3"/>
+    <text x="40" y="5" font-family="Arial" font-size="12">Price/PNL</text>
+
+    <line x1="120" y1="0" x2="150" y2="0" stroke="#4caf50" stroke-width="2.5" stroke-dasharray="5,5"/>
+    <text x="160" y="5" font-family="Arial" font-size="12">Trailing Stop</text>
+
+    <circle cx="240" cy="0" r="3" stroke="#ff9800" stroke-width="1" fill="white"/>
+    <text x="250" y="5" font-family="Arial" font-size="12">Price Controls</text>
+
+    <circle cx="350" cy="0" r="3" stroke="#66bb6a" stroke-width="1" fill="white"/>
+    <text x="360" y="5" font-family="Arial" font-size="12">Trail Controls</text>
+  </g>
+
+  <!-- Title -->
+  <text x="400" y="30" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">
+    Activation and Dynamic Trailing
+  </text>
+</svg>

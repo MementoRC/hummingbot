@@ -597,6 +597,19 @@ class PositionExecutor(ExecutorBase):
         )
         self.logger().debug("Removing open order")
 
+    def cancel_close_order(self):
+        """
+        This method is responsible for canceling the close order.
+
+        :return: None
+        """
+        self._strategy.cancel(
+            connector_name=self.config.connector_name,
+            trading_pair=self.config.trading_pair,
+            order_id=self._close_order.order_id
+        )
+        self.logger().debug("Removing close order")
+
     def early_stop(self, keep_position: bool = False):
         """
         This method allows strategy to stop the executor early.

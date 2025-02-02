@@ -188,6 +188,12 @@ class ExecutorBase(RunnableBase):
         """
         raise NotImplementedError
 
+    def update_live(self, update_data):
+        """
+        This method allows strategy to update the executor.
+        """
+        raise NotImplementedError
+
     async def validate_sufficient_balance(self):
         """
         Validates that the executor has sufficient balance to place orders.
@@ -264,6 +270,18 @@ class ExecutorBase(RunnableBase):
         Adjusts the order candidates based on the budget checker of the specified exchange.
         """
         return self.connectors[exchange].budget_checker.adjust_candidates(order_candidates)
+
+    def lock_order_candidate(self, exchange: str, order_candidate: OrderCandidate) -> OrderCandidate:
+        """
+        Adjusts and locks the order candidate based on the budget checker of the specified exchange.
+        """
+        return self.connectors[exchange].budget_checker.adjust_candidate_and_lock_available_collateral(order_candidate)
+
+    def unlock_order_candidate(self, exchange: str, order_candidate: OrderCandidate) -> OrderCandidate:
+        """
+        Adjusts and locks the order candidate based on the budget checker of the specified exchange.
+        """
+        return self.connectors[exchange].budget_checker.release_locked_collateral(order_candidate)
 
     def place_order(self,
                     connector_name: str,
