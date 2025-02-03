@@ -57,6 +57,12 @@ class TestProgressiveExecutor(IsolatedAsyncioWrapperTestCase):
 
         self.strategy.connectors = {"binance": self.connector}
 
+    async def asyncSetUp(self):
+        await super().asyncSetUp()
+
+    async def asyncTearDown(self):
+        await super().asyncTearDown()
+
     @property
     def create_mock_strategy(self):
         market = MagicMock()
@@ -64,9 +70,9 @@ class TestProgressiveExecutor(IsolatedAsyncioWrapperTestCase):
         market_info.market = market
 
         strategy = MagicMock(spec=ScriptStrategyBase)
-        type(strategy).market_info = PropertyMock(return_value=market_info)
-        type(strategy).trading_pair = PropertyMock(return_value="ETH-USDT")
-        type(strategy).current_timestamp = PropertyMock(return_value=1234567890)
+        strategy.market_info = market_info
+        strategy.trading_pair = "ETH-USDT"
+        strategy.current_timestamp = 1234567890
         strategy.buy.side_effect = ["OID-BUY-1", "OID-BUY-2", "OID-BUY-3"]
         strategy.sell.side_effect = ["OID-SELL-1", "OID-SELL-2", "OID-SELL-3"]
         strategy.cancel.return_value = None
@@ -542,7 +548,6 @@ class TestProgressiveExecutor(IsolatedAsyncioWrapperTestCase):
                 fill_timestamp=10,
             )
         )
-        type(progressive_executor).close_price = PropertyMock(return_value=Decimal(101))
         status = progressive_executor.to_format_status()
         pnl: Decimal = (price_mock.return_value - progressive_config.entry_price) * 100 / progressive_config.entry_price
         self.assertTrue(any("ETH-USDT" in s for s in status))

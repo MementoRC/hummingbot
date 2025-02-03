@@ -98,7 +98,7 @@ class PNLCalculatorMixin:
 
         :return: The net pnl percentage.
         """
-        return self.net_pnl_quote / self.open_filled_amount_quote if self.open_filled_amount_quote != Decimal(
+        return self.get_net_pnl_quote() / self.open_filled_amount_quote if self.open_filled_amount_quote != Decimal(
             "0") else Decimal("0")
 
     def get_target_pnl_yield(self: ProgressiveOrderPNLProtocol) -> Decimal:

@@ -18,11 +18,6 @@ class ControlMixin:
 
         :return: None
         """
-        # Inspect call stack with inspect
-
-        # import inspect
-        # self.logger().error(f"{inspect.stack()[1].function}")
-
         self.logger().debug(f"Control task - Status: {self.status}, PnL: {self.net_pnl_pct}")
         if self.status == RunnableStatus.RUNNING:
             self.logger().debug(f"Current market price: {self.current_market_price}")
@@ -42,10 +37,11 @@ class ControlMixin:
 
         :return: None
         """
-        self.logger().debug(f"Checking barriers - TrailingStop: {self.trailing_stop_trigger_pnl}")
+        self.logger().debug("Checking barriers")
         self.control_stop_loss()
         self.control_trailing_stop()
         self.control_time_limit()
+        self.logger().debug("Checking barriers: Done")
 
     async def control_shutdown_process(self: ProgressiveOrderControlProtocol):
         """
@@ -111,6 +107,8 @@ class ControlMixin:
 
         :return: None
         """
+        self.logger().debug(f"Control TimeLimit - Is expired: {self.is_expired}")
+        self.logger().debug(f"Control TimeLimit - Is extended on yield: {self.is_extended_on_yield}")
         if self.is_expired and not self.is_extended_on_yield:
             self.place_close_order_and_cancel_open_orders(close_type=CloseType.TIME_LIMIT)
 
@@ -119,50 +117,13 @@ class ControlMixin:
             return
 
         if self.open_filled_amount > 0:
-            TrailingStopManager(
-                trailing_stop_config=self.config.triple_barrier_config.trailing_stop,
-                get_trigger_pnl=lambda: self.trailing_stop_trigger_pnl,
-                set_trigger_pnl=lambda x: setattr(self, 'trailing_stop_trigger_pnl', x)
-            ).update(
+            self.logger().debug(f"Control TrailingStop trigger PnL: {self.trailing_stop_manager._pnl_trigger}")
+            self.trailing_stop_manager.update(
                 net_pnl_pct=self.get_net_pnl_pct(),
                 current_amount=self.open_filled_amount,
                 on_close_position=functools.partial(self.place_close_order_and_cancel_open_orders, close_type=CloseType.TRAILING_STOP),
                 on_partial_close=functools.partial(self.place_partial_close_order, close_type=CloseType.TRAILING_STOP)
             )
-
-    def new_control_trailing_stop(self: ProgressiveOrderExecutionPNLControlProtocol):
-        if not self.config.triple_barrier_config.trailing_stop:
-            return
-
-        net_pnl_pct = self.get_net_pnl_pct()
-        damping_factor = Decimal("0.9")
-        trailing_stop_percentage = max(
-            min(Decimal(0.05), net_pnl_pct * damping_factor),
-            self.config.triple_barrier_config.trailing_stop.trailing_pct
-        )
-
-        if self.trailing_stop_trigger_pnl:
-            if net_pnl_pct < self.trailing_stop_trigger_pnl:
-                closest_take_profit = max(
-                    filter(lambda x: x[0] <= net_pnl_pct,
-                           self.config.triple_barrier_config.trailing_stop.take_profit_table),
-                    key=lambda x: x[0],
-                    default=(Decimal("0"), Decimal("1"))
-                )
-                if closest_take_profit[1] == Decimal("1"):
-                    self.place_close_order_and_cancel_open_orders(close_type=CloseType.TRAILING_STOP)
-                else:
-                    self.place_partial_close_order(
-                        close_type=CloseType.TRAILING_STOP,
-                        amount_to_close=self.open_filled_amount * closest_take_profit[1]
-                    )
-                    self.trailing_stop_trigger_pnl = net_pnl_pct - trailing_stop_percentage
-
-            if net_pnl_pct - trailing_stop_percentage > self.trailing_stop_trigger_pnl:
-                self.trailing_stop_trigger_pnl = net_pnl_pct - trailing_stop_percentage + self.get_target_pnl_yield()
-
-        elif net_pnl_pct > self.config.triple_barrier_config.trailing_stop.activation_pnl_pct:
-            self.trailing_stop_trigger_pnl = net_pnl_pct - self.config.triple_barrier_config.trailing_stop.trailing_pct
 
     def evaluate_max_retries(self: ProgressiveOrderControlProtocol):
         """

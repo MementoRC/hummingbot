@@ -1,6 +1,8 @@
+import logging
 from decimal import Decimal
 from typing import Callable
 
+from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy_v2.executors.progressive_executor.data_types import LadderedTrailingStop
 
 
@@ -14,19 +16,29 @@ class TrailingStopManager:
     The trailing stop can be configured to take profits at certain PnL levels.
     """
 
+    _logger = None
+
+    @classmethod
+    def logger(cls) -> HummingbotLogger:
+        if cls._logger is None:
+            cls._logger = logging.getLogger(__name__)
+        return cls._logger
+
     def __init__(
             self,
             trailing_stop_config: LadderedTrailingStop,
-            get_trigger_pnl: Callable[[], Decimal | None],
-            set_trigger_pnl: Callable[[Decimal | None], None],
-            damping_factor: Decimal = Decimal("0.9"),
+            pnl_relaxation: Decimal = Decimal("0.9"),
             max_trailing_pct: Decimal = Decimal("0.05"),
     ):
-        self._config = trailing_stop_config
-        self._get_trigger_pnl = get_trigger_pnl
-        self._set_trigger_pnl = set_trigger_pnl
-        self._pnl_relaxation = damping_factor
-        self._max_trailing_pct = max_trailing_pct
+        self._config: LadderedTrailingStop = trailing_stop_config
+        self._pnl_relaxation: Decimal = pnl_relaxation
+        self._max_trailing_pct: Decimal = max_trailing_pct
+        
+        self._pnl_trigger: Decimal | None = None
+
+    @property
+    def pnl_trigger(self) -> Decimal | None:
+        return self._pnl_trigger
 
     def update(
             self,
@@ -44,28 +56,28 @@ class TrailingStopManager:
         :param on_partial_close: Callback to partially close the
         """
         assert current_amount > 0, f"Current amount must be positive: {current_amount} <= 0"
+        self.logger().debug(f"Updating trailing stop with net PnL percentage {net_pnl_pct}")
 
         trailing_pct = self._calculate_trailing_percentage(net_pnl_pct)
-        trigger_pnl = self._get_trigger_pnl()
-
-        if trigger_pnl is None:
+        if self._pnl_trigger is None:
             if net_pnl_pct >= self._config.activation_pnl_pct:
-                self._set_trigger_pnl(net_pnl_pct - trailing_pct)
+                self.logger().debug(f"Trailing stop activated at {net_pnl_pct} > {self._config.activation_pnl_pct}.")
+                self._pnl_trigger = net_pnl_pct - trailing_pct
             return
 
-        if (updated_trigger := net_pnl_pct - trailing_pct) > trigger_pnl:
-            self._set_trigger_pnl(updated_trigger)
+        if (updated_trigger := net_pnl_pct - trailing_pct) > self._pnl_trigger:
+            self._pnl_trigger = updated_trigger
             return
 
-        if net_pnl_pct <= trigger_pnl:
+        if net_pnl_pct <= self._pnl_trigger:
             self._handle_stop_trigger(net_pnl_pct, current_amount, on_close_position, on_partial_close)
-            self._set_trigger_pnl(net_pnl_pct - trailing_pct)
+            self._pnl_trigger = net_pnl_pct - trailing_pct
 
     def _calculate_trailing_percentage(self, net_pnl_pct: Decimal) -> Decimal:
         """
         Calculate the trailing percentage based on the net PnL percentage.
         At base, use config trailing_pct.
-        As PNL grows, add a fraction (damping_factor) of the excess PNL.
+        As PNL grows, add a fraction (pnl_relaxation) of the excess PNL.
 
         :param net_pnl_pct: The net PnL percentage.
         :return: The trailing percentage.
@@ -93,8 +105,10 @@ class TrailingStopManager:
         close_ratio = closest_take_profit[1]
 
         if close_ratio == Decimal("1"):
+            self.logger().debug(f"Trailing stop triggered at {net_pnl_pct}. Closing position.")
             on_close_position()
         else:
+            self.logger().debug(f"Trailing stop triggered at {net_pnl_pct}. Closing {close_ratio} of the position.")
             on_partial_close(current_amount * close_ratio)
 
     def _find_closest_take_profit(self, net_pnl_pct: Decimal) -> tuple[Decimal, Decimal]:

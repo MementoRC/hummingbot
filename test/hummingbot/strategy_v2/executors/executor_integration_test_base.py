@@ -87,7 +87,21 @@ class ExecutorIntegrationTestBase(IsolatedAsyncioWrapperTestCase, LoggerMixinFor
     def create_executor_config(self, *args, **kwargs) -> ExecutorConfigBase:
         NotImplementedError()
 
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        # Store original class state
+        cls._original_markets = getattr(MockStrategyV2, 'markets', None)
+
+    @classmethod
+    def tearDownClass(cls):
+        # Restore original class state
+        if hasattr(cls, '_original_markets'):
+            MockStrategyV2.markets = cls._original_markets
+        super().tearDownClass()
+
     def setUp(self) -> None:
+        self._patches = []
         super().setUp()
         self.clock_tick_size = 1
         self.start = pd.Timestamp("2019-01-01", tz="UTC")
@@ -116,6 +130,77 @@ class ExecutorIntegrationTestBase(IsolatedAsyncioWrapperTestCase, LoggerMixinFor
         self.clock.backtest_til(self.start_timestamp + 1)
 
         self.set_loggers([self.strategy.logger()])
+
+    async def asyncSetUp(self) -> None:
+        await super().asyncSetUp()
+
+    async def asyncTearDown(self) -> None:
+        await super().asyncTearDown()
+
+    def tearDown(self) -> None:
+        try:
+            # Remove clock iterators first to prevent any late callbacks
+            if hasattr(self, 'clock'):
+                for iterator in self.clock.child_iterators:
+                    self.clock.remove_iterator(iterator)
+
+            # Stop executor first since it depends on everything else
+            if hasattr(self, 'executor') and self.executor is not None:
+                self.executor.stop()
+                # Clear executor state explicitly
+                self.executor._trailing_stop_pnl_trigger = None
+                self.executor._open_order = None
+                self.executor._close_order = None
+                self.executor._realized_orders = []
+                self.executor._failed_orders = []
+                self.executor._canceled_orders = []
+                self.executor._total_executed_amount_backup = Decimal("0")
+                self.executor._current_retries = 0
+
+            # Remove event listeners
+            if hasattr(self, 'connector') and hasattr(self, '_event_listeners'):
+                for event_tag, listener in self._event_listeners:
+                    self.connector.remove_listener(event_tag, listener)
+                self._event_listeners.clear()
+
+            # Clear order tracker
+            if hasattr(self, 'connector'):
+                self.connector._order_tracker.active_orders.clear()
+                # Reset order book
+                self.connector.new_empty_order_book(self.trading_pair)
+                self.connector.set_balanced_order_book(
+                    trading_pair=self.trading_pair,
+                    mid_price=float(self.initial_price),  # Start fresh at initial price
+                    min_price=float(self.initial_price * Decimal("0.95")),
+                    max_price=float(self.initial_price * Decimal("1.05")),
+                    price_step_size=0.1,
+                    volume_step_size=1.0,
+                )
+            # Stop strategy and clear mocks
+            if hasattr(self, 'strategy'):
+                self.strategy.stop(self.clock)
+                if hasattr(self.strategy, 'executor_orchestrator'):
+                    self.strategy.executor_orchestrator.reset_mock()
+                if hasattr(self.strategy, 'market_data_provider'):
+                    self.strategy.market_data_provider.reset_mock()
+
+            # Always reset markets class variable
+            if hasattr(MockStrategyV2, 'markets'):
+                MockStrategyV2.markets = {}
+
+            # Stop all patches
+            if hasattr(self, '_patches'):
+                for p in self._patches:
+                    p.stop()
+                self._patches.clear()
+            if hasattr(self, '_mocks'):
+                self._mocks.clear()
+
+            for iterator in self.clock.child_iterators:
+                self.clock.remove_iterator(iterator)
+
+        finally:
+            super().tearDown()
 
     def create_exchange(self):
         connector = ExtendedMockPaperExchange(
@@ -153,22 +238,33 @@ class ExecutorIntegrationTestBase(IsolatedAsyncioWrapperTestCase, LoggerMixinFor
         return connector
 
     def create_strategy(self):
-        with (
+        # Create patches
+        patches = [
             patch("asyncio.create_task"),
             patch("hummingbot.strategy.strategy_v2_base.StrategyV2Base.listen_to_executor_actions"),
-            patch("hummingbot.strategy.strategy_v2_base.ExecutorOrchestrator") as mock_orch,
+            patch("hummingbot.strategy.strategy_v2_base.ExecutorOrchestrator"),
             patch("hummingbot.strategy.strategy_v2_base.MarketDataProvider"),
-        ):
-            mock_orch_instance = mock_orch.return_value
-            type(mock_orch_instance).ready = PropertyMock(return_value=True)
+        ]
 
-            return MockStrategyV2(
-                connectors={"mock_paper_exchange": self.connector},
-                config=MockStrategyV2Config(
-                    markets={"mock_paper_exchange": {self.trading_pair}},
-                    candles_config=[],
-                ),
-            )
+        # Start patches and store mocks
+        self._patches = []
+        self._mocks = []
+        for p in patches:
+            mock = p.start()
+            self._patches.append(p)
+            self._mocks.append(mock)
+
+        mock_orch = self._mocks[2]  # Now we can access the mock
+        type(mock_orch).ready = PropertyMock(return_value=True)
+
+        strategy = MockStrategyV2(
+            connectors={"mock_paper_exchange": self.connector},
+            config=MockStrategyV2Config(
+                markets={"mock_paper_exchange": {self.trading_pair}},
+                candles_config=[],
+            ),
+        )
+        return strategy
 
     def advance_clock(self, ticks: int = 1) -> None:
         for _ in range(ticks):
@@ -277,8 +373,3 @@ class ExecutorIntegrationTestBase(IsolatedAsyncioWrapperTestCase, LoggerMixinFor
             trade_fee=AddedToCostTradeFee(flat_fees=[]),
         )
         market_info.market.trigger_event(MarketEvent.OrderFilled, fill_event)
-
-    def tearDown(self) -> None:
-        for iterator in self.clock.child_iterators:
-            self.clock.remove_iterator(iterator)
-        super().tearDown()

@@ -17,6 +17,7 @@ from .order_execution_mixin import OrderExecutionMixin
 from .order_management_mixin import OrderManagementMixin
 from .order_processing_mixin import OrderProcessingMixin
 from .pnl_calculator_mixin import PNLCalculatorMixin
+from ...utils.trailing_stop_manager import TrailingStopManager
 
 
 class ProgressiveExecutor(
@@ -65,7 +66,9 @@ class ProgressiveExecutor(
         self._open_order_timestamp = None
 
         # Order tracking
-        self._trailing_stop_trigger_pct: Decimal | None = None
+        self._trailing_stop_manager = TrailingStopManager(
+            trailing_stop_config=self.config.triple_barrier_config.trailing_stop,
+        )
         self._open_order: TrackedOrder | None = None
         self._close_order: TrackedOrder | None = None
         self._realized_orders: List[TrackedOrder] = []
@@ -132,14 +135,6 @@ class ProgressiveExecutor(
         self._open_order_timestamp = value
 
     @property
-    def trailing_stop_trigger_pnl(self) -> Decimal | None:
-        return self._trailing_stop_trigger_pct
-
-    @trailing_stop_trigger_pnl.setter
-    def trailing_stop_trigger_pnl(self, value: Decimal):
-        self._trailing_stop_trigger_pct = value
-
-    @property
     def current_retries(self) -> int:
         return self._current_retries
 
@@ -184,6 +179,7 @@ class ProgressiveExecutor(
 
         :return: True if the position is expired, False otherwise.
         """
+        self.logger().debug(f"Is expired: {self.end_time and (self.end_time <= self.current_timestamp)}")
         return self.end_time and (self.end_time <= self.current_timestamp)
 
     @property
@@ -193,6 +189,8 @@ class ProgressiveExecutor(
 
         :return: True if the position is extended for PnL above APR, False otherwise.
         """
+        self.logger().debug(f"Is extended on yield: {self.get_net_pnl_pct()} > {self.get_target_pnl_yield()}")
+        self.logger().debug(f"Is extended on yield: {self.is_expired and (self.get_net_pnl_pct() > self.get_target_pnl_yield())}")
         return self.is_expired and (self.get_net_pnl_pct() > self.get_target_pnl_yield())
 
     @property
@@ -203,7 +201,9 @@ class ProgressiveExecutor(
         :return: The current market price.
         """
         price_type = PriceType.BestAsk if self.config.side == TradeType.BUY else PriceType.BestBid
-        return self.get_price(self.config.connector_name, self.config.trading_pair, price_type=price_type)
+        current_price = self.get_price(self.config.connector_name, self.config.trading_pair, price_type=price_type)
+        self.logger().debug(f"Current market price: {current_price}")
+        return current_price
 
     @property
     def current_timestamp(self) -> float:
@@ -242,9 +242,10 @@ class ProgressiveExecutor(
         :return: The close price.
         """
         if self.close_order and self.close_order.is_done:
+            self.logger().debug(f"Close order average executed price: {self.close_order.average_executed_price}")
             return self.close_order.average_executed_price
-        else:
-            return self.current_market_price
+        self.logger().debug(f"Close order Current market price: {self.current_market_price}")
+        return self.current_market_price
 
     @property
     def side(self) -> TradeType:
@@ -265,6 +266,13 @@ class ProgressiveExecutor(
         if not self.config.triple_barrier_config.time_limit:
             return None
         return self.config.timestamp + self.config.triple_barrier_config.time_limit
+
+    @property
+    def trailing_stop_manager(self) -> TrailingStopManager:
+        """
+        :return: The trailing stop trigger percentage.
+        """
+        return self._trailing_stop_manager
 
     def evaluate_max_retries(self):
         """
@@ -333,6 +341,12 @@ class ProgressiveExecutor(
             "max_retries": self.max_retries
         }
 
+    def get_pnl_trigger(self):
+        return self._trailing_stop_pnl_trigger
+
+    def set_pnl_trigger(self, value):
+        self._trailing_stop_pnl_trigger = value
+
     def to_format_status(self, scale=1.0) -> List[str]:
         lines = []
         current_price = self.get_price(self.config.connector_name, self.config.trading_pair)
@@ -378,14 +392,14 @@ class ProgressiveExecutor(
                     price_range = take_profit_price - stop_loss_price
                     progress = (current_price - stop_loss_price) / price_range
                     entry_price = (self.entry_price - stop_loss_price) / price_range
-                    if self.trailing_stop_trigger_pnl:
-                        trailing_stop_price = (self.entry_price * (1 + self.trade_pnl_pct - self.trailing_stop_trigger_pnl) - stop_loss_price) / price_range
+                    if self.trailing_stop_manager.pnl_trigger:
+                        trailing_stop_price = (self.entry_price * (1 + self.trade_pnl_pct - self.trailing_stop_manager.pnl_trigger) - stop_loss_price) / price_range
                 elif self.config.side == TradeType.SELL:
                     price_range = stop_loss_price - take_profit_price
                     progress = (stop_loss_price - current_price) / price_range
                     entry_price = (stop_loss_price - self.entry_price) / price_range
-                    if self.trailing_stop_trigger_pnl:
-                        trailing_stop_price = (stop_loss_price - self.entry_price * (1 + self.trailing_stop_trigger_pnl - self.trade_pnl_pct)) / price_range
+                    if self.trailing_stop_manager.pnl_trigger:
+                        trailing_stop_price = (stop_loss_price - self.entry_price * (1 + self.trailing_stop_manager.pnl_trigger - self.trade_pnl_pct)) / price_range
                 else:
                     entry_price = 0
                     price_range = 1
@@ -443,8 +457,8 @@ class ProgressiveExecutor(
                 lines.extend([f"{''.join(price_bar)}"])
                 lines.extend([f"{''.join(trailing_bar)}"])
 
-            if self.trailing_stop_trigger_pnl:
-                lines.extend([f"             Trailing stop pnl trigger: {self.trailing_stop_trigger_pnl:.2g}"])
+            if self.trailing_stop_manager.pnl_trigger:
+                lines.extend([f"             Trailing stop pnl trigger: {self.trailing_stop_manager.pnl_trigger:.2g}"])
 
             # lines.extend([f"{' ' * 10}"])
         return lines

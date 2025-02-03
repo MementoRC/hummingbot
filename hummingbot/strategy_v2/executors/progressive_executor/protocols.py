@@ -10,6 +10,7 @@ from hummingbot.strategy.script_strategy_base import ScriptStrategyBase
 from hummingbot.strategy_v2.executors.executor_protocols import ExecutorProtocol
 from hummingbot.strategy_v2.executors.progressive_executor.data_types import ProgressiveExecutorConfig
 from hummingbot.strategy_v2.models.executors import TrackedOrder, CloseType
+from hummingbot.strategy_v2.utils.trailing_stop_manager import TrailingStopManager
 
 
 class ProgressiveProtocol(Protocol):
@@ -59,7 +60,15 @@ class ProgressiveProtocol(Protocol):
         ...
 
     @property
+    def current_market_price(self) -> Decimal:
+        ...
+
+    @property
     def close_price(self) -> Decimal:
+        ...
+
+    @property
+    def trailing_stop_manager(self) -> TrailingStopManager:
         ...
 
     @property

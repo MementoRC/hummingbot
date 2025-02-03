@@ -8,7 +8,6 @@ from hummingbot.strategy_v2.utils.trailing_stop_manager import TrailingStopManag
 
 class TestTrailingStopController(TestCase):
     def setUp(self):
-        self.trigger_pnl = None
         self.on_close_called = False
         self.partial_close_amount = Decimal("0")
 
@@ -23,9 +22,7 @@ class TestTrailingStopController(TestCase):
 
         self.controller = TrailingStopManager(
             trailing_stop_config=self.trailing_stop_config,
-            get_trigger_pnl=lambda: self.trigger_pnl,
-            set_trigger_pnl=lambda x: setattr(self, 'trigger_pnl', x),
-            damping_factor=Decimal("0.9"),
+            pnl_relaxation=Decimal("0.9"),
             max_trailing_pct=Decimal("0.05"),
         )
 
@@ -88,7 +85,7 @@ class TestTrailingStopController(TestCase):
         self.controller.update(net_pnl_pct=net_pnl_pct, current_amount=Decimal("1"),
                                on_close_position=self._on_close_position,
                                on_partial_close=self._on_partial_close)
-        first_trigger = self.trigger_pnl
+        first_trigger = self.controller.pnl_trigger
         self.assertEqual(net_pnl_pct - self.controller._calculate_trailing_percentage(Decimal("0.025")),
                          first_trigger)
 
@@ -96,14 +93,14 @@ class TestTrailingStopController(TestCase):
         self.controller.update(net_pnl_pct=Decimal("0.035"), current_amount=Decimal("1"),
                                on_close_position=self._on_close_position,
                                on_partial_close=self._on_partial_close)
-        second_trigger = self.trigger_pnl
+        second_trigger = self.controller.pnl_trigger
         self.assertGreater(second_trigger, first_trigger)
 
         # Small drop - should not update trigger
         self.controller.update(net_pnl_pct=Decimal("0.033"), current_amount=Decimal("1"),
                                on_close_position=self._on_close_position,
                                on_partial_close=self._on_partial_close)
-        self.assertEqual(self.trigger_pnl, second_trigger)
+        self.assertEqual(self.controller.pnl_trigger, second_trigger)
 
     def test_initial_activation(self):
         """Tests initial activation of trailing stop."""
@@ -114,7 +111,7 @@ class TestTrailingStopController(TestCase):
             on_close_position=self._on_close_position,
             on_partial_close=self._on_partial_close,
         )
-        self.assertIsNone(self.trigger_pnl)
+        self.assertIsNone(self.controller.pnl_trigger)
         self.assertFalse(self.on_close_called)
         self.assertEqual(self.partial_close_amount, Decimal("0"))
 
@@ -127,7 +124,7 @@ class TestTrailingStopController(TestCase):
         )
         self.assertEqual(
             Decimal("0.025") - self.controller._calculate_trailing_percentage(Decimal("0.025")),
-            self.trigger_pnl)  # 2.5% - 1%
+            self.controller.pnl_trigger)  # 2.5% - 1%
         self.assertFalse(self.on_close_called)
         self.assertEqual(self.partial_close_amount, Decimal("0"))
 
@@ -140,7 +137,7 @@ class TestTrailingStopController(TestCase):
             on_close_position=self._on_close_position,
             on_partial_close=self._on_partial_close,
         )
-        initial_trigger = self.trigger_pnl
+        initial_trigger = self.controller.pnl_trigger
 
         # Price moves up
         self.controller.update(
@@ -149,7 +146,7 @@ class TestTrailingStopController(TestCase):
             on_close_position=self._on_close_position,
             on_partial_close=self._on_partial_close,
         )
-        self.assertGreater(self.trigger_pnl, initial_trigger)
+        self.assertGreater(self.controller.pnl_trigger, initial_trigger)
         self.assertFalse(self.on_close_called)
         self.assertEqual(self.partial_close_amount, Decimal("0"))
 
@@ -222,7 +219,7 @@ class TestTrailingStopController(TestCase):
             on_close_position=self._on_close_position,
             on_partial_close=self._on_partial_close,
         )
-        self.assertIsNone(self.trigger_pnl)
+        self.assertIsNone(self.controller.pnl_trigger)
         self.assertFalse(self.on_close_called)
         self.assertEqual(self.partial_close_amount, Decimal("0"))
 
@@ -231,7 +228,7 @@ class TestTrailingStopController(TestCase):
         self.controller.update(net_pnl_pct=Decimal("0.05"), current_amount=Decimal("1"),
                                on_close_position=self._on_close_position,
                                on_partial_close=self._on_partial_close)
-        trigger = self.trigger_pnl
+        trigger = self.controller.pnl_trigger
         self.controller.update(net_pnl_pct=trigger, current_amount=Decimal("1"),
                                on_close_position=self._on_close_position,
                                on_partial_close=self._on_partial_close)
@@ -255,7 +252,7 @@ class TestTrailingStopController(TestCase):
         self.controller.update(net_pnl_pct=Decimal("0.05"), current_amount=Decimal("1"),
                                on_close_position=self._on_close_position,
                                on_partial_close=self._on_partial_close)
-        first_trigger = self.trigger_pnl
+        first_trigger = self.controller.pnl_trigger
         self.controller.update(net_pnl_pct=Decimal("0.03"), current_amount=Decimal("0.5"),
                                on_close_position=self._on_close_position,
                                on_partial_close=self._on_partial_close)
@@ -263,6 +260,6 @@ class TestTrailingStopController(TestCase):
         self.controller.update(net_pnl_pct=Decimal("0.1"), current_amount=Decimal("0.5"),
                                on_close_position=self._on_close_position,
                                on_partial_close=self._on_partial_close)
-        second_trigger = self.trigger_pnl
+        second_trigger = self.controller.pnl_trigger
         self.assertGreater(second_trigger, first_trigger)
 
