@@ -1474,12 +1474,12 @@ class OkxPerpetualDerivativeTests(
 
             request_sent_event.clear()
             self.exchange._funding_fee_poll_notifier.set()
-            await request_sent_event.wait()
+            await asyncio.wait_for(request_sent_event.wait(), timeout=1)
             self.assertEqual(1, len(self.funding_payment_logger.event_log))
 
             request_sent_event.clear()
             self.exchange._funding_fee_poll_notifier.set()
-            await request_sent_event.wait()
+            await asyncio.wait_for(request_sent_event.wait(), timeout=1)
 
         self.run_async_with_timeout(run_test())
 
