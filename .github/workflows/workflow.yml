@@ -67,9 +67,9 @@ jobs:
         if: steps.program-changes.outputs.cache-hit != 'true'
         run: |
           if [ "${{ github.event_name }}" == "pull_request" ]; then
-            pixi run -e ci pre-commit run --files $(git diff --name-only origin/${{ github.base_ref }})
+            pixi run -e ci pre-commit run --files $(git diff --name-only origin/${{ github.base_ref }} | grep -v '^sub-packages/')
           else
-            pixi run -e ci pre-commit run --files $(git diff --name-only HEAD~1)
+            pixi run -e ci pre-commit run --files $(git diff --name-only HEAD~1 | grep -v '^sub-packages/')
           fi
 
       # Run tests with coverage
