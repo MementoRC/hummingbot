@@ -77,6 +77,7 @@ jobs:
         if: steps.program-changes.outputs.cache-hit != 'true'
         run: |
           pixi run -e ci coverage run -m pytest \
+            --timeout=30 \
             --ignore="test/mock" \
             --ignore="test/hummingbot/connector/exchange/ndax/" \
             --ignore="test/hummingbot/connector/derivative/dydx_v4_perpetual/" \
