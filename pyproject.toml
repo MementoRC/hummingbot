@@ -123,6 +123,7 @@ cython-lint = "*"
 
 [tool.pixi.feature.ci.dependencies]
 bandit = "*"
+pip-audit = "*"
 types-setuptools = "*"
 
 [tool.pixi.environments]
@@ -141,6 +142,8 @@ format = "ruff format hummingbot test"
 format-check = "ruff format --check hummingbot test"
 type-check = "mypy hummingbot"
 security-scan = "bandit -c pyproject.toml -r hummingbot/"
+dependency-scan = { cmd = "pip-audit --strict --desc on", depends-on = ["install-dev"] }
+quality-gate = { depends-on = ["quality", "type-check"] }
 quality = { depends-on = ["lint", "format-check"] }
 check = { depends-on = ["quality", "test"] }
 hooks-install = "pre-commit install"
