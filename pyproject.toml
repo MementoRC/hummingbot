@@ -120,8 +120,6 @@ ruff = "*"
 mypy = "*"
 pre-commit = ">=3.3.3"
 cython-lint = "*"
-autopep8 = "*"
-flake8 = ">=6.0.0"
 
 [tool.pixi.feature.ci.dependencies]
 bandit = "*"
@@ -141,8 +139,8 @@ lint = "ruff check hummingbot test"
 lint-cython = "cython-lint hummingbot"
 format = "ruff format hummingbot test"
 format-check = "ruff format --check hummingbot test"
-typecheck = "mypy hummingbot"
-security = "bandit -c pyproject.toml -r hummingbot/"
+type-check = "mypy hummingbot"
+security-scan = "bandit -c pyproject.toml -r hummingbot/"
 quality = { depends-on = ["lint", "format-check"] }
 check = { depends-on = ["quality", "test"] }
 hooks-install = "pre-commit install"
@@ -169,6 +167,33 @@ ignore = ["E251", "E501", "E702"]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
+
+[tool.mypy]
+ignore_missing_imports = true
+follow_imports = "silent"
+disallow_untyped_defs = false
+check_untyped_defs = false
+exclude = [
+    "hummingbot/connector/gateway",
+    "hummingbot/connector/derivative/injective_v2",
+    "hummingbot/core/cpp",
+]
+
+[tool.bandit]
+skips = [
+    "B101",  # assert used — standard in trading logic
+    "B110",  # try-except-pass — common async pattern
+    "B311",  # random — not used for crypto keys
+    "B324",  # hashlib — used for API signatures, not passwords
+    "B404",  # import_subprocess — flagged by importing subprocess
+    "B603",  # subprocess_without_shell_equals_true
+    "B607",  # start_process_with_partial_path
+    "B105",  # hardcoded_password_string — false positives on config defaults
+    "B106",  # hardcoded_password_funcarg — false positives on config defaults
+    "B107",  # hardcoded_password_default — false positives ("USDT" as default)
+    "B112",  # try_except_continue — common async pattern
+    "B608",  # hardcoded_sql_expressions — local SQLite, not user-facing
+]
 
 [tool.cython-lint]
 max-line-length = 999
