@@ -70,12 +70,18 @@ class TestMarketDataProvider(IsolatedAsyncioWrapperTestCase):
         price = self.provider.get_price_by_type("mock_connector", "BTC-USDT", PriceType.MidPrice)
         self.assertEqual(price, 10000)
 
-    @patch.object(CandlesBase, "start", MagicMock())
     def test_get_candles_df(self):
-        self.provider.initialize_candles_feed(
-            CandlesConfig(connector="binance", trading_pair="BTC-USDT", interval="1m", max_records=100)
-        )
-        result = self.provider.get_candles_df("binance", "BTC-USDT", "1m", 100)
+        mock_feed = MagicMock(spec=CandlesBase)
+        mock_feed.max_records = 100
+        mock_feed.candles_df = pd.DataFrame(columns=CandlesBase.columns)
+        with patch(
+            "hummingbot.data_feed.candles_feed.candles_factory.CandlesFactory.get_candle",
+            return_value=mock_feed,
+        ):
+            self.provider.initialize_candles_feed(
+                CandlesConfig(connector="binance", trading_pair="BTC-USDT", interval="1m", max_records=100)
+            )
+            result = self.provider.get_candles_df("binance", "BTC-USDT", "1m", 100)
         self.assertIsInstance(result, pd.DataFrame)
 
     def test_get_trading_pairs(self):
