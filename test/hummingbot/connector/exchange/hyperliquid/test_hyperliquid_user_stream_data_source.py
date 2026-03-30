@@ -32,7 +32,7 @@ class TestHyperliquidAPIUserStreamDataSource(IsolatedAsyncioWrapperTestCase):
         cls.hyperliquid_mode = "arb_wallet"  # noqa: mock
         cls.use_vault = False
         cls.trading_required = False
-        cls.api_secret = "13e56ca9cceebf1f33065c2c5376ab38570a114bc1b003b60d838f92be9d7930"  # noqa: mock"
+        cls.api_secret = "13e56ca9cceebf1f33065c2c5376ab38570a114bc1b003b60d838f92be9d7930"  # noqa: mock
 
     async def asyncSetUp(self) -> None:
         await super().asyncSetUp()
@@ -117,7 +117,7 @@ class TestHyperliquidAPIUserStreamDataSource(IsolatedAsyncioWrapperTestCase):
                         "startPosition": "0.0",
                         "dir": "Open Long",
                         "closedPnl": "0.0",
-                        "hash": "0x544c46b72e0efdada8cd04080bb32b010d005a7d0554c10c4d0287e9a2c237e7",
+                        "hash": "0x544c46b72e0efdada8cd04080bb32b010d005a7d0554c10c4d0287e9a2c237e7",  # noqa: mock
                         "oid": 2260113568,  # noqa: mock
                         # noqa: mock
                         "crossed": True,

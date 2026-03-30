@@ -76,7 +76,7 @@ class HyperliquidOrderBookTests(TestCase):
             "px": "2009.0",
             "sz": "0.0079",
             "time": 1701156061468,
-            "hash": "0x3e2bc327cc925903cebe0408315a98010b002fda921d23fd1468bbb5d573f902",
+            "hash": "0x3e2bc327cc925903cebe0408315a98010b002fda921d23fd1468bbb5d573f902",  # noqa: mock
         }  # noqa: mock
         trade_message = HyperliquidOrderBook.trade_message_from_exchange(
             msg=trade_update, metadata={"trading_pair": "COINALPHA-USDC"}
