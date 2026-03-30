@@ -23,17 +23,13 @@ class TestMarketDataProvider(IsolatedAsyncioWrapperTestCase):
         self.provider = MarketDataProvider(self.connectors)
 
     def test_initialize_candles_feed(self):
-        with patch(
-            "hummingbot.data_feed.candles_feed.candles_factory.CandlesFactory.get_candle", return_value=MagicMock()
-        ):
+        with patch("hummingbot.data_feed.market_data_provider.CandlesFactory.get_candle", return_value=MagicMock()):
             config = CandlesConfig(connector="mock_connector", trading_pair="BTC-USDT", interval="1m", max_records=100)
             self.provider.initialize_candles_feed(config)
             self.assertTrue("mock_connector_BTC-USDT_1m" in self.provider.candles_feeds)
 
     def test_initialize_candles_feed_list(self):
-        with patch(
-            "hummingbot.data_feed.candles_feed.candles_factory.CandlesFactory.get_candle", return_value=MagicMock()
-        ):
+        with patch("hummingbot.data_feed.market_data_provider.CandlesFactory.get_candle", return_value=MagicMock()):
             config = [
                 CandlesConfig(connector="mock_connector", trading_pair="BTC-USDT", interval="1m", max_records=100)
             ]
@@ -75,7 +71,7 @@ class TestMarketDataProvider(IsolatedAsyncioWrapperTestCase):
         mock_feed.max_records = 100
         mock_feed.candles_df = pd.DataFrame(columns=CandlesBase.columns)
         with patch(
-            "hummingbot.data_feed.candles_feed.candles_factory.CandlesFactory.get_candle",
+            "hummingbot.data_feed.market_data_provider.CandlesFactory.get_candle",
             return_value=mock_feed,
         ):
             self.provider.initialize_candles_feed(
@@ -447,7 +443,7 @@ class TestMarketDataProvider(IsolatedAsyncioWrapperTestCase):
 
     def test_get_candles_feed_existing_feed_stop(self):
         # Test that existing feed is stopped when creating new one with higher max_records
-        with patch("hummingbot.data_feed.candles_feed.candles_factory.CandlesFactory.get_candle") as mock_get_candle:
+        with patch("hummingbot.data_feed.market_data_provider.CandlesFactory.get_candle") as mock_get_candle:
             mock_existing_feed = MagicMock()
             mock_existing_feed.max_records = 50
             mock_existing_feed.stop = MagicMock()
