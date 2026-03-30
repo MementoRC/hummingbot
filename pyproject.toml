@@ -136,10 +136,10 @@ install-dev = "pip install --no-build-isolation -e ."
 build = { cmd = "python setup.py build_ext --inplace", depends-on = ["install-dev"] }
 test = { cmd = "pytest test", depends-on = ["build"] }
 test-unit = { cmd = "pytest test/hummingbot", depends-on = ["build"] }
-lint = "ruff check hummingbot test"
+lint = "ruff check hummingbot test controllers scripts"
 lint-cython = "cython-lint hummingbot"
-format = "ruff format hummingbot test"
-format-check = "ruff format --check hummingbot test"
+format = "ruff format hummingbot test controllers scripts"
+format-check = "ruff format --check hummingbot test controllers scripts"
 type-check = "mypy hummingbot"
 security-scan = "bandit -c pyproject.toml -r hummingbot/"
 dependency-scan = { cmd = "pip-audit --strict --desc on", depends-on = ["install-dev"] }
