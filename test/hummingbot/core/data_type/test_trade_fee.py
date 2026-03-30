@@ -13,7 +13,6 @@ from hummingbot.core.data_type.trade_fee import (
 
 
 class TradeFeeTests(TestCase):
-
     def test_added_to_cost_spot_fee_created_for_buy_and_fee_not_deducted_from_return(self):
 
         schema = TradeFeeSchema(
@@ -28,7 +27,7 @@ class TradeFeeTests(TestCase):
             trade_type=TradeType.BUY,
             percent=Decimal("1.1"),
             percent_token="HBOT",
-            flat_fees=[TokenAmount(token="COINALPHA", amount=Decimal("20"))]
+            flat_fees=[TokenAmount(token="COINALPHA", amount=Decimal("20"))],
         )
 
         self.assertEqual(AddedToCostTradeFee, type(fee))
@@ -49,7 +48,7 @@ class TradeFeeTests(TestCase):
             trade_type=TradeType.BUY,
             percent=Decimal("1.1"),
             percent_token="HBOT",
-            flat_fees=[TokenAmount(token="COINALPHA", amount=Decimal("20"))]
+            flat_fees=[TokenAmount(token="COINALPHA", amount=Decimal("20"))],
         )
 
         self.assertEqual(DeductedFromReturnsTradeFee, type(fee))
@@ -71,7 +70,7 @@ class TradeFeeTests(TestCase):
             trade_type=TradeType.SELL,
             percent=Decimal("1.1"),
             percent_token="HBOT",
-            flat_fees=[TokenAmount(token="COINALPHA", amount=Decimal("20"))]
+            flat_fees=[TokenAmount(token="COINALPHA", amount=Decimal("20"))],
         )
 
         self.assertEqual(DeductedFromReturnsTradeFee, type(fee))
@@ -87,7 +86,7 @@ class TradeFeeTests(TestCase):
             trade_type=TradeType.SELL,
             percent=Decimal("1.1"),
             percent_token="HBOT",
-            flat_fees=[TokenAmount(token="COINALPHA", amount=Decimal("20"))]
+            flat_fees=[TokenAmount(token="COINALPHA", amount=Decimal("20"))],
         )
 
         self.assertEqual(DeductedFromReturnsTradeFee, type(fee))
@@ -105,7 +104,7 @@ class TradeFeeTests(TestCase):
             position_action=PositionAction.OPEN,
             percent=Decimal("1.1"),
             percent_token="HBOT",
-            flat_fees=[TokenAmount(token="COINALPHA", amount=Decimal("20"))]
+            flat_fees=[TokenAmount(token="COINALPHA", amount=Decimal("20"))],
         )
 
         self.assertEqual(AddedToCostTradeFee, type(fee))
@@ -120,7 +119,7 @@ class TradeFeeTests(TestCase):
             position_action=PositionAction.OPEN,
             percent=Decimal("1.1"),
             percent_token="HBOT",
-            flat_fees=[TokenAmount(token="COINALPHA", amount=Decimal("20"))]
+            flat_fees=[TokenAmount(token="COINALPHA", amount=Decimal("20"))],
         )
 
         self.assertEqual(AddedToCostTradeFee, type(fee))
@@ -139,7 +138,7 @@ class TradeFeeTests(TestCase):
             position_action=PositionAction.CLOSE,
             percent=Decimal("1.1"),
             percent_token="HBOT",
-            flat_fees=[TokenAmount(token="COINALPHA", amount=Decimal("20"))]
+            flat_fees=[TokenAmount(token="COINALPHA", amount=Decimal("20"))],
         )
 
         self.assertEqual(AddedToCostTradeFee, type(fee))
@@ -160,7 +159,7 @@ class TradeFeeTests(TestCase):
             position_action=PositionAction.CLOSE,
             percent=Decimal("1.1"),
             percent_token="HBOT",
-            flat_fees=[TokenAmount(token="COINALPHA", amount=Decimal("20"))]
+            flat_fees=[TokenAmount(token="COINALPHA", amount=Decimal("20"))],
         )
 
         self.assertEqual(DeductedFromReturnsTradeFee, type(fee))
@@ -170,55 +169,39 @@ class TradeFeeTests(TestCase):
 
     def test_added_to_cost_json_serialization(self):
         token_amount = TokenAmount(token="COINALPHA", amount=Decimal("20.6"))
-        fee = AddedToCostTradeFee(
-            percent=Decimal("0.5"),
-            percent_token="COINALPHA",
-            flat_fees=[token_amount]
-        )
+        fee = AddedToCostTradeFee(percent=Decimal("0.5"), percent_token="COINALPHA", flat_fees=[token_amount])
 
         expected_json = {
             "fee_type": AddedToCostTradeFee.type_descriptor_for_json(),
             "percent": "0.5",
             "percent_token": "COINALPHA",
-            "flat_fees": [token_amount.to_json()]
+            "flat_fees": [token_amount.to_json()],
         }
 
         self.assertEqual(expected_json, fee.to_json())
 
     def test_added_to_cost_json_deserialization(self):
         token_amount = TokenAmount(token="COINALPHA", amount=Decimal("20.6"))
-        fee = AddedToCostTradeFee(
-            percent=Decimal("0.5"),
-            percent_token="COINALPHA",
-            flat_fees=[token_amount]
-        )
+        fee = AddedToCostTradeFee(percent=Decimal("0.5"), percent_token="COINALPHA", flat_fees=[token_amount])
 
         self.assertEqual(fee, TradeFeeBase.from_json(fee.to_json()))
 
     def test_deducted_from_returns_json_serialization(self):
         token_amount = TokenAmount(token="COINALPHA", amount=Decimal("20.6"))
-        fee = DeductedFromReturnsTradeFee(
-            percent=Decimal("0.5"),
-            percent_token="COINALPHA",
-            flat_fees=[token_amount]
-        )
+        fee = DeductedFromReturnsTradeFee(percent=Decimal("0.5"), percent_token="COINALPHA", flat_fees=[token_amount])
 
         expected_json = {
             "fee_type": DeductedFromReturnsTradeFee.type_descriptor_for_json(),
             "percent": "0.5",
             "percent_token": "COINALPHA",
-            "flat_fees": [token_amount.to_json()]
+            "flat_fees": [token_amount.to_json()],
         }
 
         self.assertEqual(expected_json, fee.to_json())
 
     def test_deducted_from_returns_json_deserialization(self):
         token_amount = TokenAmount(token="COINALPHA", amount=Decimal("20.6"))
-        fee = DeductedFromReturnsTradeFee(
-            percent=Decimal("0.5"),
-            percent_token="COINALPHA",
-            flat_fees=[token_amount]
-        )
+        fee = DeductedFromReturnsTradeFee(percent=Decimal("0.5"), percent_token="COINALPHA", flat_fees=[token_amount])
 
         self.assertEqual(fee, TradeFeeBase.from_json(fee.to_json()))
 
@@ -228,10 +211,8 @@ class TradeFeeTests(TestCase):
         fee = AddedToCostTradeFee(percent=Decimal("0"), percent_token="COINALPHA")
 
         fee_amount = fee.fee_amount_in_token(
-            trading_pair="HBOT-COINALPHA",
-            price=Decimal("1000"),
-            order_amount=Decimal("1"),
-            token="BNB")
+            trading_pair="HBOT-COINALPHA", price=Decimal("1000"), order_amount=Decimal("1"), token="BNB"
+        )
 
         self.assertEqual(Decimal("0"), fee_amount)
 
@@ -241,16 +222,13 @@ class TradeFeeTests(TestCase):
         fee = DeductedFromReturnsTradeFee(percent=Decimal("0"), percent_token="COINALPHA")
 
         fee_amount = fee.fee_amount_in_token(
-            trading_pair="HBOT-COINALPHA",
-            price=Decimal("1000"),
-            order_amount=Decimal("1"),
-            token="BNB")
+            trading_pair="HBOT-COINALPHA", price=Decimal("1000"), order_amount=Decimal("1"), token="BNB"
+        )
 
         self.assertEqual(Decimal("0"), fee_amount)
 
 
 class TokenAmountTests(TestCase):
-
     def test_json_serialization(self):
         amount = TokenAmount(token="HBOT-COINALPHA", amount=Decimal("1000.50"))
 
@@ -268,14 +246,9 @@ class TokenAmountTests(TestCase):
 
 
 class TradeUpdateTests(TestCase):
-
     def test_json_serialization(self):
         token_amount = TokenAmount(token="COINALPHA", amount=Decimal("20.6"))
-        fee = DeductedFromReturnsTradeFee(
-            percent=Decimal("0.5"),
-            percent_token="COINALPHA",
-            flat_fees=[token_amount]
-        )
+        fee = DeductedFromReturnsTradeFee(percent=Decimal("0.5"), percent_token="COINALPHA", flat_fees=[token_amount])
         trade_update = TradeUpdate(
             trade_id="12345",
             client_order_id="OID1",
@@ -289,22 +262,20 @@ class TradeUpdateTests(TestCase):
         )
 
         expected_json = trade_update._asdict()
-        expected_json.update({
-            "fill_price": "1000.11",
-            "fill_base_amount": "2",
-            "fill_quote_amount": "2000.22",
-            "fee": fee.to_json(),
-        })
+        expected_json.update(
+            {
+                "fill_price": "1000.11",
+                "fill_base_amount": "2",
+                "fill_quote_amount": "2000.22",
+                "fee": fee.to_json(),
+            }
+        )
 
         self.assertEqual(expected_json, trade_update.to_json())
 
     def test_json_deserialization(self):
         token_amount = TokenAmount(token="COINALPHA", amount=Decimal("20.6"))
-        fee = DeductedFromReturnsTradeFee(
-            percent=Decimal("0.5"),
-            percent_token="COINALPHA",
-            flat_fees=[token_amount]
-        )
+        fee = DeductedFromReturnsTradeFee(percent=Decimal("0.5"), percent_token="COINALPHA", flat_fees=[token_amount])
         trade_update = TradeUpdate(
             trade_id="12345",
             client_order_id="OID1",

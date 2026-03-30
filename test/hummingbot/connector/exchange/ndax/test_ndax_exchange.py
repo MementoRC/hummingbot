@@ -17,7 +17,6 @@ from hummingbot.core.data_type.trade_fee import DeductedFromReturnsTradeFee, Tra
 
 
 class NdaxExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests):
-
     maxDiff = None
 
     @property
