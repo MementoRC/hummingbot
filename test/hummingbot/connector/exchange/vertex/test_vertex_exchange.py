@@ -753,8 +753,8 @@ class TestVertexExchange(unittest.TestCase):
         )
         request_data = json.loads(order_request[1][0].kwargs["data"])["place_order"]["order"]
         self.assertEqual(
-            "0x2162Db26939B9EAF0C5404217774d166056d31B564656661756c740000000000",
-            request_data["sender"],  # noqa: mock
+            "0x2162Db26939B9EAF0C5404217774d166056d31B564656661756c740000000000",  # noqa: mock
+            request_data["sender"],
         )
         self.assertEqual("10000000000000000000000", request_data["priceX18"])
         self.assertEqual("100000000000000000000", request_data["amount"])
@@ -809,8 +809,8 @@ class TestVertexExchange(unittest.TestCase):
         )
         request_data = json.loads(order_request[1][0].kwargs["data"])["place_order"]["order"]
         self.assertEqual(
-            "0x2162Db26939B9EAF0C5404217774d166056d31B564656661756c740000000000",
-            request_data["sender"],  # noqa: mock
+            "0x2162Db26939B9EAF0C5404217774d166056d31B564656661756c740000000000",  # noqa: mock
+            request_data["sender"],
         )
         self.assertEqual("10000000000000000000000", request_data["priceX18"])
         self.assertEqual("100000000000000000000", request_data["amount"])
@@ -866,8 +866,8 @@ class TestVertexExchange(unittest.TestCase):
         )
         request_data = json.loads(order_request[1][0].kwargs["data"])["place_order"]["order"]
         self.assertEqual(
-            "0x2162Db26939B9EAF0C5404217774d166056d31B564656661756c740000000000",
-            request_data["sender"],  # noqa: mock
+            "0x2162Db26939B9EAF0C5404217774d166056d31B564656661756c740000000000",  # noqa: mock
+            request_data["sender"],
         )
         self.assertEqual("10000000000000000000000", request_data["priceX18"])
         self.assertEqual("-100000000000000000000", request_data["amount"])
