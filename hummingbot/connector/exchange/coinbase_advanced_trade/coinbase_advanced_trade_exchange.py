@@ -452,7 +452,7 @@ class CoinbaseAdvancedTradeExchange(ExchangePyBase):
         return successful_cancellations + failed_cancellations
 
     async def _cancel_lost_orders(self):
-        await self._execute_orders_cancel(orders=[l for _, l in self._order_tracker.lost_orders.items()])
+        await self._execute_orders_cancel(orders=[order for _, order in self._order_tracker.lost_orders.items()])
 
     async def _execute_orders_cancel(self, orders: List[InFlightOrder]) -> List[str]:
         try:
