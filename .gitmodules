@@ -6,3 +6,7 @@
 	path = sub-packages/liquidations-feed
 	url = https://github.com/MementoRC/hb-liquidations-feed.git
 	branch = development
+[submodule "sub-packages/rate-oracle"]
+	path = sub-packages/rate-oracle
+	url = https://github.com/MementoRC/hb-rate-oracle.git
+	branch = development
