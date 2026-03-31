@@ -101,3 +101,10 @@ coverage.xml
 .claude/
 .cursor/
 .agents/
+
+# MCP / Serena (local tool configs)
+.mcp.json
+.serena/
+
+# Local credentials
+conf/password_verification.save
