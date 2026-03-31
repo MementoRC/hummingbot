@@ -95,14 +95,14 @@ graph TD
 
 ```mermaid
 graph TB
-    subgraph "🟢 PURE PYTHON — Runs Unmodified"
+    subgraph "PURE PYTHON - Runs Unmodified"
         Strategy["StrategyV2Base"]
         Ctrl["Controllers"]
         Orch["Orchestrator"]
         Exec["Executors"]
     end
 
-    subgraph "SEAM ① ConnectorBase"
+    subgraph "SEAM 1: ConnectorBase"
         direction LR
         S1_Events["📢 Events"]
         S1_Orders["📝 Orders"]
@@ -111,23 +111,23 @@ graph TB
         S1_Rules["📏 Trading Rules"]
     end
 
-    subgraph "SEAM ② CandlesFactory"
+    subgraph "SEAM 2: CandlesFactory"
         S2["📈 Historical Data"]
     end
 
-    subgraph "SEAM ③ Time"
+    subgraph "SEAM 3: Time"
         S3["⏰ MDP.time()"]
     end
 
-    subgraph "SEAM ④ Persistence"
+    subgraph "SEAM 4: Persistence"
         S4["💾 MarketsRecorder"]
     end
 
-    subgraph "SEAM ⑤ RateOracle"
+    subgraph "SEAM 5: RateOracle"
         S5["💱 Conversion Rates"]
     end
 
-    subgraph "SEAM ⑥ Clock"
+    subgraph "SEAM 6: Clock"
         S6["🔄 BacktestClock"]
     end
 
