@@ -6,3 +6,7 @@
 	path = sub-packages/liquidations-feed
 	url = https://github.com/MementoRC/hb-liquidations-feed.git
 	branch = development
+[submodule "sub-packages/market-simulator"]
+	path = sub-packages/market-simulator
+	url = https://github.com/MementoRC/hb-market-simulator.git
+	branch = development
