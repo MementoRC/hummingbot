@@ -10,3 +10,7 @@
 	path = sub-packages/rate-oracle
 	url = https://github.com/MementoRC/hb-rate-oracle.git
 	branch = development
+[submodule "sub-packages/market-simulator"]
+	path = sub-packages/market-simulator
+	url = https://github.com/MementoRC/hb-market-simulator.git
+	branch = development
