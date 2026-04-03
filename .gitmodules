@@ -14,3 +14,7 @@
 	path = sub-packages/market-simulator
 	url = https://github.com/MementoRC/hb-market-simulator.git
 	branch = development
+[submodule "sub-packages/cython-framework"]
+	path = sub-packages/cython-framework
+	url = https://github.com/MementoRC/hb-cython-framework.git
+	branch = development
