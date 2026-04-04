@@ -48,6 +48,7 @@ class ExecutorFactory:
             class MyExecutor(ExecutorBase):
                 ...
         """
+
         def decorator(executor_cls):
             if config_type in cls._registry:
                 cls.logger().warning(
@@ -56,6 +57,7 @@ class ExecutorFactory:
                 )
             cls._registry[config_type] = executor_cls
             return executor_cls
+
         return decorator
 
     @classmethod

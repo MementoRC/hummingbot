@@ -8,6 +8,7 @@ from typing import Protocol, runtime_checkable
 @runtime_checkable
 class ExecutorConfigProtocol(Protocol):
     """Minimum config interface for factory registration."""
+
     id: str
     type: str
     controller_id: str | None
@@ -18,18 +19,16 @@ class ExecutorConfigProtocol(Protocol):
 @runtime_checkable
 class ExecutorProtocol(Protocol):
     """Executor interface for factory creation."""
+
     config: ExecutorConfigProtocol
 
-    def start(self) -> None:
-        ...
+    def start(self) -> None: ...
 
-    def stop(self) -> None:
-        ...
+    def stop(self) -> None: ...
 
 
 @runtime_checkable
 class ExecutorUpdateProtocol(Protocol):
     """Protocol for executor update payloads."""
 
-    def validate(self) -> bool:
-        ...
+    def validate(self) -> bool: ...
