@@ -17,13 +17,14 @@ from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.executor_base import ExecutorBase
 from hummingbot.strategy_v2.executors.executor_factory import ExecutorFactory
+from hummingbot.strategy_v2.executors.mixins.retry import RetryMixin
 from hummingbot.strategy_v2.executors.twap_executor.data_types import TWAPExecutorConfig
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 
 
 @ExecutorFactory.register(TWAPExecutorConfig)
-class TWAPExecutor(ExecutorBase):
+class TWAPExecutor(RetryMixin, ExecutorBase):
     _logger = None
 
     @classmethod
@@ -48,8 +49,7 @@ class TWAPExecutor(ExecutorBase):
             )
         if self.config.is_maker:
             self.logger().warning("Maker mode is in beta. Please use with caution.")
-        self._max_retries = max_retries
-        self._current_retries = 0
+        self.init_retry(max_retries)
         self._start_timestamp = self._strategy.current_timestamp
         self._order_plan: Dict[float, Optional[TrackedOrder]] = self.create_order_plan()
         self._failed_orders = []
@@ -100,9 +100,9 @@ class TWAPExecutor(ExecutorBase):
             self.evaluate_create_order()
             self.evaluate_refresh_orders()
             self.evaluate_all_orders_completed()
-            self.evaluate_max_retries()
         elif self.status == RunnableStatus.SHUTTING_DOWN:
             await self.evaluate_all_orders_closed()
+        self.evaluate_max_retries()
 
     def evaluate_create_order(self):
         for timestamp, tracked_order in self._order_plan.items():
@@ -128,10 +128,6 @@ class TWAPExecutor(ExecutorBase):
             )
         else:
             return False
-
-    def evaluate_max_retries(self):
-        if self._current_retries > self._max_retries:
-            self.close_execution_by(CloseType.FAILED)
 
     def create_order(self, timestamp):
         price = self.get_price(self.config.connector_name, self.config.trading_pair, PriceType.MidPrice)
@@ -188,7 +184,7 @@ class TWAPExecutor(ExecutorBase):
             self._order_plan = {
                 timestamp: None for timestamp, order in self._order_plan.items() if order == active_order
             }
-            self._current_retries += 1
+            self.increment_retries("order failed")
 
     def update_tracked_orders_with_order_id(self, order_id: str):
         all_orders = self._order_plan.values()
@@ -225,7 +221,7 @@ class TWAPExecutor(ExecutorBase):
             self.close_execution_by(CloseType.COMPLETED)
             self._status = RunnableStatus.TERMINATED
         else:
-            self._current_retries += 1
+            self.increment_retries("shutdown retry")
             await asyncio.sleep(5)
 
     def cancel_open_orders(self):

@@ -18,12 +18,13 @@ from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.dca_executor.data_types import DCAExecutorConfig, DCAMode
 from hummingbot.strategy_v2.executors.executor_base import ExecutorBase
 from hummingbot.strategy_v2.executors.executor_factory import ExecutorFactory
+from hummingbot.strategy_v2.executors.mixins.retry import RetryMixin
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 
 
 @ExecutorFactory.register(DCAExecutorConfig)
-class DCAExecutor(ExecutorBase):
+class DCAExecutor(RetryMixin, ExecutorBase):
     _logger = None
 
     @classmethod
@@ -72,8 +73,7 @@ class DCAExecutor(ExecutorBase):
         self._total_executed_amount_backup: Decimal = Decimal("0")
 
         # add retries
-        self._current_retries = 0
-        self._max_retries = max_retries
+        self.init_retry(max_retries)
 
     @property
     def active_open_orders(self) -> List[TrackedOrder]:
@@ -506,7 +506,7 @@ class DCAExecutor(ExecutorBase):
                 f"Open amount: {self.open_filled_amount}, Close amount: {self.close_filled_amount}, Back up filled amount {self._total_executed_amount_backup}"
             )
             self.place_close_order_and_cancel_open_orders()
-            self._current_retries += 1
+            self.increment_retries("shutdown retry")
         await asyncio.sleep(5.0)
 
     def update_tracked_orders_with_order_id(self, order_id: str):
@@ -541,16 +541,7 @@ class DCAExecutor(ExecutorBase):
             self._failed_orders.append(close_order)
             self._close_orders.remove(close_order)
             self.logger().error(f"Order {event.order_id} failed.")
-            self._current_retries += 1
-
-    def evaluate_max_retries(self):
-        """
-        This method is responsible for evaluating the max retries. If the max retries is reached, the executor will be
-        stopped.
-        """
-        if self._current_retries >= self._max_retries:
-            self.close_execution_by(CloseType.FAILED)
-            self.logger().error("Max retries reached. Stopping DCA executor.")
+            self.increment_retries("close order failed")
 
     def process_order_filled_event(self, event_tag: int, market: ConnectorBase, event: OrderFilledEvent):
         """

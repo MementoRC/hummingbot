@@ -21,13 +21,14 @@ from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.executor_base import ExecutorBase
 from hummingbot.strategy_v2.executors.executor_factory import ExecutorFactory
 from hummingbot.strategy_v2.executors.grid_executor.data_types import GridExecutorConfig, GridLevel, GridLevelStates
+from hummingbot.strategy_v2.executors.mixins.retry import RetryMixin
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 from hummingbot.strategy_v2.utils.distributions import Distributions
 
 
 @ExecutorFactory.register(GridExecutorConfig)
-class GridExecutor(ExecutorBase):
+class GridExecutor(RetryMixin, ExecutorBase):
     _logger = None
 
     @classmethod
@@ -90,8 +91,7 @@ class GridExecutor(ExecutorBase):
         self._open_fee_in_base = False
 
         self._trailing_stop_trigger_pct: Optional[Decimal] = None
-        self._current_retries = 0
-        self._max_retries = max_retries
+        self.init_retry(max_retries)
 
     @property
     def is_perpetual(self) -> bool:
@@ -355,7 +355,7 @@ class GridExecutor(ExecutorBase):
                     self.stop()
                 else:
                     await self.control_close_order()
-                    self._current_retries += 1
+                    self.increment_retries("shutdown retry")
         else:
             self.cancel_open_orders()
         await self._sleep(5.0)
@@ -757,17 +757,6 @@ class GridExecutor(ExecutorBase):
             self.logger().error(f"Grid is already expired by {self.close_type}.")
 
             self._status = RunnableStatus.SHUTTING_DOWN
-
-    def evaluate_max_retries(self):
-        """
-        This method is responsible for evaluating the maximum number of retries to place an order and stop the executor
-        if the maximum number of retries is reached.
-
-        :return: None
-        """
-        if self._current_retries > self._max_retries:
-            self.close_type = CloseType.FAILED
-            self.stop()
 
     def update_tracked_orders_with_order_id(self, order_id: str):
         """
