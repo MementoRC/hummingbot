@@ -18,12 +18,13 @@ from hummingbot.core.event.events import (
 from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.executor_base import ExecutorBase
+from hummingbot.strategy_v2.executors.mixins.retry import RetryMixin
 from hummingbot.strategy_v2.executors.position_executor.data_types import PositionExecutorConfig
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 
 
-class PositionExecutor(ExecutorBase):
+class PositionExecutor(RetryMixin, ExecutorBase):
     _logger = None
 
     @classmethod
@@ -64,8 +65,7 @@ class PositionExecutor(ExecutorBase):
         self._trailing_stop_trigger_pct: Optional[Decimal] = None
 
         self._total_executed_amount_backup: Decimal = Decimal("0")
-        self._current_retries = 0
-        self._max_retries = max_retries
+        self.init_retry(max_retries)
 
     @property
     def is_perpetual(self) -> bool:
@@ -335,7 +335,7 @@ class PositionExecutor(ExecutorBase):
                 self.stop()
             else:
                 await self.control_close_order()
-                self._current_retries += 1
+                self.increment_retries("shutdown retry")
         else:
             self.cancel_open_orders()
         await self._sleep(5.0)
@@ -367,17 +367,6 @@ class PositionExecutor(ExecutorBase):
                 self._close_order = None
         else:
             self.place_close_order_and_cancel_open_orders(close_type=self.close_type)
-
-    def evaluate_max_retries(self):
-        """
-        This method is responsible for evaluating the maximum number of retries to place an order and stop the executor
-        if the maximum number of retries is reached.
-
-        :return: None
-        """
-        if self._current_retries > self._max_retries:
-            self.close_type = CloseType.FAILED
-            self.stop()
 
     async def on_start(self):
         """
@@ -681,12 +670,12 @@ class PositionExecutor(ExecutorBase):
             self._failed_orders.append(self._open_order)
             self._open_order = None
             self.logger().error(f"Open order failed {event.order_id}. Retrying {self._current_retries}/{self._max_retries}")
-            self._current_retries += 1
+            self.increment_retries("open order failed")
         elif self._close_order and event.order_id == self._close_order.order_id:
             self._failed_orders.append(self._close_order)
             self._close_order = None
             self.logger().error(f"Close order failed {event.order_id}. Retrying {self._current_retries}/{self._max_retries}")
-            self._current_retries += 1
+            self.increment_retries("close order failed")
         elif self._take_profit_limit_order and event.order_id == self._take_profit_limit_order.order_id:
             self._failed_orders.append(self._take_profit_limit_order)
             self._take_profit_limit_order = None
