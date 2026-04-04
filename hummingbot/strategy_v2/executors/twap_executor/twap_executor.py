@@ -16,13 +16,14 @@ from hummingbot.core.event.events import (
 from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.executor_base import ExecutorBase
+from hummingbot.strategy_v2.executors.mixins.balance_validation import BalanceValidationMixin
 from hummingbot.strategy_v2.executors.mixins.retry import RetryMixin
 from hummingbot.strategy_v2.executors.twap_executor.data_types import TWAPExecutorConfig
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 
 
-class TWAPExecutor(RetryMixin, ExecutorBase):
+class TWAPExecutor(RetryMixin, BalanceValidationMixin, ExecutorBase):
     _logger = None
 
     @classmethod
@@ -60,11 +61,11 @@ class TWAPExecutor(RetryMixin, ExecutorBase):
         self.close_timestamp = self._strategy.current_timestamp
         self.stop()
 
-    async def validate_sufficient_balance(self):
+    def _create_validation_order_candidate(self):
         mid_price = self.get_price(self.config.connector_name, self.config.trading_pair, PriceType.MidPrice)
         total_amount_base = self.config.total_amount_quote / mid_price
         if self.is_perpetual_connector(self.config.connector_name):
-            order_candidate = PerpetualOrderCandidate(
+            return PerpetualOrderCandidate(
                 trading_pair=self.config.trading_pair,
                 is_maker=self.config.is_maker,
                 order_type=self.config.order_type,
@@ -74,7 +75,7 @@ class TWAPExecutor(RetryMixin, ExecutorBase):
                 leverage=Decimal(self.config.leverage),
             )
         else:
-            order_candidate = OrderCandidate(
+            return OrderCandidate(
                 trading_pair=self.config.trading_pair,
                 is_maker=self.config.is_maker,
                 order_type=self.config.order_type,
@@ -82,11 +83,6 @@ class TWAPExecutor(RetryMixin, ExecutorBase):
                 amount=total_amount_base,
                 price=mid_price,
             )
-        adjusted_order_candidates = self.adjust_order_candidates(self.config.connector_name, [order_candidate])
-        if adjusted_order_candidates[0].amount == Decimal("0"):
-            self.close_type = CloseType.INSUFFICIENT_BALANCE
-            self.logger().error("Not enough budget to open position.")
-            self.stop()
 
     async def control_task(self):
         if self.status == RunnableStatus.RUNNING:
