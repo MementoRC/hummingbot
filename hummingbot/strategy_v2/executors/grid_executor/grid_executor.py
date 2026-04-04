@@ -21,6 +21,7 @@ from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.executor_base import ExecutorBase
 from hummingbot.strategy_v2.executors.executor_factory import ExecutorFactory
 from hummingbot.strategy_v2.executors.grid_executor.data_types import GridExecutorConfig, GridLevel, GridLevelStates
+from hummingbot.strategy_v2.executors.mixins.balance_validation import BalanceValidationMixin
 from hummingbot.strategy_v2.executors.mixins.retry import RetryMixin
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
@@ -28,7 +29,7 @@ from hummingbot.strategy_v2.utils.distributions import Distributions
 
 
 @ExecutorFactory.register(GridExecutorConfig)
-class GridExecutor(RetryMixin, ExecutorBase):
+class GridExecutor(RetryMixin, BalanceValidationMixin, ExecutorBase):
     _logger = None
 
     @classmethod
@@ -102,11 +103,11 @@ class GridExecutor(RetryMixin, ExecutorBase):
         """
         return self.is_perpetual_connector(self.config.connector_name)
 
-    async def validate_sufficient_balance(self):
+    def _create_validation_order_candidate(self):
         mid_price = self.get_price(self.config.connector_name, self.config.trading_pair, PriceType.MidPrice)
         total_amount_base = self.config.total_amount_quote / mid_price
         if self.is_perpetual:
-            order_candidate = PerpetualOrderCandidate(
+            return PerpetualOrderCandidate(
                 trading_pair=self.config.trading_pair,
                 is_maker=self.config.triple_barrier_config.open_order_type.is_limit_type(),
                 order_type=self.config.triple_barrier_config.open_order_type,
@@ -116,7 +117,7 @@ class GridExecutor(RetryMixin, ExecutorBase):
                 leverage=Decimal(self.config.leverage),
             )
         else:
-            order_candidate = OrderCandidate(
+            return OrderCandidate(
                 trading_pair=self.config.trading_pair,
                 is_maker=self.config.triple_barrier_config.open_order_type.is_limit_type(),
                 order_type=self.config.triple_barrier_config.open_order_type,
@@ -124,11 +125,6 @@ class GridExecutor(RetryMixin, ExecutorBase):
                 amount=total_amount_base,
                 price=mid_price,
             )
-        adjusted_order_candidates = self.adjust_order_candidates(self.config.connector_name, [order_candidate])
-        if adjusted_order_candidates[0].amount == Decimal("0"):
-            self.close_type = CloseType.INSUFFICIENT_BALANCE
-            self.logger().error("Not enough budget to open position.")
-            self.stop()
 
     def _generate_grid_levels(self):
         grid_levels = []

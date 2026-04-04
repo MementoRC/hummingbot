@@ -19,6 +19,7 @@ from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.executor_base import ExecutorBase
 from hummingbot.strategy_v2.executors.executor_factory import ExecutorFactory
+from hummingbot.strategy_v2.executors.mixins.balance_validation import BalanceValidationMixin
 from hummingbot.strategy_v2.executors.mixins.retry import RetryMixin
 from hummingbot.strategy_v2.executors.position_executor.data_types import PositionExecutorConfig
 from hummingbot.strategy_v2.models.base import RunnableStatus
@@ -26,7 +27,7 @@ from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 
 
 @ExecutorFactory.register(PositionExecutorConfig)
-class PositionExecutor(RetryMixin, ExecutorBase):
+class PositionExecutor(RetryMixin, BalanceValidationMixin, ExecutorBase):
     _logger = None
 
     @classmethod
@@ -844,9 +845,9 @@ class PositionExecutor(RetryMixin, ExecutorBase):
                         net_pnl_pct - self.config.triple_barrier_config.trailing_stop.trailing_delta
                     )
 
-    async def validate_sufficient_balance(self):
+    def _create_validation_order_candidate(self):
         if self.is_perpetual:
-            order_candidate = PerpetualOrderCandidate(
+            return PerpetualOrderCandidate(
                 trading_pair=self.config.trading_pair,
                 is_maker=self.config.triple_barrier_config.open_order_type.is_limit_type(),
                 order_type=self.config.triple_barrier_config.open_order_type,
@@ -856,7 +857,7 @@ class PositionExecutor(RetryMixin, ExecutorBase):
                 leverage=Decimal(self.config.leverage),
             )
         else:
-            order_candidate = OrderCandidate(
+            return OrderCandidate(
                 trading_pair=self.config.trading_pair,
                 is_maker=self.config.triple_barrier_config.open_order_type.is_limit_type(),
                 order_type=self.config.triple_barrier_config.open_order_type,
@@ -864,11 +865,6 @@ class PositionExecutor(RetryMixin, ExecutorBase):
                 amount=self.config.amount,
                 price=self.entry_price,
             )
-        adjusted_order_candidates = self.adjust_order_candidates(self.config.connector_name, [order_candidate])
-        if adjusted_order_candidates[0].amount == Decimal("0"):
-            self.close_type = CloseType.INSUFFICIENT_BALANCE
-            self.logger().error("Not enough budget to open position.")
-            self.stop()
 
     async def _sleep(self, delay: float):
         """
