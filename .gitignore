@@ -96,8 +96,10 @@ coverage.xml
 .env
 
 **/.claude/settings.local.json
+**/.claude/*
+!**/.claude/skills/
+!**/.claude/skills/**
 
 # Editor/AI tool directories
-.claude/
 .cursor/
 .agents/
