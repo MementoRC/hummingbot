@@ -22,13 +22,14 @@ from hummingbot.strategy_v2.executors.executor_factory import ExecutorFactory
 from hummingbot.strategy_v2.executors.mixins.activation_bounds import ActivationBoundsMixin
 from hummingbot.strategy_v2.executors.mixins.balance_validation import BalanceValidationMixin
 from hummingbot.strategy_v2.executors.mixins.retry import RetryMixin
+from hummingbot.strategy_v2.executors.mixins.trailing_stop import TrailingStopMixin
 from hummingbot.strategy_v2.executors.position_executor.data_types import PositionExecutorConfig
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 
 
 @ExecutorFactory.register(PositionExecutorConfig)
-class PositionExecutor(ActivationBoundsMixin, RetryMixin, BalanceValidationMixin, ExecutorBase):
+class PositionExecutor(TrailingStopMixin, ActivationBoundsMixin, RetryMixin, BalanceValidationMixin, ExecutorBase):
     _logger = None
 
     @classmethod
@@ -75,9 +76,8 @@ class PositionExecutor(ActivationBoundsMixin, RetryMixin, BalanceValidationMixin
         self._close_order: Optional[TrackedOrder] = None
         self._take_profit_limit_order: Optional[TrackedOrder] = None
         self._failed_orders: List[TrackedOrder] = []
-        self._trailing_stop_trigger_pct: Optional[Decimal] = None
-
         self._total_executed_amount_backup: Decimal = Decimal("0")
+        self.init_trailing_stop()
         self.init_retry(max_retries)
 
     @property
@@ -800,23 +800,14 @@ class PositionExecutor(ActivationBoundsMixin, RetryMixin, BalanceValidationMixin
         return lines
 
     def control_trailing_stop(self):
-        if self.config.triple_barrier_config.trailing_stop:
-            net_pnl_pct = self.get_net_pnl_pct()
-            if not self._trailing_stop_trigger_pct:
-                if net_pnl_pct > self.config.triple_barrier_config.trailing_stop.activation_price:
-                    self._trailing_stop_trigger_pct = (
-                        net_pnl_pct - self.config.triple_barrier_config.trailing_stop.trailing_delta
-                    )
-            else:
-                if net_pnl_pct < self._trailing_stop_trigger_pct:
-                    self.place_close_order_and_cancel_open_orders(close_type=CloseType.TRAILING_STOP)
-                if (
-                    net_pnl_pct - self.config.triple_barrier_config.trailing_stop.trailing_delta
-                    > self._trailing_stop_trigger_pct
-                ):
-                    self._trailing_stop_trigger_pct = (
-                        net_pnl_pct - self.config.triple_barrier_config.trailing_stop.trailing_delta
-                    )
+        if self.evaluate_trailing_stop():
+            self.place_close_order_and_cancel_open_orders(close_type=CloseType.TRAILING_STOP)
+
+    def _get_trailing_stop_pnl_pct(self):
+        return self.get_net_pnl_pct()
+
+    def _get_trailing_stop_config(self):
+        return self.config.triple_barrier_config.trailing_stop
 
     def _create_validation_order_candidate(self):
         if self.is_perpetual:

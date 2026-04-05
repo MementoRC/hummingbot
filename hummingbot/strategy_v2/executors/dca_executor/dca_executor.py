@@ -2,7 +2,7 @@ import asyncio
 import logging
 import math
 from decimal import Decimal
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Union
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.common import OrderType, PositionAction, PriceType, TradeType
@@ -19,13 +19,15 @@ from hummingbot.strategy_v2.executors.dca_executor.data_types import DCAExecutor
 from hummingbot.strategy_v2.executors.executor_base import ExecutorBase
 from hummingbot.strategy_v2.executors.executor_factory import ExecutorFactory
 from hummingbot.strategy_v2.executors.mixins.order_tracking import OrderTrackingMixin
+from hummingbot.strategy_v2.executors.mixins.pnl_calculator import PNLCalculatorMixin
 from hummingbot.strategy_v2.executors.mixins.retry import RetryMixin
+from hummingbot.strategy_v2.executors.mixins.trailing_stop import TrailingStopMixin
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 
 
 @ExecutorFactory.register(DCAExecutorConfig)
-class DCAExecutor(OrderTrackingMixin, RetryMixin, ExecutorBase):
+class DCAExecutor(PNLCalculatorMixin, TrailingStopMixin, OrderTrackingMixin, RetryMixin, ExecutorBase):
     _logger = None
 
     @classmethod
@@ -67,7 +69,7 @@ class DCAExecutor(OrderTrackingMixin, RetryMixin, ExecutorBase):
         self._open_orders: List[TrackedOrder] = []
         self._close_orders: List[TrackedOrder] = []  # for now will be just one order but we can have multiple
         self.init_order_tracking()
-        self._trailing_stop_trigger_pct: Optional[Decimal] = None
+        self.init_trailing_stop()
 
         # used to track the total amount filled that is updated by the event in case that the InFlightOrder is
         # not available
@@ -189,25 +191,23 @@ class DCAExecutor(OrderTrackingMixin, RetryMixin, ExecutorBase):
             / self.max_amount_quote
         )
 
-    @property
-    def trade_pnl_pct(self):
-        """
-        This method is responsible for calculating the trade pnl (Pure pnl without fees)
-        """
-        if self.current_position_average_price != Decimal("0"):
-            if self.config.side == TradeType.BUY:
-                return (self.close_price - self.current_position_average_price) / self.current_position_average_price
-            else:
-                return (self.current_position_average_price - self.close_price) / self.current_position_average_price
-        else:
-            return Decimal("0")
+    # PNLCalculatorMixin template methods
 
-    @property
-    def trade_pnl_quote(self) -> Decimal:
-        """
-        This method is responsible for calculating the trade pnl in quote asset
-        """
-        return self.trade_pnl_pct * self.open_filled_amount_quote
+    def _get_entry_price(self) -> Decimal:
+        return self.current_position_average_price
+
+    def _get_close_price(self) -> Decimal:
+        return self.close_price
+
+    def _get_open_filled_amount_quote(self) -> Decimal:
+        return self.open_filled_amount_quote
+
+    def _get_trade_side(self) -> TradeType:
+        return self.config.side
+
+    def _get_cum_fees_from_orders(self) -> Decimal:
+        all_orders = self._open_orders + self._close_orders
+        return sum([order.cum_fees_quote for order in all_orders])
 
     def is_any_amount_lower_than_min_order_size(self):
         """
@@ -228,29 +228,6 @@ class DCAExecutor(OrderTrackingMixin, RetryMixin, ExecutorBase):
             ]
         )
         return notional_size_check or base_amount_size_check
-
-    def get_net_pnl_quote(self) -> Decimal:
-        """
-        This method is responsible for calculating the net pnl in quote asset
-        """
-        return self.trade_pnl_quote - self.cum_fees_quote
-
-    def get_net_pnl_pct(self) -> Decimal:
-        """
-        This method is responsible for calculating the net pnl percentage
-        """
-        return (
-            self.net_pnl_quote / self.open_filled_amount_quote
-            if self.open_filled_amount_quote > Decimal("0")
-            else Decimal("0")
-        )
-
-    def get_cum_fees_quote(self) -> Decimal:
-        """
-        This method is responsible for calculating the cumulative fees in quote asset
-        """
-        all_orders = self._open_orders + self._close_orders
-        return sum([order.cum_fees_quote for order in all_orders])
 
     async def on_start(self):
         await super().on_start()
@@ -378,17 +355,15 @@ class DCAExecutor(OrderTrackingMixin, RetryMixin, ExecutorBase):
         is lower than the trailing stop trigger. the value of the trailing stop trigger will be updated if the net pnl
         minus the trailing delta is higher than the current value of the trailing stop trigger.
         """
-        if self.config.trailing_stop:
-            net_pnl_pct = self.get_net_pnl_pct()
-            if not self._trailing_stop_trigger_pct:
-                if net_pnl_pct > self.config.trailing_stop.activation_price:
-                    self._trailing_stop_trigger_pct = net_pnl_pct - self.config.trailing_stop.trailing_delta
-            else:
-                if net_pnl_pct < self._trailing_stop_trigger_pct:
-                    self.close_type = CloseType.TRAILING_STOP
-                    self.place_close_order_and_cancel_open_orders()
-                if net_pnl_pct - self.config.trailing_stop.trailing_delta > self._trailing_stop_trigger_pct:
-                    self._trailing_stop_trigger_pct = net_pnl_pct - self.config.trailing_stop.trailing_delta
+        if self.evaluate_trailing_stop():
+            self.close_type = CloseType.TRAILING_STOP
+            self.place_close_order_and_cancel_open_orders()
+
+    def _get_trailing_stop_pnl_pct(self):
+        return self.get_net_pnl_pct()
+
+    def _get_trailing_stop_config(self):
+        return self.config.trailing_stop
 
     def control_take_profit(self):
         """

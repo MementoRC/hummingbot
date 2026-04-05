@@ -23,13 +23,14 @@ from hummingbot.strategy_v2.executors.executor_factory import ExecutorFactory
 from hummingbot.strategy_v2.executors.grid_executor.data_types import GridExecutorConfig, GridLevel, GridLevelStates
 from hummingbot.strategy_v2.executors.mixins.balance_validation import BalanceValidationMixin
 from hummingbot.strategy_v2.executors.mixins.retry import RetryMixin
+from hummingbot.strategy_v2.executors.mixins.trailing_stop import TrailingStopMixin
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 from hummingbot.strategy_v2.utils.distributions import Distributions
 
 
 @ExecutorFactory.register(GridExecutorConfig)
-class GridExecutor(RetryMixin, BalanceValidationMixin, ExecutorBase):
+class GridExecutor(TrailingStopMixin, RetryMixin, BalanceValidationMixin, ExecutorBase):
     _logger = None
 
     @classmethod
@@ -91,7 +92,7 @@ class GridExecutor(RetryMixin, BalanceValidationMixin, ExecutorBase):
         self.max_close_creation_timestamp = 0
         self._open_fee_in_base = False
 
-        self._trailing_stop_trigger_pct: Optional[Decimal] = None
+        self.init_trailing_stop()
         self.init_retry(max_retries)
 
     @property
@@ -647,24 +648,13 @@ class GridExecutor(RetryMixin, BalanceValidationMixin, ExecutorBase):
         return False
 
     def trailing_stop_condition(self):
-        if self.config.triple_barrier_config.trailing_stop:
-            net_pnl_pct = self.position_pnl_pct
-            if not self._trailing_stop_trigger_pct:
-                if net_pnl_pct > self.config.triple_barrier_config.trailing_stop.activation_price:
-                    self._trailing_stop_trigger_pct = (
-                        net_pnl_pct - self.config.triple_barrier_config.trailing_stop.trailing_delta
-                    )
-            else:
-                if net_pnl_pct < self._trailing_stop_trigger_pct:
-                    return True
-                if (
-                    net_pnl_pct - self.config.triple_barrier_config.trailing_stop.trailing_delta
-                    > self._trailing_stop_trigger_pct
-                ):
-                    self._trailing_stop_trigger_pct = (
-                        net_pnl_pct - self.config.triple_barrier_config.trailing_stop.trailing_delta
-                    )
-        return False
+        return self.evaluate_trailing_stop()
+
+    def _get_trailing_stop_pnl_pct(self):
+        return self.position_pnl_pct
+
+    def _get_trailing_stop_config(self):
+        return self.config.triple_barrier_config.trailing_stop
 
     def place_close_order_and_cancel_open_orders(self, close_type: CloseType, price: Decimal = Decimal("NaN")):
         """

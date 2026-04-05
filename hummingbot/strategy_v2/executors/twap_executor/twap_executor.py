@@ -19,6 +19,7 @@ from hummingbot.strategy_v2.executors.executor_base import ExecutorBase
 from hummingbot.strategy_v2.executors.executor_factory import ExecutorFactory
 from hummingbot.strategy_v2.executors.mixins.balance_validation import BalanceValidationMixin
 from hummingbot.strategy_v2.executors.mixins.order_tracking import OrderTrackingMixin
+from hummingbot.strategy_v2.executors.mixins.pnl_calculator import PNLCalculatorMixin
 from hummingbot.strategy_v2.executors.mixins.retry import RetryMixin
 from hummingbot.strategy_v2.executors.twap_executor.data_types import TWAPExecutorConfig
 from hummingbot.strategy_v2.models.base import RunnableStatus
@@ -26,7 +27,7 @@ from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 
 
 @ExecutorFactory.register(TWAPExecutorConfig)
-class TWAPExecutor(OrderTrackingMixin, RetryMixin, BalanceValidationMixin, ExecutorBase):
+class TWAPExecutor(PNLCalculatorMixin, OrderTrackingMixin, RetryMixin, BalanceValidationMixin, ExecutorBase):
     _logger = None
 
     @classmethod
@@ -231,48 +232,22 @@ class TWAPExecutor(OrderTrackingMixin, RetryMixin, BalanceValidationMixin, Execu
     def filled_amount_quote(self) -> Decimal:
         return self.get_total_executed_amount_quote()
 
-    @property
-    def trade_pnl_pct(self) -> Decimal:
-        """
-        Calculate the trade pnl (Pure pnl without fees)
+    # PNLCalculatorMixin template methods
 
-        :return: The trade pnl percentage.
-        """
-        mid_price = self.get_price(self.config.connector_name, self.config.trading_pair, PriceType.MidPrice)
-        average_executed_price = self.get_average_executed_price()
-        if average_executed_price != Decimal("0"):
-            if self.config.side == TradeType.BUY:
-                return (mid_price - average_executed_price) / average_executed_price
-            else:
-                return (average_executed_price - mid_price) / average_executed_price
-        else:
-            return Decimal("0")
+    def _get_entry_price(self) -> Decimal:
+        return self.get_average_executed_price()
 
-    @property
-    def trade_pnl_quote(self) -> Decimal:
-        """
-        This method is responsible for calculating the trade pnl in quote asset
-        """
-        return self.trade_pnl_pct * self.get_total_executed_amount_quote()
+    def _get_close_price(self) -> Decimal:
+        return self.get_price(self.config.connector_name, self.config.trading_pair, PriceType.MidPrice)
 
-    def get_cum_fees_quote(self) -> Decimal:
-        """
-        This method is responsible for calculating the cumulative fees in quote asset
-        """
+    def _get_open_filled_amount_quote(self) -> Decimal:
+        return self.get_total_executed_amount_quote()
+
+    def _get_trade_side(self) -> TradeType:
+        return self.config.side
+
+    def _get_cum_fees_from_orders(self) -> Decimal:
         return sum([order.cum_fees_quote for order in self._order_plan.values() if order])
-
-    def get_net_pnl_quote(self) -> Decimal:
-        """
-        This method is responsible for calculating the net pnl in quote asset
-        """
-        return self.trade_pnl_quote - self.cum_fees_quote
-
-    def get_net_pnl_pct(self) -> Decimal:
-        """
-        This method is responsible for calculating the net pnl percentage
-        """
-        total_executed_quote = self.get_total_executed_amount_quote()
-        return self.net_pnl_quote / total_executed_quote if total_executed_quote > Decimal("0") else Decimal("0")
 
     def get_average_executed_price(self) -> Decimal:
         """
