@@ -124,14 +124,86 @@ class MyExecutor(ActivationBoundsMixin, ExecutorBase):
 **Methods:**
 - `_is_within_activation_bounds(order_price, side, order_type)` — checks limit (one-sided) vs market (two-sided range)
 
+### TrailingStopMixin (`trailing_stop.py`)
+Provides the trailing stop ratchet algorithm: activate when PNL exceeds
+threshold, ratchet trigger upward as PNL rises, fire when PNL drops below.
+
+**Applied to:** PositionExecutor, DCAExecutor, GridExecutor
+**Not applied to:** TWAPExecutor (no trailing stop support)
+
+**Usage:**
+```python
+class MyExecutor(TrailingStopMixin, ExecutorBase):
+    def __init__(self, ...):
+        super().__init__(...)
+        self.init_trailing_stop()
+
+    def control_trailing_stop(self):
+        if self.evaluate_trailing_stop():
+            self.place_close_order_and_cancel_open_orders(
+                close_type=CloseType.TRAILING_STOP)
+
+    def _get_trailing_stop_pnl_pct(self):
+        return self.get_net_pnl_pct()
+
+    def _get_trailing_stop_config(self):
+        return self.config.trailing_stop  # object with .activation_price, .trailing_delta
+```
+
+**Methods:**
+- `init_trailing_stop()` — initialize trailing stop state
+- `evaluate_trailing_stop()` — returns True if trailing stop should fire
+- `_get_trailing_stop_pnl_pct()` — **template method** — the PNL metric to track
+- `_get_trailing_stop_config()` — **template method** — config with activation_price and trailing_delta
+
+### PNLCalculatorMixin (`pnl_calculator.py`)
+Provides `trade_pnl_pct`, `trade_pnl_quote`, `get_net_pnl_quote()`,
+`get_cum_fees_quote()`, `get_net_pnl_pct()` using the trade_pnl - fees pattern.
+
+**Applied to:** DCAExecutor, TWAPExecutor
+**Not applied to:** PositionExecutor (has FAILED/POSITION_HOLD guard in trade_pnl_pct),
+GridExecutor (realized/unrealized split model), XEMM/Arbitrage (cash flow difference model)
+
+**Usage:**
+```python
+class MyExecutor(PNLCalculatorMixin, ExecutorBase):
+    def _get_entry_price(self):
+        return self.current_position_average_price
+
+    def _get_close_price(self):
+        return self.close_price
+
+    def _get_open_filled_amount_quote(self):
+        return self.open_filled_amount_quote
+
+    def _get_trade_side(self):
+        return self.config.side
+
+    def _get_cum_fees_from_orders(self):
+        return sum(o.cum_fees_quote for o in self._all_orders if o)
+```
+
+**Provided properties/methods:**
+- `trade_pnl_pct` (property) — pure PNL percentage without fees
+- `trade_pnl_quote` (property) — pure PNL in quote currency
+- `get_net_pnl_quote()` — trade_pnl_quote minus fees
+- `get_cum_fees_quote()` — cumulative fees
+- `get_net_pnl_pct()` — net PNL percentage
+
+**Template methods:**
+- `_get_entry_price()` — entry/average price
+- `_get_close_price()` — close/current market price
+- `_get_open_filled_amount_quote()` — filled amount in quote
+- `_get_trade_side()` — TradeType.BUY or SELL
+- `_get_cum_fees_from_orders()` — sum of fees from orders
+
 ## Future Mixins (Not Yet Extracted)
 
 These patterns were identified as duplicated but not yet extracted:
 
 | Mixin | Duplicated In | Lines per executor | Notes |
 |-------|---------------|-------------------|-------|
-| **TripleBarrierMixin** | Position, DCA, Grid, Progressive | ~60 | SL/TP/TL/trailing dispatch — most complex extraction |
-| **PNLCalculatorMixin** | Position, DCA, Progressive | ~30 | `trade_pnl - fees` pattern (Grid uses different model) |
+| **TripleBarrierMixin** | Position, DCA, Grid, Progressive | ~60 | SL/TP/TL dispatch — most complex extraction |
 
 ## Design Principles
 
