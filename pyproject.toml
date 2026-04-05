@@ -13,7 +13,11 @@ hummingbot = "bin.hummingbot_quickstart:main"
 testpaths = ["test"]
 python_files = ["test_*.py"]
 asyncio_default_fixture_loop_scope = "function"
-addopts = "--strict-markers"
+asyncio_mode = "auto"
+
+[tool.pixi.tasks]
+migrate-pytest = { cmd = "python $HOME/PycharmProjects/refactor-applications/refactor/rules/pytest_migration.py -d --apply --verbose test/", env = { PYTHONPATH = "$HOME/PycharmProjects/refactor-applications:$PYTHONPATH" } }
+migrate-pytest-dry = { cmd = "python $HOME/PycharmProjects/refactor-applications/refactor/rules/pytest_migration.py -d --verbose test/", env = { PYTHONPATH = "$HOME/PycharmProjects/refactor-applications:$PYTHONPATH" } }
 
 [tool.black]
 line-length = 120
