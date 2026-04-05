@@ -3,9 +3,9 @@ asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
 
 [tool.pixi.tasks]
-migrate-pytest = { cmd = "python -m refactor migrate-pytest --changed-since development test/", env = { PYTHONPATH = "$HOME/PycharmProjects/refactor:$PYTHONPATH" } }
-migrate-pytest-all = { cmd = "python -m refactor migrate-pytest --all test/", env = { PYTHONPATH = "$HOME/PycharmProjects/refactor:$PYTHONPATH" } }
-migrate-pytest-dry = { cmd = "python -m refactor migrate-pytest --dry-run --changed-since development test/", env = { PYTHONPATH = "$HOME/PycharmProjects/refactor:$PYTHONPATH" } }
+migrate-pytest = { cmd = "python -m refactor migrate-pytest --changed-since development test/", env = { PYTHONPATH = "$HOME/PycharmProjects/refactor-applications:$PYTHONPATH" } }
+migrate-pytest-all = { cmd = "python -m refactor migrate-pytest --all test/", env = { PYTHONPATH = "$HOME/PycharmProjects/refactor-applications:$PYTHONPATH" } }
+migrate-pytest-dry = { cmd = "python -m refactor migrate-pytest --dry-run --changed-since development test/", env = { PYTHONPATH = "$HOME/PycharmProjects/refactor-applications:$PYTHONPATH" } }
 
 [tool.black]
 line-length = 120
