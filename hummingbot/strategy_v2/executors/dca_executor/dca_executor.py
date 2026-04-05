@@ -18,13 +18,14 @@ from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.dca_executor.data_types import DCAExecutorConfig, DCAMode
 from hummingbot.strategy_v2.executors.executor_base import ExecutorBase
 from hummingbot.strategy_v2.executors.executor_factory import ExecutorFactory
+from hummingbot.strategy_v2.executors.mixins.order_tracking import OrderTrackingMixin
 from hummingbot.strategy_v2.executors.mixins.retry import RetryMixin
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 
 
 @ExecutorFactory.register(DCAExecutorConfig)
-class DCAExecutor(RetryMixin, ExecutorBase):
+class DCAExecutor(OrderTrackingMixin, RetryMixin, ExecutorBase):
     _logger = None
 
     @classmethod
@@ -65,7 +66,7 @@ class DCAExecutor(RetryMixin, ExecutorBase):
         # executors tracking
         self._open_orders: List[TrackedOrder] = []
         self._close_orders: List[TrackedOrder] = []  # for now will be just one order but we can have multiple
-        self._failed_orders: List[TrackedOrder] = []
+        self.init_order_tracking()
         self._trailing_stop_trigger_pct: Optional[Decimal] = None
 
         # used to track the total amount filled that is updated by the event in case that the InFlightOrder is
@@ -509,13 +510,8 @@ class DCAExecutor(RetryMixin, ExecutorBase):
             self.increment_retries("shutdown retry")
         await asyncio.sleep(5.0)
 
-    def update_tracked_orders_with_order_id(self, order_id: str):
-        all_orders = self._open_orders + self._close_orders
-        active_order = next((order for order in all_orders if order.order_id == order_id), None)
-        if active_order:
-            in_flight_order = self.get_in_flight_order(self.config.connector_name, order_id)
-            if in_flight_order:
-                active_order.order = in_flight_order
+    def _get_trackable_orders(self):
+        return self._open_orders + self._close_orders
 
     def process_order_created_event(
         self, event_tag: int, market: ConnectorBase, event: Union[BuyOrderCreatedEvent, SellOrderCreatedEvent]

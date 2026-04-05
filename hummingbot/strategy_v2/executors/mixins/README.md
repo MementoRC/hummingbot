@@ -73,6 +73,57 @@ doesn't cleanly fit the template pattern.
 - `_place_shutdown_close_order()` → None
 - `_update_orders_with_error_handler()` → None
 
+### OrderTrackingMixin (`order_tracking.py`)
+Provides `update_tracked_orders_with_order_id()` which fetches the
+InFlightOrder from the connector and assigns it to the matching
+TrackedOrder. Also manages `_failed_orders` list.
+
+**Applied to:** DCAExecutor, TWAPExecutor
+**Not applied to:** PositionExecutor (checks specific named fields, not a list),
+GridExecutor (iterates nested grid level structure with `update_grid_levels()` call)
+
+**Usage:**
+```python
+class MyExecutor(OrderTrackingMixin, ExecutorBase):
+    def __init__(self, ...):
+        super().__init__(...)
+        self.init_order_tracking()
+
+    def _get_trackable_orders(self):
+        return self._open_orders + self._close_orders
+```
+
+**Methods:**
+- `init_order_tracking()` — initialize `_failed_orders` list
+- `update_tracked_orders_with_order_id(order_id)` — fetch InFlightOrder and assign
+- `_get_trackable_orders()` — **template method** — override to return orders to search
+
+### ActivationBoundsMixin (`activation_bounds.py`)
+Checks whether the current market price is within configured activation
+bounds of the target order price — improving capital efficiency.
+
+**Applied to:** PositionExecutor
+**Not applied to:** DCAExecutor (different signature, has MAKER/TAKER mode split,
+uses different operators and `close_price` instead of `mid_price`),
+GridExecutor (uses single Decimal `activation_bounds`, not a list — completely
+different distance-based filtering pattern),
+TWAPExecutor (no activation bounds)
+
+**Usage:**
+```python
+class MyExecutor(ActivationBoundsMixin, ExecutorBase):
+    def control_open_order(self):
+        if self._is_within_activation_bounds(
+            self.config.entry_price,
+            self.config.side,
+            self.config.triple_barrier_config.open_order_type,
+        ):
+            self.place_open_order()
+```
+
+**Methods:**
+- `_is_within_activation_bounds(order_price, side, order_type)` — checks limit (one-sided) vs market (two-sided range)
+
 ## Future Mixins (Not Yet Extracted)
 
 These patterns were identified as duplicated but not yet extracted:
@@ -80,9 +131,7 @@ These patterns were identified as duplicated but not yet extracted:
 | Mixin | Duplicated In | Lines per executor | Notes |
 |-------|---------------|-------------------|-------|
 | **TripleBarrierMixin** | Position, DCA, Grid, Progressive | ~60 | SL/TP/TL/trailing dispatch — most complex extraction |
-| **OrderTrackingMixin** | Position, DCA, Grid, Progressive | ~25 | `update_tracked_orders_with_order_id()` + `_failed_orders` |
 | **PNLCalculatorMixin** | Position, DCA, Progressive | ~30 | `trade_pnl - fees` pattern (Grid uses different model) |
-| **ActivationBoundsMixin** | Position, DCA, Grid, Progressive | ~15 | `_is_within_activation_bounds()` with BUY/SELL + MAKER/TAKER |
 
 ## Design Principles
 
