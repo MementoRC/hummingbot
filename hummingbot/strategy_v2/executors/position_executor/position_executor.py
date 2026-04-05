@@ -18,6 +18,7 @@ from hummingbot.core.event.events import (
 from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.executor_base import ExecutorBase
+from hummingbot.strategy_v2.executors.mixins.activation_bounds import ActivationBoundsMixin
 from hummingbot.strategy_v2.executors.mixins.balance_validation import BalanceValidationMixin
 from hummingbot.strategy_v2.executors.mixins.retry import RetryMixin
 from hummingbot.strategy_v2.executors.position_executor.data_types import PositionExecutorConfig
@@ -25,7 +26,7 @@ from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 
 
-class PositionExecutor(RetryMixin, BalanceValidationMixin, ExecutorBase):
+class PositionExecutor(ActivationBoundsMixin, RetryMixin, BalanceValidationMixin, ExecutorBase):
     _logger = None
 
     @classmethod
@@ -397,34 +398,6 @@ class PositionExecutor(RetryMixin, BalanceValidationMixin, ExecutorBase):
                     not self._is_within_activation_bounds(self.config.entry_price, self.config.side,
                                                           self.config.triple_barrier_config.open_order_type):
                 self.cancel_open_order()
-
-    def _is_within_activation_bounds(self, order_price: Decimal, side: TradeType, order_type: OrderType) -> bool:
-        """
-        This method is responsible for checking if the close price is within the activation bounds to place the open
-        order. If the activation bounds are not set, it returns True. This makes the executor more capital efficient.
-
-        :param close_price: The close price to be checked.
-        :return: True if the close price is within the activation bounds, False otherwise.
-        """
-        activation_bounds = self.config.activation_bounds
-        mid_price = self.get_price(self.config.connector_name, self.config.trading_pair, PriceType.MidPrice)
-        if activation_bounds:
-            if order_type.is_limit_type():
-                if side == TradeType.BUY:
-                    return order_price >= mid_price * (1 - activation_bounds[0])
-                else:
-                    return order_price <= mid_price * (1 + activation_bounds[0])
-            else:
-                if side == TradeType.BUY:
-                    min_price_to_buy = order_price * (1 - activation_bounds[0])
-                    max_price_to_buy = order_price * (1 + activation_bounds[1])
-                    return min_price_to_buy <= mid_price <= max_price_to_buy
-                else:
-                    min_price_to_sell = order_price * (1 - activation_bounds[1])
-                    max_price_to_sell = order_price * (1 + activation_bounds[0])
-                    return min_price_to_sell <= mid_price <= max_price_to_sell
-        else:
-            return True
 
     def place_open_order(self):
         """

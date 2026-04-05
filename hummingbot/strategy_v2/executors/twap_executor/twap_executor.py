@@ -17,13 +17,14 @@ from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.executor_base import ExecutorBase
 from hummingbot.strategy_v2.executors.mixins.balance_validation import BalanceValidationMixin
+from hummingbot.strategy_v2.executors.mixins.order_tracking import OrderTrackingMixin
 from hummingbot.strategy_v2.executors.mixins.retry import RetryMixin
 from hummingbot.strategy_v2.executors.twap_executor.data_types import TWAPExecutorConfig
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 
 
-class TWAPExecutor(RetryMixin, BalanceValidationMixin, ExecutorBase):
+class TWAPExecutor(OrderTrackingMixin, RetryMixin, BalanceValidationMixin, ExecutorBase):
     _logger = None
 
     @classmethod
@@ -46,7 +47,7 @@ class TWAPExecutor(RetryMixin, BalanceValidationMixin, ExecutorBase):
         self.init_retry(max_retries)
         self._start_timestamp = self._strategy.current_timestamp
         self._order_plan: Dict[float, Optional[TrackedOrder]] = self.create_order_plan()
-        self._failed_orders = []
+        self.init_order_tracking()
         self._refreshed_orders = []
 
     def create_order_plan(self):
@@ -161,13 +162,8 @@ class TWAPExecutor(RetryMixin, BalanceValidationMixin, ExecutorBase):
             self._order_plan = {timestamp: None for timestamp, order in self._order_plan.items() if order == active_order}
             self.increment_retries("order failed")
 
-    def update_tracked_orders_with_order_id(self, order_id: str):
-        all_orders = self._order_plan.values()
-        active_order = next((order for order in all_orders if order.order_id == order_id), None)
-        if active_order:
-            in_flight_order = self.get_in_flight_order(self.config.connector_name, order_id)
-            if in_flight_order:
-                active_order.order = in_flight_order
+    def _get_trackable_orders(self):
+        return [order for order in self._order_plan.values() if order]
 
     def process_order_completed_event(self,
                                       event_tag: int,
