@@ -15,10 +15,6 @@ python_files = ["test_*.py"]
 asyncio_default_fixture_loop_scope = "function"
 asyncio_mode = "auto"
 
-[tool.pixi.tasks]
-migrate-pytest = { cmd = "python $HOME/PycharmProjects/refactor-applications/refactor/rules/pytest_migration.py -d --apply --verbose test/", env = { PYTHONPATH = "$HOME/PycharmProjects/refactor-applications:$PYTHONPATH" } }
-migrate-pytest-dry = { cmd = "python $HOME/PycharmProjects/refactor-applications/refactor/rules/pytest_migration.py -d --verbose test/", env = { PYTHONPATH = "$HOME/PycharmProjects/refactor-applications:$PYTHONPATH" } }
-
 [tool.black]
 line-length = 120
 include = '\.pyi?$'
@@ -156,6 +152,8 @@ compat-import = { cmd = "python ci/check_subpackage_compat.py import", depends-o
 compat-contract = { cmd = "python ci/check_subpackage_compat.py contract", depends-on = ["install-dev"] }
 compat-integration = { cmd = "pytest sub-packages/candles-feed/tests/unit/test_compatibility.py sub-packages/candles-feed/tests/unit/test_hummingbot_integration.py -v --timeout=30", depends-on = ["install-dev"] }
 compat-check = { depends-on = ["compat-import", "compat-contract", "compat-integration"] }
+migrate-pytest = { cmd = "python $HOME/PycharmProjects/refactor-applications/refactor/rules/pytest_migration.py -d --apply --verbose test/", env = { PYTHONPATH = "$HOME/PycharmProjects/refactor-applications:$PYTHONPATH" } }
+migrate-pytest-dry = { cmd = "python $HOME/PycharmProjects/refactor-applications/refactor/rules/pytest_migration.py -d --verbose test/", env = { PYTHONPATH = "$HOME/PycharmProjects/refactor-applications:$PYTHONPATH" } }
 
 [tool.isort]
 line_length = 120
