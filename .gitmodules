@@ -18,3 +18,7 @@
 	path = sub-packages/cython-framework
 	url = https://github.com/MementoRC/hb-cython-framework.git
 	branch = development
+[submodule "sub-packages/rust-accelerators"]
+	path = sub-packages/rust-accelerators
+	url = https://github.com/MementoRC/hb-rust-accelerators.git
+	branch = development
