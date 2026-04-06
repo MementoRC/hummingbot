@@ -116,7 +116,7 @@ WS_ORDER_STATE = "OrderStateEvent"
 WS_ORDER_TRADE = "OrderTradeEvent"
 WS_TRADE_RESPONSE = "TradeDataUpdateEvent"
 
-ORDER_BOOK_DEPTH = 10
+ORDER_BOOK_DEPTH = 5
 
 RATE_LIMITS = [
     # Pools
@@ -147,10 +147,3 @@ RATE_LIMITS = [
                              LinkedLimitWeightPair(ORDERS, 1),
                              LinkedLimitWeightPair(ORDERS_24HR, 1)]),
 ]
-
-# Error codes
-ORDER_NOT_EXIST_ERROR_CODE = -2013
-ORDER_NOT_EXIST_MESSAGE = "Order does not exist"
-
-UNKNOWN_ORDER_ERROR_CODE = -2011
-UNKNOWN_ORDER_MESSAGE = "Unknown order sent"

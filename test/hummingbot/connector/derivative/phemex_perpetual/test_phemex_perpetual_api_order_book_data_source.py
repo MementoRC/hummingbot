@@ -331,6 +331,62 @@ class PhemexPerpetualAPIOrderBookDataSourceUnitTests(unittest.TestCase):
         expected_rate = Decimal(funding_update[10])
         self.assertEqual(expected_rate, msg.rate)
 
+    def test_listen_for_funding_info_successful(self):
+        funding_info_event = {
+            "data": [
+                [
+                    self.ex_trading_pair,
+                    "0.6597",
+                    "0.6887",
+                    "0.6149",
+                    "0.6429",
+                    "8416322",
+                    "5502514.8318",
+                    "291407",
+                    "0.6418",
+                    "0.642054889",
+                    "0.0001",
+                    "0.0001",
+                ]
+            ],
+            "fields": [
+                "symbol",
+                "openRp",
+                "highRp",
+                "lowRp",
+                "lastRp",
+                "volumeRq",
+                "turnoverRv",
+                "openInterestRv",
+                "indexRp",
+                "markRp",
+                "fundingRateRr",
+                "predFundingRateRr",
+            ],
+            "method": "perp_market24h_pack_p.update",
+            "timestamp": 1681507081332818939,
+            "type": "snapshot",
+        }
+
+        mock_queue = AsyncMock()
+        mock_queue.get.side_effect = [funding_info_event, asyncio.CancelledError()]
+        self.data_source._message_queue[self.data_source._funding_info_messages_queue_key] = mock_queue
+
+        msg_queue: asyncio.Queue = asyncio.Queue()
+
+        self.listening_task = self.ev_loop.create_task(self.data_source.listen_for_funding_info(msg_queue))
+
+        msg: FundingInfoUpdate = self.async_run_with_timeout(msg_queue.get())
+        funding_update = funding_info_event["data"][0]
+
+        self.assertEqual(self.trading_pair, msg.trading_pair)
+        expected_index_price = Decimal(str(funding_update[8]))
+        self.assertEqual(expected_index_price, msg.index_price)
+        expected_mark_price = Decimal(str(funding_update[9]))
+        self.assertEqual(expected_mark_price, msg.mark_price)
+        expected_rate = Decimal(funding_update[10])
+        self.assertEqual(expected_rate, msg.rate)
+
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
     @patch("hummingbot.core.data_type.order_book_tracker_data_source.OrderBookTrackerDataSource._sleep")
     def test_listen_for_subscriptions_cancelled_when_connecting(self, _, mock_ws):

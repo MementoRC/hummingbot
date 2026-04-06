@@ -53,11 +53,10 @@ class FoxbitAPIOrderBookDataSourceUnitTests(unittest.TestCase):
                                                         domain=self.domain)
         self.data_source.logger().setLevel(1)
         self.data_source.logger().addHandler(self)
-        self.data_source._live_stream_connected[1] = True
+
         self.resume_test_event = asyncio.Event()
 
         self.connector._set_trading_pair_symbol_map(bidict({self.ex_trading_pair: self.trading_pair}))
-        self.connector._set_trading_pair_instrument_id_map(bidict({1: self.ex_trading_pair}))
 
     def tearDown(self) -> None:
         self.listening_task and self.listening_task.cancel()
@@ -163,8 +162,7 @@ class FoxbitAPIOrderBookDataSourceUnitTests(unittest.TestCase):
         mock_api.get(regex_url, body=json.dumps(self._snapshot_response()))
 
         order_book: OrderBook = self.async_run_with_timeout(
-            coroutine=self.data_source.get_new_order_book(self.trading_pair),
-            timeout=2000
+            self.data_source.get_new_order_book(self.trading_pair)
         )
 
         expected_update_id = order_book.snapshot_uid
@@ -179,7 +177,6 @@ class FoxbitAPIOrderBookDataSourceUnitTests(unittest.TestCase):
         self.assertEqual(145901, asks[0].price)
         self.assertEqual(8.65827849, asks[0].amount)
 
-    @patch("hummingbot.connector.exchange.foxbit.foxbit_api_order_book_data_source.FoxbitAPIOrderBookDataSource._ORDER_BOOK_INTERVAL", 0.0)
     @aioresponses()
     def test_get_new_order_book_raises_exception(self, mock_api):
         url = web_utils.public_rest_url(path_url=CONSTANTS.SNAPSHOT_PATH_URL.format(self.trading_pair), domain=self.domain)
@@ -188,8 +185,7 @@ class FoxbitAPIOrderBookDataSourceUnitTests(unittest.TestCase):
         mock_api.get(regex_url, status=400)
         with self.assertRaises(IOError):
             self.async_run_with_timeout(
-                coroutine=self.data_source.get_new_order_book(self.trading_pair),
-                timeout=2000
+                self.data_source.get_new_order_book(self.trading_pair)
             )
 
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
@@ -241,14 +237,14 @@ class FoxbitAPIOrderBookDataSourceUnitTests(unittest.TestCase):
         sent_subscription_messages = self.mocking_assistant.json_messages_sent_through_websocket(
             websocket_mock=ws_connect_mock.return_value)
 
-        self.assertEqual(2, len(sent_subscription_messages))
+        self.assertEqual(3, len(sent_subscription_messages))
         expected_trade_subscription = {
             'Content-Type': 'application/json',
             'User-Agent': 'HBOT',
             'm': 0,
             'i': 2,
             'n': 'GetInstruments',
-            'o': '{"OMSId": 1, "InstrumentId": 1, "Depth": 10}'
+            'o': '{"OMSId": 1}'
         }
         self.assertEqual(expected_trade_subscription['o'], sent_subscription_messages[0]['o'])
 
@@ -258,7 +254,7 @@ class FoxbitAPIOrderBookDataSourceUnitTests(unittest.TestCase):
             'm': 0,
             'i': 2,
             'n': 'SubscribeLevel2',
-            'o': '{"InstrumentId": 1}'
+            'o': '{"OMSId": 1, "InstrumentId": 1, "Depth": 5}'
         }
         self.assertEqual(expected_diff_subscription['o'], sent_subscription_messages[1]['o'])
 
@@ -268,9 +264,9 @@ class FoxbitAPIOrderBookDataSourceUnitTests(unittest.TestCase):
         ))
 
     @patch("hummingbot.core.data_type.order_book_tracker_data_source.OrderBookTrackerDataSource._sleep")
-    @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
-    def test_listen_for_subscriptions_raises_cancel_exception(self, ws_connect_mock, _: AsyncMock):
-        ws_connect_mock.side_effect = asyncio.CancelledError
+    @patch("aiohttp.ClientSession.ws_connect")
+    def test_listen_for_subscriptions_raises_cancel_exception(self, mock_ws, _: AsyncMock):
+        mock_ws.side_effect = asyncio.CancelledError
 
         with self.assertRaises(asyncio.CancelledError):
             self.listening_task = self.ev_loop.create_task(self.data_source.listen_for_subscriptions())
@@ -506,3 +502,51 @@ class FoxbitAPIOrderBookDataSourceUnitTests(unittest.TestCase):
 
         expected_id = eval(diff_event["o"])[0][0]
         self.assertEqual(expected_id, msg.update_id)
+
+    @aioresponses()
+    def test_listen_for_order_book_snapshots_cancelled_when_fetching_snapshot(self, mock_api):
+        url = web_utils.public_rest_url(path_url=CONSTANTS.SNAPSHOT_PATH_URL.format(self.trading_pair), domain=self.domain)
+        regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
+
+        mock_api.get(regex_url, exception=asyncio.CancelledError)
+
+        with self.assertRaises(asyncio.CancelledError):
+            self.async_run_with_timeout(
+                self.data_source.listen_for_order_book_snapshots(self.ev_loop, asyncio.Queue())
+            )
+
+    @aioresponses()
+    @patch("hummingbot.connector.exchange.foxbit.foxbit_api_order_book_data_source"
+           ".FoxbitAPIOrderBookDataSource._sleep")
+    def test_listen_for_order_book_snapshots_log_exception(self, mock_api, sleep_mock):
+        msg_queue: asyncio.Queue = asyncio.Queue()
+        sleep_mock.side_effect = lambda _: self._create_exception_and_unlock_test_with_event(asyncio.CancelledError())
+
+        url = web_utils.public_rest_url(path_url=CONSTANTS.SNAPSHOT_PATH_URL, domain=self.domain)
+        regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
+
+        mock_api.get(regex_url, exception=Exception)
+
+        self.listening_task = self.ev_loop.create_task(
+            self.data_source.listen_for_order_book_snapshots(self.ev_loop, msg_queue)
+        )
+        self.async_run_with_timeout(self.resume_test_event.wait())
+
+        self.assertTrue(
+            self._is_logged("ERROR", f"Unexpected error fetching order book snapshot for {self.trading_pair}."))
+
+    @aioresponses()
+    def test_listen_for_order_book_snapshots_successful(self, mock_api, ):
+        msg_queue: asyncio.Queue = asyncio.Queue()
+        url = web_utils.public_rest_url(path_url=CONSTANTS.SNAPSHOT_PATH_URL.format(self.trading_pair), domain=self.domain)
+        regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
+
+        mock_api.get(regex_url, body=json.dumps(self._snapshot_response()))
+
+        self.listening_task = self.ev_loop.create_task(
+            self.data_source.listen_for_order_book_snapshots(self.ev_loop, msg_queue)
+        )
+
+        msg: OrderBookMessage = self.async_run_with_timeout(msg_queue.get())
+
+        self.assertEqual(1, msg.update_id)

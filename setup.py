@@ -17,7 +17,10 @@ if is_posix:
         os.environ["CFLAGS"] = "-std=c++11"
 
 if os.environ.get('WITHOUT_CYTHON_OPTIMIZATIONS'):
-    os.environ["CFLAGS"] += " -O0"
+    if "CFLAGS" in os.environ:
+        os.environ["CFLAGS"] = os.environ.get("CFLAGS") + " -O0"
+    else:
+        os.environ["CFLAGS"] = "-O0"
 
 
 # Avoid a gcc warning below:
@@ -32,7 +35,7 @@ class BuildExt(build_ext):
 
 def main():
     cpu_count = os.cpu_count() or 8
-    version = "20230529"
+    version = "20230828"
     packages = find_packages(include=["hummingbot", "hummingbot.*"])
     package_data = {
         "hummingbot": [
@@ -47,20 +50,24 @@ def main():
         "0x-order-utils",
         "aioconsole",
         "aiohttp",
-        "aiokafka",
+        "asyncssh",
         "appdirs",
         "appnope",
         "async-timeout",
         "bidict",
+        "base58",
         "cachetools",
         "certifi",
+        "coincurve",
         "cryptography",
         "cython",
         "cytoolz",
+        "commlib-py",
         "docker",
         "diff-cover",
         "dydx-python",
         "dydx-v3-python",
+        "eip712-structs",
         "eth-abi",
         "eth-account",
         "eth-bloom",
@@ -71,6 +78,7 @@ def main():
         "flake8",
         "hexbytes",
         "importlib-metadata",
+        "injective-py"
         "mypy-extensions",
         "nose",
         "nose-exclude",
@@ -85,6 +93,7 @@ def main():
         "pyperclip",
         "python-dateutil",
         "python-telegram-bot",
+        "pyOpenSSL",
         "requests",
         "rsa",
         "ruamel-yaml",

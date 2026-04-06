@@ -6,7 +6,6 @@ import pandas as pd
 native_tokens = {
     "ethereum": "ETH",
     "avalanche": "AVAX",
-    "algorand": "ALGO",
     "cosmos": "ATOM",
     "polygon": "MATIC",
     "harmony": "ONE",
@@ -14,7 +13,8 @@ native_tokens = {
     "cronos": "CRO",
     "near": "NEAR",
     "injective": "INJ",
-    "xdc": "XDC"
+    "xdc": "XDC",
+    "tezos": "XTZ",
 }
 
 SUPPORTED_CHAINS = set(native_tokens.keys())
