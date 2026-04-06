@@ -1,4 +1,3 @@
-
 from pydantic import SecretStr
 
 from hummingbot.client.settings import ConnectorSetting, ConnectorType
@@ -30,7 +29,7 @@ class SettingsTest:
         assert api_key == connector.api_key
         self.assertNotIsInstance(connector.secret_key, SecretStr)
         assert api_secret == connector.secret_key
-    
+
     def test_conn_init_parameters_for_cex_connector(self):
         api_key = "someKey"
         api_secret = "someSecret"

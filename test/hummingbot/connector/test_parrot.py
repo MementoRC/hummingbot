@@ -5,10 +5,10 @@ from copy import copy
 from decimal import Decimal
 from unittest.mock import patch
 
+import pytest
 from aioresponses import aioresponses
 
 import hummingbot.connector.parrot as parrot
-import pytest
 
 
 class ParrotConnectorUnitTest:
@@ -18,14 +18,14 @@ class ParrotConnectorUnitTest:
     @classmethod
     def setUpClass(cls):
         cls.ev_loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
-    
+
     @pytest.fixture(autouse=True)
     def setup(self) -> None:
         self.log_records = []
-    
+
         parrot.logger().setLevel(1)
         parrot.logger().addHandler(self)
-    
+
         self.campaigns_get_resp = {
             "status": "success",
             "campaigns": [
@@ -135,9 +135,9 @@ class ParrotConnectorUnitTest:
                 }
             ],
         }
-    
+
         self.get_fail = {"status": "error", "message": "ERROR message"}
-    
+
         self.snapshot_get_resp = {
             "status": "success",
             "market_snapshot": {
@@ -200,7 +200,7 @@ class ParrotConnectorUnitTest:
             "message": "Data not available for timestamp 1657747860000.",
         }
         self.expected_snapshots_error = {"status": "error", "message": "404: Not Found"}
-    
+
         self.expected_summary = {
             "ALGO-USDT": parrot.CampaignSummary(
                 market_id=32,
@@ -215,10 +215,10 @@ class ParrotConnectorUnitTest:
                 apy=Decimal("0.40261369893035958700266974119585938751697540283203125"),
             )
         }
-    
+
     def handle(self, record):
         self.log_records.append(record)
-    
+
     def _is_logged(self, log_level: str, message: str) -> bool:
         return any(
             record.levelname == log_level and record.getMessage().startswith(message) for record in self.log_records
@@ -228,9 +228,9 @@ class ParrotConnectorUnitTest:
     def test_get_active_campaigns_empty_markets(self, mocked_http):
         mocked_http.get(f"{parrot.PARROT_MINER_BASE_URL}campaigns", body=json.dumps(self.campaigns_get_resp))
         mocked_http.get(f"{parrot.PARROT_MINER_BASE_URL}markets", body=json.dumps(""))
-        
+
         campaigns = self.ev_loop.run_until_complete(parrot.get_active_campaigns("binance"))
-        
+
         assert {1: self.expected_campaign_no_markets} == campaigns
         assert self._is_logged("WARNING", "Could not get active markets from Hummingbot API (returned response '').")
 
@@ -238,13 +238,13 @@ class ParrotConnectorUnitTest:
     def test_get_active_campaigns_failed_markets(self, mocked_http):
         mocked_http.get(f"{parrot.PARROT_MINER_BASE_URL}campaigns", body=json.dumps(self.campaigns_get_resp))
         mocked_http.get(f"{parrot.PARROT_MINER_BASE_URL}markets", body=json.dumps(self.get_fail))
-        
+
         campaigns = self.ev_loop.run_until_complete(parrot.get_active_campaigns("binance"))
-        
+
         assert {1: self.expected_campaign_no_markets} == campaigns
         assert self._is_logged(
-                "WARNING", f"Could not get active markets from Hummingbot API (returned response '{self.get_fail}')."
-            )
+            "WARNING", f"Could not get active markets from Hummingbot API (returned response '{self.get_fail}')."
+        )
 
     @aioresponses()
     def test_get_active_campaigns_markets_wrong_id(self, mocked_http):
@@ -252,19 +252,19 @@ class ParrotConnectorUnitTest:
         market_wrong_id = self.markets_get_resp
         market_wrong_id["markets"][0]["market_id"] = 10
         mocked_http.get(f"{parrot.PARROT_MINER_BASE_URL}markets", body=json.dumps(market_wrong_id))
-        
+
         campaigns = self.ev_loop.run_until_complete(parrot.get_active_campaigns("binance"))
-        
+
         assert {1: self.expected_campaign_no_markets} == campaigns
         assert not self._is_logged(
-                "WARNING", f"Could not get active markets from Hummingbot API (returned response '{self.get_fail}')."
-            )
+            "WARNING", f"Could not get active markets from Hummingbot API (returned response '{self.get_fail}')."
+        )
 
     @aioresponses()
     def test_get_active_campaigns_markets(self, mocked_http):
         mocked_http.get(f"{parrot.PARROT_MINER_BASE_URL}campaigns", body=json.dumps(self.campaigns_get_resp))
         mocked_http.get(f"{parrot.PARROT_MINER_BASE_URL}markets", body=json.dumps(self.markets_get_resp))
-        
+
         campaigns = self.ev_loop.run_until_complete(parrot.get_active_campaigns("binance", ["ZIL-USDT"]))
         assert {1: self.expected_campaign_w_markets} == campaigns
 
@@ -300,19 +300,19 @@ class ParrotConnectorUnitTest:
         )
         snapshot = self.ev_loop.run_until_complete(parrot.get_market_snapshots(market_id))
         assert {
-                "data": [
-                    {
-                        "ask": 0.301145,
-                        "bid": 0.298362,
-                        "liquidity": 32932.5255,
-                        "price": 0.30005,
-                        "spread_ask": 0.3647958323482506,
-                        "spread_bid": 0.5624147716913023,
-                        "timestamp": 1662589860000,
-                    }
-                ],
-                "status": "success",
-                    } == snapshot
+            "data": [
+                {
+                    "ask": 0.301145,
+                    "bid": 0.298362,
+                    "liquidity": 32932.5255,
+                    "price": 0.30005,
+                    "spread_ask": 0.3647958323482506,
+                    "spread_bid": 0.5624147716913023,
+                    "timestamp": 1662589860000,
+                }
+            ],
+            "status": "success",
+        } == snapshot
 
     @aioresponses()
     def test_get_market_snapshots_returns_none(self, mocked_http):
@@ -323,23 +323,23 @@ class ParrotConnectorUnitTest:
             body=json.dumps({"status": "error", "data": []}),
         )
         snapshot = self.ev_loop.run_until_complete(parrot.get_market_snapshots(market_id))
-        assert None == snapshot
-        
+        assert None is snapshot
+
         # No 'status' field
         mocked_http.get(
             f"{parrot.PARROT_MINER_BASE_URL}charts/market_band?chart_interval=1&market_id={market_id}",
             body=json.dumps({"data": []}),
         )
         snapshot = self.ev_loop.run_until_complete(parrot.get_market_snapshots(market_id))
-        assert None == snapshot
-        
+        assert None is snapshot
+
         # JSON resp is None
         mocked_http.get(
             f"{parrot.PARROT_MINER_BASE_URL}charts/market_band?chart_interval=1&market_id={market_id}",
             body=json.dumps(None),
         )
         snapshot = self.ev_loop.run_until_complete(parrot.get_market_snapshots(market_id))
-        assert None == snapshot
+        assert None is snapshot
 
     @aioresponses()
     def test_get_market_last_snapshot(self, mocked_http):
@@ -412,15 +412,15 @@ class ParrotConnectorUnitTest:
         resp = {"status": "error", "message": "Rate limit exceeded: 10 per 1 minute"}
         mock_api.get(f"{parrot.PARROT_MINER_BASE_URL}campaigns", body=json.dumps(resp))
         mock_api.get(f"{parrot.PARROT_MINER_BASE_URL}markets", body=json.dumps(resp))
-        
+
         campaigns = asyncio.get_event_loop().run_until_complete(
             parrot.get_active_campaigns(exchange="binance", trading_pairs=["COINALPHA-HBOT"])
         )
-        
+
         assert 0 == len(campaigns)
         assert self._is_logged(
-                "WARNING", f"Could not get active campaigns from Hummingbot API (returned response '{resp}')."
-            )
+            "WARNING", f"Could not get active campaigns from Hummingbot API (returned response '{resp}')."
+        )
 
     @aioresponses()
     def test_active_campaigns_are_filtered_by_token_pair(self, mock_api):
@@ -462,14 +462,14 @@ class ParrotConnectorUnitTest:
                 },
             ],
         }
-        
+
         mock_api.get(url, body=json.dumps(resp))
         mock_api.get(f"{parrot.PARROT_MINER_BASE_URL}markets", body=json.dumps(self.markets_get_resp))
-        
+
         campaigns = asyncio.get_event_loop().run_until_complete(
             parrot.get_active_campaigns(exchange="kucoin", trading_pairs=["COINALPHA-HBOT"])
         )
-        
+
         assert 1 == len(campaigns)
         campaign_summary: parrot.CampaignSummary = campaigns[63]
         assert "COINALPHA-HBOT" == campaign_summary.trading_pair
@@ -518,19 +518,19 @@ class ParrotConnectorUnitTest:
                 }
             ],
         }
-        
+
         mock_api.get(url, body=json.dumps(resp))
         mock_api.get(f"{parrot.PARROT_MINER_BASE_URL}markets", body=json.dumps(self.markets_get_resp))
-        
+
         campaigns = asyncio.get_event_loop().run_until_complete(
             parrot.get_active_campaigns(exchange="test_exchange", trading_pairs=["XYM-BTC"])
         )
-        
+
         assert 0 == len(campaigns)
-        
+
         mock_api.get(url, body=json.dumps(resp))
         mock_api.get(f"{parrot.PARROT_MINER_BASE_URL}markets", body=json.dumps(self.markets_get_resp))
-        
+
         campaigns = asyncio.get_event_loop().run_until_complete(
             parrot.get_active_campaigns(exchange="ascend_ex", trading_pairs=["XYM-BTC"])
         )
@@ -539,16 +539,16 @@ class ParrotConnectorUnitTest:
     @aioresponses()
     def test_get_campaign_summary_logs_error_if_exception_happens(self, mock_api):
         url = f"{parrot.PARROT_MINER_BASE_URL}campaigns"
-        
+
         mock_api.get(url, exception=Exception("Test error description"))
-        
+
         campaigns = asyncio.get_event_loop().run_until_complete(
             parrot.get_campaign_summary(exchange="test_exchange", trading_pairs=["XYM-BTC"])
         )
-        
+
         assert 0 == len(campaigns)
         assert self._is_logged("ERROR", "Unexpected error while requesting data from Hummingbot API.")
-    
+
     def test_are_same_entity(self):
         assert parrot.are_same_entity("ascend_ex", "ascendex")
         assert parrot.are_same_entity("ascend_ex", "ascend_ex")

@@ -41,7 +41,6 @@ class MockTestConnector(ConnectorBase):
 
 
 class ConnectorBaseUnitTest:
-
     @classmethod
     def setUpClass(cls):
         cls._patcher = unittest.mock.patch("hummingbot.connector.connector_base.estimate_fee")
@@ -51,7 +50,7 @@ class ConnectorBaseUnitTest:
     @classmethod
     def tearDownClass(cls) -> None:
         cls._patcher.stop()
-    
+
     def test_in_flight_asset_balances(self):
         connector = ConnectorBase()
         connector.real_time_balance_update = True
@@ -65,7 +64,7 @@ class ConnectorBaseUnitTest:
         bals = connector.in_flight_asset_balances(orders)
         assert Decimal("300") == bals["USDT"]
         assert Decimal("1.5") == bals["HBOT"]
-    
+
     def test_estimated_available_balance_with_no_order_during_snapshot_is_the_registered_available_balance(self):
         connector = MockTestConnector()
         connector.real_time_balance_update = True
@@ -77,7 +76,7 @@ class ConnectorBaseUnitTest:
         )
 
         assert initial_balance == estimated_balance
-    
+
     def test_estimated_available_balance_with_unfilled_orders_during_snapshot_and_no_current_orders(self):
         # Considers the case where the balance update was done when two orders were alive
         # The orders were then cancelled and the available balance is calculated after the cancellation
@@ -125,7 +124,7 @@ class ConnectorBaseUnitTest:
 
         assert initial_coinalpha_balance + initial_sell_order.amount == estimated_coinalpha_balance
         assert initial_hbot_balance + (initial_buy_order.amount * initial_buy_order.price) == estimated_hbot_balance
-    
+
     def test_estimated_available_balance_with_no_orders_during_snapshot_and_two_current_orders(self):
         # Considers the case where the balance update was done when no orders were alive
         # At the moment of calculating the available balance there are two live orders
@@ -171,7 +170,7 @@ class ConnectorBaseUnitTest:
 
         assert initial_coinalpha_balance - sell_order.amount == estimated_coinalpha_balance
         assert initial_hbot_balance - (buy_order.amount * buy_order.price) == estimated_hbot_balance
-    
+
     def test_estimated_available_balance_with_unfilled_orders_during_snapshot_that_are_still_alive(self):
         # Considers the case where the balance update was done when two orders were alive
         # The orders are still alive when calculating the available balance
@@ -221,7 +220,7 @@ class ConnectorBaseUnitTest:
 
         assert initial_coinalpha_balance == estimated_coinalpha_balance
         assert initial_hbot_balance == estimated_hbot_balance
-    
+
     def test_estimated_available_balance_with_no_orders_during_snapshot_no_alive_orders_and_a_fill_event(self):
         connector = MockTestConnector()
         connector.real_time_balance_update = True
@@ -255,7 +254,7 @@ class ConnectorBaseUnitTest:
 
         assert initial_coinalpha_balance + fill_event.amount == estimated_coinalpha_balance
         assert initial_hbot_balance - (fill_event.amount * fill_event.price) == estimated_hbot_balance
-    
+
     def test_fill_event_previous_to_balance_updated_is_ignored_for_estimated_available_balance(self):
         connector = MockTestConnector()
         connector.real_time_balance_update = True
@@ -289,7 +288,7 @@ class ConnectorBaseUnitTest:
 
         assert initial_coinalpha_balance == estimated_coinalpha_balance
         assert initial_hbot_balance == estimated_hbot_balance
-    
+
     def test_estimated_available_balance_with_partially_filled_orders_during_snapshot_and_no_current_orders(self):
         # Considers the case where the balance update was done when two orders were alive and partially filled
         # The orders were then cancelled and the available balance is calculated after the cancellation
@@ -365,13 +364,16 @@ class ConnectorBaseUnitTest:
 
         # The partial fills prior to the balance update are already impacted in the balance
         # Only the unfilled part of the orders should be recovered once they are gone
-        assert initial_coinalpha_balance + initial_sell_order.amount - sell_fill_event.amount == estimated_coinalpha_balance
+        assert (
+            initial_coinalpha_balance + initial_sell_order.amount - sell_fill_event.amount
+            == estimated_coinalpha_balance
+        )
         expected_hbot_amount = (
             initial_hbot_balance
             + (initial_buy_order.amount - initial_buy_order.executed_amount_base) * initial_buy_order.price
         )
         assert expected_hbot_amount == estimated_hbot_balance
-    
+
     def test_estimated_available_balance_with_partially_filled_orders_during_snapshot_that_are_still_alive(self):
         # Considers the case where the balance update was done when two orders were alive and partially filled
         # The orders are still alive with no more fills
@@ -451,7 +453,7 @@ class ConnectorBaseUnitTest:
         # The partial fills prior to the balance update are already impacted in the balance
         assert initial_coinalpha_balance == estimated_coinalpha_balance
         assert initial_hbot_balance == estimated_hbot_balance
-    
+
     def test_estimated_available_balance_with_unfilled_orders_during_snapshot_two_current_partial_filled_and_extra_fill(
         self,
     ):

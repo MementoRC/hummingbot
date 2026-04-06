@@ -6,32 +6,32 @@ from hummingbot.client import FLOAT_PRINTOUT_PRECISION, format_decimal
 class FormatterTest:
     def test_precision_assumption(self):
         assert 8 == FLOAT_PRINTOUT_PRECISION
-    
+
     def test_format_float_decimal_places_rounded(self):
         n = 0.987654321
         s = format_decimal(n)
         assert "0.98765432" == s
-    
+
     def test_format_float_places_no_rounding(self):
         n = 0.21
         s = format_decimal(n)
         assert "0.21" == s
-    
+
     def test_format_large_float(self):
         n = 987654321.0
         s = format_decimal(n)
         assert "987654321" == s
-    
+
     def test_format_decimal_obj_decimal_places_rounded(self):
         n = Decimal("0.987654321")
         s = format_decimal(n)
         assert "0.98765432" == s
-    
+
     def test_format_decimal_obj_places_no_rounding(self):
         n = Decimal("0.21")
         s = format_decimal(n)
         assert "0.21" == s
-    
+
     def test_format_large_decimal_obj(self):
         n = Decimal("987654321.0")
         s = format_decimal(n)

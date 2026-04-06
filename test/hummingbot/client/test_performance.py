@@ -4,6 +4,8 @@ from decimal import Decimal
 from typing import Awaitable
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from hummingbot.client.performance import PerformanceMetrics
 from hummingbot.core.data_type.common import OrderType, PositionAction, TradeType
 from hummingbot.core.data_type.trade import Trade
@@ -12,7 +14,6 @@ from hummingbot.core.rate_oracle.rate_oracle import RateOracle
 from hummingbot.model.order import Order  # noqa — Order needs to be defined for TradeFill
 from hummingbot.model.order_status import OrderStatus  # noqa — Order needs to be defined for TradeFill
 from hummingbot.model.trade_fill import TradeFill
-import pytest
 
 trading_pair = "HBOT-USDT"
 base, quote = trading_pair.split("-")
@@ -23,7 +24,7 @@ class PerformanceMetricsUnitTest:
     def teardown_fixture(self) -> None:
         yield
         RateOracle._shared_instance = None
-    
+
     def mock_trade(self, id, amount, price, position="OPEN", type="BUY", fee=None):
         trade = MagicMock()
         trade.order_id = id
@@ -35,11 +36,11 @@ class PerformanceMetricsUnitTest:
             trade.trade_fee = fee.to_json()
 
         return trade
-    
+
     def async_run_with_timeout(self, coroutine: Awaitable, timeout: int = 1):
         ret = asyncio.get_event_loop().run_until_complete(asyncio.wait_for(coroutine, timeout))
         return ret
-    
+
     def test_position_order_returns_nothing_when_no_open_and_no_close_orders(self):
         trade_for_open = [self.mock_trade(id=f"order{i}", amount=100, price=10, position="INVALID") for i in range(3)]
         trades_for_close = [self.mock_trade(id=f"order{i}", amount=100, price=10, position="INVALID") for i in range(2)]
@@ -54,7 +55,7 @@ class PerformanceMetricsUnitTest:
         trades_for_close[-1].position = "CLOSE"
 
         assert PerformanceMetrics.position_order(trade_for_open, trades_for_close) is None
-    
+
     def test_position_order_returns_open_and_close_pair(self):
         trades_for_open = [self.mock_trade(id=f"order{i}", amount=100, price=10, position="INVALID") for i in range(3)]
         trades_for_close = [self.mock_trade(id=f"order{i}", amount=100, price=10, position="INVALID") for i in range(2)]
@@ -67,13 +68,13 @@ class PerformanceMetricsUnitTest:
         )
         assert selected_open == trades_for_open[1]
         assert selected_close == trades_for_close[-1]
-    
+
     def test_aggregated_position_with_no_trades(self):
         aggregated_buys, aggregated_sells = PerformanceMetrics.aggregate_position_order([], [])
 
         assert len(aggregated_buys) == 0
         assert len(aggregated_sells) == 0
-    
+
     def test_aggregated_position_for_unrelated_trades(self):
         trades = []
 
@@ -90,7 +91,7 @@ class PerformanceMetricsUnitTest:
 
         assert len(aggregated_buys) == 0
         assert aggregated_sells == trades
-    
+
     def test_aggregated_position_with_two_related_trades_from_three(self):
         trades = []
 
@@ -119,7 +120,7 @@ class PerformanceMetricsUnitTest:
         trade = aggregated_sells[0]
         assert trade.order_id == "order1" and trade.amount == 400 and trade.price == 15
         assert aggregated_sells[1] == trades[1]
-    
+
     def test_performance_metrics(self):
         rate_oracle = RateOracle()
         rate_oracle._prices["USDT-HBOT"] = Decimal("5")
@@ -172,7 +173,7 @@ class PerformanceMetricsUnitTest:
         rate_oracle = RateOracle()
         rate_oracle._prices["USDT-HBOT"] = Decimal("5")
         RateOracle._shared_instance = rate_oracle
-        
+
         is_trade_fill_mock.return_value = True
         trades = []
         trades.append(
@@ -215,7 +216,7 @@ class PerformanceMetricsUnitTest:
                 fee=AddedToCostTradeFee(Decimal("0.1"), flat_fees=[TokenAmount("USD", Decimal("0"))]),
             )
         )
-        
+
         cur_bals = {base: 100, quote: 10000}
         metrics = asyncio.get_event_loop().run_until_complete(PerformanceMetrics.create(trading_pair, trades, cur_bals))
         assert metrics.num_buys == 2
@@ -238,7 +239,7 @@ class PerformanceMetricsUnitTest:
         assert metrics.cur_price == Decimal("0.2")
         assert metrics.trade_pnl == Decimal("1000")
         assert metrics.total_pnl == Decimal("650")
-    
+
     def test_smart_round(self):
         value = PerformanceMetrics.smart_round(None)
         assert value is None
@@ -262,7 +263,7 @@ class PerformanceMetricsUnitTest:
 
         value = PerformanceMetrics.smart_round(Decimal("0.123456"), 2)
         assert value == Decimal("0.12")
-    
+
     def test_calculate_fees_in_quote_for_one_trade_with_fees_different_tokens(self):
         rate_oracle = RateOracle()
         rate_oracle._prices["DAI-COINALPHA"] = Decimal("2")
@@ -291,7 +292,7 @@ class PerformanceMetricsUnitTest:
         expected_fee_amount += flat_fees[0].amount * Decimal("0.9") * Decimal("2")
         expected_fee_amount += flat_fees[1].amount * Decimal("2")
         assert expected_fee_amount == performance_metric.fee_in_quote
-    
+
     def test_calculate_fees_in_quote_for_one_trade_fill_with_fees_different_tokens(self):
         rate_oracle = RateOracle()
         rate_oracle._prices["DAI-COINALPHA"] = Decimal("2")
@@ -329,7 +330,7 @@ class PerformanceMetricsUnitTest:
         expected_fee_amount += flat_fees[0].amount * Decimal("0.9") * Decimal("2")
         expected_fee_amount += flat_fees[1].amount * Decimal("2")
         assert expected_fee_amount == performance_metric.fee_in_quote
-    
+
     def test__process_deducted_fees_impact_in_quote_vol(self):
         dummy_trade = Trade(
             trading_pair="HBOT-COINALPHA",

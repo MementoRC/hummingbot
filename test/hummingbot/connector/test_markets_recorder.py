@@ -5,6 +5,7 @@ from typing import Awaitable
 from unittest.mock import MagicMock, PropertyMock, patch
 
 import numpy as np
+import pytest
 from sqlalchemy import create_engine
 
 from hummingbot.client.config.client_config_map import ClientConfigMap, MarketDataCollectionConfigMap
@@ -33,17 +34,15 @@ from hummingbot.strategy_v2.executors.position_executor.position_executor import
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType
 from hummingbot.strategy_v2.models.executors_info import ExecutorInfo
-import pytest
 
 
 class MarketsRecorderTests:
-
     @staticmethod
     def create_mock_strategy():
         market = MagicMock()
         market_info = MagicMock()
         market_info.market = market
-        
+
         strategy = MagicMock(spec=StrategyV2Base)
         type(strategy).market_info = PropertyMock(return_value=market_info)
         type(strategy).trading_pair = PropertyMock(return_value="ETH-USDT")
@@ -56,13 +55,13 @@ class MarketsRecorderTests:
         return strategy
 
     @staticmethod
-    def async_run_with_timeout(coroutine: Awaitable, timeout: int=1):
+    def async_run_with_timeout(coroutine: Awaitable, timeout: int = 1):
         ret = asyncio.get_event_loop().run_until_complete(asyncio.wait_for(coroutine, timeout))
         return ret
-    
+
     def get_price_by_type(self, trading_pair, price_type):
         pass
-    
+
     def get_order_book(self, trading_pair):
         pass
 
@@ -72,27 +71,27 @@ class MarketsRecorderTests:
         self.display_name = "test_market"
         self.config_file_path = "test_config"
         self.strategy_name = "test_strategy"
-    
+
         self.symbol = "COINALPHAHBOT"
         self.base = "COINALPHA"
         self.quote = "HBOT"
         self.trading_pair = f"{self.base}-{self.quote}"
         self.ready = True
         self.trading_pairs = [self.trading_pair]
-    
+
         engine_mock.return_value = create_engine("sqlite:///:memory:")
         self.manager = SQLConnectionManager(
             ClientConfigAdapter(ClientConfigMap()), SQLConnectionType.TRADE_FILLS, db_name="test_DB"
         )
-    
+
         self.tracking_states = dict()
-    
+
     def add_trade_fills_from_market_recorder(self, current_trade_fills):
         pass
-    
+
     def add_exchange_order_ids_from_market_recorder(self, current_exchange_order_ids):
         pass
-    
+
     def test_properties(self):
         recorder = MarketsRecorder(
             sql=self.manager,
@@ -110,7 +109,7 @@ class MarketsRecorderTests:
         assert self.config_file_path == recorder.config_file_path
         assert self.strategy_name == recorder.strategy_name
         assert isinstance(recorder.logger(), HummingbotLogger)
-    
+
     def test_get_trade_for_config(self):
         recorder = MarketsRecorder(
             sql=self.manager,
@@ -151,7 +150,7 @@ class MarketsRecorderTests:
         trades = recorder.get_trades_for_config("test_config")
         assert 1 == len(trades)
         assert fill_id == trades[0].exchange_trade_id
-    
+
     def test_buy_order_created_event_creates_order_record(self):
         recorder = MarketsRecorder(
             sql=self.manager,
@@ -192,7 +191,7 @@ class MarketsRecorderTests:
         assert 1 == len(order_status)
         assert MarketEvent.BuyOrderCreated.name == order_status[0].status
         assert 0 == len(trade_fills)
-    
+
     def test_sell_order_created_event_creates_order_record(self):
         recorder = MarketsRecorder(
             sql=self.manager,
@@ -233,7 +232,7 @@ class MarketsRecorderTests:
         assert 1 == len(order_status)
         assert MarketEvent.SellOrderCreated.name == order_status[0].status
         assert 0 == len(trade_fills)
-    
+
     def test_create_order_and_process_fill(self):
         recorder = MarketsRecorder(
             sql=self.manager,
@@ -290,7 +289,7 @@ class MarketsRecorderTests:
         assert 1 == len(trade_fills)
         assert self.config_file_path == trade_fills[0].config_file_path
         assert fill_event.order_id == trade_fills[0].order_id
-    
+
     def test_trade_fee_in_quote_not_available(self):
         recorder = MarketsRecorder(
             sql=self.manager,
@@ -350,7 +349,7 @@ class MarketsRecorderTests:
         assert 1 == len(trade_fills)
         assert self.config_file_path == trade_fills[0].config_file_path
         assert fill_event.order_id == trade_fills[0].order_id
-    
+
     def test_create_order_and_completed(self):
         recorder = MarketsRecorder(
             sql=self.manager,
@@ -444,7 +443,7 @@ class MarketsRecorderTests:
         assert market_data[0].best_ask == Decimal("101")
         assert market_data[0].best_bid == Decimal("99")
         assert market_data[0].mid_price == Decimal("100")
-    
+
     def test_store_position(self):
         recorder = MarketsRecorder(
             sql=self.manager,
@@ -477,7 +476,7 @@ class MarketsRecorderTests:
             query = session.query(Position)
             positions = query.all()
         assert 1 == len(positions)
-    
+
     def test_update_or_store_position(self):
         recorder = MarketsRecorder(
             sql=self.manager,
@@ -590,7 +589,7 @@ class MarketsRecorderTests:
             positions = query.all()
         # Should now have 3 positions
         assert 3 == len(positions)
-    
+
     def test_get_positions_methods(self):
         recorder = MarketsRecorder(
             sql=self.manager,
@@ -675,7 +674,7 @@ class MarketsRecorderTests:
         assert "pos1" in [p.id for p in positions_by_ids]
         assert "pos3" in [p.id for p in positions_by_ids]
         assert "pos2" not in [p.id for p in positions_by_ids]
-    
+
     def test_store_or_update_executor(self):
         recorder = MarketsRecorder(
             sql=self.manager,
@@ -724,7 +723,7 @@ class MarketsRecorderTests:
             query = session.query(Executors)
             executors = query.all()
         assert 1 == len(executors)
-    
+
     def test_add_market(self):
         """Test adding a new market dynamically to the recorder."""
         recorder = MarketsRecorder(
@@ -773,7 +772,7 @@ class MarketsRecorderTests:
         # Test adding the same market again (should not duplicate)
         recorder.add_market(new_market)
         assert 2 == len(recorder._markets)
-    
+
     def test_add_market_with_existing_trade_data(self):
         """Test adding a market when there's existing trade data for that market."""
         recorder = MarketsRecorder(
@@ -853,7 +852,7 @@ class MarketsRecorderTests:
         call_args = new_market.add_trade_fills_from_market_recorder.call_args[0][0]
         # The call should have been made with a set of TradeFillOrderDetails
         assert isinstance(call_args, set)
-    
+
     def test_remove_market(self):
         """Test removing a market dynamically from the recorder."""
         # Create a second mock market
@@ -900,7 +899,7 @@ class MarketsRecorderTests:
         non_existent_market = MagicMock()
         recorder.remove_market(non_existent_market)
         assert 1 == len(recorder._markets)
-    
+
     def test_add_remove_market_event_listeners(self):
         """Test that event listeners are properly managed when adding/removing markets."""
         recorder = MarketsRecorder(
@@ -955,7 +954,7 @@ class MarketsRecorderTests:
             event_type, forwarder = call[0]
             assert event_type in expected_event_types
             assert forwarder in expected_forwarders
-    
+
     def test_add_market_integration_with_event_processing(self):
         """Test that dynamically added markets can process events correctly."""
         recorder = MarketsRecorder(
@@ -1008,7 +1007,7 @@ class MarketsRecorderTests:
         assert "integration_test_market" == orders[0].market
         assert "BTC-USDT" == orders[0].symbol
         assert "NEW_MARKET_OID1" == orders[0].id
-    
+
     def test_did_update_range_position_add_liquidity(self):
         """Test _did_update_range_position records ADD liquidity event"""
         from hummingbot.core.event.events import RangePositionLiquidityAddedEvent
@@ -1064,7 +1063,7 @@ class MarketsRecorderTests:
         assert 5.0 == record.base_amount
         assert 500.0 == record.quote_amount
         assert 0.002 == record.position_rent
-    
+
     def test_did_update_range_position_remove_liquidity(self):
         """Test _did_update_range_position records REMOVE liquidity event"""
         from hummingbot.core.event.events import RangePositionLiquidityRemovedEvent

@@ -17,6 +17,7 @@ class PMMisterConfig(ControllerConfigBase):
     Advanced PMM (Pure Market Making) controller with sophisticated position management.
     Features hanging executors, price distance requirements, and breakeven awareness.
     """
+
     controller_type: str = "generic"
     controller_name: str = "pmm_mister"
     connector_name: str = Field(default="binance")
@@ -64,50 +65,53 @@ class PMMisterConfig(ControllerConfigBase):
             return Decimal(v)
         return v
 
-    @field_validator('take_profit_order_type', mode="before")
+    @field_validator("take_profit_order_type", mode="before")
     @classmethod
     def validate_order_type(cls, v) -> OrderType:
         if v is None:
             return OrderType.MARKET
         return parse_enum_value(OrderType, v, "take_profit_order_type")
 
-    @field_validator('open_order_type', mode="before")
+    @field_validator("open_order_type", mode="before")
     @classmethod
     def validate_open_order_type(cls, v) -> OrderType:
         if v is None:
             return OrderType.MARKET
         return parse_enum_value(OrderType, v, "open_order_type")
 
-    @field_validator('buy_spreads', 'sell_spreads', mode="before")
+    @field_validator("buy_spreads", "sell_spreads", mode="before")
     @classmethod
     def parse_spreads(cls, v):
         return parse_comma_separated_list(v)
 
-    @field_validator('buy_amounts_pct', 'sell_amounts_pct', mode="before")
+    @field_validator("buy_amounts_pct", "sell_amounts_pct", mode="before")
     @classmethod
     def parse_and_validate_amounts(cls, v, validation_info: ValidationInfo):
         field_name = validation_info.field_name
         if v is None or v == "":
-            spread_field = field_name.replace('amounts_pct', 'spreads')
+            spread_field = field_name.replace("amounts_pct", "spreads")
             return [1 for _ in validation_info.data[spread_field]]
         parsed = parse_comma_separated_list(v)
-        if isinstance(parsed, list) and len(parsed) != len(validation_info.data[field_name.replace('amounts_pct', 'spreads')]):
+        if isinstance(parsed, list) and len(parsed) != len(
+            validation_info.data[field_name.replace("amounts_pct", "spreads")]
+        ):
             raise ValueError(
-                f"The number of {field_name} must match the number of {field_name.replace('amounts_pct', 'spreads')}.")
+                f"The number of {field_name} must match the number of {field_name.replace('amounts_pct', 'spreads')}."
+            )
         return parsed
 
-    @field_validator('position_mode', mode="before")
+    @field_validator("position_mode", mode="before")
     @classmethod
     def validate_position_mode(cls, v) -> PositionMode:
         return parse_enum_value(PositionMode, v, "position_mode")
 
-    @field_validator('price_distance_tolerance', 'refresh_tolerance', 'tolerance_scaling', mode="before")
+    @field_validator("price_distance_tolerance", "refresh_tolerance", "tolerance_scaling", mode="before")
     @classmethod
     def validate_tolerance_fields(cls, v, validation_info: ValidationInfo):
         field_name = validation_info.field_name
         if isinstance(v, str):
             return Decimal(v)
-        if field_name == 'tolerance_scaling' and Decimal(str(v)) <= 0:
+        if field_name == "tolerance_scaling" and Decimal(str(v)) <= 0:
             raise ValueError(f"{field_name} must be greater than 0")
         return v
 
@@ -115,7 +119,9 @@ class PMMisterConfig(ControllerConfigBase):
     def triple_barrier_config(self) -> TripleBarrierConfig:
         # Ensure we're passing OrderType enum values, not strings
         open_order_type = self.open_order_type if isinstance(self.open_order_type, OrderType) else OrderType.LIMIT_MAKER
-        take_profit_order_type = self.take_profit_order_type if isinstance(self.take_profit_order_type, OrderType) else OrderType.LIMIT_MAKER
+        take_profit_order_type = (
+            self.take_profit_order_type if isinstance(self.take_profit_order_type, OrderType) else OrderType.LIMIT_MAKER
+        )
 
         return TripleBarrierConfig(
             take_profit=self.take_profit,
@@ -123,7 +129,7 @@ class PMMisterConfig(ControllerConfigBase):
             open_order_type=open_order_type,
             take_profit_order_type=take_profit_order_type,
             stop_loss_order_type=OrderType.MARKET,
-            time_limit_order_type=OrderType.MARKET
+            time_limit_order_type=OrderType.MARKET,
         )
 
     def get_cooldown_time(self, trade_type: TradeType) -> int:
@@ -132,35 +138,46 @@ class PMMisterConfig(ControllerConfigBase):
 
     def get_position_effectivization_time(self, trade_type: TradeType) -> int:
         """Get position effectivization time for specific trade type"""
-        return self.buy_position_effectivization_time if trade_type == TradeType.BUY else self.sell_position_effectivization_time
+        return (
+            self.buy_position_effectivization_time
+            if trade_type == TradeType.BUY
+            else self.sell_position_effectivization_time
+        )
 
     def get_price_distance_level_tolerance(self, level: int) -> Decimal:
         """Get level-specific price distance tolerance (for new order placement).
         Prevents placing new orders when existing ones are too close to current price.
         """
-        return self.price_distance_tolerance * (self.tolerance_scaling ** level)
+        return self.price_distance_tolerance * (self.tolerance_scaling**level)
 
     def get_refresh_level_tolerance(self, level: int) -> Decimal:
         """Get level-specific refresh tolerance (for order replacement).
         Triggers replacing open orders when price deviates from theoretical level.
         """
-        return self.refresh_tolerance * (self.tolerance_scaling ** level)
+        return self.refresh_tolerance * (self.tolerance_scaling**level)
 
-    def update_parameters(self, trade_type: TradeType, new_spreads: Union[List[float], str],
-                          new_amounts_pct: Optional[Union[List[int], str]] = None):
-        spreads_field = 'buy_spreads' if trade_type == TradeType.BUY else 'sell_spreads'
-        amounts_pct_field = 'buy_amounts_pct' if trade_type == TradeType.BUY else 'sell_amounts_pct'
+    def update_parameters(
+        self,
+        trade_type: TradeType,
+        new_spreads: Union[List[float], str],
+        new_amounts_pct: Optional[Union[List[int], str]] = None,
+    ):
+        spreads_field = "buy_spreads" if trade_type == TradeType.BUY else "sell_spreads"
+        amounts_pct_field = "buy_amounts_pct" if trade_type == TradeType.BUY else "sell_amounts_pct"
 
         setattr(self, spreads_field, self.parse_spreads(new_spreads))
         if new_amounts_pct is not None:
-            setattr(self, amounts_pct_field,
-                    self.parse_and_validate_amounts(new_amounts_pct, self.__dict__, self.__fields__[amounts_pct_field]))
+            setattr(
+                self,
+                amounts_pct_field,
+                self.parse_and_validate_amounts(new_amounts_pct, self.__dict__, self.__fields__[amounts_pct_field]),
+            )
         else:
             setattr(self, amounts_pct_field, [1 for _ in getattr(self, spreads_field)])
 
     def get_spreads_and_amounts_in_quote(self, trade_type: TradeType) -> Tuple[List[float], List[float]]:
-        buy_amounts_pct = getattr(self, 'buy_amounts_pct')
-        sell_amounts_pct = getattr(self, 'sell_amounts_pct')
+        buy_amounts_pct = getattr(self, "buy_amounts_pct")
+        sell_amounts_pct = getattr(self, "sell_amounts_pct")
 
         total_pct = sum(buy_amounts_pct) + sum(sell_amounts_pct)
 
@@ -169,8 +186,10 @@ class PMMisterConfig(ControllerConfigBase):
         else:
             normalized_amounts_pct = [amt_pct / total_pct for amt_pct in sell_amounts_pct]
 
-        spreads = getattr(self, f'{trade_type.name.lower()}_spreads')
-        return spreads, [amt_pct * self.total_amount_quote * self.portfolio_allocation for amt_pct in normalized_amounts_pct]
+        spreads = getattr(self, f"{trade_type.name.lower()}_spreads")
+        return spreads, [
+            amt_pct * self.total_amount_quote * self.portfolio_allocation for amt_pct in normalized_amounts_pct
+        ]
 
     def update_markets(self, markets: MarketDict) -> MarketDict:
         return markets.add_or_update(self.connector_name, self.trading_pair)
@@ -249,7 +268,7 @@ class PMMister(ControllerBase):
     def should_refresh_executor_by_distance(self, executor_info, reference_price: Decimal) -> bool:
         """Check if executor should be refreshed due to price distance deviation"""
         level_id = executor_info.custom_info.get("level_id", "")
-        if not level_id or not hasattr(executor_info.config, 'entry_price'):
+        if not level_id or not hasattr(executor_info.config, "entry_price"):
             return False
 
         current_order_price = executor_info.config.entry_price
@@ -303,9 +322,7 @@ class PMMister(ControllerBase):
             side_multiplier = Decimal("-1") if trade_type == TradeType.BUY else Decimal("1")
             price = reference_price * (Decimal("1") + side_multiplier * spread_in_pct)
             amount = self.market_data_provider.quantize_order_amount(
-                self.config.connector_name,
-                self.config.trading_pair,
-                (amount_quote / price) * skew
+                self.config.connector_name, self.config.trading_pair, (amount_quote / price) * skew
             )
 
             if amount == Decimal("0"):
@@ -321,20 +338,21 @@ class PMMister(ControllerBase):
             executor_config = self.get_executor_config(level_id, price, amount)
             if executor_config is not None:
                 # Track order creation for visualization
-                self.order_history.append({
-                    'timestamp': self.market_data_provider.time(),
-                    'price': price,
-                    'side': trade_type.name,
-                    'level_id': level_id,
-                    'action': 'CREATE'
-                })
+                self.order_history.append(
+                    {
+                        "timestamp": self.market_data_provider.time(),
+                        "price": price,
+                        "side": trade_type.name,
+                        "level_id": level_id,
+                        "action": "CREATE",
+                    }
+                )
                 if len(self.order_history) > self.max_order_history:
                     self.order_history.pop(0)
 
-                create_actions.append(CreateExecutorAction(
-                    controller_id=self.config.id,
-                    executor_config=executor_config
-                ))
+                create_actions.append(
+                    CreateExecutorAction(controller_id=self.config.id, executor_config=executor_config)
+                )
 
         return create_actions
 
@@ -384,10 +402,7 @@ class PMMister(ControllerBase):
                     price_distance_violated = True
 
             # Level is working if any condition is true
-            if (has_active_not_trading or
-                has_too_many_executors or
-                has_active_cooldown or
-                    price_distance_violated):
+            if has_active_not_trading or has_too_many_executors or has_active_cooldown or price_distance_violated:
                 working_levels_ids.append(level_id)
                 continue
         return self.get_not_active_levels_ids(working_levels_ids)
@@ -409,19 +424,21 @@ class PMMister(ControllerBase):
         executors_to_refresh = self.filter_executors(
             executors=self.executors_info,
             filter_func=lambda x: (
-                not x.is_trading and x.is_active and (
+                not x.is_trading
+                and x.is_active
+                and (
                     # Time-based refresh condition
-                    current_time - x.timestamp > self.config.executor_refresh_time or
+                    current_time - x.timestamp > self.config.executor_refresh_time
+                    or
                     # Distance-based refresh condition
                     (reference_price > 0 and self.should_refresh_executor_by_distance(x, reference_price))
                 )
-            )
+            ),
         )
-        return [StopExecutorAction(
-            controller_id=self.config.id,
-            keep_position=True,
-            executor_id=executor.id
-        ) for executor in executors_to_refresh]
+        return [
+            StopExecutorAction(controller_id=self.config.id, keep_position=True, executor_id=executor.id)
+            for executor in executors_to_refresh
+        ]
 
     def process_hanging_executors(self) -> List[ExecutorAction]:
         """Process hanging executors and effectivize them when appropriate"""
@@ -429,15 +446,14 @@ class PMMister(ControllerBase):
         # Find hanging executors that should be effectivized (only is_trading)
         executors_to_effectivize = self.filter_executors(
             executors=self.executors_info,
-            filter_func=lambda x: x.is_trading and self.should_effectivize_executor(x, current_time)
+            filter_func=lambda x: x.is_trading and self.should_effectivize_executor(x, current_time),
         )
 
         # Create actions for effectivization (keep position)
-        effectivize_actions = [StopExecutorAction(
-            controller_id=self.config.id,
-            keep_position=True,
-            executor_id=executor.id
-        ) for executor in executors_to_effectivize]
+        effectivize_actions = [
+            StopExecutorAction(controller_id=self.config.id, keep_position=True, executor_id=executor.id)
+            for executor in executors_to_effectivize
+        ]
 
         return effectivize_actions
 
@@ -460,16 +476,19 @@ class PMMister(ControllerBase):
             reference_price = self.processed_data.get("reference_price", Decimal("100"))  # Default fallback
 
         # Update price history for visualization
-        self.price_history.append({
-            'timestamp': current_time,
-            'price': Decimal(reference_price)
-        })
+        self.price_history.append({"timestamp": current_time, "price": Decimal(reference_price)})
         if len(self.price_history) > self.max_price_history:
             self.price_history.pop(0)
 
-        position_held = next((position for position in self.positions_held if
-                              (position.trading_pair == self.config.trading_pair) &
-                              (position.connector_name == self.config.connector_name)), None)
+        position_held = next(
+            (
+                position
+                for position in self.positions_held
+                if (position.trading_pair == self.config.trading_pair)
+                & (position.connector_name == self.config.connector_name)
+            ),
+            None,
+        )
 
         target_position = self.config.total_amount_quote * self.config.target_base_pct
 
@@ -477,8 +496,11 @@ class PMMister(ControllerBase):
             position_amount = position_held.amount
             current_base_pct = position_held.amount_quote / self.config.total_amount_quote
             deviation = (target_position - position_held.amount_quote) / target_position
-            unrealized_pnl_pct = position_held.unrealized_pnl_quote / position_held.amount_quote if position_held.amount_quote != 0 else Decimal(
-                "0")
+            unrealized_pnl_pct = (
+                position_held.unrealized_pnl_quote / position_held.amount_quote
+                if position_held.amount_quote != 0
+                else Decimal("0")
+            )
             breakeven_price = position_held.breakeven_price
         else:
             position_amount = 0
@@ -488,8 +510,12 @@ class PMMister(ControllerBase):
             breakeven_price = None
 
         if self.config.tick_mode:
-            spread_multiplier = (self.market_data_provider.get_trading_rules(self.config.connector_name,
-                                                                             self.config.trading_pair).min_price_increment / reference_price)
+            spread_multiplier = (
+                self.market_data_provider.get_trading_rules(
+                    self.config.connector_name, self.config.trading_pair
+                ).min_price_increment
+                / reference_price
+            )
         else:
             spread_multiplier = Decimal("1")
 
@@ -532,7 +558,7 @@ class PMMister(ControllerBase):
             "level_conditions": level_conditions,
             "executor_stats": executor_stats,
             "refresh_tracking": refresh_tracking,
-            "current_time": current_time
+            "current_time": current_time,
         }
 
     def get_executor_config(self, level_id: str, price: Decimal, amount: Decimal):
@@ -558,7 +584,7 @@ class PMMister(ControllerBase):
         return TradeType.BUY if level_id.startswith("buy") else TradeType.SELL
 
     def get_level_from_level_id(self, level_id: str) -> int:
-        return int(level_id.split('_')[1])
+        return int(level_id.split("_")[1])
 
     def get_not_active_levels_ids(self, active_levels_ids: List[str]) -> List[str]:
         """Get levels that should be executed based on position constraints"""
@@ -596,13 +622,17 @@ class PMMister(ControllerBase):
 
     def analyze_all_levels(self) -> List[Dict]:
         """Analyze executors for all levels."""
-        level_ids: Set[str] = {e.custom_info.get("level_id") for e in self.executors_info if "level_id" in e.custom_info}
+        level_ids: Set[str] = {
+            e.custom_info.get("level_id") for e in self.executors_info if "level_id" in e.custom_info
+        }
         return [self._analyze_by_level_id(level_id) for level_id in level_ids]
 
     def _analyze_by_level_id(self, level_id: str) -> Dict:
         """Analyze executors for a specific level ID."""
         # Get active executors for level calculations
-        filtered_executors = [e for e in self.executors_info if e.custom_info.get("level_id") == level_id and e.is_active]
+        filtered_executors = [
+            e for e in self.executors_info if e.custom_info.get("level_id") == level_id and e.is_active
+        ]
 
         active_not_trading = [e for e in filtered_executors if e.is_active and not e.is_trading]
         active_trading = [e for e in filtered_executors if e.is_active and e.is_trading]
@@ -610,12 +640,13 @@ class PMMister(ControllerBase):
         # For cooldown calculation, include both active and recently completed executors
         all_level_executors = [e for e in self.executors_info if e.custom_info.get("level_id") == level_id]
         open_order_last_updates = [
-            e.custom_info.get("open_order_last_update") for e in all_level_executors
+            e.custom_info.get("open_order_last_update")
+            for e in all_level_executors
             if "open_order_last_update" in e.custom_info and e.custom_info["open_order_last_update"] is not None
         ]
         latest_open_order_update = max(open_order_last_updates) if open_order_last_updates else None
 
-        prices = [e.config.entry_price for e in filtered_executors if hasattr(e.config, 'entry_price')]
+        prices = [e.config.entry_price for e in filtered_executors if hasattr(e.config, "entry_price")]
 
         return {
             "level_id": level_id,
@@ -641,29 +672,29 @@ class PMMister(ControllerBase):
         inner_width = outer_width - 4
 
         # Get all required data with safe fallbacks
-        if not hasattr(self, 'processed_data') or not self.processed_data:
+        if not hasattr(self, "processed_data") or not self.processed_data:
             # Return minimal status if processed_data is not available
             status.append("╒" + "═" * inner_width + "╕")
             status.append(f"│ {'Initializing controller... please wait':<{inner_width}} │")
             status.append(f"╘{'═' * inner_width}╛")
             return status
 
-        base_pct = self.processed_data.get('current_base_pct', Decimal("0"))
+        base_pct = self.processed_data.get("current_base_pct", Decimal("0"))
         min_pct = self.config.min_base_pct
         max_pct = self.config.max_base_pct
         target_pct = self.config.target_base_pct
-        pnl = self.processed_data.get('unrealized_pnl_pct', Decimal('0'))
-        breakeven = self.processed_data.get('breakeven_price')
-        current_price = self.processed_data.get('reference_price', Decimal("0"))
-        buy_skew = self.processed_data.get('buy_skew', Decimal("1.0"))
-        sell_skew = self.processed_data.get('sell_skew', Decimal("1.0"))
+        pnl = self.processed_data.get("unrealized_pnl_pct", Decimal("0"))
+        breakeven = self.processed_data.get("breakeven_price")
+        current_price = self.processed_data.get("reference_price", Decimal("0"))
+        buy_skew = self.processed_data.get("buy_skew", Decimal("1.0"))
+        sell_skew = self.processed_data.get("sell_skew", Decimal("1.0"))
 
         # Enhanced condition data
-        cooldown_status = self.processed_data.get('cooldown_status', {})
-        effectivization = self.processed_data.get('effectivization_tracking', {})
-        level_conditions = self.processed_data.get('level_conditions', {})
-        executor_stats = self.processed_data.get('executor_stats', {})
-        refresh_tracking = self.processed_data.get('refresh_tracking', {})
+        cooldown_status = self.processed_data.get("cooldown_status", {})
+        effectivization = self.processed_data.get("effectivization_tracking", {})
+        level_conditions = self.processed_data.get("level_conditions", {})
+        executor_stats = self.processed_data.get("executor_stats", {})
+        refresh_tracking = self.processed_data.get("refresh_tracking", {})
 
         # Layout dimensions already set above
 
@@ -692,19 +723,25 @@ class PMMister(ControllerBase):
         # REAL-TIME CONDITIONS DASHBOARD
         status.append(f"├{'─' * inner_width}┤")
         status.append(f"│ {'🔄 REAL-TIME CONDITIONS DASHBOARD':<{inner_width}} │")
-        status.append(f"├{'─' * col1_width}┬{'─' * col2_width}┬{'─' * col3_width}┬{'─' * col4_width}┬{'─' * col5_width}┤")
-        status.append(f"│ {'COOLDOWNS':<{col1_width}} │ {'PRICE DISTANCES':<{col2_width}} │ {'EFFECTIVIZATION':<{col3_width}} │ {'REFRESH TRACKING':<{col4_width}} │ {'EXECUTION':<{col5_width}} │")
-        status.append(f"├{'─' * col1_width}┼{'─' * col2_width}┼{'─' * col3_width}┼{'─' * col4_width}┼{'─' * col5_width}┤")
+        status.append(
+            f"├{'─' * col1_width}┬{'─' * col2_width}┬{'─' * col3_width}┬{'─' * col4_width}┬{'─' * col5_width}┤"
+        )
+        status.append(
+            f"│ {'COOLDOWNS':<{col1_width}} │ {'PRICE DISTANCES':<{col2_width}} │ {'EFFECTIVIZATION':<{col3_width}} │ {'REFRESH TRACKING':<{col4_width}} │ {'EXECUTION':<{col5_width}} │"
+        )
+        status.append(
+            f"├{'─' * col1_width}┼{'─' * col2_width}┼{'─' * col3_width}┼{'─' * col4_width}┼{'─' * col5_width}┤"
+        )
 
         # Cooldown information
-        buy_cooldown = cooldown_status.get('buy', {})
-        sell_cooldown = cooldown_status.get('sell', {})
+        buy_cooldown = cooldown_status.get("buy", {})
+        sell_cooldown = cooldown_status.get("sell", {})
 
         cooldown_info = [
             f"BUY: {self._format_cooldown_status(buy_cooldown)}",
             f"SELL: {self._format_cooldown_status(sell_cooldown)}",
             f"Times: {self.config.buy_cooldown_time}/{self.config.sell_cooldown_time}s",
-            ""
+            "",
         ]
 
         # Calculate actual distances for current levels
@@ -724,7 +761,12 @@ class PMMister(ControllerBase):
                 current_sell_distance = f"({distance:.3%})"
 
         # Enhanced price info with unified tolerance approach
-        violation_marker = " ⚠️" if (current_buy_distance and "(0.0" in current_buy_distance) or (current_sell_distance and "(0.0" in current_sell_distance) else ""
+        violation_marker = (
+            " ⚠️"
+            if (current_buy_distance and "(0.0" in current_buy_distance)
+            or (current_sell_distance and "(0.0" in current_sell_distance)
+            else ""
+        )
 
         # Show level-specific tolerances
         dist_l0 = self.config.get_price_distance_level_tolerance(0)
@@ -734,35 +776,47 @@ class PMMister(ControllerBase):
             f"L0 Dist: {dist_l0:.4%}{violation_marker}",
             f"BUY Current: {current_buy_distance}",
             f"L1 Dist: {dist_l1:.4%}" if dist_l1 else "L1: N/A",
-            f"SELL Current: {current_sell_distance}"
+            f"SELL Current: {current_sell_distance}",
         ]
 
         # Effectivization information
-        total_hanging = effectivization.get('total_hanging', 0)
-        ready_count = effectivization.get('ready_for_effectivization', 0)
+        total_hanging = effectivization.get("total_hanging", 0)
+        ready_count = effectivization.get("ready_for_effectivization", 0)
 
         effect_info = [
             f"Hanging: {total_hanging}",
             f"Ready: {ready_count}",
             f"Times: {self.config.buy_position_effectivization_time}s/{self.config.sell_position_effectivization_time}s",
-            ""
+            "",
         ]
 
         # Refresh tracking information
-        near_refresh = refresh_tracking.get('near_refresh', 0)
-        refresh_ready = refresh_tracking.get('refresh_ready', 0)
-        distance_violations = refresh_tracking.get('distance_violations', 0)
+        near_refresh = refresh_tracking.get("near_refresh", 0)
+        refresh_ready = refresh_tracking.get("refresh_ready", 0)
+        distance_violations = refresh_tracking.get("distance_violations", 0)
 
         refresh_info = [
             f"Near Refresh: {near_refresh}",
             f"Ready: {refresh_ready}",
             f"Distance Violations: {distance_violations}",
-            f"Threshold: {self.config.executor_refresh_time}s"
+            f"Threshold: {self.config.executor_refresh_time}s",
         ]
 
         # Execution status
-        can_execute_buy = len([level for level in level_conditions.values() if level.get('trade_type') == 'BUY' and level.get('can_execute')])
-        can_execute_sell = len([level for level in level_conditions.values() if level.get('trade_type') == 'SELL' and level.get('can_execute')])
+        can_execute_buy = len(
+            [
+                level
+                for level in level_conditions.values()
+                if level.get("trade_type") == "BUY" and level.get("can_execute")
+            ]
+        )
+        can_execute_sell = len(
+            [
+                level
+                for level in level_conditions.values()
+                if level.get("trade_type") == "SELL" and level.get("can_execute")
+            ]
+        )
         total_buy_levels = len(self.config.buy_spreads)
         total_sell_levels = len(self.config.sell_spreads)
 
@@ -770,12 +824,16 @@ class PMMister(ControllerBase):
             f"BUY: {can_execute_buy}/{total_buy_levels}",
             f"SELL: {can_execute_sell}/{total_sell_levels}",
             f"Active: {executor_stats.get('total_active', 0)}",
-            ""
+            "",
         ]
 
         # Display conditions in 5 columns
-        for cool_line, price_line, effect_line, refresh_line, exec_line in zip_longest(cooldown_info, price_info, effect_info, refresh_info, execution_info, fillvalue=""):
-            status.append(f"│ {cool_line:<{col1_width}} │ {price_line:<{col2_width}} │ {effect_line:<{col3_width}} │ {refresh_line:<{col4_width}} │ {exec_line:<{col5_width}} │")
+        for cool_line, price_line, effect_line, refresh_line, exec_line in zip_longest(
+            cooldown_info, price_info, effect_info, refresh_info, execution_info, fillvalue=""
+        ):
+            status.append(
+                f"│ {cool_line:<{col1_width}} │ {price_line:<{col2_width}} │ {effect_line:<{col3_width}} │ {refresh_line:<{col4_width}} │ {exec_line:<{col5_width}} │"
+            )
 
         # LEVEL-BY-LEVEL ANALYSIS
         status.append(f"├{'─' * inner_width}┤")
@@ -791,7 +849,7 @@ class PMMister(ControllerBase):
         status.append(f"├{'─' * inner_width}┤")
 
         # Cooldown progress bars
-        if buy_cooldown.get('active') or sell_cooldown.get('active'):
+        if buy_cooldown.get("active") or sell_cooldown.get("active"):
             status.extend(self._format_cooldown_bars(buy_cooldown, sell_cooldown, bar_width, inner_width))
 
         # Effectivization progress
@@ -799,7 +857,7 @@ class PMMister(ControllerBase):
             status.extend(self._format_effectivization_bars(effectivization, bar_width, inner_width))
 
         # Refresh progress bars
-        if refresh_tracking.get('refresh_candidates', []):
+        if refresh_tracking.get("refresh_candidates", []):
             status.extend(self._format_refresh_bars(refresh_tracking, bar_width, inner_width))
 
         # POSITION & PNL DASHBOARD
@@ -809,25 +867,25 @@ class PMMister(ControllerBase):
 
         # Position data with enhanced skew info
         skew = base_pct - target_pct
-        skew_pct = skew / target_pct if target_pct != 0 else Decimal('0')
+        skew_pct = skew / target_pct if target_pct != 0 else Decimal("0")
         position_info = [
             f"Current: {base_pct:.2%} (Target: {target_pct:.2%})",
             f"Range: {min_pct:.2%} - {max_pct:.2%}",
             f"Skew: {skew_pct:+.2%} (min {self.config.min_skew:.2%})",
-            f"Buy Skew: {buy_skew:.2f} | Sell Skew: {sell_skew:.2f}"
+            f"Buy Skew: {buy_skew:.2f} | Sell Skew: {sell_skew:.2f}",
         ]
 
         # Enhanced PnL data
         breakeven_str = f"{breakeven:.2f}" if breakeven is not None else "N/A"
         pnl_sign = "+" if pnl >= 0 else ""
-        distance_to_tp = self.config.global_take_profit - pnl if pnl < self.config.global_take_profit else Decimal('0')
-        distance_to_sl = pnl + self.config.global_stop_loss if pnl > -self.config.global_stop_loss else Decimal('0')
+        distance_to_tp = self.config.global_take_profit - pnl if pnl < self.config.global_take_profit else Decimal("0")
+        distance_to_sl = pnl + self.config.global_stop_loss if pnl > -self.config.global_stop_loss else Decimal("0")
 
         pnl_info = [
             f"Unrealized: {pnl_sign}{pnl:.2%}",
             f"Take Profit: {self.config.global_take_profit:.2%} (Δ{distance_to_tp:.2%})",
             f"Stop Loss: {-self.config.global_stop_loss:.2%} (Δ{distance_to_sl:.2%})",
-            f"Breakeven: {breakeven_str}"
+            f"Breakeven: {breakeven_str}",
         ]
 
         # Display position and PnL info
@@ -836,7 +894,11 @@ class PMMister(ControllerBase):
 
         # Position visualization with enhanced details
         status.append(f"├{'─' * inner_width}┤")
-        status.extend(self._format_position_visualization(base_pct, target_pct, min_pct, max_pct, skew_pct, pnl, bar_width, inner_width))
+        status.extend(
+            self._format_position_visualization(
+                base_pct, target_pct, min_pct, max_pct, skew_pct, pnl, bar_width, inner_width
+            )
+        )
 
         # Bottom border
         status.append(f"╘{'═' * inner_width}╛")
@@ -845,7 +907,7 @@ class PMMister(ControllerBase):
 
     def _is_executor_too_far_from_price(self, executor_info, current_price: Decimal) -> bool:
         """Check if hanging executor is too far from current price and should be stopped"""
-        if not hasattr(executor_info.config, 'entry_price'):
+        if not hasattr(executor_info.config, "entry_price"):
             return False
 
         entry_price = executor_info.config.entry_price
@@ -874,11 +936,11 @@ class PMMister(ControllerBase):
 
     def _format_cooldown_status(self, cooldown_data: Dict) -> str:
         """Format cooldown status for display"""
-        if not cooldown_data.get('active'):
+        if not cooldown_data.get("active"):
             return "READY ✓"
 
-        remaining = cooldown_data.get('remaining_time', 0)
-        progress = cooldown_data.get('progress_pct', Decimal('0'))
+        remaining = cooldown_data.get("remaining_time", 0)
+        progress = cooldown_data.get("progress_pct", Decimal("0"))
         return f"{remaining:.1f}s ({progress:.0%})"
 
     def _format_level_conditions(self, level_conditions: Dict, inner_width: int) -> List[str]:
@@ -886,8 +948,8 @@ class PMMister(ControllerBase):
         lines = []
 
         # Group by trade type
-        buy_levels = {k: v for k, v in level_conditions.items() if v.get('trade_type') == 'BUY'}
-        sell_levels = {k: v for k, v in level_conditions.items() if v.get('trade_type') == 'SELL'}
+        buy_levels = {k: v for k, v in level_conditions.items() if v.get("trade_type") == "BUY"}
+        sell_levels = {k: v for k, v in level_conditions.items() if v.get("trade_type") == "SELL"}
 
         if not buy_levels and not sell_levels:
             lines.append(f"│ {'No levels configured':<{inner_width}} │")
@@ -897,10 +959,10 @@ class PMMister(ControllerBase):
         if buy_levels:
             lines.append(f"│ {'BUY LEVELS:':<{inner_width}} │")
             for level_id, conditions in sorted(buy_levels.items()):
-                status_icon = "✓" if conditions.get('can_execute') else "✗"
-                blocking = ", ".join(conditions.get('blocking_conditions', []))
-                active = conditions.get('active_executors', 0)
-                hanging = conditions.get('hanging_executors', 0)
+                status_icon = "✓" if conditions.get("can_execute") else "✗"
+                blocking = ", ".join(conditions.get("blocking_conditions", []))
+                active = conditions.get("active_executors", 0)
+                hanging = conditions.get("hanging_executors", 0)
 
                 level_line = f"  {level_id}: {status_icon} Active:{active} Hanging:{hanging}"
                 if blocking:
@@ -912,10 +974,10 @@ class PMMister(ControllerBase):
         if sell_levels:
             lines.append(f"│ {'SELL LEVELS:':<{inner_width}} │")
             for level_id, conditions in sorted(sell_levels.items()):
-                status_icon = "✓" if conditions.get('can_execute') else "✗"
-                blocking = ", ".join(conditions.get('blocking_conditions', []))
-                active = conditions.get('active_executors', 0)
-                hanging = conditions.get('hanging_executors', 0)
+                status_icon = "✓" if conditions.get("can_execute") else "✗"
+                blocking = ", ".join(conditions.get("blocking_conditions", []))
+                active = conditions.get("active_executors", 0)
+                hanging = conditions.get("hanging_executors", 0)
 
                 level_line = f"  {level_id}: {status_icon} Active:{active} Hanging:{hanging}"
                 if blocking:
@@ -925,19 +987,21 @@ class PMMister(ControllerBase):
 
         return lines
 
-    def _format_cooldown_bars(self, buy_cooldown: Dict, sell_cooldown: Dict, bar_width: int, inner_width: int) -> List[str]:
+    def _format_cooldown_bars(
+        self, buy_cooldown: Dict, sell_cooldown: Dict, bar_width: int, inner_width: int
+    ) -> List[str]:
         """Format cooldown progress bars"""
         lines = []
 
-        if buy_cooldown.get('active'):
-            progress = float(buy_cooldown.get('progress_pct', 0))
-            remaining = buy_cooldown.get('remaining_time', 0)
+        if buy_cooldown.get("active"):
+            progress = float(buy_cooldown.get("progress_pct", 0))
+            remaining = buy_cooldown.get("remaining_time", 0)
             bar = self._create_progress_bar(progress, bar_width // 2)  # Same size as other bars
             lines.append(f"│ BUY Cooldown:   [{bar}] {remaining:.1f}s remaining │")
 
-        if sell_cooldown.get('active'):
-            progress = float(sell_cooldown.get('progress_pct', 0))
-            remaining = sell_cooldown.get('remaining_time', 0)
+        if sell_cooldown.get("active"):
+            progress = float(sell_cooldown.get("progress_pct", 0))
+            remaining = sell_cooldown.get("remaining_time", 0)
             bar = self._create_progress_bar(progress, bar_width // 2)  # Same size as other bars
             lines.append(f"│ SELL Cooldown:  [{bar}] {remaining:.1f}s remaining │")
 
@@ -947,7 +1011,7 @@ class PMMister(ControllerBase):
         """Format effectivization progress bars"""
         lines = []
 
-        hanging_executors = effectivization.get('hanging_executors', [])
+        hanging_executors = effectivization.get("hanging_executors", [])
         if not hanging_executors:
             return lines
 
@@ -955,11 +1019,11 @@ class PMMister(ControllerBase):
 
         # Show up to 5 hanging executors with progress
         for executor in hanging_executors[:5]:
-            level_id = executor.get('level_id', 'unknown')
-            trade_type = executor.get('trade_type', 'UNKNOWN')
-            progress = float(executor.get('progress_pct', 0))
-            remaining = executor.get('remaining_time', 0)
-            ready = executor.get('ready', False)
+            level_id = executor.get("level_id", "unknown")
+            trade_type = executor.get("trade_type", "UNKNOWN")
+            progress = float(executor.get("progress_pct", 0))
+            remaining = executor.get("remaining_time", 0)
+            ready = executor.get("ready", False)
 
             bar = self._create_progress_bar(progress, bar_width // 2)
             status = "READY!" if ready else f"{remaining}s"
@@ -972,9 +1036,17 @@ class PMMister(ControllerBase):
 
         return lines
 
-    def _format_position_visualization(self, base_pct: Decimal, target_pct: Decimal, min_pct: Decimal,
-                                       max_pct: Decimal, skew_pct: Decimal, pnl: Decimal,
-                                       bar_width: int, inner_width: int) -> List[str]:
+    def _format_position_visualization(
+        self,
+        base_pct: Decimal,
+        target_pct: Decimal,
+        min_pct: Decimal,
+        max_pct: Decimal,
+        skew_pct: Decimal,
+        pnl: Decimal,
+        bar_width: int,
+        inner_width: int,
+    ) -> List[str]:
         """Format enhanced position visualization"""
         lines = []
 
@@ -1019,7 +1091,9 @@ class PMMister(ControllerBase):
         lines.append(f"│ Skew:       [{skew_bar}] {skew_direction} │")
 
         # PnL visualization with dynamic scaling
-        max_range = max(abs(self.config.global_take_profit), abs(self.config.global_stop_loss), abs(pnl)) * Decimal("1.2")
+        max_range = max(abs(self.config.global_take_profit), abs(self.config.global_stop_loss), abs(pnl)) * Decimal(
+            "1.2"
+        )
         if max_range > 0:
             scale = (bar_width // 2) / float(max_range)
             pnl_pos = center + int(float(pnl) * scale)
@@ -1040,8 +1114,7 @@ class PMMister(ControllerBase):
                     pnl_bar += "T"  # Take profit target
                 elif i == stop_loss_pos:
                     pnl_bar += "S"  # Stop loss target
-                elif ((pnl >= 0 and center <= i < pnl_pos) or
-                      (pnl < 0 and pnl_pos < i <= center)):
+                elif (pnl >= 0 and center <= i < pnl_pos) or (pnl < 0 and pnl_pos < i <= center):
                     pnl_bar += "█" if pnl >= 0 else "▓"  # Fill to current PnL
                 else:
                     pnl_bar += "─"
@@ -1073,7 +1146,7 @@ class PMMister(ControllerBase):
         """Calculate cooldown status for buy and sell sides"""
         cooldown_status = {
             "buy": {"active": False, "remaining_time": 0, "progress_pct": Decimal("0")},
-            "sell": {"active": False, "remaining_time": 0, "progress_pct": Decimal("0")}
+            "sell": {"active": False, "remaining_time": 0, "progress_pct": Decimal("0")},
         }
 
         # Get latest order timestamps for each trade type
@@ -1086,7 +1159,8 @@ class PMMister(ControllerBase):
 
             # Find most recent open order update
             latest_updates = [
-                e.custom_info.get("open_order_last_update") for e in executors
+                e.custom_info.get("open_order_last_update")
+                for e in executors
                 if "open_order_last_update" in e.custom_info and e.custom_info["open_order_last_update"] is not None
             ]
 
@@ -1094,8 +1168,7 @@ class PMMister(ControllerBase):
                 continue
 
             latest_update = max(latest_updates)
-            cooldown_time = (self.config.buy_cooldown_time if trade_type == "buy"
-                             else self.config.sell_cooldown_time)
+            cooldown_time = self.config.buy_cooldown_time if trade_type == "buy" else self.config.sell_cooldown_time
 
             time_since_update = current_time - latest_update
             remaining_time = max(0, cooldown_time - time_since_update)
@@ -1103,7 +1176,9 @@ class PMMister(ControllerBase):
             if remaining_time > 0:
                 cooldown_status[trade_type]["active"] = True
                 cooldown_status[trade_type]["remaining_time"] = remaining_time
-                cooldown_status[trade_type]["progress_pct"] = Decimal(str(time_since_update)) / Decimal(str(cooldown_time))
+                cooldown_status[trade_type]["progress_pct"] = Decimal(str(time_since_update)) / Decimal(
+                    str(cooldown_time)
+                )
             else:
                 cooldown_status[trade_type]["progress_pct"] = Decimal("1")
 
@@ -1113,7 +1188,7 @@ class PMMister(ControllerBase):
         """Analyze price distance conditions for all levels with unified tolerance approach"""
         price_analysis = {
             "buy": {"violations": [], "distances": [], "base_tolerance": self.config.price_distance_tolerance},
-            "sell": {"violations": [], "distances": [], "base_tolerance": self.config.price_distance_tolerance}
+            "sell": {"violations": [], "distances": [], "base_tolerance": self.config.price_distance_tolerance},
         }
 
         # Analyze all levels for price distance violations
@@ -1128,14 +1203,16 @@ class PMMister(ControllerBase):
                 current_distance = (reference_price - analysis["max_price"]) / reference_price
                 level_tolerance = self.config.get_price_distance_level_tolerance(level)
 
-                price_analysis["buy"]["distances"].append({
-                    "level_id": level_id,
-                    "level": level,
-                    "current_distance": current_distance,
-                    "distance_pct": current_distance,
-                    "tolerance": level_tolerance,
-                    "violates": current_distance < level_tolerance
-                })
+                price_analysis["buy"]["distances"].append(
+                    {
+                        "level_id": level_id,
+                        "level": level,
+                        "current_distance": current_distance,
+                        "distance_pct": current_distance,
+                        "tolerance": level_tolerance,
+                        "violates": current_distance < level_tolerance,
+                    }
+                )
 
                 if current_distance < level_tolerance:
                     price_analysis["buy"]["violations"].append(level_id)
@@ -1144,14 +1221,16 @@ class PMMister(ControllerBase):
                 current_distance = (analysis["min_price"] - reference_price) / reference_price
                 level_tolerance = self.config.get_price_distance_level_tolerance(level)
 
-                price_analysis["sell"]["distances"].append({
-                    "level_id": level_id,
-                    "level": level,
-                    "current_distance": current_distance,
-                    "distance_pct": current_distance,
-                    "tolerance": level_tolerance,
-                    "violates": current_distance < level_tolerance
-                })
+                price_analysis["sell"]["distances"].append(
+                    {
+                        "level_id": level_id,
+                        "level": level,
+                        "current_distance": current_distance,
+                        "distance_pct": current_distance,
+                        "tolerance": level_tolerance,
+                        "violates": current_distance < level_tolerance,
+                    }
+                )
 
                 if current_distance < level_tolerance:
                     price_analysis["sell"]["violations"].append(level_id)
@@ -1160,11 +1239,7 @@ class PMMister(ControllerBase):
 
     def _calculate_effectivization_tracking(self, current_time: int) -> Dict:
         """Track hanging executor effectivization progress"""
-        effectivization_data = {
-            "hanging_executors": [],
-            "total_hanging": 0,
-            "ready_for_effectivization": 0
-        }
+        effectivization_data = {"hanging_executors": [], "total_hanging": 0, "ready_for_effectivization": 0}
 
         hanging_executors = [e for e in self.executors_info if e.is_active and e.is_trading]
         effectivization_data["total_hanging"] = len(hanging_executors)
@@ -1186,15 +1261,17 @@ class PMMister(ControllerBase):
             if ready:
                 effectivization_data["ready_for_effectivization"] += 1
 
-            effectivization_data["hanging_executors"].append({
-                "level_id": level_id,
-                "trade_type": trade_type.name,
-                "time_elapsed": time_elapsed,
-                "remaining_time": remaining_time,
-                "progress_pct": progress_pct,
-                "ready": ready,
-                "executor_id": executor.id
-            })
+            effectivization_data["hanging_executors"].append(
+                {
+                    "level_id": level_id,
+                    "trade_type": trade_type.name,
+                    "time_elapsed": time_elapsed,
+                    "remaining_time": remaining_time,
+                    "progress_pct": progress_pct,
+                    "ready": ready,
+                    "executor_id": executor.id,
+                }
+            )
 
         return effectivization_data
 
@@ -1213,7 +1290,7 @@ class PMMister(ControllerBase):
             level_analysis_cache[level_id] = self._analyze_by_level_id(level_id)
 
         # Pre-calculate position constraints with safe defaults
-        if hasattr(self, 'processed_data') and self.processed_data:
+        if hasattr(self, "processed_data") and self.processed_data:
             current_pct = self.processed_data.get("current_base_pct", Decimal("0"))
             breakeven_price = self.processed_data.get("breakeven_price")
         else:
@@ -1234,7 +1311,7 @@ class PMMister(ControllerBase):
                 "can_execute": True,
                 "blocking_conditions": [],
                 "active_executors": 0,
-                "hanging_executors": 0
+                "hanging_executors": 0,
             }
 
             # Get cached level analysis
@@ -1278,8 +1355,13 @@ class PMMister(ControllerBase):
                 conditions["can_execute"] = False
 
             # 5. Position profit protection
-            if (self.config.position_profit_protection and not is_buy and
-                    breakeven_price and breakeven_price > 0 and reference_price < breakeven_price):
+            if (
+                self.config.position_profit_protection
+                and not is_buy
+                and breakeven_price
+                and breakeven_price > 0
+                and reference_price < breakeven_price
+            ):
                 conditions["blocking_conditions"].append("position_profit_protection")
                 conditions["can_execute"] = False
 
@@ -1298,7 +1380,7 @@ class PMMister(ControllerBase):
             "total_not_trading": len([e for e in self.executors_info if e.is_active and not e.is_trading]),
             "avg_executor_age": Decimal("0"),
             "oldest_executor_age": 0,
-            "refresh_candidates": 0
+            "refresh_candidates": 0,
         }
 
         active_executors = [e for e in self.executors_info if e.is_active]
@@ -1309,21 +1391,19 @@ class PMMister(ControllerBase):
             stats["oldest_executor_age"] = max(ages)
 
             # Count refresh candidates
-            stats["refresh_candidates"] = len([
-                e for e in active_executors
-                if not e.is_trading and current_time - e.timestamp > self.config.executor_refresh_time
-            ])
+            stats["refresh_candidates"] = len(
+                [
+                    e
+                    for e in active_executors
+                    if not e.is_trading and current_time - e.timestamp > self.config.executor_refresh_time
+                ]
+            )
 
         return stats
 
     def _calculate_refresh_tracking(self, current_time: int) -> Dict:
         """Track executor refresh progress including distance-based refresh conditions"""
-        refresh_data = {
-            "refresh_candidates": [],
-            "near_refresh": 0,
-            "refresh_ready": 0,
-            "distance_violations": 0
-        }
+        refresh_data = {"refresh_candidates": [], "near_refresh": 0, "refresh_ready": 0, "distance_violations": 0}
 
         # Get active non-trading executors
         active_not_trading = [e for e in self.executors_info if e.is_active and not e.is_trading]
@@ -1335,16 +1415,19 @@ class PMMister(ControllerBase):
             progress_pct = min(Decimal("1"), Decimal(str(age)) / Decimal(str(self.config.executor_refresh_time)))
 
             # Check distance-based refresh condition
-            distance_violation = (reference_price > 0 and
-                                  self.should_refresh_executor_by_distance(executor, reference_price))
+            distance_violation = reference_price > 0 and self.should_refresh_executor_by_distance(
+                executor, reference_price
+            )
             # Calculate distance deviation for display
             distance_deviation_pct = Decimal("0")
             if reference_price > 0:
                 level_id = executor.custom_info.get("level_id", "")
-                if level_id and hasattr(executor.config, 'entry_price'):
+                if level_id and hasattr(executor.config, "entry_price"):
                     theoretical_price = self.calculate_theoretical_price(level_id, reference_price)
                     if theoretical_price > 0:
-                        distance_deviation_pct = abs(executor.config.entry_price - theoretical_price) / theoretical_price
+                        distance_deviation_pct = (
+                            abs(executor.config.entry_price - theoretical_price) / theoretical_price
+                        )
 
             ready_by_time = time_to_refresh == 0
             ready_by_distance = distance_violation
@@ -1363,23 +1446,29 @@ class PMMister(ControllerBase):
             level = self.get_level_from_level_id(level_id) if level_id != "unknown" else 0
 
             # Get level-specific refresh tolerance for display
-            level_tolerance = self.config.get_refresh_level_tolerance(level) if level_id != "unknown" else self.config.refresh_tolerance
+            level_tolerance = (
+                self.config.get_refresh_level_tolerance(level)
+                if level_id != "unknown"
+                else self.config.refresh_tolerance
+            )
 
-            refresh_data["refresh_candidates"].append({
-                "executor_id": executor.id,
-                "level_id": level_id,
-                "level": level,
-                "age": age,
-                "time_to_refresh": time_to_refresh,
-                "progress_pct": progress_pct,
-                "ready": ready,
-                "ready_by_time": ready_by_time,
-                "ready_by_distance": ready_by_distance,
-                "distance_deviation_pct": distance_deviation_pct,
-                "distance_violation": distance_violation,
-                "level_tolerance": level_tolerance,
-                "near_refresh": near_refresh
-            })
+            refresh_data["refresh_candidates"].append(
+                {
+                    "executor_id": executor.id,
+                    "level_id": level_id,
+                    "level": level,
+                    "age": age,
+                    "time_to_refresh": time_to_refresh,
+                    "progress_pct": progress_pct,
+                    "ready": ready,
+                    "ready_by_time": ready_by_time,
+                    "ready_by_distance": ready_by_distance,
+                    "distance_deviation_pct": distance_deviation_pct,
+                    "distance_violation": distance_violation,
+                    "level_tolerance": level_tolerance,
+                    "near_refresh": near_refresh,
+                }
+            )
 
         return refresh_data
 
@@ -1387,7 +1476,7 @@ class PMMister(ControllerBase):
         """Format refresh progress bars"""
         lines = []
 
-        refresh_candidates = refresh_tracking.get('refresh_candidates', [])
+        refresh_candidates = refresh_tracking.get("refresh_candidates", [])
         if not refresh_candidates:
             return lines
 
@@ -1395,13 +1484,13 @@ class PMMister(ControllerBase):
 
         # Show up to 5 executors approaching refresh
         for candidate in refresh_candidates[:5]:
-            level_id = candidate.get('level_id', 'unknown')
-            time_to_refresh = candidate.get('time_to_refresh', 0)
-            progress = float(candidate.get('progress_pct', 0))
-            ready = candidate.get('ready', False)
-            ready_by_distance = candidate.get('ready_by_distance', False)
-            distance_deviation_pct = candidate.get('distance_deviation_pct', Decimal('0'))
-            near_refresh = candidate.get('near_refresh', False)
+            level_id = candidate.get("level_id", "unknown")
+            time_to_refresh = candidate.get("time_to_refresh", 0)
+            progress = float(candidate.get("progress_pct", 0))
+            ready = candidate.get("ready", False)
+            ready_by_distance = candidate.get("ready_by_distance", False)
+            distance_deviation_pct = candidate.get("distance_deviation_pct", Decimal("0"))
+            near_refresh = candidate.get("near_refresh", False)
 
             bar = self._create_progress_bar(progress, bar_width // 2)
 
@@ -1429,7 +1518,9 @@ class PMMister(ControllerBase):
 
         return lines
 
-    def _format_price_graph(self, current_price: Decimal, breakeven_price: Optional[Decimal], inner_width: int) -> List[str]:
+    def _format_price_graph(
+        self, current_price: Decimal, breakeven_price: Optional[Decimal], inner_width: int
+    ) -> List[str]:
         """Format price graph with order zones and history"""
         lines = []
 
@@ -1438,16 +1529,16 @@ class PMMister(ControllerBase):
             return lines
 
         # Get last 30 price points for the graph
-        recent_prices = [p['price'] for p in self.price_history[-30:]]
+        recent_prices = [p["price"] for p in self.price_history[-30:]]
         min_price = min(recent_prices)
         max_price = max(recent_prices)
 
         # Calculate price range with some padding
         price_range = max_price - min_price
         if price_range == 0:
-            price_range = current_price * Decimal('0.01')  # 1% range if no movement
+            price_range = current_price * Decimal("0.01")  # 1% range if no movement
 
-        padding = price_range * Decimal('0.1')  # 10% padding
+        padding = price_range * Decimal("0.1")  # 10% padding
         graph_min = min_price - padding
         graph_max = max_price + padding
         graph_range = graph_max - graph_min
@@ -1494,7 +1585,9 @@ class PMMister(ControllerBase):
                         char = "·"  # Price history point
 
                 # Mark breakeven line
-                if breakeven_price and abs(float(breakeven_price - price_level)) < float(graph_range) / (graph_height * 2):
+                if breakeven_price and abs(float(breakeven_price - price_level)) < float(graph_range) / (
+                    graph_height * 2
+                ):
                     char = "="  # Breakeven line
 
                 # Mark order zones
@@ -1505,9 +1598,9 @@ class PMMister(ControllerBase):
 
                 # Mark recent orders
                 for order in self.order_history[-10:]:  # Last 10 orders
-                    order_price = order['price']
+                    order_price = order["price"]
                     if abs(float(order_price - price_level)) < float(graph_range) / (graph_height * 3):
-                        if order['side'] == 'BUY':
+                        if order["side"] == "BUY":
                             char = "b"  # Buy order
                         else:
                             char = "s"  # Sell order
@@ -1519,7 +1612,9 @@ class PMMister(ControllerBase):
             annotation = ""
             if abs(float(current_price - price_level)) < float(graph_range) / (graph_height * 2):
                 annotation = " ← Current"
-            elif breakeven_price and abs(float(breakeven_price - price_level)) < float(graph_range) / (graph_height * 2):
+            elif breakeven_price and abs(float(breakeven_price - price_level)) < float(graph_range) / (
+                graph_height * 2
+            ):
                 annotation = " ← Breakeven"
             elif abs(float(sell_zone_price - price_level)) < float(graph_range) / (graph_height * 4):
                 annotation = " ← Sell zone"
@@ -1534,14 +1629,18 @@ class PMMister(ControllerBase):
             lines.append(f"│ {graph_line:<{inner_width}} │")
 
         # Add legend
-        lines.append(f"│ {'Legend: ● Current price  = Breakeven  B/S Zone boundaries  b/s Recent orders':<{inner_width}} │")
+        lines.append(
+            f"│ {'Legend: ● Current price  = Breakeven  B/S Zone boundaries  b/s Recent orders':<{inner_width}} │"
+        )
 
         # Add current metrics
         dist_l0 = self.config.get_price_distance_level_tolerance(0)
         ref_l0 = self.config.get_refresh_level_tolerance(0)
         metrics_line = f"Dist: L0 {dist_l0:.4%} | Refresh: L0 {ref_l0:.4%} | Scaling: ×{self.config.tolerance_scaling}"
         if breakeven_price:
-            distance_to_breakeven = ((current_price - breakeven_price) / current_price) if breakeven_price > 0 else Decimal(0)
+            distance_to_breakeven = (
+                ((current_price - breakeven_price) / current_price) if breakeven_price > 0 else Decimal(0)
+            )
             metrics_line += f" | Breakeven gap: {distance_to_breakeven:+.2%}"
 
         lines.append(f"│ {metrics_line:<{inner_width}} │")
