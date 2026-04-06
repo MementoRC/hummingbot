@@ -1,7 +1,6 @@
 import asyncio
 import time
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from typing import Awaitable
 from unittest.mock import MagicMock, PropertyMock, patch
 
@@ -34,15 +33,17 @@ from hummingbot.strategy_v2.executors.position_executor.position_executor import
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType
 from hummingbot.strategy_v2.models.executors_info import ExecutorInfo
+import pytest
 
 
-class MarketsRecorderTests(IsolatedAsyncioWrapperTestCase):
+class MarketsRecorderTests:
+
     @staticmethod
     def create_mock_strategy():
         market = MagicMock()
         market_info = MagicMock()
         market_info.market = market
-
+        
         strategy = MagicMock(spec=StrategyV2Base)
         type(strategy).market_info = PropertyMock(return_value=market_info)
         type(strategy).trading_pair = PropertyMock(return_value="ETH-USDT")
@@ -55,43 +56,43 @@ class MarketsRecorderTests(IsolatedAsyncioWrapperTestCase):
         return strategy
 
     @staticmethod
-    def async_run_with_timeout(coroutine: Awaitable, timeout: int = 1):
+    def async_run_with_timeout(coroutine: Awaitable, timeout: int=1):
         ret = asyncio.get_event_loop().run_until_complete(asyncio.wait_for(coroutine, timeout))
         return ret
-
+    
     def get_price_by_type(self, trading_pair, price_type):
         pass
-
+    
     def get_order_book(self, trading_pair):
         pass
 
+    @pytest.fixture(autouse=True)
     @patch("hummingbot.model.sql_connection_manager.create_engine")
-    def setUp(self, engine_mock) -> None:
-        super().setUp()
+    def setup(self, engine_mock) -> None:
         self.display_name = "test_market"
         self.config_file_path = "test_config"
         self.strategy_name = "test_strategy"
-
+    
         self.symbol = "COINALPHAHBOT"
         self.base = "COINALPHA"
         self.quote = "HBOT"
         self.trading_pair = f"{self.base}-{self.quote}"
         self.ready = True
         self.trading_pairs = [self.trading_pair]
-
+    
         engine_mock.return_value = create_engine("sqlite:///:memory:")
         self.manager = SQLConnectionManager(
             ClientConfigAdapter(ClientConfigMap()), SQLConnectionType.TRADE_FILLS, db_name="test_DB"
         )
-
+    
         self.tracking_states = dict()
-
+    
     def add_trade_fills_from_market_recorder(self, current_trade_fills):
         pass
-
+    
     def add_exchange_order_ids_from_market_recorder(self, current_exchange_order_ids):
         pass
-
+    
     def test_properties(self):
         recorder = MarketsRecorder(
             sql=self.manager,
@@ -105,11 +106,11 @@ class MarketsRecorderTests(IsolatedAsyncioWrapperTestCase):
             ),
         )
 
-        self.assertEqual(self.manager, recorder.sql_manager)
-        self.assertEqual(self.config_file_path, recorder.config_file_path)
-        self.assertEqual(self.strategy_name, recorder.strategy_name)
-        self.assertIsInstance(recorder.logger(), HummingbotLogger)
-
+        assert self.manager == recorder.sql_manager
+        assert self.config_file_path == recorder.config_file_path
+        assert self.strategy_name == recorder.strategy_name
+        assert isinstance(recorder.logger(), HummingbotLogger)
+    
     def test_get_trade_for_config(self):
         recorder = MarketsRecorder(
             sql=self.manager,
@@ -148,9 +149,9 @@ class MarketsRecorderTests(IsolatedAsyncioWrapperTestCase):
             fill_id = trade_fill_record.exchange_trade_id
 
         trades = recorder.get_trades_for_config("test_config")
-        self.assertEqual(1, len(trades))
-        self.assertEqual(fill_id, trades[0].exchange_trade_id)
-
+        assert 1 == len(trades)
+        assert fill_id == trades[0].exchange_trade_id
+    
     def test_buy_order_created_event_creates_order_record(self):
         recorder = MarketsRecorder(
             sql=self.manager,
@@ -184,14 +185,14 @@ class MarketsRecorderTests(IsolatedAsyncioWrapperTestCase):
             order_status = order.status
             trade_fills = order.trade_fills
 
-        self.assertEqual(1, len(orders))
-        self.assertEqual(self.config_file_path, orders[0].config_file_path)
-        self.assertEqual(event.order_id, orders[0].id)
-        self.assertEqual(1640001112223, orders[0].creation_timestamp)
-        self.assertEqual(1, len(order_status))
-        self.assertEqual(MarketEvent.BuyOrderCreated.name, order_status[0].status)
-        self.assertEqual(0, len(trade_fills))
-
+        assert 1 == len(orders)
+        assert self.config_file_path == orders[0].config_file_path
+        assert event.order_id == orders[0].id
+        assert 1640001112223 == orders[0].creation_timestamp
+        assert 1 == len(order_status)
+        assert MarketEvent.BuyOrderCreated.name == order_status[0].status
+        assert 0 == len(trade_fills)
+    
     def test_sell_order_created_event_creates_order_record(self):
         recorder = MarketsRecorder(
             sql=self.manager,
@@ -225,14 +226,14 @@ class MarketsRecorderTests(IsolatedAsyncioWrapperTestCase):
             order_status = order.status
             trade_fills = order.trade_fills
 
-        self.assertEqual(1, len(orders))
-        self.assertEqual(self.config_file_path, orders[0].config_file_path)
-        self.assertEqual(event.order_id, orders[0].id)
-        self.assertEqual(1640001112223, orders[0].creation_timestamp)
-        self.assertEqual(1, len(order_status))
-        self.assertEqual(MarketEvent.SellOrderCreated.name, order_status[0].status)
-        self.assertEqual(0, len(trade_fills))
-
+        assert 1 == len(orders)
+        assert self.config_file_path == orders[0].config_file_path
+        assert event.order_id == orders[0].id
+        assert 1640001112223 == orders[0].creation_timestamp
+        assert 1 == len(order_status)
+        assert MarketEvent.SellOrderCreated.name == order_status[0].status
+        assert 0 == len(trade_fills)
+    
     def test_create_order_and_process_fill(self):
         recorder = MarketsRecorder(
             sql=self.manager,
@@ -280,16 +281,16 @@ class MarketsRecorderTests(IsolatedAsyncioWrapperTestCase):
             order_status = order.status
             trade_fills = order.trade_fills
 
-        self.assertEqual(1, len(orders))
-        self.assertEqual(self.config_file_path, orders[0].config_file_path)
-        self.assertEqual(create_event.order_id, orders[0].id)
-        self.assertEqual(2, len(order_status))
-        self.assertEqual(MarketEvent.BuyOrderCreated.name, order_status[0].status)
-        self.assertEqual(MarketEvent.OrderFilled.name, order_status[1].status)
-        self.assertEqual(1, len(trade_fills))
-        self.assertEqual(self.config_file_path, trade_fills[0].config_file_path)
-        self.assertEqual(fill_event.order_id, trade_fills[0].order_id)
-
+        assert 1 == len(orders)
+        assert self.config_file_path == orders[0].config_file_path
+        assert create_event.order_id == orders[0].id
+        assert 2 == len(order_status)
+        assert MarketEvent.BuyOrderCreated.name == order_status[0].status
+        assert MarketEvent.OrderFilled.name == order_status[1].status
+        assert 1 == len(trade_fills)
+        assert self.config_file_path == trade_fills[0].config_file_path
+        assert fill_event.order_id == trade_fills[0].order_id
+    
     def test_trade_fee_in_quote_not_available(self):
         recorder = MarketsRecorder(
             sql=self.manager,
@@ -340,16 +341,16 @@ class MarketsRecorderTests(IsolatedAsyncioWrapperTestCase):
             order_status = order.status
             trade_fills = order.trade_fills
 
-        self.assertEqual(1, len(orders))
-        self.assertEqual(self.config_file_path, orders[0].config_file_path)
-        self.assertEqual(create_event.order_id, orders[0].id)
-        self.assertEqual(2, len(order_status))
-        self.assertEqual(MarketEvent.BuyOrderCreated.name, order_status[0].status)
-        self.assertEqual(MarketEvent.OrderFilled.name, order_status[1].status)
-        self.assertEqual(1, len(trade_fills))
-        self.assertEqual(self.config_file_path, trade_fills[0].config_file_path)
-        self.assertEqual(fill_event.order_id, trade_fills[0].order_id)
-
+        assert 1 == len(orders)
+        assert self.config_file_path == orders[0].config_file_path
+        assert create_event.order_id == orders[0].id
+        assert 2 == len(order_status)
+        assert MarketEvent.BuyOrderCreated.name == order_status[0].status
+        assert MarketEvent.OrderFilled.name == order_status[1].status
+        assert 1 == len(trade_fills)
+        assert self.config_file_path == trade_fills[0].config_file_path
+        assert fill_event.order_id == trade_fills[0].order_id
+    
     def test_create_order_and_completed(self):
         recorder = MarketsRecorder(
             sql=self.manager,
@@ -395,13 +396,13 @@ class MarketsRecorderTests(IsolatedAsyncioWrapperTestCase):
             order_status = order.status
             trade_fills = order.trade_fills
 
-        self.assertEqual(1, len(orders))
-        self.assertEqual(self.config_file_path, orders[0].config_file_path)
-        self.assertEqual(create_event.order_id, orders[0].id)
-        self.assertEqual(2, len(order_status))
-        self.assertEqual(MarketEvent.BuyOrderCreated.name, order_status[0].status)
-        self.assertEqual(MarketEvent.BuyOrderCompleted.name, order_status[1].status)
-        self.assertEqual(0, len(trade_fills))
+        assert 1 == len(orders)
+        assert self.config_file_path == orders[0].config_file_path
+        assert create_event.order_id == orders[0].id
+        assert 2 == len(order_status)
+        assert MarketEvent.BuyOrderCreated.name == order_status[0].status
+        assert MarketEvent.BuyOrderCompleted.name == order_status[1].status
+        assert 0 == len(trade_fills)
 
     @patch("hummingbot.connector.markets_recorder.MarketsRecorder._sleep")
     def test_market_data_collection_enabled(self, sleep_mock):
@@ -435,15 +436,15 @@ class MarketsRecorderTests(IsolatedAsyncioWrapperTestCase):
                 asks_array = np.array([[4, 1, 1], [5, 1, 2], [6, 1, 3], [7, 1, 4]], dtype=np.float64)
                 order_book.apply_numpy_snapshot(bids_array, asks_array)
                 get_order_book.return_value = order_book
-                with self.assertRaises(asyncio.CancelledError):
+                with pytest.raises(asyncio.CancelledError):
                     self.async_run_with_timeout(recorder._record_market_data())
         with self.manager.get_new_session() as session:
             query = session.query(MarketData)
             market_data = query.all()
-        self.assertEqual(market_data[0].best_ask, Decimal("101"))
-        self.assertEqual(market_data[0].best_bid, Decimal("99"))
-        self.assertEqual(market_data[0].mid_price, Decimal("100"))
-
+        assert market_data[0].best_ask == Decimal("101")
+        assert market_data[0].best_bid == Decimal("99")
+        assert market_data[0].mid_price == Decimal("100")
+    
     def test_store_position(self):
         recorder = MarketsRecorder(
             sql=self.manager,
@@ -475,8 +476,8 @@ class MarketsRecorderTests(IsolatedAsyncioWrapperTestCase):
         with self.manager.get_new_session() as session:
             query = session.query(Position)
             positions = query.all()
-        self.assertEqual(1, len(positions))
-
+        assert 1 == len(positions)
+    
     def test_update_or_store_position(self):
         recorder = MarketsRecorder(
             sql=self.manager,
@@ -510,10 +511,10 @@ class MarketsRecorderTests(IsolatedAsyncioWrapperTestCase):
         with self.manager.get_new_session() as session:
             query = session.query(Position)
             positions = query.all()
-        self.assertEqual(1, len(positions))
-        self.assertEqual(Decimal("1"), positions[0].amount)
-        self.assertEqual(Decimal("1000"), positions[0].breakeven_price)
-        self.assertEqual(Decimal("10"), positions[0].volume_traded_quote)
+        assert 1 == len(positions)
+        assert Decimal("1") == positions[0].amount
+        assert Decimal("1000") == positions[0].breakeven_price
+        assert Decimal("10") == positions[0].volume_traded_quote
 
         # Test updating an existing position with same controller_id, connector, trading_pair, and side
         position2 = Position(
@@ -536,13 +537,13 @@ class MarketsRecorderTests(IsolatedAsyncioWrapperTestCase):
             query = session.query(Position)
             positions = query.all()
         # Should still be only 1 position (updated, not inserted)
-        self.assertEqual(1, len(positions))
-        self.assertEqual(Decimal("2"), positions[0].amount)
-        self.assertEqual(Decimal("1100"), positions[0].breakeven_price)
-        self.assertEqual(Decimal("100"), positions[0].unrealized_pnl_quote)
-        self.assertEqual(Decimal("5"), positions[0].cum_fees_quote)
-        self.assertEqual(Decimal("30"), positions[0].volume_traded_quote)
-        self.assertEqual(456, positions[0].timestamp)
+        assert 1 == len(positions)
+        assert Decimal("2") == positions[0].amount
+        assert Decimal("1100") == positions[0].breakeven_price
+        assert Decimal("100") == positions[0].unrealized_pnl_quote
+        assert Decimal("5") == positions[0].cum_fees_quote
+        assert Decimal("30") == positions[0].volume_traded_quote
+        assert 456 == positions[0].timestamp
 
         # Test inserting a new position with different side
         position3 = Position(
@@ -565,7 +566,7 @@ class MarketsRecorderTests(IsolatedAsyncioWrapperTestCase):
             query = session.query(Position)
             positions = query.all()
         # Should now have 2 positions (one BUY, one SELL)
-        self.assertEqual(2, len(positions))
+        assert 2 == len(positions)
 
         # Test inserting a new position with different trading pair
         position4 = Position(
@@ -588,8 +589,8 @@ class MarketsRecorderTests(IsolatedAsyncioWrapperTestCase):
             query = session.query(Position)
             positions = query.all()
         # Should now have 3 positions
-        self.assertEqual(3, len(positions))
-
+        assert 3 == len(positions)
+    
     def test_get_positions_methods(self):
         recorder = MarketsRecorder(
             sql=self.manager,
@@ -653,28 +654,28 @@ class MarketsRecorderTests(IsolatedAsyncioWrapperTestCase):
 
         # Test get_all_positions
         all_positions = recorder.get_all_positions()
-        self.assertEqual(3, len(all_positions))
-        self.assertIn("pos1", [p.id for p in all_positions])
-        self.assertIn("pos2", [p.id for p in all_positions])
-        self.assertIn("pos3", [p.id for p in all_positions])
+        assert 3 == len(all_positions)
+        assert "pos1" in [p.id for p in all_positions]
+        assert "pos2" in [p.id for p in all_positions]
+        assert "pos3" in [p.id for p in all_positions]
 
         # Test get_positions_by_controller
         controller1_positions = recorder.get_positions_by_controller("controller1")
-        self.assertEqual(2, len(controller1_positions))
-        self.assertIn("pos1", [p.id for p in controller1_positions])
-        self.assertIn("pos2", [p.id for p in controller1_positions])
+        assert 2 == len(controller1_positions)
+        assert "pos1" in [p.id for p in controller1_positions]
+        assert "pos2" in [p.id for p in controller1_positions]
 
         controller2_positions = recorder.get_positions_by_controller("controller2")
-        self.assertEqual(1, len(controller2_positions))
-        self.assertEqual("pos3", controller2_positions[0].id)
+        assert 1 == len(controller2_positions)
+        assert "pos3" == controller2_positions[0].id
 
         # Test get_positions_by_ids
         positions_by_ids = recorder.get_positions_by_ids(["pos1", "pos3"])
-        self.assertEqual(2, len(positions_by_ids))
-        self.assertIn("pos1", [p.id for p in positions_by_ids])
-        self.assertIn("pos3", [p.id for p in positions_by_ids])
-        self.assertNotIn("pos2", [p.id for p in positions_by_ids])
-
+        assert 2 == len(positions_by_ids)
+        assert "pos1" in [p.id for p in positions_by_ids]
+        assert "pos3" in [p.id for p in positions_by_ids]
+        assert "pos2" not in [p.id for p in positions_by_ids]
+    
     def test_store_or_update_executor(self):
         recorder = MarketsRecorder(
             sql=self.manager,
@@ -722,8 +723,8 @@ class MarketsRecorderTests(IsolatedAsyncioWrapperTestCase):
         with self.manager.get_new_session() as session:
             query = session.query(Executors)
             executors = query.all()
-        self.assertEqual(1, len(executors))
-
+        assert 1 == len(executors)
+    
     def test_add_market(self):
         """Test adding a new market dynamically to the recorder."""
         recorder = MarketsRecorder(
@@ -749,15 +750,15 @@ class MarketsRecorderTests(IsolatedAsyncioWrapperTestCase):
         new_market.add_listener = MagicMock()
 
         # Initial state: recorder should have only one market
-        self.assertEqual(1, len(recorder._markets))
-        self.assertEqual(self, recorder._markets[0])
+        assert 1 == len(recorder._markets)
+        assert self == recorder._markets[0]
 
         # Add the new market
         recorder.add_market(new_market)
 
         # Verify the new market was added
-        self.assertEqual(2, len(recorder._markets))
-        self.assertIn(new_market, recorder._markets)
+        assert 2 == len(recorder._markets)
+        assert new_market in recorder._markets
 
         # Verify trade fills were loaded for the new market
         new_market.add_trade_fills_from_market_recorder.assert_called_once()
@@ -767,12 +768,12 @@ class MarketsRecorderTests(IsolatedAsyncioWrapperTestCase):
 
         # Verify event listeners were added (should be called for each event pair)
         expected_calls = len(recorder._event_pairs)
-        self.assertEqual(expected_calls, new_market.add_listener.call_count)
+        assert expected_calls == new_market.add_listener.call_count
 
         # Test adding the same market again (should not duplicate)
         recorder.add_market(new_market)
-        self.assertEqual(2, len(recorder._markets))  # Should still be 2, not 3
-
+        assert 2 == len(recorder._markets)
+    
     def test_add_market_with_existing_trade_data(self):
         """Test adding a market when there's existing trade data for that market."""
         recorder = MarketsRecorder(
@@ -844,15 +845,15 @@ class MarketsRecorderTests(IsolatedAsyncioWrapperTestCase):
         recorder.add_market(new_market)
 
         # Verify the market was added and data loading methods were called
-        self.assertIn(new_market, recorder._markets)
+        assert new_market in recorder._markets
         new_market.add_trade_fills_from_market_recorder.assert_called_once()
         new_market.add_exchange_order_ids_from_market_recorder.assert_called_once()
 
         # Verify the trade fills call included only data for this specific market
         call_args = new_market.add_trade_fills_from_market_recorder.call_args[0][0]
         # The call should have been made with a set of TradeFillOrderDetails
-        self.assertIsInstance(call_args, set)
-
+        assert isinstance(call_args, set)
+    
     def test_remove_market(self):
         """Test removing a market dynamically from the recorder."""
         # Create a second mock market
@@ -879,27 +880,27 @@ class MarketsRecorderTests(IsolatedAsyncioWrapperTestCase):
         )
 
         # Initial state: recorder should have two markets
-        self.assertEqual(2, len(recorder._markets))
-        self.assertIn(self, recorder._markets)
-        self.assertIn(second_market, recorder._markets)
+        assert 2 == len(recorder._markets)
+        assert self in recorder._markets
+        assert second_market in recorder._markets
 
         # Remove the second market
         recorder.remove_market(second_market)
 
         # Verify the market was removed
-        self.assertEqual(1, len(recorder._markets))
-        self.assertIn(self, recorder._markets)
-        self.assertNotIn(second_market, recorder._markets)
+        assert 1 == len(recorder._markets)
+        assert self in recorder._markets
+        assert second_market not in recorder._markets
 
         # Verify event listeners were removed (should be called for each event pair)
         expected_calls = len(recorder._event_pairs)
-        self.assertEqual(expected_calls, second_market.remove_listener.call_count)
+        assert expected_calls == second_market.remove_listener.call_count
 
         # Test removing a market that doesn't exist (should not cause error)
         non_existent_market = MagicMock()
         recorder.remove_market(non_existent_market)
-        self.assertEqual(1, len(recorder._markets))  # Should still be 1
-
+        assert 1 == len(recorder._markets)
+    
     def test_add_remove_market_event_listeners(self):
         """Test that event listeners are properly managed when adding/removing markets."""
         recorder = MarketsRecorder(
@@ -933,28 +934,28 @@ class MarketsRecorderTests(IsolatedAsyncioWrapperTestCase):
         expected_forwarders = [pair[1] for pair in recorder._event_pairs]
 
         # Check that add_listener was called for each event pair
-        self.assertEqual(len(recorder._event_pairs), new_market.add_listener.call_count)
+        assert len(recorder._event_pairs) == new_market.add_listener.call_count
 
         # Verify the correct event types and forwarders were registered
         add_listener_calls = new_market.add_listener.call_args_list
         for i, call in enumerate(add_listener_calls):
             event_type, forwarder = call[0]
-            self.assertIn(event_type, expected_event_types)
-            self.assertIn(forwarder, expected_forwarders)
+            assert event_type in expected_event_types
+            assert forwarder in expected_forwarders
 
         # Now remove the market
         recorder.remove_market(new_market)
 
         # Verify all event pairs were unregistered
-        self.assertEqual(len(recorder._event_pairs), new_market.remove_listener.call_count)
+        assert len(recorder._event_pairs) == new_market.remove_listener.call_count
 
         # Verify the correct event types and forwarders were unregistered
         remove_listener_calls = new_market.remove_listener.call_args_list
         for i, call in enumerate(remove_listener_calls):
             event_type, forwarder = call[0]
-            self.assertIn(event_type, expected_event_types)
-            self.assertIn(forwarder, expected_forwarders)
-
+            assert event_type in expected_event_types
+            assert forwarder in expected_forwarders
+    
     def test_add_market_integration_with_event_processing(self):
         """Test that dynamically added markets can process events correctly."""
         recorder = MarketsRecorder(
@@ -1003,11 +1004,11 @@ class MarketsRecorderTests(IsolatedAsyncioWrapperTestCase):
             query = session.query(Order).filter(Order.id == "NEW_MARKET_OID1")
             orders = query.all()
 
-        self.assertEqual(1, len(orders))
-        self.assertEqual("integration_test_market", orders[0].market)
-        self.assertEqual("BTC-USDT", orders[0].symbol)
-        self.assertEqual("NEW_MARKET_OID1", orders[0].id)
-
+        assert 1 == len(orders)
+        assert "integration_test_market" == orders[0].market
+        assert "BTC-USDT" == orders[0].symbol
+        assert "NEW_MARKET_OID1" == orders[0].id
+    
     def test_did_update_range_position_add_liquidity(self):
         """Test _did_update_range_position records ADD liquidity event"""
         from hummingbot.core.event.events import RangePositionLiquidityAddedEvent
@@ -1050,20 +1051,20 @@ class MarketsRecorderTests(IsolatedAsyncioWrapperTestCase):
             query = session.query(RangePositionUpdate)
             records = query.all()
 
-        self.assertEqual(1, len(records))
+        assert 1 == len(records)
         record = records[0]
-        self.assertEqual("range-SOL-USDC-001", record.hb_id)
-        self.assertEqual("tx_sig_123", record.tx_hash)
-        self.assertEqual("ADD", record.order_action)
-        self.assertEqual("SOL-USDC", record.trading_pair)
-        self.assertEqual("pos_addr_123", record.position_address)
-        self.assertEqual(95.0, record.lower_price)
-        self.assertEqual(105.0, record.upper_price)
-        self.assertEqual(100.0, record.mid_price)
-        self.assertEqual(5.0, record.base_amount)
-        self.assertEqual(500.0, record.quote_amount)
-        self.assertEqual(0.002, record.position_rent)
-
+        assert "range-SOL-USDC-001" == record.hb_id
+        assert "tx_sig_123" == record.tx_hash
+        assert "ADD" == record.order_action
+        assert "SOL-USDC" == record.trading_pair
+        assert "pos_addr_123" == record.position_address
+        assert 95.0 == record.lower_price
+        assert 105.0 == record.upper_price
+        assert 100.0 == record.mid_price
+        assert 5.0 == record.base_amount
+        assert 500.0 == record.quote_amount
+        assert 0.002 == record.position_rent
+    
     def test_did_update_range_position_remove_liquidity(self):
         """Test _did_update_range_position records REMOVE liquidity event"""
         from hummingbot.core.event.events import RangePositionLiquidityRemovedEvent
@@ -1107,14 +1108,14 @@ class MarketsRecorderTests(IsolatedAsyncioWrapperTestCase):
             query = session.query(RangePositionUpdate)
             records = query.all()
 
-        self.assertEqual(1, len(records))
+        assert 1 == len(records)
         record = records[0]
-        self.assertEqual("range-SOL-USDC-002", record.hb_id)
-        self.assertEqual("tx_sig_456", record.tx_hash)
-        self.assertEqual("REMOVE", record.order_action)
-        self.assertEqual("pos_addr_456", record.position_address)
-        self.assertEqual(4.8, record.base_amount)
-        self.assertEqual(520.0, record.quote_amount)
-        self.assertEqual(0.05, record.base_fee)
-        self.assertEqual(5.0, record.quote_fee)
-        self.assertEqual(0.002, record.position_rent_refunded)
+        assert "range-SOL-USDC-002" == record.hb_id
+        assert "tx_sig_456" == record.tx_hash
+        assert "REMOVE" == record.order_action
+        assert "pos_addr_456" == record.position_address
+        assert 4.8 == record.base_amount
+        assert 520.0 == record.quote_amount
+        assert 0.05 == record.base_fee
+        assert 5.0 == record.quote_fee
+        assert 0.002 == record.position_rent_refunded

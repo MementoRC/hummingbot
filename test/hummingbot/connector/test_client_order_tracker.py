@@ -1,5 +1,4 @@
 import asyncio
-import unittest
 from decimal import Decimal
 from typing import Awaitable, Dict
 from unittest.mock import patch
@@ -19,6 +18,7 @@ from hummingbot.core.event.events import (
     OrderCancelledEvent,
     OrderFilledEvent,
 )
+import pytest
 
 
 class MockExchange(ExchangeBase):
@@ -27,7 +27,7 @@ class MockExchange(ExchangeBase):
         return dict()
 
 
-class ClientOrderTrackerUnitTest(unittest.TestCase):
+class ClientOrderTrackerUnitTest:
     # logging.Level required to receive logs from the exchange
     level = 0
 
@@ -36,25 +36,25 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
         super().setUpClass()
         cls.ev_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(cls.ev_loop)
-
+        
         cls.base_asset = "COINALPHA"
         cls.quote_asset = "HBOT"
         cls.trading_pair = f"{cls.base_asset}-{cls.quote_asset}"
         cls.trade_fee_percent = Decimal("0.001")
-
-    def setUp(self) -> None:
-        super().setUp()
+    
+    @pytest.fixture(autouse=True)
+    def setup(self) -> None:
         self.log_records = []
-
+    
         self.connector = MockExchange()
         self.connector._set_current_timestamp(1640000000.0)
         self.tracker = ClientOrderTracker(connector=self.connector)
-
+    
         self.tracker.logger().setLevel(1)
         self.tracker.logger().addHandler(self)
-
+    
         self._initialize_event_loggers()
-
+    
     def _initialize_event_loggers(self):
         self.buy_order_completed_logger = EventLogger()
         self.buy_order_created_logger = EventLogger()
@@ -76,19 +76,19 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
 
         for event, logger in events_and_loggers:
             self.connector.add_listener(event, logger)
-
+    
     def handle(self, record):
         self.log_records.append(record)
-
+    
     def _is_logged(self, log_level: str, message: str) -> bool:
         return any(record.levelname == log_level and record.getMessage() == message for record in self.log_records)
-
+    
     def async_run_with_timeout(self, coroutine: Awaitable, timeout: float = 1):
         ret = self.ev_loop.run_until_complete(asyncio.wait_for(coroutine, timeout))
         return ret
-
+    
     def test_start_tracking_order(self):
-        self.assertEqual(0, len(self.tracker.active_orders))
+        assert 0 == len(self.tracker.active_orders)
 
         order: InFlightOrder = InFlightOrder(
             client_order_id="someClientOrderId",
@@ -102,10 +102,10 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
 
         self.tracker.start_tracking_order(order)
 
-        self.assertEqual(1, len(self.tracker.active_orders))
-
+        assert 1 == len(self.tracker.active_orders)
+    
     def test_stop_tracking_order(self):
-        self.assertEqual(0, len(self.tracker.active_orders))
+        assert 0 == len(self.tracker.active_orders)
 
         order: InFlightOrder = InFlightOrder(
             client_order_id="someClientOrderId",
@@ -117,13 +117,13 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
             price=Decimal("1.0"),
         )
         self.tracker.start_tracking_order(order)
-        self.assertEqual(1, len(self.tracker.active_orders))
+        assert 1 == len(self.tracker.active_orders)
 
         self.tracker.stop_tracking_order(order.client_order_id)
 
-        self.assertEqual(0, len(self.tracker.active_orders))
-        self.assertEqual(1, len(self.tracker.cached_orders))
-
+        assert 0 == len(self.tracker.active_orders)
+        assert 1 == len(self.tracker.cached_orders)
+    
     def test_cached_order_max_cache_size(self):
         for i in range(ClientOrderTracker.MAX_CACHE_SIZE + 1):
             order: InFlightOrder = InFlightOrder(
@@ -137,11 +137,11 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
             )
             self.tracker._cached_orders[order.client_order_id] = order
 
-        self.assertEqual(ClientOrderTracker.MAX_CACHE_SIZE, len(self.tracker.cached_orders))
+        assert ClientOrderTracker.MAX_CACHE_SIZE == len(self.tracker.cached_orders)
 
         # First entry gets removed when the no. of cached order exceeds MAX_CACHE_SIZE
-        self.assertNotIn("someClientOrderId_0", self.tracker._cached_orders)
-
+        assert "someClientOrderId_0" not in self.tracker._cached_orders
+    
     def test_cached_order_ttl_not_exceeded(self):
         order: InFlightOrder = InFlightOrder(
             client_order_id="someClientOrderId",
@@ -154,7 +154,7 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
         )
         self.tracker._cached_orders[order.client_order_id] = order
 
-        self.assertIn(order.client_order_id, self.tracker._cached_orders)
+        assert order.client_order_id in self.tracker._cached_orders
 
     @patch("hummingbot.connector.client_order_tracker.ClientOrderTracker.CACHED_ORDER_TTL", 0.1)
     def test_cached_order_ttl_exceeded(self):
@@ -169,14 +169,14 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
             price=Decimal("1.0"),
         )
         tracker._cached_orders[order.client_order_id] = order
-
+        
         self.ev_loop.run_until_complete(asyncio.sleep(0.2))
-
-        self.assertNotIn(order.client_order_id, tracker.cached_orders)
-
+        
+        assert order.client_order_id not in tracker.cached_orders
+    
     def test_fetch_tracked_order_not_found(self):
-        self.assertIsNone(self.tracker.fetch_tracked_order("someNonExistantOrderId"))
-
+        assert self.tracker.fetch_tracked_order("someNonExistantOrderId") is None
+    
     def test_fetch_tracked_order(self):
         order: InFlightOrder = InFlightOrder(
             client_order_id="someClientOrderId",
@@ -188,15 +188,15 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
             price=Decimal("1.0"),
         )
         self.tracker.start_tracking_order(order)
-        self.assertEqual(1, len(self.tracker.active_orders))
+        assert 1 == len(self.tracker.active_orders)
 
         fetched_order: InFlightOrder = self.tracker.fetch_tracked_order(order.client_order_id)
 
-        self.assertTrue(fetched_order == order)
-
+        assert fetched_order == order
+    
     def test_fetch_cached_order_not_found(self):
-        self.assertIsNone(self.tracker.fetch_cached_order("someNonExistantOrderId"))
-
+        assert self.tracker.fetch_cached_order("someNonExistantOrderId") is None
+    
     def test_fetch_cached_order(self):
         order: InFlightOrder = InFlightOrder(
             client_order_id="someClientOrderId",
@@ -208,12 +208,12 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
             price=Decimal("1.0"),
         )
         self.tracker._cached_orders[order.client_order_id] = order
-        self.assertEqual(1, len(self.tracker.cached_orders))
+        assert 1 == len(self.tracker.cached_orders)
 
         fetched_order: InFlightOrder = self.tracker.fetch_cached_order(order.client_order_id)
 
-        self.assertTrue(fetched_order == order)
-
+        assert fetched_order == order
+    
     def test_fetch_order_by_client_order_id(self):
         order: InFlightOrder = InFlightOrder(
             client_order_id="someClientOrderId",
@@ -225,12 +225,12 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
             price=Decimal("1.0"),
         )
         self.tracker.start_tracking_order(order)
-        self.assertEqual(1, len(self.tracker.active_orders))
+        assert 1 == len(self.tracker.active_orders)
 
         fetched_order: InFlightOrder = self.tracker.fetch_order(order.client_order_id)
 
-        self.assertTrue(fetched_order == order)
-
+        assert fetched_order == order
+    
     def test_fetch_order_by_exchange_order_id(self):
         order: InFlightOrder = InFlightOrder(
             client_order_id="someClientOrderId",
@@ -243,12 +243,12 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
             price=Decimal("1.0"),
         )
         self.tracker.start_tracking_order(order)
-        self.assertEqual(1, len(self.tracker.active_orders))
+        assert 1 == len(self.tracker.active_orders)
 
         fetched_order: InFlightOrder = self.tracker.fetch_order(exchange_order_id=order.exchange_order_id)
 
-        self.assertTrue(fetched_order == order)
-
+        assert fetched_order == order
+    
     def test_fetch_order_does_not_match_orders_with_undefined_exchange_id(self):
         order: InFlightOrder = InFlightOrder(
             client_order_id="someClientOrderId",
@@ -260,12 +260,12 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
             price=Decimal("1.0"),
         )
         self.tracker.start_tracking_order(order)
-        self.assertEqual(1, len(self.tracker.active_orders))
+        assert 1 == len(self.tracker.active_orders)
 
         fetched_order = self.tracker.fetch_order("invalid_order_id")
 
-        self.assertIsNone(fetched_order)
-
+        assert fetched_order is None
+    
     def test_process_order_update_invalid_order_update(self):
 
         order_creation_update: OrderUpdate = OrderUpdate(
@@ -279,13 +279,11 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
         update_future = self.tracker.process_order_update(order_creation_update)
         self.async_run_with_timeout(update_future)
 
-        self.assertTrue(
-            self._is_logged(
+        assert self._is_logged(
                 "ERROR",
                 "OrderUpdate does not contain any client_order_id or exchange_order_id",
             )
-        )
-
+    
     def test_process_order_update_order_not_found(self):
 
         order_creation_update: OrderUpdate = OrderUpdate(
@@ -299,13 +297,11 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
         update_future = self.tracker.process_order_update(order_creation_update)
         self.async_run_with_timeout(update_future)
 
-        self.assertTrue(
-            self._is_logged(
+        assert self._is_logged(
                 "DEBUG",
                 f"Order is not/no longer being tracked ({order_creation_update})",
             )
-        )
-
+    
     def test_process_order_update_trigger_order_creation_event(self):
         order: InFlightOrder = InFlightOrder(
             client_order_id="someClientOrderId",
@@ -332,30 +328,28 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
         updated_order: InFlightOrder = self.tracker.fetch_tracked_order(order.client_order_id)
 
         # Check order update has been successfully applied
-        self.assertEqual(updated_order.exchange_order_id, order_creation_update.exchange_order_id)
-        self.assertTrue(updated_order.exchange_order_id_update_event.is_set())
-        self.assertEqual(updated_order.current_state, order_creation_update.new_state)
-        self.assertTrue(updated_order.is_open)
+        assert updated_order.exchange_order_id == order_creation_update.exchange_order_id
+        assert updated_order.exchange_order_id_update_event.is_set()
+        assert updated_order.current_state == order_creation_update.new_state
+        assert updated_order.is_open
 
         # Check that Logger has logged the correct log
-        self.assertTrue(
-            self._is_logged(
+        assert self._is_logged(
                 "INFO",
                 f"Created {order.order_type.name} {order.trade_type.name} order {order.client_order_id} for "
                 f"{order.amount} {order.trading_pair} at {order.price}.",
             )
-        )
 
         # Check that Buy/SellOrderCreatedEvent has been triggered.
-        self.assertEqual(1, len(self.buy_order_created_logger.event_log))
+        assert 1 == len(self.buy_order_created_logger.event_log)
         event_logged = self.buy_order_created_logger.event_log[0]
-        self.assertEqual(event_logged.amount, order.amount)
-        self.assertEqual(event_logged.exchange_order_id, order_creation_update.exchange_order_id)
-        self.assertEqual(event_logged.order_id, order.client_order_id)
-        self.assertEqual(event_logged.price, order.price)
-        self.assertEqual(event_logged.trading_pair, order.trading_pair)
-        self.assertEqual(event_logged.type, order.order_type)
-
+        assert event_logged.amount == order.amount
+        assert event_logged.exchange_order_id == order_creation_update.exchange_order_id
+        assert event_logged.order_id == order.client_order_id
+        assert event_logged.price == order.price
+        assert event_logged.trading_pair == order.trading_pair
+        assert event_logged.type == order.order_type
+    
     def test_process_order_update_trigger_order_creation_event_without_client_order_id(self):
         order: InFlightOrder = InFlightOrder(
             client_order_id="someClientOrderId",
@@ -383,31 +377,29 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
         updated_order: InFlightOrder = self.tracker.fetch_tracked_order(order.client_order_id)
 
         # Check order update has been successfully applied
-        self.assertEqual(updated_order.exchange_order_id, order_creation_update.exchange_order_id)
-        self.assertTrue(updated_order.exchange_order_id_update_event.is_set())
-        self.assertEqual(updated_order.current_state, order_creation_update.new_state)
-        self.assertTrue(updated_order.is_open)
+        assert updated_order.exchange_order_id == order_creation_update.exchange_order_id
+        assert updated_order.exchange_order_id_update_event.is_set()
+        assert updated_order.current_state == order_creation_update.new_state
+        assert updated_order.is_open
 
         # Check that Logger has logged the correct log
-        self.assertTrue(
-            self._is_logged(
+        assert self._is_logged(
                 "INFO",
                 f"Created {order.order_type.name} {order.trade_type.name} order {order.client_order_id} for "
                 f"{order.amount} {order.trading_pair} at {order.price}.",
             )
-        )
 
         # Check that Buy/SellOrderCreatedEvent has been triggered.
-        self.assertEqual(1, len(self.buy_order_created_logger.event_log))
+        assert 1 == len(self.buy_order_created_logger.event_log)
         event_logged = self.buy_order_created_logger.event_log[0]
 
-        self.assertEqual(event_logged.amount, order.amount)
-        self.assertEqual(event_logged.exchange_order_id, order_creation_update.exchange_order_id)
-        self.assertEqual(event_logged.order_id, order.client_order_id)
-        self.assertEqual(event_logged.price, order.price)
-        self.assertEqual(event_logged.trading_pair, order.trading_pair)
-        self.assertEqual(event_logged.type, order.order_type)
-
+        assert event_logged.amount == order.amount
+        assert event_logged.exchange_order_id == order_creation_update.exchange_order_id
+        assert event_logged.order_id == order.client_order_id
+        assert event_logged.price == order.price
+        assert event_logged.trading_pair == order.trading_pair
+        assert event_logged.type == order.order_type
+    
     def test_process_order_update_with_pending_status_does_not_trigger_order_creation_event(self):
         order: InFlightOrder = InFlightOrder(
             client_order_id="someClientOrderId",
@@ -434,21 +426,19 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
         updated_order: InFlightOrder = self.tracker.fetch_tracked_order(order.client_order_id)
 
         # Check order update has been successfully applied
-        self.assertEqual(updated_order.exchange_order_id, order_creation_update.exchange_order_id)
-        self.assertTrue(updated_order.exchange_order_id_update_event.is_set())
-        self.assertTrue(updated_order.is_pending_create)
+        assert updated_order.exchange_order_id == order_creation_update.exchange_order_id
+        assert updated_order.exchange_order_id_update_event.is_set()
+        assert updated_order.is_pending_create
 
-        self.assertFalse(
-            self._is_logged(
+        assert not self._is_logged(
                 "INFO",
                 f"Created {order.order_type.name} {order.trade_type.name} order {order.client_order_id} for "
                 f"{order.amount} {order.trading_pair}.",
             )
-        )
 
         # Check that Buy/SellOrderCreatedEvent has not been triggered.
-        self.assertEqual(0, len(self.buy_order_created_logger.event_log))
-
+        assert 0 == len(self.buy_order_created_logger.event_log)
+    
     def test_process_order_update_trigger_order_cancelled_event(self):
         order: InFlightOrder = InFlightOrder(
             client_order_id="someClientOrderId",
@@ -475,16 +465,16 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
         update_future = self.tracker.process_order_update(order_cancelled_update)
         self.async_run_with_timeout(update_future)
 
-        self.assertTrue(self._is_logged("INFO", f"Successfully canceled order {order.client_order_id}."))
-        self.assertEqual(0, len(self.tracker.active_orders))
-        self.assertEqual(1, len(self.tracker.cached_orders))
-        self.assertEqual(1, len(self.order_cancelled_logger.event_log))
+        assert self._is_logged("INFO", f"Successfully canceled order {order.client_order_id}.")
+        assert 0 == len(self.tracker.active_orders)
+        assert 1 == len(self.tracker.cached_orders)
+        assert 1 == len(self.order_cancelled_logger.event_log)
 
         event_triggered = self.order_cancelled_logger.event_log[0]
-        self.assertIsInstance(event_triggered, OrderCancelledEvent)
-        self.assertEqual(event_triggered.exchange_order_id, order.exchange_order_id)
-        self.assertEqual(event_triggered.order_id, order.client_order_id)
-
+        assert isinstance(event_triggered, OrderCancelledEvent)
+        assert event_triggered.exchange_order_id == order.exchange_order_id
+        assert event_triggered.order_id == order.client_order_id
+    
     def test_process_order_update_trigger_order_failure_event(self):
         order: InFlightOrder = InFlightOrder(
             client_order_id="someClientOrderId",
@@ -511,18 +501,16 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
         update_future = self.tracker.process_order_update(order_failure_update)
         self.async_run_with_timeout(update_future)
 
-        self.assertTrue(
-            self._is_logged("INFO", f"Order {order.client_order_id} has failed. Order Update: {order_failure_update}")
-        )
-        self.assertEqual(0, len(self.tracker.active_orders))
-        self.assertEqual(1, len(self.tracker.cached_orders))
-        self.assertEqual(1, len(self.order_failure_logger.event_log))
+        assert self._is_logged("INFO", f"Order {order.client_order_id} has failed. Order Update: {order_failure_update}")
+        assert 0 == len(self.tracker.active_orders)
+        assert 1 == len(self.tracker.cached_orders)
+        assert 1 == len(self.order_failure_logger.event_log)
 
         event_triggered = self.order_failure_logger.event_log[0]
-        self.assertIsInstance(event_triggered, MarketOrderFailureEvent)
-        self.assertEqual(event_triggered.order_id, order.client_order_id)
-        self.assertEqual(event_triggered.order_type, order.order_type)
-
+        assert isinstance(event_triggered, MarketOrderFailureEvent)
+        assert event_triggered.order_id == order.client_order_id
+        assert event_triggered.order_type == order.order_type
+    
     def test_process_order_update_trigger_completed_event_and_not_fill_event(self):
         order: InFlightOrder = InFlightOrder(
             client_order_id="someClientOrderId",
@@ -551,10 +539,10 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
 
         # Check order update has been successfully applied
         updated_order: InFlightOrder = self.tracker.fetch_tracked_order(order.client_order_id)
-        self.assertEqual(updated_order.exchange_order_id, order_update_1.exchange_order_id)
-        self.assertTrue(updated_order.exchange_order_id_update_event.is_set())
-        self.assertEqual(updated_order.current_state, order_update_1.new_state)
-        self.assertTrue(updated_order.is_open)
+        assert updated_order.exchange_order_id == order_update_1.exchange_order_id
+        assert updated_order.exchange_order_id_update_event.is_set()
+        assert updated_order.current_state == order_update_1.new_state
+        assert updated_order.is_open
 
         subsequent_order_filled_amount = order.amount - initial_order_filled_amount
         order_update_2: OrderUpdate = OrderUpdate(
@@ -571,35 +559,29 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
         self.async_run_with_timeout(update_future)
 
         # Check order is not longer being actively tracked
-        self.assertIsNone(self.tracker.fetch_tracked_order(order.client_order_id))
+        assert self.tracker.fetch_tracked_order(order.client_order_id) is None
 
         cached_order: InFlightOrder = self.tracker.fetch_cached_order(order.client_order_id)
-        self.assertEqual(cached_order.current_state, order_update_2.new_state)
-        self.assertTrue(cached_order.is_done)
+        assert cached_order.current_state == order_update_2.new_state
+        assert cached_order.is_done
 
         # Check that Logger has logged the appropriate logs
-        self.assertFalse(
-            self._is_logged(
+        assert not self._is_logged(
                 "INFO",
                 f"The {order.trade_type.name.upper()} order {order.client_order_id} amounting to "
                 f"{initial_order_filled_amount}/{order.amount} {order.base_asset} has been filled.",
             )
-        )
-        self.assertFalse(
-            self._is_logged(
+        assert not self._is_logged(
                 "INFO",
                 f"The {order.trade_type.name.upper()} order {order.client_order_id} amounting to "
                 f"{initial_order_filled_amount + subsequent_order_filled_amount}/{order.amount} {order.base_asset} "
                 f"has been filled.",
             )
-        )
-        self.assertTrue(
-            self._is_logged("INFO", f"{order.trade_type.name.upper()} order {order.client_order_id} completely filled.")
-        )
+        assert self._is_logged("INFO", f"{order.trade_type.name.upper()} order {order.client_order_id} completely filled.")
 
-        self.assertEqual(0, len(self.order_filled_logger.event_log))
-        self.assertEqual(1, len(self.buy_order_completed_logger.event_log))
-
+        assert 0 == len(self.order_filled_logger.event_log)
+        assert 1 == len(self.buy_order_completed_logger.event_log)
+    
     def test_process_trade_update_trigger_filled_event_flat_fee(self):
         order: InFlightOrder = InFlightOrder(
             client_order_id="someClientOrderId",
@@ -631,24 +613,20 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
 
         self.tracker.process_trade_update(trade_update)
 
-        self.assertTrue(
-            self._is_logged(
+        assert self._is_logged(
                 "INFO",
                 f"The {order.trade_type.name.upper()} order {order.client_order_id} amounting to "
                 f"{trade_filled_amount}/{order.amount} {order.base_asset} has been filled at {trade_filled_price} {order.quote_asset}.",
             )
-        )
 
-        self.assertEqual(1, len(self.order_filled_logger.event_log))
+        assert 1 == len(self.order_filled_logger.event_log)
         order_filled_event: OrderFilledEvent = self.order_filled_logger.event_log[0]
 
-        self.assertEqual(order_filled_event.order_id, order.client_order_id)
-        self.assertEqual(order_filled_event.price, trade_update.fill_price)
-        self.assertEqual(order_filled_event.amount, trade_update.fill_base_amount)
-        self.assertEqual(
-            order_filled_event.trade_fee, AddedToCostTradeFee(flat_fees=[TokenAmount(self.quote_asset, fee_paid)])
-        )
-
+        assert order_filled_event.order_id == order.client_order_id
+        assert order_filled_event.price == trade_update.fill_price
+        assert order_filled_event.amount == trade_update.fill_base_amount
+        assert order_filled_event.trade_fee == AddedToCostTradeFee(flat_fees=[TokenAmount(self.quote_asset, fee_paid)])
+    
     def test_process_trade_update_does_not_trigger_filled_event_update_status_when_completely_filled(self):
         order: InFlightOrder = InFlightOrder(
             client_order_id="someClientOrderId",
@@ -679,31 +657,27 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
         self.tracker.process_trade_update(trade_update)
 
         fetched_order: InFlightOrder = self.tracker.fetch_order(order.client_order_id)
-        self.assertTrue(fetched_order.is_filled)
-        self.assertIn(fetched_order.client_order_id, self.tracker.active_orders)
-        self.assertNotIn(fetched_order.client_order_id, self.tracker.cached_orders)
+        assert fetched_order.is_filled
+        assert fetched_order.client_order_id in self.tracker.active_orders
+        assert fetched_order.client_order_id not in self.tracker.cached_orders
 
-        self.assertTrue(
-            self._is_logged(
+        assert self._is_logged(
                 "INFO",
                 f"The {order.trade_type.name.upper()} order {order.client_order_id} amounting to "
                 f"{order.amount}/{order.amount} {order.base_asset} has been filled at {order.price} {order.quote_asset}.",
             )
-        )
 
-        self.assertEqual(1, len(self.order_filled_logger.event_log))
-        self.assertEqual(0, len(self.buy_order_completed_logger.event_log))
+        assert 1 == len(self.order_filled_logger.event_log)
+        assert 0 == len(self.buy_order_completed_logger.event_log)
 
         order_filled_event: OrderFilledEvent = self.order_filled_logger.event_log[0]
-        self.assertIsNotNone(order_filled_event)
+        assert order_filled_event is not None
 
-        self.assertEqual(order_filled_event.order_id, order.client_order_id)
-        self.assertEqual(order_filled_event.price, trade_update.fill_price)
-        self.assertEqual(order_filled_event.amount, trade_update.fill_base_amount)
-        self.assertEqual(
-            order_filled_event.trade_fee, AddedToCostTradeFee(flat_fees=[TokenAmount(self.quote_asset, fee_paid)])
-        )
-
+        assert order_filled_event.order_id == order.client_order_id
+        assert order_filled_event.price == trade_update.fill_price
+        assert order_filled_event.amount == trade_update.fill_base_amount
+        assert order_filled_event.trade_fee == AddedToCostTradeFee(flat_fees=[TokenAmount(self.quote_asset, fee_paid)])
+    
     def test_updating_order_states_with_both_process_order_update_and_process_trade_update(self):
         order: InFlightOrder = InFlightOrder(
             client_order_id="someClientOrderId",
@@ -730,11 +704,11 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
         open_order: InFlightOrder = self.tracker.fetch_tracked_order(order.client_order_id)
 
         # Check order_creation_update has been successfully applied
-        self.assertEqual(open_order.exchange_order_id, order_creation_update.exchange_order_id)
-        self.assertTrue(open_order.exchange_order_id_update_event.is_set())
-        self.assertEqual(open_order.current_state, order_creation_update.new_state)
-        self.assertTrue(open_order.is_open)
-        self.assertEqual(0, len(open_order.order_fills))
+        assert open_order.exchange_order_id == order_creation_update.exchange_order_id
+        assert open_order.exchange_order_id_update_event.is_set()
+        assert open_order.current_state == order_creation_update.new_state
+        assert open_order.is_open
+        assert 0 == len(open_order.order_fills)
 
         trade_filled_price: Decimal = order.price
         trade_filled_amount: Decimal = order.amount
@@ -752,17 +726,17 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
         )
 
         self.tracker.process_trade_update(trade_update)
-        self.assertEqual(1, len(self.tracker.active_orders))
-        self.assertEqual(0, len(self.tracker.cached_orders))
-
+        assert 1 == len(self.tracker.active_orders)
+        assert 0 == len(self.tracker.cached_orders)
+    
     def test_process_order_not_found_invalid_order(self):
-        self.assertEqual(0, len(self.tracker.active_orders))
+        assert 0 == len(self.tracker.active_orders)
 
         unknown_order_id = "UNKNOWN_ORDER_ID"
         self.async_run_with_timeout(self.tracker.process_order_not_found(unknown_order_id))
 
         self._is_logged("DEBUG", f"Order is not/no longer being tracked ({unknown_order_id})")
-
+    
     def test_process_order_not_found_does_not_exceed_limit(self):
         order: InFlightOrder = InFlightOrder(
             client_order_id="someClientOrderId",
@@ -779,10 +753,10 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
 
         self.async_run_with_timeout(self.tracker.process_order_not_found(order.client_order_id))
 
-        self.assertIn(order.client_order_id, self.tracker.active_orders)
-        self.assertIn(order.client_order_id, self.tracker._order_not_found_records)
-        self.assertEqual(1, self.tracker._order_not_found_records[order.client_order_id])
-
+        assert order.client_order_id in self.tracker.active_orders
+        assert order.client_order_id in self.tracker._order_not_found_records
+        assert 1 == self.tracker._order_not_found_records[order.client_order_id]
+    
     def test_process_order_not_found_exceeded_limit(self):
         self.tracker = ClientOrderTracker(connector=self.connector, lost_order_count_limit=1)
 
@@ -802,8 +776,8 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
         self.async_run_with_timeout(self.tracker.process_order_not_found(order.client_order_id))
         self.async_run_with_timeout(self.tracker.process_order_not_found(order.client_order_id))
 
-        self.assertNotIn(order.client_order_id, self.tracker.active_orders)
-
+        assert order.client_order_id not in self.tracker.active_orders
+    
     def test_restore_tracking_states_only_registers_open_orders(self):
         orders = []
         orders.append(
@@ -862,11 +836,11 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
 
         self.tracker.restore_tracking_states(tracking_states)
 
-        self.assertIn("OID1", self.tracker.active_orders)
-        self.assertNotIn("OID2", self.tracker.all_orders)
-        self.assertNotIn("OID3", self.tracker.all_orders)
-        self.assertNotIn("OID4", self.tracker.all_orders)
-
+        assert "OID1" in self.tracker.active_orders
+        assert "OID2" not in self.tracker.all_orders
+        assert "OID3" not in self.tracker.all_orders
+        assert "OID4" not in self.tracker.all_orders
+    
     def test_restore_tracking_states_skips_orders_without_exchange_order_id(self):
         orders = []
         # PENDING_CREATE with no exchange_order_id — should be skipped
@@ -916,12 +890,12 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
 
         self.tracker.restore_tracking_states(tracking_states)
 
-        self.assertNotIn("OID_PENDING", self.tracker.active_orders)
-        self.assertNotIn("OID_PENDING", self.tracker.lost_orders)
-        self.assertNotIn("OID_OPEN_STALE", self.tracker.active_orders)
-        self.assertNotIn("OID_OPEN_STALE", self.tracker.lost_orders)
-        self.assertIn("OID_GOOD", self.tracker.active_orders)
-
+        assert "OID_PENDING" not in self.tracker.active_orders
+        assert "OID_PENDING" not in self.tracker.lost_orders
+        assert "OID_OPEN_STALE" not in self.tracker.active_orders
+        assert "OID_OPEN_STALE" not in self.tracker.lost_orders
+        assert "OID_GOOD" in self.tracker.active_orders
+    
     def test_update_to_close_order_is_not_processed_until_order_completelly_filled(self):
         order: InFlightOrder = InFlightOrder(
             client_order_id="someClientOrderId",
@@ -973,25 +947,25 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
         order: InFlightOrder = self.tracker.fetch_order(client_order_id=order.client_order_id)
 
         # Check order_creation_update has been successfully applied
-        self.assertFalse(order.is_done)
-        self.assertFalse(order.is_filled)
-        self.assertFalse(order.completely_filled_event.is_set())
+        assert not order.is_done
+        assert not order.is_filled
+        assert not order.completely_filled_event.is_set()
 
         fill_timetamp = 1640001115
         self.connector._set_current_timestamp(fill_timetamp)
         self.tracker.process_trade_update(trade_update)
-        self.assertTrue(order.completely_filled_event.is_set())
+        assert order.completely_filled_event.is_set()
 
         self.connector._set_current_timestamp(1640001120)
         self.async_run_with_timeout(completion_update_future)
 
-        self.assertTrue(order.is_filled)
+        assert order.is_filled
         fill_event: OrderFilledEvent = self.order_filled_logger.event_log[0]
-        self.assertEqual(fill_timetamp, fill_event.timestamp)
+        assert fill_timetamp == fill_event.timestamp
 
         complete_event: BuyOrderCompletedEvent = self.buy_order_completed_logger.event_log[0]
-        self.assertGreaterEqual(complete_event.timestamp, 1640001120)
-
+        assert complete_event.timestamp >= 1640001120
+    
     def test_access_lost_orders(self):
         self.tracker = ClientOrderTracker(connector=self.connector, lost_order_count_limit=1)
 
@@ -1010,13 +984,13 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
 
         self.async_run_with_timeout(self.tracker.process_order_not_found(order.client_order_id))
 
-        self.assertEqual(0, len(self.tracker.lost_orders))
+        assert 0 == len(self.tracker.lost_orders)
 
         self.async_run_with_timeout(self.tracker.process_order_not_found(order.client_order_id))
 
-        self.assertEqual(1, len(self.tracker.lost_orders))
-        self.assertIn(order.client_order_id, self.tracker.lost_orders)
-
+        assert 1 == len(self.tracker.lost_orders)
+        assert order.client_order_id in self.tracker.lost_orders
+    
     def test_lost_orders_returned_in_all_fillable_orders(self):
         self.tracker = ClientOrderTracker(connector=self.connector, lost_order_count_limit=1)
 
@@ -1036,9 +1010,9 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
         self.async_run_with_timeout(self.tracker.process_order_not_found(order.client_order_id))
         self.async_run_with_timeout(self.tracker.process_order_not_found(order.client_order_id))
 
-        self.assertIn(order.client_order_id, self.tracker.all_fillable_orders)
-        self.assertNotIn(order.client_order_id, self.tracker.cached_orders)
-
+        assert order.client_order_id in self.tracker.all_fillable_orders
+        assert order.client_order_id not in self.tracker.cached_orders
+    
     def test_lost_orders_returned_in_all_updatable_orders(self):
         self.tracker = ClientOrderTracker(connector=self.connector, lost_order_count_limit=1)
 
@@ -1058,9 +1032,9 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
         self.async_run_with_timeout(self.tracker.process_order_not_found(order.client_order_id))
         self.async_run_with_timeout(self.tracker.process_order_not_found(order.client_order_id))
 
-        self.assertIn(order.client_order_id, self.tracker.all_updatable_orders)
-        self.assertNotIn(order.client_order_id, self.tracker.cached_orders)
-
+        assert order.client_order_id in self.tracker.all_updatable_orders
+        assert order.client_order_id not in self.tracker.cached_orders
+    
     def test_lost_order_removed_when_fully_filled(self):
         self.tracker = ClientOrderTracker(connector=self.connector, lost_order_count_limit=1)
 
@@ -1080,7 +1054,7 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
         self.async_run_with_timeout(self.tracker.process_order_not_found(order.client_order_id))
         self.async_run_with_timeout(self.tracker.process_order_not_found(order.client_order_id))
 
-        self.assertIn(order.client_order_id, self.tracker.lost_orders)
+        assert order.client_order_id in self.tracker.lost_orders
 
         order_completion_update: OrderUpdate = OrderUpdate(
             client_order_id=order.client_order_id,
@@ -1091,9 +1065,9 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
 
         self.async_run_with_timeout(self.tracker.process_order_update(order_update=order_completion_update))
 
-        self.assertTrue(order.is_failure)
-        self.assertNotIn(order.client_order_id, self.tracker.lost_orders)
-
+        assert order.is_failure
+        assert order.client_order_id not in self.tracker.lost_orders
+    
     def test_lost_order_removed_when_canceled(self):
         self.tracker = ClientOrderTracker(connector=self.connector, lost_order_count_limit=1)
 
@@ -1113,7 +1087,7 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
         self.async_run_with_timeout(self.tracker.process_order_not_found(order.client_order_id))
         self.async_run_with_timeout(self.tracker.process_order_not_found(order.client_order_id))
 
-        self.assertIn(order.client_order_id, self.tracker.lost_orders)
+        assert order.client_order_id in self.tracker.lost_orders
 
         order_completion_update: OrderUpdate = OrderUpdate(
             client_order_id=order.client_order_id,
@@ -1124,9 +1098,9 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
 
         self.async_run_with_timeout(self.tracker.process_order_update(order_update=order_completion_update))
 
-        self.assertTrue(order.is_failure)
-        self.assertNotIn(order.client_order_id, self.tracker.lost_orders)
-
+        assert order.is_failure
+        assert order.client_order_id not in self.tracker.lost_orders
+    
     def test_lost_order_not_removed_when_updated_with_non_final_states(self):
         self.tracker = ClientOrderTracker(connector=self.connector, lost_order_count_limit=1)
 
@@ -1146,7 +1120,7 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
         self.async_run_with_timeout(self.tracker.process_order_not_found(order.client_order_id))
         self.async_run_with_timeout(self.tracker.process_order_not_found(order.client_order_id))
 
-        self.assertIn(order.client_order_id, self.tracker.lost_orders)
+        assert order.client_order_id in self.tracker.lost_orders
 
         update: OrderUpdate = OrderUpdate(
             client_order_id=order.client_order_id,
@@ -1157,8 +1131,8 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
 
         self.async_run_with_timeout(self.tracker.process_order_update(order_update=update))
 
-        self.assertTrue(order.is_failure)
-        self.assertIn(order.client_order_id, self.tracker.lost_orders)
+        assert order.is_failure
+        assert order.client_order_id in self.tracker.lost_orders
 
         update: OrderUpdate = OrderUpdate(
             client_order_id=order.client_order_id,
@@ -1169,8 +1143,8 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
 
         self.async_run_with_timeout(self.tracker.process_order_update(order_update=update))
 
-        self.assertTrue(order.is_failure)
-        self.assertIn(order.client_order_id, self.tracker.lost_orders)
+        assert order.is_failure
+        assert order.client_order_id in self.tracker.lost_orders
 
         update: OrderUpdate = OrderUpdate(
             client_order_id=order.client_order_id,
@@ -1181,14 +1155,14 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
 
         self.async_run_with_timeout(self.tracker.process_order_update(order_update=update))
 
-        self.assertTrue(order.is_failure)
-        self.assertIn(order.client_order_id, self.tracker.lost_orders)
-
+        assert order.is_failure
+        assert order.client_order_id in self.tracker.lost_orders
+    
     def test_setting_lost_order_count_limit(self):
         self.tracker.lost_order_count_limit = 1
 
-        self.assertEqual(1, self.tracker.lost_order_count_limit)
+        assert 1 == self.tracker.lost_order_count_limit
 
         self.tracker.lost_order_count_limit = 2
 
-        self.assertEqual(2, self.tracker.lost_order_count_limit)
+        assert 2 == self.tracker.lost_order_count_limit
