@@ -25,86 +25,74 @@ class ProgressiveGainControllerConfig(ProgressiveTradingControllerConfig):
         json_schema_extra={
             "prompt": "Enter the connector for the candles data, leave empty to use the same exchange as the connector: ",
             "prompt_on_new": True,
-        },
-    )
+        })
     candles_trading_pair: str = Field(
         default=None,
         json_schema_extra={
             "prompt": "Enter the trading pair for the candles data, leave empty to use the same trading pair as the connector: ",
             "prompt_on_new": True,
-        },
-    )
+        })
     interval: str = Field(
         default="30m",
         json_schema_extra={
             "prompt": "Enter the candle interval (e.g., 1m, 5m, 1h, 1d): ",
             "prompt_on_new": True,
-        },
-    )
+        })
     bb_length: int = Field(
         default=100,
         json_schema_extra={
             "prompt": "Enter the Bollinger Bands length: ",
             "prompt_on_new": True,
-        },
-    )
+        })
     bb_std: float = Field(
         default=2.0,
         json_schema_extra={
             "prompt": "Enter the Bollinger Bands standard deviation: ",
-        },
-    )
+        })
     bb_long_threshold: float = Field(
         default=0.0,
         json_schema_extra={
             "prompt": "Enter the Bollinger Bands long threshold: ",
             "prompt_on_new": True,
             "is_updatable": True,
-        },
-    )
+        })
     bb_short_threshold: float = Field(
         default=1.0,
         json_schema_extra={
             "prompt": "Enter the Bollinger Bands short threshold: ",
             "prompt_on_new": True,
             "is_updatable": True,
-        },
-    )
+        })
     macd_fast: int = Field(
         default=21,
         json_schema_extra={
             "prompt": "Enter the MACD fast period: ",
             "prompt_on_new": True,
-        },
-    )
+        })
     macd_slow: int = Field(
         default=42,
         json_schema_extra={
             "prompt": "Enter the MACD slow period: ",
             "prompt_on_new": True,
-        },
-    )
+        })
     macd_signal: int = Field(
         default=9,
         json_schema_extra={
             "prompt": "Enter the MACD signal period: ",
             "prompt_on_new": True,
-        },
-    )
+        })
     dynamic_order_spread: bool = Field(
         default=True,
         json_schema_extra={
             "prompt": "Enable dynamic order spread: ",
             "prompt_on_new": True,
-        },
-    )
+        })
     dynamic_target: bool = Field(
         default=True,
         json_schema_extra={
             "prompt": "Enable dynamic target: ",
             "prompt_on_new": True,
-        },
-    )
+        })
 
     @field_validator("candles_connector", mode="before")
     @classmethod
@@ -131,14 +119,12 @@ class ProgressiveGainController(ProgressiveTradingController):
         self.config = config
         self.max_records = config.bb_length
         if len(self.config.candles_config) == 0:
-            self.config.candles_config = [
-                CandlesConfig(
-                    connector=config.candles_connector,
-                    trading_pair=config.candles_trading_pair,
-                    interval=config.interval,
-                    max_records=self.max_records,
-                )
-            ]
+            self.config.candles_config = [CandlesConfig(
+                connector=config.candles_connector,
+                trading_pair=config.candles_trading_pair,
+                interval=config.interval,
+                max_records=self.max_records
+            )]
         super().__init__(config, *args, **kwargs)
 
         self._volatility: float = 0.0
@@ -149,16 +135,15 @@ class ProgressiveGainController(ProgressiveTradingController):
         return self.config.candles_config
 
     async def update_processed_data(self):
-        df = self.market_data_provider.get_candles_df(
-            connector_name=self.config.candles_connector,
-            trading_pair=self.config.candles_trading_pair,
-            interval=self.config.interval,
-            max_records=self.max_records,
-        )
+        df = self.market_data_provider.get_candles_df(connector_name=self.config.candles_connector,
+                                                      trading_pair=self.config.candles_trading_pair,
+                                                      interval=self.config.interval,
+                                                      max_records=self.max_records)
         # Add indicators
         df.ta.bbands(length=self.config.bb_length, std=self.config.bb_std, append=True)
         df.ta.natr(length=self.config.bb_length)
-        df.ta.macd(fast=self.config.macd_fast, slow=self.config.macd_slow, signal=self.config.macd_signal, append=True)
+        df.ta.macd(fast=self.config.macd_fast, slow=self.config.macd_slow,
+                   signal=self.config.macd_signal, append=True)
         df.ta.adx(length=self.config.bb_length, append=True)
         df.ta.aroon(length=self.config.macd_fast // 2, append=True)
         df.ta.aroon(length=self.config.macd_fast, append=True)
@@ -175,8 +160,18 @@ class ProgressiveGainController(ProgressiveTradingController):
         df.loc[df[macd_col] > df[macds_col], "MACD>S"] = 1
         df["MACD_cross"] = df["MACD>S"].diff()
 
-        long_condition = (df["MACD>S"] == 1) & (aroon_0 > 0) & (aroon_1 > 0) & (aroon_2 > 0)
-        short_condition = (df["MACD>S"] == 0) & (aroon_0 < 0) & (aroon_1 < 0) & (aroon_2 < 0)
+        long_condition = (
+            (df["MACD>S"] == 1) &
+            (aroon_0 > 0) &
+            (aroon_1 > 0) &
+            (aroon_2 > 0)
+        )
+        short_condition = (
+            (df["MACD>S"] == 0) &
+            (aroon_0 < 0) &
+            (aroon_1 < 0) &
+            (aroon_2 < 0)
+        )
 
         df["signal"] = 0
         df.loc[long_condition, "signal"] = -1
@@ -184,7 +179,9 @@ class ProgressiveGainController(ProgressiveTradingController):
 
         df["volatility"] = df[f"BBB_{self._bb_suffix}"] / self.config.bb_std / 100
         if df["volatility"].iloc[-1] != 0:
-            volatility_update = abs((df["volatility"].iloc[-1] - self._volatility) / df["volatility"].iloc[-1]) > 0.01
+            volatility_update = (
+                abs((df["volatility"].iloc[-1] - self._volatility) / df["volatility"].iloc[-1]) > 0.01
+            )
             self._volatility = df["volatility"].iloc[-1]
         else:
             volatility_update = False
@@ -198,19 +195,13 @@ class ProgressiveGainController(ProgressiveTradingController):
         if new_signal != prev_signal:
             self.logger().info(
                 f"Signal changed: {prev_signal} -> {new_signal} "
-                f"({'LONG' if new_signal == -1 else 'SHORT' if new_signal == 1 else 'NEUTRAL'})"
-            )
-        if self.processed_data["volatility_update"]:
+                f"({'LONG' if new_signal == -1 else 'SHORT' if new_signal == 1 else 'NEUTRAL'})")
+        if self.processed_data['volatility_update']:
             self.logger().info(f"Volatility: {self.processed_data['volatility']:.4g}")
 
         self.processed_data["features"] = df[
             [
-                "timestamp",
-                "open",
-                "high",
-                "low",
-                "close",
-                "volume",
+                "timestamp", "open", "high", "low", "close", "volume",
                 f"BBP_{self._bb_suffix}",
                 f"BBB_{self._bb_suffix}",
                 "MACD>S",
@@ -236,7 +227,7 @@ class ProgressiveGainController(ProgressiveTradingController):
             trailing_stop = LadderedTrailingStop(
                 activation_pnl_pct=self.config.trailing_stop.activation_pnl_pct * spread_multiplier,
                 trailing_pct=self.config.trailing_stop.trailing_pct * spread_multiplier,
-                take_profit_table=self.config.trailing_stop.take_profit_table,
+                take_profit_table=self.config.trailing_stop.take_profit_table
             )
         else:
             stop_loss = self.config.stop_loss
