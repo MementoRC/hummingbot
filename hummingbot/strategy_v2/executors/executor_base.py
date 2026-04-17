@@ -226,6 +226,13 @@ class ExecutorBase(RunnableBase):
             self.close_type = CloseType.FAILED
             self.stop()
 
+    def update_live(self, update_data):
+        """
+        Update a running executor with new data (e.g., adjusted volatility).
+        Subclasses that support live updates should override this method.
+        """
+        raise NotImplementedError
+
     async def validate_sufficient_balance(self):
         """
         Validates that the executor has sufficient balance to place orders.

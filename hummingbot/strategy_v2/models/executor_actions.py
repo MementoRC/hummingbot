@@ -1,4 +1,4 @@
-from typing import Optional, TypeVar
+from typing import Any, Optional, TypeVar
 
 from pydantic import BaseModel
 
@@ -38,3 +38,11 @@ class StoreExecutorAction(ExecutorAction):
     """
 
     executor_id: str
+
+
+class UpdateExecutorAction(ExecutorAction):
+    """
+    Action to update a running executor with new data (e.g., volatility).
+    """
+    executor_id: str
+    update_data: Any
