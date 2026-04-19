@@ -102,6 +102,15 @@ coverage.xml
 .cursor/
 .agents/
 
-
 # GRVT
 /grvt
+
+# MCP / Serena (local tool configs)
+.mcp.json
+.serena/
+
+# Worktree artifacts (rebuild script creates .worktrees/rebase-* on failure)
+.worktrees/
+
+# Local credentials
+conf/password_verification.save

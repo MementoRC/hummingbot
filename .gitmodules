@@ -1,0 +1,16 @@
+[submodule "/home/memento/PycharmProjects/Hummingbot/hummingbot/sub-packages/candles-feed"]
+	path = /home/memento/PycharmProjects/Hummingbot/hummingbot/sub-packages/candles-feed
+	url = https://github.com/MementoRC/hb-candles-feed.git
+	branch = development
+[submodule "/home/memento/PycharmProjects/Hummingbot/hummingbot/sub-packages/liquidations-feed"]
+	path = /home/memento/PycharmProjects/Hummingbot/hummingbot/sub-packages/liquidations-feed
+	url = https://github.com/MementoRC/hb-liquidations-feed.git
+	branch = development
+[submodule "/home/memento/PycharmProjects/Hummingbot/hummingbot/sub-packages/market-simulator"]
+	path = /home/memento/PycharmProjects/Hummingbot/hummingbot/sub-packages/market-simulator
+	url = https://github.com/MementoRC/hb-market-simulator.git
+	branch = development
+[submodule "/home/memento/PycharmProjects/Hummingbot/hummingbot/sub-packages/strategy-framework"]
+	path = /home/memento/PycharmProjects/Hummingbot/hummingbot/sub-packages/strategy-framework
+	url = https://github.com/MementoRC/hb-strategy-framework.git
+	branch = feat/hb-compat
