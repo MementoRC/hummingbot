@@ -61,52 +61,52 @@ class IsolatedAsyncioWrapperTestCase(unittest.IsolatedAsyncioTestCase):
     """
     Custom test case class that wraps `unittest.IsolatedAsyncioTestCase`.
 
-    Under the bare-unittest runner this class saves and restores the "main"
-    event loop around each test so that one test's loop misuse cannot leak
-    into the next.
+    Saves and restores the "main" event loop around each test so that one
+    test's loop destruction cannot cascade into subsequent tests.
 
-    Under pytest with ``asyncio_mode = auto``, pytest-asyncio already
-    provides that isolation, so the manual loop juggling is skipped to
-    avoid conflicting with the framework.
+    Under pytest with ``asyncio_mode = auto``, the loop save/restore is
+    still needed (other tests may kill the loop), but the identity
+    assertions are relaxed since pytest-asyncio may reuse the same loop
+    object.
     """
 
     main_event_loop = None
 
     @classmethod
     def setUpClass(cls) -> None:
-        if not _PYTEST_RUNNER:
-            try:
-                cls.main_event_loop = asyncio.get_event_loop()
-            except RuntimeError:
-                cls.main_event_loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(cls.main_event_loop)
-            assert cls.main_event_loop is not None
+        try:
+            cls.main_event_loop = asyncio.get_event_loop()
+        except RuntimeError:
+            cls.main_event_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(cls.main_event_loop)
+        assert cls.main_event_loop is not None
         super().setUpClass()
 
     def setUp(self) -> None:
+        self.local_event_loop = asyncio.get_event_loop()
+        # Under pytest-asyncio the local and main loop may be the same object;
+        # only assert they differ when running under the bare-unittest runner.
         if not _PYTEST_RUNNER:
-            self.local_event_loop = asyncio.get_event_loop()
             assert self.local_event_loop is not self.main_event_loop
         super().setUp()
 
     def tearDown(self) -> None:
         super().tearDown()
-        if not _PYTEST_RUNNER:
-            if self.main_event_loop is not None and not self.main_event_loop.is_closed():
-                asyncio.set_event_loop(self.main_event_loop)
+        if self.main_event_loop is not None and not self.main_event_loop.is_closed():
+            asyncio.set_event_loop(self.main_event_loop)
+            if not _PYTEST_RUNNER:
                 assert asyncio.get_event_loop() is self.main_event_loop
-            else:
-                asyncio.set_event_loop(asyncio.new_event_loop())
+        else:
+            asyncio.set_event_loop(asyncio.new_event_loop())
 
     @classmethod
     def tearDownClass(cls) -> None:
         super().tearDownClass()
-        if not _PYTEST_RUNNER:
-            if cls.main_event_loop is not None and not cls.main_event_loop.is_closed():
-                asyncio.set_event_loop(cls.main_event_loop)
-            else:
-                asyncio.set_event_loop(asyncio.new_event_loop())
-            assert asyncio.get_event_loop() is not None
+        if cls.main_event_loop is not None and not cls.main_event_loop.is_closed():
+            asyncio.set_event_loop(cls.main_event_loop)
+        else:
+            asyncio.set_event_loop(asyncio.new_event_loop())
+        assert asyncio.get_event_loop() is not None
 
     def run_async_with_timeout(self, coroutine: Awaitable, timeout: float = 1.0) -> Any:
         """
@@ -117,8 +117,7 @@ class IsolatedAsyncioWrapperTestCase(unittest.IsolatedAsyncioTestCase):
         :return: The result of the coroutine.
         :rtype: Any
         """
-        loop = getattr(self, "local_event_loop", None) or asyncio.get_event_loop()
-        return loop.run_until_complete(asyncio.wait_for(coroutine, timeout=timeout))
+        return self.local_event_loop.run_until_complete(asyncio.wait_for(coroutine, timeout=timeout))
 
     @staticmethod
     async def await_task_completion(tasks_name: Optional[str | List[str]]) -> None:
