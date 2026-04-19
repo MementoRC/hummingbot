@@ -171,7 +171,6 @@ class TestXRPLTransactionPipelineSubmit(unittest.IsolatedAsyncioTestCase):
             await pipeline.submit(failing_coroutine())
         self.assertEqual(str(context.exception), "Test error")
         self.assertEqual(pipeline._submissions_failed, 1)
-        await pipeline.stop()
 
     async def test_submit_rejects_when_queue_full(self):
         """Test that submit raises XRPLSystemBusyError when queue is full."""

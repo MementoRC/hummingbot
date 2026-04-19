@@ -584,7 +584,8 @@ class TestMarketDataProvider(IsolatedAsyncioWrapperTestCase):
 
             # Should call historical fetch and update cache
             mock_feed.get_historical_candles.assert_called_once()
-            mock_feed._candles.clear.assert_called()
+            # Plain MagicMock has reset_with_dataframe, so _update_candle_cache uses it
+            mock_feed.reset_with_dataframe.assert_called_once()
 
     async def test_get_historical_candles_df_fallback(self):
         # Test fallback to regular method when no time range specified
@@ -661,7 +662,7 @@ class TestMarketDataProvider(IsolatedAsyncioWrapperTestCase):
             self.assertGreaterEqual(call_args.end_time, 1640995380)
 
             # Should update cache
-            mock_feed._candles.clear.assert_called()
+            mock_feed.clear_candles.assert_called()
 
     async def test_get_historical_candles_df_with_max_records(self):
         # Test calculating start_time from max_records
@@ -814,8 +815,8 @@ class TestMarketDataProvider(IsolatedAsyncioWrapperTestCase):
 
             # Should merge and limit cache
             mock_feed.get_historical_candles.assert_called_once()
-            mock_feed._candles.clear.assert_called()
+            mock_feed.clear_candles.assert_called()
 
             # Verify cache update was called with limited size
-            append_calls = mock_feed._candles.append.call_count
-            self.assertLessEqual(append_calls, 80)
+            add_candle_calls = mock_feed.add_candle.call_count
+            self.assertLessEqual(add_candle_calls, 80)
