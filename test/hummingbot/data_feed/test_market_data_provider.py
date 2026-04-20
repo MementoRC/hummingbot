@@ -70,7 +70,7 @@ class TestMarketDataProvider(IsolatedAsyncioWrapperTestCase):
         price = self.provider.get_price_by_type("mock_connector", "BTC-USDT", PriceType.MidPrice)
         self.assertEqual(price, 10000)
 
-    def test_get_candles_df(self):
+    async def test_get_candles_df(self):
         with patch("hummingbot.data_feed.candles_feed.candles_factory.CandlesFactory.get_candle") as mock_get_candle:
             mock_feed = MagicMock()
             mock_feed.candles_df = pd.DataFrame()
@@ -446,7 +446,7 @@ class TestMarketDataProvider(IsolatedAsyncioWrapperTestCase):
         self.assertEqual(mock_oracle_instance.set_price.call_count, 2)
 
     @patch.object(CandlesBase, "start", MagicMock())
-    def test_get_candles_feed_existing_feed_stop(self):
+    async def test_get_candles_feed_existing_feed_stop(self):
         # Test that existing feed is stopped when creating new one with higher max_records
         with patch("hummingbot.data_feed.candles_feed.candles_factory.CandlesFactory.get_candle") as mock_get_candle:
             mock_existing_feed = MagicMock()

@@ -1312,10 +1312,7 @@ class TestXRPLNodePoolProactivePingLoop(IsolatedAsyncioWrapperTestCase):
         pool._connections["wss://test.com"] = conn
         pool._healthy_connections.append("wss://test.com")
 
-        ping_called = asyncio.Event()
-
         async def mock_ping(c):
-            ping_called.set()
             return False  # Simulate ping failure
 
         with (
@@ -1324,8 +1321,11 @@ class TestXRPLNodePoolProactivePingLoop(IsolatedAsyncioWrapperTestCase):
             patch("hummingbot.connector.exchange.xrpl.xrpl_constants.PROACTIVE_PING_INTERVAL", 0.01),
         ):
             task = asyncio.create_task(pool._proactive_ping_loop())
-            await asyncio.wait_for(ping_called.wait(), timeout=5.0)
-            await asyncio.sleep(0)
+            # Poll for the observable state change (generous timeout for slow CI)
+            for _ in range(500):
+                if not conn.is_healthy:
+                    break
+                await asyncio.sleep(0.01)
             pool._running = False
             task.cancel()
             try:
@@ -1348,10 +1348,7 @@ class TestXRPLNodePoolProactivePingLoop(IsolatedAsyncioWrapperTestCase):
         pool._connections["wss://test.com"] = conn
         pool._healthy_connections.append("wss://test.com")
 
-        ping_called = asyncio.Event()
-
         async def mock_ping(c):
-            ping_called.set()
             return True
 
         with (
@@ -1359,8 +1356,11 @@ class TestXRPLNodePoolProactivePingLoop(IsolatedAsyncioWrapperTestCase):
             patch("hummingbot.connector.exchange.xrpl.xrpl_constants.PROACTIVE_PING_INTERVAL", 0.01),
         ):
             task = asyncio.create_task(pool._proactive_ping_loop())
-            await asyncio.wait_for(ping_called.wait(), timeout=5.0)
-            await asyncio.sleep(0)
+            # Poll for the observable state change (generous timeout for slow CI)
+            for _ in range(500):
+                if conn.consecutive_errors == 0:
+                    break
+                await asyncio.sleep(0.01)
             pool._running = False
             task.cancel()
             try:
