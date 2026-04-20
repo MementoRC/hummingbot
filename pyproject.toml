@@ -15,13 +15,6 @@ python_files = ["test_*.py"]
 asyncio_default_fixture_loop_scope = "function"
 addopts = "--strict-markers"
 asyncio_mode = "auto"
-collect_ignore_glob = [
-    # Connectors with missing upstream dependencies (collection errors)
-    "test/hummingbot/connector/derivative/decibel_perpetual/*",
-    "test/hummingbot/connector/derivative/dydx_v4_perpetual/*",
-    "test/hummingbot/connector/exchange/vertex/*",
-    "test/hummingbot/connector/gateway/test_gateway_lp.py",
-]
 
 [tool.black]
 line-length = 120
