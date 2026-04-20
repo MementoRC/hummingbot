@@ -448,7 +448,7 @@ class TestMarketDataProvider(IsolatedAsyncioWrapperTestCase):
     @patch.object(CandlesBase, "start", MagicMock())
     async def test_get_candles_feed_existing_feed_stop(self):
         # Test that existing feed is stopped when creating new one with higher max_records
-        with patch("hummingbot.data_feed.candles_feed.candles_factory.CandlesFactory.get_candle") as mock_get_candle:
+        with patch("hummingbot.data_feed.market_data_provider.CandlesFactory.get_candle") as mock_get_candle:
             mock_existing_feed = MagicMock()
             mock_existing_feed.max_records = 50
             mock_existing_feed.stop = MagicMock()
