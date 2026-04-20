@@ -1312,11 +1312,10 @@ class TestXRPLNodePoolProactivePingLoop(IsolatedAsyncioWrapperTestCase):
         pool._connections["wss://test.com"] = conn
         pool._healthy_connections.append("wss://test.com")
 
-        call_count = 0
+        ping_called = asyncio.Event()
 
         async def mock_ping(c):
-            nonlocal call_count
-            call_count += 1
+            ping_called.set()
             return False  # Simulate ping failure
 
         with (
@@ -1324,13 +1323,10 @@ class TestXRPLNodePoolProactivePingLoop(IsolatedAsyncioWrapperTestCase):
             patch.object(pool, "_reconnect", new_callable=AsyncMock),
             patch("hummingbot.connector.exchange.xrpl.xrpl_constants.PROACTIVE_PING_INTERVAL", 0.01),
         ):
-            # Run one iteration then stop
-            async def run_one_iter():
-                await asyncio.sleep(0.02)
-                pool._running = False
-
             task = asyncio.create_task(pool._proactive_ping_loop())
-            await run_one_iter()
+            await asyncio.wait_for(ping_called.wait(), timeout=5.0)
+            await asyncio.sleep(0)
+            pool._running = False
             task.cancel()
             try:
                 await task
@@ -1352,20 +1348,20 @@ class TestXRPLNodePoolProactivePingLoop(IsolatedAsyncioWrapperTestCase):
         pool._connections["wss://test.com"] = conn
         pool._healthy_connections.append("wss://test.com")
 
+        ping_called = asyncio.Event()
+
         async def mock_ping(c):
+            ping_called.set()
             return True
 
         with (
             patch.object(pool, "_ping_connection", side_effect=mock_ping),
             patch("hummingbot.connector.exchange.xrpl.xrpl_constants.PROACTIVE_PING_INTERVAL", 0.01),
         ):
-
-            async def run_one_iter():
-                await asyncio.sleep(0.02)
-                pool._running = False
-
             task = asyncio.create_task(pool._proactive_ping_loop())
-            await run_one_iter()
+            await asyncio.wait_for(ping_called.wait(), timeout=5.0)
+            await asyncio.sleep(0)
+            pool._running = False
             task.cancel()
             try:
                 await task
