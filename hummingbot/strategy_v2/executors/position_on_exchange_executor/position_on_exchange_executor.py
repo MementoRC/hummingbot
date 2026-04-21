@@ -12,12 +12,14 @@ from hummingbot.core.event.events import (
 )
 from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
+from hummingbot.strategy_v2.executors.executor_factory import ExecutorFactory
 from hummingbot.strategy_v2.executors.position_executor.position_executor import PositionExecutor
 from hummingbot.strategy_v2.executors.position_on_exchange_executor.data_types import PositionOnExchangeExecutorConfig
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 
 
+@ExecutorFactory.register(PositionOnExchangeExecutorConfig)
 class PositionOnExchangeExecutor(PositionExecutor):
     """
     Executor that places stop-loss and take-profit orders directly on the exchange
@@ -38,11 +40,11 @@ class PositionOnExchangeExecutor(PositionExecutor):
         return cls._logger
 
     def __init__(
-            self,
-            strategy: StrategyV2Base,
-            config: PositionOnExchangeExecutorConfig,
-            update_interval: float = 1.0,
-            max_retries: int = 10,
+        self,
+        strategy: StrategyV2Base,
+        config: PositionOnExchangeExecutorConfig,
+        update_interval: float = 1.0,
+        max_retries: int = 10,
     ):
         """
         Initialize the PositionOnExchangeExecutor instance.
@@ -57,7 +59,8 @@ class PositionOnExchangeExecutor(PositionExecutor):
             self.logger().error(error)
             raise ValueError(error)
         if config.triple_barrier_config.stop_loss_order_type not in (
-            OrderType.STOP_LOSS, OrderType.STOP_LOSS_LIMIT,
+            OrderType.STOP_LOSS,
+            OrderType.STOP_LOSS_LIMIT,
         ):
             error = (
                 f"PositionOnExchangeExecutor requires STOP_LOSS or STOP_LOSS_LIMIT order type, "
@@ -70,8 +73,7 @@ class PositionOnExchangeExecutor(PositionExecutor):
         # validation, then restore the exchange-native type.
         original_sl_type = config.triple_barrier_config.stop_loss_order_type
         config.triple_barrier_config.stop_loss_order_type = OrderType.MARKET
-        super().__init__(strategy=strategy, config=config,
-                         update_interval=update_interval, max_retries=max_retries)
+        super().__init__(strategy=strategy, config=config, update_interval=update_interval, max_retries=max_retries)
         config.triple_barrier_config.stop_loss_order_type = original_sl_type
 
         self._stop_loss_order: TrackedOrder | None = None
@@ -110,14 +112,19 @@ class PositionOnExchangeExecutor(PositionExecutor):
         if self.config.triple_barrier_config.take_profit and not self._take_profit_order:
             if self.config.triple_barrier_config.take_profit_order_type.is_limit_type():
                 is_within_activation_bounds = self._is_within_activation_bounds(
-                    self.take_profit_price, self.close_order_side,
-                    self.config.triple_barrier_config.take_profit_order_type)
+                    self.take_profit_price,
+                    self.close_order_side,
+                    self.config.triple_barrier_config.take_profit_order_type,
+                )
                 if not self._take_profit_limit_order:
                     if is_within_activation_bounds:
                         self.place_take_profit_limit_order()
                 else:
-                    if self._take_profit_limit_order.is_open and not self._take_profit_limit_order.is_filled and \
-                            not is_within_activation_bounds:
+                    if (
+                        self._take_profit_limit_order.is_open
+                        and not self._take_profit_limit_order.is_filled
+                        and not is_within_activation_bounds
+                    ):
                         self.cancel_take_profit()
             else:
                 self.place_take_profit_order()
@@ -295,14 +302,14 @@ class PositionOnExchangeExecutor(PositionExecutor):
             self._failed_orders.append(self._stop_loss_order)
             self._stop_loss_order = None
             self.logger().error(
-                f"Stop loss order failed {event.order_id}. "
-                f"Retrying {self._current_retries}/{self._max_retries}")
+                f"Stop loss order failed {event.order_id}. Retrying {self._current_retries}/{self._max_retries}"
+            )
         if self._take_profit_order and event.order_id == self._take_profit_order.order_id:
             self._failed_orders.append(self._take_profit_order)
             self._take_profit_order = None
             self.logger().error(
-                f"Take profit order failed {event.order_id}. "
-                f"Retrying {self._current_retries}/{self._max_retries}")
+                f"Take profit order failed {event.order_id}. Retrying {self._current_retries}/{self._max_retries}"
+            )
 
     async def _sleep(self, delay: float):
         """
