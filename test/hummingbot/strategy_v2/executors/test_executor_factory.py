@@ -253,6 +253,8 @@ class TestExecutorFactoryCreate(unittest.TestCase):
             timestamp=1234,
             connector_name="binance",
             trading_pair="ETH-USDT",
+            lp_provider="meteora/clmm",
+            side=TradeType.BUY,
             pool_address="0xabc123",
             lower_price=Decimal(100),
             upper_price=Decimal(200),
