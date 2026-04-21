@@ -1,10 +1,13 @@
 """Tests for OrchestratorBridge — thin hummingbot ↔ strategy-framework bridge."""
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
 
 import pytest
-from strategy_framework.hb_compat import OrchestratorAdapter
+
+strategy_framework = pytest.importorskip("strategy_framework", reason="strategy-framework sub-package not installed")
+from strategy_framework.hb_compat import OrchestratorAdapter  # noqa: E402
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
