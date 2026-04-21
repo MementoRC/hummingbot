@@ -69,6 +69,9 @@ class TWAPExecutor(PNLCalculatorMixin, OrderTrackingMixin, RetryMixin, BalanceVa
             order_plan[timestamp] = None  # Initialized with None, to be replaced with a TrackedOrder
         return order_plan
 
+    def _get_trackable_orders(self):
+        return [order for order in self._order_plan.values() if order is not None]
+
     def close_execution_by(self, close_type):
         self.close_type = close_type
         self.close_timestamp = self._strategy.current_timestamp
