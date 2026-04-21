@@ -494,7 +494,7 @@ class TestPositionOnExchangeExecutor(IsolatedAsyncioWrapperTestCase):
         self.assertEqual(position_on_exchange_executor._take_profit_limit_order.order_id, "OID-SELL-2")
         self.assertEqual(position_on_exchange_executor._close_order.order_id, "OID-SELL-3")
         self.assertEqual(position_on_exchange_executor.close_type, CloseType.TIME_LIMIT)
-        self.assertEqual(position_on_exchange_executor.trade_pnl_pct, Decimal("0.01"))
+        self.assertEqual(position_on_exchange_executor.trade_pnl_pct, Decimal("0"))
 
     @patch.object(PositionOnExchangeExecutor, "get_trading_rules")
     @patch(

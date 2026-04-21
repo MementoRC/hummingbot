@@ -186,31 +186,32 @@ class ExecutorOrchestrator:
                 self.cached_performance[controller_id] = PerformanceReport()
                 self.active_executors[controller_id] = []
                 self.positions_held[controller_id] = []
-        db_executors = MarketsRecorder.get_instance().get_all_executors()
-        for executor in db_executors:
-            controller_id = executor.controller_id
-            if controller_id not in self.strategy.controllers:
-                continue
-            self._update_cached_performance(controller_id, executor)
+        # Load executors only for active controllers (not all 689K+ rows)
+        recorder = MarketsRecorder.get_instance()
+        for controller_id in self.strategy.controllers.keys():
+            db_executors = recorder.get_executors_by_controller(controller_id)
+            for executor in db_executors:
+                self._update_cached_performance(controller_id, executor)
 
-        # Load positions from database only for controllers without initial position overrides
-        db_positions = MarketsRecorder.get_instance().get_all_positions()
-        for position in db_positions:
-            controller_id = position.controller_id
-            # Skip if this controller has initial position overrides
-            if controller_id in self.initial_positions_by_controller or controller_id not in self.strategy.controllers:
+        # Create initial positions from config overrides first
+        self._create_initial_positions()
+
+        # Load positions only for active controllers without initial position overrides
+        for controller_id in self.strategy.controllers.keys():
+            if controller_id in self.initial_positions_by_controller:
                 continue
-            # Skip if the connector/trading pair is not in the current strategy markets
-            if (
-                position.connector_name not in self.strategy.markets
-                or position.trading_pair not in self.strategy.markets.get(position.connector_name, set())
-            ):
-                self.logger().warning(
-                    f"Skipping position for {position.connector_name}.{position.trading_pair} - "
-                    f"not available in current strategy markets"
-                )
-                continue
-            self._load_position_from_db(controller_id, position)
+            db_positions = recorder.get_positions_by_controller(controller_id)
+            for position in db_positions:
+                if (
+                    position.connector_name not in self.strategy.markets
+                    or position.trading_pair not in self.strategy.markets.get(position.connector_name, set())
+                ):
+                    self.logger().warning(
+                        f"Skipping position for {position.connector_name}.{position.trading_pair} - "
+                        f"not available in current strategy markets"
+                    )
+                    continue
+                self._load_position_from_db(controller_id, position)
 
     def _update_cached_performance(self, controller_id: str, executor_info: ExecutorInfo):
         """
