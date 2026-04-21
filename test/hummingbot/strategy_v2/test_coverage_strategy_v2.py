@@ -161,6 +161,8 @@ def test_strategy_v2_config_parse_controllers_config_non_empty_string():
 
 def test_strategy_v2_config_load_controller_configs():
     """Lines 104,107-108,116: load_controller_configs reads file and imports module."""
+    import types
+
     from hummingbot.strategy.strategy_v2_base import StrategyV2ConfigBase
 
     fake_yaml = {"controller_type": "generic", "controller_name": "my_ctrl", "id": "test"}
@@ -175,8 +177,9 @@ def test_strategy_v2_config_load_controller_configs():
     class FakeConfig(_ControllerConfigBase):
         pass
 
-    fake_module = MagicMock()
-    fake_module.__name__ = "controllers.generic.my_ctrl"
+    # Use a real module object so inspect.getmembers / inspect.isclass work naturally
+    fake_module = types.ModuleType("controllers.generic.my_ctrl")
+    fake_module.FakeConfig = FakeConfig
 
     with (
         patch("hummingbot.strategy.strategy_v2_base.settings.CONTROLLERS_CONF_DIR_PATH", "/fake/conf"),
@@ -184,11 +187,6 @@ def test_strategy_v2_config_load_controller_configs():
         patch("builtins.open", mock_open(read_data="")),
         patch("hummingbot.strategy.strategy_v2_base.yaml.safe_load", return_value=fake_yaml),
         patch("hummingbot.strategy.strategy_v2_base.importlib.import_module", return_value=fake_module),
-        patch(
-            "hummingbot.strategy.strategy_v2_base.inspect.getmembers",
-            return_value=[("FakeConfig", FakeConfig)],
-        ),
-        patch("hummingbot.strategy.strategy_v2_base.inspect.isclass", return_value=True),
     ):
         cfg = StrategyV2ConfigBase(controllers_config=["my_ctrl.yml"])
         result = cfg.load_controller_configs()

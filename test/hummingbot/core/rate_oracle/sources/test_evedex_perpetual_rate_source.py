@@ -48,6 +48,7 @@ class EvedexPerpetualRateSourceTest(IsolatedAsyncioWrapperTestCase):
 
     async def test_get_evedex_perpetual_prices_handles_unknown_symbols(self):
         rate_source = EvedexPerpetualRateSource()
+        rate_source.get_prices.cache_clear()
         mock_exchange = MagicMock()
 
         async def mock_get_all_pairs_prices():
