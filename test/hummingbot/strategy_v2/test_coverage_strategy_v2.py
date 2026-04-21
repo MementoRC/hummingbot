@@ -162,12 +162,17 @@ def test_strategy_v2_config_parse_controllers_config_non_empty_string():
 def test_strategy_v2_config_load_controller_configs():
     """Lines 104,107-108,116: load_controller_configs reads file and imports module."""
     from hummingbot.strategy.strategy_v2_base import StrategyV2ConfigBase
-    from hummingbot.strategy_v2.controllers.controller_base import ControllerConfigBase
 
     fake_yaml = {"controller_type": "generic", "controller_name": "my_ctrl", "id": "test"}
 
-    # Build a fake config class the finder will match
-    class FakeConfig(ControllerConfigBase):
+    # Build a fake config class the finder will match.
+    # FakeConfig must be resolvable via issubclass against the *same* ControllerConfigBase
+    # that strategy_v2_base.py imports — use that module's class directly.
+    import hummingbot.strategy.strategy_v2_base as _sv2_mod
+
+    _ControllerConfigBase = _sv2_mod.ControllerConfigBase
+
+    class FakeConfig(_ControllerConfigBase):
         pass
 
     fake_module = MagicMock()
@@ -183,6 +188,7 @@ def test_strategy_v2_config_load_controller_configs():
             "hummingbot.strategy.strategy_v2_base.inspect.getmembers",
             return_value=[("FakeConfig", FakeConfig)],
         ),
+        patch("hummingbot.strategy.strategy_v2_base.inspect.isclass", return_value=True),
     ):
         cfg = StrategyV2ConfigBase(controllers_config=["my_ctrl.yml"])
         result = cfg.load_controller_configs()
@@ -206,7 +212,7 @@ def test_strategy_v2_base_format_status_with_positions():
 
     strategy = StrategyV2Base.__new__(StrategyV2Base)
     strategy.connectors = {}
-    strategy.current_timestamp = 1000.0
+    strategy._set_current_timestamp(1000.0)
     strategy.ready_to_trade = True
 
     pos = PositionSummary(
