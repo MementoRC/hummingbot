@@ -31,11 +31,12 @@ from hummingbot.strategy_v2.models.executors_info import ExecutorInfo, Performan
 class TestExecutorOrchestrator(unittest.TestCase):
     @patch.object(MarketsRecorder, "get_instance")
     def setUp(self, markets_recorder: MagicMock):
-        markets_recorder.return_value = MagicMock(spec=MarketsRecorder)
-        markets_recorder.get_all_executors = MagicMock(return_value=[])
-        markets_recorder.get_all_positions = MagicMock(return_value=[])
-        markets_recorder.store_or_update_executor = MagicMock(return_value=None)
-        markets_recorder.update_or_store_position = MagicMock(return_value=None)
+        mock_recorder = MagicMock(spec=MarketsRecorder)
+        mock_recorder.get_executors_by_controller.return_value = []
+        mock_recorder.get_positions_by_controller.return_value = []
+        mock_recorder.store_or_update_executor = MagicMock(return_value=None)
+        mock_recorder.update_or_store_position = MagicMock(return_value=None)
+        markets_recorder.return_value = mock_recorder
         self.mock_strategy = self.create_mock_strategy()
         self.orchestrator = ExecutorOrchestrator(strategy=self.mock_strategy)
 
@@ -278,7 +279,7 @@ class TestExecutorOrchestrator(unittest.TestCase):
             controller_id="test",
         )
 
-        # Set up mock to return executor info
+        # Set up mock to return executor info (matching get_all_executors API)
         mock_markets_recorder.get_all_executors.return_value = [executor_info]
         mock_markets_recorder.get_all_positions.return_value = []
 
@@ -325,7 +326,7 @@ class TestExecutorOrchestrator(unittest.TestCase):
             volume_traded_quote=Decimal("5000"),
         )
 
-        # Set up mock to return all positions as flat lists (matching get_all_* API)
+        # Set up mock to return positions as flat list (matching get_all_positions API)
         mock_markets_recorder.get_all_executors.return_value = []
         mock_markets_recorder.get_all_positions.return_value = [position1, position2]
 
@@ -561,7 +562,7 @@ class TestExecutorOrchestrator(unittest.TestCase):
             volume_traded_quote=Decimal("2000"),
         )
 
-        # Set up mock to return position
+        # Set up mock to return position as flat list (matching get_all_positions API)
         mock_markets_recorder.get_all_executors.return_value = []
         mock_markets_recorder.get_all_positions.return_value = [db_position]
 

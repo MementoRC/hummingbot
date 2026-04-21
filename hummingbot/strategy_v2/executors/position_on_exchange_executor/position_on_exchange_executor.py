@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from decimal import Decimal
 from typing import Union
 
 from hummingbot.connector.connector_base import ConnectorBase
@@ -78,6 +79,20 @@ class PositionOnExchangeExecutor(PositionExecutor):
 
         self._stop_loss_order: TrackedOrder | None = None
         self._take_profit_order: TrackedOrder | None = None
+
+    @property
+    def trade_pnl_pct(self):
+        """
+        Override to return 0 when a close order has been placed but not yet filled.
+
+        For exchange-native SL/TP executors the actual execution price is only
+        known after the exchange-side order fills.  Using current_market_price as
+        a proxy while the order is in-flight (close_type set, _close_order pending)
+        gives misleading non-zero PnL.  Return 0 until the close order is done.
+        """
+        if self._close_order and not self._close_order.is_done:
+            return Decimal("0")
+        return super().trade_pnl_pct
 
     @property
     def stop_loss_price(self):
