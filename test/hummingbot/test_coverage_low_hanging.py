@@ -15,13 +15,12 @@ def test_derivative_base_funding_payment_span():
     """Line 26: self._funding_payment_span = [0, 0] in __init__."""
     from hummingbot.connector.derivative_base import DerivativeBase
 
-    # ExchangeBase is a Cython extension type — cannot monkey-patch __init__.
-    # Use object.__new__ to skip the C-level __new__, then call DerivativeBase.__init__
-    # directly. DerivativeBase.__init__ calls super().__init__(client_config_map) which
-    # maps to ExchangeBase.__init__(balance_asset_limit=mock_config) — safe to run.
-    obj = object.__new__(DerivativeBase)
-    mock_config = MagicMock()
-    DerivativeBase.__init__(obj, mock_config)
+    # ExchangeBase is a Cython extension type — object.__new__(DerivativeBase) is not safe
+    # and ExchangeBase.__init__ rejects non-Cython self. Patch super().__init__ call
+    # at the module level so DerivativeBase.__init__ only runs its own attribute setup.
+    obj = MagicMock()
+    with patch("hummingbot.connector.derivative_base.ExchangeBase.__init__", return_value=None):
+        DerivativeBase.__init__(obj, MagicMock())
     assert obj._funding_payment_span == [0, 0]
 
 
