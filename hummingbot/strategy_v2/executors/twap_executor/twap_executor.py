@@ -69,16 +69,13 @@ class TWAPExecutor(PNLCalculatorMixin, OrderTrackingMixin, RetryMixin, BalanceVa
             order_plan[timestamp] = None  # Initialized with None, to be replaced with a TrackedOrder
         return order_plan
 
-    def _get_trackable_orders(self):
+    def _get_trackable_orders(self) -> list:
         return [order for order in self._order_plan.values() if order is not None]
 
     def close_execution_by(self, close_type):
         self.close_type = close_type
         self.close_timestamp = self._strategy.current_timestamp
         self.stop()
-
-    def _get_trackable_orders(self) -> list:
-        return [order for order in self._order_plan.values() if order is not None]
 
     async def validate_sufficient_balance(self):
         mid_price = self.get_price(self.config.connector_name, self.config.trading_pair, PriceType.MidPrice)
