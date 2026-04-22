@@ -50,12 +50,13 @@ class ProgressiveExecutor(
             error = "Only market orders are supported for time_limit and stop_loss"
             self.logger().error(error)
             raise ValueError(error)
-        # Current ExecutorBase.__init__ signature: (strategy, connectors, config, update_interval)
+        # Current ExecutorBase.__init__ signature: (strategy, connectors, config, update_interval, max_retries)
         super().__init__(
             strategy,
             [config.connector_name],
             config,
             update_interval,
+            max_retries,
         )
         if not config.entry_price:
             open_order_price_type = PriceType.BestBid if config.side == TradeType.BUY else PriceType.BestAsk
@@ -77,8 +78,6 @@ class ProgressiveExecutor(
         self._canceled_orders: List[TrackedOrder] = []
 
         self._total_executed_amount_backup: Decimal = Decimal("0")
-        self._current_retries = 0
-        self._max_retries = max_retries
 
     @property
     def strategy(self) -> StrategyV2Base:
@@ -210,11 +209,6 @@ class ProgressiveExecutor(
     @property
     def trailing_stop_manager(self) -> TrailingStopManager:
         return self._trailing_stop_manager
-
-    def evaluate_max_retries(self):
-        if self.current_retries > self.max_retries:
-            self.close_type = CloseType.FAILED
-            self.stop()
 
     async def on_start(self):
         self.logger().debug("Starting ProgressiveExecutor")
