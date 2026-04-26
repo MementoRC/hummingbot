@@ -14,3 +14,15 @@
 	path = sub-packages/strategy-framework
 	url = https://github.com/MementoRC/hb-strategy-framework.git
 	branch = feat/hb-compat
+[submodule "sub-packages/rate-oracle"]
+	path = sub-packages/rate-oracle
+	url = https://github.com/MementoRC/hb-rate-oracle.git
+	branch = development
+[submodule "sub-packages/market-connector"]
+	path = sub-packages/market-connector
+	url = https://github.com/MementoRC/hb-market-connector.git
+	branch = development
+[submodule "sub-packages/market-data"]
+	path = sub-packages/market-data
+	url = https://github.com/MementoRC/hb-market-data.git
+	branch = development
