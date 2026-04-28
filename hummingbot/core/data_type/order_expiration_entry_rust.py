@@ -21,7 +21,7 @@ Public API (mirrors original Cython class):
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     import pandas as pd
@@ -77,7 +77,7 @@ except ImportError:
                 f"{self._timestamp}, '{self._expiration_timestamp}')"
             )
 
-        def __lt__(self, other: "OrderExpirationEntry") -> bool:
+        def __lt__(self, other: OrderExpirationEntry) -> bool:
             """C++ operator< semantics: sort by expiration_timestamp, then order_id."""
             if self._expiration_timestamp == other._expiration_timestamp:
                 return self._order_id < other._order_id
@@ -97,7 +97,7 @@ except ImportError:
             return hash((self._trading_pair, self._order_id, self._timestamp, self._expiration_timestamp))
 
         @classmethod
-        def to_pandas(cls, order_expiration_entries: List["OrderExpirationEntry"]) -> "pd.DataFrame":
+        def to_pandas(cls, order_expiration_entries: list[OrderExpirationEntry]) -> pd.DataFrame:
             """Convert a list of entries to a pandas DataFrame.
 
             Columns: trading_pair, order_id, timestamp, expiration_timestamp
