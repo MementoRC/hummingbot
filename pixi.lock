@@ -3251,7 +3251,7 @@ packages:
 - pypi: ./sub-packages/candles-feed
   name: hb-candles-feed
   version: 2.4.0
-  sha256: b964e804db6513b19e9cf7116412d161416944b7cacbd2bb3245db79bc46a9f0
+  sha256: c5e3848b4ca04a81855c8461834b3a02734c91e7b3d134445ed4a9d2b591c605
   requires_dist:
   - aiohttp>=3.8.0
   - ccxt
@@ -3259,7 +3259,7 @@ packages:
   - pandas>=1.0.0
   - pydantic>=2
   - aioresponses>=0.7.0 ; extra == 'dev'
-  - cython-lint>=0.15.0 ; extra == 'dev'
+  - cython-lint>=0.19.0 ; extra == 'dev'
   - locust>=2.20.0 ; extra == 'dev'
   - mypy>=1.5.1 ; extra == 'dev'
   - pre-commit>=2.15.0 ; extra == 'dev'
@@ -3282,7 +3282,7 @@ packages:
   - mkdocstrings-python ; extra == 'doc'
   - mkdocstrings>=0.18.0 ; extra == 'doc'
   - pymdown-extensions>=8.0.0 ; extra == 'doc'
-  requires_python: '>=3.10'
+  requires_python: '>=3.12'
   editable: true
 - conda: https://conda.anaconda.org/conda-forge/noarch/hdwallets-0.1.2-pyhd8ed1ab_1.conda
   sha256: 00cbedaf462a2916301edb61c273279c87a53b881c37ec3ac326f67418262033
