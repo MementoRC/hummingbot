@@ -1,7 +1,6 @@
 import logging
 from decimal import Decimal
 from math import floor
-from typing import Dict, List
 
 from hummingbot.core.data_type.common import OrderType, PriceType, TradeType
 from hummingbot.core.data_type.order_candidate import OrderCandidate, PerpetualOrderCandidate
@@ -73,9 +72,9 @@ class ProgressiveExecutor(
         )
         self._open_order: TrackedOrder | None = None
         self._close_order: TrackedOrder | None = None
-        self._realized_orders: List[TrackedOrder] = []
-        self._failed_orders: List[TrackedOrder] = []
-        self._canceled_orders: List[TrackedOrder] = []
+        self._realized_orders: list[TrackedOrder] = []
+        self._failed_orders: list[TrackedOrder] = []
+        self._canceled_orders: list[TrackedOrder] = []
 
         self._total_executed_amount_backup: Decimal = Decimal("0")
 
@@ -100,27 +99,27 @@ class ProgressiveExecutor(
         self._close_order = value
 
     @property
-    def realized_orders(self) -> List[TrackedOrder]:
+    def realized_orders(self) -> list[TrackedOrder]:
         return self._realized_orders
 
     @realized_orders.setter
-    def realized_orders(self, value: List[TrackedOrder]):
+    def realized_orders(self, value: list[TrackedOrder]):
         self._realized_orders = value
 
     @property
-    def failed_orders(self) -> List[TrackedOrder]:
+    def failed_orders(self) -> list[TrackedOrder]:
         return self._failed_orders
 
     @failed_orders.setter
-    def failed_orders(self, value: List[TrackedOrder]):
+    def failed_orders(self, value: list[TrackedOrder]):
         self._failed_orders = value
 
     @property
-    def canceled_orders(self) -> List[TrackedOrder]:
+    def canceled_orders(self) -> list[TrackedOrder]:
         return self._canceled_orders
 
     @canceled_orders.setter
-    def canceled_orders(self, value: List[TrackedOrder]):
+    def canceled_orders(self, value: list[TrackedOrder]):
         self._canceled_orders = value
 
     @property
@@ -239,7 +238,7 @@ class ProgressiveExecutor(
         )
         self.logger().info(f"Updating executor with data: {update_data}")
 
-    def get_custom_info(self) -> Dict:
+    def get_custom_info(self) -> dict:
         return {
             "level_id": self.config.level_id,
             "current_position_average_price": self.entry_price,
@@ -248,7 +247,7 @@ class ProgressiveExecutor(
             "max_retries": self.max_retries,
         }
 
-    def to_format_status(self, scale=1.0) -> List[str]:
+    def to_format_status(self, scale=1.0) -> list[str]:
         lines = []
         current_price = self.get_price(self.config.connector_name, self.config.trading_pair)
         if self.is_trading:
