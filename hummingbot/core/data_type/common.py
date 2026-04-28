@@ -1,6 +1,7 @@
+from collections.abc import Callable
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Callable, Generic, NamedTuple, TypeVar
+from typing import Any, Generic, NamedTuple, TypeVar
 
 from pydantic_core import core_schema
 
