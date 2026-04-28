@@ -1,4 +1,4 @@
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 
 from pydantic import BaseModel
 
@@ -12,7 +12,7 @@ class ExecutorAction(BaseModel):
     Base class for bot actions.
     """
 
-    controller_id: Optional[str] = "main"
+    controller_id: str | None = "main"
 
 
 class CreateExecutorAction(ExecutorAction):
@@ -29,7 +29,7 @@ class StopExecutorAction(ExecutorAction):
     """
 
     executor_id: str
-    keep_position: Optional[bool] = False
+    keep_position: bool | None = False
 
 
 class StoreExecutorAction(ExecutorAction):
@@ -44,5 +44,6 @@ class UpdateExecutorAction(ExecutorAction):
     """
     Action to update a running executor with new data (e.g., volatility).
     """
+
     executor_id: str
     update_data: Any
