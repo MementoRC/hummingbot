@@ -3,7 +3,7 @@ name = "hummingbot"
 version = "20260302"
 description = "Hummingbot"
 authors = [{name = "Hummingbot Foundation", email = "dev@hummingbot.org"}]
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 license = {text = "Apache-2.0"}
 
 [project.scripts]
@@ -52,7 +52,7 @@ channels = ["conda-forge"]
 platforms = ["linux-64", "osx-arm64"]
 [tool.pixi.dependencies]
 # Build/install
-python = ">=3.10.12,<3.13"
+python = ">=3.12,<3.13"
 cython = ">=3.0.12"
 maturin = ">=1.5"
 setuptools = ">=80.8.0"
