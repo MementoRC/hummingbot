@@ -2,7 +2,6 @@ import asyncio
 import logging
 import math
 from decimal import Decimal
-from typing import Dict, Union
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.common import OrderType, PositionAction, PriceType, TradeType
@@ -704,7 +703,7 @@ class GridExecutor(BalanceValidationMixin, TrailingStopMixin, ExecutorBase):
                 self.logger().debug("Removing open order")
                 self.logger().debug(f"Executor ID: {self.config.id} - Canceling open order {order.order_id}")
 
-    def get_custom_info(self) -> Dict:
+    def get_custom_info(self) -> dict:
         held_position_value = sum([Decimal(order["executed_amount_quote"]) for order in self._held_position_orders])
 
         # Grid visualization data (shared structure with backtesting simulator)
@@ -779,7 +778,7 @@ class GridExecutor(BalanceValidationMixin, TrailingStopMixin, ExecutorBase):
             if self._close_order and self._close_order.order_id == order_id:
                 self._close_order.order = in_flight_order
 
-    def process_order_created_event(self, _, market, event: Union[BuyOrderCreatedEvent, SellOrderCreatedEvent]):
+    def process_order_created_event(self, _, market, event: BuyOrderCreatedEvent | SellOrderCreatedEvent):
         """
         This method is responsible for processing the order created event. Here we will update the TrackedOrder with the
         order_id.
@@ -794,7 +793,7 @@ class GridExecutor(BalanceValidationMixin, TrailingStopMixin, ExecutorBase):
         """
         self.update_tracked_orders_with_order_id(event.order_id)
 
-    def process_order_completed_event(self, _, market, event: Union[BuyOrderCompletedEvent, SellOrderCompletedEvent]):
+    def process_order_completed_event(self, _, market, event: BuyOrderCompletedEvent | SellOrderCompletedEvent):
         """
         This method is responsible for processing the order completed event. Here we will check if the id is one of the
         tracked orders and update the state

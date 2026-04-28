@@ -1,7 +1,6 @@
 import asyncio
 import logging
 from decimal import Decimal
-from typing import Dict, Union
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.common import OrderType, PositionAction, PriceType, TradeType
@@ -80,7 +79,6 @@ class PositionExecutor(TrailingStopMixin, ActivationBoundsMixin, RetryMixin, Bal
         self._close_order: TrackedOrder | None = None
         self._take_profit_limit_order: TrackedOrder | None = None
         self._failed_orders: list[TrackedOrder] = []
-        self._trailing_stop_trigger_pct: Decimal | None = None
 
         self._total_executed_amount_backup: Decimal = Decimal("0")
 
@@ -679,7 +677,7 @@ class PositionExecutor(TrailingStopMixin, ActivationBoundsMixin, RetryMixin, Bal
         elif self._take_profit_limit_order and self._take_profit_limit_order.order_id == order_id:
             self._take_profit_limit_order.order = in_flight_order
 
-    def process_order_created_event(self, _, market, event: Union[BuyOrderCreatedEvent, SellOrderCreatedEvent]):
+    def process_order_created_event(self, _, market, event: BuyOrderCreatedEvent | SellOrderCreatedEvent):
         """
         This method is responsible for processing the order created event. Here we will update the TrackedOrder with the
         order_id.
@@ -694,7 +692,7 @@ class PositionExecutor(TrailingStopMixin, ActivationBoundsMixin, RetryMixin, Bal
         """
         self.update_tracked_orders_with_order_id(event.order_id)
 
-    def process_order_completed_event(self, _, market, event: Union[BuyOrderCompletedEvent, SellOrderCompletedEvent]):
+    def process_order_completed_event(self, _, market, event: BuyOrderCompletedEvent | SellOrderCompletedEvent):
         """
         This method is responsible for processing the order completed event. Here we will check if the id is one of the
         tracked orders and update the state
@@ -747,7 +745,7 @@ class PositionExecutor(TrailingStopMixin, ActivationBoundsMixin, RetryMixin, Bal
                 f"Take profit order failed {event.order_id}. Retrying {self._current_retries}/{self._max_retries}"
             )
 
-    def get_custom_info(self) -> Dict:
+    def get_custom_info(self) -> dict:
         return {
             "level_id": self.config.level_id,
             "current_position_average_price": self.entry_price,

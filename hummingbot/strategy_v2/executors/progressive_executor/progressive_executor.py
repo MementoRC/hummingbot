@@ -1,7 +1,6 @@
 import logging
 from decimal import Decimal
 from math import floor
-from typing import Dict
 
 from hummingbot.core.data_type.common import OrderType, PriceType, TradeType
 from hummingbot.core.data_type.order_candidate import OrderCandidate, PerpetualOrderCandidate
@@ -239,7 +238,7 @@ class ProgressiveExecutor(
         )
         self.logger().info(f"Updating executor with data: {update_data}")
 
-    def get_custom_info(self) -> Dict:
+    def get_custom_info(self) -> dict:
         return {
             "level_id": self.config.level_id,
             "current_position_average_price": self.entry_price,

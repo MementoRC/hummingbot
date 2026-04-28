@@ -2,7 +2,6 @@ import asyncio
 import logging
 import math
 from decimal import Decimal
-from typing import Dict, Union
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.common import OrderType, PositionAction, PriceType, TradeType
@@ -73,8 +72,6 @@ class DCAExecutor(PNLCalculatorMixin, TrailingStopMixin, OrderTrackingMixin, Ret
         # executors tracking
         self._open_orders: list[TrackedOrder] = []
         self._close_orders: list[TrackedOrder] = []  # for now will be just one order but we can have multiple
-        self._failed_orders: list[TrackedOrder] = []
-        self._trailing_stop_trigger_pct: Decimal | None = None
 
         # used to track the total amount filled that is updated by the event in case that the InFlightOrder is
         # not available
@@ -531,7 +528,7 @@ class DCAExecutor(PNLCalculatorMixin, TrailingStopMixin, OrderTrackingMixin, Ret
                 active_order.order = in_flight_order
 
     def process_order_created_event(
-        self, event_tag: int, market: ConnectorBase, event: Union[BuyOrderCreatedEvent, SellOrderCreatedEvent]
+        self, event_tag: int, market: ConnectorBase, event: BuyOrderCreatedEvent | SellOrderCreatedEvent
     ):
         """
         This method is responsible for processing the order created event. Here we will add the InFlightOrder to the
@@ -576,7 +573,7 @@ class DCAExecutor(PNLCalculatorMixin, TrailingStopMixin, OrderTrackingMixin, Ret
             self._total_executed_amount_backup += event.amount
         self.update_tracked_orders_with_order_id(event.order_id)
 
-    def get_custom_info(self) -> Dict:
+    def get_custom_info(self) -> dict:
         return {
             "side": self.config.side,
             "current_position_average_price": self.current_position_average_price,
