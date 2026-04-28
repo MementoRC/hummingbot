@@ -2,7 +2,6 @@ import asyncio
 import logging
 import math
 from decimal import Decimal
-from typing import Dict, List, Optional, Union
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.common import OrderType, PositionAction, PriceType, TradeType
@@ -73,22 +72,22 @@ class DCAExecutor(PNLCalculatorMixin, TrailingStopMixin, OrderTrackingMixin, Ret
             self.config.activation_bounds = [Decimal("0.0001"), Decimal("0.005")]  # 0.01% and 0.5%
 
         # executors tracking
-        self._open_orders: List[TrackedOrder] = []
-        self._close_orders: List[TrackedOrder] = []  # for now will be just one order but we can have multiple
+        self._open_orders: list[TrackedOrder] = []
+        self._close_orders: list[TrackedOrder] = []  # for now will be just one order but we can have multiple
 
         # used to track the total amount filled that is updated by the event in case that the InFlightOrder is
         # not available
         self._total_executed_amount_backup: Decimal = Decimal("0")
 
     @property
-    def active_open_orders(self) -> List[TrackedOrder]:
+    def active_open_orders(self) -> list[TrackedOrder]:
         return self._open_orders
 
     @property
-    def active_close_orders(self) -> List[TrackedOrder]:
+    def active_close_orders(self) -> list[TrackedOrder]:
         return self._close_orders
 
-    def _get_trackable_orders(self) -> List[Optional[TrackedOrder]]:
+    def _get_trackable_orders(self) -> list[TrackedOrder | None]:
         return self._open_orders + self._close_orders
 
     @property
@@ -531,7 +530,7 @@ class DCAExecutor(PNLCalculatorMixin, TrailingStopMixin, OrderTrackingMixin, Ret
                 active_order.order = in_flight_order
 
     def process_order_created_event(
-        self, event_tag: int, market: ConnectorBase, event: Union[BuyOrderCreatedEvent, SellOrderCreatedEvent]
+        self, event_tag: int, market: ConnectorBase, event: BuyOrderCreatedEvent | SellOrderCreatedEvent
     ):
         """
         This method is responsible for processing the order created event. Here we will add the InFlightOrder to the
@@ -576,7 +575,7 @@ class DCAExecutor(PNLCalculatorMixin, TrailingStopMixin, OrderTrackingMixin, Ret
             self._total_executed_amount_backup += event.amount
         self.update_tracked_orders_with_order_id(event.order_id)
 
-    def get_custom_info(self) -> Dict:
+    def get_custom_info(self) -> dict:
         return {
             "side": self.config.side,
             "current_position_average_price": self.current_position_average_price,

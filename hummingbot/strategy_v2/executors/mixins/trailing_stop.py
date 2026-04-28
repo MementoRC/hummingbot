@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Optional
 
 
 class TrailingStopMixin:
@@ -35,7 +34,7 @@ class TrailingStopMixin:
 
     def init_trailing_stop(self) -> None:
         """Initialize trailing stop state. Call from __init__ after super().__init__."""
-        self._trailing_stop_trigger_pct: Optional[Decimal] = None
+        self._trailing_stop_trigger_pct: Decimal | None = None
 
     def evaluate_trailing_stop(self) -> bool:
         """Evaluate trailing stop condition.

@@ -15,7 +15,7 @@ Usage:
 from __future__ import annotations
 
 import logging
-from typing import Callable, Type
+from collections.abc import Callable
 
 from hummingbot.strategy_v2.executors.data_types import ExecutorConfigBase
 
@@ -27,7 +27,7 @@ class ExecutorFactory:
     keyed by their config class type. Lookup is O(1) dict access.
     """
 
-    _registry: dict[Type[ExecutorConfigBase], Type] = {}
+    _registry: dict[type[ExecutorConfigBase], type] = {}
     _logger = None
 
     @classmethod
@@ -39,7 +39,7 @@ class ExecutorFactory:
     @classmethod
     def register(
         cls,
-        config_type: Type[ExecutorConfigBase],
+        config_type: type[ExecutorConfigBase],
     ) -> Callable:
         """Decorator to register an executor class for a config type.
 
@@ -99,11 +99,11 @@ class ExecutorFactory:
         )
 
     @classmethod
-    def get_registry(cls) -> dict[Type[ExecutorConfigBase], Type]:
+    def get_registry(cls) -> dict[type[ExecutorConfigBase], type]:
         """Return the current registry (for introspection/debugging)."""
         return dict(cls._registry)
 
     @classmethod
-    def is_registered(cls, config_type: Type[ExecutorConfigBase]) -> bool:
+    def is_registered(cls, config_type: type[ExecutorConfigBase]) -> bool:
         """Check if a config type has a registered executor."""
         return config_type in cls._registry

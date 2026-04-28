@@ -8,7 +8,7 @@ return the orders that should be searched.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from hummingbot.strategy_v2.models.executors import TrackedOrder
@@ -31,9 +31,9 @@ class OrderTrackingMixin:
 
     def init_order_tracking(self) -> None:
         """Initialize order tracking state. Call from __init__ after super().__init__."""
-        self._failed_orders: List[TrackedOrder] = []
+        self._failed_orders: list[TrackedOrder] = []
 
-    def _get_trackable_orders(self) -> List[Optional["TrackedOrder"]]:
+    def _get_trackable_orders(self) -> list[TrackedOrder | None]:
         """Return all tracked orders to search through.
 
         Override in each executor to provide the relevant orders.

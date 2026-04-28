@@ -1,7 +1,6 @@
 import asyncio
 import logging
 from decimal import Decimal
-from typing import Dict, Optional, Union
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.common import OrderType, PriceType, TradeType
@@ -55,7 +54,7 @@ class OrderExecutor(ExecutorBase):
         self.config: OrderExecutorConfig = config
 
         # Order tracking
-        self._order: Optional[TrackedOrder] = None
+        self._order: TrackedOrder | None = None
         self._failed_orders: list[TrackedOrder] = []
         self._canceled_orders: list[TrackedOrder] = []
         self._partial_filled_orders: list[TrackedOrder] = []
@@ -271,7 +270,7 @@ class OrderExecutor(ExecutorBase):
         if self._order and self._order.order_id == order_id:
             self._order.order = in_flight_order
 
-    def process_order_created_event(self, _, market, event: Union[BuyOrderCreatedEvent, SellOrderCreatedEvent]):
+    def process_order_created_event(self, _, market, event: BuyOrderCreatedEvent | SellOrderCreatedEvent):
         """
         Process the order created event.
         """
@@ -283,7 +282,7 @@ class OrderExecutor(ExecutorBase):
         """
         self.update_tracked_order_with_order_id(event.order_id)
 
-    def process_order_completed_event(self, _, market, event: Union[BuyOrderCompletedEvent, SellOrderCompletedEvent]):
+    def process_order_completed_event(self, _, market, event: BuyOrderCompletedEvent | SellOrderCompletedEvent):
         """
         Process the order completed event.
         """
@@ -314,7 +313,7 @@ class OrderExecutor(ExecutorBase):
             self.logger().error(f"Order failed {event.order_id}. Retrying {self._current_retries}/{self._max_retries}")
             self._current_retries += 1
 
-    def get_custom_info(self) -> Dict:
+    def get_custom_info(self) -> dict:
         """
         Get custom information about the executor.
 

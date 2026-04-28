@@ -1,7 +1,6 @@
 import asyncio
 import logging
 from decimal import Decimal
-from typing import Dict, Union
 
 from hummingbot.connector.utils import split_hb_trading_pair
 from hummingbot.core.data_type.common import OrderType, TradeType
@@ -43,7 +42,7 @@ class ArbitrageExecutor(ExecutorBase):
         ]
         same_token_condition = first_token == second_token
         tokens_interchangeable_condition = any(
-            ({first_token, second_token} <= interchangeable_pair for interchangeable_pair in interchangeable_tokens)
+            {first_token, second_token} <= interchangeable_pair for interchangeable_pair in interchangeable_tokens
         )
         # for now, we will consider all the stablecoins interchangeable
         stable_coins_condition = "USD" in first_token and "USD" in second_token
@@ -331,7 +330,7 @@ class ArbitrageExecutor(ExecutorBase):
                 token=asset,
             )
 
-    def process_order_created_event(self, _, market, event: Union[BuyOrderCreatedEvent, SellOrderCreatedEvent]):
+    def process_order_created_event(self, _, market, event: BuyOrderCreatedEvent | SellOrderCreatedEvent):
         if self.buy_order.order_id == event.order_id:
             self.buy_order.order = self.get_in_flight_order(self.buying_market.connector_name, event.order_id)
             self.logger().info("Buy Order Created")
@@ -347,7 +346,7 @@ class ArbitrageExecutor(ExecutorBase):
             self.place_sell_arbitrage_order()
             self._cumulative_failures += 1
 
-    def get_custom_info(self) -> Dict:
+    def get_custom_info(self) -> dict:
         return {
             "buy_connector": self.buying_market.connector_name,
             "sell_connector": self.selling_market.connector_name,

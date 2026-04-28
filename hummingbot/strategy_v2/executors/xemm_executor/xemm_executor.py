@@ -1,7 +1,6 @@
 import asyncio
 import logging
 from decimal import Decimal
-from typing import Dict
 
 from hummingbot.connector.connector_base import ConnectorBase, Union
 from hummingbot.connector.utils import split_hb_trading_pair
@@ -51,7 +50,7 @@ class XEMMExecutor(ExecutorBase):
         ]
         same_token_condition = first_token == second_token
         tokens_interchangeable_condition = any(
-            ({first_token, second_token} <= interchangeable_pair for interchangeable_pair in interchangeable_tokens)
+            {first_token, second_token} <= interchangeable_pair for interchangeable_pair in interchangeable_tokens
         )
         # for now, we will consider all the stablecoins interchangeable
         stable_coins_condition = "USD" in first_token and "USD" in second_token
@@ -328,7 +327,7 @@ class XEMMExecutor(ExecutorBase):
             self._current_retries += 1
             self.place_taker_order()
 
-    def get_custom_info(self) -> Dict:
+    def get_custom_info(self) -> dict:
         # Since we can't make this method async, we'll skip the profitability calculation
         # The profitability will still be shown in the status message which is async
         return {
