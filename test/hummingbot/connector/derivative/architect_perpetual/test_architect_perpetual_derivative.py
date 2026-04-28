@@ -139,11 +139,9 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
                     "price_bands": "+/- 10% from prior Contract Mark Price",
                     "funding_schedule_time_description": "Daily around 4:00 P.M. NY time",
                     "funding_schedule_calendar_description": "All days where a valid Underlying Benchmark Price AND Contract Mark Price are published",
-                    "funding_schedule": {
-                    },
-                    "trading_schedule": {
-                    }
-                }
+                    "funding_schedule": {},
+                    "trading_schedule": {},
+                },
             ]
         }
         return response
