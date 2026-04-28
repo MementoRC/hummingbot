@@ -2,13 +2,13 @@ name: ci
 
 on:
   push:
-    branches: [master, development, 'refactor/unit_tests**', 'epic/**', 'ci-base', 'bleeding-edge', '_for_bleed/**', '_for_bleed_manual/**']
+    branches: [master, development, 'refactor/unit_tests**', 'epic/**', '_for_bleed/**', '_for_bleed_manual/**']
   pull_request:
     branches: [master, development, 'refactor/unit_tests**', 'epic/**']
     types: [ready_for_review, opened, synchronize, reopened]
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
