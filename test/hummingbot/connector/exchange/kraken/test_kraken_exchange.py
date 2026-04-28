@@ -1,9 +1,10 @@
 import json
 import logging
 import re
+from collections.abc import Callable
 from decimal import Decimal
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from typing import Any, Callable, Dict
+from typing import Any
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
@@ -904,7 +905,7 @@ class KrakenExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests)
         self.assertIn("API-Key", request_headers)
         self.assertEqual("someKey", request_headers["API-Key"])
 
-    def get_asset_pairs_mock(self) -> Dict:
+    def get_asset_pairs_mock(self) -> dict:
         asset_pairs = {
             f"X{self.base_asset}{self.quote_asset}": {
                 "altname": f"{self.base_asset}{self.quote_asset}",
@@ -942,7 +943,7 @@ class KrakenExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests)
         result = {"error": [], "result": asset_pairs}
         return result
 
-    def get_balances_mock(self, base_asset_balance: float, quote_asset_balance: float) -> Dict:
+    def get_balances_mock(self, base_asset_balance: float, quote_asset_balance: float) -> dict:
         balances = {
             "error": [],
             "result": {
@@ -954,7 +955,7 @@ class KrakenExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests)
         }
         return balances
 
-    def get_open_orders_mock(self, quantity: float, price: float, order_type: str) -> Dict:
+    def get_open_orders_mock(self, quantity: float, price: float, order_type: str) -> dict:
         open_orders = {
             "open": {
                 "OQCLML-BW3P3-BUCMWZ": self.get_order_status_mock(quantity, price, order_type, status="open"),
@@ -963,7 +964,7 @@ class KrakenExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests)
         result = {"error": [], "result": open_orders}
         return result
 
-    def get_order_status_mock(self, quantity: float, price: float, order_type: str, status: str) -> Dict:
+    def get_order_status_mock(self, quantity: float, price: float, order_type: str, status: str) -> dict:
         order_status = {
             "refid": None,
             "userref": 0,

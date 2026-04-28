@@ -2,7 +2,7 @@ import asyncio
 import re
 from collections import defaultdict
 from decimal import Decimal
-from typing import Any, List
+from typing import Any
 
 from bidict import bidict
 
@@ -479,11 +479,11 @@ class KrakenExchange(ExchangePyBase):
                 )
 
                 if response_json.get("error") or not response_json.get("result"):
-                    raise IOError({"error": response_json})
+                    raise OSError({"error": response_json})
 
                 result = response_json.get("result")
                 break
-            except IOError as e:
+            except OSError as e:
                 if self.is_cloudflare_exception(e):
                     if path_url == CONSTANTS.ADD_ORDER_PATH_URL:
                         self.logger().info(f"Retrying {path_url}")
@@ -516,7 +516,7 @@ class KrakenExchange(ExchangePyBase):
                     self.logger().error(f"Error fetching data from {path_url}, msg is {response_json}")
                     raise e
         if not result:
-            raise IOError(f"Error fetching data from {path_url}, msg is {response_json}.")
+            raise OSError(f"Error fetching data from {path_url}, msg is {response_json}.")
         return result
 
     async def _get_exchange_order_id(self, tracked_order: InFlightOrder) -> str:
@@ -661,7 +661,7 @@ class KrakenExchange(ExchangePyBase):
         )
         return trade_update
 
-    def _process_trade_message(self, trades: List):
+    def _process_trade_message(self, trades: list):
         for update in trades:
             trade_id: str = next(iter(update))
             trade: dict[str, str] = update[trade_id]
@@ -686,7 +686,7 @@ class KrakenExchange(ExchangePyBase):
         )
         return order_update
 
-    def _process_order_message(self, orders: List):
+    def _process_order_message(self, orders: list):
         update = orders[0]
         for message in update:
             for exchange_order_id, order_msg in message.items():
@@ -725,8 +725,8 @@ class KrakenExchange(ExchangePyBase):
                 trade_update = self._create_trade_update_with_order_fill_data(order_fill=trade, order=order)
                 trade_updates.append(trade_update)
 
-        except asyncio.TimeoutError as e:
-            raise IOError(
+        except TimeoutError as e:
+            raise OSError(
                 f"Skipped order update with order fills for {order.client_order_id} - waiting for exchange order id."
             ) from e
         except Exception as e:
