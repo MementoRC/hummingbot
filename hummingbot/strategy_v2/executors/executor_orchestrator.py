@@ -3,7 +3,7 @@ import logging
 import uuid
 from collections import deque
 from decimal import Decimal
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING
 
 from hummingbot.connector.markets_recorder import MarketsRecorder
 from hummingbot.core.data_type.common import PositionAction, PositionMode, PriceType, TradeType
@@ -630,7 +630,11 @@ class ExecutorOrchestrator:
             report[controller_id] = positions_summary
         return report
 
+<<<<<<< HEAD
     def get_all_reports(self) -> dict[str, Dict]:
+=======
+    def get_all_reports(self) -> dict[str, dict]:
+>>>>>>> f995b7e18 (chore(py312): apply pyupgrade to branch diff)
         """
         Generate a unified report containing executors, positions, and performance for all controllers.
         Returns a dictionary with controller_id as key and a dict containing all reports as value.
