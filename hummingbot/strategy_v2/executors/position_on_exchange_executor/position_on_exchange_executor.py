@@ -1,7 +1,6 @@
 import asyncio
 import logging
 from decimal import Decimal
-from typing import Union
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.common import OrderType, PositionAction, TradeType
@@ -279,7 +278,7 @@ class PositionOnExchangeExecutor(PositionExecutor):
         if self._take_profit_order and self._take_profit_order.order_id == order_id:
             self._take_profit_order.order = in_flight_order
 
-    def process_order_completed_event(self, _, market, event: Union[BuyOrderCompletedEvent, SellOrderCompletedEvent]):
+    def process_order_completed_event(self, _, market, event: BuyOrderCompletedEvent | SellOrderCompletedEvent):
         """
         Process order completed events. Check if a SL/TP order was filled and update state.
         """

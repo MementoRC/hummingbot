@@ -1,6 +1,5 @@
 import unittest
 from decimal import Decimal
-from typing import Optional
 
 from pydantic import ValidationError
 
@@ -10,7 +9,6 @@ from hummingbot.strategy_v2.executors.position_on_exchange_executor.data_types i
 
 
 class PositionOnExchangeExecutorConfigTest(unittest.TestCase):
-
     def test_valid_config(self):
         config = PositionOnExchangeExecutorConfig(
             timestamp=123,
@@ -99,10 +97,10 @@ class PositionOnExchangeExecutorConfigTest(unittest.TestCase):
 
     @staticmethod
     def create_config_with_triple_barrier(
-            stop_loss: Optional[Decimal] = None,
-            take_profit: Optional[Decimal] = None,
-            stop_loss_order_type: Optional[OrderType] = OrderType.MARKET,
-            trailing_stop: Optional[TrailingStop] = None,
+        stop_loss: Decimal | None = None,
+        take_profit: Decimal | None = None,
+        stop_loss_order_type: OrderType | None = OrderType.MARKET,
+        trailing_stop: TrailingStop | None = None,
     ):
         return PositionOnExchangeExecutorConfig(
             timestamp=123,
