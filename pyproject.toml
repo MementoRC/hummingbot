@@ -105,11 +105,6 @@ web3 = "*"
 xrpl-py = "==4.4.0"
 zlib = ">=1.2.13"
 
-[tool.pixi.pypi-dependencies]
-# eip712-structs excluded: depends on pysha3 which can't build on 3.12+
-# conda safe-pysha3 provides sha3 at runtime; install manually: pip install --no-deps eip712-structs
-hb-candles-feed = { path = "sub-packages/candles-feed", editable = true }
-
 [tool.pixi.feature.dev.dependencies]
 pytest = ">=7.4.0"
 pytest-asyncio = ">=0.16.0"
@@ -134,7 +129,8 @@ ci = { features = ["ci", "dev"], solve-group = "default" }
 # py310/py311/py312 removed: pandas-ta/numba version conflicts
 
 [tool.pixi.tasks]
-install-dev = "pip install --no-build-isolation -e ."
+install-subpackages = "python -m pip install --no-deps --no-build-isolation -e sub-packages/candles-feed -e sub-packages/liquidations-feed -e sub-packages/market-connector -e sub-packages/market-data -e sub-packages/market-simulator -e sub-packages/rate-oracle -e sub-packages/strategy-framework"
+install-dev = { depends-on = ["install-subpackages"], cmd = "python -m pip install --no-build-isolation -e ." }
 build = { cmd = "python setup.py build_ext --inplace", depends-on = ["install-dev"] }
 rust-build = { cmd = "maturin develop --manifest-path hummingbot/rust/Cargo.toml", depends-on = ["install-dev"] }
 test = { cmd = "pytest test", depends-on = ["build"] }
