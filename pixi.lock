@@ -3,8 +3,6 @@ environments:
   ci:
     channels:
     - url: https://conda.anaconda.org/conda-forge/
-    indexes:
-    - https://pypi.org/simple
     packages:
       linux-64:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
@@ -354,15 +352,9 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-3.23.0-pyhcf101f3_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zlib-1.3.2-h25fd6f3_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstd-1.5.7-hb78ec9c_6.conda
-      - pypi: https://files.pythonhosted.org/packages/d0/60/14ac40c03e8a26216e4f2642497b776e52f9e3214e4fd537628829bbb082/aiodns-4.0.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/16/e9/abe7404f64b191b3326ad9f94096ff116468af6c4f8f14c785285d1dc6a5/ccxt-4.5.15-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/a4/d0/c67967a10abd89529cb9aded9d73f43e5de00cf21243638ef529f6757262/pycares-5.0.1-cp312-cp312-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl
-      - pypi: ./sub-packages/candles-feed
   default:
     channels:
     - url: https://conda.anaconda.org/conda-forge/
-    indexes:
-    - https://pypi.org/simple
     packages:
       linux-64:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
@@ -689,10 +681,6 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-3.23.0-pyhcf101f3_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zlib-1.3.2-h25fd6f3_2.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstd-1.5.7-hb78ec9c_6.conda
-      - pypi: https://files.pythonhosted.org/packages/d0/60/14ac40c03e8a26216e4f2642497b776e52f9e3214e4fd537628829bbb082/aiodns-4.0.0-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/16/e9/abe7404f64b191b3326ad9f94096ff116468af6c4f8f14c785285d1dc6a5/ccxt-4.5.15-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/a4/d0/c67967a10abd89529cb9aded9d73f43e5de00cf21243638ef529f6757262/pycares-5.0.1-cp312-cp312-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl
-      - pypi: ./sub-packages/candles-feed
 packages:
 - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
   build_number: 20
@@ -720,13 +708,6 @@ packages:
   purls: []
   size: 631452
   timestamp: 1758743294412
-- pypi: https://files.pythonhosted.org/packages/d0/60/14ac40c03e8a26216e4f2642497b776e52f9e3214e4fd537628829bbb082/aiodns-4.0.0-py3-none-any.whl
-  name: aiodns
-  version: 4.0.0
-  sha256: a188a75fb8b2b7862ac8f84811a231402fb74f5b4e6f10766dc8a4544b0cf989
-  requires_dist:
-  - pycares>=5.0.0,<6
-  requires_python: '>=3.10'
 - conda: https://conda.anaconda.org/conda-forge/noarch/aiohappyeyeballs-2.6.1-pyhd8ed1ab_0.conda
   sha256: 7842ddc678e77868ba7b92a726b437575b23aaec293bca0d40826f1026d90e27
   md5: 18fd895e0e775622906cdabfc3cf0fb4
@@ -1204,22 +1185,6 @@ packages:
   - pkg:pypi/cchecksum?source=hash-mapping
   size: 261283
   timestamp: 1772791837602
-- pypi: https://files.pythonhosted.org/packages/16/e9/abe7404f64b191b3326ad9f94096ff116468af6c4f8f14c785285d1dc6a5/ccxt-4.5.15-py2.py3-none-any.whl
-  name: ccxt
-  version: 4.5.15
-  sha256: 4220118d146a6e8b74b52918ae99508c1b12ae7b41298170fab14e8ef14c7f9d
-  requires_dist:
-  - setuptools>=60.9.0
-  - certifi>=2018.1.18
-  - requests>=2.18.4
-  - cryptography>=2.6.1
-  - typing-extensions>=4.4.0
-  - aiohttp>=3.10.11 ; python_full_version >= '3.6'
-  - aiodns>=1.1.1 ; python_full_version >= '3.6'
-  - yarl>=1.7.2 ; python_full_version >= '3.6'
-  - ruff==0.0.292 ; extra == 'qa'
-  - tox>=4.8.0 ; extra == 'qa'
-  - mypy==1.6.1 ; extra == 'type'
 - conda: https://conda.anaconda.org/conda-forge/noarch/certifi-2026.2.25-pyhd8ed1ab_0.conda
   sha256: a6b118fd1ed6099dc4fc03f9c492b88882a780fadaef4ed4f93dc70757713656
   md5: 765c4d97e877cdbbb88ff33152b86125
@@ -2161,42 +2126,6 @@ packages:
   purls: []
   size: 2384060
   timestamp: 1774276284520
-- pypi: ./sub-packages/candles-feed
-  name: hb-candles-feed
-  version: 2.4.0
-  sha256: c5e3848b4ca04a81855c8461834b3a02734c91e7b3d134445ed4a9d2b591c605
-  requires_dist:
-  - aiohttp>=3.8.0
-  - ccxt
-  - numpy>=1.20.0
-  - pandas>=1.0.0
-  - pydantic>=2
-  - aioresponses>=0.7.0 ; extra == 'dev'
-  - cython-lint>=0.19.0 ; extra == 'dev'
-  - locust>=2.20.0 ; extra == 'dev'
-  - mypy>=1.5.1 ; extra == 'dev'
-  - pre-commit>=2.15.0 ; extra == 'dev'
-  - prometheus-client>=0.17.0 ; extra == 'dev'
-  - pytest-aiohttp>=1.1.0 ; extra == 'dev'
-  - pytest-asyncio>=0.21.0 ; extra == 'dev'
-  - pytest-benchmark>=4.0.0 ; extra == 'dev'
-  - pytest-cov>=4.1.0 ; extra == 'dev'
-  - pytest-mock>=3.11.0 ; extra == 'dev'
-  - pytest-timeout>=2.1.0 ; extra == 'dev'
-  - pytest-xdist>=3.0.0 ; extra == 'dev'
-  - pytest>=7.0.0 ; extra == 'dev'
-  - pyupgrade ; extra == 'dev'
-  - redis>=4.5.0 ; extra == 'dev'
-  - ruff>=0.1.6 ; extra == 'dev'
-  - websockets>=11.0.0 ; extra == 'dev'
-  - mkdocs ; extra == 'doc'
-  - mkdocs-git-revision-date-localized-plugin ; extra == 'doc'
-  - mkdocs-material>=8.2.0 ; extra == 'doc'
-  - mkdocstrings-python ; extra == 'doc'
-  - mkdocstrings>=0.18.0 ; extra == 'doc'
-  - pymdown-extensions>=8.0.0 ; extra == 'doc'
-  requires_python: '>=3.12'
-  editable: true
 - conda: https://conda.anaconda.org/conda-forge/noarch/hdwallets-0.1.2-pyhd8ed1ab_1.conda
   sha256: 00cbedaf462a2916301edb61c273279c87a53b881c37ec3ac326f67418262033
   md5: d7226ccf56e0a79317ba1412fa4e78a1
@@ -4040,15 +3969,6 @@ packages:
   - pkg:pypi/py-sr25519-bindings?source=hash-mapping
   size: 345559
   timestamp: 1768576724099
-- pypi: https://files.pythonhosted.org/packages/a4/d0/c67967a10abd89529cb9aded9d73f43e5de00cf21243638ef529f6757262/pycares-5.0.1-cp312-cp312-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl
-  name: pycares
-  version: 5.0.1
-  sha256: 09ef90da8da3026fcba4ed223bd71e8057608d5b3fec4f5990b52ae1e8c855cc
-  requires_dist:
-  - cffi>=1.5.0 ; python_full_version < '3.14'
-  - cffi>=2.0.0b1 ; python_full_version >= '3.14'
-  - idna>=2.1 ; extra == 'idna'
-  requires_python: '>=3.9'
 - conda: https://conda.anaconda.org/conda-forge/noarch/pycodestyle-2.14.0-pyhd8ed1ab_0.conda
   sha256: 1950f71ff44e64163e176b1ca34812afc1a104075c3190de50597e1623eb7d53
   md5: 85815c6a22905c080111ec8d56741454
