@@ -115,7 +115,7 @@ pytest-mock = "*"
 pytest-timeout = ">=2.1.0"
 coverage = ">=7.2.7"
 diff-cover = ">=7.7.0"
-ruff = "*"
+ruff = "==0.15.7"
 mypy = "*"
 pre-commit = ">=3.3.3"
 cython-lint = "*"
@@ -138,10 +138,10 @@ rust-build = { cmd = "maturin develop --manifest-path hummingbot/rust/Cargo.toml
 test = { cmd = "pytest test", depends-on = ["build"] }
 test-unit = { cmd = "pytest test/hummingbot", depends-on = ["build"] }
 test-fast = "pytest --timeout=30 --tb=short -q"
-lint = "ruff check hummingbot test"
+lint = "ruff check hummingbot test controllers scripts"
 lint-cython = "cython-lint hummingbot"
-format = "ruff format hummingbot test"
-format-check = "ruff format --check hummingbot test"
+format = "ruff format hummingbot test controllers scripts"
+format-check = "ruff format --check hummingbot test controllers scripts"
 type-check = "mypy hummingbot"
 security-scan = "bandit -c pyproject.toml -r hummingbot/"
 dependency-scan = { cmd = "pip-audit --strict --desc on", depends-on = ["install-dev"] }
