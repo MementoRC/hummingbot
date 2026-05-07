@@ -98,7 +98,6 @@ jobs:
             --ignore="test/hummingbot/core/rate_oracle/sources/test_decibel_perpetual_rate_source.py" \
             --ignore="test/hummingbot/connector/exchange/vertex/" \
             --ignore="test/hummingbot/connector/gateway/" \
-            --ignore="test/hummingbot/remote_iface/" \
             --ignore="test/connector/utilities/oms_connector/" \
             --ignore="test/hummingbot/strategy/amm_arb/" \
             --ignore="test/hummingbot/strategy/cross_exchange_market_making/"
