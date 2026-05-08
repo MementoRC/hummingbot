@@ -95,51 +95,26 @@ class RemoteIfaceMQTTTests(TestCase):
         self.patch_loggers_mock.return_value = None
 
     def tearDown(self):
-        # Collect all commlib service objects before stop so we can drain their
-        # threads/executors.  Publishers, subscribers, and RPC services all spin
-        # up a _main_thread + _executor; none of them are joined by gateway.stop().
+        # Collect RPC services before stop so we can drain their threads/executors.
         rpc_services = list(getattr(self.gateway, "_rpc_services", []))
-        publishers = list(getattr(self.gateway, "_publishers", []))
-        subscribers = list(getattr(self.gateway, "_subscribers", []))
-        hb_thread = getattr(self.gateway, "_hb_thread", None)
 
-        # Stop the health-monitoring coroutine first so it doesn't race with
-        # shutdown.
+        # Stop the health-monitoring coroutine first so it doesn't race with shutdown.
         self.gateway._stop_health_monitoring_loop()
         # Give the async health loop one iteration to see the stop event.
         self.async_loop.run_until_complete(asyncio.sleep(0.0))
 
-        # Remove market-event listeners now so the EventForwarder doesn't fire
-        # callbacks after its publisher transport is torn down.
-        self.gateway._remove_market_event_listeners()
-
         self.gateway.stop()
 
-        def _drain(obj: object) -> None:
-            """Join _main_thread and shutdown _executor for any commlib service."""
-            main_thread = getattr(obj, "_main_thread", None)
+        # Join every RPCService worker thread and shut down its thread-pool so
+        # ThreadPoolExecutor workers (5 per service, 8 services = up to 40 threads)
+        # don't accumulate across tests and eventually hang the runner.
+        for svc in rpc_services:
+            main_thread = getattr(svc, "_main_thread", None)
             if main_thread is not None and main_thread.is_alive():
                 main_thread.join(timeout=5.0)
-            executor = getattr(obj, "_executor", None)
+            executor = getattr(svc, "_executor", None)
             if executor is not None:
                 executor.shutdown(wait=False, cancel_futures=True)
-
-        # RPC services: 8 services x up to 5 ThreadPoolExecutor workers each.
-        for svc in rpc_services:
-            _drain(svc)
-
-        # Publishers: heartbeat pub, event_fw_pub, notify_pub, status_updates_pub,
-        # log_pub -- each owns its own transport thread.
-        for pub in publishers:
-            _drain(pub)
-
-        # Subscribers: external-events psubscriber (and any test-created ones).
-        for sub in subscribers:
-            _drain(sub)
-
-        # Heartbeat publisher thread (stored separately as _hb_thread on Node).
-        if hb_thread is not None:
-            _drain(hb_thread)
 
         del self.gateway
         self.fake_mqtt_broker.clear()
