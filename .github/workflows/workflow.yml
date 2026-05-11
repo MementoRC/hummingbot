@@ -2,7 +2,7 @@ name: ci
 
 on:
   push:
-    branches: [master, development, 'refactor/unit_tests**', 'epic/**', 'ci-base', 'bleeding-edge', '_for_bleed/**', '_for_bleed_manual/**']
+    branches: [master, development, 'refactor/unit_tests**', 'epic/**', 'ci-base', 'bleeding-edge', '_for_bleed/**', '_for_bleed_manual/**', '_for_ci/**']
   pull_request:
     branches: [master, development, 'refactor/unit_tests**', 'epic/**', ci-base]
     types: [ready_for_review, opened, synchronize, reopened]
