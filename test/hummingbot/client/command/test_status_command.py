@@ -6,6 +6,9 @@ from unittest.mock import patch
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import ClientConfigAdapter, read_system_configs_from_yml
 from hummingbot.client.hummingbot_application import HummingbotApplication
+from hummingbot.core.gateway.gateway_http_client import GatewayHttpClient
+from hummingbot.core.rate_oracle.rate_oracle import RateOracle
+from hummingbot.core.utils.trading_pair_fetcher import TradingPairFetcher
 
 
 class StatusCommandTest(IsolatedAsyncioWrapperTestCase):
@@ -13,6 +16,10 @@ class StatusCommandTest(IsolatedAsyncioWrapperTestCase):
     @patch("hummingbot.core.gateway.gateway_http_client.GatewayHttpClient.start_monitor")
     @patch("hummingbot.client.hummingbot_application.HummingbotApplication.mqtt_start")
     async def asyncSetUp(self, mock_mqtt_start, mock_gateway_start, mock_trading_pair_fetcher):
+        # Reset singletons to avoid state pollution from upstream tests in CI
+        GatewayHttpClient._GatewayHttpClient__instance = None
+        RateOracle._shared_instance = None
+        TradingPairFetcher._sf_shared_instance = None
         await read_system_configs_from_yml()
         self.client_config_map = ClientConfigAdapter(ClientConfigMap())
         self.app = HummingbotApplication(client_config_map=self.client_config_map)
