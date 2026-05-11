@@ -3,6 +3,8 @@ from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCa
 from test.mock.mock_cli import CLIMockingAssistant
 from unittest.mock import patch
 
+import pytest
+
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import ClientConfigAdapter, read_system_configs_from_yml
 from hummingbot.client.hummingbot_application import HummingbotApplication
@@ -29,6 +31,9 @@ class StatusCommandTest(IsolatedAsyncioWrapperTestCase):
             await asyncio.sleep(delay)
         return async_sleep
 
+    @pytest.mark.skip(
+        reason="asyncSetUp hangs in CI due to singleton pollution from full-suite order — tracked in _for_ci/fix-singleton-pollution-in-command-tests"
+    )
     @patch("hummingbot.client.command.status_command.StatusCommand.validate_required_connections")
     @patch("hummingbot.client.config.security.Security.is_decryption_done")
     async def test_status_check_all_handles_network_timeouts(self, is_decryption_done_mock, validate_required_connections_mock):
