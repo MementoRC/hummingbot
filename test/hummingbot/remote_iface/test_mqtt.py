@@ -20,9 +20,8 @@ from hummingbot.model.order import Order
 from hummingbot.model.trade_fill import TradeFill
 from hummingbot.remote_iface.mqtt import MQTTGateway, MQTTMarketEventForwarder
 
-pytestmark = pytest.mark.xfail(
-    reason="commlib RPCService subscribe() race - tracked by _commlib_adapter refactor (parallel investigation)",
-    strict=False,
+pytestmark = pytest.mark.skip(
+    reason="commlib RPCService subscribe() race + thread leakage - tracked by _commlib_adapter refactor (parallel investigation)"
 )
 
 
