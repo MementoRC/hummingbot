@@ -26,3 +26,7 @@
 	path = sub-packages/market-data
 	url = https://github.com/MementoRC/hb-market-data.git
 	branch = development
+[submodule "sub-packages/remote-iface"]
+	path = sub-packages/remote-iface
+	url = https://github.com/MementoRC/hb-remote-iface.git
+	branch = development
