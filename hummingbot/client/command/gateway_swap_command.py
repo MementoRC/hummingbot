@@ -104,6 +104,10 @@ class GatewaySwapCommand:
             if side:
                 side = side.upper()
 
+            if side is not None and side not in ("BUY", "SELL"):
+                self.notify(f"Error: Invalid side '{side}'. Must be BUY or SELL.")
+                return
+
             # Construct trading pair
             trading_pair = f"{base_token}-{quote_token}"
 
