@@ -118,7 +118,7 @@ class GatewaySwapCommand:
             if side:
                 side = side.upper()
 
-            if side not in ("BUY", "SELL"):
+            if side is not None and side not in ("BUY", "SELL"):
                 self.notify(f"Error: Invalid side '{side}'. Must be BUY or SELL.")
                 return
 

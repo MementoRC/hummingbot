@@ -133,6 +133,7 @@ class GatewayPoolCommand:
                     return
 
                 # Get default network for the chain
+                chain = (chain or "").strip().lower()
                 default_network = await self._get_gateway_instance().get_default_network_for_chain(chain)
                 if not default_network:
                     self.notify(f"Could not determine default network for chain '{chain}'")
