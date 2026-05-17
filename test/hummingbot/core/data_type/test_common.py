@@ -1,7 +1,7 @@
 from typing import Set
 from unittest import TestCase
 
-from hummingbot.core.data_type.common import GroupedSetDict, LazyDict
+from hummingbot.core.data_type.common import GroupedSetDict, LazyDict, OrderType
 
 
 class GroupedSetDictTests(TestCase):
@@ -96,6 +96,38 @@ class LambdaDictTests(TestCase):
             _ = self.dict["nonexistent"]
         with self.assertRaises(KeyError):
             _ = self.dict.get("nonexistent")
+
+
+class OrderTypeTests(TestCase):
+    def test_is_limit_type_for_limit(self):
+        self.assertTrue(OrderType.LIMIT.is_limit_type())
+
+    def test_is_limit_type_for_limit_maker(self):
+        self.assertTrue(OrderType.LIMIT_MAKER.is_limit_type())
+
+    def test_is_limit_type_for_market(self):
+        self.assertFalse(OrderType.MARKET.is_limit_type())
+
+    def test_is_limit_type_for_amm_swap(self):
+        self.assertFalse(OrderType.AMM_SWAP.is_limit_type())
+
+    def test_is_limit_type_for_amm_add(self):
+        self.assertFalse(OrderType.AMM_ADD.is_limit_type())
+
+    def test_is_limit_type_for_amm_remove(self):
+        self.assertFalse(OrderType.AMM_REMOVE.is_limit_type())
+
+    def test_order_type_enum_members(self):
+        """Verify that all expected OrderType enum members exist."""
+        expected_members = {"MARKET", "LIMIT", "LIMIT_MAKER", "AMM_SWAP", "AMM_ADD", "AMM_REMOVE"}
+        actual_members = {member.name for member in OrderType}
+        self.assertEqual(actual_members, expected_members)
+
+    def test_is_limit_type_true_count(self):
+        """Verify that exactly 2 OrderType members return True for is_limit_type()."""
+        limit_types = [ot for ot in OrderType if ot.is_limit_type()]
+        self.assertEqual(len(limit_types), 2)
+        self.assertEqual(set(limit_types), {OrderType.LIMIT, OrderType.LIMIT_MAKER})
 
 
 if __name__ == "__main__":
