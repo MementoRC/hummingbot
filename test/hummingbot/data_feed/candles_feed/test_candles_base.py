@@ -446,6 +446,6 @@ class TestCandlesBase(IsolatedAsyncioWrapperTestCase, ABC):
             # After the continue, add candles and return True to exit
             return True
 
-        with patch.object(type(self.data_feed), 'ready', new_callable=lambda: property(mock_ready)):
-            with patch.object(self.data_feed, 'check_candles_sorted_and_equidistant'):
+        with patch.object(type(self.data_feed), "ready", new_callable=lambda: property(mock_ready)):
+            with patch.object(self.data_feed, "check_candles_sorted_and_equidistant"):
                 await asyncio.wait_for(self.data_feed.fill_historical_candles(), timeout=5)

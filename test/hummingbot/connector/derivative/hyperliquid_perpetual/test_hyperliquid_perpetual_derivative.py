@@ -3142,45 +3142,55 @@ class HyperliquidPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpe
         url = web_utils.public_rest_url(CONSTANTS.POSITION_INFORMATION_URL)
 
         # First poll: two open positions (BTC and ETH).
-        mock_api.post(url, body=json.dumps({
-            "assetPositions": [
+        mock_api.post(
+            url,
+            body=json.dumps(
                 {
-                    "position": {
-                        "coin": "BTC",
-                        "szi": "0.5",
-                        "entryPx": "50000.0",
-                        "unrealizedPnl": "100.0",
-                        "leverage": {"value": 10},
-                    }
-                },
-                {
-                    "position": {
-                        "coin": "ETH",
-                        "szi": "2.0",
-                        "entryPx": "3000.0",
-                        "unrealizedPnl": "50.0",
-                        "leverage": {"value": 5},
-                    }
-                },
-            ]
-        }))
+                    "assetPositions": [
+                        {
+                            "position": {
+                                "coin": "BTC",
+                                "szi": "0.5",
+                                "entryPx": "50000.0",
+                                "unrealizedPnl": "100.0",
+                                "leverage": {"value": 10},
+                            }
+                        },
+                        {
+                            "position": {
+                                "coin": "ETH",
+                                "szi": "2.0",
+                                "entryPx": "3000.0",
+                                "unrealizedPnl": "50.0",
+                                "leverage": {"value": 5},
+                            }
+                        },
+                    ]
+                }
+            ),
+        )
         self.async_run_with_timeout(self.exchange._update_positions())
         self.assertEqual(2, len(self.exchange.account_positions))
 
         # Second poll: ETH position closed — exchange returns only BTC.
-        mock_api.post(url, body=json.dumps({
-            "assetPositions": [
+        mock_api.post(
+            url,
+            body=json.dumps(
                 {
-                    "position": {
-                        "coin": "BTC",
-                        "szi": "0.5",
-                        "entryPx": "50000.0",
-                        "unrealizedPnl": "120.0",
-                        "leverage": {"value": 10},
-                    }
+                    "assetPositions": [
+                        {
+                            "position": {
+                                "coin": "BTC",
+                                "szi": "0.5",
+                                "entryPx": "50000.0",
+                                "unrealizedPnl": "120.0",
+                                "leverage": {"value": 10},
+                            }
+                        }
+                    ]
                 }
-            ]
-        }))
+            ),
+        )
         self.async_run_with_timeout(self.exchange._update_positions())
 
         positions = self.exchange.account_positions
