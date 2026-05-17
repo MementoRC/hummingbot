@@ -4,6 +4,7 @@ import time
 from collections import deque
 from typing import Deque, Dict, List, Optional, Union
 
+from remote_iface import MQTTGateway
 from sqlalchemy.orm import Session
 
 from hummingbot.client.command import __all__ as commands
@@ -31,7 +32,6 @@ from hummingbot.exceptions import ArgumentParserError
 from hummingbot.logger import HummingbotLogger
 from hummingbot.logger.application_warning import ApplicationWarning
 from hummingbot.model.trade_fill import TradeFill
-from hummingbot.remote_iface.mqtt import MQTTGateway
 
 s_logger = None
 
