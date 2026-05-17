@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import yaml
 from pydantic import BaseModel, Field, field_validator
+from remote_iface import ETopicPublisher
 
 from hummingbot.client import settings
 from hummingbot.client.config.config_data_types import BaseClientModel
@@ -25,7 +26,6 @@ from hummingbot.data_feed.candles_feed.data_types import CandlesConfig
 from hummingbot.data_feed.market_data_provider import MarketDataProvider
 from hummingbot.exceptions import InvalidController
 from hummingbot.logger import HummingbotLogger
-from hummingbot.remote_iface.mqtt import ETopicPublisher
 from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple
 from hummingbot.strategy.strategy_py_base import StrategyPyBase
 from hummingbot.strategy_v2.controllers.controller_base import ControllerBase, ControllerConfigBase
@@ -653,9 +653,10 @@ class StrategyV2Base(StrategyPyBase):
         # Check if MQTT is enabled at runtime
         from hummingbot.client.hummingbot_application import HummingbotApplication
 
-        if HummingbotApplication.main_application()._mqtt is not None:
+        app = HummingbotApplication.main_application()
+        if app._mqtt is not None:
             self.mqtt_enabled = True
-            self._pub = ETopicPublisher("performance", use_bot_prefix=True)
+            self._pub = ETopicPublisher(app._mqtt, "performance", use_bot_prefix=True)
 
         # Start controllers
         for controller in self.controllers.values():
