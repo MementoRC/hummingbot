@@ -30,3 +30,7 @@
 	path = sub-packages/remote-iface
 	url = https://github.com/MementoRC/hb-remote-iface.git
 	branch = development
+[submodule "sub-packages/web-assistant"]
+	path = sub-packages/web-assistant
+	url = https://github.com/MementoRC/hb-web-assistant.git
+	branch = development
