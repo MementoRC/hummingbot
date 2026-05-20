@@ -2,12 +2,13 @@ import asyncio
 import logging
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+from web_assistant.ws_assistant import WSAssistant
+
 from hummingbot.connector.exchange.ndax import ndax_constants as CONSTANTS
 from hummingbot.connector.exchange.ndax.ndax_auth import NdaxAuth
 from hummingbot.connector.exchange.ndax.ndax_websocket_adaptor import NdaxWebSocketAdaptor
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
-from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.logger import HummingbotLogger
 
 if TYPE_CHECKING:

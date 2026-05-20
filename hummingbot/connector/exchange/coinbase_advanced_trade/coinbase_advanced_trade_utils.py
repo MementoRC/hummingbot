@@ -2,11 +2,11 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from pydantic import ConfigDict, Field, SecretStr
+from web_assistant.connections.data_types import EndpointRESTRequest
 
 import hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_trade_constants as constants
 from hummingbot.client.config.config_data_types import BaseConnectorConfigMap
 from hummingbot.core.data_type.trade_fee import TradeFeeSchema
-from hummingbot.core.web_assistant.connections.data_types import EndpointRESTRequest
 
 CENTRALIZED = True
 EXAMPLE_PAIR = "ZRX-ETH"

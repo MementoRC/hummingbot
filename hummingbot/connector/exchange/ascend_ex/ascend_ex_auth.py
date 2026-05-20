@@ -3,9 +3,10 @@ import hmac
 import time
 from typing import Any, Dict
 
+from web_assistant.auth import AuthBase
+from web_assistant.connections.data_types import RESTRequest, WSRequest
+
 from hummingbot.connector.exchange.ascend_ex import ascend_ex_constants as CONSTANTS
-from hummingbot.core.web_assistant.auth import AuthBase
-from hummingbot.core.web_assistant.connections.data_types import RESTRequest, WSRequest
 
 
 class AscendExAuth(AuthBase):

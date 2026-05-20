@@ -9,6 +9,9 @@ from pyinjective.composer_v2 import Composer, injective_exchange_tx_pb
 from pyinjective.core.network import Network
 from pyinjective.indexer_client import IndexerClient
 from pyinjective.wallet import Address, PrivateKey
+from web_assistant.throttler.async_throttler import AsyncThrottler
+from web_assistant.throttler.async_throttler_base import AsyncThrottlerBase
+from web_assistant.throttler.data_types import RateLimit
 
 from hummingbot.connector.exchange.injective_v2 import injective_constants as CONSTANTS
 from hummingbot.connector.exchange.injective_v2.data_sources.injective_data_source import InjectiveDataSource
@@ -20,9 +23,6 @@ from hummingbot.connector.exchange.injective_v2.injective_market import (
 from hummingbot.connector.exchange.injective_v2.injective_query_executor import PythonSDKInjectiveQueryExecutor
 from hummingbot.connector.gateway.gateway_in_flight_order import GatewayInFlightOrder, GatewayPerpetualInFlightOrder
 from hummingbot.connector.utils import combine_to_hb_trading_pair
-from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
-from hummingbot.core.api_throttler.async_throttler_base import AsyncThrottlerBase
-from hummingbot.core.api_throttler.data_types import RateLimit
 from hummingbot.core.data_type.common import OrderType, PositionAction, TradeType
 from hummingbot.core.data_type.in_flight_order import OrderState, OrderUpdate
 from hummingbot.core.pubsub import PubSub

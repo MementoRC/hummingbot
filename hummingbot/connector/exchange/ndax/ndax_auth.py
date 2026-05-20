@@ -4,10 +4,11 @@ import threading
 import time
 from typing import Dict, Optional
 
+from web_assistant.auth import AuthBase
+from web_assistant.connections.connections_factory import ConnectionsFactory
+from web_assistant.connections.data_types import RESTMethod, RESTRequest, WSRequest
+
 from hummingbot.core.utils.tracking_nonce import get_tracking_nonce_low_res
-from hummingbot.core.web_assistant.auth import AuthBase
-from hummingbot.core.web_assistant.connections.connections_factory import ConnectionsFactory
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest, WSRequest
 
 ONE_HOUR = 3600
 

@@ -3,9 +3,8 @@ from enum import Enum
 from typing import Any, Dict, Optional
 
 import ujson
-
-from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest
-from hummingbot.core.web_assistant.ws_assistant import WSAssistant
+from web_assistant.connections.data_types import WSJSONRequest
+from web_assistant.ws_assistant import WSAssistant
 
 
 class NdaxMessageType(Enum):

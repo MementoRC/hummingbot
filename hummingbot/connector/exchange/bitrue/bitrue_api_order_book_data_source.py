@@ -1,14 +1,15 @@
 import asyncio
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from web_assistant.connections.data_types import RESTMethod, WSJSONRequest
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+from web_assistant.ws_assistant import WSAssistant
+
 from hummingbot.connector.exchange.bitrue import bitrue_constants as CONSTANTS, bitrue_web_utils as web_utils
 from hummingbot.connector.exchange.bitrue.bitrue_order_book import BitrueOrderBook
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
 from hummingbot.core.utils.tracking_nonce import NonceCreator
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, WSJSONRequest
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
-from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.logger import HummingbotLogger
 
 if TYPE_CHECKING:

@@ -1,8 +1,8 @@
 from google.protobuf.json_format import MessageToDict
+from web_assistant.connections.data_types import WSResponse
+from web_assistant.ws_post_processors import WSPostProcessorBase
 
 from hummingbot.connector.exchange.mexc.protobuf import PushDataV3ApiWrapper_pb2
-from hummingbot.core.web_assistant.connections.data_types import WSResponse
-from hummingbot.core.web_assistant.ws_post_processors import WSPostProcessorBase
 
 
 class MexcPostProcessor(WSPostProcessorBase):

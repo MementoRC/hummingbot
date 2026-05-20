@@ -5,9 +5,10 @@ import struct
 import time
 from typing import Dict, Tuple
 
+from web_assistant.auth import AuthBase
+from web_assistant.connections.data_types import RESTRequest, WSRequest
+
 from hummingbot.connector.exchange.cube.cube_ws_protobufs import trade_pb2
-from hummingbot.core.web_assistant.auth import AuthBase
-from hummingbot.core.web_assistant.connections.data_types import RESTRequest, WSRequest
 
 
 class CubeAuth(AuthBase):

@@ -1,8 +1,9 @@
 import time
 from typing import Optional
 
+from web_assistant.throttler.async_throttler import AsyncThrottler
+
 import hummingbot.connector.exchange.cube.cube_constants as CONSTANTS
-from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 
 
 async def get_current_server_time(

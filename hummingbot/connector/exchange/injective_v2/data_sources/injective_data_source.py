@@ -14,6 +14,7 @@ from pyinjective.composer_v2 import Composer, injective_exchange_tx_pb
 from pyinjective.constant import GAS_PRICE
 from pyinjective.core.market_v2 import DerivativeMarket, SpotMarket
 from pyinjective.core.token import Token
+from web_assistant.throttler.async_throttler_base import AsyncThrottlerBase
 
 from hummingbot.connector.derivative.position import Position
 from hummingbot.connector.exchange.injective_v2 import injective_constants as CONSTANTS
@@ -26,7 +27,6 @@ from hummingbot.connector.exchange.injective_v2.injective_market import (
 from hummingbot.connector.gateway.common_types import CancelOrderResult, PlaceOrderResult
 from hummingbot.connector.gateway.gateway_in_flight_order import GatewayInFlightOrder, GatewayPerpetualInFlightOrder
 from hummingbot.connector.trading_rule import TradingRule
-from hummingbot.core.api_throttler.async_throttler_base import AsyncThrottlerBase
 from hummingbot.core.data_type.common import OrderType, PositionAction, PositionSide, TradeType
 from hummingbot.core.data_type.funding_info import FundingInfo, FundingInfoUpdate
 from hummingbot.core.data_type.in_flight_order import OrderState, OrderUpdate, TradeUpdate

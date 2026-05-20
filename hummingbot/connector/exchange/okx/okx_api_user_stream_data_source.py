@@ -1,12 +1,13 @@
 import asyncio
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
+from web_assistant.connections.data_types import WSJSONRequest, WSPlainTextRequest, WSResponse
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+from web_assistant.ws_assistant import WSAssistant
+
 from hummingbot.connector.exchange.okx import okx_constants as CONSTANTS
 from hummingbot.connector.exchange.okx.okx_auth import OkxAuth
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
-from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest, WSPlainTextRequest, WSResponse
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
-from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.logger import HummingbotLogger
 
 if TYPE_CHECKING:
