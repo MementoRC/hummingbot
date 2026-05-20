@@ -3,10 +3,10 @@ from unittest.mock import MagicMock
 
 from eth_account import Account
 from eth_account.messages import encode_defunct
+from web_assistant.connections.data_types import RESTMethod, RESTRequest, WSJSONRequest
 
 from hummingbot.connector.exchange.dexalot.dexalot_auth import DexalotAuth
 from hummingbot.connector.utils import to_0x_hex
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest, WSJSONRequest
 
 
 class DexalotAuthTests(IsolatedAsyncioWrapperTestCase):

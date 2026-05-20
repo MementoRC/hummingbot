@@ -6,10 +6,10 @@ from unittest.mock import AsyncMock, patch
 
 import aiohttp
 from aiohttp import WebSocketError
+from web_assistant.connections.data_types import WSJSONRequest, WSResponse
+from web_assistant.connections.ws_connection import WSConnection
 
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
-from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest, WSResponse
-from hummingbot.core.web_assistant.connections.ws_connection import WSConnection
 
 
 class WSConnectionTest(IsolatedAsyncioWrapperTestCase):

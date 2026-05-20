@@ -4,8 +4,9 @@ import hmac
 from unittest import TestCase
 from unittest.mock import patch
 
+from web_assistant.connections.data_types import RESTMethod, RESTRequest
+
 from hummingbot.connector.derivative.aevo_perpetual.aevo_perpetual_auth import AevoPerpetualAuth
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest
 
 
 class AevoPerpetualAuthTests(TestCase):

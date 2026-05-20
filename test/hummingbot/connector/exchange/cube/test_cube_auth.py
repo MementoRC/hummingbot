@@ -2,9 +2,9 @@ import asyncio
 from unittest import TestCase
 
 from typing_extensions import Awaitable
+from web_assistant.connections.data_types import RESTMethod, RESTRequest
 
 from hummingbot.connector.exchange.cube.cube_auth import CubeAuth
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest
 
 
 class CubeAuthTests(TestCase):

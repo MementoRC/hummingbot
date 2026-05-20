@@ -5,14 +5,14 @@ import unittest
 from typing import Awaitable
 
 from aioresponses import aioresponses
+from web_assistant.connections.data_types import RESTMethod, RESTRequest
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 from hummingbot.connector.derivative.okx_perpetual import (
     okx_perpetual_constants as CONSTANTS,
     okx_perpetual_web_utils as web_utils,
 )
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class OKXPerpetualWebUtilsTest(unittest.TestCase):

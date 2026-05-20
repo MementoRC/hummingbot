@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses import aioresponses
 from bidict import bidict
+from web_assistant.throttler.async_throttler import AsyncThrottler
 
 from hummingbot.connector.exchange.bitrue import bitrue_constants as CONSTANTS
 from hummingbot.connector.exchange.bitrue.bitrue_auth import BitrueAuth
@@ -14,7 +15,6 @@ from hummingbot.connector.exchange.bitrue.bitrue_exchange import BitrueExchange
 from hummingbot.connector.exchange.bitrue.bitrue_user_stream_data_source import BitrueUserStreamDataSource
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
-from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 
 
 class BitrueUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):

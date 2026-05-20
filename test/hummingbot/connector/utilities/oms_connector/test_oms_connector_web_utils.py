@@ -3,9 +3,10 @@ from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCa
 from typing import Optional
 from unittest.mock import AsyncMock, patch
 
+from web_assistant.connections.data_types import WSJSONRequest, WSResponse
+
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.utilities.oms_connector.oms_connector_web_utils import build_api_factory
-from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest, WSResponse
 
 
 class OMSConnectorWebUtilsTest(IsolatedAsyncioWrapperTestCase):

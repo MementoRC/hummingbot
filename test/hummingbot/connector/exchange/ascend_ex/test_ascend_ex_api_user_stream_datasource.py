@@ -6,6 +6,7 @@ from typing import Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses import aioresponses
+from web_assistant.throttler.async_throttler import AsyncThrottler
 
 from hummingbot.connector.exchange.ascend_ex import ascend_ex_constants as CONSTANTS, ascend_ex_web_utils as web_utils
 from hummingbot.connector.exchange.ascend_ex.ascend_ex_api_user_stream_data_source import (
@@ -14,7 +15,6 @@ from hummingbot.connector.exchange.ascend_ex.ascend_ex_api_user_stream_data_sour
 from hummingbot.connector.exchange.ascend_ex.ascend_ex_auth import AscendExAuth
 from hummingbot.connector.exchange.ascend_ex.ascend_ex_exchange import AscendExExchange
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
-from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 
 
 class AscendExUserStreamTrackerTests(IsolatedAsyncioWrapperTestCase):

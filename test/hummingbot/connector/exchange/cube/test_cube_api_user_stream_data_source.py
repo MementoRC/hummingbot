@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiohttp
+from web_assistant.throttler.async_throttler import AsyncThrottler
 
 from hummingbot.connector.exchange.cube import cube_constants as CONSTANTS
 from hummingbot.connector.exchange.cube.cube_api_user_stream_data_source import CubeAPIUserStreamDataSource
@@ -14,7 +15,6 @@ from hummingbot.connector.exchange.cube.cube_ws_protobufs import trade_pb2
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
 from hummingbot.connector.trading_rule import TradingRule
-from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 
 
 class CubeUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):

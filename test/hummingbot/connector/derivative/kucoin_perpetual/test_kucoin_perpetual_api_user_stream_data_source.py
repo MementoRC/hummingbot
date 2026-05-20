@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 import ujson
 from aioresponses.core import aioresponses
+from web_assistant.throttler.async_throttler import AsyncThrottler
 
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
@@ -20,7 +21,6 @@ from hummingbot.connector.derivative.kucoin_perpetual.kucoin_perpetual_auth impo
 from hummingbot.connector.derivative.kucoin_perpetual.kucoin_perpetual_derivative import KucoinPerpetualDerivative
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
-from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 
 
 class KucoinPerpetualAPIUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):

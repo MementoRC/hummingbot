@@ -8,10 +8,11 @@ from decimal import Decimal
 from typing import Dict, List
 from unittest.mock import patch
 
+from web_assistant.throttler.async_throttler import AsyncRequestContext, AsyncThrottler
+from web_assistant.throttler.data_types import LinkedLimitWeightPair, RateLimit, TaskLog
+
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
-from hummingbot.core.api_throttler.async_throttler import AsyncRequestContext, AsyncThrottler
-from hummingbot.core.api_throttler.data_types import LinkedLimitWeightPair, RateLimit, TaskLog
 from hummingbot.logger.struct_logger import METRICS_LOG_LEVEL
 
 TEST_PATH_URL = "/hummingbot"
@@ -256,7 +257,7 @@ class AsyncThrottlerUnitTests(unittest.TestCase):
         context = throttler.execute_task(limit_id="test_limit_id")
         self.assertTrue(context.within_capacity())
 
-    @patch("hummingbot.core.api_throttler.async_throttler.AsyncRequestContext._time")
+    @patch("web_assistant.throttler.async_throttler.AsyncRequestContext._time")
     def test_within_capacity_for_limits_with_milliseconds_interval(self, time_mock):
         per_second_limit = RateLimit(limit_id="generic_per_second", limit=3, time_interval=1)
         per_millisecond_limit = RateLimit(limit_id="generic_per_millisecond", limit=2, time_interval=0.2)

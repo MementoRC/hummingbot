@@ -10,10 +10,11 @@ This module tests:
 import unittest
 from typing import Any, Dict, List, Optional
 
+from web_assistant.ws_assistant import WSAssistant
+
 from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_message import OrderBookMessage
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
-from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 
 
 class MockOrderBookTrackerDataSource(OrderBookTrackerDataSource):

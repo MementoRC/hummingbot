@@ -2,6 +2,7 @@ import unittest
 from decimal import Decimal
 
 from pydantic import SecretStr
+from web_assistant.connections.data_types import RESTMethod
 
 import hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_trade_constants as CONSTANTS
 from hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_trade_utils import (
@@ -9,7 +10,6 @@ from hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_tra
     CoinbaseAdvancedTradeConfigMap,
     CoinbaseAdvancedTradeRESTRequest,
 )
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod
 
 
 class CoinbaseAdvancedTradeUtilTestCases(unittest.TestCase):

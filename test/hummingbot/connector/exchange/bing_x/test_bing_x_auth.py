@@ -6,8 +6,9 @@ from typing import Any, Awaitable, Dict, Mapping, Optional
 from unittest import TestCase
 from urllib.parse import urlencode
 
+from web_assistant.connections.data_types import RESTMethod, RESTRequest, WSJSONRequest
+
 from hummingbot.connector.exchange.bing_x.bing_x_auth import BingXAuth
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest, WSJSONRequest
 
 
 class BingXAuthTests(TestCase):

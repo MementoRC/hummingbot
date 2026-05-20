@@ -8,6 +8,7 @@ from typing import Any, Callable, Dict, Optional
 import pandas as pd
 from aioresponses.core import aioresponses
 from bidict import bidict
+from web_assistant.connections.data_types import RESTMethod
 
 import hummingbot.connector.derivative.pacifica_perpetual.pacifica_perpetual_constants as CONSTANTS
 import hummingbot.connector.derivative.pacifica_perpetual.pacifica_perpetual_web_utils as web_utils
@@ -25,7 +26,6 @@ from hummingbot.core.data_type.trade_fee import TradeFeeSchema
 from hummingbot.core.event.event_logger import EventLogger
 from hummingbot.core.event.events import MarketEvent
 from hummingbot.core.network_iterator import NetworkStatus
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod
 
 
 class PacificaPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):

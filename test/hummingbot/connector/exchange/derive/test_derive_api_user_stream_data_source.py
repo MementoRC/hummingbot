@@ -7,6 +7,7 @@ from typing import Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from bidict import bidict
+from web_assistant.throttler.async_throttler import AsyncThrottler
 
 from hummingbot.connector.exchange.derive import derive_constants as CONSTANTS
 from hummingbot.connector.exchange.derive.derive_api_user_stream_data_source import DeriveAPIUserStreamDataSource
@@ -14,7 +15,6 @@ from hummingbot.connector.exchange.derive.derive_auth import DeriveAuth
 from hummingbot.connector.exchange.derive.derive_exchange import DeriveExchange
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
-from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 
 
 class TestDeriveAPIUserStreamDataSource(IsolatedAsyncioWrapperTestCase):
