@@ -2,17 +2,18 @@ import asyncio
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
+from web_assistant.connections.data_types import RESTMethod, RESTRequest, RESTResponse
+from web_assistant.rest_pre_processors import RESTPreProcessorBase
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+
 from hummingbot.connector.utils import combine_to_hb_trading_pair
 from hummingbot.core.network_iterator import NetworkStatus, safe_ensure_future
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest, RESTResponse
-from hummingbot.core.web_assistant.rest_pre_processors import RESTPreProcessorBase
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 from hummingbot.data_feed.coin_cap_data_feed import coin_cap_constants as CONSTANTS
 from hummingbot.data_feed.data_feed_base import DataFeedBase
 from hummingbot.logger import HummingbotLogger
 
 if TYPE_CHECKING:
-    from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
+    from web_assistant.throttler.async_throttler import AsyncThrottler
 
 
 class CoinCapAPIKeyAppender(RESTPreProcessorBase):
@@ -33,7 +34,7 @@ class CoinCapDataFeed(DataFeedBase):
     @classmethod
     def _get_async_throttler(cls) -> "AsyncThrottler":
         """This avoids circular imports."""
-        from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
+        from web_assistant.throttler.async_throttler import AsyncThrottler
 
         if cls._async_throttler is None:
             cls._async_throttler = AsyncThrottler(CONSTANTS.RATE_LIMITS)

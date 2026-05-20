@@ -3,10 +3,11 @@ import hmac
 import json
 from typing import Dict
 
+from web_assistant.auth import AuthBase
+from web_assistant.connections.data_types import RESTRequest, WSJSONRequest
+
 from hummingbot.connector.utilities.oms_connector import oms_connector_constants as CONSTANTS
 from hummingbot.core.utils.tracking_nonce import NonceCreator
-from hummingbot.core.web_assistant.auth import AuthBase
-from hummingbot.core.web_assistant.connections.data_types import RESTRequest, WSJSONRequest
 
 
 class OMSConnectorAuth(AuthBase):

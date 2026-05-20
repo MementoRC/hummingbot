@@ -2,8 +2,9 @@ import asyncio
 import logging
 from typing import Any, Dict, List, Optional
 
+from web_assistant.connections.data_types import RESTMethod
+
 from hummingbot.core.network_iterator import NetworkStatus
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod
 from hummingbot.data_feed.candles_feed.candles_base import CandlesBase
 from hummingbot.data_feed.candles_feed.hyperliquid_spot_candles import constants as CONSTANTS
 from hummingbot.logger import HummingbotLogger

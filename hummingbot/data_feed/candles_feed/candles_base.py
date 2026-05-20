@@ -7,14 +7,14 @@ from typing import List, Optional
 import numpy as np
 import pandas as pd
 from bidict import bidict
+from web_assistant.connections.data_types import RESTMethod, WSJSONRequest
+from web_assistant.throttler.async_throttler import AsyncThrottler
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+from web_assistant.ws_assistant import WSAssistant
 
-from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 from hummingbot.core.network_base import NetworkBase
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.core.utils.async_utils import safe_ensure_future
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, WSJSONRequest
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
-from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.data_feed.candles_feed.data_types import HistoricalCandlesConfig
 
 

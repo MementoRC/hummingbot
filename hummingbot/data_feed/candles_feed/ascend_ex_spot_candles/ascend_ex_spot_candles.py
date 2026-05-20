@@ -1,8 +1,9 @@
 import logging
 from typing import Any, Dict, List, Optional
 
+from web_assistant.connections.data_types import WSJSONRequest
+
 from hummingbot.core.network_iterator import NetworkStatus
-from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest
 from hummingbot.data_feed.candles_feed.ascend_ex_spot_candles import constants as CONSTANTS
 from hummingbot.data_feed.candles_feed.candles_base import CandlesBase
 from hummingbot.logger import HummingbotLogger

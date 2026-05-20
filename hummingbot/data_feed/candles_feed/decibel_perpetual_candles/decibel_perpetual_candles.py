@@ -1,8 +1,9 @@
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from web_assistant.ws_assistant import WSAssistant
+
 from hummingbot.core.network_iterator import NetworkStatus
-from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.data_feed.candles_feed.candles_base import CandlesBase
 from hummingbot.data_feed.candles_feed.decibel_perpetual_candles import constants as CONSTANTS
 from hummingbot.logger import HummingbotLogger

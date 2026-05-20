@@ -5,6 +5,8 @@ from decimal import Decimal
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from bidict import bidict
+from web_assistant.connections.data_types import RESTMethod
+from web_assistant.throttler.data_types import RateLimit
 
 from hummingbot.connector.constants import s_decimal_NaN
 from hummingbot.connector.exchange_py_base import ExchangePyBase
@@ -26,7 +28,6 @@ from hummingbot.connector.utilities.oms_connector.oms_connector_web_utils import
     OMSConnectorWebAssistantsFactory,
 )
 from hummingbot.connector.utils import combine_to_hb_trading_pair, get_new_numeric_client_order_id
-from hummingbot.core.api_throttler.data_types import RateLimit
 from hummingbot.core.data_type.common import OrderType, TradeType
 from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState, OrderUpdate, TradeUpdate
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
@@ -35,7 +36,6 @@ from hummingbot.core.data_type.user_stream_tracker_data_source import UserStream
 from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.core.utils.estimate_fee import build_trade_fee
 from hummingbot.core.utils.tracking_nonce import NonceCreator
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod
 
 
 class OMSExchange(ExchangePyBase):

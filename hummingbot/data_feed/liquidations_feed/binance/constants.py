@@ -1,4 +1,4 @@
-from hummingbot.core.api_throttler.data_types import LinkedLimitWeightPair, RateLimit
+from web_assistant.throttler.data_types import LinkedLimitWeightPair, RateLimit
 
 REST_URL = "https://fapi.binance.com"
 HEALTH_CHECK_ENDPOINT = "/fapi/v1/ping"

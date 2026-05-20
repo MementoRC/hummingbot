@@ -1,6 +1,5 @@
 from bidict import bidict
-
-from hummingbot.core.api_throttler.data_types import LinkedLimitWeightPair, RateLimit
+from web_assistant.throttler.data_types import LinkedLimitWeightPair, RateLimit
 
 # Base URLs - Mainnet
 REST_URL = "https://api.mainnet.aptoslabs.com/decibel"

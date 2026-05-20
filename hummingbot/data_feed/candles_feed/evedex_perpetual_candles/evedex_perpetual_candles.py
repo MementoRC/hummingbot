@@ -3,9 +3,10 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
+from web_assistant.connections.data_types import WSJSONRequest
+from web_assistant.ws_assistant import WSAssistant
+
 from hummingbot.core.network_iterator import NetworkStatus
-from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest
-from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.data_feed.candles_feed.candles_base import CandlesBase
 from hummingbot.data_feed.candles_feed.evedex_perpetual_candles import constants as CONSTANTS
 from hummingbot.logger import HummingbotLogger
