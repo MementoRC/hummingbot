@@ -1,6 +1,10 @@
 import asyncio
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from web_assistant.connections.data_types import WSJSONRequest, WSResponse
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+from web_assistant.ws_assistant import WSAssistant
+
 from hummingbot.connector.derivative.aevo_perpetual import (
     aevo_perpetual_constants as CONSTANTS,
     aevo_perpetual_web_utils as web_utils,
@@ -8,9 +12,6 @@ from hummingbot.connector.derivative.aevo_perpetual import (
 from hummingbot.connector.derivative.aevo_perpetual.aevo_perpetual_auth import AevoPerpetualAuth
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.utils.async_utils import safe_ensure_future
-from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest, WSResponse
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
-from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.logger import HummingbotLogger
 
 if TYPE_CHECKING:

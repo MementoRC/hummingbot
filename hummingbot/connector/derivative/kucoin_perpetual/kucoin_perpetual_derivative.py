@@ -4,6 +4,9 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 from bidict import ValueDuplicationError, bidict
+from web_assistant.connections.data_types import RESTMethod
+from web_assistant.throttler.data_types import RateLimit
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 import hummingbot.connector.derivative.kucoin_perpetual.kucoin_perpetual_constants as CONSTANTS
 import hummingbot.connector.derivative.kucoin_perpetual.kucoin_perpetual_utils as kucoin_utils
@@ -19,7 +22,6 @@ from hummingbot.connector.derivative.position import Position
 from hummingbot.connector.perpetual_derivative_py_base import PerpetualDerivativePyBase
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.connector.utils import combine_to_hb_trading_pair
-from hummingbot.core.api_throttler.data_types import RateLimit
 from hummingbot.core.clock import Clock
 from hummingbot.core.data_type.common import OrderType, PositionAction, PositionMode, PositionSide, TradeType
 from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState, OrderUpdate, TradeUpdate
@@ -28,8 +30,6 @@ from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee, TokenAmount
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.utils.async_utils import safe_gather
 from hummingbot.core.utils.estimate_fee import build_perpetual_trade_fee
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 
 s_decimal_NaN = Decimal("nan")
 s_decimal_0 = Decimal(0)

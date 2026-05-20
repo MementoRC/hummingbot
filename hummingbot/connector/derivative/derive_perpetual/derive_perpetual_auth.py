@@ -5,6 +5,8 @@ from typing import Any, Dict, List
 
 from eth_account.messages import encode_defunct
 from web3 import Web3
+from web_assistant.auth import AuthBase
+from web_assistant.connections.data_types import RESTMethod, RESTRequest, WSRequest
 
 from hummingbot.connector.derivative.derive_perpetual import (
     derive_perpetual_constants as CONSTANTS,
@@ -13,8 +15,6 @@ from hummingbot.connector.derivative.derive_perpetual import (
 from hummingbot.connector.derivative.derive_perpetual.derive_perpetual_web_utils import MAX_INT_32, get_action_nonce
 from hummingbot.connector.other.derive_common_utils import SignedAction, TradeModuleData
 from hummingbot.connector.utils import to_0x_hex
-from hummingbot.core.web_assistant.auth import AuthBase
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest, WSRequest
 
 
 class DerivePerpetualAuth(AuthBase):

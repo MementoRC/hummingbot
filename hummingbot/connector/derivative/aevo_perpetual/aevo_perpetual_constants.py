@@ -1,7 +1,8 @@
 from decimal import Decimal
 
+from web_assistant.throttler.data_types import RateLimit
+
 from hummingbot.connector.constants import SECOND
-from hummingbot.core.api_throttler.data_types import RateLimit
 from hummingbot.core.data_type.in_flight_order import OrderState
 
 DEFAULT_DOMAIN = "aevo_perpetual"

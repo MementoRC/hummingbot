@@ -4,11 +4,11 @@ from typing import Any, Callable, Dict, Optional
 
 from eth_account import Account
 from eth_account.messages import encode_typed_data
+from web_assistant.auth import AuthBase
+from web_assistant.connections.data_types import RESTRequest, WSRequest
 
 from hummingbot.connector.derivative.evedex_perpetual import evedex_perpetual_constants as CONSTANTS
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
-from hummingbot.core.web_assistant.auth import AuthBase
-from hummingbot.core.web_assistant.connections.data_types import RESTRequest, WSRequest
 
 # EIP-712 Type Schemas
 EIP712_TYPES = {
