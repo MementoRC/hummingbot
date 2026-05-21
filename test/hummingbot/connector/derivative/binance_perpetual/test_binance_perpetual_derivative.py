@@ -511,9 +511,7 @@ class BinancePerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         await self.exchange._initialize_position_mode()
 
         self.assertIsNone(self.exchange._position_mode)
-        self.assertTrue(
-            self._is_logged("WARNING", "Could not fetch position mode from exchange. Using default.")
-        )
+        self.assertTrue(self._is_logged("WARNING", "Could not fetch position mode from exchange. Using default."))
 
     async def test_format_trading_rules(self):
         margin_asset = self.quote_asset

@@ -898,10 +898,7 @@ class TestExecutorOrchestrator(unittest.TestCase):
         initial_positions = {
             "test_controller": [
                 InitialPositionConfig(
-                    connector_name="binance",
-                    trading_pair="ETH-USDT",
-                    amount=Decimal("2"),
-                    side=TradeType.BUY
+                    connector_name="binance", trading_pair="ETH-USDT", amount=Decimal("2"), side=TradeType.BUY
                 ),
             ]
         }
@@ -909,8 +906,7 @@ class TestExecutorOrchestrator(unittest.TestCase):
         self.mock_strategy.controllers = {"test_controller": MagicMock()}
 
         orchestrator = ExecutorOrchestrator(
-            strategy=self.mock_strategy,
-            initial_positions_by_controller=initial_positions
+            strategy=self.mock_strategy, initial_positions_by_controller=initial_positions
         )
 
         # First call creates positions
