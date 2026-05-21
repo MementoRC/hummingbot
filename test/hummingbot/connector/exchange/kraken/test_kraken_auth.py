@@ -7,9 +7,9 @@ from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
 from typing_extensions import Awaitable
+from web_assistant.connections.data_types import RESTMethod, RESTRequest
 
 from hummingbot.connector.exchange.kraken.kraken_auth import KrakenAuth
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest
 
 
 class KrakenAuthTests(TestCase):
