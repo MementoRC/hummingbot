@@ -7,6 +7,11 @@ from decimal import Decimal
 from typing import Any, AsyncIterable, Callable
 
 from async_timeout import timeout
+from web_assistant.auth import AuthBase
+from web_assistant.connections.data_types import RESTMethod
+from web_assistant.throttler.async_throttler import AsyncThrottler
+from web_assistant.throttler.data_types import RateLimit
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 from hummingbot.connector.client_order_tracker import ClientOrderTracker
 from hummingbot.connector.constants import MINUTE, TWELVE_HOURS, s_decimal_0, s_decimal_NaN
@@ -14,8 +19,6 @@ from hummingbot.connector.exchange_base import ExchangeBase
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.connector.utils import get_new_client_order_id
-from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
-from hummingbot.core.api_throttler.data_types import RateLimit
 from hummingbot.core.data_type.cancellation_result import CancellationResult
 from hummingbot.core.data_type.common import OrderType, TradeType
 from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState, OrderUpdate, TradeUpdate
@@ -28,9 +31,6 @@ from hummingbot.core.data_type.user_stream_tracker import UserStreamTracker
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.core.utils.async_utils import safe_ensure_future, safe_gather
-from hummingbot.core.web_assistant.auth import AuthBase
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 from hummingbot.logger import HummingbotLogger
 
 
