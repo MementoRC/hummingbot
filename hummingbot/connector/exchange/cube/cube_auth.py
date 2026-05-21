@@ -3,7 +3,6 @@ import hashlib
 import hmac
 import struct
 import time
-from typing import Dict, Tuple
 
 from hummingbot.connector.exchange.cube.cube_ws_protobufs import trade_pb2
 from hummingbot.core.web_assistant.auth import AuthBase
@@ -37,7 +36,7 @@ class CubeAuth(AuthBase):
 
         return request  # pass-through
 
-    def header_for_authentication(self) -> Dict[str, str]:
+    def header_for_authentication(self) -> dict[str, str]:
         # Generate signature
         signature, timestamp = self._generate_signature()
 
@@ -77,7 +76,7 @@ class CubeAuth(AuthBase):
         # Compare the generated signatures with the provided signature
         return signature == generated_signature and signature != generated_signature_diff_timestamp
 
-    def _generate_signature(self, timestamp: int = None) -> Tuple[str, int]:
+    def _generate_signature(self, timestamp: int = None) -> tuple[str, int]:
         # Get timestamp
         if timestamp is None:
             input_timestamp = int(time.time())

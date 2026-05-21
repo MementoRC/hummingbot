@@ -1,11 +1,10 @@
 from decimal import Decimal
-from typing import Dict
 
 from hummingbot.connector.utils import combine_to_hb_trading_pair, split_hb_trading_pair
 from hummingbot.core.gateway.utils import unwrap_token_symbol
 
 
-def find_rate(prices: Dict[str, Decimal], pair: str) -> Decimal:
+def find_rate(prices: dict[str, Decimal], pair: str) -> Decimal:
     """
     Finds exchange rate for a given trading pair from a dictionary of prices
     For example, given prices of {"HBOT-USDT": Decimal("100"), "AAVE-USDT": Decimal("50"), "USDT-GBP": Decimal("0.75")}

@@ -2,7 +2,7 @@ import importlib
 import inspect
 import os
 from decimal import Decimal
-from typing import Dict, List, Optional, Type, Union
+from typing import Dict, List, Union
 
 import numpy as np
 import pandas as pd
@@ -30,7 +30,7 @@ from hummingbot.strategy_v2.models.executors_info import ExecutorInfo
 
 
 class BacktestingEngineBase:
-    __controller_class_cache = LazyDict[str, Type[ControllerBase]]()
+    __controller_class_cache = LazyDict[str, type[ControllerBase]]()
 
     def __init__(self):
         self.controller = None
@@ -143,8 +143,8 @@ class BacktestingEngineBase:
             List[ExecutorInfo]: List of executor information objects detailing the simulation results.
         """
         processed_features = self.prepare_market_data()
-        self.active_executor_simulations: List[ExecutorSimulation] = []
-        self.stopped_executors_info: List[ExecutorInfo] = []
+        self.active_executor_simulations: list[ExecutorSimulation] = []
+        self.stopped_executors_info: list[ExecutorInfo] = []
         for i, row in processed_features.iterrows():
             await self.update_state(row)
             for action in self.controller.determine_executor_actions():
@@ -230,7 +230,7 @@ class BacktestingEngineBase:
 
     def simulate_executor(
         self, config: Union[PositionExecutorConfig, DCAExecutorConfig], df: pd.DataFrame, trade_cost: float
-    ) -> Optional[ExecutorSimulation]:
+    ) -> ExecutorSimulation | None:
         """
         Simulates the execution of a trading strategy given a configuration.
 

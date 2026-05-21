@@ -2,7 +2,6 @@ import asyncio
 import unittest
 from decimal import Decimal
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from typing import List
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import pandas as pd
@@ -511,7 +510,7 @@ class StrategyV2BaseBasicTest(unittest.TestCase):
         self.assertEqual("HBOT", assets[2])
 
     def test_get_market_trading_pair_tuples_basic(self):
-        market_infos: List[MarketTradingPairTuple] = self.strategy.get_market_trading_pair_tuples()
+        market_infos: list[MarketTradingPairTuple] = self.strategy.get_market_trading_pair_tuples()
         self.assertEqual(1, len(market_infos))
         market_info = market_infos[0]
         self.assertEqual(market_info.market, self.connector)

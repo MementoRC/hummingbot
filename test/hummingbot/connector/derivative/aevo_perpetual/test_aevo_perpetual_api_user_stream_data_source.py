@@ -1,6 +1,5 @@
 import asyncio
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from typing import Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from bidict import bidict
@@ -30,7 +29,7 @@ class AevoPerpetualAPIUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
     def setUp(self) -> None:
         super().setUp()
         self.log_records = []
-        self.listening_task: Optional[asyncio.Task] = None
+        self.listening_task: asyncio.Task | None = None
 
         self._wallet_patcher = patch("eth_account.Account.from_key", return_value=MagicMock())
         self._wallet_patcher.start()

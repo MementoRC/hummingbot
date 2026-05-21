@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import List, Optional
 
 import pandas as pd
 
@@ -110,14 +109,14 @@ class ArbitrageController(ControllerBase):
         else:
             loop.run_until_complete(fetch_gas_tokens())
 
-    def get_gas_token(self, connector_name: str) -> Optional[str]:
+    def get_gas_token(self, connector_name: str) -> str | None:
         """Get the cached gas token for a connector."""
         return self._gas_token_cache.get(connector_name)
 
     async def update_processed_data(self):
         pass
 
-    def determine_executor_actions(self) -> List[ExecutorAction]:
+    def determine_executor_actions(self) -> list[ExecutorAction]:
         self.update_arbitrage_stats()
         executor_actions = []
         current_time = self.market_data_provider.time()
@@ -214,7 +213,7 @@ class ArbitrageController(ControllerBase):
             ]
         )
 
-    def to_format_status(self) -> List[str]:
+    def to_format_status(self) -> list[str]:
         all_executors_custom_info = pd.DataFrame(e.custom_info for e in self.executors_info)
         return [
             format_df_for_printout(

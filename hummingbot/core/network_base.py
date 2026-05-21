@@ -1,6 +1,5 @@
 import asyncio
 import logging
-from typing import Optional
 
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.core.utils.async_utils import safe_ensure_future
@@ -36,7 +35,7 @@ class NetworkBase:
         return self._last_connected_timestamp
 
     @property
-    def check_network_task(self) -> Optional[asyncio.Task]:
+    def check_network_task(self) -> asyncio.Task | None:
         return self._check_network_task
 
     @property

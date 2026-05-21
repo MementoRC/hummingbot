@@ -5,7 +5,7 @@ Debug console diagnosis tools.
 """
 
 import asyncio
-from typing import Coroutine, Generator, List, Union
+from typing import Coroutine, Generator, Union
 
 import pandas as pd
 
@@ -28,9 +28,9 @@ def get_wrapped_coroutine(t: asyncio.Task) -> Union[Coroutine, Generator]:
 
 
 def active_tasks() -> pd.DataFrame:
-    tasks: List[asyncio.Task] = [t for t in asyncio.Task.all_tasks() if not t.done()]
-    coroutines: List[Union[Coroutine, Generator]] = [get_wrapped_coroutine(t) for t in tasks]
-    func_names: List[str] = [get_coro_name(c) for c in coroutines]
+    tasks: list[asyncio.Task] = [t for t in asyncio.Task.all_tasks() if not t.done()]
+    coroutines: list[Union[Coroutine, Generator]] = [get_wrapped_coroutine(t) for t in tasks]
+    func_names: list[str] = [get_coro_name(c) for c in coroutines]
     retval: pd.DataFrame = pd.DataFrame(
         [{"func_name": f, "coroutine": c, "task": t} for f, c, t in zip(func_names, coroutines, tasks)],
         columns=["func_name", "coroutine", "task"],

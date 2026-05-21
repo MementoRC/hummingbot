@@ -10,7 +10,7 @@ from decimal import Decimal
 from os import listdir, scandir, unlink
 from os.path import isfile, join
 from pathlib import Path, PosixPath, PureWindowsPath
-from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, Generator, List, Tuple, Type, Union
 
 import ruamel.yaml
 import yaml
@@ -50,7 +50,7 @@ class ConfigTraversalItem:
     attr: str
     value: Any
     printable_value: str
-    client_field_data: Optional[ClientFieldData]
+    client_field_data: ClientFieldData | None
     field_info: FieldInfo
     type_: Type
 
@@ -135,7 +135,7 @@ class ClientConfigAdapter:
                     traversal_item.config_path = config_path
                     yield traversal_item
 
-    async def get_client_prompt(self, attr_name: str) -> Optional[str]:
+    async def get_client_prompt(self, attr_name: str) -> str | None:
         prompt = None
         client_data = self.get_client_data(attr_name)
         if client_data is not None:
@@ -153,7 +153,7 @@ class ClientConfigAdapter:
         secure = client_data is not None and client_data.is_secure
         return secure
 
-    def get_client_data(self, attr_name: str) -> Optional[ClientFieldData]:
+    def get_client_data(self, attr_name: str) -> ClientFieldData | None:
         json_schema_extra = self._hb_config.__class__.model_fields[attr_name].json_schema_extra or {}
         client_data = ClientFieldData(
             prompt=json_schema_extra.get("prompt"),
@@ -248,7 +248,7 @@ class ClientConfigAdapter:
         is_union = hasattr(t, "__origin__") and t.__origin__ == Union
         return is_union
 
-    def _dict_in_conf_order(self) -> Dict[str, Any]:
+    def _dict_in_conf_order(self) -> dict[str, Any]:
         conf_dict = {}
         for attr in self._hb_config.__class__.model_fields.keys():
             value = getattr(self, attr)
@@ -258,7 +258,7 @@ class ClientConfigAdapter:
         self._encrypt_secrets(conf_dict)
         return conf_dict
 
-    def _encrypt_secrets(self, conf_dict: Dict[str, Any]):
+    def _encrypt_secrets(self, conf_dict: dict[str, Any]):
         from hummingbot.client.config.security import Security  # avoids circular import
 
         for attr, value in conf_dict.items():
@@ -270,7 +270,7 @@ class ClientConfigAdapter:
                     )
                 conf_dict[attr] = Security.secrets_manager.encrypt_secret_value(attr, clear_text_value)
 
-    def _decrypt_secrets(self, conf_dict: Dict[str, Any]):
+    def _decrypt_secrets(self, conf_dict: dict[str, Any]):
         from hummingbot.client.config.security import Security  # avoids circular import
 
         for attr, value in conf_dict.items():
@@ -309,7 +309,7 @@ class ClientConfigAdapter:
 
     def _add_model_fragments(
         self,
-        fragments_with_comments: List[str],
+        fragments_with_comments: list[str],
     ):
         fragments_with_comments.append("\n")
         first_level_conf_items_generator = (item for item in self.traverse() if item.depth == 0)
@@ -512,7 +512,7 @@ def get_strategy_template_path(strategy: str) -> Path:
     return TEMPLATE_PATH / f"{CONF_PREFIX}{strategy}{CONF_POSTFIX}_TEMPLATE.yml"
 
 
-def _merge_dicts(*args: Dict[str, ConfigVar]) -> OrderedDict:
+def _merge_dicts(*args: dict[str, ConfigVar]) -> OrderedDict:
     """
     Helper function to merge a few dictionaries into an ordered dictionary.
     """
@@ -528,7 +528,7 @@ def get_connector_class(connector_name: str) -> Callable:
     return getattr(mod, conn_setting.class_name())
 
 
-def get_strategy_config_map(strategy: str) -> Optional[Union[ClientConfigAdapter, Dict[str, ConfigVar]]]:
+def get_strategy_config_map(strategy: str) -> Union[ClientConfigAdapter, dict[str, ConfigVar]] | None:
     """
     Given the name of a strategy, find and load strategy-specific config map.
     """
@@ -576,7 +576,7 @@ def connector_name_from_file(file_path: Path) -> str:
     return connector
 
 
-def validate_strategy_file(file_path: Path) -> Optional[str]:
+def validate_strategy_file(file_path: Path) -> str | None:
     if not isfile(file_path):
         return f"{file_path} file does not exist."
     strategy = strategy_name_from_file(file_path)
@@ -587,7 +587,7 @@ def validate_strategy_file(file_path: Path) -> Optional[str]:
     return None
 
 
-def read_yml_file(yml_path: Path) -> Dict[str, Any]:
+def read_yml_file(yml_path: Path) -> dict[str, Any]:
     with open(yml_path, "r", encoding="utf-8") as file:
         data = yaml.safe_load(file) or {}
     return dict(data)
@@ -609,7 +609,7 @@ def get_strategy_pydantic_config_cls(strategy_name: str):
     return pydantic_cm_class
 
 
-async def load_strategy_config_map_from_file(yml_path: Path) -> Union[ClientConfigAdapter, Dict[str, ConfigVar]]:
+async def load_strategy_config_map_from_file(yml_path: Path) -> Union[ClientConfigAdapter, dict[str, ConfigVar]]:
     strategy_name = strategy_name_from_file(yml_path)
     config_cls = get_strategy_pydantic_config_cls(strategy_name)
     if config_cls is None:  # legacy
@@ -675,7 +675,7 @@ def update_connector_hb_config(connector_config: ClientConfigAdapter):
     AllConnectorSettings.update_connector_config_keys(connector_config.hb_config)
 
 
-def api_keys_from_connector_config_map(cm: ClientConfigAdapter) -> Dict[str, str]:
+def api_keys_from_connector_config_map(cm: ClientConfigAdapter) -> dict[str, str]:
     api_keys = {}
     for c in cm.traverse():
         if c.value is not None and c.client_field_data is not None and c.client_field_data.is_connect_key:
@@ -689,7 +689,7 @@ def get_connector_config_yml_path(connector_name: str) -> Path:
     return connector_path
 
 
-def list_connector_configs() -> List[Path]:
+def list_connector_configs() -> list[Path]:
     connector_configs = [
         Path(f.path)
         for f in scandir(str(CONNECTORS_CONF_DIR_PATH))
@@ -698,7 +698,7 @@ def list_connector_configs() -> List[Path]:
     return connector_configs
 
 
-async def load_yml_into_dict(yml_path: str) -> Dict[str, Any]:
+async def load_yml_into_dict(yml_path: str) -> dict[str, Any]:
     data = {}
     if isfile(yml_path):
         with open(yml_path, encoding="utf-8") as stream:
@@ -707,7 +707,7 @@ async def load_yml_into_dict(yml_path: str) -> Dict[str, Any]:
     return dict(data.items())
 
 
-async def save_yml_from_dict(yml_path: str, conf_dict: Dict[str, Any]):
+async def save_yml_from_dict(yml_path: str, conf_dict: dict[str, Any]):
     try:
         with open(yml_path, "w+", encoding="utf-8") as stream:
             data = yaml_parser.load(stream) or {}
@@ -719,7 +719,7 @@ async def save_yml_from_dict(yml_path: str, conf_dict: Dict[str, Any]):
         logging.getLogger().error(f"Error writing configs: {str(e)}", exc_info=True)
 
 
-async def load_yml_into_cm_legacy(yml_path: str, template_file_path: str, cm: Dict[str, ConfigVar]):
+async def load_yml_into_cm_legacy(yml_path: str, template_file_path: str, cm: dict[str, ConfigVar]):
     try:
         data = {}
         conf_version = -1
@@ -797,7 +797,7 @@ async def refresh_trade_fees_config(client_config_map: ClientConfigAdapter):
     save_to_yml_legacy(str(TRADE_FEES_CONFIG_PATH), fee_overrides_config_map)
 
 
-def save_to_yml_legacy(yml_path: str, cm: Dict[str, ConfigVar]):
+def save_to_yml_legacy(yml_path: str, cm: dict[str, ConfigVar]):
     """
     Write current config saved a single config map into each a single yml file
     """

@@ -1,6 +1,5 @@
 from decimal import Decimal
 from math import exp, log
-from typing import List
 
 
 class Distributions:
@@ -9,7 +8,7 @@ class Distributions:
     """
 
     @classmethod
-    def linear(cls, n_levels: int, start: float = 0.0, end: float = 1.0) -> List[Decimal]:
+    def linear(cls, n_levels: int, start: float = 0.0, end: float = 1.0) -> list[Decimal]:
         """
         Generate a linear sequence of spreads.
 
@@ -30,7 +29,7 @@ class Distributions:
         ]
 
     @classmethod
-    def fibonacci(cls, n_levels: int, start: float = 0.01) -> List[Decimal]:
+    def fibonacci(cls, n_levels: int, start: float = 0.01) -> list[Decimal]:
         """
         Generate a Fibonacci sequence of spreads represented as percentages.
 
@@ -63,7 +62,7 @@ class Distributions:
     @classmethod
     def logarithmic(
         cls, n_levels: int, base: float = exp(1), scaling_factor: float = 1.0, start: float = 0.4
-    ) -> List[Decimal]:
+    ) -> list[Decimal]:
         """
         Generate a logarithmic sequence of spreads.
 
@@ -80,7 +79,7 @@ class Distributions:
         return [Decimal(scaling_factor) * Decimal(log(i + 2, base)) + translation for i in range(n_levels)]
 
     @classmethod
-    def arithmetic(cls, n_levels: int, start: float, step: float) -> List[Decimal]:
+    def arithmetic(cls, n_levels: int, start: float, step: float) -> list[Decimal]:
         """
         Generate an arithmetic sequence of spreads.
 
@@ -95,7 +94,7 @@ class Distributions:
         return [Decimal(start) + i * Decimal(step) for i in range(n_levels)]
 
     @classmethod
-    def geometric(cls, n_levels: int, start: float, ratio: float) -> List[Decimal]:
+    def geometric(cls, n_levels: int, start: float, ratio: float) -> list[Decimal]:
         """
         Generate a geometric sequence of spreads.
 

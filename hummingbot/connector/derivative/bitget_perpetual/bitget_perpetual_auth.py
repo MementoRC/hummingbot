@@ -1,6 +1,6 @@
 import base64
 import hmac
-from typing import Any, Dict
+from typing import Any
 from urllib.parse import urlencode
 
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
@@ -58,7 +58,7 @@ class BitgetPerpetualAuth(AuthBase):
     async def ws_authenticate(self, request: WSRequest) -> WSRequest:
         return request
 
-    def get_ws_auth_payload(self) -> Dict[str, Any]:
+    def get_ws_auth_payload(self) -> dict[str, Any]:
         """
         Generates a dictionary with all required information for the authentication process
 

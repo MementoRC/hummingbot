@@ -5,7 +5,7 @@ import json
 import time
 from collections import OrderedDict
 from decimal import Decimal
-from typing import Any, Dict, List
+from typing import Any
 from urllib.parse import urlencode
 
 from hummingbot.connector.derivative.kucoin_perpetual import kucoin_perpetual_constants as CONSTANTS
@@ -26,7 +26,7 @@ class KucoinPerpetualAuth(AuthBase):
         self._time_provider: TimeSynchronizer = time_provider
 
     @staticmethod
-    def keysort(dictionary: Dict[str, str]) -> Dict[str, str]:
+    def keysort(dictionary: dict[str, str]) -> dict[str, str]:
         return OrderedDict(sorted(dictionary.items(), key=lambda t: t[0]))
 
     async def rest_authenticate(self, request: RESTRequest, use_time_provider=0) -> RESTRequest:
@@ -64,7 +64,7 @@ class KucoinPerpetualAuth(AuthBase):
         """
         return request  # pass-through
 
-    def get_ws_auth_payload(self) -> List[str]:
+    def get_ws_auth_payload(self) -> list[str]:
         """
         Generates a dictionary with all required information for the authentication process
         :return: a dictionary of authentication info including the request signature
@@ -78,7 +78,7 @@ class KucoinPerpetualAuth(AuthBase):
 
         return auth_info
 
-    def _extend_params_with_authentication_info(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def _extend_params_with_authentication_info(self, params: dict[str, Any]) -> dict[str, Any]:
         params["timestamp"] = self._get_timestamp()
         params["api_key"] = self._api_key
         key_value_elements = []
@@ -104,7 +104,7 @@ class KucoinPerpetualAuth(AuthBase):
         }
         return third_party
 
-    def authentication_headers(self, request: RESTRequest, use_time_provider) -> Dict[str, Any]:
+    def authentication_headers(self, request: RESTRequest, use_time_provider) -> dict[str, Any]:
         if use_time_provider == 1 and self._time_provider.time() > 0:
             timestamp = self._time_provider.time()
         else:

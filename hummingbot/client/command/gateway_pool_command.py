@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Dict
 
 import pandas as pd
 
@@ -25,7 +25,7 @@ class GatewayPoolCommand:
     """Commands for managing gateway pools."""
 
     @ensure_gateway_online
-    def gateway_pool(self, symbol_or_address: Optional[str], action: Optional[str]):
+    def gateway_pool(self, symbol_or_address: str | None, action: str | None):
         """
         View or update pool information.
         Usage:
@@ -61,7 +61,7 @@ class GatewayPoolCommand:
             from hummingbot.connector.gateway.common_types import Chain
 
             chains_to_check = [chain.chain for chain in Chain]
-            found_pools: List[Dict] = []
+            found_pools: list[Dict] = []
 
             self.notify(f"\nSearching for '{symbol_or_address}' across all chains' default networks...")
 
@@ -250,7 +250,7 @@ class GatewayPoolCommand:
             return True
         return False
 
-    def _display_pools_table(self, pools: List[Dict]):
+    def _display_pools_table(self, pools: list[Dict]):
         """Display pools in a table format."""
         self.notify("\nFound pools:")
 

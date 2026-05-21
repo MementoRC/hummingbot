@@ -1,7 +1,7 @@
 import re
 from abc import ABC, abstractmethod
 from decimal import Decimal
-from typing import TYPE_CHECKING, Dict, List, Literal, Optional, Union
+from typing import TYPE_CHECKING, Dict, Literal, Union
 
 from pydantic import ConfigDict, Field, SecretStr, field_validator
 from pyinjective.async_client_v2 import AsyncClient
@@ -45,8 +45,8 @@ class InjectiveFeeCalculatorMode(BaseClientModel, ABC):
         self,
         client: AsyncClient,
         composer: Composer,
-        gas_price: Optional[int] = None,
-        gas_limit_adjustment_multiplier: Optional[Decimal] = None,
+        gas_price: int | None = None,
+        gas_limit_adjustment_multiplier: Decimal | None = None,
     ) -> Network:
         pass
 
@@ -59,8 +59,8 @@ class InjectiveSimulatedTransactionFeeCalculatorMode(InjectiveFeeCalculatorMode)
         self,
         client: AsyncClient,
         composer: Composer,
-        gas_price: Optional[int] = None,
-        gas_limit_adjustment_multiplier: Optional[Decimal] = None,
+        gas_price: int | None = None,
+        gas_limit_adjustment_multiplier: Decimal | None = None,
     ) -> TransactionFeeCalculator:
         return SimulatedTransactionFeeCalculator(
             client=client,
@@ -78,8 +78,8 @@ class InjectiveMessageBasedTransactionFeeCalculatorMode(InjectiveFeeCalculatorMo
         self,
         client: AsyncClient,
         composer: Composer,
-        gas_price: Optional[int] = None,
-        gas_limit_adjustment_multiplier: Optional[Decimal] = None,
+        gas_price: int | None = None,
+        gas_limit_adjustment_multiplier: Decimal | None = None,
     ) -> TransactionFeeCalculator:
         return MessageBasedTransactionFeeCalculator.new_using_gas_heuristics(
             client=client,
@@ -110,7 +110,7 @@ class InjectiveMainnetNetworkMode(InjectiveNetworkMode):
     def network(self) -> Network:
         return Network.mainnet()
 
-    def rate_limits(self) -> List[RateLimit]:
+    def rate_limits(self) -> list[RateLimit]:
         return CONSTANTS.PUBLIC_NODE_RATE_LIMITS
 
 
@@ -134,7 +134,7 @@ class InjectiveTestnetNetworkMode(InjectiveNetworkMode):
     def network(self) -> Network:
         return Network.testnet(node=self.testnet_node)
 
-    def rate_limits(self) -> List[RateLimit]:
+    def rate_limits(self) -> list[RateLimit]:
         return CONSTANTS.PUBLIC_NODE_RATE_LIMITS
 
 
@@ -186,7 +186,7 @@ class InjectiveCustomNetworkMode(InjectiveNetworkMode):
             official_tokens_list_url=Network.mainnet().official_tokens_list_url,
         )
 
-    def rate_limits(self) -> List[RateLimit]:
+    def rate_limits(self) -> list[RateLimit]:
         return CONSTANTS.CUSTOM_NODE_RATE_LIMITS
 
 
@@ -205,7 +205,7 @@ class InjectiveAccountMode(BaseClientModel, ABC):
     def create_data_source(
         self,
         network: Network,
-        rate_limits: List[RateLimit],
+        rate_limits: list[RateLimit],
         fee_calculator_mode: InjectiveFeeCalculatorMode,
     ) -> "InjectiveDataSource":
         pass
@@ -260,7 +260,7 @@ class InjectiveDelegatedAccountMode(InjectiveAccountMode):
     def create_data_source(
         self,
         network: Network,
-        rate_limits: List[RateLimit],
+        rate_limits: list[RateLimit],
         fee_calculator_mode: InjectiveFeeCalculatorMode,
     ) -> "InjectiveDataSource":
         return InjectiveGranteeDataSource(
@@ -280,7 +280,7 @@ class InjectiveReadOnlyAccountMode(InjectiveAccountMode):
     def create_data_source(
         self,
         network: Network,
-        rate_limits: List[RateLimit],
+        rate_limits: list[RateLimit],
         fee_calculator_mode: InjectiveFeeCalculatorMode,
     ) -> "InjectiveDataSource":
         return InjectiveReadOnlyDataSource(

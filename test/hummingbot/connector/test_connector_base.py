@@ -2,7 +2,7 @@ import copy
 import unittest
 import unittest.mock
 from decimal import Decimal
-from typing import Dict, List
+from typing import List
 
 from hummingbot.connector.connector_base import ConnectorBase, OrderFilledEvent
 from hummingbot.connector.in_flight_order_base import InFlightOrderBase
@@ -32,7 +32,7 @@ class MockTestConnector(ConnectorBase):
         self._event_logs = []
 
     @property
-    def in_flight_orders(self) -> Dict[str, InFlightOrder]:
+    def in_flight_orders(self) -> dict[str, InFlightOrder]:
         return self._in_flight_orders
 
     @property

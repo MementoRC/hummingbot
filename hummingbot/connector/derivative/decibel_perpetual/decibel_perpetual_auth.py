@@ -1,5 +1,3 @@
-from typing import Optional
-
 from aptos_sdk.account import Account
 
 
@@ -27,8 +25,8 @@ class DecibelPerpetualAuth:
         self._api_wallet_private_key = api_wallet_private_key
         self._main_wallet_public_key = main_wallet_public_key.replace("0x", "").replace("0X", "")
         self._api_key = api_key
-        self._api_wallet_account: Optional[Account] = None
-        self._subaccount_addr: Optional[str] = None
+        self._api_wallet_account: Account | None = None
+        self._subaccount_addr: str | None = None
 
     @property
     def account(self) -> Account:

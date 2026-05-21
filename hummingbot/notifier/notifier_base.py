@@ -1,13 +1,12 @@
 import asyncio
 import logging
-from typing import Optional
 
 from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.logger import HummingbotLogger
 
 
 class NotifierBase:
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -18,7 +17,7 @@ class NotifierBase:
     def __init__(self):
         self._started = False
         self._message_queue: asyncio.Queue = asyncio.Queue()
-        self._send_message_task: Optional[asyncio.Task] = None
+        self._send_message_task: asyncio.Task | None = None
 
     def add_message_to_queue(self, message: str):
         self._message_queue.put_nowait(message)

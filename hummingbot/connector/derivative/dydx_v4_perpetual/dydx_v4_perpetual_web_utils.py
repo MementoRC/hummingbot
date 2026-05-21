@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 import hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_constants as CONSTANTS
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
@@ -72,7 +72,7 @@ def build_api_factory_without_time_synchronizer_pre_processor(throttler: AsyncTh
     return api_factory
 
 
-def is_exchange_information_valid(rule: Dict[str, Any]) -> bool:
+def is_exchange_information_valid(rule: dict[str, Any]) -> bool:
     """
     Verifies if a trading pair is enabled to operate with based on its exchange information
 

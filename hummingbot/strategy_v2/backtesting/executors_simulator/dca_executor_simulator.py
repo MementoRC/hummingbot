@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import List
 
 import pandas as pd
 
@@ -11,7 +10,7 @@ from hummingbot.strategy_v2.models.executors import CloseType
 
 class DCAExecutorSimulator(ExecutorSimulatorBase):
     @staticmethod
-    def break_even_price_at_index(prices: List[Decimal], amounts: List[Decimal], index: int) -> Decimal:
+    def break_even_price_at_index(prices: list[Decimal], amounts: list[Decimal], index: int) -> Decimal:
         total_amount = sum(amounts[: index + 1])
         total_quote = sum([amounts[i] * prices[i] for i in range(index + 1)])
         return total_quote / total_amount

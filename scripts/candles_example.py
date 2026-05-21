@@ -1,5 +1,4 @@
 import os
-from typing import Dict, List
 
 import pandas as pd
 import pandas_ta as ta  # noqa: F401
@@ -20,10 +19,10 @@ class CandlesExampleConfig(StrategyV2ConfigBase):
     script_file_name: str = os.path.basename(__file__)
 
     # Override controllers_config to ensure no controllers are loaded
-    controllers_config: List[str] = Field(default=[], exclude=True)
+    controllers_config: list[str] = Field(default=[], exclude=True)
 
     # Candles configuration - user can modify these
-    candles_config: List[CandlesConfig] = Field(
+    candles_config: list[CandlesConfig] = Field(
         default_factory=lambda: [
             CandlesConfig(connector="binance", trading_pair="ETH-USDT", interval="1m", max_records=1000),
             CandlesConfig(connector="binance", trading_pair="ETH-USDT", interval="1h", max_records=1000),
@@ -37,7 +36,7 @@ class CandlesExampleConfig(StrategyV2ConfigBase):
 
     @field_validator("candles_config", mode="before")
     @classmethod
-    def parse_candles_config(cls, v) -> List[CandlesConfig]:
+    def parse_candles_config(cls, v) -> list[CandlesConfig]:
         # Handle string input (user provided)
         if isinstance(v, str):
             return cls.parse_candles_config_str(v)
@@ -55,7 +54,7 @@ class CandlesExampleConfig(StrategyV2ConfigBase):
         return v
 
     @staticmethod
-    def parse_candles_config_str(v: str) -> List[CandlesConfig]:
+    def parse_candles_config_str(v: str) -> list[CandlesConfig]:
         configs = []
         if v.strip():
             entries = v.split(":")
@@ -106,7 +105,7 @@ class CandlesExample(StrategyV2Base):
     initialized by the MarketDataProvider. No manual candle management required!
     """
 
-    def __init__(self, connectors: Dict[str, ConnectorBase], config: CandlesExampleConfig):
+    def __init__(self, connectors: dict[str, ConnectorBase], config: CandlesExampleConfig):
         super().__init__(connectors, config)
         # Note: self.config is already set by parent class
 

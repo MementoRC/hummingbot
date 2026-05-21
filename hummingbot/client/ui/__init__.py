@@ -19,7 +19,7 @@ with open(realpath(join(dirname(__file__), "../../VERSION"))) as version_file:
     version = version_file.read().strip()
 
 
-def login_prompt(secrets_manager_cls: Type[BaseSecretsManager], style: Style):
+def login_prompt(secrets_manager_cls: type[BaseSecretsManager], style: Style):
     err_msg = None
     secrets_manager = None
     if Security.new_password_required():
@@ -79,7 +79,7 @@ def legacy_confs_exist() -> bool:
     return exist
 
 
-def migrate_configs_prompt(secrets_manager_cls: Type[BaseSecretsManager], style: Style) -> BaseSecretsManager:
+def migrate_configs_prompt(secrets_manager_cls: type[BaseSecretsManager], style: Style) -> BaseSecretsManager:
     message_dialog(
         title="Configs Migration",
         text="""

@@ -4,7 +4,7 @@ import json
 import re
 from decimal import Decimal
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from typing import Any, Awaitable, Callable, Dict, List, Optional
+from typing import Any, Awaitable, Callable, List
 from unittest.mock import AsyncMock, patch
 
 import pandas as pd
@@ -77,7 +77,7 @@ class BitmartPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         self.exchange._order_tracker.logger().setLevel(1)
         self.exchange._order_tracker.logger().addHandler(self)
         self.mocking_assistant = NetworkMockingAssistant()
-        self.test_task: Optional[asyncio.Task] = None
+        self.test_task: asyncio.Task | None = None
         self.resume_test_event = asyncio.Event()
         self._initialize_event_loggers()
 
@@ -162,7 +162,7 @@ class BitmartPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         self.resume_test_event.set()
         return calculation(*args, **kwargs)
 
-    def _get_position_risk_api_endpoint_single_position_list(self) -> List[Dict[str, Any]]:
+    def _get_position_risk_api_endpoint_single_position_list(self) -> list[dict[str, Any]]:
         positions = {
             "code": 1000,
             "message": "Ok",
@@ -194,7 +194,7 @@ class BitmartPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         }
         return positions
 
-    def _get_wrong_symbol_position_risk_api_endpoint_single_position_list(self) -> List[Dict[str, Any]]:
+    def _get_wrong_symbol_position_risk_api_endpoint_single_position_list(self) -> list[dict[str, Any]]:
         positions = {
             "code": 1000,
             "message": "Ok",
@@ -226,7 +226,7 @@ class BitmartPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         }
         return positions
 
-    def _get_account_update_ws_event_single_position_dict(self) -> Dict[str, Any]:
+    def _get_account_update_ws_event_single_position_dict(self) -> dict[str, Any]:
         account_update = {
             "group": "futures/position",
             "data": [
@@ -248,7 +248,7 @@ class BitmartPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         }
         return account_update
 
-    def _get_wrong_symbol_account_update_ws_event_single_position_dict(self) -> Dict[str, Any]:
+    def _get_wrong_symbol_account_update_ws_event_single_position_dict(self) -> dict[str, Any]:
         account_update = {
             "group": "futures/position",
             "data": [
@@ -306,7 +306,7 @@ class BitmartPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         }
         return income_history
 
-    def _get_funding_info_dict(self) -> Dict[str, Any]:
+    def _get_funding_info_dict(self) -> dict[str, Any]:
         funding_info = {
             "code": 1000,
             "message": "Ok",
@@ -323,7 +323,7 @@ class BitmartPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         }
         return funding_info
 
-    def _get_trading_pair_symbol_map(self) -> Dict[str, str]:
+    def _get_trading_pair_symbol_map(self) -> dict[str, str]:
         trading_pair_symbol_map = {self.symbol: f"{self.base_asset}-{self.quote_asset}"}
         return trading_pair_symbol_map
 
@@ -334,7 +334,7 @@ class BitmartPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         vol_precision: float = 0.1,
         price_precision: float = 0.01,
         last_price: float = 10.0,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         mocked_exchange_info = {
             "code": 1000,
             "message": "Ok",
@@ -383,7 +383,7 @@ class BitmartPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         vol_precision: float = 0.1,
         price_precision: float = 0.01,
         last_price: float = 10.0,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         mocked_exchange_info = {
             "code": 1000,
             "message": "Ok",
@@ -462,7 +462,7 @@ class BitmartPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         vol_precision: float = 0.1,
         price_precision: float = 0.01,
         last_price: float = 10.0,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         mocked_exchange_info = {
             "code": 1000,
             "message": "Ok",

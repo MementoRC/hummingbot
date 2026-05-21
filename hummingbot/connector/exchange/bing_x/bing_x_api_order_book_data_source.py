@@ -1,7 +1,7 @@
 import asyncio
 import time
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Mapping
 
 import hummingbot.connector.exchange.bing_x.bing_x_constants as CONSTANTS
 import hummingbot.connector.exchange.bing_x.bing_x_utils as utils
@@ -25,20 +25,20 @@ class BingXAPIOrderBookDataSource(OrderBookTrackerDataSource):
     DIFF_STREAM_ID = 2
     ONE_HOUR = 60 * 60
 
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
     _DYNAMIC_SUBSCRIBE_ID_START = 100
     _next_subscribe_id: int = _DYNAMIC_SUBSCRIBE_ID_START
-    _trading_pair_symbol_map: Dict[str, Mapping[str, str]] = {}
+    _trading_pair_symbol_map: dict[str, Mapping[str, str]] = {}
     _mapping_initialization_lock = asyncio.Lock()
 
     def __init__(
         self,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "BingXExchange",
-        api_factory: Optional[WebAssistantsFactory] = None,
+        api_factory: WebAssistantsFactory | None = None,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
-        throttler: Optional[AsyncThrottler] = None,
-        time_synchronizer: Optional[TimeSynchronizer] = None,
+        throttler: AsyncThrottler | None = None,
+        time_synchronizer: TimeSynchronizer | None = None,
     ):
         super().__init__(trading_pairs)
         self._connector = connector
@@ -51,13 +51,13 @@ class BingXAPIOrderBookDataSource(OrderBookTrackerDataSource):
             time_synchronizer=self._time_synchronizer,
             domain=self._domain,
         )
-        self._message_queue: Dict[str, asyncio.Queue] = defaultdict(asyncio.Queue)
+        self._message_queue: dict[str, asyncio.Queue] = defaultdict(asyncio.Queue)
         self._last_ws_message_sent_timestamp = 0
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
-    async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, Any]:
+    async def _request_order_book_snapshot(self, trading_pair: str) -> dict[str, Any]:
         """
         Retrieves a copy of the full order book from the exchange, for a particular trading pair.
 
@@ -73,14 +73,14 @@ class BingXAPIOrderBookDataSource(OrderBookTrackerDataSource):
         return data["data"]
 
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBookMessage:
-        snapshot: Dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
+        snapshot: dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
         snapshot_timestamp: float = float(snapshot["timestamp"]) * 1e-3
         snapshot_msg: OrderBookMessage = BingXOrderBook.snapshot_message_from_exchange_rest(
             snapshot, snapshot_timestamp, metadata={"trading_pair": trading_pair}
         )
         return snapshot_msg
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         # trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(symbol=raw_message["symbol"])
         trading_pair = raw_message["dataType"].split("@")[0]
         # for trades in raw_message["data"]:
@@ -89,7 +89,7 @@ class BingXAPIOrderBookDataSource(OrderBookTrackerDataSource):
         )
         message_queue.put_nowait(trade_message)
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         # self.logger().info(f"parse msg queue: {raw_message}")
         trading_pair = raw_message.get("dataType").split("@")[0]
         # for diff_message in raw_message["data"]:
@@ -226,10 +226,10 @@ class BingXAPIOrderBookDataSource(OrderBookTrackerDataSource):
                 self.logger().error("Unexpected error when processing public order book updates from exchange")
                 raise
 
-    async def _take_full_order_book_snapshot(self, trading_pairs: List[str], snapshot_queue: asyncio.Queue):
+    async def _take_full_order_book_snapshot(self, trading_pairs: list[str], snapshot_queue: asyncio.Queue):
         for trading_pair in trading_pairs:
             try:
-                snapshot: Dict[str, Any] = await self._request_order_book_snapshot(trading_pair=trading_pair)
+                snapshot: dict[str, Any] = await self._request_order_book_snapshot(trading_pair=trading_pair)
                 snapshot_timestamp: float = float(snapshot["timestamp"]) * 1e-3
                 snapshot_msg: OrderBookMessage = BingXOrderBook.snapshot_message_from_exchange_rest(
                     snapshot, snapshot_timestamp, metadata={"trading_pair": trading_pair}

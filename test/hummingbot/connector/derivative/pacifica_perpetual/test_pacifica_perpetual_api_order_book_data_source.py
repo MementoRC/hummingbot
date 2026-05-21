@@ -269,7 +269,7 @@ class PacificaPerpetualAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCas
 
         message_queue = asyncio.Queue()
         self.async_tasks.append(
-            asyncio.create_task(self.data_source.listen_for_trades(asyncio.get_event_loop(), message_queue))
+            asyncio.create_task(self.data_source.listen_for_trades(asyncio.get_running_loop(), message_queue))
         )
 
         await self.mocking_assistant.run_until_all_aiohttp_messages_delivered(ws_connect_mock.return_value)
@@ -295,7 +295,7 @@ class PacificaPerpetualAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCas
         message_queue = asyncio.Queue()
         self.async_tasks.append(
             asyncio.create_task(
-                self.data_source.listen_for_order_book_snapshots(asyncio.get_event_loop(), message_queue)
+                self.data_source.listen_for_order_book_snapshots(asyncio.get_running_loop(), message_queue)
             )
         )
 
@@ -343,7 +343,7 @@ class PacificaPerpetualAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCas
         ws_connect_mock.return_value = self.mocking_assistant.create_websocket_mock()
 
         message_queue = asyncio.Queue()
-        task = asyncio.create_task(self.data_source.listen_for_trades(asyncio.get_event_loop(), message_queue))
+        task = asyncio.create_task(self.data_source.listen_for_trades(asyncio.get_running_loop(), message_queue))
         self.async_tasks.append(task)
         task.cancel()
 

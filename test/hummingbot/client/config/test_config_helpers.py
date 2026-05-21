@@ -2,7 +2,7 @@ import asyncio
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Awaitable, Optional
+from typing import Awaitable
 from unittest.mock import MagicMock, patch
 
 from pydantic import Field, SecretStr
@@ -79,7 +79,7 @@ strategy: pure_market_making
     def test_load_connector_config_map_from_file_with_secrets(self, get_connector_config_keys_mock: MagicMock):
         class DummyConnectorModel(BaseConnectorConfigMap):
             connector: str = "binance"
-            secret_attr: Optional[SecretStr] = Field(
+            secret_attr: SecretStr | None = Field(
                 default=None, json_schema_extra={"is_secure": True, "is_connect_key": True}
             )
 

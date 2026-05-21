@@ -1,5 +1,3 @@
-from typing import List
-
 import pandas as pd
 from pydantic import Field
 
@@ -71,7 +69,7 @@ class MarketStatusController(ControllerBase):
         # This controller is for monitoring only, no trading actions
         return []
 
-    def to_format_status(self) -> List[str]:
+    def to_format_status(self) -> list[str]:
         if not self.ready_to_trade:
             return ["Market connectors are not ready."]
 

@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import List
 
 import pandas_ta as ta  # noqa: F401
 from pydantic import Field, field_validator
@@ -19,7 +18,7 @@ from hummingbot.strategy_v2.executors.progressive_executor.data_types import (
 
 class ProgressiveGainControllerConfig(ProgressiveTradingControllerConfig):
     controller_name: str = "progressive_gain"
-    candles_config: List[CandlesConfig] = []
+    candles_config: list[CandlesConfig] = []
     candles_connector: str = Field(
         default=None,
         json_schema_extra={

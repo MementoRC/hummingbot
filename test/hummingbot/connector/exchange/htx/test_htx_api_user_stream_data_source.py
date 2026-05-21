@@ -1,7 +1,6 @@
 import asyncio
 import json
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from typing import List
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiohttp
@@ -26,7 +25,7 @@ class HtxAPIUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
 
     async def asyncSetUp(self) -> None:
         self.log_records = []
-        self.async_tasks: List[asyncio.Task] = []
+        self.async_tasks: list[asyncio.Task] = []
         self.mock_time_provider = MagicMock()
         self.mock_time_provider.time.return_value = 1000
         self.time_synchronizer = MagicMock()

@@ -1,5 +1,4 @@
 import time
-from typing import Optional
 
 import hummingbot.connector.exchange.vertex.vertex_constants as CONSTANTS
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
@@ -34,8 +33,8 @@ def private_rest_url(path_url: str, domain: str = CONSTANTS.DEFAULT_DOMAIN) -> s
 
 
 def build_api_factory(
-    throttler: Optional[AsyncThrottler] = None,
-    auth: Optional[AuthBase] = None,
+    throttler: AsyncThrottler | None = None,
+    auth: AuthBase | None = None,
 ) -> WebAssistantsFactory:
     throttler = throttler or create_throttler()
     api_factory = WebAssistantsFactory(throttler=throttler, auth=auth)

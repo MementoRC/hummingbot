@@ -1,5 +1,5 @@
-from enum import Enum
+from enum import IntEnum
 
 
-class InjectiveEvent(int, Enum):
+class InjectiveEvent(IntEnum):
     ChainTransactionEvent = 9999

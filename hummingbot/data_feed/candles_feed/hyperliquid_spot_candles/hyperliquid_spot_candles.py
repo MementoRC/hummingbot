@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod
@@ -10,7 +10,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class HyperliquidSpotCandles(CandlesBase):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -75,7 +75,7 @@ class HyperliquidSpotCandles(CandlesBase):
     def get_exchange_trading_pair(self, trading_pair):
         return trading_pair.replace("-", "")
 
-    def _rest_payload(self, **kwargs) -> Optional[dict]:
+    def _rest_payload(self, **kwargs) -> dict | None:
         return {
             "type": "candleSnapshot",
             "req": {
@@ -102,14 +102,14 @@ class HyperliquidSpotCandles(CandlesBase):
         return False
 
     def _get_rest_candles_params(
-        self, start_time: Optional[int] = None, end_time: Optional[int] = None, limit: Optional[int] = None
+        self, start_time: int | None = None, end_time: int | None = None, limit: int | None = None
     ) -> dict:
         pass
 
     def _get_rest_candles_headers(self):
         return {"Content-Type": "application/json"}
 
-    def _parse_rest_candles(self, data: dict, end_time: Optional[int] = None) -> List[List[float]]:
+    def _parse_rest_candles(self, data: dict, end_time: int | None = None) -> list[list[float]]:
         if len(data) > 0:
             return [
                 [
@@ -136,7 +136,7 @@ class HyperliquidSpotCandles(CandlesBase):
         return payload
 
     def _parse_websocket_message(self, data):
-        candles_row_dict: Dict[str, Any] = {}
+        candles_row_dict: dict[str, Any] = {}
         if data is not None and data.get("channel") == "candle":
             candle = data["data"]
             candles_row_dict["timestamp"] = self.ensure_timestamp_in_seconds(candle["t"])

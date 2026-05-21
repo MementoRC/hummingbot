@@ -6,7 +6,7 @@ import sys
 import time
 import traceback
 from logging import Logger as PythonLogger
-from typing import Optional, Type
+from typing import Type
 
 import pandas as pd
 
@@ -52,7 +52,7 @@ class HummingbotLogger(PythonLogger):
             hummingbot_app: HummingbotApplication = HummingbotApplication.main_application()
             hummingbot_app.notify(f"({pd.Timestamp.fromtimestamp(int(time.time()))}) {msg}")
 
-    def network(self, log_msg: str, app_warning_msg: Optional[str] = None, *args, **kwargs):
+    def network(self, log_msg: str, app_warning_msg: str | None = None, *args, **kwargs):
         if app_warning_msg is not None and not HummingbotLogger.is_testing_mode():
             from hummingbot.client.hummingbot_application import HummingbotApplication
 

@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import List
 
 import pandas_ta as ta  # noqa: F401
 from pydantic import Field
@@ -82,7 +81,7 @@ class AILivestreamController(DirectionalTradingControllerBase):
             leverage=self.config.leverage,
         )
 
-    def to_format_status(self) -> List[str]:
+    def to_format_status(self) -> list[str]:
         lines = []
         features = self.processed_data.get("features", {})
         lines.append(f"Signal: {self.processed_data.get('signal', 'N/A')}")

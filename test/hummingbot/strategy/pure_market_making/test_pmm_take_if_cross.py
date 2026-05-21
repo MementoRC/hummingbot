@@ -1,7 +1,6 @@
 import logging
 import unittest
 from decimal import Decimal
-from typing import List
 
 import pandas as pd
 
@@ -23,8 +22,8 @@ logging.basicConfig(level=logging.ERROR)
 # Update the orderbook so that the top bids and asks are lower than actual for a wider bid ask spread
 # this basically removes the orderbook entries above top bid and below top ask
 def simulate_order_book_widening(order_book: OrderBook, top_bid: float, top_ask: float):
-    bid_diffs: List[OrderBookRow] = []
-    ask_diffs: List[OrderBookRow] = []
+    bid_diffs: list[OrderBookRow] = []
+    ask_diffs: list[OrderBookRow] = []
     update_id: int = order_book.last_diff_uid + 1
     for row in order_book.bid_entries():
         if row.price > top_bid:

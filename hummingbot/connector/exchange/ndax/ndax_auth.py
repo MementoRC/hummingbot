@@ -2,7 +2,6 @@ import hashlib
 import hmac
 import threading
 import time
-from typing import Dict, Optional
 
 from hummingbot.core.utils.tracking_nonce import get_tracking_nonce_low_res
 from hummingbot.core.web_assistant.auth import AuthBase
@@ -35,7 +34,7 @@ class NdaxAuth(AuthBase):
                 self._api_key: str = api_key
                 self._secret_key: str = secret_key
                 self._account_name: str = account_name
-                self._token: Optional[str] = None
+                self._token: str | None = None
                 self._token_expiration: int = 0
                 self._initialized = True
 
@@ -104,7 +103,7 @@ class NdaxAuth(AuthBase):
         """
         return request
 
-    def header_for_authentication(self) -> Dict[str, str]:
+    def header_for_authentication(self) -> dict[str, str]:
         """
         Generates authentication headers
         :return: a dictionary of auth headers

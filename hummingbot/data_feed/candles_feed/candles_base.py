@@ -2,7 +2,6 @@ import asyncio
 import os
 import time
 from collections import deque
-from typing import List, Optional
 
 import numpy as np
 import pandas as pd
@@ -65,8 +64,8 @@ class CandlesBase(NetworkBase):
         self._api_factory = WebAssistantsFactory(throttler=async_throttler)
         self.max_records = max_records
         self._candles = deque(maxlen=max_records)
-        self._listen_candles_task: Optional[asyncio.Task] = None
-        self._fill_candles_task: Optional[asyncio.Task] = None
+        self._listen_candles_task: asyncio.Task | None = None
+        self._fill_candles_task: asyncio.Task | None = None
         self._trading_pair = trading_pair
         self._ex_trading_pair = self.get_exchange_trading_pair(trading_pair)
         self._ws_candle_available = asyncio.Event()
@@ -261,7 +260,7 @@ class CandlesBase(NetworkBase):
         self._ws_candle_available.clear()
         self._candles.clear()
 
-    def _rest_payload(self, **kwargs) -> Optional[dict]:
+    def _rest_payload(self, **kwargs) -> dict | None:
         return None
 
     @property
@@ -272,9 +271,7 @@ class CandlesBase(NetworkBase):
     def _rest_throttler_limit_id(self):
         return self.candles_endpoint
 
-    async def fetch_candles(
-        self, start_time: Optional[int] = None, end_time: Optional[int] = None, limit: Optional[int] = None
-    ):
+    async def fetch_candles(self, start_time: int | None = None, end_time: int | None = None, limit: int | None = None):
         if start_time is None and end_time is None:
             raise ValueError("Either the start time or end time must be specified.")
 
@@ -307,7 +304,7 @@ class CandlesBase(NetworkBase):
         return np.array(arr).astype(float)
 
     def _get_rest_candles_params(
-        self, start_time: Optional[int] = None, end_time: Optional[int] = None, limit: Optional[int] = None
+        self, start_time: int | None = None, end_time: int | None = None, limit: int | None = None
     ) -> dict:
         """
         This method returns the parameters for the candles REST request. In specific implementations, if the last candle
@@ -319,7 +316,7 @@ class CandlesBase(NetworkBase):
         """
         raise NotImplementedError
 
-    def _parse_rest_candles(self, data: dict, end_time: Optional[int] = None) -> List[List[float]]:
+    def _parse_rest_candles(self, data: dict, end_time: int | None = None) -> list[list[float]]:
         """
         This method parses the candles data fetched from the REST API.
 
@@ -354,10 +351,10 @@ class CandlesBase(NetworkBase):
         """
         return int(timestamp - timestamp % self.interval_in_seconds)
 
-    def _calculate_end_time(self, end_time: Optional[int] = None):
+    def _calculate_end_time(self, end_time: int | None = None):
         return end_time + self.interval_in_seconds * self._is_last_candle_not_included_in_rest_request
 
-    def _calculate_start_time(self, start_time: Optional[int]):
+    def _calculate_start_time(self, start_time: int | None):
         return start_time - self.interval_in_seconds * self._is_first_candle_not_included_in_rest_request
 
     async def fill_historical_candles(self):
@@ -391,7 +388,7 @@ class CandlesBase(NetworkBase):
         Connects to the candlestick websocket endpoint and listens to the messages sent by the
         exchange.
         """
-        ws: Optional[WSAssistant] = None
+        ws: WSAssistant | None = None
         while True:
             try:
                 ws: WSAssistant = await self._connected_websocket_assistant()
@@ -515,7 +512,7 @@ class CandlesBase(NetworkBase):
         """
         await asyncio.sleep(delay)
 
-    async def _on_order_stream_interruption(self, websocket_assistant: Optional[WSAssistant] = None):
+    async def _on_order_stream_interruption(self, websocket_assistant: WSAssistant | None = None):
         websocket_assistant and await websocket_assistant.disconnect()
         if self._fill_candles_task is not None:
             self._fill_candles_task.cancel()

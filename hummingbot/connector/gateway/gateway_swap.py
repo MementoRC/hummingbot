@@ -1,6 +1,6 @@
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict, Optional
+from typing import Any
 
 from hummingbot.connector.gateway.gateway_base import GatewayBase
 from hummingbot.core.data_type.common import OrderType, TradeType
@@ -20,9 +20,9 @@ class GatewaySwap(GatewayBase):
         trading_pair: str,
         is_buy: bool,
         amount: Decimal,
-        slippage_pct: Optional[Decimal] = None,
-        pool_address: Optional[str] = None,
-    ) -> Optional[Decimal]:
+        slippage_pct: Decimal | None = None,
+        pool_address: str | None = None,
+    ) -> Decimal | None:
         """
         Retrieves the volume weighted average price. For an AMM DEX connectors, this is the swap price for a given amount.
 
@@ -36,7 +36,7 @@ class GatewaySwap(GatewayBase):
 
         # Pull the price from gateway.
         try:
-            resp: Dict[str, Any] = await self._get_gateway_instance().quote_swap(
+            resp: dict[str, Any] = await self._get_gateway_instance().quote_swap(
                 network=self.network,
                 connector=self.connector_name,
                 base_asset=base,
@@ -131,12 +131,12 @@ class GatewaySwap(GatewayBase):
             quote_id = kwargs.get("quote_id")
             if quote_id:
                 # Use execute_quote if we have a quote_id
-                order_result: Dict[str, Any] = await self._get_gateway_instance().execute_quote(
+                order_result: dict[str, Any] = await self._get_gateway_instance().execute_quote(
                     connector=self.connector_name, quote_id=quote_id, network=self.network, wallet_address=self.address
                 )
             else:
                 # Use execute_swap for direct swaps without quote
-                order_result: Dict[str, Any] = await self._get_gateway_instance().execute_swap(
+                order_result: dict[str, Any] = await self._get_gateway_instance().execute_swap(
                     connector=self.connector_name,
                     base_asset=base,
                     quote_asset=quote,
@@ -145,7 +145,7 @@ class GatewaySwap(GatewayBase):
                     network=self.network,
                     wallet_address=self.address,
                 )
-            transaction_hash: Optional[str] = order_result.get("signature")
+            transaction_hash: str | None = order_result.get("signature")
             if transaction_hash is not None and transaction_hash != "":
                 self.update_order_from_hash(order_id, trading_pair, transaction_hash, order_result)
 

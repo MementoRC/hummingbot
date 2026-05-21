@@ -3,7 +3,7 @@ import importlib
 import inspect
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Callable, Dict
 
 from pydantic import ConfigDict, Field, field_validator
 
@@ -36,24 +36,24 @@ class ExecutorFilter:
     List-based criteria use OR logic within the list.
     """
 
-    executor_ids: Optional[List[str]] = None
-    connector_names: Optional[List[str]] = None
-    trading_pairs: Optional[List[str]] = None
-    executor_types: Optional[List[str]] = None
-    statuses: Optional[List[RunnableStatus]] = None
-    sides: Optional[List[TradeType]] = None
-    is_active: Optional[bool] = None
-    is_trading: Optional[bool] = None
-    close_types: Optional[List[CloseType]] = None
-    controller_ids: Optional[List[str]] = None
-    min_pnl_pct: Optional[Decimal] = None
-    max_pnl_pct: Optional[Decimal] = None
-    min_pnl_quote: Optional[Decimal] = None
-    max_pnl_quote: Optional[Decimal] = None
-    min_timestamp: Optional[float] = None
-    max_timestamp: Optional[float] = None
-    min_close_timestamp: Optional[float] = None
-    max_close_timestamp: Optional[float] = None
+    executor_ids: list[str] | None = None
+    connector_names: list[str] | None = None
+    trading_pairs: list[str] | None = None
+    executor_types: list[str] | None = None
+    statuses: list[RunnableStatus] | None = None
+    sides: list[TradeType] | None = None
+    is_active: bool | None = None
+    is_trading: bool | None = None
+    close_types: list[CloseType] | None = None
+    controller_ids: list[str] | None = None
+    min_pnl_pct: Decimal | None = None
+    max_pnl_pct: Decimal | None = None
+    min_pnl_quote: Decimal | None = None
+    max_pnl_quote: Decimal | None = None
+    min_timestamp: float | None = None
+    max_timestamp: float | None = None
+    min_close_timestamp: float | None = None
+    max_close_timestamp: float | None = None
 
 
 class ControllerConfigBase(BaseClientModel):
@@ -79,7 +79,7 @@ class ControllerConfigBase(BaseClientModel):
         },
     )
     manual_kill_switch: bool = Field(default=False, json_schema_extra={"is_updatable": True})
-    initial_positions: List[InitialPositionConfig] = Field(
+    initial_positions: list[InitialPositionConfig] = Field(
         default=[],
         json_schema_extra={
             "prompt": "Enter initial positions as a list of InitialPositionConfig objects: ",
@@ -91,7 +91,7 @@ class ControllerConfigBase(BaseClientModel):
 
     @field_validator("initial_positions", mode="before")
     @classmethod
-    def parse_initial_positions(cls, v) -> List[InitialPositionConfig]:
+    def parse_initial_positions(cls, v) -> list[InitialPositionConfig]:
         if isinstance(v, list):
             return v
         raise ValueError("Invalid type for initial_positions. Expected List[InitialPositionConfig]")
@@ -205,9 +205,9 @@ class ControllerBase(RunnableBase):
     ):
         super().__init__(update_interval=update_interval)
         self.config = config
-        self.executors_info: List[ExecutorInfo] = []
-        self.positions_held: List[PositionSummary] = []
-        self.performance_report: Optional[PerformanceReport] = None
+        self.executors_info: list[ExecutorInfo] = []
+        self.positions_held: list[PositionSummary] = []
+        self.performance_report: PerformanceReport | None = None
         self.market_data_provider: MarketDataProvider = market_data_provider
         self.actions_queue: asyncio.Queue = actions_queue
         self.processed_data = {}
@@ -234,7 +234,7 @@ class ControllerBase(RunnableBase):
         for candles_config in candles_configs:
             self.market_data_provider.initialize_candles_feed(candles_config)
 
-    def get_candles_config(self) -> List[CandlesConfig]:
+    def get_candles_config(self) -> list[CandlesConfig]:
         """
         Override this method in your controller to specify candles configuration.
         By default, returns empty list (no candles).
@@ -268,22 +268,22 @@ class ControllerBase(RunnableBase):
     async def control_task(self):
         if self.market_data_provider.ready and self.executors_update_event.is_set():
             await self.update_processed_data()
-            executor_actions: List[ExecutorAction] = self.determine_executor_actions()
+            executor_actions: list[ExecutorAction] = self.determine_executor_actions()
             if len(executor_actions) > 0:
                 self.logger().debug(f"Sending actions: {executor_actions}")
                 await self.send_actions(executor_actions)
 
-    async def send_actions(self, executor_actions: List[ExecutorAction]):
+    async def send_actions(self, executor_actions: list[ExecutorAction]):
         if len(executor_actions) > 0:
             await self.actions_queue.put(executor_actions)
             self.executors_update_event.clear()  # Clear the event after sending the actions
 
     def filter_executors(
         self,
-        executors: List[ExecutorInfo] = None,
+        executors: list[ExecutorInfo] = None,
         executor_filter: ExecutorFilter = None,
         filter_func: Callable[[ExecutorInfo], bool] = None,
-    ) -> List[ExecutorInfo]:
+    ) -> list[ExecutorInfo]:
         """
         Filter executors using ExecutorFilter criteria or a custom filter function.
 
@@ -305,8 +305,8 @@ class ControllerBase(RunnableBase):
         return filtered_executors
 
     def _apply_executor_filter(
-        self, executors: List[ExecutorInfo], executor_filter: ExecutorFilter
-    ) -> List[ExecutorInfo]:
+        self, executors: list[ExecutorInfo], executor_filter: ExecutorFilter
+    ) -> list[ExecutorInfo]:
         """Apply ExecutorFilter criteria to a list of executors."""
         filtered = executors
 
@@ -380,7 +380,7 @@ class ControllerBase(RunnableBase):
 
         return filtered
 
-    def get_executors(self, executor_filter: ExecutorFilter = None) -> List[ExecutorInfo]:
+    def get_executors(self, executor_filter: ExecutorFilter = None) -> list[ExecutorInfo]:
         """
         Get executors with optional filtering.
 
@@ -391,10 +391,10 @@ class ControllerBase(RunnableBase):
 
     def get_active_executors(
         self,
-        connector_names: Optional[List[str]] = None,
-        trading_pairs: Optional[List[str]] = None,
-        executor_types: Optional[List[str]] = None,
-    ) -> List[ExecutorInfo]:
+        connector_names: list[str] | None = None,
+        trading_pairs: list[str] | None = None,
+        executor_types: list[str] | None = None,
+    ) -> list[ExecutorInfo]:
         """
         Get all active executors with optional additional filtering.
 
@@ -410,10 +410,10 @@ class ControllerBase(RunnableBase):
 
     def get_completed_executors(
         self,
-        connector_names: Optional[List[str]] = None,
-        trading_pairs: Optional[List[str]] = None,
-        executor_types: Optional[List[str]] = None,
-    ) -> List[ExecutorInfo]:
+        connector_names: list[str] | None = None,
+        trading_pairs: list[str] | None = None,
+        executor_types: list[str] | None = None,
+    ) -> list[ExecutorInfo]:
         """
         Get all completed (terminated) executors with optional additional filtering.
 
@@ -432,10 +432,10 @@ class ControllerBase(RunnableBase):
 
     def get_executors_by_type(
         self,
-        executor_types: List[str],
-        connector_names: Optional[List[str]] = None,
-        trading_pairs: Optional[List[str]] = None,
-    ) -> List[ExecutorInfo]:
+        executor_types: list[str],
+        connector_names: list[str] | None = None,
+        trading_pairs: list[str] | None = None,
+    ) -> list[ExecutorInfo]:
         """
         Get executors filtered by type with optional additional filtering.
 
@@ -451,10 +451,10 @@ class ControllerBase(RunnableBase):
 
     def get_executors_by_side(
         self,
-        sides: List[TradeType],
-        connector_names: Optional[List[str]] = None,
-        trading_pairs: Optional[List[str]] = None,
-    ) -> List[ExecutorInfo]:
+        sides: list[TradeType],
+        connector_names: list[str] | None = None,
+        trading_pairs: list[str] | None = None,
+    ) -> list[ExecutorInfo]:
         """
         Get executors filtered by trading side with optional additional filtering.
 
@@ -474,14 +474,14 @@ class ControllerBase(RunnableBase):
         """
         raise NotImplementedError
 
-    def determine_executor_actions(self) -> List[ExecutorAction]:
+    def determine_executor_actions(self) -> list[ExecutorAction]:
         """
         This method should be overridden by the derived classes to implement the logic to determine the actions
         that the executors should take.
         """
         raise NotImplementedError
 
-    def to_format_status(self) -> List[str]:
+    def to_format_status(self) -> list[str]:
         """
         This method should be overridden by the derived classes to implement the logic to format the status of the
         controller to be displayed in the UI.
@@ -508,10 +508,10 @@ class ControllerBase(RunnableBase):
         connector_name: str,
         trading_pair: str,
         amount: Decimal,
-        price: Optional[Decimal] = None,
+        price: Decimal | None = None,
         execution_strategy: ExecutionStrategy = ExecutionStrategy.MARKET,
-        chaser_config: Optional[LimitChaserConfig] = None,
-        triple_barrier_config: Optional[TripleBarrierConfig] = None,
+        chaser_config: LimitChaserConfig | None = None,
+        triple_barrier_config: TripleBarrierConfig | None = None,
         leverage: int = 1,
         keep_position: bool = True,
     ) -> str:
@@ -547,10 +547,10 @@ class ControllerBase(RunnableBase):
         connector_name: str,
         trading_pair: str,
         amount: Decimal,
-        price: Optional[Decimal] = None,
+        price: Decimal | None = None,
         execution_strategy: ExecutionStrategy = ExecutionStrategy.MARKET,
-        chaser_config: Optional[LimitChaserConfig] = None,
-        triple_barrier_config: Optional[TripleBarrierConfig] = None,
+        chaser_config: LimitChaserConfig | None = None,
+        triple_barrier_config: TripleBarrierConfig | None = None,
         leverage: int = 1,
         keep_position: bool = True,
     ) -> str:
@@ -587,10 +587,10 @@ class ControllerBase(RunnableBase):
         trading_pair: str,
         side: TradeType,
         amount: Decimal,
-        price: Optional[Decimal] = None,
+        price: Decimal | None = None,
         execution_strategy: ExecutionStrategy = ExecutionStrategy.MARKET,
-        chaser_config: Optional[LimitChaserConfig] = None,
-        triple_barrier_config: Optional[TripleBarrierConfig] = None,
+        chaser_config: LimitChaserConfig | None = None,
+        triple_barrier_config: TripleBarrierConfig | None = None,
         leverage: int = 1,
         keep_position: bool = True,
     ) -> str:
@@ -663,10 +663,10 @@ class ControllerBase(RunnableBase):
 
     def cancel_all(
         self,
-        connector_name: Optional[str] = None,
-        trading_pair: Optional[str] = None,
-        executor_filter: Optional[ExecutorFilter] = None,
-    ) -> List[str]:
+        connector_name: str | None = None,
+        trading_pair: str | None = None,
+        executor_filter: ExecutorFilter | None = None,
+    ) -> list[str]:
         """
         Cancel all active orders, optionally filtered by connector, trading pair, or advanced filter.
 
@@ -719,10 +719,10 @@ class ControllerBase(RunnableBase):
 
     def open_orders(
         self,
-        connector_name: Optional[str] = None,
-        trading_pair: Optional[str] = None,
-        executor_filter: Optional[ExecutorFilter] = None,
-    ) -> List[Dict]:
+        connector_name: str | None = None,
+        trading_pair: str | None = None,
+        executor_filter: ExecutorFilter | None = None,
+    ) -> list[Dict]:
         """
         Get all open orders from active executors.
 
@@ -788,10 +788,10 @@ class ControllerBase(RunnableBase):
 
     def open_positions(
         self,
-        connector_name: Optional[str] = None,
-        trading_pair: Optional[str] = None,
-        executor_filter: Optional[ExecutorFilter] = None,
-    ) -> List[Dict]:
+        connector_name: str | None = None,
+        trading_pair: str | None = None,
+        executor_filter: ExecutorFilter | None = None,
+    ) -> list[Dict]:
         """
         Get all held positions from completed executors.
 
@@ -876,7 +876,7 @@ class ControllerBase(RunnableBase):
         """
         return self.market_data_provider.get_price_by_type(connector_name, trading_pair, price_type)
 
-    def _find_executor_by_id(self, executor_id: str) -> Optional[ExecutorInfo]:
+    def _find_executor_by_id(self, executor_id: str) -> ExecutorInfo | None:
         """
         Find an executor by its ID.
 

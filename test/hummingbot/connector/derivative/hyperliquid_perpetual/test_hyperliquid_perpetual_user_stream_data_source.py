@@ -1,7 +1,6 @@
 import asyncio
 import json
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from typing import Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from bidict import bidict
@@ -38,7 +37,7 @@ class TestHyperliquidPerpetualAPIUserStreamDataSource(IsolatedAsyncioWrapperTest
     def setUp(self) -> None:
         super().setUp()
         self.log_records = []
-        self.listening_task: Optional[asyncio.Task] = None
+        self.listening_task: asyncio.Task | None = None
 
         self.throttler = AsyncThrottler(CONSTANTS.RATE_LIMITS)
         self.mock_time_provider = MagicMock()

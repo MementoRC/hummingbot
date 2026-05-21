@@ -1,7 +1,7 @@
 import asyncio
 import hashlib
 from decimal import Decimal
-from typing import Any, AsyncIterable, Dict, List, Literal, Optional, Tuple
+from typing import Any, AsyncIterable, List, Literal
 
 from bidict import bidict
 
@@ -41,13 +41,13 @@ class HyperliquidExchange(ExchangePyBase):
 
     def __init__(
         self,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
         hyperliquid_secret_key: str = None,
         hyperliquid_address: str = None,
         use_vault: bool = False,
         hyperliquid_mode: Literal["arb_wallet", "api_wallet"] = "arb_wallet",
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         domain: str = CONSTANTS.DOMAIN,
     ):
@@ -60,8 +60,8 @@ class HyperliquidExchange(ExchangePyBase):
         self._domain = domain
         self._last_trade_history_timestamp = None
         self._last_trades_poll_timestamp = 1.0
-        self.coin_to_asset: Dict[str, int] = {}
-        self.name_to_coin: Dict[str, str] = {}
+        self.coin_to_asset: dict[str, int] = {}
+        self.name_to_coin: dict[str, str] = {}
         super().__init__(balance_asset_limit, rate_limits_share_pct)
 
     @property
@@ -70,13 +70,13 @@ class HyperliquidExchange(ExchangePyBase):
         return self._domain
 
     @property
-    def authenticator(self) -> Optional[HyperliquidAuth]:
+    def authenticator(self) -> HyperliquidAuth | None:
         if self._trading_required:
             return HyperliquidAuth(self.hyperliquid_address, self.hyperliquid_secret_key, self._use_vault)
         return None
 
     @property
-    def rate_limits_rules(self) -> List[RateLimit]:
+    def rate_limits_rules(self) -> list[RateLimit]:
         return CONSTANTS.RATE_LIMITS
 
     @property
@@ -118,13 +118,13 @@ class HyperliquidExchange(ExchangePyBase):
     async def _make_network_check_request(self):
         await self._api_post(path_url=self.check_network_request_path, data={"type": CONSTANTS.META_INFO})
 
-    def supported_order_types(self) -> List[OrderType]:
+    def supported_order_types(self) -> list[OrderType]:
         """
         :return a list of OrderType supported by this connector
         """
         return [OrderType.LIMIT, OrderType.LIMIT_MAKER, OrderType.MARKET]
 
-    async def get_all_pairs_prices(self) -> List[Dict[str, str]]:
+    async def get_all_pairs_prices(self) -> list[dict[str, str]]:
         res = []
         exchange_info = await self._api_post(
             path_url=CONSTANTS.TICKER_PRICE_CHANGE_URL, data={"type": CONSTANTS.ASSET_CONTEXT_TYPE}
@@ -229,7 +229,7 @@ class HyperliquidExchange(ExchangePyBase):
         order_side: TradeType,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         is_maker = order_type is OrderType.LIMIT_MAKER
         return DeductedFromReturnsTradeFee(percent=self.estimate_fee_pct(is_maker))
@@ -354,7 +354,7 @@ class HyperliquidExchange(ExchangePyBase):
         order_type: OrderType,
         price: Decimal,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         symbol = await self.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
         param_order_type = {"limit": {"tif": "Gtc"}}
         if order_type is OrderType.LIMIT_MAKER:
@@ -409,7 +409,7 @@ class HyperliquidExchange(ExchangePyBase):
             for trade_fill in all_fills_response:
                 self._process_trade_rs_event_message(order_fill=trade_fill, all_fillable_order=all_fillable_orders)
 
-    def _process_trade_rs_event_message(self, order_fill: Dict[str, Any], all_fillable_order):
+    def _process_trade_rs_event_message(self, order_fill: dict[str, Any], all_fillable_order):
         exchange_order_id = str(order_fill.get("oid"))
         fillable_order = all_fillable_order.get(exchange_order_id)
         if fillable_order is not None:
@@ -436,7 +436,7 @@ class HyperliquidExchange(ExchangePyBase):
 
             self._order_tracker.process_trade_update(trade_update)
 
-    async def _iter_user_event_queue(self) -> AsyncIterable[Dict[str, any]]:
+    async def _iter_user_event_queue(self) -> AsyncIterable[dict[str, any]]:
         while True:
             try:
                 yield await self._user_stream_tracker.user_stream.get()
@@ -485,7 +485,7 @@ class HyperliquidExchange(ExchangePyBase):
                 self.logger().error("Unexpected error in user stream listener loop.", exc_info=True)
                 await self._sleep(5.0)
 
-    async def _process_trade_message(self, trade: Dict[str, Any], client_order_id: Optional[str] = None):
+    async def _process_trade_message(self, trade: dict[str, Any], client_order_id: str | None = None):
         """
         Updates in-flight order and trigger order filled event for a trade message received. Triggers order completedim
         event if the total executed amount equals to the specified order amount.
@@ -517,7 +517,7 @@ class HyperliquidExchange(ExchangePyBase):
                 )
                 self._order_tracker.process_trade_update(trade_update)
 
-    def _process_order_message(self, order_msg: Dict[str, Any]):
+    def _process_order_message(self, order_msg: dict[str, Any]):
         """
         Updates in-flight order and triggers cancelation or failure event if needed.
 
@@ -540,7 +540,7 @@ class HyperliquidExchange(ExchangePyBase):
         )
         self._order_tracker.process_order_update(order_update=order_update)
 
-    async def _format_trading_rules(self, exchange_info_dict: List) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: List) -> list[TradingRule]:
         """
         Queries the necessary API endpoint and initialize the TradingRule object for each trading pair being traded.
 
@@ -648,7 +648,7 @@ class HyperliquidExchange(ExchangePyBase):
             mapping.pop(current_exchange_symbol)
 
     @staticmethod
-    def _is_valid_spot_entry(exchange_info: List, spot_info: Dict[str, Any]) -> bool:
+    def _is_valid_spot_entry(exchange_info: List, spot_info: dict[str, Any]) -> bool:
         tokens = exchange_info[0].get("tokens", [])
         pair_tokens = spot_info.get("tokens", [])
 
@@ -803,7 +803,7 @@ class HyperliquidExchange(ExchangePyBase):
                         )
                         self.logger().info(f"Recreating missing trade in TradeFill: {trade}")
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         trade_updates = []
 
         if order.exchange_order_id is not None:

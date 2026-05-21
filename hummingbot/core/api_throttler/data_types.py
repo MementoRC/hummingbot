@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import List, Optional
 
 DEFAULT_PATH = ""
 DEFAULT_WEIGHT = 1
@@ -27,7 +26,7 @@ class RateLimit:
         limit: int,
         time_interval: float,
         weight: int = DEFAULT_WEIGHT,
-        linked_limits: Optional[List[LinkedLimitWeightPair]] = None,
+        linked_limits: list[LinkedLimitWeightPair] | None = None,
     ):
         """
         :param limit_id: A unique identifier for this RateLimit object, this is usually an API request path url

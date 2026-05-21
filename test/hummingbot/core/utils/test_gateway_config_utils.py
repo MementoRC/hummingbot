@@ -1,4 +1,3 @@
-from typing import List
 from unittest import TestCase
 
 import hummingbot.core.utils.gateway_config_utils as utils
@@ -8,7 +7,7 @@ class GatewayConfigUtilsTest(TestCase):
     config_dict = {"a": 1, "b": {"ba": 21, "bb": 22, "bc": {"bca": 231, "bcb": 232}}, "c": 3}
 
     def test_build_config_dict_display(self):
-        lines: List[str] = []
+        lines: list[str] = []
         utils.build_config_dict_display(lines, self.config_dict)
         self.assertEqual(8, len(lines))
         self.assertEqual("a: 1", lines[0])

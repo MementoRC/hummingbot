@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import ConfigDict, Field, SecretStr, field_validator
 
@@ -20,7 +20,7 @@ EXAMPLE_PAIR = "BTC-USD"
 BROKER_ID = "HBOT"
 
 
-def validate_wallet_mode(value: str) -> Optional[str]:
+def validate_wallet_mode(value: str) -> str | None:
     """
     Check if the value is a valid mode
     """
@@ -35,7 +35,7 @@ def validate_wallet_mode(value: str) -> Optional[str]:
     raise ValueError(f"Invalid wallet mode '{value}', choose from: {allowed}")
 
 
-def validate_bool(value: str) -> Optional[str]:
+def validate_bool(value: str) -> str | None:
     """
     Permissively interpret a string as a boolean
     """

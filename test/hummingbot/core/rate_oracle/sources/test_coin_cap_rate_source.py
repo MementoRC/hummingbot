@@ -3,7 +3,6 @@ import json
 import re
 from decimal import Decimal
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from typing import Optional
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
@@ -50,7 +49,7 @@ class CoinCapRateSourceTest(IsolatedAsyncioWrapperTestCase):
         self,
         asset_symbol: str,
         asset_price: Decimal,
-        asset_id: Optional[str] = None,
+        asset_id: str | None = None,
     ):
         data = {
             "data": [

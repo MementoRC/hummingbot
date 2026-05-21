@@ -1,5 +1,3 @@
-from typing import List
-
 from pydantic import Field
 
 from hummingbot.core.data_type.common import MarketDict, PriceType
@@ -80,7 +78,7 @@ class PriceMonitorController(ControllerBase):
         # This controller is for monitoring only, no trading actions
         return []
 
-    def to_format_status(self) -> List[str]:
+    def to_format_status(self) -> list[str]:
         lines = []
         lines.extend(["", f"PRICE MONITOR - {self.config.trading_pair}"])
         lines.extend(["=" * 60])

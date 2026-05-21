@@ -2,7 +2,7 @@ import json
 import math
 import re
 from decimal import Decimal
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Any, Callable
 
 from aioresponses import aioresponses
 from aioresponses.core import RequestCall
@@ -95,7 +95,7 @@ class BtcMarketsExchangeTest(AbstractExchangeConnectorTests.ExchangeConnectorTes
         }
 
     @property
-    def all_symbols_including_invalid_pair_mock_response(self) -> Tuple[str, Any]:
+    def all_symbols_including_invalid_pair_mock_response(self) -> tuple[str, Any]:
         response = [
             {
                 "marketId": self.exchange_symbol_for_tokens(self.base_asset, self.quote_asset),
@@ -319,7 +319,7 @@ class BtcMarketsExchangeTest(AbstractExchangeConnectorTests.ExchangeConnectorTes
         self.assertEqual(order.exchange_order_id, request_params["orderId"])
 
     def configure_successful_cancelation_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = self.private_url_with_param(CONSTANTS.ORDERS_URL, order.exchange_order_id, "/")
         response = self._order_cancelation_request_successful_mock_response(order=order)
@@ -327,7 +327,7 @@ class BtcMarketsExchangeTest(AbstractExchangeConnectorTests.ExchangeConnectorTes
         return url
 
     def configure_erroneous_cancelation_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = self.private_url_with_param(CONSTANTS.ORDERS_URL, order.exchange_order_id, "/")
         response = {
@@ -339,7 +339,7 @@ class BtcMarketsExchangeTest(AbstractExchangeConnectorTests.ExchangeConnectorTes
 
     def configure_one_successful_one_erroneous_cancel_all_response(
         self, successful_order: InFlightOrder, erroneous_order: InFlightOrder, mock_api: aioresponses
-    ) -> List[str]:
+    ) -> list[str]:
         """
         :return: a list of all configured URLs for the cancelations
         """
@@ -351,7 +351,7 @@ class BtcMarketsExchangeTest(AbstractExchangeConnectorTests.ExchangeConnectorTes
         return all_urls
 
     def configure_order_not_found_error_cancelation_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         response = {
             "code": CONSTANTS.ORDER_NOT_FOUND,
@@ -361,8 +361,8 @@ class BtcMarketsExchangeTest(AbstractExchangeConnectorTests.ExchangeConnectorTes
         return self.order_creation_url
 
     def configure_order_not_found_error_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
-    ) -> List[str]:
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
+    ) -> list[str]:
         response = {
             "code": CONSTANTS.ORDER_NOT_FOUND,
             "message": "Order not found",
@@ -371,14 +371,14 @@ class BtcMarketsExchangeTest(AbstractExchangeConnectorTests.ExchangeConnectorTes
         return [self.order_creation_url]
 
     def configure_completely_filled_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         response = self._order_status_request_completely_filled_mock_response(order=order)
         mock_api.get(self.order_creation_url, body=json.dumps(response), callback=callback)
         return self.order_creation_url
 
     def configure_canceled_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = self.private_url_with_param(CONSTANTS.ORDERS_URL, order.exchange_order_id, "/")
         response = self._order_status_request_canceled_mock_response(order=order)
@@ -386,7 +386,7 @@ class BtcMarketsExchangeTest(AbstractExchangeConnectorTests.ExchangeConnectorTes
         return url
 
     def configure_open_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         """
         :return: the URL configured
@@ -397,7 +397,7 @@ class BtcMarketsExchangeTest(AbstractExchangeConnectorTests.ExchangeConnectorTes
         return url
 
     def configure_http_error_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         response = []
         mock_api.get(self.trade_url, body=json.dumps(response), callback=callback)
@@ -408,7 +408,7 @@ class BtcMarketsExchangeTest(AbstractExchangeConnectorTests.ExchangeConnectorTes
         return url
 
     def configure_partially_filled_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         response = self._order_status_request_partially_filled_mock_response(order=order)
         mock_api.get(self.order_creation_url, body=json.dumps(response), callback=callback)
@@ -418,7 +418,7 @@ class BtcMarketsExchangeTest(AbstractExchangeConnectorTests.ExchangeConnectorTes
         return self.order_creation_url
 
     def configure_partial_fill_trade_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         response = self._order_fills_request_partial_fill_mock_response(order=order)
         mock_api.get(self.trade_url, body=json.dumps(response), callback=callback)
@@ -428,7 +428,7 @@ class BtcMarketsExchangeTest(AbstractExchangeConnectorTests.ExchangeConnectorTes
         return self.trade_url
 
     def configure_erroneous_http_fill_trade_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         mock_api.get(self.trade_url, status=400, callback=callback)
 
@@ -438,7 +438,7 @@ class BtcMarketsExchangeTest(AbstractExchangeConnectorTests.ExchangeConnectorTes
         return self.trade_url
 
     def configure_full_fill_trade_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         response = self._order_fills_request_full_fill_mock_response(order=order)
         mock_api.get(self.trade_url, body=json.dumps(response), callback=callback)

@@ -1,6 +1,6 @@
 import asyncio
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.utils import combine_to_hb_trading_pair
 from hummingbot.core.network_iterator import NetworkStatus, safe_ensure_future
@@ -27,8 +27,8 @@ class CoinCapAPIKeyAppender(RESTPreProcessorBase):
 
 
 class CoinCapDataFeed(DataFeedBase):
-    _logger: Optional[HummingbotLogger] = None
-    _async_throttler: Optional["AsyncThrottler"] = None
+    _logger: HummingbotLogger | None = None
+    _async_throttler: "AsyncThrottler" | None = None
 
     @classmethod
     def _get_async_throttler(cls) -> "AsyncThrottler":
@@ -39,14 +39,14 @@ class CoinCapDataFeed(DataFeedBase):
             cls._async_throttler = AsyncThrottler(CONSTANTS.RATE_LIMITS)
         return cls._async_throttler
 
-    def __init__(self, assets_map: Dict[str, str], api_key: str):
+    def __init__(self, assets_map: dict[str, str], api_key: str):
         super().__init__()
         self._assets_map = assets_map
-        self._price_dict: Dict[str, Decimal] = {}
-        self._api_factory: Optional[WebAssistantsFactory] = None
+        self._price_dict: dict[str, Decimal] = {}
+        self._api_factory: WebAssistantsFactory | None = None
         self._api_key = api_key
         self._is_api_key_authorized = True
-        self._prices_stream_task: Optional[asyncio.Task] = None
+        self._prices_stream_task: asyncio.Task | None = None
 
         self._ready_event.set()
 
@@ -78,7 +78,7 @@ class CoinCapDataFeed(DataFeedBase):
             return NetworkStatus.NOT_CONNECTED
         return NetworkStatus.CONNECTED
 
-    async def get_all_usd_quoted_prices(self) -> Dict[str, Decimal]:
+    async def get_all_usd_quoted_prices(self) -> dict[str, Decimal]:
         prices = (
             self._price_dict
             if self._prices_stream_task and len(self._price_dict) != 0
@@ -96,7 +96,7 @@ class CoinCapDataFeed(DataFeedBase):
             )
         return self._api_factory
 
-    async def _get_all_usd_quoted_prices_by_rest_request(self) -> Dict[str, Decimal]:
+    async def _get_all_usd_quoted_prices_by_rest_request(self) -> dict[str, Decimal]:
         prices = {}
         url = f"{CONSTANTS.BASE_REST_URL}{CONSTANTS.ALL_ASSETS_ENDPOINT}"
 
@@ -115,7 +115,7 @@ class CoinCapDataFeed(DataFeedBase):
 
         return prices
 
-    async def _make_request(self, url: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    async def _make_request(self, url: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         api_factory = self._get_api_factory()
         rest_assistant = await api_factory.get_rest_assistant()
         rate_limit_id = CONSTANTS.API_KEY_LIMIT_ID if self._is_api_key_authorized else CONSTANTS.NO_KEY_LIMIT_ID

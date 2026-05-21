@@ -4,7 +4,7 @@ import re
 from abc import ABC, abstractmethod
 from decimal import Decimal
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Awaitable, Callable, Union
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
@@ -88,7 +88,7 @@ class AbstractExchangeConnectorTests:
 
         @property
         @abstractmethod
-        def all_symbols_including_invalid_pair_mock_response(self) -> Tuple[str, Any]:
+        def all_symbols_including_invalid_pair_mock_response(self) -> tuple[str, Any]:
             raise NotImplementedError
 
         @property
@@ -214,7 +214,7 @@ class AbstractExchangeConnectorTests:
             self,
             order: InFlightOrder,
             mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
+            callback: Callable | None = lambda *args, **kwargs: None,
         ) -> str:
             """
             :return: the URL configured for the cancelation
@@ -226,7 +226,7 @@ class AbstractExchangeConnectorTests:
             self,
             order: InFlightOrder,
             mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
+            callback: Callable | None = lambda *args, **kwargs: None,
         ) -> str:
             """
             :return: the URL configured for the cancelation
@@ -238,7 +238,7 @@ class AbstractExchangeConnectorTests:
             self,
             order: InFlightOrder,
             mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
+            callback: Callable | None = lambda *args, **kwargs: None,
         ) -> str:
             """
             :return: the URL configured for the cancelation
@@ -248,7 +248,7 @@ class AbstractExchangeConnectorTests:
         @abstractmethod
         def configure_one_successful_one_erroneous_cancel_all_response(
             self, successful_order: InFlightOrder, erroneous_order: InFlightOrder, mock_api: aioresponses
-        ) -> List[str]:
+        ) -> list[str]:
             """
             :return: a list of all configured URLs for the cancelations
             """
@@ -258,8 +258,8 @@ class AbstractExchangeConnectorTests:
             self,
             order: InFlightOrder,
             mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
-        ) -> List[str]:
+            callback: Callable | None = lambda *args, **kwargs: None,
+        ) -> list[str]:
             """
             :return: the URL configured
             """
@@ -270,8 +270,8 @@ class AbstractExchangeConnectorTests:
             self,
             order: InFlightOrder,
             mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
-        ) -> Union[str, List[str]]:
+            callback: Callable | None = lambda *args, **kwargs: None,
+        ) -> Union[str, list[str]]:
             """
             :return: the URL configured
             """
@@ -282,8 +282,8 @@ class AbstractExchangeConnectorTests:
             self,
             order: InFlightOrder,
             mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
-        ) -> List[str]:
+            callback: Callable | None = lambda *args, **kwargs: None,
+        ) -> list[str]:
             """
             :return: the URL configured
             """
@@ -294,7 +294,7 @@ class AbstractExchangeConnectorTests:
             self,
             order: InFlightOrder,
             mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
+            callback: Callable | None = lambda *args, **kwargs: None,
         ) -> str:
             """
             :return: the URL configured
@@ -306,7 +306,7 @@ class AbstractExchangeConnectorTests:
             self,
             order: InFlightOrder,
             mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
+            callback: Callable | None = lambda *args, **kwargs: None,
         ) -> str:
             """
             :return: the URL configured
@@ -318,8 +318,8 @@ class AbstractExchangeConnectorTests:
             self,
             order: InFlightOrder,
             mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
-        ) -> List[str]:
+            callback: Callable | None = lambda *args, **kwargs: None,
+        ) -> list[str]:
             """
             :return: the URL configured
             """
@@ -330,7 +330,7 @@ class AbstractExchangeConnectorTests:
             self,
             order: InFlightOrder,
             mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
+            callback: Callable | None = lambda *args, **kwargs: None,
         ) -> str:
             """
             :return: the URL configured
@@ -342,7 +342,7 @@ class AbstractExchangeConnectorTests:
             self,
             order: InFlightOrder,
             mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
+            callback: Callable | None = lambda *args, **kwargs: None,
         ) -> str:
             """
             :return: the URL configured
@@ -351,7 +351,7 @@ class AbstractExchangeConnectorTests:
 
         @abstractmethod
         def configure_full_fill_trade_response(
-            self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = None
+            self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = None
         ) -> str:
             """
             :return: the URL configured
@@ -386,7 +386,7 @@ class AbstractExchangeConnectorTests:
             super().setUp()
 
             self.log_records = []
-            self.async_tasks: List[asyncio.Task] = []
+            self.async_tasks: list[asyncio.Task] = []
 
             self.exchange = self.create_exchange_instance()
 
@@ -424,8 +424,8 @@ class AbstractExchangeConnectorTests:
         def configure_all_symbols_response(
             self,
             mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
-        ) -> List[str]:
+            callback: Callable | None = lambda *args, **kwargs: None,
+        ) -> list[str]:
             url = self.all_symbols_url
             response = self.all_symbols_request_mock_response
             mock_api.get(url, body=json.dumps(response), callback=callback)
@@ -434,8 +434,8 @@ class AbstractExchangeConnectorTests:
         def configure_trading_rules_response(
             self,
             mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
-        ) -> List[str]:
+            callback: Callable | None = lambda *args, **kwargs: None,
+        ) -> list[str]:
             url = self.trading_rules_url
             response = self.trading_rules_request_mock_response
             mock_api.get(url, body=json.dumps(response), callback=callback)
@@ -444,8 +444,8 @@ class AbstractExchangeConnectorTests:
         def configure_erroneous_trading_rules_response(
             self,
             mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
-        ) -> List[str]:
+            callback: Callable | None = lambda *args, **kwargs: None,
+        ) -> list[str]:
             url = self.trading_rules_url
             response = self.trading_rules_request_erroneous_mock_response
             mock_api.get(url, body=json.dumps(response), callback=callback)
@@ -579,7 +579,7 @@ class AbstractExchangeConnectorTests:
             url = self.all_symbols_url
             mock_api.get(url, exception=Exception)
 
-            result: List[str] = await self.exchange.all_trading_pairs()
+            result: list[str] = await self.exchange.all_trading_pairs()
 
             self.assertEqual(0, len(result))
 
@@ -591,7 +591,7 @@ class AbstractExchangeConnectorTests:
 
             mock_api.get(url, body=json.dumps(response))
 
-            latest_prices: Dict[str, float] = await self.exchange.get_last_traded_prices(
+            latest_prices: dict[str, float] = await self.exchange.get_last_traded_prices(
                 trading_pairs=[self.trading_pair]
             )
 
@@ -1837,7 +1837,7 @@ class AbstractExchangeConnectorTests:
                 )
             }
 
-        def _all_executed_requests(self, api_mock: aioresponses, url: Union[str, re.Pattern]) -> List[RequestCall]:
+        def _all_executed_requests(self, api_mock: aioresponses, url: Union[str, re.Pattern]) -> list[RequestCall]:
             request_calls = []
             for key, value in api_mock.requests.items():
                 req_url = key[1].human_repr()
@@ -1848,9 +1848,9 @@ class AbstractExchangeConnectorTests:
 
         def _configure_balance_response(
             self,
-            response: Dict[str, Any],
+            response: dict[str, Any],
             mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
+            callback: Callable | None = lambda *args, **kwargs: None,
         ) -> str:
             url = self.balance_url
             mock_api.get(
@@ -1860,7 +1860,7 @@ class AbstractExchangeConnectorTests:
             )
             return url
 
-        def _expected_initial_status_dict(self) -> Dict[str, bool]:
+        def _expected_initial_status_dict(self) -> dict[str, bool]:
             return {
                 "symbols_mapping_initialized": False,
                 "order_books_initialized": False,

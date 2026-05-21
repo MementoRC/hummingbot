@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import List
 
 from hummingbot.core.data_type.common import MarketDict, PositionMode, PriceType, TradeType
 from hummingbot.strategy_v2.controllers import ControllerBase, ControllerConfigBase
@@ -61,7 +60,7 @@ class BuyThreeTimesExample(ControllerBase):
             return [CreateExecutorAction(controller_id=self.config.id, executor_config=config)]
         return []
 
-    def to_format_status(self) -> List[str]:
+    def to_format_status(self) -> list[str]:
         lines = []
         lines.append("Buy Three Times Example Status:")
         lines.append(f"  Buys completed: {self.buy_count}/{self.max_buys}")

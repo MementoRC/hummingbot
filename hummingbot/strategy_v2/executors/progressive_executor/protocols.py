@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import List, Protocol, Union
+from typing import Protocol, Union
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.common import TradeType
@@ -29,10 +29,10 @@ class ProgressiveProtocol(Protocol):
     total_executed_amount_backup: Decimal
     current_retries: int
     open_order: TrackedOrder | None
-    realized_orders: List[TrackedOrder]
+    realized_orders: list[TrackedOrder]
     close_order: TrackedOrder | None
-    failed_orders: List[TrackedOrder]
-    canceled_orders: List[TrackedOrder]
+    failed_orders: list[TrackedOrder]
+    canceled_orders: list[TrackedOrder]
     open_order_timestamp: float | int | None
     trailing_stop_trigger_pnl: Decimal | None
 

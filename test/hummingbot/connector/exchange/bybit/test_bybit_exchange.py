@@ -3,7 +3,7 @@ import json
 import re
 import unittest
 from decimal import Decimal
-from typing import Awaitable, Dict, NamedTuple, Optional
+from typing import Awaitable, Dict, NamedTuple
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
@@ -51,7 +51,7 @@ class TestBybitExchange(unittest.TestCase):
         super().setUp()
 
         self.log_records = []
-        self.test_task: Optional[asyncio.Task] = None
+        self.test_task: asyncio.Task | None = None
         self.client_config_map = ClientConfigAdapter(ClientConfigMap())
 
         self.exchange = BybitExchange(

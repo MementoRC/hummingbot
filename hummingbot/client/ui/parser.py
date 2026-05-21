@@ -1,5 +1,5 @@
 import argparse
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 from hummingbot.client.command.connect_command import OPTIONS as CONNECT_OPTIONS
 from hummingbot.exceptions import ArgumentParserError
@@ -25,10 +25,10 @@ class ThrowingArgumentParser(argparse.ArgumentParser):
                 return action
 
     @property
-    def commands(self) -> List[str]:
+    def commands(self) -> list[str]:
         return list(self.subparser_action._name_parser_map.keys())
 
-    def subcommands_from(self, top_level_command: str) -> List[str]:
+    def subcommands_from(self, top_level_command: str) -> list[str]:
         parser: argparse.ArgumentParser = self.subparser_action._name_parser_map.get(top_level_command)
         if parser is None:
             return []

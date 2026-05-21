@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Any, Dict, Literal
+from typing import Any, Literal
 
 from pydantic import Field, SecretStr
 
@@ -58,7 +58,7 @@ class OKXConfigMap(BaseConnectorConfigMap):
 KEYS = OKXConfigMap.model_construct()
 
 
-def is_exchange_information_valid(exchange_info: Dict[str, Any]) -> bool:
+def is_exchange_information_valid(exchange_info: dict[str, Any]) -> bool:
     """
     Verifies if a trading pair is enabled to operate with based on its exchange information
 

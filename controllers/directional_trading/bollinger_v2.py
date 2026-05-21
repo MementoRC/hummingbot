@@ -1,5 +1,4 @@
 from sys import float_info as sflt
-from typing import List
 
 import pandas as pd
 import pandas_ta as ta  # noqa: F401
@@ -63,7 +62,7 @@ class BollingerV2Controller(DirectionalTradingControllerBase):
         self.max_records = self.config.bb_length * 5
         super().__init__(config, *args, **kwargs)
 
-    def get_candles_config(self) -> List[CandlesConfig]:
+    def get_candles_config(self) -> list[CandlesConfig]:
         return [
             CandlesConfig(
                 connector=self.config.candles_connector,

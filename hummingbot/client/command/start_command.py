@@ -1,7 +1,7 @@
 import asyncio
 import platform
 import threading
-from typing import TYPE_CHECKING, Callable, Optional, Set
+from typing import TYPE_CHECKING, Callable
 
 import hummingbot.client.settings as settings
 from hummingbot import init_logging
@@ -39,7 +39,7 @@ class StartCommand(GatewayChainApiManager):
 
     async def _strategy_uses_gateway_connector(
         self,  # type: HummingbotApplication
-        required_exchanges: Set[str],
+        required_exchanges: set[str],
     ) -> bool:
         """Check if any required exchange is a gateway connector."""
         # Ensure gateway connectors are registered before checking
@@ -55,9 +55,9 @@ class StartCommand(GatewayChainApiManager):
 
     def start(
         self,  # type: HummingbotApplication
-        log_level: Optional[str] = None,
-        v2_conf: Optional[str] = None,
-        is_quickstart: Optional[bool] = False,
+        log_level: str | None = None,
+        v2_conf: str | None = None,
+        is_quickstart: bool | None = False,
     ):
         if threading.current_thread() != threading.main_thread():
             self.ev_loop.call_soon_threadsafe(self.start, log_level, v2_conf)
@@ -66,9 +66,9 @@ class StartCommand(GatewayChainApiManager):
 
     async def start_check(
         self,  # type: HummingbotApplication
-        log_level: Optional[str] = None,
-        v2_conf: Optional[str] = None,
-        is_quickstart: Optional[bool] = False,
+        log_level: str | None = None,
+        v2_conf: str | None = None,
+        is_quickstart: bool | None = False,
     ):
         if self._in_start_check or (
             self.trading_core.strategy_task is not None and not self.trading_core.strategy_task.done()

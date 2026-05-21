@@ -2,7 +2,6 @@
 
 import asyncio
 import unittest
-from typing import Optional
 from unittest.mock import AsyncMock, MagicMock
 
 from hummingbot.connector.derivative.evedex_perpetual import evedex_perpetual_constants as CONSTANTS
@@ -35,7 +34,7 @@ class TestEvedexPerpetualUserStreamDataSource(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):
         super().setUp()
-        self.listening_task: Optional[asyncio.Task] = None
+        self.listening_task: asyncio.Task | None = None
 
         self.time_provider = MagicMock()
         self.private_key = "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"  # noqa: mock

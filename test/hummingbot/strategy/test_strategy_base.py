@@ -5,7 +5,7 @@ import unittest
 import unittest.mock
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Union
 
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
@@ -31,10 +31,10 @@ class ExtendedMockPaperExchange(MockPaperExchange):
         self._in_flight_orders = {}
 
     @property
-    def limit_orders(self) -> List[LimitOrder]:
+    def limit_orders(self) -> list[LimitOrder]:
         return [in_flight_order.to_limit_order() for in_flight_order in self._in_flight_orders.values()]
 
-    def restored_market_states(self, saved_states: Dict[str, any]):
+    def restored_market_states(self, saved_states: dict[str, any]):
         self._in_flight_orders.update({key: value for key, value in saved_states.items()})
 
 
@@ -135,7 +135,7 @@ class StrategyBaseUnitTests(unittest.TestCase):
 
     def test_cum_flat_fees(self):
         fee_asset = self.trading_pair.split("-")[1]
-        trades: List[Tuple[str, Decimal]] = [(fee_asset, Decimal(f"{i}")) for i in range(5)]
+        trades: list[tuple[str, Decimal]] = [(fee_asset, Decimal(f"{i}")) for i in range(5)]
 
         expected_total_fees = sum([Decimal(f"{i}") for i in range(5)])
 
@@ -363,7 +363,7 @@ class StrategyBaseUnitTests(unittest.TestCase):
     def test_track_restored_order(self):
         self.assertEqual(0, len(self.market.limit_orders))
 
-        saved_states: Dict[str, Any] = {
+        saved_states: dict[str, Any] = {
             f"LIMIT_ORDER_ID_{i}": InFlightOrderBase(
                 client_order_id=f"LIMIT_ORDER_ID_{i}",
                 exchange_order_id=f"LIMIT_ORDER_ID_{i}",

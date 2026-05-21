@@ -4,7 +4,7 @@ import asyncio
 import time
 import unittest
 from decimal import Decimal
-from typing import Dict, List, Optional
+from typing import Dict
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from hummingbot.connector.derivative.evedex_perpetual import evedex_perpetual_constants as CONSTANTS
@@ -37,7 +37,7 @@ class TestEvedexPerpetualAPIOrderBookDataSource(unittest.IsolatedAsyncioTestCase
 
     def setUp(self):
         super().setUp()
-        self.listening_task: Optional[asyncio.Task] = None
+        self.listening_task: asyncio.Task | None = None
 
         self.connector = MagicMock()
         self.connector._domain = CONSTANTS.DEFAULT_DOMAIN
@@ -82,7 +82,7 @@ class TestEvedexPerpetualAPIOrderBookDataSource(unittest.IsolatedAsyncioTestCase
             "t": int(time.time() * 1000),
         }
 
-    def _instrument_info_response(self) -> List[Dict]:
+    def _instrument_info_response(self) -> list[Dict]:
         """Mock response for GET /api/market/instrument with metrics."""
         return [
             {

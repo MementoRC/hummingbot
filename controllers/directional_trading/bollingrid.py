@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import List
 
 import pandas_ta as ta  # noqa: F401
 from pydantic import Field, field_validator
@@ -165,7 +164,7 @@ class BollinGridController(DirectionalTradingControllerBase):
             max_open_orders=self.config.max_open_orders,
         )
 
-    def get_candles_config(self) -> List[CandlesConfig]:
+    def get_candles_config(self) -> list[CandlesConfig]:
         return [
             CandlesConfig(
                 connector=self.config.candles_connector,

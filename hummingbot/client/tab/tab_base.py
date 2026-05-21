@@ -1,5 +1,5 @@
 from abc import ABCMeta, abstractmethod
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from hummingbot.client.hummingbot_application import HummingbotApplication
@@ -32,7 +32,7 @@ class TabBase(metaclass=ABCMeta):
 
     @classmethod
     @abstractmethod
-    def get_command_arguments(cls) -> Dict[str, Dict[str, Any]]:
+    def get_command_arguments(cls) -> dict[str, dict[str, Any]]:
         """
         Returns a dictionary of command argument and all its properties. See hummingbot.client.ui.parser for examples.
         """

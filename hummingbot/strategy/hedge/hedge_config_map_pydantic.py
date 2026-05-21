@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Dict, List, Literal, Union
+from typing import Dict, Literal, Union
 
 from pydantic import ConfigDict, Field, field_validator
 
@@ -30,8 +30,8 @@ MAX_CONNECTOR = 5
 
 class EmptyMarketConfigMap(BaseClientModel):
     connector: Union[None, ExchangeEnum] = None
-    markets: Union[None, List[str]] = None
-    offsets: Union[None, List[Decimal]] = None
+    markets: Union[None, list[str]] = None
+    offsets: Union[None, list[Decimal]] = None
     model_config = ConfigDict(title="n")
 
 
@@ -41,12 +41,12 @@ class MarketConfigMap(BaseClientModel):
         description="The name of the exchange connector.",
         json_schema_extra={"prompt": "Enter name of the exchange to use", "prompt_on_new": True},
     )
-    markets: Union[None, List[str]] = Field(
+    markets: Union[None, list[str]] = Field(
         default=...,
         description="The name of the trading pair.",
         json_schema_extra={"prompt": lambda mi: MarketConfigMap.trading_pair_prompt(mi), "prompt_on_new": True},
     )
-    offsets: Union[None, List[Decimal]] = Field(
+    offsets: Union[None, list[Decimal]] = Field(
         default=Decimal("0.0"),
         description="The offsets for each trading pair.",
         json_schema_extra={
@@ -113,12 +113,12 @@ class HedgeConfigMap(BaseStrategyConfigMap):
         description="The name of the hedge exchange connector.",
         json_schema_extra={"prompt": "Enter name of the exchange to hedge overall assets", "prompt_on_new": True},
     )
-    hedge_markets: List[str] = Field(
+    hedge_markets: list[str] = Field(
         default=...,
         description="The name of the trading pair.",
         json_schema_extra={"prompt": lambda mi: HedgeConfigMap.hedge_markets_prompt(mi), "prompt_on_new": True},
     )
-    hedge_offsets: List[Decimal] = Field(
+    hedge_offsets: list[Decimal] = Field(
         default=Decimal("0.0"),
         description="The offsets for each trading pair.",
         json_schema_extra={"prompt": lambda mi: HedgeConfigMap.hedge_offsets_prompt(mi), "prompt_on_new": True},

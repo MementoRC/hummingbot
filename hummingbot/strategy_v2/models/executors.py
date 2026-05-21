@@ -1,6 +1,5 @@
 from decimal import Decimal
 from enum import Enum
-from typing import Optional
 
 from hummingbot.core.data_type.in_flight_order import InFlightOrder
 
@@ -19,7 +18,7 @@ class CloseType(Enum):
 
 
 class TrackedOrder:
-    def __init__(self, order_id: Optional[str] = None):
+    def __init__(self, order_id: str | None = None):
         self._order_id = order_id
         self._order = None
 

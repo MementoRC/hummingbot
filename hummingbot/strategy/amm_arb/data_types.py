@@ -2,7 +2,6 @@ import asyncio
 import logging
 from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import List, Optional
 
 from hummingbot.core.data_type.trade_fee import TokenAmount, TradeFeeBase
 from hummingbot.core.event.events import OrderType, TradeType
@@ -14,7 +13,7 @@ from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple
 
 s_decimal_nan = Decimal("NaN")
 s_decimal_0 = Decimal("0")
-arbprop_logger: Optional[HummingbotLogger] = None
+arbprop_logger: HummingbotLogger | None = None
 
 
 @dataclass
@@ -28,7 +27,7 @@ class ArbProposalSide:
     quote_price: Decimal
     order_price: Decimal
     amount: Decimal
-    extra_flat_fees: List[TokenAmount]
+    extra_flat_fees: list[TokenAmount]
     completed_event: asyncio.Event = field(default_factory=asyncio.Event)
     failed_event: asyncio.Event = field(default_factory=asyncio.Event)
 
@@ -78,7 +77,7 @@ class ArbProposal:
 
     def profit_pct(
         self,
-        rate_source: Optional[RateOracle] = None,
+        rate_source: RateOracle | None = None,
         account_for_fee: bool = False,
     ) -> Decimal:
         """

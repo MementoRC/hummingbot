@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.data_feed.candles_feed.candles_base import CandlesBase
@@ -8,7 +8,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class PacificaPerpetualCandles(CandlesBase):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -80,9 +80,9 @@ class PacificaPerpetualCandles(CandlesBase):
 
     def _get_rest_candles_params(
         self,
-        start_time: Optional[int] = None,
-        end_time: Optional[int] = None,
-        limit: Optional[int] = CONSTANTS.MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        limit: int | None = CONSTANTS.MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST,
     ) -> dict:
         """
         Build REST API parameters for fetching candles.
@@ -124,7 +124,7 @@ class PacificaPerpetualCandles(CandlesBase):
 
         return params
 
-    def _parse_rest_candles(self, data: dict, end_time: Optional[int] = None) -> List[List[float]]:
+    def _parse_rest_candles(self, data: dict, end_time: int | None = None) -> list[list[float]]:
         """
         Parse REST API response into standard candle format.
 
@@ -167,7 +167,7 @@ class PacificaPerpetualCandles(CandlesBase):
 
         return new_hb_candles
 
-    def ws_subscription_payload(self) -> Dict[str, Any]:
+    def ws_subscription_payload(self) -> dict[str, Any]:
         """
         Build WebSocket subscription message.
 
@@ -192,7 +192,7 @@ class PacificaPerpetualCandles(CandlesBase):
             },
         }
 
-    def _parse_websocket_message(self, data: dict) -> Optional[Dict[str, Any]]:
+    def _parse_websocket_message(self, data: dict) -> dict[str, Any] | None:
         """
         Parse WebSocket candle update message.
 

@@ -8,7 +8,7 @@ import shutil
 import sys
 from collections import OrderedDict
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Dict
 
 import yaml
 
@@ -50,8 +50,8 @@ class OrderedDumper(yaml.SafeDumper):
 class CreateCommand:
     def create(
         self,  # type: HummingbotApplication
-        script_to_config: Optional[str] = None,
-        controller_name: Optional[str] = None,
+        script_to_config: str | None = None,
+        controller_name: str | None = None,
     ) -> None:
         self.app.clear_input()
         self.placeholder_mode = True
@@ -223,7 +223,7 @@ class CreateCommand:
 
     async def get_strategy_name(
         self,  # type: HummingbotApplication
-    ) -> Optional[str]:
+    ) -> str | None:
         strategy = None
         strategy_config = ClientConfigAdapter(BaseStrategyConfigMap.model_construct())
         await self.prompt_for_model_config(strategy_config)
@@ -389,7 +389,7 @@ class CreateCommand:
             self.notify('\nEnter "start" to start market making.')
 
     @staticmethod
-    def restore_config_legacy(config_map: Dict[str, ConfigVar], config_map_backup: Dict[str, ConfigVar]):
+    def restore_config_legacy(config_map: dict[str, ConfigVar], config_map_backup: dict[str, ConfigVar]):
         for key in config_map:
             config_map[key] = config_map_backup[key]
 

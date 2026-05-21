@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from hummingbot.connector.utils import split_hb_trading_pair
 from hummingbot.core.network_iterator import NetworkStatus
@@ -13,7 +13,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class BitgetPerpetualCandles(CandlesBase):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -24,7 +24,7 @@ class BitgetPerpetualCandles(CandlesBase):
     def __init__(self, trading_pair: str, interval: str = "1m", max_records: int = 150):
         super().__init__(trading_pair, interval, max_records)
 
-        self._ping_task: Optional[asyncio.Task] = None
+        self._ping_task: asyncio.Task | None = None
 
     @property
     def name(self):
@@ -99,9 +99,9 @@ class BitgetPerpetualCandles(CandlesBase):
 
     def _get_rest_candles_params(
         self,
-        start_time: Optional[int] = None,
-        end_time: Optional[int] = None,
-        limit: Optional[int] = CONSTANTS.MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        limit: int | None = CONSTANTS.MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST,
     ) -> dict:
         params = {
             "symbol": self._ex_trading_pair,
@@ -133,7 +133,7 @@ class BitgetPerpetualCandles(CandlesBase):
 
         return params
 
-    def _parse_rest_candles(self, data: dict, end_time: Optional[int] = None) -> List[List[float]]:
+    def _parse_rest_candles(self, data: dict, end_time: int | None = None) -> list[list[float]]:
         """
         Rest response example:
         {
@@ -190,7 +190,7 @@ class BitgetPerpetualCandles(CandlesBase):
 
         return payload
 
-    def _parse_websocket_message(self, data: dict) -> Optional[Dict[str, Any]]:
+    def _parse_websocket_message(self, data: dict) -> dict[str, Any] | None:
         """
         WS response example:
         {
@@ -218,7 +218,7 @@ class BitgetPerpetualCandles(CandlesBase):
         if data == "pong":
             return
 
-        candles_row_dict: Dict[str, Any] = {}
+        candles_row_dict: dict[str, Any] = {}
 
         if data and data.get("data") and data["action"] == "update":
             candle = data["data"][0]
@@ -261,7 +261,7 @@ class BitgetPerpetualCandles(CandlesBase):
         Connects to the candlestick websocket endpoint and listens to the messages sent by the
         exchange.
         """
-        ws: Optional[WSAssistant] = None
+        ws: WSAssistant | None = None
         while True:
             try:
                 ws: WSAssistant = await self._connected_websocket_assistant()

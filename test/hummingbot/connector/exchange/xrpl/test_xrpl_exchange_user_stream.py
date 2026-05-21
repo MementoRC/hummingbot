@@ -10,7 +10,7 @@ Tests for:
 import unittest
 from decimal import Decimal
 from test.hummingbot.connector.exchange.xrpl.test_xrpl_exchange_base import XRPLExchangeTestBase
-from typing import Any, Dict, List
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from hummingbot.core.data_type.common import OrderType, TradeType
@@ -40,7 +40,7 @@ def _make_event_message(
     taker_pays=None,
     tx_type: str = "OfferCreate",
     tx_result: str = "tesSUCCESS",
-    affected_nodes: List[Dict[str, Any]] = None,
+    affected_nodes: list[dict[str, Any]] = None,
     tx_hash: str = "86440061A351FF77F21A24ED045EE958F6256697F2628C3555AEBF29A887518C",  # noqa: mock
     tx_date: int = 772789130,
     extra_created_offer: dict = None,

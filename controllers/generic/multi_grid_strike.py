@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -46,19 +45,19 @@ class MultiGridStrikeConfig(ControllerConfigBase):
     total_amount_quote: Decimal = Field(default=Decimal("1000"), json_schema_extra={"is_updatable": True})
 
     # Grid configurations
-    grids: List[GridConfig] = Field(default_factory=list, json_schema_extra={"is_updatable": True})
+    grids: list[GridConfig] = Field(default_factory=list, json_schema_extra={"is_updatable": True})
 
     # Common grid parameters
-    min_spread_between_orders: Optional[Decimal] = Field(
+    min_spread_between_orders: Decimal | None = Field(
         default=Decimal("0.001"), json_schema_extra={"is_updatable": True}
     )
-    min_order_amount_quote: Optional[Decimal] = Field(default=Decimal("5"), json_schema_extra={"is_updatable": True})
+    min_order_amount_quote: Decimal | None = Field(default=Decimal("5"), json_schema_extra={"is_updatable": True})
 
     # Execution
     max_open_orders: int = Field(default=2, json_schema_extra={"is_updatable": True})
-    max_orders_per_batch: Optional[int] = Field(default=1, json_schema_extra={"is_updatable": True})
+    max_orders_per_batch: int | None = Field(default=1, json_schema_extra={"is_updatable": True})
     order_frequency: int = Field(default=3, json_schema_extra={"is_updatable": True})
-    activation_bounds: Optional[Decimal] = Field(default=None, json_schema_extra={"is_updatable": True})
+    activation_bounds: Decimal | None = Field(default=None, json_schema_extra={"is_updatable": True})
     keep_position: bool = Field(default=False, json_schema_extra={"is_updatable": True})
 
     # Risk Management
@@ -77,7 +76,7 @@ class MultiGridStrike(ControllerBase):
         super().__init__(config, *args, **kwargs)
         self.config = config
         self._last_config_hash = self._get_config_hash()
-        self._grid_executor_mapping: Dict[str, str] = {}  # grid_id -> executor_id
+        self._grid_executor_mapping: dict[str, str] = {}  # grid_id -> executor_id
         self.trading_rules = None
         self.initialize_rate_sources()
 
@@ -105,10 +104,10 @@ class MultiGridStrike(ControllerBase):
             self._last_config_hash = current_hash
         return changed
 
-    def active_executors(self) -> List[ExecutorInfo]:
+    def active_executors(self) -> list[ExecutorInfo]:
         return [executor for executor in self.executors_info if executor.is_active]
 
-    def get_executor_by_grid_id(self, grid_id: str) -> Optional[ExecutorInfo]:
+    def get_executor_by_grid_id(self, grid_id: str) -> ExecutorInfo | None:
         """Get executor associated with a specific grid"""
         executor_id = self._grid_executor_mapping.get(grid_id)
         if executor_id:
@@ -125,7 +124,7 @@ class MultiGridStrike(ControllerBase):
         """Check if price is within grid bounds"""
         return grid.start_price <= price <= grid.end_price
 
-    def determine_executor_actions(self) -> List[ExecutorAction]:
+    def determine_executor_actions(self) -> list[ExecutorAction]:
         actions = []
         mid_price = self.market_data_provider.get_price_by_type(
             self.config.connector_name, self.config.trading_pair, PriceType.MidPrice
@@ -189,7 +188,7 @@ class MultiGridStrike(ControllerBase):
             if hasattr(executor.config, "level_id") and executor.config.level_id:
                 self._grid_executor_mapping[executor.config.level_id] = executor.id
 
-    def to_format_status(self) -> List[str]:
+    def to_format_status(self) -> list[str]:
         status = []
         mid_price = self.market_data_provider.get_price_by_type(
             self.config.connector_name, self.config.trading_pair, PriceType.MidPrice

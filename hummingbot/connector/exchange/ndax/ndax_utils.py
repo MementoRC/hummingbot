@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 from pydantic import ConfigDict, Field, SecretStr
 
@@ -19,7 +19,7 @@ DEFAULT_FEES = [0.2, 0.2]
 # FEE_TOKEN not required because the fee is not flat
 
 
-def is_exchange_information_valid(exchange_info: Dict[str, Any]) -> bool:
+def is_exchange_information_valid(exchange_info: dict[str, Any]) -> bool:
     """
     Verifies if a trading pair is enabled to operate with based on its exchange information
     :param exchange_info: the exchange information for a trading pair

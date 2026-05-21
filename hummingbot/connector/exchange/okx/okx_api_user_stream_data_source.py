@@ -1,5 +1,5 @@
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.exchange.okx import okx_constants as CONSTANTS
 from hummingbot.connector.exchange.okx.okx_auth import OkxAuth
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 class OkxAPIUserStreamDataSource(UserStreamTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(self, auth: OkxAuth, connector: "OkxExchange", api_factory: WebAssistantsFactory):
         super().__init__()
@@ -87,7 +87,7 @@ class OkxAPIUserStreamDataSource(UserStreamTrackerDataSource):
                 ping_request = WSPlainTextRequest(payload="ping")
                 await websocket_assistant.send(request=ping_request)
 
-    async def _process_event_message(self, event_message: Dict[str, Any], queue: asyncio.Queue):
+    async def _process_event_message(self, event_message: dict[str, Any], queue: asyncio.Queue):
         if len(event_message) > 0 and "data" in event_message:
             queue.put_nowait(event_message)
 

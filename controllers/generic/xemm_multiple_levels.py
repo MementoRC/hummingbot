@@ -1,6 +1,5 @@
 import time
 from decimal import Decimal
-from typing import Dict, List, Optional, Set
 
 import pandas as pd
 from pydantic import Field, field_validator
@@ -28,14 +27,14 @@ class XEMMMultipleLevelsConfig(ControllerConfigBase):
     taker_trading_pair: str = Field(
         default="PEPE-USDT", json_schema_extra={"prompt": "Enter the taker trading pair: ", "prompt_on_new": True}
     )
-    buy_levels_targets_amount: List[List[Decimal]] = Field(
+    buy_levels_targets_amount: list[list[Decimal]] = Field(
         default="0.003,10-0.006,20-0.009,30",
         json_schema_extra={
             "prompt": "Enter the buy levels targets with the following structure: (target_profitability1,amount1-target_profitability2,amount2): ",
             "prompt_on_new": True,
         },
     )
-    sell_levels_targets_amount: List[List[Decimal]] = Field(
+    sell_levels_targets_amount: list[list[Decimal]] = Field(
         default="0.003,10-0.006,20-0.009,30",
         json_schema_extra={
             "prompt": "Enter the sell levels targets with the following structure: (target_profitability1,amount1-target_profitability2,amount2): ",
@@ -59,7 +58,7 @@ class XEMMMultipleLevelsConfig(ControllerConfigBase):
             v = [list(map(Decimal, x.split(","))) for x in v.split("-")]
         return v
 
-    def update_markets(self, markets: Dict[str, Set[str]]) -> Dict[str, Set[str]]:
+    def update_markets(self, markets: dict[str, set[str]]) -> dict[str, set[str]]:
         if self.maker_connector not in markets:
             markets[self.maker_connector] = set()
         markets[self.maker_connector].add(self.maker_trading_pair)
@@ -138,14 +137,14 @@ class XEMMMultipleLevels(ControllerBase):
         else:
             loop.run_until_complete(fetch_gas_tokens())
 
-    def get_gas_token(self, connector_name: str) -> Optional[str]:
+    def get_gas_token(self, connector_name: str) -> str | None:
         """Get the cached gas token for a connector."""
         return self._gas_token_cache.get(connector_name)
 
     async def update_processed_data(self):
         pass
 
-    def determine_executor_actions(self) -> List[ExecutorAction]:
+    def determine_executor_actions(self) -> list[ExecutorAction]:
         executor_actions = []
         mid_price = self.market_data_provider.get_price_by_type(
             self.config.maker_connector, self.config.maker_trading_pair, PriceType.MidPrice
@@ -227,7 +226,7 @@ class XEMMMultipleLevels(ControllerBase):
                 executor_actions.append(CreateExecutorAction(executor_config=config, controller_id=self.config.id))
         return executor_actions
 
-    def to_format_status(self) -> List[str]:
+    def to_format_status(self) -> list[str]:
         all_executors_custom_info = pd.DataFrame(e.custom_info for e in self.executors_info)
         return [
             format_df_for_printout(

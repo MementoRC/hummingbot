@@ -1,7 +1,7 @@
 import asyncio
 import re
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from typing import Any, Dict, Optional
+from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import ujson
@@ -38,7 +38,7 @@ class BinancePerpetualUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCa
 
     async def asyncSetUp(self) -> None:
         self.log_records = []
-        self.listening_task: Optional[asyncio.Task] = None
+        self.listening_task: asyncio.Task | None = None
         self.mocking_assistant = NetworkMockingAssistant(self.local_event_loop)
 
         self.emulated_time = 1640001112.223
@@ -92,7 +92,7 @@ class BinancePerpetualUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCa
         resp = {"listenKey": self.listen_key}
         return ujson.dumps(resp)
 
-    def _error_response(self) -> Dict[str, Any]:
+    def _error_response(self) -> dict[str, Any]:
         resp = {"code": "ERROR CODE", "msg": "ERROR MESSAGE"}
 
         return resp

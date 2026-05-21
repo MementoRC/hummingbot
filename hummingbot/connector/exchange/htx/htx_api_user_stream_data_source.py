@@ -1,5 +1,5 @@
 import asyncio
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 import hummingbot.connector.exchange.htx.htx_constants as CONSTANTS
 from hummingbot.connector.exchange.htx.htx_auth import HtxAuth
@@ -14,14 +14,14 @@ if TYPE_CHECKING:
 
 
 class HtxAPIUserStreamDataSource(UserStreamTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
         htx_auth: HtxAuth,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "HtxExchange",
-        api_factory: Optional[WebAssistantsFactory],
+        api_factory: WebAssistantsFactory | None,
     ):
         self._auth: HtxAuth = htx_auth
         self._connector = connector

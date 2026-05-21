@@ -8,7 +8,7 @@ from the XRPL ledger instead of relying on WebSocket subscriptions.
 import asyncio
 import time
 from collections import deque
-from typing import TYPE_CHECKING, Any, Deque, Dict, List, Optional, Set
+from typing import TYPE_CHECKING, Any, Deque
 
 from xrpl.models import AccountTx, Ledger
 
@@ -38,7 +38,7 @@ class XRPLAPIUserStreamDataSource(UserStreamTrackerDataSource):
     - Transforms XRPL transactions into internal event format
     """
 
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     POLL_INTERVAL = CONSTANTS.POLLING_INTERVAL
 
@@ -46,7 +46,7 @@ class XRPLAPIUserStreamDataSource(UserStreamTrackerDataSource):
         self,
         auth: XRPLAuth,
         connector: "XrplExchange",
-        worker_manager: Optional[XRPLWorkerPoolManager] = None,
+        worker_manager: XRPLWorkerPoolManager | None = None,
     ):
         """
         Initialize the polling data source.
@@ -62,11 +62,11 @@ class XRPLAPIUserStreamDataSource(UserStreamTrackerDataSource):
         self._worker_manager = worker_manager
 
         # Polling state
-        self._last_ledger_index: Optional[int] = None
+        self._last_ledger_index: int | None = None
         self._last_recv_time: float = 0
         # Use both deque for FIFO ordering and set for O(1) lookup
         self._seen_tx_hashes_queue: Deque[str] = deque()
-        self._seen_tx_hashes_set: Set[str] = set()
+        self._seen_tx_hashes_set: set[str] = set()
         self._seen_tx_hashes_max_size = CONSTANTS.SEEN_TX_HASHES_MAX_SIZE
 
     # @classmethod
@@ -148,7 +148,7 @@ class XRPLAPIUserStreamDataSource(UserStreamTrackerDataSource):
                 # Wait before retrying
                 await asyncio.sleep(self.POLL_INTERVAL)
 
-    async def _poll_account_state(self) -> List[Dict[str, Any]]:
+    async def _poll_account_state(self) -> list[dict[str, Any]]:
         """
         Poll the account's transaction history for new transactions.
 
@@ -284,10 +284,10 @@ class XRPLAPIUserStreamDataSource(UserStreamTrackerDataSource):
 
     def _transform_to_event(
         self,
-        tx: Dict[str, Any],
-        meta: Dict[str, Any],
-        tx_data: Dict[str, Any],
-    ) -> Optional[Dict[str, Any]]:
+        tx: dict[str, Any],
+        meta: dict[str, Any],
+        tx_data: dict[str, Any],
+    ) -> dict[str, Any] | None:
         """
         Transform an XRPL transaction into an internal event format.
 

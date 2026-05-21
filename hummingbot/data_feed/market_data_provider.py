@@ -2,7 +2,6 @@ import asyncio
 import logging
 import time
 from decimal import Decimal
-from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
 
@@ -34,7 +33,7 @@ from hummingbot.strategy_v2.executors.data_types import ConnectorPair
 
 
 class MarketDataProvider:
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -42,14 +41,14 @@ class MarketDataProvider:
             cls._logger = logging.getLogger(__name__)
         return cls._logger
 
-    def __init__(self, connectors: Dict[str, ConnectorBase], rates_update_interval: int = 60):
+    def __init__(self, connectors: dict[str, ConnectorBase], rates_update_interval: int = 60):
         self.candles_feeds = {}  # Stores instances of candle feeds
         self.connectors = connectors  # Stores instances of connectors
         self._rates_update_task = None
         self._rates_update_interval = rates_update_interval
         self._rates = {}
         self._non_trading_connectors = LazyDict[str, ConnectorBase](self._create_non_trading_connector)
-        self._non_trading_connectors_started: Dict[str, bool] = {}  # Track which connectors have been started
+        self._non_trading_connectors_started: dict[str, bool] = {}  # Track which connectors have been started
         self._rates_required = GroupedSetDict[str, ConnectorPair]()
         self.conn_settings = AllConnectorSettings.get_connector_settings()
 
@@ -76,7 +75,7 @@ class MarketDataProvider:
     def time(self):
         return time.time()
 
-    def initialize_rate_sources(self, connector_pairs: List[ConnectorPair]):
+    def initialize_rate_sources(self, connector_pairs: list[ConnectorPair]):
         """
         Initializes a rate source based on the given connector pair.
         :param connector_pairs: List[ConnectorPair]
@@ -86,7 +85,7 @@ class MarketDataProvider:
         if not self._rates_update_task:
             self._rates_update_task = safe_ensure_future(self.update_rates_task())
 
-    def remove_rate_sources(self, connector_pairs: List[ConnectorPair]):
+    def remove_rate_sources(self, connector_pairs: list[ConnectorPair]):
         """
         Removes rate sources for the given connector pairs.
         :param connector_pairs: List[ConnectorPair]
@@ -189,7 +188,7 @@ class MarketDataProvider:
         """
         self.get_candles_feed(config)
 
-    def initialize_candles_feed_list(self, config_list: List[CandlesConfig]):
+    def initialize_candles_feed_list(self, config_list: list[CandlesConfig]):
         """
         Initializes a list of candle feeds based on the given configurations.
         :param config_list: List[CandlesConfig]
@@ -450,7 +449,7 @@ class MarketDataProvider:
         self.logger().warning(f"Timeout waiting for {trading_pair} order book to initialize")
         return False
 
-    async def initialize_order_books(self, connector_name: str, trading_pairs: List[str]) -> Dict[str, bool]:
+    async def initialize_order_books(self, connector_name: str, trading_pairs: list[str]) -> dict[str, bool]:
         """
         Dynamically initializes order books for multiple trading pairs in parallel.
 
@@ -484,7 +483,7 @@ class MarketDataProvider:
         # Remove trading pair via connector method
         return await connector.remove_trading_pair(trading_pair)
 
-    async def remove_order_books(self, connector_name: str, trading_pairs: List[str]) -> Dict[str, bool]:
+    async def remove_order_books(self, connector_name: str, trading_pairs: list[str]) -> dict[str, bool]:
         """
         Removes order book tracking for multiple trading pairs in parallel.
 
@@ -544,9 +543,9 @@ class MarketDataProvider:
         connector_name: str,
         trading_pair: str,
         interval: str,
-        start_time: Optional[int] = None,
-        end_time: Optional[int] = None,
-        max_records: Optional[int] = None,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        max_records: int | None = None,
         max_cache_records: int = 10000,
     ):
         """
@@ -731,7 +730,7 @@ class MarketDataProvider:
         order_book = connector.get_order_book(trading_pair)
         return order_book.get_price_for_volume(is_buy, volume)
 
-    def get_order_book_snapshot(self, connector_name, trading_pair) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def get_order_book_snapshot(self, connector_name, trading_pair) -> tuple[pd.DataFrame, pd.DataFrame]:
         """
         Retrieves the order book snapshot for a trading pair from the specified connector, as a tuple of bid and ask in
         DataFrame format.

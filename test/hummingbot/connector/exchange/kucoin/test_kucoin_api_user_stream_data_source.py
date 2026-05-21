@@ -2,7 +2,6 @@ import asyncio
 import json
 import re
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from typing import Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses import aioresponses
@@ -32,7 +31,7 @@ class TestKucoinAPIUserStreamDataSource(IsolatedAsyncioWrapperTestCase):
     async def asyncSetUp(self) -> None:
         await super().asyncSetUp()
         self.log_records = []
-        self.listening_task: Optional[asyncio.Task] = None
+        self.listening_task: asyncio.Task | None = None
         self.mocking_assistant = NetworkMockingAssistant(self.local_event_loop)
 
         self.throttler = AsyncThrottler(CONSTANTS.RATE_LIMITS)

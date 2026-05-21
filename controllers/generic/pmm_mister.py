@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Dict, List, Optional, Set, Tuple, Union
+from typing import Dict, Union
 
 from pydantic import Field, field_validator
 from pydantic_core.core_schema import ValidationInfo
@@ -26,10 +26,10 @@ class PMMisterConfig(ControllerConfigBase):
     target_base_pct: Decimal = Field(default=Decimal("0.5"), json_schema_extra={"is_updatable": True})
     min_base_pct: Decimal = Field(default=Decimal("0.3"), json_schema_extra={"is_updatable": True})
     max_base_pct: Decimal = Field(default=Decimal("0.7"), json_schema_extra={"is_updatable": True})
-    buy_spreads: List[float] = Field(default="0.0005", json_schema_extra={"is_updatable": True})
-    sell_spreads: List[float] = Field(default="0.0005", json_schema_extra={"is_updatable": True})
-    buy_amounts_pct: Union[List[Decimal], None] = Field(default="1", json_schema_extra={"is_updatable": True})
-    sell_amounts_pct: Union[List[Decimal], None] = Field(default="1", json_schema_extra={"is_updatable": True})
+    buy_spreads: list[float] = Field(default="0.0005", json_schema_extra={"is_updatable": True})
+    sell_spreads: list[float] = Field(default="0.0005", json_schema_extra={"is_updatable": True})
+    buy_amounts_pct: Union[list[Decimal], None] = Field(default="1", json_schema_extra={"is_updatable": True})
+    sell_amounts_pct: Union[list[Decimal], None] = Field(default="1", json_schema_extra={"is_updatable": True})
     executor_refresh_time: int = Field(default=30, json_schema_extra={"is_updatable": True})
 
     # Enhanced timing parameters
@@ -46,10 +46,10 @@ class PMMisterConfig(ControllerConfigBase):
 
     leverage: int = Field(default=20, json_schema_extra={"is_updatable": True})
     position_mode: PositionMode = Field(default="ONEWAY")
-    take_profit: Optional[Decimal] = Field(default=Decimal("0.0001"), gt=0, json_schema_extra={"is_updatable": True})
-    take_profit_order_type: Optional[OrderType] = Field(default="LIMIT_MAKER", json_schema_extra={"is_updatable": True})
-    open_order_type: Optional[OrderType] = Field(default="LIMIT_MAKER", json_schema_extra={"is_updatable": True})
-    max_active_executors_by_level: Optional[int] = Field(default=4, json_schema_extra={"is_updatable": True})
+    take_profit: Decimal | None = Field(default=Decimal("0.0001"), gt=0, json_schema_extra={"is_updatable": True})
+    take_profit_order_type: OrderType | None = Field(default="LIMIT_MAKER", json_schema_extra={"is_updatable": True})
+    open_order_type: OrderType | None = Field(default="LIMIT_MAKER", json_schema_extra={"is_updatable": True})
+    max_active_executors_by_level: int | None = Field(default=4, json_schema_extra={"is_updatable": True})
     tick_mode: bool = Field(default=False, json_schema_extra={"is_updatable": True})
     position_profit_protection: bool = Field(default=False, json_schema_extra={"is_updatable": True})
     min_skew: Decimal = Field(default=Decimal("1.0"), json_schema_extra={"is_updatable": True})
@@ -159,8 +159,8 @@ class PMMisterConfig(ControllerConfigBase):
     def update_parameters(
         self,
         trade_type: TradeType,
-        new_spreads: Union[List[float], str],
-        new_amounts_pct: Optional[Union[List[int], str]] = None,
+        new_spreads: Union[list[float], str],
+        new_amounts_pct: Union[list[int], str] | None = None,
     ):
         spreads_field = "buy_spreads" if trade_type == TradeType.BUY else "sell_spreads"
         amounts_pct_field = "buy_amounts_pct" if trade_type == TradeType.BUY else "sell_amounts_pct"
@@ -175,7 +175,7 @@ class PMMisterConfig(ControllerConfigBase):
         else:
             setattr(self, amounts_pct_field, [1 for _ in getattr(self, spreads_field)])
 
-    def get_spreads_and_amounts_in_quote(self, trade_type: TradeType) -> Tuple[List[float], List[float]]:
+    def get_spreads_and_amounts_in_quote(self, trade_type: TradeType) -> tuple[list[float], list[float]]:
         buy_amounts_pct = getattr(self, "buy_amounts_pct")
         sell_amounts_pct = getattr(self, "sell_amounts_pct")
 
@@ -220,7 +220,7 @@ class PMMister(ControllerBase):
         # Initialize processed_data to prevent access errors
         self.processed_data = {}
 
-    def determine_executor_actions(self) -> List[ExecutorAction]:
+    def determine_executor_actions(self) -> list[ExecutorAction]:
         """
         Determine actions based on the current state with advanced position management.
         """
@@ -285,7 +285,7 @@ class PMMister(ControllerBase):
         level_tolerance = self.config.get_refresh_level_tolerance(level)
         return distance_deviation > level_tolerance
 
-    def create_actions_proposal(self) -> List[ExecutorAction]:
+    def create_actions_proposal(self) -> list[ExecutorAction]:
         """
         Create actions proposal with advanced position management logic.
         """
@@ -356,7 +356,7 @@ class PMMister(ControllerBase):
 
         return create_actions
 
-    def get_levels_to_execute(self) -> List[str]:
+    def get_levels_to_execute(self) -> list[str]:
         """
         Get levels to execute with advanced hanging executor logic using the analyzer.
         """
@@ -407,7 +407,7 @@ class PMMister(ControllerBase):
                 continue
         return self.get_not_active_levels_ids(working_levels_ids)
 
-    def stop_actions_proposal(self) -> List[ExecutorAction]:
+    def stop_actions_proposal(self) -> list[ExecutorAction]:
         """
         Create stop actions with enhanced refresh logic.
         """
@@ -416,7 +416,7 @@ class PMMister(ControllerBase):
         stop_actions.extend(self.process_hanging_executors())
         return stop_actions
 
-    def executors_to_refresh(self) -> List[ExecutorAction]:
+    def executors_to_refresh(self) -> list[ExecutorAction]:
         """Refresh executors that have been active too long or deviated too far from theoretical price"""
         current_time = self.market_data_provider.time()
         reference_price = Decimal(self.processed_data.get("reference_price", Decimal("0")))
@@ -440,7 +440,7 @@ class PMMister(ControllerBase):
             for executor in executors_to_refresh
         ]
 
-    def process_hanging_executors(self) -> List[ExecutorAction]:
+    def process_hanging_executors(self) -> list[ExecutorAction]:
         """Process hanging executors and effectivize them when appropriate"""
         current_time = self.market_data_provider.time()
         # Find hanging executors that should be effectivized (only is_trading)
@@ -586,7 +586,7 @@ class PMMister(ControllerBase):
     def get_level_from_level_id(self, level_id: str) -> int:
         return int(level_id.split("_")[1])
 
-    def get_not_active_levels_ids(self, active_levels_ids: List[str]) -> List[str]:
+    def get_not_active_levels_ids(self, active_levels_ids: list[str]) -> list[str]:
         """Get levels that should be executed based on position constraints"""
         buy_ids_missing = [
             self.get_level_id_from_side(TradeType.BUY, level)
@@ -620,9 +620,9 @@ class PMMister(ControllerBase):
 
         return buy_ids_missing + sell_ids_missing
 
-    def analyze_all_levels(self) -> List[Dict]:
+    def analyze_all_levels(self) -> list[Dict]:
         """Analyze executors for all levels."""
-        level_ids: Set[str] = {
+        level_ids: set[str] = {
             e.custom_info.get("level_id") for e in self.executors_info if "level_id" in e.custom_info
         }
         return [self._analyze_by_level_id(level_id) for level_id in level_ids]
@@ -658,7 +658,7 @@ class PMMister(ControllerBase):
             "max_price": max(prices) if prices else None,
         }
 
-    def to_format_status(self) -> List[str]:
+    def to_format_status(self) -> list[str]:
         """
         Comprehensive real-time trading conditions dashboard.
         """
@@ -943,7 +943,7 @@ class PMMister(ControllerBase):
         progress = cooldown_data.get("progress_pct", Decimal("0"))
         return f"{remaining:.1f}s ({progress:.0%})"
 
-    def _format_level_conditions(self, level_conditions: Dict, inner_width: int) -> List[str]:
+    def _format_level_conditions(self, level_conditions: Dict, inner_width: int) -> list[str]:
         """Format level-by-level conditions analysis"""
         lines = []
 
@@ -989,7 +989,7 @@ class PMMister(ControllerBase):
 
     def _format_cooldown_bars(
         self, buy_cooldown: Dict, sell_cooldown: Dict, bar_width: int, inner_width: int
-    ) -> List[str]:
+    ) -> list[str]:
         """Format cooldown progress bars"""
         lines = []
 
@@ -1007,7 +1007,7 @@ class PMMister(ControllerBase):
 
         return lines
 
-    def _format_effectivization_bars(self, effectivization: Dict, bar_width: int, inner_width: int) -> List[str]:
+    def _format_effectivization_bars(self, effectivization: Dict, bar_width: int, inner_width: int) -> list[str]:
         """Format effectivization progress bars"""
         lines = []
 
@@ -1046,7 +1046,7 @@ class PMMister(ControllerBase):
         pnl: Decimal,
         bar_width: int,
         inner_width: int,
-    ) -> List[str]:
+    ) -> list[str]:
         """Format enhanced position visualization"""
         lines = []
 
@@ -1472,7 +1472,7 @@ class PMMister(ControllerBase):
 
         return refresh_data
 
-    def _format_refresh_bars(self, refresh_tracking: Dict, bar_width: int, inner_width: int) -> List[str]:
+    def _format_refresh_bars(self, refresh_tracking: Dict, bar_width: int, inner_width: int) -> list[str]:
         """Format refresh progress bars"""
         lines = []
 
@@ -1519,8 +1519,8 @@ class PMMister(ControllerBase):
         return lines
 
     def _format_price_graph(
-        self, current_price: Decimal, breakeven_price: Optional[Decimal], inner_width: int
-    ) -> List[str]:
+        self, current_price: Decimal, breakeven_price: Decimal | None, inner_width: int
+    ) -> list[str]:
         """Format price graph with order zones and history"""
         lines = []
 

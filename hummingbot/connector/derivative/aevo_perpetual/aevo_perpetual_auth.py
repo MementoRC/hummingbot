@@ -2,7 +2,7 @@ import hashlib
 import hmac
 import json
 import time
-from typing import Any, Dict
+from typing import Any
 from urllib.parse import urlparse
 
 import eth_account
@@ -84,7 +84,7 @@ class AevoPerpetualAuth(AuthBase):
     async def ws_authenticate(self, request: WSRequest) -> WSRequest:
         return request
 
-    def get_ws_auth_payload(self) -> Dict[str, Any]:
+    def get_ws_auth_payload(self) -> dict[str, Any]:
         return {
             "op": "auth",
             "data": {

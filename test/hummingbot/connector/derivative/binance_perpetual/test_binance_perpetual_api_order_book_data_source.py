@@ -3,7 +3,7 @@ import json
 import re
 from decimal import Decimal
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from typing import Any, Dict, List
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses.core import aioresponses
@@ -40,7 +40,7 @@ class BinancePerpetualAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTest
     async def asyncSetUp(self) -> None:
         self.log_records = []
         self.listening_task = None
-        self.async_tasks: List[asyncio.Task] = []
+        self.async_tasks: list[asyncio.Task] = []
 
         self.time_synchronizer = TimeSynchronizer()
         self.time_synchronizer.add_time_offset_ms_sample(0)
@@ -174,7 +174,7 @@ class BinancePerpetualAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTest
         }
         mock_api.get(regex_url, status=200, body=json.dumps(mock_response))
 
-        result: Dict[str, Any] = await self.data_source._request_order_book_snapshot(trading_pair=self.trading_pair)
+        result: dict[str, Any] = await self.data_source._request_order_book_snapshot(trading_pair=self.trading_pair)
         self.assertEqual(mock_response, result)
 
     @aioresponses()

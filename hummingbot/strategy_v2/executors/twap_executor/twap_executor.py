@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from decimal import Decimal
-from typing import Dict, Optional, Union
+from typing import Union
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.common import PositionAction, PriceType, TradeType
@@ -51,7 +51,7 @@ class TWAPExecutor(ExecutorBase):
         if self.config.is_maker:
             self.logger().warning("Maker mode is in beta. Please use with caution.")
         self._start_timestamp = self._strategy.current_timestamp
-        self._order_plan: Dict[float, Optional[TrackedOrder]] = self.create_order_plan()
+        self._order_plan: dict[float, TrackedOrder | None] = self.create_order_plan()
         self._failed_orders = []
         self._refreshed_orders = []
 

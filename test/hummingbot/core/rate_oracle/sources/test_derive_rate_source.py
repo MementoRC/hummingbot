@@ -3,7 +3,7 @@ import json
 import re
 import unittest
 from decimal import Decimal
-from typing import Awaitable, Callable, List, Optional
+from typing import Awaitable, Callable
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
@@ -107,8 +107,8 @@ class DeriveRateSourceTest(unittest.TestCase):
     def configure_trading_rules_response(
         self,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
         url = self.trading_rules_url
         response = self.trading_rules_request_mock_response
         mock_api.post(url, body=json.dumps(response), callback=callback)
@@ -117,8 +117,8 @@ class DeriveRateSourceTest(unittest.TestCase):
     def configure_currency_trading_rules_response(
         self,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
         url = self.trading_rules_currency_url
         response = self.currency_request_mock_response
         mock_api.post(url, body=json.dumps(response), callback=callback)
@@ -127,8 +127,8 @@ class DeriveRateSourceTest(unittest.TestCase):
     def configure_all_symbols_response(
         self,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
         url = self.all_symbols_url
         response = self.trading_rules_request_mock_response
         mock_api.post(url, body=json.dumps(response), callback=callback)

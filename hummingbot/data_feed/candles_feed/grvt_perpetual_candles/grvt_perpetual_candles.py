@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from hummingbot.connector.derivative.grvt_perpetual import (
     grvt_perpetual_constants as GRVT_CONSTANTS,
@@ -14,7 +14,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class GrvtPerpetualCandles(CandlesBase):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -99,13 +99,13 @@ class GrvtPerpetualCandles(CandlesBase):
 
     def _get_rest_candles_params(
         self,
-        start_time: Optional[int] = None,
-        end_time: Optional[int] = None,
-        limit: Optional[int] = None,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        limit: int | None = None,
     ) -> dict:
         return {}
 
-    def _parse_rest_candles(self, data: dict, end_time: Optional[int] = None) -> List[List[float]]:
+    def _parse_rest_candles(self, data: dict, end_time: int | None = None) -> list[list[float]]:
         candles = sorted(data.get("result", []), key=lambda row: int(row["open_time"]))
         return [
             [
@@ -135,7 +135,7 @@ class GrvtPerpetualCandles(CandlesBase):
             "id": self._ws_request_id,
         }
 
-    def _parse_websocket_message(self, data: dict) -> Optional[Dict[str, Any]]:
+    def _parse_websocket_message(self, data: dict) -> dict[str, Any] | None:
         if data.get("stream") != CONSTANTS.WS_CANDLES_ENDPOINT or "feed" not in data:
             return None
 

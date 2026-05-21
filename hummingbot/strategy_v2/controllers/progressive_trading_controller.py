@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import List
 
 import pandas as pd
 from pydantic import Field, field_validator
@@ -84,7 +83,7 @@ class ProgressiveTradingController(DirectionalTradingControllerBase):
     def __init__(self, config: ProgressiveTradingControllerConfig, *args, **kwargs):
         super().__init__(config, *args, **kwargs)
 
-    def determine_executor_actions(self) -> List[ExecutorAction]:
+    def determine_executor_actions(self) -> list[ExecutorAction]:
         actions = []
         actions.extend(self.create_actions_proposal())
         actions.extend(self.stop_actions_proposal())
@@ -102,7 +101,7 @@ class ProgressiveTradingController(DirectionalTradingControllerBase):
             leverage=self.config.leverage,
         )
 
-    def to_format_status(self) -> List[str]:
+    def to_format_status(self) -> list[str]:
         df = self.processed_data.get("features", pd.DataFrame())
         if df.empty:
             return []

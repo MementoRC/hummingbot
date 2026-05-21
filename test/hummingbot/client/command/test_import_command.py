@@ -5,7 +5,6 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from test.mock.mock_cli import CLIMockingAssistant
-from typing import Type
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from pydantic import Field
@@ -39,7 +38,7 @@ class ImportCommandTest(IsolatedAsyncioWrapperTestCase):
         raise asyncio.TimeoutError
 
     @staticmethod
-    def build_dummy_strategy_config_cls(strategy_name: str) -> Type[BaseClientModel]:
+    def build_dummy_strategy_config_cls(strategy_name: str) -> type[BaseClientModel]:
         class SomeEnum(ClientConfigEnum):
             ONE = "one"
 

@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import List
 
 import numpy as np
 from sklearn.linear_model import LinearRegression
@@ -102,7 +101,7 @@ class StatArb(ControllerBase):
             connector.set_position_mode(self.config.position_mode)
             connector.set_leverage(self.config.connector_pair_hedge.trading_pair, self.config.leverage)
 
-    def determine_executor_actions(self) -> List[ExecutorAction]:
+    def determine_executor_actions(self) -> list[ExecutorAction]:
         """
         The execution logic for the statistical arbitrage strategy.
         Market Data Conditions: Signal is generated based on the z-score of the spread between the two assets.
@@ -114,7 +113,7 @@ class StatArb(ControllerBase):
                               If the imbalance scaled pct is greater than the threshold, we avoid placing orders in the market passed on filtered_connector_pair.
                               If the pnl of total position is greater than the take profit or lower than the stop loss, we close the position.
         """
-        actions: List[ExecutorAction] = []
+        actions: list[ExecutorAction] = []
         # Check global take profit and stop loss
         if (
             self.processed_data["pair_pnl_pct"] > self.config.tp_global
@@ -135,7 +134,7 @@ class StatArb(ControllerBase):
 
         return actions
 
-    def get_executors_to_reduce_position_on_opposite_signal(self) -> List[ExecutorAction]:
+    def get_executors_to_reduce_position_on_opposite_signal(self) -> list[ExecutorAction]:
         if self.processed_data["signal"] == 1:
             dominant_side, hedge_side = TradeType.SELL, TradeType.BUY
         elif self.processed_data["signal"] == -1:
@@ -165,7 +164,7 @@ class StatArb(ControllerBase):
         ]
 
         # Get order executors to reduce positions
-        reduce_actions: List[ExecutorAction] = []
+        reduce_actions: list[ExecutorAction] = []
         for position in self.positions_held:
             if (
                 position.connector_name == self.config.connector_pair_dominant.connector_name
@@ -181,8 +180,8 @@ class StatArb(ControllerBase):
                 reduce_actions.extend(self.get_executors_to_reduce_position(position))
         return stop_actions + reduce_actions
 
-    def get_executors_to_keep_position(self) -> List[ExecutorAction]:
-        stop_actions: List[ExecutorAction] = []
+    def get_executors_to_keep_position(self) -> list[ExecutorAction]:
+        stop_actions: list[ExecutorAction] = []
         for executor in (
             self.processed_data["executors_dominant_filled"] + self.processed_data["executors_hedge_filled"]
         ):
@@ -193,8 +192,8 @@ class StatArb(ControllerBase):
                 )
         return stop_actions
 
-    def get_executors_to_refresh(self) -> List[ExecutorAction]:
-        refresh_actions: List[ExecutorAction] = []
+    def get_executors_to_refresh(self) -> list[ExecutorAction]:
+        refresh_actions: list[ExecutorAction] = []
         for executor in (
             self.processed_data["executors_dominant_placed"] + self.processed_data["executors_hedge_placed"]
         ):
@@ -205,11 +204,11 @@ class StatArb(ControllerBase):
                 )
         return refresh_actions
 
-    def get_executors_to_quote(self) -> List[ExecutorAction]:
+    def get_executors_to_quote(self) -> list[ExecutorAction]:
         """
         Get Order Executor to quote from the dominant and hedge markets.
         """
-        actions: List[ExecutorAction] = []
+        actions: list[ExecutorAction] = []
         trade_type_dominant = TradeType.BUY if self.processed_data["signal"] == 1 else TradeType.SELL
         trade_type_hedge = TradeType.SELL if self.processed_data["signal"] == 1 else TradeType.BUY
 
@@ -262,7 +261,7 @@ class StatArb(ControllerBase):
             actions.append(CreateExecutorAction(controller_id=self.config.id, executor_config=hedge_executor_config))
         return actions
 
-    def get_executors_to_reduce_position(self, position: PositionSummary) -> List[ExecutorAction]:
+    def get_executors_to_reduce_position(self, position: PositionSummary) -> list[ExecutorAction]:
         """
         Get Order Executor to reduce position.
         """
@@ -559,7 +558,7 @@ class StatArb(ControllerBase):
         )
         return active_executors_hedge_placed, active_executors_hedge_filled
 
-    def to_format_status(self) -> List[str]:
+    def to_format_status(self) -> list[str]:
         """
         Format the status of the controller for display.
         """
@@ -582,7 +581,7 @@ Pair PnL PCT: {self.processed_data["pair_pnl_pct"] * 100:.2f} %
 """)
         return status_lines
 
-    def get_candles_config(self) -> List[CandlesConfig]:
+    def get_candles_config(self) -> list[CandlesConfig]:
         max_records = self.config.lookback_period + 20
         return [
             CandlesConfig(

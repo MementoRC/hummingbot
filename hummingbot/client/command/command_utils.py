@@ -3,7 +3,7 @@ Shared utilities for gateway commands - UI and display functions.
 """
 
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from hummingbot.connector.gateway.gateway_base import GatewayBase
@@ -32,7 +32,7 @@ class GatewayCommandUtils:
         timeout: float = 60.0,
         check_interval: float = 1.0,
         pending_msg_delay: float = 3.0,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Monitor a transaction until completion or timeout by polling order status.
 
@@ -110,7 +110,7 @@ class GatewayCommandUtils:
     @staticmethod
     def handle_transaction_result(
         app: Any,
-        result: Dict[str, Any],
+        result: dict[str, Any],
         success_msg: str = "Transaction completed successfully!",
         failure_msg: str = "Transaction failed. Please try again.",
         timeout_msg: str = "Transaction timed out. Check your wallet for status.",
@@ -152,8 +152,8 @@ class GatewayCommandUtils:
 
     @staticmethod
     def format_allowance_display(
-        allowances: Dict[str, Any], token_data: Dict[str, Any], connector_name: str = None
-    ) -> List[Dict[str, str]]:
+        allowances: dict[str, Any], token_data: dict[str, Any], connector_name: str = None
+    ) -> list[dict[str, str]]:
         """
         Format allowance data for display.
 
@@ -197,11 +197,11 @@ class GatewayCommandUtils:
     def display_balance_impact_table(
         app: Any,  # HummingbotApplication
         wallet_address: str,
-        current_balances: Dict[str, float],
-        balance_changes: Dict[str, float],
+        current_balances: dict[str, float],
+        balance_changes: dict[str, float],
         native_token: str,
         gas_fee: float,
-        warnings: List[str],
+        warnings: list[str],
         title: str = "Balance Impact",
     ):
         """
@@ -250,7 +250,7 @@ class GatewayCommandUtils:
     @staticmethod
     def display_transaction_fee_details(
         app: Any,  # HummingbotApplication
-        fee_info: Dict[str, Any],
+        fee_info: dict[str, Any],
     ):
         """
         Display transaction fee details from fee estimation.
@@ -308,7 +308,7 @@ class GatewayCommandUtils:
     @staticmethod
     def display_warnings(
         app: Any,  # HummingbotApplication
-        warnings: List[str],
+        warnings: list[str],
         title: str = "WARNINGS",
     ):
         """
@@ -328,10 +328,10 @@ class GatewayCommandUtils:
     @staticmethod
     def calculate_and_display_fees(
         app: Any,  # HummingbotApplication
-        positions: List[Any],
+        positions: list[Any],
         base_token: str = None,
         quote_token: str = None,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """
         Calculate total fees across positions and display them.
 
@@ -382,7 +382,7 @@ class GatewayCommandUtils:
         app: Any,  # HummingbotApplication
         prompt_text: str = "Enter percentage (0-100): ",
         default: float = 100.0,
-    ) -> Optional[float]:
+    ) -> float | None:
         """
         Prompt user for a percentage value.
 

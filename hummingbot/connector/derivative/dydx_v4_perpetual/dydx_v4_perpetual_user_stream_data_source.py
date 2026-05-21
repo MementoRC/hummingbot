@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 import hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_constants as CONSTANTS
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
@@ -11,7 +11,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class DydxV4PerpetualUserStreamDataSource(UserStreamTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -19,9 +19,9 @@ class DydxV4PerpetualUserStreamDataSource(UserStreamTrackerDataSource):
             cls._logger = logging.getLogger(__name__)
         return cls._logger
 
-    def __init__(self, api_factory: Optional[WebAssistantsFactory], connector):
+    def __init__(self, api_factory: WebAssistantsFactory | None, connector):
         self._api_factory: WebAssistantsFactory = api_factory
-        self._ws_assistant: Optional[WSAssistant] = None
+        self._ws_assistant: WSAssistant | None = None
         self._connector = connector
 
         super().__init__()
@@ -56,6 +56,6 @@ class DydxV4PerpetualUserStreamDataSource(UserStreamTrackerDataSource):
             self.logger().info("Authenticated user stream...")
         return self._ws_assistant
 
-    async def _process_event_message(self, event_message: Dict[str, Any], queue: asyncio.Queue):
+    async def _process_event_message(self, event_message: dict[str, Any], queue: asyncio.Queue):
         if event_message.get("type", "") in [CONSTANTS.WS_TYPE_SUBSCRIBED, CONSTANTS.WS_TYPE_CHANNEL_DATA]:
             await super()._process_event_message(event_message=event_message, queue=queue)

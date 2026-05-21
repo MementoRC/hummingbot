@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Dict, List, Set, Union
+from typing import Union
 
 import pandas_ta as ta  # noqa: F401
 from pydantic import Field, field_validator
@@ -33,7 +33,7 @@ class QGAConfig(ControllerConfigBase):
     max_orders_per_batch: int = Field(default=1, json_schema_extra={"is_updatable": True})
 
     # Portfolio allocation
-    portfolio_allocation: Dict[str, Decimal] = Field(
+    portfolio_allocation: dict[str, Decimal] = Field(
         default={
             "SOL": Decimal("0.50"),  # 50%
         },
@@ -91,7 +91,7 @@ class QGAConfig(ControllerConfigBase):
             raise ValueError("USDT should not be explicitly allocated as it is the quote asset")
         return v
 
-    def update_markets(self, markets: Dict[str, Set[str]]) -> Dict[str, Set[str]]:
+    def update_markets(self, markets: dict[str, set[str]]) -> dict[str, set[str]]:
         if self.connector_name not in markets:
             markets[self.connector_name] = set()
         for asset in self.portfolio_allocation:
@@ -174,7 +174,7 @@ class QuantumGridAllocator(ControllerBase):
         metrics["total_portfolio_value"] = total_value_quote
         self.metrics = metrics
 
-    def get_active_grids_by_asset(self) -> Dict[str, List[ExecutorInfo]]:
+    def get_active_grids_by_asset(self) -> dict[str, list[ExecutorInfo]]:
         """Group active grids by asset using filter_executors"""
         active_grids = {}
         for asset in self.config.portfolio_allocation:
@@ -189,7 +189,7 @@ class QuantumGridAllocator(ControllerBase):
                 active_grids[asset] = active_executors
         return active_grids
 
-    def to_format_status(self) -> List[str]:
+    def to_format_status(self) -> list[str]:
         """Generate a detailed status report with portfolio, grid, and position information"""
         status_lines = []
         total_value = self.metrics.get("total_portfolio_value", Decimal("0"))
@@ -265,7 +265,7 @@ class QuantumGridAllocator(ControllerBase):
     def sl_multiplier(self):
         return 1 - self.config.tp_sl_ratio
 
-    def determine_executor_actions(self) -> List[Union[CreateExecutorAction, StopExecutorAction]]:
+    def determine_executor_actions(self) -> list[Union[CreateExecutorAction, StopExecutorAction]]:
         actions = []
         self.update_portfolio_metrics()
         active_grids_by_asset = self.get_active_grids_by_asset()
@@ -478,7 +478,7 @@ class QuantumGridAllocator(ControllerBase):
     def get_mid_price(self, trading_pair: str) -> Decimal:
         return self.market_data_provider.get_price_by_type(self.config.connector_name, trading_pair, PriceType.MidPrice)
 
-    def get_candles_config(self) -> List[CandlesConfig]:
+    def get_candles_config(self) -> list[CandlesConfig]:
         return [
             CandlesConfig(
                 connector=self.config.connector_name,

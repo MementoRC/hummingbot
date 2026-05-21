@@ -1,6 +1,6 @@
 from decimal import Decimal
 from enum import Enum
-from typing import List, Literal, Optional
+from typing import Literal
 
 from hummingbot.core.data_type.common import TradeType
 from hummingbot.strategy_v2.executors.data_types import ExecutorConfigBase
@@ -18,12 +18,12 @@ class DCAExecutorConfig(ExecutorConfigBase):
     trading_pair: str
     side: TradeType
     leverage: int = 1
-    amounts_quote: List[Decimal]
-    prices: List[Decimal]
-    take_profit: Optional[Decimal] = None
-    stop_loss: Optional[Decimal] = None
-    trailing_stop: Optional[TrailingStop] = None
-    time_limit: Optional[int] = None
+    amounts_quote: list[Decimal]
+    prices: list[Decimal]
+    take_profit: Decimal | None = None
+    stop_loss: Decimal | None = None
+    trailing_stop: TrailingStop | None = None
+    time_limit: int | None = None
     mode: DCAMode = DCAMode.MAKER
-    activation_bounds: Optional[List[Decimal]] = None
-    level_id: Optional[str] = None
+    activation_bounds: list[Decimal] | None = None
+    level_id: str | None = None

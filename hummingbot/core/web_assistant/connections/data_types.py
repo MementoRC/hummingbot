@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
 from json import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Mapping
 
 import aiohttp
 import ujson
@@ -30,13 +30,13 @@ class RESTMethod(Enum):
 @dataclass
 class RESTRequest:
     method: RESTMethod
-    url: Optional[str] = None
-    endpoint_url: Optional[str] = None
-    params: Optional[Mapping[str, str]] = None
+    url: str | None = None
+    endpoint_url: str | None = None
+    params: Mapping[str, str] | None = None
     data: Any = None
-    headers: Optional[Mapping[str, str]] = None
+    headers: Mapping[str, str] | None = None
     is_auth_required: bool = False
-    throttler_limit_id: Optional[str] = None
+    throttler_limit_id: str | None = None
 
 
 @dataclass
@@ -47,7 +47,7 @@ class EndpointRESTRequest(RESTRequest, ABC):
     `"endpoint"` and `"/endpoint"`. It also provides the necessary checks to ensure a valid URL can be constructed.
     """
 
-    endpoint: Optional[str] = None
+    endpoint: str | None = None
 
     def __post_init__(self):
         self._ensure_url()
@@ -87,7 +87,7 @@ class RESTResponse:
     url: str
     method: RESTMethod
     status: int
-    headers: Optional[Mapping[str, str]]
+    headers: Mapping[str, str] | None
 
     def __init__(self, aiohttp_response: aiohttp.ClientResponse):
         self._aiohttp_response = aiohttp_response
@@ -108,7 +108,7 @@ class RESTResponse:
         return status_
 
     @property
-    def headers(self) -> Optional[Mapping[str, str]]:
+    def headers(self) -> Mapping[str, str] | None:
         headers_ = self._aiohttp_response.headers
         return headers_
 
@@ -144,7 +144,7 @@ class WSRequest(ABC):
 @dataclass
 class WSJSONRequest(WSRequest):
     payload: Mapping[str, Any]
-    throttler_limit_id: Optional[str] = None
+    throttler_limit_id: str | None = None
     is_auth_required: bool = False
 
     async def send_with_connection(self, connection: "WSConnection"):
@@ -154,7 +154,7 @@ class WSJSONRequest(WSRequest):
 @dataclass
 class WSPlainTextRequest(WSRequest):
     payload: str
-    throttler_limit_id: Optional[str] = None
+    throttler_limit_id: str | None = None
     is_auth_required: bool = False
 
     async def send_with_connection(self, connection: "WSConnection"):
@@ -164,7 +164,7 @@ class WSPlainTextRequest(WSRequest):
 @dataclass
 class WSBinaryRequest(WSRequest):
     payload: bytes
-    throttler_limit_id: Optional[str] = None
+    throttler_limit_id: str | None = None
     is_auth_required: bool = False
 
     async def send_with_connection(self, connection: "WSConnection"):

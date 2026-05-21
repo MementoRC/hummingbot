@@ -1,5 +1,4 @@
 import time
-from typing import Optional
 
 import hummingbot.connector.exchange.cube.cube_constants as CONSTANTS
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
@@ -28,8 +27,8 @@ def private_rest_url(path_url: str, domain: str = CONSTANTS.DEFAULT_DOMAIN) -> s
 
 
 def build_api_factory(
-    throttler: Optional[AsyncThrottler] = None,
-    auth: Optional[AuthBase] = None,
+    throttler: AsyncThrottler | None = None,
+    auth: AuthBase | None = None,
 ) -> WebAssistantsFactory:
     throttler = throttler or create_throttler()
     api_factory = WebAssistantsFactory(throttler=throttler, auth=auth)
@@ -41,7 +40,7 @@ def create_throttler() -> AsyncThrottler:
 
 
 async def get_current_server_time(
-    throttler: Optional[AsyncThrottler] = None,
+    throttler: AsyncThrottler | None = None,
     domain: str = CONSTANTS.DEFAULT_DOMAIN,
 ) -> int:
     return int(time.time() * 1e3)

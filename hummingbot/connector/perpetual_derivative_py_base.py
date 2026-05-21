@@ -1,7 +1,6 @@
 import asyncio
 from abc import ABC, abstractmethod
 from decimal import Decimal
-from typing import Dict, List, Optional, Tuple
 
 from hummingbot.connector.constants import s_decimal_0, s_decimal_NaN
 from hummingbot.connector.derivative.perpetual_budget_checker import PerpetualBudgetChecker
@@ -27,15 +26,15 @@ class PerpetualDerivativePyBase(ExchangePyBase, ABC):
 
     def __init__(
         self,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
     ):
         super().__init__(balance_asset_limit, rate_limits_share_pct)
-        self._last_funding_fee_payment_ts: Dict[str, float] = {}
+        self._last_funding_fee_payment_ts: dict[str, float] = {}
 
         self._perpetual_trading = PerpetualTrading(self.trading_pairs)
-        self._funding_info_listener_task: Optional[asyncio.Task] = None
-        self._funding_fee_polling_task: Optional[asyncio.Task] = None
+        self._funding_info_listener_task: asyncio.Task | None = None
+        self._funding_fee_polling_task: asyncio.Task | None = None
         self._funding_fee_poll_notifier = asyncio.Event()
         self._orderbook_ds: PerpetualAPIOrderBookDataSource = self._orderbook_ds  # for type-hinting
 
@@ -47,7 +46,7 @@ class PerpetualDerivativePyBase(ExchangePyBase, ABC):
         raise NotImplementedError
 
     @property
-    def status_dict(self) -> Dict[str, bool]:
+    def status_dict(self) -> dict[str, bool]:
         """
         A dictionary of statuses of various exchange's components. Used to determine if the connector is ready
         """
@@ -66,12 +65,12 @@ class PerpetualDerivativePyBase(ExchangePyBase, ABC):
         return self._budget_checker
 
     @property
-    def account_positions(self) -> Dict[str, Position]:
+    def account_positions(self) -> dict[str, Position]:
         """Returns a dictionary of current active open positions."""
         return self._perpetual_trading.account_positions
 
     @abstractmethod
-    def supported_position_modes(self) -> List[PositionMode]:
+    def supported_position_modes(self) -> list[PositionMode]:
         raise NotImplementedError
 
     @abstractmethod
@@ -131,7 +130,7 @@ class PerpetualDerivativePyBase(ExchangePyBase, ABC):
                 exc_info=True,
             )
 
-    async def _fetch_account_position_mode(self) -> Optional[PositionMode]:
+    async def _fetch_account_position_mode(self) -> PositionMode | None:
         """
         Fetches the current position mode from the exchange account.
         Connectors should override this to query their exchange API.
@@ -151,7 +150,7 @@ class PerpetualDerivativePyBase(ExchangePyBase, ABC):
     def start_tracking_order(
         self,
         order_id: str,
-        exchange_order_id: Optional[str],
+        exchange_order_id: str | None,
         trading_pair: str,
         trade_type: TradeType,
         price: Decimal,
@@ -203,7 +202,7 @@ class PerpetualDerivativePyBase(ExchangePyBase, ABC):
         price: Decimal,
         position_action: PositionAction = PositionAction.NIL,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         raise NotImplementedError
 
     @abstractmethod
@@ -211,18 +210,18 @@ class PerpetualDerivativePyBase(ExchangePyBase, ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> Tuple[bool, str]:
+    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> tuple[bool, str]:
         """
         :return: A tuple of boolean (true if success) and error message if the exchange returns one on failure.
         """
         raise NotImplementedError
 
     @abstractmethod
-    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> Tuple[bool, str]:
+    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> tuple[bool, str]:
         raise NotImplementedError
 
     @abstractmethod
-    async def _fetch_last_fee_payment(self, trading_pair: str) -> Tuple[float, Decimal, Decimal]:
+    async def _fetch_last_fee_payment(self, trading_pair: str) -> tuple[float, Decimal, Decimal]:
         """
         Returns a tuple of the latest funding payment timestamp, funding rate, and payment amount.
         If no payment exists, return (0, -1, -1)
@@ -245,7 +244,7 @@ class PerpetualDerivativePyBase(ExchangePyBase, ABC):
         trading_pair: str,
         amount: Decimal,
         order_type: OrderType,
-        price: Optional[Decimal] = None,
+        price: Decimal | None = None,
         position_action: PositionAction = PositionAction.NIL,
         **kwargs,
     ):
@@ -284,7 +283,7 @@ class PerpetualDerivativePyBase(ExchangePyBase, ABC):
         position_action: PositionAction,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         """
         Calculates the fee to pay based on the fee information provided by the exchange for
@@ -316,7 +315,7 @@ class PerpetualDerivativePyBase(ExchangePyBase, ABC):
         position_action: PositionAction,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         raise NotImplementedError
 
@@ -360,8 +359,8 @@ class PerpetualDerivativePyBase(ExchangePyBase, ABC):
             self.logger().debug(f"Position mode switched to {mode}.")
 
     async def _execute_set_position_mode_for_pairs(
-        self, mode: PositionMode, trading_pairs: List[str]
-    ) -> Tuple[bool, List[str], str]:
+        self, mode: PositionMode, trading_pairs: list[str]
+    ) -> tuple[bool, list[str], str]:
         successful_pairs = []
         success = True
         msg = ""

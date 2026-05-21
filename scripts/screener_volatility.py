@@ -1,5 +1,4 @@
 import os
-from typing import List
 
 import pandas as pd
 import pandas_ta as ta  # noqa: F401
@@ -15,7 +14,7 @@ from hummingbot.strategy.strategy_v2_base import StrategyV2Base, StrategyV2Confi
 
 class VolatilityScreenerConfig(StrategyV2ConfigBase):
     script_file_name: str = os.path.basename(__file__)
-    controllers_config: List[str] = []
+    controllers_config: list[str] = []
     exchange: str = Field(default="binance_perpetual")
     trading_pairs: list = Field(default=["BTC-USDT", "ETH-USDT", "BNB-USDT", "SOL-USDT", "MET-USDT"])
 

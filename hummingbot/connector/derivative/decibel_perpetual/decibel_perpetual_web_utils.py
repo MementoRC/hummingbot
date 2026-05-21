@@ -1,5 +1,5 @@
 import time
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 from hummingbot.connector.derivative.decibel_perpetual import decibel_perpetual_constants as CONSTANTS
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
@@ -68,11 +68,11 @@ def fullnode_url(domain: str = CONSTANTS.DEFAULT_DOMAIN) -> str:
 
 
 def build_api_factory(
-    throttler: Optional[AsyncThrottler] = None,
-    time_synchronizer: Optional[TimeSynchronizer] = None,
+    throttler: AsyncThrottler | None = None,
+    time_synchronizer: TimeSynchronizer | None = None,
     domain: str = CONSTANTS.DEFAULT_DOMAIN,
-    time_provider: Optional[Callable] = None,
-    auth: Optional[AuthBase] = None,
+    time_provider: Callable | None = None,
+    auth: AuthBase | None = None,
 ) -> WebAssistantsFactory:
     """
     Builds a WebAssistantsFactory for Decibel API requests.
@@ -108,7 +108,7 @@ def get_package_address(domain: str = CONSTANTS.DEFAULT_DOMAIN) -> str:
 
 
 async def get_current_server_time(
-    throttler: Optional[Any] = None,
+    throttler: Any | None = None,
     domain: str = CONSTANTS.DEFAULT_DOMAIN,
 ) -> float:
     """

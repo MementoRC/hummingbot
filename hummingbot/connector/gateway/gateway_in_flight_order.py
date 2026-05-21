@@ -1,7 +1,7 @@
 import asyncio
 import copy
 from decimal import Decimal
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 from async_timeout import timeout
 
@@ -24,9 +24,9 @@ class GatewayInFlightOrder(InFlightOrder):
         creation_timestamp: float,
         price: Decimal = s_decimal_0,
         amount: Decimal = s_decimal_0,
-        exchange_order_id: Optional[str] = None,
-        creation_transaction_hash: Optional[str] = None,
-        gas_price: Optional[Decimal] = s_decimal_0,
+        exchange_order_id: str | None = None,
+        creation_transaction_hash: str | None = None,
+        gas_price: Decimal | None = s_decimal_0,
         initial_state: OrderState = OrderState.PENDING_CREATE,
         leverage: int = 1,
         position: PositionAction = PositionAction.NIL,
@@ -47,11 +47,11 @@ class GatewayInFlightOrder(InFlightOrder):
         self._fee_asset = trading_pair.split("-")[0]  # defaults to base asset
         self._gas_price = gas_price
         self._nonce: int = -1
-        self._creation_transaction_hash: Optional[str] = creation_transaction_hash
+        self._creation_transaction_hash: str | None = creation_transaction_hash
         self._creation_transaction_hash_update_event = asyncio.Event()
         if self.creation_transaction_hash is not None:
             self._creation_transaction_hash_update_event.set()
-        self._cancel_tx_hash: Optional[str] = None
+        self._cancel_tx_hash: str | None = None
 
     @property
     def gas_price(self) -> Decimal:
@@ -78,7 +78,7 @@ class GatewayInFlightOrder(InFlightOrder):
         self._nonce = nonce
 
     @property
-    def creation_transaction_hash(self) -> Optional[str]:
+    def creation_transaction_hash(self) -> str | None:
         return self._creation_transaction_hash
 
     @creation_transaction_hash.setter
@@ -86,14 +86,14 @@ class GatewayInFlightOrder(InFlightOrder):
         self._creation_transaction_hash = creation_transaction_hash
 
     @property
-    def cancel_tx_hash(self) -> Optional[str]:
+    def cancel_tx_hash(self) -> str | None:
         return self._cancel_tx_hash
 
     @cancel_tx_hash.setter
     def cancel_tx_hash(self, cancel_tx_hash):
         self._cancel_tx_hash = cancel_tx_hash
 
-    async def get_exchange_order_id(self) -> Optional[str]:
+    async def get_exchange_order_id(self) -> str | None:
         """
         Overridden from parent class because blockchain orders take more time than ones from CEX.
         """
@@ -103,7 +103,7 @@ class GatewayInFlightOrder(InFlightOrder):
         return self.exchange_order_id
 
     @property
-    def attributes(self) -> Tuple[Any]:
+    def attributes(self) -> tuple[Any]:
         return copy.deepcopy(
             (
                 self.client_order_id,
@@ -176,7 +176,7 @@ class GatewayInFlightOrder(InFlightOrder):
         return updated
 
     @classmethod
-    def from_json(cls, data: Dict[str, Any]) -> "GatewayInFlightOrder":
+    def from_json(cls, data: dict[str, Any]) -> "GatewayInFlightOrder":
         """
         Initialize an InFlightOrder using a JSON object
         :param data: JSON data
@@ -210,7 +210,7 @@ class GatewayInFlightOrder(InFlightOrder):
 
         return order
 
-    def to_json(self) -> Dict[str, Any]:
+    def to_json(self) -> dict[str, Any]:
         """
         Returns this InFlightOrder as a JSON object.
         :return: JSON object

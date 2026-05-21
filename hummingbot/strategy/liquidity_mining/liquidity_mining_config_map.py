@@ -4,7 +4,6 @@ The configuration parameters for a user made liquidity_mining strategy.
 
 import re
 from decimal import Decimal
-from typing import Optional
 
 from hummingbot.client.config.config_validators import validate_bool, validate_decimal, validate_exchange, validate_int
 from hummingbot.client.config.config_var import ConfigVar
@@ -15,7 +14,7 @@ def exchange_on_validated(value: str) -> None:
     required_exchanges.add(value)
 
 
-def market_validate(value: str) -> Optional[str]:
+def market_validate(value: str) -> str | None:
     pairs = list()
     if len(value.strip()) == 0:
         # Whitespace
@@ -40,7 +39,7 @@ def market_validate(value: str) -> Optional[str]:
         pairs.append(pair)
 
 
-def token_validate(value: str) -> Optional[str]:
+def token_validate(value: str) -> str | None:
     value = value.upper()
     markets = list(liquidity_mining_config_map["markets"].value.split(","))
     tokens = set()

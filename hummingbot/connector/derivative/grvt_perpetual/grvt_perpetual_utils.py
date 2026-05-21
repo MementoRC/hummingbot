@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Any, Dict
+from typing import Any
 
 from pydantic import ConfigDict, Field, SecretStr
 
@@ -16,7 +16,7 @@ DEFAULT_FEES = TradeFeeSchema(
 )
 
 
-def is_exchange_information_valid(exchange_info: Dict[str, Any]) -> bool:
+def is_exchange_information_valid(exchange_info: dict[str, Any]) -> bool:
     return exchange_info.get("kind") == "PERPETUAL"
 
 

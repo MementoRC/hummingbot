@@ -1,5 +1,3 @@
-from typing import List, Tuple
-
 from hummingbot.strategy.cross_exchange_mining.cross_exchange_mining import CrossExchangeMiningStrategy
 from hummingbot.strategy.cross_exchange_mining.cross_exchange_mining_pair import CrossExchangeMiningPair
 from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple
@@ -18,13 +16,13 @@ async def start(self):
         taker_trading_pair: str = raw_taker_trading_pair
         maker_base, maker_quote = maker_trading_pair.split("-")
         taker_base, taker_quote = taker_trading_pair.split("-")
-        maker_assets: Tuple[str, str] = (maker_base, maker_quote)
-        taker_assets: Tuple[str, str] = (taker_base, taker_quote)
+        maker_assets: tuple[str, str] = (maker_base, maker_quote)
+        taker_assets: tuple[str, str] = (taker_base, taker_quote)
     except ValueError as e:
         self.notify(str(e))
         return
 
-    market_names: List[Tuple[str, List[str]]] = [
+    market_names: list[tuple[str, list[str]]] = [
         (maker_market, [maker_trading_pair]),
         (taker_market, [taker_trading_pair]),
     ]

@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Any, Dict
+from typing import Any
 
 from pydantic import ConfigDict, Field, SecretStr
 
@@ -16,7 +16,7 @@ DEFAULT_FEES = TradeFeeSchema(
 )
 
 
-def is_pair_information_valid(pair_info: Dict[str, Any]) -> bool:
+def is_pair_information_valid(pair_info: dict[str, Any]) -> bool:
     """
     Verifies if a trading pair is enabled to operate with based on its market information
 

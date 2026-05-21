@@ -1,5 +1,5 @@
 import time
-from typing import Dict, Optional
+from typing import Dict
 
 import hummingbot.connector.exchange.kraken.kraken_constants as CONSTANTS
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
@@ -22,8 +22,8 @@ def rest_url(path_url: str, domain: str = "kraken"):
 
 
 def build_api_factory(
-    throttler: Optional[AsyncThrottler] = None,
-    auth: Optional[AuthBase] = None,
+    throttler: AsyncThrottler | None = None,
+    auth: AuthBase | None = None,
 ) -> WebAssistantsFactory:
     throttler = throttler
     api_factory = WebAssistantsFactory(throttler=throttler, auth=auth)
@@ -59,7 +59,7 @@ def build_api_factory_without_time_synchronizer_pre_processor(throttler: AsyncTh
 
 
 async def get_current_server_time_s(
-    throttler: Optional[AsyncThrottler] = None,
+    throttler: AsyncThrottler | None = None,
     domain: str = CONSTANTS.DEFAULT_DOMAIN,
 ) -> float:
     """
@@ -82,7 +82,7 @@ async def get_current_server_time_s(
 
 
 async def get_current_server_time_ms(
-    throttler: Optional[AsyncThrottler] = None,
+    throttler: AsyncThrottler | None = None,
     domain: str = CONSTANTS.DEFAULT_DOMAIN,
 ) -> int:
     server_time_s = await get_current_server_time_s(throttler=throttler, domain=domain)

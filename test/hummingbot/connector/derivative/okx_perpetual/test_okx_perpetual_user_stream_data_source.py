@@ -100,7 +100,7 @@ class OkxPerpetualUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
             ws_connect_mock.return_value, self._subscription_response(CONSTANTS.WS_BALANCE_AND_POSITIONS_CHANNEL)
         )
 
-        self.listening_task = asyncio.get_event_loop().create_task(
+        self.listening_task = asyncio.get_running_loop().create_task(
             self.data_source._listen_for_user_stream_on_url("test_url", messages)
         )
         await self.mocking_assistant.run_until_all_aiohttp_messages_delivered(ws_connect_mock.return_value)
@@ -135,7 +135,7 @@ class OkxPerpetualUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
         messages = asyncio.Queue()
         ws_connect_mock.return_value = self.mocking_assistant.create_websocket_mock()
 
-        self.listening_task = asyncio.get_event_loop().create_task(
+        self.listening_task = asyncio.get_running_loop().create_task(
             self.data_source._listen_for_user_stream_on_url("test_url", messages)
         )
         self.mocking_assistant.add_websocket_aiohttp_message(
@@ -191,7 +191,7 @@ class OkxPerpetualUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
         ws_connect_mock.side_effect = asyncio.CancelledError
 
         with self.assertRaises(asyncio.CancelledError):
-            self.listening_task = asyncio.get_event_loop().create_task(
+            self.listening_task = asyncio.get_running_loop().create_task(
                 self.data_source.listen_for_user_stream(messages)
             )
             await self.listening_task

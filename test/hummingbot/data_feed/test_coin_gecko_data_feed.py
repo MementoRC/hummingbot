@@ -2,7 +2,7 @@ import asyncio
 import json
 import re
 import unittest
-from typing import Awaitable, Optional
+from typing import Awaitable
 from unittest.mock import MagicMock, patch
 
 from aioresponses import aioresponses
@@ -97,8 +97,8 @@ class CoinGeckoDataFeedTest(unittest.TestCase):
         self,
         mock_api: aioresponses,
         url: str,
-        expected_header: Optional[str] = None,
-        expected_key: Optional[str] = None,
+        expected_header: str | None = None,
+        expected_key: str | None = None,
     ):
         """Helper to verify auth headers in requests"""
         found_request = False

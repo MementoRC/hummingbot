@@ -1,5 +1,3 @@
-from typing import Dict, Optional, Set, Type
-
 from pydantic import BaseModel
 
 from hummingbot.data_feed.liquidations_feed.binance.binance_liquidations import BinancePerpetualLiquidations
@@ -29,7 +27,7 @@ class LiquidationsConfig(BaseModel):
     """
 
     connector: str
-    trading_pairs: Optional[Set[str]] = None  # Optional, defaults to subscribing to all liquidations on that exchange
+    trading_pairs: set[str] | None = None  # Optional, defaults to subscribing to all liquidations on that exchange
     max_retention_seconds: int = 60  # Default value set to 60 seconds
 
 
@@ -39,7 +37,7 @@ class LiquidationsFactory:
     configuration. It uses a mapping of connector names to their respective data-feed classes.
     """
 
-    _liquidation_feeds_map: Dict[str, Type[LiquidationsBase]] = {
+    _liquidation_feeds_map: dict[str, type[LiquidationsBase]] = {
         "binance": BinancePerpetualLiquidations,
     }
 

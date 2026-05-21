@@ -1,5 +1,4 @@
 from os.path import dirname, join, realpath
-from typing import Dict
 
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import Completer
@@ -236,7 +235,7 @@ def generate_layout(
     timer: TextArea,
     process_monitor: TextArea,
     trade_monitor: TextArea,
-    command_tabs: Dict[str, CommandTab],
+    command_tabs: dict[str, CommandTab],
 ):
     components = {}
 

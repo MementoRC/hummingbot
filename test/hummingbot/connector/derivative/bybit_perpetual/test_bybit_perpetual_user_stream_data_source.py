@@ -101,7 +101,7 @@ class BybitPerpetualUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
             self._subscription_response(True, CONSTANTS.WS_SUBSCRIPTION_WALLET_ENDPOINT_NAME),
         )
         self.data_source._sleep = AsyncMock()
-        self.listening_task = asyncio.get_event_loop().create_task(self.data_source.listen_for_user_stream(messages))
+        self.listening_task = asyncio.get_running_loop().create_task(self.data_source.listen_for_user_stream(messages))
         await self.mocking_assistant.run_until_all_aiohttp_messages_delivered(ws_connect_mock.return_value)
 
         self.assertTrue(
@@ -139,7 +139,7 @@ class BybitPerpetualUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
         messages = asyncio.Queue()
         ws_connect_mock.return_value = self.mocking_assistant.create_websocket_mock()
         ret_msg = "FAILED FOR SOME REASON"
-        self.listening_task = asyncio.get_event_loop().create_task(self.data_source.listen_for_user_stream(messages))
+        self.listening_task = asyncio.get_running_loop().create_task(self.data_source.listen_for_user_stream(messages))
         self.mocking_assistant.add_websocket_aiohttp_message(
             ws_connect_mock.return_value, self._authentication_response(False, ret_msg=ret_msg)
         )

@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import List
 
 from hummingbot.core.api_throttler.data_types import RateLimit
 
@@ -16,7 +15,7 @@ class CoinGeckoTier:
     header: str  # API header name to use for authentication
     base_url: str  # Base URL for the API tier
     rate_limit: int  # Calls per minute
-    rate_limits: List[RateLimit] = field(default_factory=list)  # Rate limits for this tier
+    rate_limits: list[RateLimit] = field(default_factory=list)  # Rate limits for this tier
 
 
 # API Tiers as dataclass instances with all necessary properties

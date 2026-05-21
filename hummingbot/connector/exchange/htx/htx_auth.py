@@ -3,7 +3,7 @@ import datetime
 import hashlib
 import hmac
 from collections import OrderedDict
-from typing import Any, Dict
+from typing import Any
 from urllib.parse import urlencode
 
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
@@ -21,7 +21,7 @@ class HtxAuth(AuthBase):
         self.time_provider = time_provider
 
     @staticmethod
-    def keysort(dictionary: Dict[str, str]) -> Dict[str, str]:
+    def keysort(dictionary: dict[str, str]) -> dict[str, str]:
         return OrderedDict(sorted(dictionary.items(), key=lambda t: t[0]))
 
     async def rest_authenticate(self, request: RESTRequest) -> RESTRequest:
@@ -33,7 +33,7 @@ class HtxAuth(AuthBase):
     async def ws_authenticate(self, request: WSJSONRequest) -> WSJSONRequest:
         return request  # pass-through
 
-    def generate_auth_params_for_REST(self, request: RESTRequest) -> Dict[str, Any]:
+    def generate_auth_params_for_REST(self, request: RESTRequest) -> dict[str, Any]:
         timestamp = datetime.datetime.fromtimestamp(self.time_provider.time(), datetime.UTC).strftime(
             "%Y-%m-%dT%H:%M:%S"
         )
@@ -56,7 +56,7 @@ class HtxAuth(AuthBase):
         sorted_params["Signature"] = signature
         return sorted_params
 
-    def generate_auth_params_for_WS(self, request: WSJSONRequest) -> Dict[str, Any]:
+    def generate_auth_params_for_WS(self, request: WSJSONRequest) -> dict[str, Any]:
         timestamp = datetime.datetime.fromtimestamp(self.time_provider.time(), datetime.UTC).strftime(
             "%Y-%m-%dT%H:%M:%S"
         )
@@ -84,7 +84,7 @@ class HtxAuth(AuthBase):
         self,
         method: str,
         path_url: str,
-        params: Dict[str, Any],
+        params: dict[str, Any],
     ) -> str:
         query_endpoint = path_url
         encoded_params_str = urlencode(params)

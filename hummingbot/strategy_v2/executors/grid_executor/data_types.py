@@ -1,6 +1,6 @@
 from decimal import Decimal
 from enum import Enum
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
@@ -25,14 +25,14 @@ class GridExecutorConfig(ExecutorConfigBase):
     min_order_amount_quote: Decimal = Decimal("5")
     # Execution
     max_open_orders: int = 5
-    max_orders_per_batch: Optional[int] = None
+    max_orders_per_batch: int | None = None
     order_frequency: int = 0
-    activation_bounds: Optional[Decimal] = None
+    activation_bounds: Decimal | None = None
     safe_extra_spread: Decimal = Decimal("0.0001")
     # Risk Management
     triple_barrier_config: TripleBarrierConfig
     leverage: int = 20
-    level_id: Optional[str] = None
+    level_id: str | None = None
     deduct_base_fees: bool = False
     keep_position: bool = False
     coerce_tp_to_step: bool = False
@@ -54,8 +54,8 @@ class GridLevel(BaseModel):
     side: TradeType
     open_order_type: OrderType
     take_profit_order_type: OrderType
-    active_open_order: Optional[TrackedOrder] = None
-    active_close_order: Optional[TrackedOrder] = None
+    active_open_order: TrackedOrder | None = None
+    active_close_order: TrackedOrder | None = None
     state: GridLevelStates = GridLevelStates.NOT_ACTIVE
     model_config = ConfigDict(arbitrary_types_allowed=True)
 

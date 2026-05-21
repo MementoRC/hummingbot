@@ -1,6 +1,5 @@
 from asyncio import Lock
 from datetime import datetime, timedelta
-from typing import Optional, Tuple
 
 import certifi
 import grpc
@@ -111,7 +110,7 @@ class DydxPerpetualV4Client:
         order_flags: int,
         good_til_block: int,
         good_til_time_in_seconds: int,
-    ) -> Tuple[int, int]:
+    ) -> tuple[int, int]:
         if order_flags == CONSTANTS.ORDER_FLAGS_LONG_TERM:
             return 0, self.calculate_good_til_block_time(good_til_time_in_seconds)
         else:
@@ -245,7 +244,7 @@ class DydxPerpetualV4Client:
     async def prepare_and_broadcast_basic_transaction(
         self,
         tx: "Transaction",  # type: ignore # noqa: F821
-        memo: Optional[str] = None,
+        memo: str | None = None,
     ):
         async with self.transaction_lock:
             # query the account information for the sender

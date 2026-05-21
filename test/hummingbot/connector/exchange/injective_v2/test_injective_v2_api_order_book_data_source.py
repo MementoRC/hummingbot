@@ -2,7 +2,7 @@ import asyncio
 import re
 from decimal import Decimal
 from test.hummingbot.connector.exchange.injective_v2.programmable_query_executor import ProgrammableQueryExecutor
-from typing import Awaitable, Optional, Union
+from typing import Awaitable, Union
 from unittest import TestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -93,7 +93,7 @@ class InjectiveV2APIOrderBookDataSourceTests(TestCase):
         self.connector._data_source._composer = Composer(network=self.connector._data_source.network_name)
 
         self.log_records = []
-        self._logs_event: Optional[asyncio.Event] = None
+        self._logs_event: asyncio.Event | None = None
         self.data_source.logger().setLevel(1)
         self.data_source.logger().addHandler(self)
         self.data_source._data_source.logger().setLevel(1)

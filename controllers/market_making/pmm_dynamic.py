@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import List
 
 import pandas_ta as ta  # noqa: F401
 from pydantic import Field, field_validator
@@ -15,7 +14,7 @@ from hummingbot.strategy_v2.executors.position_executor.data_types import Positi
 
 class PMMDynamicControllerConfig(MarketMakingControllerConfigBase):
     controller_name: str = "pmm_dynamic"
-    buy_spreads: List[float] = Field(
+    buy_spreads: list[float] = Field(
         default="1,2,4",
         json_schema_extra={
             "prompt": "Enter a comma-separated list of buy spreads measured in units of volatility(e.g., '1, 2'): ",
@@ -23,7 +22,7 @@ class PMMDynamicControllerConfig(MarketMakingControllerConfigBase):
             "is_updatable": True,
         },
     )
-    sell_spreads: List[float] = Field(
+    sell_spreads: list[float] = Field(
         default="1,2,4",
         json_schema_extra={
             "prompt": "Enter a comma-separated list of sell spreads measured in units of volatility(e.g., '1, 2'): ",
@@ -125,7 +124,7 @@ class PMMDynamicController(MarketMakingControllerBase):
             side=trade_type,
         )
 
-    def get_candles_config(self) -> List[CandlesConfig]:
+    def get_candles_config(self) -> list[CandlesConfig]:
         return [
             CandlesConfig(
                 connector=self.config.candles_connector,

@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import List
 
 from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple
 
@@ -10,7 +9,7 @@ s_decimal_nan = Decimal("NaN")
 
 async def create_arb_proposals(
     market_info_1: MarketTradingPairTuple, market_info_2: MarketTradingPairTuple, order_amount: Decimal
-) -> List[ArbProposal]:
+) -> list[ArbProposal]:
     """
     Creates base arbitrage proposals for given markets without any filtering.
     :param market_info_1: The first market
