@@ -8,8 +8,8 @@ from typing import Any, Union
 from unittest.mock import AsyncMock, PropertyMock
 
 import aiohttp
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 from hummingbot.logger import HummingbotLogger
 
 
