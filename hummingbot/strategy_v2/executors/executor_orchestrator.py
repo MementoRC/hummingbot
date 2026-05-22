@@ -3,7 +3,7 @@ import logging
 import uuid
 from collections import deque
 from decimal import Decimal
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING
 
 from hummingbot.connector.markets_recorder import MarketsRecorder
 from hummingbot.core.data_type.common import PositionAction, PositionMode, PriceType, TradeType
@@ -27,6 +27,7 @@ from hummingbot.strategy_v2.models.executor_actions import (
     ExecutorAction,
     StopExecutorAction,
     StoreExecutorAction,
+    UpdateExecutorAction,
 )
 from hummingbot.strategy_v2.models.executors import CloseType
 from hummingbot.strategy_v2.models.executors_info import ExecutorInfo, PerformanceReport
@@ -419,6 +420,8 @@ class ExecutorOrchestrator:
             self.stop_executor(action)
         elif isinstance(action, StoreExecutorAction):
             self.store_executor(action)
+        elif isinstance(action, UpdateExecutorAction):
+            self.update_executor(action)
 
     def execute_actions(self, actions: list[ExecutorAction]):
         """
@@ -468,6 +471,22 @@ class ExecutorOrchestrator:
             self.logger().error(f"Executor ID {executor_id} not found for controller {controller_id}.")
             return
         executor.early_stop(action.keep_position)
+
+    def update_executor(self, action: UpdateExecutorAction):
+        """
+        Update a running executor with new data.
+        """
+        controller_id = action.controller_id
+        executor_id = action.executor_id
+
+        executor = next(
+            (executor for executor in self.active_executors[controller_id] if executor.config.id == executor_id),
+            None,
+        )
+        if not executor:
+            self.logger().error(f"Executor ID {executor_id} not found for controller {controller_id}.")
+            return
+        executor.update_live(action.update_data)
 
     def _update_positions_from_done_executors(self):
         """
@@ -611,7 +630,7 @@ class ExecutorOrchestrator:
             report[controller_id] = positions_summary
         return report
 
-    def get_all_reports(self) -> dict[str, Dict]:
+    def get_all_reports(self) -> dict[str, dict]:
         """
         Generate a unified report containing executors, positions, and performance for all controllers.
         Returns a dictionary with controller_id as key and a dict containing all reports as value.
