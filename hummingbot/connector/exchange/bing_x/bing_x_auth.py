@@ -5,9 +5,10 @@ from collections import OrderedDict
 from typing import Any
 from urllib.parse import urlencode
 
+from web_assistant.auth import AuthBase
+from web_assistant.connections.data_types import RESTRequest, WSRequest
+
 import hummingbot.connector.exchange.bing_x.bing_x_constants as CONSTANTS
-from hummingbot.core.web_assistant.auth import AuthBase
-from hummingbot.core.web_assistant.connections.data_types import RESTRequest, WSRequest
 
 
 class BingXAuth(AuthBase):

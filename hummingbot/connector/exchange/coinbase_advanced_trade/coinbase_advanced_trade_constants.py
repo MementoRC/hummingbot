@@ -1,8 +1,8 @@
 from enum import Enum
 
 from bidict import bidict
+from web_assistant.throttler.data_types import DEFAULT_WEIGHT, LinkedLimitWeightPair, RateLimit
 
-from hummingbot.core.api_throttler.data_types import DEFAULT_WEIGHT, LinkedLimitWeightPair, RateLimit
 from hummingbot.core.data_type.in_flight_order import OrderState
 
 EXCHANGE_NAME = "Coinbase Advanced Trade"

@@ -3,17 +3,18 @@ import time
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Mapping
 
+from web_assistant.connections.data_types import RESTMethod, WSJSONRequest
+from web_assistant.throttler.async_throttler import AsyncThrottler
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+from web_assistant.ws_assistant import WSAssistant
+
 import hummingbot.connector.exchange.bing_x.bing_x_constants as CONSTANTS
 import hummingbot.connector.exchange.bing_x.bing_x_utils as utils
 from hummingbot.connector.exchange.bing_x import bing_x_web_utils as web_utils
 from hummingbot.connector.exchange.bing_x.bing_x_order_book import BingXOrderBook
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
-from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 from hummingbot.core.data_type.order_book_message import OrderBookMessage
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, WSJSONRequest
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
-from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.logger import HummingbotLogger
 
 if TYPE_CHECKING:

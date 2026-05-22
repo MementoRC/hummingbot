@@ -1,10 +1,10 @@
 from eth_account import Account
 from eth_account.messages import encode_defunct
+from web_assistant.auth import AuthBase
+from web_assistant.connections.data_types import RESTRequest, WSRequest
 
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
 from hummingbot.connector.utils import to_0x_hex
-from hummingbot.core.web_assistant.auth import AuthBase
-from hummingbot.core.web_assistant.connections.data_types import RESTRequest, WSRequest
 
 
 class DexalotAuth(AuthBase):

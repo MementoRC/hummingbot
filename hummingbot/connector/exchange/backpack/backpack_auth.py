@@ -3,11 +3,11 @@ import json
 from typing import Any
 
 from cryptography.hazmat.primitives.asymmetric import ed25519
+from web_assistant.auth import AuthBase
+from web_assistant.connections.data_types import RESTMethod, RESTRequest, WSRequest
 
 import hummingbot.connector.exchange.backpack.backpack_constants as CONSTANTS
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
-from hummingbot.core.web_assistant.auth import AuthBase
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest, WSRequest
 
 
 class BackpackAuth(AuthBase):
