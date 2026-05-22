@@ -34,3 +34,23 @@
 	path = sub-packages/web-assistant
 	url = https://github.com/MementoRC/hb-web-assistant.git
 	branch = development
+[submodule "sub-packages/event-bus"]
+	path = sub-packages/event-bus
+	url = https://github.com/MementoRC/hb-event-bus.git
+	branch = development
+[submodule "sub-packages/async-utils"]
+	path = sub-packages/async-utils
+	url = https://github.com/MementoRC/hb-async-utils.git
+	branch = development
+[submodule "sub-packages/data-type-primitives"]
+	path = sub-packages/data-type-primitives
+	url = https://github.com/MementoRC/hb-data-type-primitives.git
+	branch = development
+[submodule "sub-packages/connector-utils"]
+	path = sub-packages/connector-utils
+	url = https://github.com/MementoRC/hb-connector-utils.git
+	branch = development
+[submodule "sub-packages/logger"]
+	path = sub-packages/logger
+	url = https://github.com/MementoRC/hb-logger.git
+	branch = development
