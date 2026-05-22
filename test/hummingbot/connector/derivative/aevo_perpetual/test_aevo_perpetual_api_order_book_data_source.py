@@ -4,6 +4,7 @@ from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCa
 from unittest.mock import AsyncMock
 
 from bidict import bidict
+from web_assistant.connections.data_types import WSJSONRequest
 
 from hummingbot.connector.derivative.aevo_perpetual import aevo_perpetual_constants as CONSTANTS
 from hummingbot.connector.derivative.aevo_perpetual.aevo_perpetual_api_order_book_data_source import (
@@ -13,7 +14,6 @@ from hummingbot.connector.derivative.aevo_perpetual.aevo_perpetual_derivative im
 from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.data_type.funding_info import FundingInfo, FundingInfoUpdate
 from hummingbot.core.data_type.order_book_message import OrderBookMessageType
-from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest
 
 
 class AevoPerpetualAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):

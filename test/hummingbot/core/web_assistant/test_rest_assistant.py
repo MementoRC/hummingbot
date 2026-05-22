@@ -4,14 +4,13 @@ from unittest.mock import patch
 
 import aiohttp
 from aioresponses import aioresponses
-
-from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
-from hummingbot.core.web_assistant.auth import AuthBase
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest, RESTResponse, WSRequest
-from hummingbot.core.web_assistant.connections.rest_connection import RESTConnection
-from hummingbot.core.web_assistant.rest_assistant import RESTAssistant
-from hummingbot.core.web_assistant.rest_post_processors import RESTPostProcessorBase
-from hummingbot.core.web_assistant.rest_pre_processors import RESTPreProcessorBase
+from web_assistant.auth import AuthBase
+from web_assistant.connections.data_types import RESTMethod, RESTRequest, RESTResponse, WSRequest
+from web_assistant.connections.rest_connection import RESTConnection
+from web_assistant.rest_assistant import RESTAssistant
+from web_assistant.rest_post_processors import RESTPostProcessorBase
+from web_assistant.rest_pre_processors import RESTPreProcessorBase
+from web_assistant.throttler.async_throttler import AsyncThrottler
 
 
 class RESTAssistantTest(IsolatedAsyncioWrapperTestCase):
@@ -62,7 +61,7 @@ class RESTAssistantTest(IsolatedAsyncioWrapperTestCase):
         self.assertTrue(post_processor_ran)
         await aiohttp_client_session.close()
 
-    @patch("hummingbot.core.web_assistant.connections.rest_connection.RESTConnection.call")
+    @patch("web_assistant.connections.rest_connection.RESTConnection.call")
     async def test_rest_assistant_authenticates(self, mocked_call):
         url = "https://www.test.com/url"
         resp = {"one": 1}

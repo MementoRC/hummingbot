@@ -6,9 +6,9 @@ from unittest import TestCase
 from unittest.mock import MagicMock
 
 from typing_extensions import Awaitable
+from web_assistant.connections.data_types import RESTMethod, RESTRequest
 
 from hummingbot.connector.exchange.binance.binance_auth import BinanceAuth
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest
 
 
 class BinanceAuthTests(TestCase):

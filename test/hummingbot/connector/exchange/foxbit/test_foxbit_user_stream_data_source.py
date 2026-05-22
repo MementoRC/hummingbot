@@ -5,6 +5,8 @@ from typing import Any, Awaitable
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from bidict import bidict
+from web_assistant.throttler.async_throttler import AsyncThrottler
+from web_assistant.ws_assistant import WSAssistant
 
 from hummingbot.connector.exchange.foxbit import foxbit_constants as CONSTANTS
 from hummingbot.connector.exchange.foxbit.foxbit_api_user_stream_data_source import FoxbitAPIUserStreamDataSource
@@ -12,8 +14,6 @@ from hummingbot.connector.exchange.foxbit.foxbit_auth import FoxbitAuth
 from hummingbot.connector.exchange.foxbit.foxbit_exchange import FoxbitExchange
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
-from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
-from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 
 
 @patch(

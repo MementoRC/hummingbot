@@ -3,6 +3,8 @@ from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCa
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from bidict import bidict
+from web_assistant.connections.data_types import WSJSONRequest, WSResponse
+from web_assistant.ws_assistant import WSAssistant
 
 from hummingbot.connector.derivative.aevo_perpetual import aevo_perpetual_constants as CONSTANTS
 from hummingbot.connector.derivative.aevo_perpetual.aevo_perpetual_api_user_stream_data_source import (
@@ -10,8 +12,6 @@ from hummingbot.connector.derivative.aevo_perpetual.aevo_perpetual_api_user_stre
 )
 from hummingbot.connector.derivative.aevo_perpetual.aevo_perpetual_auth import AevoPerpetualAuth
 from hummingbot.connector.derivative.aevo_perpetual.aevo_perpetual_derivative import AevoPerpetualDerivative
-from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest, WSResponse
-from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 
 
 class AevoPerpetualAPIUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):

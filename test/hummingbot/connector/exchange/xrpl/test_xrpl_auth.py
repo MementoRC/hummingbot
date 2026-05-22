@@ -1,9 +1,9 @@
 from unittest.async_case import IsolatedAsyncioTestCase
 
+from web_assistant.connections.data_types import RESTMethod, RESTRequest, WSJSONRequest
 from xrpl.constants import CryptoAlgorithm
 
 from hummingbot.connector.exchange.xrpl.xrpl_auth import XRPLAuth
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest, WSJSONRequest
 
 
 class TestXRPLAuth(IsolatedAsyncioTestCase):
