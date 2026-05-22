@@ -1,4 +1,4 @@
-from hummingbot.core.api_throttler.data_types import LinkedLimitWeightPair, RateLimit
+from web_assistant.throttler.data_types import LinkedLimitWeightPair, RateLimit
 
 EXCHANGE_NAME = "gate_io_perpetual"
 DEFAULT_DOMAIN = ""

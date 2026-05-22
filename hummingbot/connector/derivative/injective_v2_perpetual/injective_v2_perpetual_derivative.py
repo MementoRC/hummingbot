@@ -5,6 +5,9 @@ from enum import Enum
 from typing import Any, Callable, Union
 
 from async_timeout import timeout
+from web_assistant.auth import AuthBase
+from web_assistant.throttler.data_types import RateLimit
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 from hummingbot.connector.client_order_tracker import ClientOrderTracker
 from hummingbot.connector.constants import FUNDING_FEE_POLL_INTERVAL, s_decimal_NaN
@@ -23,7 +26,6 @@ from hummingbot.connector.gateway.gateway_order_tracker import GatewayOrderTrack
 from hummingbot.connector.perpetual_derivative_py_base import PerpetualDerivativePyBase
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.connector.utils import combine_to_hb_trading_pair, get_new_client_order_id
-from hummingbot.core.api_throttler.data_types import RateLimit
 from hummingbot.core.data_type.cancellation_result import CancellationResult
 from hummingbot.core.data_type.common import OrderType, PositionAction, PositionMode, TradeType
 from hummingbot.core.data_type.in_flight_order import OrderState, OrderUpdate, TradeUpdate
@@ -37,8 +39,6 @@ from hummingbot.core.event.events import AccountEvent, BalanceUpdateEvent, Marke
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.core.utils.estimate_fee import build_perpetual_trade_fee
-from hummingbot.core.web_assistant.auth import AuthBase
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):

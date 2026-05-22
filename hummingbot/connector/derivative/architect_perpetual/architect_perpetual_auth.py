@@ -1,6 +1,9 @@
 import time
 from asyncio import Lock
 
+from web_assistant.auth import AuthBase
+from web_assistant.connections.data_types import RESTMethod, RESTRequest, WSRequest
+
 from hummingbot.connector.derivative.architect_perpetual import (
     architect_perpetual_constants as CONSTANTS,
     architect_perpetual_web_utils as web_utils,
@@ -9,8 +12,6 @@ from hummingbot.connector.derivative.architect_perpetual.architect_perpetual_web
     build_api_factory_without_time_synchronizer_pre_processor,
 )
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
-from hummingbot.core.web_assistant.auth import AuthBase
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest, WSRequest
 
 
 class ArchitectPerpetualAuth(AuthBase):
