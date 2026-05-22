@@ -5,9 +5,10 @@ from abc import ABCMeta, abstractmethod
 from collections import defaultdict
 from typing import Any, Callable
 
+from web_assistant.ws_assistant import WSAssistant
+
 from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_message import OrderBookMessage
-from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.logger import HummingbotLogger
 
 

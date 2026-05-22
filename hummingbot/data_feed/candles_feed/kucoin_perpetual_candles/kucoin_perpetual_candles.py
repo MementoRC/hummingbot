@@ -2,10 +2,10 @@ import logging
 from typing import Any
 
 import pandas as pd
+from web_assistant.connections.data_types import RESTMethod
 
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.core.utils.tracking_nonce import get_tracking_nonce
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod
 from hummingbot.data_feed.candles_feed.candles_base import CandlesBase
 from hummingbot.data_feed.candles_feed.kucoin_perpetual_candles import constants as CONSTANTS
 from hummingbot.logger import HummingbotLogger
