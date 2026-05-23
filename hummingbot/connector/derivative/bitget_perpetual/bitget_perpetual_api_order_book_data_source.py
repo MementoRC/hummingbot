@@ -2,6 +2,7 @@ import asyncio
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any, NoReturn
 
+from async_utils.core import safe_gather
 from web_assistant.connections.data_types import RESTMethod, WSJSONRequest, WSPlainTextRequest
 from web_assistant.rest_assistant import RESTAssistant
 from web_assistant.web_assistants_factory import WebAssistantsFactory
@@ -15,7 +16,6 @@ from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.data_type.funding_info import FundingInfo, FundingInfoUpdate
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 from hummingbot.core.data_type.perpetual_api_order_book_data_source import PerpetualAPIOrderBookDataSource
-from hummingbot.core.utils.async_utils import safe_gather
 
 if TYPE_CHECKING:
     from hummingbot.connector.derivative.bitget_perpetual.bitget_perpetual_derivative import BitgetPerpetualDerivative
