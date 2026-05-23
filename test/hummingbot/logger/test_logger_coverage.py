@@ -2,6 +2,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from hummingbot.logger.application_warning import ApplicationWarning
 from hummingbot.logger.logger import HummingbotLogger
 
 
@@ -10,47 +11,50 @@ def hb_logger():
     return HummingbotLogger("test.hb_logger_coverage")
 
 
-def test_network_with_app_warning_msg_not_in_testing_mode(hb_logger):
-    """Lines 97, 100: network() creates ApplicationWarning and calls add_application_warning
-    when app_warning_msg is provided and NOT in testing mode."""
-    mock_app = MagicMock()
+@pytest.fixture(autouse=True)
+def reset_logger_callbacks():
+    """Reset callback attributes between tests to prevent state leakage."""
+    yield
+    HummingbotLogger._notify_callback = None
+    HummingbotLogger._network_callback = None
 
-    with (
-        patch.object(HummingbotLogger, "is_testing_mode", return_value=False),
-        patch("hummingbot.client.hummingbot_application.HummingbotApplication") as mock_hb_app_cls,
-    ):
-        mock_hb_app_cls.main_application.return_value = mock_app
+
+def test_network_with_app_warning_msg_not_in_testing_mode(hb_logger):
+    """Lines 97, 100: network() calls registered callback with ApplicationWarning
+    when app_warning_msg is provided and NOT in testing mode."""
+    mock_callback = MagicMock()
+    HummingbotLogger.register_network_handler(mock_callback)
+
+    with patch.object(HummingbotLogger, "is_testing_mode", return_value=False):
         hb_logger.network("network log message", app_warning_msg="something is wrong")
 
-    mock_app.add_application_warning.assert_called_once()
-    warning_arg = mock_app.add_application_warning.call_args[0][0]
+    mock_callback.assert_called_once()
+    warning_arg = mock_callback.call_args[0][0]
     # The ApplicationWarning should carry the warning message
+    assert isinstance(warning_arg, ApplicationWarning)
     assert warning_arg.warning_msg == "something is wrong"
 
 
 def test_network_no_app_warning_when_testing_mode(hb_logger):
-    """network() must NOT create ApplicationWarning when is_testing_mode() returns True."""
-    mock_app = MagicMock()
+    """network() must NOT call callback when is_testing_mode() returns True."""
+    mock_callback = MagicMock()
+    HummingbotLogger.register_network_handler(mock_callback)
 
-    with (
-        patch.object(HummingbotLogger, "is_testing_mode", return_value=True),
-        patch("hummingbot.client.hummingbot_application.HummingbotApplication") as mock_hb_app_cls,
-    ):
-        mock_hb_app_cls.main_application.return_value = mock_app
+    with patch.object(HummingbotLogger, "is_testing_mode", return_value=True):
         hb_logger.network("network log message", app_warning_msg="should be ignored")
 
-    mock_app.add_application_warning.assert_not_called()
+    mock_callback.assert_not_called()
 
 
 def test_network_no_app_warning_when_msg_is_none(hb_logger):
-    """network() with app_warning_msg=None must not touch HummingbotApplication."""
-    with (
-        patch.object(HummingbotLogger, "is_testing_mode", return_value=False),
-        patch("hummingbot.client.hummingbot_application.HummingbotApplication") as mock_hb_app_cls,
-    ):
+    """network() with app_warning_msg=None must not call callback."""
+    mock_callback = MagicMock()
+    HummingbotLogger.register_network_handler(mock_callback)
+
+    with patch.object(HummingbotLogger, "is_testing_mode", return_value=False):
         hb_logger.network("just a network log")
 
-    mock_hb_app_cls.main_application.assert_not_called()
+    mock_callback.assert_not_called()
 
 
 def test_is_testing_mode_returns_true_during_pytest():
