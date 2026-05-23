@@ -6,6 +6,7 @@ from collections import namedtuple
 from hashlib import md5
 from typing import Any, Callable
 
+from async_utils.tracking_nonce import NonceCreator, get_tracking_nonce
 from hexbytes import HexBytes
 from web_assistant.connections.data_types import RESTRequest, WSResponse
 from web_assistant.rest_pre_processors import RESTPreProcessorBase
@@ -15,7 +16,6 @@ from web_assistant.web_assistants_factory import WebAssistantsFactory
 from web_assistant.ws_post_processors import WSPostProcessorBase
 
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
-from hummingbot.core.utils.tracking_nonce import NonceCreator, get_tracking_nonce
 
 TradeFillOrderDetails = namedtuple("TradeFillOrderDetails", "market exchange_trade_id symbol")
 

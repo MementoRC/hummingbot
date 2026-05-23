@@ -1,10 +1,10 @@
 import logging
 from decimal import Decimal
 
+from async_utils.core import safe_ensure_future
 from pydantic import Field, field_validator, model_validator
 
 from hummingbot.core.data_type.common import MarketDict, TradeType
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.data_feed.candles_feed.data_types import CandlesConfig
 from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy_v2.controllers import ControllerBase, ControllerConfigBase

@@ -13,7 +13,7 @@ from hummingbot.core.data_type.order_book_query_result import ClientOrderBookQue
 from hummingbot.core.data_type.order_book_row import ClientOrderBookRow
 from hummingbot.core.data_type.order_book_tracker import OrderBookTracker
 from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee
-from hummingbot.core.utils.async_utils import safe_gather
+from async_utils.core import safe_gather
 
 
 s_float_NaN = float("nan")

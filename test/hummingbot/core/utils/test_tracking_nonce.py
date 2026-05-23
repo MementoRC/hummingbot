@@ -1,7 +1,7 @@
 import asyncio
 from unittest import TestCase
 
-import hummingbot.core.utils.tracking_nonce as tracking_nonce
+import async_utils.tracking_nonce as tracking_nonce
 
 
 class TrackingNonceTest(TestCase):
