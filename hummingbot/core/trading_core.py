@@ -7,7 +7,7 @@ import time
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Type, Union
+from typing import Any, Callable, List, Optional, Type, Union
 
 from sqlalchemy.orm import Query, Session
 

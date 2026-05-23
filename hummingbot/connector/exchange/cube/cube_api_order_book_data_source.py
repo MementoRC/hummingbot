@@ -2,6 +2,7 @@ import asyncio
 import time
 from typing import TYPE_CHECKING, Any
 
+from async_utils.core import safe_gather
 from web_assistant.connections.data_types import RESTMethod, WSBinaryRequest
 from web_assistant.web_assistants_factory import WebAssistantsFactory
 from web_assistant.ws_assistant import WSAssistant
@@ -13,7 +14,6 @@ from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.data_type.order_book_message import OrderBookMessage
 from hummingbot.core.data_type.order_book_row import OrderBookRow
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
-from hummingbot.core.utils.async_utils import safe_gather
 from hummingbot.logger import HummingbotLogger
 
 if TYPE_CHECKING:

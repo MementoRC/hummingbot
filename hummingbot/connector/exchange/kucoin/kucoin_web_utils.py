@@ -1,5 +1,6 @@
 from typing import Callable
 
+from async_utils.tracking_nonce import get_tracking_nonce
 from web_assistant.auth import AuthBase
 from web_assistant.connections.data_types import RESTMethod
 from web_assistant.throttler.async_throttler import AsyncThrottler
@@ -8,7 +9,6 @@ from web_assistant.web_assistants_factory import WebAssistantsFactory
 from hummingbot.connector.exchange.kucoin import kucoin_constants as CONSTANTS
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
 from hummingbot.connector.utils import TimeSynchronizerRESTPreProcessor
-from hummingbot.core.utils.tracking_nonce import get_tracking_nonce
 
 
 def public_rest_url(path_url: str, domain: str = CONSTANTS.DEFAULT_DOMAIN) -> str:

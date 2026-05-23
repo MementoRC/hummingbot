@@ -3,6 +3,7 @@ from copy import deepcopy
 from decimal import Decimal
 from typing import Any
 
+from async_utils.core import safe_ensure_future
 from bidict import bidict
 from cachetools import TTLCache
 from web_assistant.connections.data_types import RESTMethod
@@ -26,7 +27,6 @@ from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState,
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
 from hummingbot.core.data_type.trade_fee import DeductedFromReturnsTradeFee, TokenAmount, TradeFeeBase
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
-from hummingbot.core.utils.async_utils import safe_ensure_future
 
 
 class BitrueExchange(ExchangePyBase):

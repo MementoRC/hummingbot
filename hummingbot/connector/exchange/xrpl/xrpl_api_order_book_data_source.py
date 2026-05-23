@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
+from async_utils.core import safe_gather
 from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 # XRPL imports
@@ -19,7 +20,6 @@ from hummingbot.connector.exchange.xrpl.xrpl_worker_pool import XRPLQueryWorkerP
 from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.data_type.order_book_message import OrderBookMessage
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
-from hummingbot.core.utils.async_utils import safe_gather
 from hummingbot.logger import HummingbotLogger
 
 if TYPE_CHECKING:
