@@ -6,6 +6,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
 import pandas as pd
+from async_utils.core import safe_ensure_future
 
 from hummingbot.client.command.command_utils import GatewayCommandUtils
 from hummingbot.client.command.gateway_api_manager import GatewayChainApiManager, begin_placeholder_mode
@@ -17,7 +18,6 @@ from hummingbot.client.settings import AllConnectorSettings, gateway_connector_t
 from hummingbot.client.ui.interface_utils import format_df_for_printout
 from hummingbot.core.gateway import get_gateway_paths
 from hummingbot.core.gateway.gateway_http_client import GatewayHttpClient, GatewayStatus
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.core.utils.ssl_cert import create_self_sign_certs
 
 if TYPE_CHECKING:

@@ -3,10 +3,10 @@ import json
 from typing import TYPE_CHECKING, Dict
 
 import pandas as pd
+from async_utils.core import safe_ensure_future
 
 from hummingbot.client.command.gateway_api_manager import begin_placeholder_mode
 from hummingbot.core.gateway.gateway_http_client import GatewayStatus
-from hummingbot.core.utils.async_utils import safe_ensure_future
 
 if TYPE_CHECKING:
     from hummingbot.client.hummingbot_application import HummingbotApplication  # noqa: F401

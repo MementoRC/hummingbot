@@ -4,12 +4,12 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 
 import pandas as pd
+from async_utils.core import safe_ensure_future
 
 from hummingbot.client.config.config_validators import validate_decimal, validate_exchange
 from hummingbot.client.performance import PerformanceMetrics
 from hummingbot.client.settings import AllConnectorSettings
 from hummingbot.core.rate_oracle.rate_oracle import RateOracle
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.user.user_balances import UserBalances
 
 if TYPE_CHECKING:

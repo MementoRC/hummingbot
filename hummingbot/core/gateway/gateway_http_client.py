@@ -8,6 +8,7 @@ from typing import Any, Dict, Union
 
 import aiohttp
 from aiohttp import ContentTypeError
+from async_utils.core import safe_ensure_future
 
 from hummingbot.client.config.client_config_map import GatewayConfigMap
 from hummingbot.client.config.security import Security
@@ -22,7 +23,6 @@ from hummingbot.client.settings import (
 )
 from hummingbot.core.data_type.trade_fee import TradeFeeSchema
 from hummingbot.core.event.events import TradeType
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.core.utils.gateway_config_utils import build_config_namespace_keys
 from hummingbot.logger import HummingbotLogger
 

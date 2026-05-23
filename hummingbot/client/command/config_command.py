@@ -3,6 +3,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING, Any, Union
 
 import pandas as pd
+from async_utils.core import safe_ensure_future
 from prompt_toolkit.utils import is_windows
 
 from hummingbot.client.command.gateway_command import GatewayCommand
@@ -21,7 +22,6 @@ from hummingbot.client.ui.interface_utils import format_df_for_printout
 from hummingbot.client.ui.style import load_style
 from hummingbot.connector.utils import split_hb_trading_pair
 from hummingbot.core.utils import map_df_to_str
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.model.inventory_cost import InventoryCost
 from hummingbot.strategy.perpetual_market_making import PerpetualMarketMakingStrategy
 from hummingbot.strategy.pure_market_making import PureMarketMakingStrategy

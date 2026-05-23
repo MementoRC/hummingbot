@@ -5,9 +5,9 @@ import logging
 from typing import Callable, Coroutine, NamedTuple
 
 from async_timeout import timeout
+from async_utils.core import safe_ensure_future
 
 import hummingbot
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.logger import HummingbotLogger
 
 

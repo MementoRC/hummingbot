@@ -4,6 +4,7 @@ import threading
 from contextlib import ExitStack
 from typing import TYPE_CHECKING, Any, Callable, Union
 
+from async_utils.core import safe_ensure_future
 from prompt_toolkit.application import Application
 from prompt_toolkit.clipboard.pyperclip import PyperclipClipboard
 from prompt_toolkit.completion import Completer
@@ -33,7 +34,6 @@ from hummingbot.client.ui.stdout_redirection import patch_stdout
 from hummingbot.client.ui.style import load_style
 from hummingbot.core.event.events import HummingbotUIEvent
 from hummingbot.core.pubsub import PubSub
-from hummingbot.core.utils.async_utils import safe_ensure_future
 
 if TYPE_CHECKING:
     from hummingbot.client.hummingbot_application import HummingbotApplication

@@ -7,7 +7,7 @@ from typing import Optional
 
 from hummingbot.core.clock cimport Clock
 from hummingbot.logger import HummingbotLogger
-from hummingbot.core.utils.async_utils import safe_ensure_future
+from async_utils.core import safe_ensure_future
 from hummingbot.core.time_iterator import TimeIterator
 
 NaN = float("nan")
