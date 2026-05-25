@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import dataclasses
 from collections import namedtuple
+from enum import IntEnum
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
@@ -27,7 +28,20 @@ if TYPE_CHECKING:
 # Minimal event fixtures
 # ---------------------------------------------------------------------------
 
-_TAG = 99
+
+class _ReporterTag(IntEnum):
+    """Sentinel tag for reporter parity tests.
+
+    PubSub.trigger_event expects an Enum (calls .value internally).
+    PubSubBridge.trigger_event expects an int.
+    Using an IntEnum satisfies both: pass _ReporterTag.TEST to legacy,
+    pass int(_ReporterTag.TEST) to bridge.
+    """
+
+    TEST = 99
+
+
+_TAG = _ReporterTag.TEST
 
 
 @dataclasses.dataclass
@@ -63,9 +77,9 @@ def test_reporter_dataclass_event_same_dict_legacy_and_bridge(
         patch.object(bridge_reporter, "logger", return_value=mock_log_bridge),
     ):
         legacy.add_listener(_TAG, legacy_reporter)
-        bridge.add_listener(_TAG, bridge_reporter)
+        bridge.add_listener(int(_TAG), bridge_reporter)
         legacy.trigger_event(_TAG, event)
-        bridge.trigger_event(_TAG, event)
+        bridge.trigger_event(int(_TAG), event)
 
     assert mock_log_legacy.event_log.call_count == 1
     assert mock_log_bridge.event_log.call_count == 1
@@ -94,9 +108,9 @@ def test_reporter_namedtuple_event_same_dict_legacy_and_bridge(
         patch.object(bridge_reporter, "logger", return_value=mock_log_bridge),
     ):
         legacy.add_listener(_TAG, legacy_reporter)
-        bridge.add_listener(_TAG, bridge_reporter)
+        bridge.add_listener(int(_TAG), bridge_reporter)
         legacy.trigger_event(_TAG, event)
-        bridge.trigger_event(_TAG, event)
+        bridge.trigger_event(int(_TAG), event)
 
     assert mock_log_legacy.event_log.call_count == 1
     assert mock_log_bridge.event_log.call_count == 1
@@ -125,9 +139,9 @@ def test_reporter_dict_includes_event_name_and_source(
         patch.object(bridge_reporter, "logger", return_value=mock_log_bridge),
     ):
         legacy.add_listener(_TAG, legacy_reporter)
-        bridge.add_listener(_TAG, bridge_reporter)
+        bridge.add_listener(int(_TAG), bridge_reporter)
         legacy.trigger_event(_TAG, event)
-        bridge.trigger_event(_TAG, event)
+        bridge.trigger_event(int(_TAG), event)
 
     for side, mock_log in [("legacy", mock_log_legacy), ("bridge", mock_log_bridge)]:
         logged = mock_log.event_log.call_args.args[0]
@@ -156,10 +170,10 @@ def test_reporter_multiple_events_count_matches(
         patch.object(bridge_reporter, "logger", return_value=mock_log_bridge),
     ):
         legacy.add_listener(_TAG, legacy_reporter)
-        bridge.add_listener(_TAG, bridge_reporter)
+        bridge.add_listener(int(_TAG), bridge_reporter)
         for ev in events:
             legacy.trigger_event(_TAG, ev)
-            bridge.trigger_event(_TAG, ev)
+            bridge.trigger_event(int(_TAG), ev)
 
     assert mock_log_legacy.event_log.call_count == n
     assert mock_log_bridge.event_log.call_count == n
@@ -188,20 +202,20 @@ def test_reporter_no_call_after_remove_listener(
         patch.object(bridge_reporter, "logger", return_value=mock_log_bridge),
     ):
         legacy.add_listener(_TAG, legacy_reporter)
-        bridge.add_listener(_TAG, bridge_reporter)
+        bridge.add_listener(int(_TAG), bridge_reporter)
 
         # Fire once — should log.
         legacy.trigger_event(_TAG, event)
-        bridge.trigger_event(_TAG, event)
+        bridge.trigger_event(int(_TAG), event)
 
         assert mock_log_legacy.event_log.call_count == 1
         assert mock_log_bridge.event_log.call_count == 1
 
         # Remove then fire again — should NOT log.
         legacy.remove_listener(_TAG, legacy_reporter)
-        bridge.remove_listener(_TAG, bridge_reporter)
+        bridge.remove_listener(int(_TAG), bridge_reporter)
         legacy.trigger_event(_TAG, event)
-        bridge.trigger_event(_TAG, event)
+        bridge.trigger_event(int(_TAG), event)
 
     assert mock_log_legacy.event_log.call_count == 1, "legacy called after removal"
     assert mock_log_bridge.event_log.call_count == 1, "bridge called after removal"

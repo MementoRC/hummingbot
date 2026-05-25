@@ -31,10 +31,13 @@ def _fire_both(legacy: PubSub, bridge: PubSubBridge, tag: MarketEvent, payload: 
     """Trigger *tag* with *payload* on both sides.
 
     PubSub.c_trigger_event is a Cython cdef method — not Python-callable.
-    Use trigger_event on the legacy side; bridge supports both but trigger_event
-    is used here for symmetry.
+    Use trigger_event on the legacy side; bridge supports both but c_trigger_event
+    is used here for symmetry with what Cython code would call.
+
+    PubSub.trigger_event expects an Enum (calls .value internally).
+    PubSubBridge.c_trigger_event expects an int.
     """
-    legacy.trigger_event(tag.value, payload)
+    legacy.trigger_event(tag, payload)
     bridge.c_trigger_event(tag.value, payload)
 
 

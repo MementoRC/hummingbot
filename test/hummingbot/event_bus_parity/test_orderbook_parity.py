@@ -152,13 +152,14 @@ class TestOrderBookDataSourceUpdateEventParity:
 
         OrderBook.c_trigger_event is a Cython cdef method — not Python-callable.
         trigger_event is the Python-accessible equivalent.
+        PubSub.trigger_event expects an Enum (calls .value internally).
         """
         ob = _make_orderbook()
         rec = RecorderListener("legacy-ds")
         ob.add_listener(OrderBookEvent.OrderBookDataSourceUpdateEvent, rec)
 
         payload = {"source": "diff", "uid": 1}
-        ob.trigger_event(OrderBookEvent.OrderBookDataSourceUpdateEvent.value, payload)
+        ob.trigger_event(OrderBookEvent.OrderBookDataSourceUpdateEvent, payload)
 
         assert len(rec.calls) == 1
 
@@ -184,12 +185,13 @@ class TestOrderBookDataSourceUpdateEventParity:
         ob.add_listener(OrderBookEvent.OrderBookDataSourceUpdateEvent, rec_legacy)
         bridge.add_listener(OrderBookEvent.OrderBookDataSourceUpdateEvent.value, rec_bridge)
 
-        tag = OrderBookEvent.OrderBookDataSourceUpdateEvent.value
+        tag_enum = OrderBookEvent.OrderBookDataSourceUpdateEvent
+        tag_int = tag_enum.value
         n = 4
         for i in range(n):
             payload = {"uid": i}
-            ob.trigger_event(tag, payload)
-            bridge.trigger_event(tag, payload)
+            ob.trigger_event(tag_enum, payload)
+            bridge.trigger_event(tag_int, payload)
 
         assert len(rec_legacy.calls) == n
         assert len(rec_bridge.calls) == n
@@ -201,7 +203,7 @@ class TestOrderBookDataSourceUpdateEventParity:
         ob.add_listener(OrderBookEvent.OrderBookDataSourceUpdateEvent, rec)
 
         payload = {"source": "rest", "uid": 99}
-        ob.trigger_event(OrderBookEvent.OrderBookDataSourceUpdateEvent.value, payload)
+        ob.trigger_event(OrderBookEvent.OrderBookDataSourceUpdateEvent, payload)
 
         _name, received = rec.calls[0]
         assert received is payload
@@ -247,7 +249,7 @@ class TestCrossPathSymmetry:
         register_on_both(legacy, bridge, OrderBookEvent.TradeEvent, rec)
 
         # Trigger on legacy side
-        legacy.trigger_event(OrderBookEvent.TradeEvent.value, _make_trade_event())
+        legacy.trigger_event(OrderBookEvent.TradeEvent, _make_trade_event())
         assert len(rec.calls) == 1
 
         # Trigger on bridge side
@@ -261,7 +263,7 @@ class TestCrossPathSymmetry:
         register_on_both(legacy, bridge, OrderBookEvent.OrderBookDataSourceUpdateEvent, rec)
 
         payload = {"uid": 10}
-        legacy.trigger_event(OrderBookEvent.OrderBookDataSourceUpdateEvent.value, payload)
+        legacy.trigger_event(OrderBookEvent.OrderBookDataSourceUpdateEvent, payload)
         bridge.trigger_event(OrderBookEvent.OrderBookDataSourceUpdateEvent.value, payload)
 
         assert len(rec.calls) == 2

@@ -117,7 +117,8 @@ def _assert_parity(
 
     # Fire on legacy — PaperTradeExchange.c_trigger_event is Cython cdef, not
     # Python-callable; trigger_event is the Python-accessible equivalent.
-    exchange.trigger_event(event_tag.value, event_obj)
+    # PubSub.trigger_event expects an Enum (calls .value internally).
+    exchange.trigger_event(event_tag, event_obj)
     # Fire on bridge — bridge.c_trigger_event is a pure-Python alias
     bridge.c_trigger_event(event_tag.value, event_obj)
 
@@ -262,7 +263,7 @@ def test_multi_listener_order_filled_parity() -> None:
     bridge.add_listener(tag.value, rec_a_br)
     bridge.add_listener(tag.value, rec_b_br)
 
-    exchange.trigger_event(tag.value, event)
+    exchange.trigger_event(tag, event)
     bridge.c_trigger_event(tag.value, event)
 
     assert len(rec_a_leg.calls) == 1
@@ -294,7 +295,7 @@ def test_remove_listener_parity() -> None:
     bridge.add_listener(tag.value, rec_br)
 
     # Fire once — both receive
-    exchange.trigger_event(tag.value, event)
+    exchange.trigger_event(tag, event)
     bridge.c_trigger_event(tag.value, event)
     assert len(rec_leg.calls) == 1
     assert len(rec_br.calls) == 1
@@ -304,7 +305,7 @@ def test_remove_listener_parity() -> None:
     bridge.remove_listener(tag.value, rec_br)
 
     # Fire again — neither receives
-    exchange.trigger_event(tag.value, event)
+    exchange.trigger_event(tag, event)
     bridge.c_trigger_event(tag.value, event)
     assert len(rec_leg.calls) == 1, "Legacy listener received after remove_listener"
     assert len(rec_br.calls) == 1, "Bridge listener received after remove_listener"
@@ -341,14 +342,14 @@ def test_cross_tag_isolation_parity() -> None:
     bridge.add_listener(MarketEvent.OrderFilled.value, rec_br)
 
     # Fire OrderCancelled — must not reach OrderFilled listeners
-    exchange.trigger_event(MarketEvent.OrderCancelled.value, cancelled_event)
+    exchange.trigger_event(MarketEvent.OrderCancelled, cancelled_event)
     bridge.c_trigger_event(MarketEvent.OrderCancelled.value, cancelled_event)
 
     assert len(rec_leg.calls) == 0, "Legacy: cross-tag leak on OrderFilled listener"
     assert len(rec_br.calls) == 0, "Bridge: cross-tag leak on OrderFilled listener"
 
     # Confirm OrderFilled still fires correctly
-    exchange.trigger_event(MarketEvent.OrderFilled.value, filled_event)
+    exchange.trigger_event(MarketEvent.OrderFilled, filled_event)
     bridge.c_trigger_event(MarketEvent.OrderFilled.value, filled_event)
 
     assert len(rec_leg.calls) == 1
