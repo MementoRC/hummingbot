@@ -97,9 +97,10 @@ def test_eventforwarder_c_trigger_event_parity(
     legacy.add_listener(3, legacy_fwd)
     bridge.add_listener(3, bridge_fwd)
 
-    # Use c_trigger_event on both sides — legacy PubSub exposes this from Cython;
-    # bridge delegates it to trigger_event.
-    legacy.c_trigger_event(3, "cython-path")
+    # PubSub.c_trigger_event is a Cython cdef method — not Python-callable.
+    # Use trigger_event on the legacy side; bridge supports c_trigger_event
+    # (pure Python alias) and is called here to verify bridge alias works.
+    legacy.trigger_event(3, "cython-path")
     bridge.c_trigger_event(3, "cython-path")
 
     assert legacy_received == bridge_received == ["cython-path"]

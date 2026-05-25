@@ -82,12 +82,17 @@ def test_dispatch_parity_via_register_on_both(pubsub_pair: tuple[PubSub, PubSubB
 def test_c_trigger_event_equivalent_to_trigger_event_on_legacy(
     pubsub_pair: tuple[PubSub, PubSubBridge],
 ) -> None:
-    """c_trigger_event and trigger_event produce identical dispatch on PubSub."""
+    """trigger_event produces identical dispatch to what c_trigger_event would on PubSub.
+
+    PubSub.c_trigger_event is a Cython cdef method — not Python-callable.
+    This test uses trigger_event on the legacy side to verify the same dispatch
+    semantics that Cython code would see via c_trigger_event.
+    """
     legacy, _ = pubsub_pair
     rec = RecorderListener("legacy")
     legacy.add_listener(TICK_TAG, rec)
 
-    legacy.c_trigger_event(TICK_TAG, PAYLOAD)
+    legacy.trigger_event(TICK_TAG, PAYLOAD)
 
     assert rec.calls == [("legacy", PAYLOAD)]
 

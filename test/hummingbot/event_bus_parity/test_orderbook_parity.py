@@ -148,13 +148,17 @@ class TestOrderBookDataSourceUpdateEventParity:
     """OrderBookDataSourceUpdateEvent fires correctly on both paths."""
 
     def test_datasource_update_fires_once_legacy(self) -> None:
-        """Legacy: direct c_trigger_event on an OrderBook reaches the listener."""
+        """Legacy: direct trigger_event on an OrderBook reaches the listener.
+
+        OrderBook.c_trigger_event is a Cython cdef method — not Python-callable.
+        trigger_event is the Python-accessible equivalent.
+        """
         ob = _make_orderbook()
         rec = RecorderListener("legacy-ds")
         ob.add_listener(OrderBookEvent.OrderBookDataSourceUpdateEvent, rec)
 
         payload = {"source": "diff", "uid": 1}
-        ob.c_trigger_event(OrderBookEvent.OrderBookDataSourceUpdateEvent.value, payload)
+        ob.trigger_event(OrderBookEvent.OrderBookDataSourceUpdateEvent.value, payload)
 
         assert len(rec.calls) == 1
 
@@ -184,20 +188,20 @@ class TestOrderBookDataSourceUpdateEventParity:
         n = 4
         for i in range(n):
             payload = {"uid": i}
-            ob.c_trigger_event(tag, payload)
+            ob.trigger_event(tag, payload)
             bridge.trigger_event(tag, payload)
 
         assert len(rec_legacy.calls) == n
         assert len(rec_bridge.calls) == n
 
     def test_datasource_update_payload_forwarded_legacy(self) -> None:
-        """Legacy c_trigger_event forwards the exact payload object."""
+        """Legacy trigger_event forwards the exact payload object."""
         ob = _make_orderbook()
         rec = RecorderListener("ds-payload")
         ob.add_listener(OrderBookEvent.OrderBookDataSourceUpdateEvent, rec)
 
         payload = {"source": "rest", "uid": 99}
-        ob.c_trigger_event(OrderBookEvent.OrderBookDataSourceUpdateEvent.value, payload)
+        ob.trigger_event(OrderBookEvent.OrderBookDataSourceUpdateEvent.value, payload)
 
         _name, received = rec.calls[0]
         assert received is payload
