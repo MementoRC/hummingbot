@@ -155,8 +155,9 @@ class TestBuyOrderCreatedParity:
         legacy, bridge = pubsub_pair
         legacy_rec = event_recorder("legacy")
         bridge_rec = event_recorder("bridge")
-        register_on_both(legacy, bridge, MarketEvent.BuyOrderCreated, legacy_rec)
-        register_on_both(legacy, bridge, MarketEvent.BuyOrderCreated, bridge_rec)
+        # Register each recorder on its own side only — avoids double-fire.
+        legacy.add_listener(MarketEvent.BuyOrderCreated, legacy_rec)
+        bridge.add_listener(MarketEvent.BuyOrderCreated.value, bridge_rec)
 
         payload = _buy_created()
         legacy.trigger_event(MarketEvent.BuyOrderCreated, payload)
@@ -168,8 +169,9 @@ class TestBuyOrderCreatedParity:
         legacy, bridge = pubsub_pair
         legacy_rec = event_recorder("legacy")
         bridge_rec = event_recorder("bridge")
-        register_on_both(legacy, bridge, MarketEvent.BuyOrderCreated, legacy_rec)
-        register_on_both(legacy, bridge, MarketEvent.BuyOrderCreated, bridge_rec)
+        # Register each recorder on its own side only — avoids double-fire.
+        legacy.add_listener(MarketEvent.BuyOrderCreated, legacy_rec)
+        bridge.add_listener(MarketEvent.BuyOrderCreated.value, bridge_rec)
 
         payload = _buy_created()
         legacy.trigger_event(MarketEvent.BuyOrderCreated, payload)
@@ -185,8 +187,9 @@ class TestSellOrderCreatedParity:
         legacy, bridge = pubsub_pair
         legacy_rec = event_recorder("legacy")
         bridge_rec = event_recorder("bridge")
-        register_on_both(legacy, bridge, MarketEvent.SellOrderCreated, legacy_rec)
-        register_on_both(legacy, bridge, MarketEvent.SellOrderCreated, bridge_rec)
+        # Register each recorder on its own side only — avoids double-fire.
+        legacy.add_listener(MarketEvent.SellOrderCreated, legacy_rec)
+        bridge.add_listener(MarketEvent.SellOrderCreated.value, bridge_rec)
 
         payload = _sell_created()
         legacy.trigger_event(MarketEvent.SellOrderCreated, payload)
@@ -198,8 +201,9 @@ class TestSellOrderCreatedParity:
         legacy, bridge = pubsub_pair
         legacy_rec = event_recorder("legacy")
         bridge_rec = event_recorder("bridge")
-        register_on_both(legacy, bridge, MarketEvent.SellOrderCreated, legacy_rec)
-        register_on_both(legacy, bridge, MarketEvent.SellOrderCreated, bridge_rec)
+        # Register each recorder on its own side only — avoids double-fire.
+        legacy.add_listener(MarketEvent.SellOrderCreated, legacy_rec)
+        bridge.add_listener(MarketEvent.SellOrderCreated.value, bridge_rec)
 
         payload = _sell_created()
         legacy.trigger_event(MarketEvent.SellOrderCreated, payload)
@@ -215,8 +219,9 @@ class TestOrderFilledParity:
         legacy, bridge = pubsub_pair
         legacy_rec = event_recorder("legacy")
         bridge_rec = event_recorder("bridge")
-        register_on_both(legacy, bridge, MarketEvent.OrderFilled, legacy_rec)
-        register_on_both(legacy, bridge, MarketEvent.OrderFilled, bridge_rec)
+        # Register each recorder on its own side only — avoids double-fire.
+        legacy.add_listener(MarketEvent.OrderFilled, legacy_rec)
+        bridge.add_listener(MarketEvent.OrderFilled.value, bridge_rec)
 
         payload = _order_filled()
         legacy.trigger_event(MarketEvent.OrderFilled, payload)
@@ -228,8 +233,9 @@ class TestOrderFilledParity:
         legacy, bridge = pubsub_pair
         legacy_rec = event_recorder("legacy")
         bridge_rec = event_recorder("bridge")
-        register_on_both(legacy, bridge, MarketEvent.OrderFilled, legacy_rec)
-        register_on_both(legacy, bridge, MarketEvent.OrderFilled, bridge_rec)
+        # Register each recorder on its own side only — avoids double-fire.
+        legacy.add_listener(MarketEvent.OrderFilled, legacy_rec)
+        bridge.add_listener(MarketEvent.OrderFilled.value, bridge_rec)
 
         payload = _order_filled()
         legacy.trigger_event(MarketEvent.OrderFilled, payload)
@@ -245,8 +251,9 @@ class TestOrderCancelledParity:
         legacy, bridge = pubsub_pair
         legacy_rec = event_recorder("legacy")
         bridge_rec = event_recorder("bridge")
-        register_on_both(legacy, bridge, MarketEvent.OrderCancelled, legacy_rec)
-        register_on_both(legacy, bridge, MarketEvent.OrderCancelled, bridge_rec)
+        # Register each recorder on its own side only — avoids double-fire.
+        legacy.add_listener(MarketEvent.OrderCancelled, legacy_rec)
+        bridge.add_listener(MarketEvent.OrderCancelled.value, bridge_rec)
 
         payload = _order_cancelled()
         legacy.trigger_event(MarketEvent.OrderCancelled, payload)
@@ -258,8 +265,9 @@ class TestOrderCancelledParity:
         legacy, bridge = pubsub_pair
         legacy_rec = event_recorder("legacy")
         bridge_rec = event_recorder("bridge")
-        register_on_both(legacy, bridge, MarketEvent.OrderCancelled, legacy_rec)
-        register_on_both(legacy, bridge, MarketEvent.OrderCancelled, bridge_rec)
+        # Register each recorder on its own side only — avoids double-fire.
+        legacy.add_listener(MarketEvent.OrderCancelled, legacy_rec)
+        bridge.add_listener(MarketEvent.OrderCancelled.value, bridge_rec)
 
         payload = _order_cancelled()
         legacy.trigger_event(MarketEvent.OrderCancelled, payload)
@@ -275,8 +283,9 @@ class TestOrderFailureParity:
         legacy, bridge = pubsub_pair
         legacy_rec = event_recorder("legacy")
         bridge_rec = event_recorder("bridge")
-        register_on_both(legacy, bridge, MarketEvent.OrderFailure, legacy_rec)
-        register_on_both(legacy, bridge, MarketEvent.OrderFailure, bridge_rec)
+        # Register each recorder on its own side only — avoids double-fire.
+        legacy.add_listener(MarketEvent.OrderFailure, legacy_rec)
+        bridge.add_listener(MarketEvent.OrderFailure.value, bridge_rec)
 
         payload = _order_failed()
         legacy.trigger_event(MarketEvent.OrderFailure, payload)
@@ -288,8 +297,9 @@ class TestOrderFailureParity:
         legacy, bridge = pubsub_pair
         legacy_rec = event_recorder("legacy")
         bridge_rec = event_recorder("bridge")
-        register_on_both(legacy, bridge, MarketEvent.OrderFailure, legacy_rec)
-        register_on_both(legacy, bridge, MarketEvent.OrderFailure, bridge_rec)
+        # Register each recorder on its own side only — avoids double-fire.
+        legacy.add_listener(MarketEvent.OrderFailure, legacy_rec)
+        bridge.add_listener(MarketEvent.OrderFailure.value, bridge_rec)
 
         payload = _order_failed()
         legacy.trigger_event(MarketEvent.OrderFailure, payload)
@@ -305,8 +315,9 @@ class TestBuyOrderCompletedParity:
         legacy, bridge = pubsub_pair
         legacy_rec = event_recorder("legacy")
         bridge_rec = event_recorder("bridge")
-        register_on_both(legacy, bridge, MarketEvent.BuyOrderCompleted, legacy_rec)
-        register_on_both(legacy, bridge, MarketEvent.BuyOrderCompleted, bridge_rec)
+        # Register each recorder on its own side only — avoids double-fire.
+        legacy.add_listener(MarketEvent.BuyOrderCompleted, legacy_rec)
+        bridge.add_listener(MarketEvent.BuyOrderCompleted.value, bridge_rec)
 
         payload = _buy_completed()
         legacy.trigger_event(MarketEvent.BuyOrderCompleted, payload)
@@ -318,8 +329,9 @@ class TestBuyOrderCompletedParity:
         legacy, bridge = pubsub_pair
         legacy_rec = event_recorder("legacy")
         bridge_rec = event_recorder("bridge")
-        register_on_both(legacy, bridge, MarketEvent.BuyOrderCompleted, legacy_rec)
-        register_on_both(legacy, bridge, MarketEvent.BuyOrderCompleted, bridge_rec)
+        # Register each recorder on its own side only — avoids double-fire.
+        legacy.add_listener(MarketEvent.BuyOrderCompleted, legacy_rec)
+        bridge.add_listener(MarketEvent.BuyOrderCompleted.value, bridge_rec)
 
         payload = _buy_completed()
         legacy.trigger_event(MarketEvent.BuyOrderCompleted, payload)
@@ -335,8 +347,9 @@ class TestSellOrderCompletedParity:
         legacy, bridge = pubsub_pair
         legacy_rec = event_recorder("legacy")
         bridge_rec = event_recorder("bridge")
-        register_on_both(legacy, bridge, MarketEvent.SellOrderCompleted, legacy_rec)
-        register_on_both(legacy, bridge, MarketEvent.SellOrderCompleted, bridge_rec)
+        # Register each recorder on its own side only — avoids double-fire.
+        legacy.add_listener(MarketEvent.SellOrderCompleted, legacy_rec)
+        bridge.add_listener(MarketEvent.SellOrderCompleted.value, bridge_rec)
 
         payload = _sell_completed()
         legacy.trigger_event(MarketEvent.SellOrderCompleted, payload)
@@ -348,8 +361,9 @@ class TestSellOrderCompletedParity:
         legacy, bridge = pubsub_pair
         legacy_rec = event_recorder("legacy")
         bridge_rec = event_recorder("bridge")
-        register_on_both(legacy, bridge, MarketEvent.SellOrderCompleted, legacy_rec)
-        register_on_both(legacy, bridge, MarketEvent.SellOrderCompleted, bridge_rec)
+        # Register each recorder on its own side only — avoids double-fire.
+        legacy.add_listener(MarketEvent.SellOrderCompleted, legacy_rec)
+        bridge.add_listener(MarketEvent.SellOrderCompleted.value, bridge_rec)
 
         payload = _sell_completed()
         legacy.trigger_event(MarketEvent.SellOrderCompleted, payload)
