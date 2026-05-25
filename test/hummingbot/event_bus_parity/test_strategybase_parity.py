@@ -172,7 +172,7 @@ class TestBuyOrderCreatedParity:
         register_on_both(legacy, bridge, MarketEvent.BuyOrderCreated, bridge_rec)
 
         payload = _buy_created()
-        legacy.c_trigger_event(MarketEvent.BuyOrderCreated.value, payload)
+        legacy.trigger_event(MarketEvent.BuyOrderCreated.value, payload)
         bridge.c_trigger_event(MarketEvent.BuyOrderCreated.value, payload)
 
         _assert_parity(legacy_rec, bridge_rec)
@@ -202,7 +202,7 @@ class TestSellOrderCreatedParity:
         register_on_both(legacy, bridge, MarketEvent.SellOrderCreated, bridge_rec)
 
         payload = _sell_created()
-        legacy.c_trigger_event(MarketEvent.SellOrderCreated.value, payload)
+        legacy.trigger_event(MarketEvent.SellOrderCreated.value, payload)
         bridge.c_trigger_event(MarketEvent.SellOrderCreated.value, payload)
 
         _assert_parity(legacy_rec, bridge_rec)
@@ -232,7 +232,7 @@ class TestOrderFilledParity:
         register_on_both(legacy, bridge, MarketEvent.OrderFilled, bridge_rec)
 
         payload = _order_filled()
-        legacy.c_trigger_event(MarketEvent.OrderFilled.value, payload)
+        legacy.trigger_event(MarketEvent.OrderFilled.value, payload)
         bridge.c_trigger_event(MarketEvent.OrderFilled.value, payload)
 
         _assert_parity(legacy_rec, bridge_rec)
@@ -262,7 +262,7 @@ class TestOrderCancelledParity:
         register_on_both(legacy, bridge, MarketEvent.OrderCancelled, bridge_rec)
 
         payload = _order_cancelled()
-        legacy.c_trigger_event(MarketEvent.OrderCancelled.value, payload)
+        legacy.trigger_event(MarketEvent.OrderCancelled.value, payload)
         bridge.c_trigger_event(MarketEvent.OrderCancelled.value, payload)
 
         _assert_parity(legacy_rec, bridge_rec)
@@ -292,7 +292,7 @@ class TestOrderFailureParity:
         register_on_both(legacy, bridge, MarketEvent.OrderFailure, bridge_rec)
 
         payload = _order_failed()
-        legacy.c_trigger_event(MarketEvent.OrderFailure.value, payload)
+        legacy.trigger_event(MarketEvent.OrderFailure.value, payload)
         bridge.c_trigger_event(MarketEvent.OrderFailure.value, payload)
 
         _assert_parity(legacy_rec, bridge_rec)
@@ -322,7 +322,7 @@ class TestBuyOrderCompletedParity:
         register_on_both(legacy, bridge, MarketEvent.BuyOrderCompleted, bridge_rec)
 
         payload = _buy_completed()
-        legacy.c_trigger_event(MarketEvent.BuyOrderCompleted.value, payload)
+        legacy.trigger_event(MarketEvent.BuyOrderCompleted.value, payload)
         bridge.c_trigger_event(MarketEvent.BuyOrderCompleted.value, payload)
 
         _assert_parity(legacy_rec, bridge_rec)
@@ -352,7 +352,7 @@ class TestSellOrderCompletedParity:
         register_on_both(legacy, bridge, MarketEvent.SellOrderCompleted, bridge_rec)
 
         payload = _sell_completed()
-        legacy.c_trigger_event(MarketEvent.SellOrderCompleted.value, payload)
+        legacy.trigger_event(MarketEvent.SellOrderCompleted.value, payload)
         bridge.c_trigger_event(MarketEvent.SellOrderCompleted.value, payload)
 
         _assert_parity(legacy_rec, bridge_rec)

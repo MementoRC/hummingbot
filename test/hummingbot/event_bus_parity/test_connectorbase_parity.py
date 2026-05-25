@@ -28,8 +28,13 @@ _SENTINEL = object()
 
 
 def _fire_both(legacy: PubSub, bridge: PubSubBridge, tag: MarketEvent, payload: object) -> None:
-    """Trigger *tag* with *payload* on both sides via c_trigger_event."""
-    legacy.c_trigger_event(tag.value, payload)
+    """Trigger *tag* with *payload* on both sides.
+
+    PubSub.c_trigger_event is a Cython cdef method — not Python-callable.
+    Use trigger_event on the legacy side; bridge supports both but trigger_event
+    is used here for symmetry.
+    """
+    legacy.trigger_event(tag.value, payload)
     bridge.c_trigger_event(tag.value, payload)
 
 
