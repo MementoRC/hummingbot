@@ -49,7 +49,14 @@ class PubSubBridge:
         """Return a closure that routes EventBus payloads to the legacy listener."""
 
         def cb(payload: Any) -> None:
-            listener(payload)  # EventListener.__call__ dispatches to c_call internally
+            if hasattr(listener, "c_call"):
+                # Cython EventListener subclass — c_call is the actual dispatch method.
+                # EventListener.__call__ raises NotImplementedError; only c_call is
+                # overridden by subclasses (EventLogger, EventReporter, EventForwarder).
+                listener.c_call(payload)
+            else:
+                # Plain Python callable.
+                listener(payload)
 
         return cb
 
