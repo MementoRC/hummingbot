@@ -269,3 +269,6 @@ show_contexts = true
 
 [tool.coverage.xml]
 output = "coverage.xml"
+
+[tool.hummingbot.supersedes]
+event-bus = []  # supersedes nothing yet; will declare in Phase C
