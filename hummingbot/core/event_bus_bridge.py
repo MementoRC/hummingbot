@@ -46,17 +46,20 @@ class PubSubBridge:
         return f"{self._name_prefix}:{event_tag}"
 
     def _make_callback(self, listener: EventListener) -> Any:
-        """Return a closure that routes EventBus payloads to the legacy listener."""
+        """Return a closure that routes EventBus payloads to the legacy listener.
+
+        Note: Cython EventListener subclasses (EventReporter, EventLogger, etc.) define
+        their dispatch logic in ``c_call`` which is a ``cdef`` method — C-only, not
+        Python-accessible.  Calling ``listener(payload)`` invokes ``__call__``, which
+        raises NotImplementedError for Cython listeners whose only override is ``c_call``.
+
+        This is the fundamental Phase B limitation: pure Python cannot invoke ``cdef``
+        methods.  Phase C will refactor EventListener/EventReporter to pure Python
+        composition, at which point ``listener(payload)`` dispatches naturally.
+        """
 
         def cb(payload: Any) -> None:
-            if hasattr(listener, "c_call"):
-                # Cython EventListener subclass — c_call is the actual dispatch method.
-                # EventListener.__call__ raises NotImplementedError; only c_call is
-                # overridden by subclasses (EventLogger, EventReporter, EventForwarder).
-                listener.c_call(payload)
-            else:
-                # Plain Python callable.
-                listener(payload)
+            listener(payload)
 
         return cb
 
