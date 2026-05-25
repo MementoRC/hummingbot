@@ -25,7 +25,7 @@ from hummingbot.core.event.events import OrderBookEvent
 from hummingbot.core.event_bus_bridge import PubSubBridge
 from hummingbot.core.pubsub import PubSub
 
-from .conftest import RecorderListener, register_on_both
+from .conftest import RecorderListener
 
 if TYPE_CHECKING:
     pass
@@ -76,12 +76,16 @@ def test_add_listener_appears_in_get_listeners_bridge() -> None:
 
 
 def test_trigger_event_dispatches_to_listener_parity(pubsub_pair: tuple[PubSub, PubSubBridge]) -> None:
-    """trigger_event reaches the registered listener on both buses identically."""
+    """trigger_event reaches the registered listener on both buses identically.
+
+    Each recorder is registered on its own side only so that triggering on one
+    side does not produce spurious calls on the other recorder.
+    """
     legacy, bridge = pubsub_pair
     rec_leg = RecorderListener("leg")
     rec_br = RecorderListener("br")
-    register_on_both(legacy, bridge, _TRADE_TAG, rec_leg)
-    # bridge gets its own independent recorder so call counts are separate
+    # Isolated registration: each recorder sees only its own bus triggers.
+    legacy.add_listener(_TRADE_TAG, rec_leg)
     bridge.add_listener(_TRADE_TAG.value, rec_br)
 
     trade = _make_trade_event()

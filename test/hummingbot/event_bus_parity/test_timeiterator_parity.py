@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING
 from hummingbot.core.event_bus_bridge import PubSubBridge
 from hummingbot.core.pubsub import PubSub
 
-from .conftest import RecorderListener, register_on_both
+from .conftest import RecorderListener
 
 if TYPE_CHECKING:
     pass
@@ -60,14 +60,20 @@ def test_single_listener_receives_payload_on_bridge(pubsub_pair: tuple[PubSub, P
 
 
 def test_dispatch_parity_via_register_on_both(pubsub_pair: tuple[PubSub, PubSubBridge]) -> None:
-    """The same listener registered on both sides receives identical calls."""
+    """Each side's recorder receives exactly one payload — isolated registration.
+
+    register_on_both registers one listener on BOTH sides, so calling it twice
+    with two different recorders and then triggering on both sides would produce
+    2 calls per recorder (one from legacy, one from bridge).  Instead, register
+    each recorder on its own side only to verify isolated dispatch parity.
+    """
     legacy, bridge = pubsub_pair
     rec_legacy = RecorderListener("legacy")
     rec_bridge = RecorderListener("bridge")
 
     _tick = _FakeEnum(TICK_TAG)
-    register_on_both(legacy, bridge, _tick, rec_legacy)
-    register_on_both(legacy, bridge, _tick, rec_bridge)
+    legacy.add_listener(_tick, rec_legacy)
+    bridge.add_listener(TICK_TAG, rec_bridge)
 
     legacy.trigger_event(_tick, PAYLOAD)
     bridge.trigger_event(TICK_TAG, PAYLOAD)
