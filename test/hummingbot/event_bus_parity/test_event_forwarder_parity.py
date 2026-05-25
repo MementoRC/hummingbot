@@ -7,6 +7,7 @@ PubSub instance or from a PubSubBridge.
 
 from __future__ import annotations
 
+from enum import IntEnum
 from typing import TYPE_CHECKING, Any
 
 from hummingbot.core.event.event_forwarder import EventForwarder, SourceInfoEventForwarder
@@ -14,6 +15,26 @@ from hummingbot.core.event.event_forwarder import EventForwarder, SourceInfoEven
 if TYPE_CHECKING:
     from hummingbot.core.event_bus_bridge import PubSubBridge
     from hummingbot.core.pubsub import PubSub
+
+
+class _FwdTag(IntEnum):
+    """Sentinel tags for EventForwarder parity tests.
+
+    PubSub.trigger_event expects an Enum (calls .value internally).
+    PubSubBridge.trigger_event expects an int.
+    Using IntEnum members satisfies legacy; .value satisfies bridge.
+    """
+
+    T1 = 1
+    T2 = 2
+    T3 = 3
+    T4 = 4
+    T5 = 5
+    T6 = 6
+    T7 = 7
+    T8 = 8
+    T10 = 10
+    T11 = 11
 
 
 # ---------------------------------------------------------------------------
@@ -32,11 +53,11 @@ def test_eventforwarder_dispatches_via_legacy_and_bridge(
     legacy_fwd = EventForwarder(lambda x: legacy_received.append(x))
     bridge_fwd = EventForwarder(lambda x: bridge_received.append(x))
 
-    legacy.add_listener(1, legacy_fwd)
-    bridge.add_listener(1, bridge_fwd)
+    legacy.add_listener(_FwdTag.T1, legacy_fwd)
+    bridge.add_listener(_FwdTag.T1.value, bridge_fwd)
 
-    legacy.trigger_event(1, "payload")
-    bridge.trigger_event(1, "payload")
+    legacy.trigger_event(_FwdTag.T1, "payload")
+    bridge.trigger_event(_FwdTag.T1.value, "payload")
 
     assert legacy_received == bridge_received == ["payload"]
 
@@ -52,12 +73,12 @@ def test_eventforwarder_multiple_payloads_parity(
     legacy_fwd = EventForwarder(lambda x: legacy_received.append(x))
     bridge_fwd = EventForwarder(lambda x: bridge_received.append(x))
 
-    legacy.add_listener(2, legacy_fwd)
-    bridge.add_listener(2, bridge_fwd)
+    legacy.add_listener(_FwdTag.T2, legacy_fwd)
+    bridge.add_listener(_FwdTag.T2.value, bridge_fwd)
 
     for payload in ("alpha", "beta", "gamma"):
-        legacy.trigger_event(2, payload)
-        bridge.trigger_event(2, payload)
+        legacy.trigger_event(_FwdTag.T2, payload)
+        bridge.trigger_event(_FwdTag.T2.value, payload)
 
     assert legacy_received == bridge_received == ["alpha", "beta", "gamma"]
 
@@ -74,11 +95,11 @@ def test_eventforwarder_distinct_tags_no_cross_fire(
     bridge_fwd = EventForwarder(lambda x: bridge_received.append(x))
 
     # Subscribe to tag 10; fire tag 11 — both lists must remain empty.
-    legacy.add_listener(10, legacy_fwd)
-    bridge.add_listener(10, bridge_fwd)
+    legacy.add_listener(_FwdTag.T10, legacy_fwd)
+    bridge.add_listener(_FwdTag.T10.value, bridge_fwd)
 
-    legacy.trigger_event(11, "wrong-tag")
-    bridge.trigger_event(11, "wrong-tag")
+    legacy.trigger_event(_FwdTag.T11, "wrong-tag")
+    bridge.trigger_event(_FwdTag.T11.value, "wrong-tag")
 
     assert legacy_received == bridge_received == []
 
@@ -94,14 +115,14 @@ def test_eventforwarder_c_trigger_event_parity(
     legacy_fwd = EventForwarder(lambda x: legacy_received.append(x))
     bridge_fwd = EventForwarder(lambda x: bridge_received.append(x))
 
-    legacy.add_listener(3, legacy_fwd)
-    bridge.add_listener(3, bridge_fwd)
+    legacy.add_listener(_FwdTag.T3, legacy_fwd)
+    bridge.add_listener(_FwdTag.T3.value, bridge_fwd)
 
     # PubSub.c_trigger_event is a Cython cdef method — not Python-callable.
     # Use trigger_event on the legacy side; bridge supports c_trigger_event
     # (pure Python alias) and is called here to verify bridge alias works.
-    legacy.trigger_event(3, "cython-path")
-    bridge.c_trigger_event(3, "cython-path")
+    legacy.trigger_event(_FwdTag.T3, "cython-path")
+    bridge.c_trigger_event(_FwdTag.T3.value, "cython-path")
 
     assert legacy_received == bridge_received == ["cython-path"]
 
@@ -118,13 +139,13 @@ def test_eventforwarder_duplicate_add_listener_fires_once(
     bridge_fwd = EventForwarder(lambda x: bridge_received.append(x))
 
     # Register twice on each side
-    legacy.add_listener(4, legacy_fwd)
-    legacy.add_listener(4, legacy_fwd)
-    bridge.add_listener(4, bridge_fwd)
-    bridge.add_listener(4, bridge_fwd)
+    legacy.add_listener(_FwdTag.T4, legacy_fwd)
+    legacy.add_listener(_FwdTag.T4, legacy_fwd)
+    bridge.add_listener(_FwdTag.T4.value, bridge_fwd)
+    bridge.add_listener(_FwdTag.T4.value, bridge_fwd)
 
-    legacy.trigger_event(4, "once")
-    bridge.trigger_event(4, "once")
+    legacy.trigger_event(_FwdTag.T4, "once")
+    bridge.trigger_event(_FwdTag.T4.value, "once")
 
     assert legacy_received == bridge_received == ["once"]
 
@@ -140,19 +161,19 @@ def test_eventforwarder_remove_listener_stops_dispatch(
     legacy_fwd = EventForwarder(lambda x: legacy_received.append(x))
     bridge_fwd = EventForwarder(lambda x: bridge_received.append(x))
 
-    legacy.add_listener(5, legacy_fwd)
-    bridge.add_listener(5, bridge_fwd)
+    legacy.add_listener(_FwdTag.T5, legacy_fwd)
+    bridge.add_listener(_FwdTag.T5.value, bridge_fwd)
 
     # First trigger reaches both
-    legacy.trigger_event(5, "before-remove")
-    bridge.trigger_event(5, "before-remove")
+    legacy.trigger_event(_FwdTag.T5, "before-remove")
+    bridge.trigger_event(_FwdTag.T5.value, "before-remove")
 
-    legacy.remove_listener(5, legacy_fwd)
-    bridge.remove_listener(5, bridge_fwd)
+    legacy.remove_listener(_FwdTag.T5, legacy_fwd)
+    bridge.remove_listener(_FwdTag.T5.value, bridge_fwd)
 
     # Second trigger must not reach either
-    legacy.trigger_event(5, "after-remove")
-    bridge.trigger_event(5, "after-remove")
+    legacy.trigger_event(_FwdTag.T5, "after-remove")
+    bridge.trigger_event(_FwdTag.T5.value, "after-remove")
 
     assert legacy_received == bridge_received == ["before-remove"]
 
@@ -184,11 +205,11 @@ def test_source_info_forwarder_receives_tag_and_caller(
     legacy_fwd = SourceInfoEventForwarder(_legacy_cb)
     bridge_fwd = SourceInfoEventForwarder(_bridge_cb)
 
-    legacy.add_listener(6, legacy_fwd)
-    bridge.add_listener(6, bridge_fwd)
+    legacy.add_listener(_FwdTag.T6, legacy_fwd)
+    bridge.add_listener(_FwdTag.T6.value, bridge_fwd)
 
-    legacy.trigger_event(6, "src-payload")
-    bridge.trigger_event(6, "src-payload")
+    legacy.trigger_event(_FwdTag.T6, "src-payload")
+    bridge.trigger_event(_FwdTag.T6.value, "src-payload")
 
     assert len(legacy_calls) == 1
     assert len(bridge_calls) == 1
@@ -215,15 +236,15 @@ def test_source_info_forwarder_multiple_tags_independent(
     bridge_fwd7 = SourceInfoEventForwarder(lambda t, c, p: tag7_bridge.append(p))
     bridge_fwd8 = SourceInfoEventForwarder(lambda t, c, p: tag8_bridge.append(p))
 
-    legacy.add_listener(7, legacy_fwd7)
-    legacy.add_listener(8, legacy_fwd8)
-    bridge.add_listener(7, bridge_fwd7)
-    bridge.add_listener(8, bridge_fwd8)
+    legacy.add_listener(_FwdTag.T7, legacy_fwd7)
+    legacy.add_listener(_FwdTag.T8, legacy_fwd8)
+    bridge.add_listener(_FwdTag.T7.value, bridge_fwd7)
+    bridge.add_listener(_FwdTag.T8.value, bridge_fwd8)
 
-    legacy.trigger_event(7, "seven")
-    legacy.trigger_event(8, "eight")
-    bridge.trigger_event(7, "seven")
-    bridge.trigger_event(8, "eight")
+    legacy.trigger_event(_FwdTag.T7, "seven")
+    legacy.trigger_event(_FwdTag.T8, "eight")
+    bridge.trigger_event(_FwdTag.T7.value, "seven")
+    bridge.trigger_event(_FwdTag.T8.value, "eight")
 
     assert tag7_legacy == tag7_bridge == ["seven"]
     assert tag8_legacy == tag8_bridge == ["eight"]

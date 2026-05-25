@@ -8,6 +8,8 @@ parity modules.  This conftest provides:
 - ``event_recorder``     — pytest fixture: factory returning fresh RecorderListeners.
 - ``register_on_both``   — module-level helper that subscribes one listener to both
                            sides while handling the Enum/int API difference.
+- ``trigger_on_both``    — module-level helper that fires an event on both sides,
+                           passing Enum to legacy PubSub and int to PubSubBridge.
 """
 
 from __future__ import annotations
@@ -97,3 +99,19 @@ def register_on_both(
     """
     legacy.add_listener(event_tag, listener)
     bridge.add_listener(event_tag.value, listener)
+
+
+def trigger_on_both(
+    legacy: PubSub,
+    bridge: PubSubBridge,
+    event_tag: Enum,
+    payload: Any,
+) -> None:
+    """Fire *payload* for *event_tag* on both *legacy* and *bridge*.
+
+    PubSub.trigger_event expects an ``Enum`` (it calls ``.value`` internally).
+    PubSubBridge.trigger_event expects an ``int`` directly.
+    This helper handles the difference so callers can pass a single Enum tag.
+    """
+    legacy.trigger_event(event_tag, payload)
+    bridge.trigger_event(event_tag.value, payload)

@@ -40,9 +40,10 @@ def test_single_listener_receives_payload_on_legacy(pubsub_pair: tuple[PubSub, P
     """Legacy PubSub dispatches the payload to a registered listener."""
     legacy, _ = pubsub_pair
     rec = RecorderListener("legacy")
-    legacy.add_listener(TICK_TAG, rec)
+    _tick = _FakeEnum(TICK_TAG)
+    legacy.add_listener(_tick, rec)
 
-    legacy.trigger_event(TICK_TAG, PAYLOAD)
+    legacy.trigger_event(_tick, PAYLOAD)
 
     assert rec.calls == [("legacy", PAYLOAD)]
 
@@ -64,10 +65,11 @@ def test_dispatch_parity_via_register_on_both(pubsub_pair: tuple[PubSub, PubSubB
     rec_legacy = RecorderListener("legacy")
     rec_bridge = RecorderListener("bridge")
 
-    register_on_both(legacy, bridge, _FakeEnum(TICK_TAG), rec_legacy)
-    register_on_both(legacy, bridge, _FakeEnum(TICK_TAG), rec_bridge)
+    _tick = _FakeEnum(TICK_TAG)
+    register_on_both(legacy, bridge, _tick, rec_legacy)
+    register_on_both(legacy, bridge, _tick, rec_bridge)
 
-    legacy.trigger_event(TICK_TAG, PAYLOAD)
+    legacy.trigger_event(_tick, PAYLOAD)
     bridge.trigger_event(TICK_TAG, PAYLOAD)
 
     assert [c[1] for c in rec_legacy.calls] == [PAYLOAD]
@@ -90,9 +92,10 @@ def test_c_trigger_event_equivalent_to_trigger_event_on_legacy(
     """
     legacy, _ = pubsub_pair
     rec = RecorderListener("legacy")
-    legacy.add_listener(TICK_TAG, rec)
+    _tick = _FakeEnum(TICK_TAG)
+    legacy.add_listener(_tick, rec)
 
-    legacy.trigger_event(TICK_TAG, PAYLOAD)
+    legacy.trigger_event(_tick, PAYLOAD)
 
     assert rec.calls == [("legacy", PAYLOAD)]
 
@@ -121,9 +124,10 @@ def test_listener_on_tick_tag_does_not_receive_alt_tag_events(
     """Events on ALT_TAG must not reach a listener subscribed to TICK_TAG — legacy."""
     legacy, _ = pubsub_pair
     rec = RecorderListener("legacy")
-    legacy.add_listener(TICK_TAG, rec)
+    _tick = _FakeEnum(TICK_TAG)
+    legacy.add_listener(_tick, rec)
 
-    legacy.trigger_event(ALT_TAG, "other")
+    legacy.trigger_event(_FakeEnum(ALT_TAG), "other")
 
     assert rec.calls == []
 
@@ -150,10 +154,11 @@ def test_multiple_ticks_accumulate_in_order_legacy(pubsub_pair: tuple[PubSub, Pu
     """Multiple sequential dispatches accumulate in arrival order — legacy."""
     legacy, _ = pubsub_pair
     rec = RecorderListener("legacy")
-    legacy.add_listener(TICK_TAG, rec)
+    _tick = _FakeEnum(TICK_TAG)
+    legacy.add_listener(_tick, rec)
 
     for i in range(3):
-        legacy.trigger_event(TICK_TAG, i)
+        legacy.trigger_event(_tick, i)
 
     assert [c[1] for c in rec.calls] == [0, 1, 2]
 
@@ -180,7 +185,7 @@ def test_trigger_event_with_no_listeners_does_not_raise_legacy(
 ) -> None:
     """Dispatching to a tag with no listeners must be a no-op — legacy."""
     legacy, _ = pubsub_pair
-    legacy.trigger_event(TICK_TAG, PAYLOAD)  # no listeners registered
+    legacy.trigger_event(_FakeEnum(TICK_TAG), PAYLOAD)  # no listeners registered
 
 
 def test_trigger_event_with_no_listeners_does_not_raise_bridge(
