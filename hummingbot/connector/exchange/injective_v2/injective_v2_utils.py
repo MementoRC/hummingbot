@@ -13,6 +13,7 @@ from pyinjective.core.broadcaster import (
 )
 from pyinjective.core.network import Network
 from pyinjective.wallet import PrivateKey
+from web_assistant.throttler.data_types import RateLimit
 
 from hummingbot.client.config.config_data_types import BaseClientModel, BaseConnectorConfigMap
 from hummingbot.connector.exchange.injective_v2 import injective_constants as CONSTANTS
@@ -22,7 +23,6 @@ from hummingbot.connector.exchange.injective_v2.data_sources.injective_grantee_d
 from hummingbot.connector.exchange.injective_v2.data_sources.injective_read_only_data_source import (
     InjectiveReadOnlyDataSource,
 )
-from hummingbot.core.api_throttler.data_types import RateLimit
 from hummingbot.core.data_type.trade_fee import TradeFeeSchema
 
 if TYPE_CHECKING:

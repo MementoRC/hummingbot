@@ -1,9 +1,9 @@
 import sys
 from decimal import Decimal
 
+from web_assistant.throttler.data_types import RateLimit
 from xrpl.asyncio.transaction.main import _LEDGER_OFFSET
 
-from hummingbot.core.api_throttler.data_types import RateLimit
 from hummingbot.core.data_type.in_flight_order import OrderState, OrderType
 
 # =============================================================================

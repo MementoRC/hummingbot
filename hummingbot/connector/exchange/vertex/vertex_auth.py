@@ -5,11 +5,11 @@ import sha3
 from coincurve import PrivateKey
 from eip712_structs import make_domain
 from eth_utils import big_endian_to_int
+from web_assistant.auth import AuthBase
+from web_assistant.connections.data_types import RESTRequest, WSRequest
 
 import hummingbot.connector.exchange.vertex.vertex_constants as CONSTANTS
 from hummingbot.connector.utils import to_0x_hex
-from hummingbot.core.web_assistant.auth import AuthBase
-from hummingbot.core.web_assistant.connections.data_types import RESTRequest, WSRequest
 
 
 def keccak_hash(x):
