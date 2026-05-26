@@ -1,12 +1,32 @@
+"""Connector utilities — shim re-exporting pure helpers from connector_utils.
+
+The 5 trading-pair / order-id pure helpers live in the standalone
+connector_utils sub-package (sub-packages/connector-utils). This module:
+- Re-exports the 3 trading-pair helpers directly (signatures identical).
+- Wraps the 2 client-order-id factories to inject hummingbot's tracking_nonce
+  via the new nonce= kwarg, preserving the original signatures.
+- Keeps TimeSynchronizerRESTPreProcessor + GZipCompressionWSPostProcessor
+  INLINE (they need hummingbot-specific TimeSynchronizer + web_assistant types
+  — not portable to the sub-package).
+- Preserves to_0x_hex, build_api_factory, and TradeFillOrderDetails inline
+  (out of extraction scope).
+"""
+
+from __future__ import annotations
+
 import gzip
 import json
-import os
-import platform
 from collections import namedtuple
-from hashlib import md5
 from typing import Any, Callable
 
 from async_utils.tracking_nonce import NonceCreator, get_tracking_nonce
+from connector_utils import combine_to_hb_trading_pair  # noqa: F401  — re-export for callers
+from connector_utils import split_hb_trading_pair  # noqa: F401  — re-export for callers
+from connector_utils import validate_trading_pair  # noqa: F401  — re-export for callers
+from connector_utils.client_order_id import (
+    get_new_client_order_id as _gen_client_order_id,
+    get_new_numeric_client_order_id as _gen_numeric_client_order_id,
+)
 from hexbytes import HexBytes
 from web_assistant.connections.data_types import RESTRequest, WSResponse
 from web_assistant.rest_pre_processors import RESTPreProcessorBase
@@ -26,71 +46,37 @@ def build_api_factory(throttler: AsyncThrottlerBase) -> WebAssistantsFactory:
     return api_factory
 
 
-def split_hb_trading_pair(trading_pair: str) -> tuple[str, str]:
-    base, quote = trading_pair.split("-")
-    return base, quote
-
-
-def combine_to_hb_trading_pair(base: str, quote: str) -> str:
-    trading_pair = f"{base}-{quote}"
-    return trading_pair
-
-
-def validate_trading_pair(trading_pair: str) -> bool:
-    valid = False
-    if "-" in trading_pair and len(trading_pair.split("-")) == 2:
-        valid = True
-    return valid
-
-
-def _bot_instance_id() -> str:
-    return md5(f"{platform.uname()}_pid:{os.getpid()}_ppid:{os.getppid()}".encode("utf-8")).hexdigest()
-
-
 def get_new_client_order_id(
-    is_buy: bool, trading_pair: str, hbot_order_id_prefix: str = "", max_id_len: int | None = None
+    is_buy: bool,
+    trading_pair: str,
+    hbot_order_id_prefix: str = "",
+    max_id_len: int | None = None,
 ) -> str:
+    """Generate a unique client order ID using hummingbot's tracking_nonce.
+
+    Delegates to connector_utils.client_order_id.get_new_client_order_id with
+    nonce injected from async_utils.tracking_nonce.get_tracking_nonce().
     """
-    Creates a client order id for a new order
-
-    Note: If the need for much shorter IDs arises, an option is to concatenate the host name, the PID,
-    and the nonce, and hash the result.
-
-    :param is_buy: True if the order is a buy order, False otherwise
-    :param trading_pair: the trading pair the order will be operating with
-    :param hbot_order_id_prefix: The hummingbot-specific identifier for the given exchange
-    :param max_id_len: The maximum length of the ID string.
-    :return: an identifier for the new order to be used in the client
-    """
-    side = "B" if is_buy else "S"
-    symbols = split_hb_trading_pair(trading_pair)
-    base = symbols[0].upper()
-    quote = symbols[1].upper()
-    base_str = f"{base[0]}{base[-1]}"
-    quote_str = f"{quote[0]}{quote[-1]}"
-    client_instance_id = _bot_instance_id()
-    ts_hex = hex(get_tracking_nonce())[2:]
-    client_order_id = f"{hbot_order_id_prefix}{side}{base_str}{quote_str}{ts_hex}{client_instance_id}".replace("$", "")
-
-    if max_id_len is not None:
-        id_prefix = f"{hbot_order_id_prefix}{side}{base_str}{quote_str}"
-        suffix_max_length = max_id_len - len(id_prefix)
-        if suffix_max_length < len(ts_hex):
-            id_suffix = md5(f"{ts_hex}{client_instance_id}".encode()).hexdigest()
-            client_order_id = f"{id_prefix}{id_suffix[:suffix_max_length]}"
-        else:
-            client_order_id = client_order_id[:max_id_len]
-    return client_order_id
+    return _gen_client_order_id(
+        is_buy=is_buy,
+        trading_pair=trading_pair,
+        hbot_order_id_prefix=hbot_order_id_prefix,
+        max_id_len=max_id_len,
+        nonce=get_tracking_nonce(),
+    )
 
 
 def get_new_numeric_client_order_id(nonce_creator: NonceCreator, max_id_bit_count: int | None = None) -> int:
-    hexa_hash = _bot_instance_id()
-    host_part = int(hexa_hash, 16)
-    client_order_id = int(f"{host_part}{nonce_creator.get_tracking_nonce()}")
-    if max_id_bit_count:
-        max_int = 2**max_id_bit_count - 1
-        client_order_id &= max_int
-    return client_order_id
+    """Generate a unique numeric client order ID using NonceCreator.
+
+    Delegates to connector_utils.client_order_id.get_new_numeric_client_order_id
+    with nonce from the supplied NonceCreator. Preserves the original signature
+    so inbound callers don't need changes.
+    """
+    return _gen_numeric_client_order_id(
+        max_id_bit_count=max_id_bit_count,
+        nonce=nonce_creator.get_tracking_nonce(),
+    )
 
 
 class TimeSynchronizerRESTPreProcessor(RESTPreProcessorBase):
