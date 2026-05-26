@@ -4,7 +4,8 @@ from abc import ABC, abstractmethod
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from hummingbot.core.utils.async_utils import safe_ensure_future
+from async_utils.core import safe_ensure_future
+
 from hummingbot.logger import HummingbotLogger
 
 if TYPE_CHECKING:

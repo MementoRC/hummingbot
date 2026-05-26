@@ -3,12 +3,13 @@ import platform
 import threading
 from typing import TYPE_CHECKING, Callable
 
+from async_utils.core import safe_ensure_future
+
 import hummingbot.client.settings as settings
 from hummingbot import init_logging
 from hummingbot.client.command.gateway_api_manager import GatewayChainApiManager
 from hummingbot.client.config.config_validators import validate_bool
 from hummingbot.client.config.config_var import ConfigVar
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.exceptions import OracleRateUnavailable
 
 if TYPE_CHECKING:

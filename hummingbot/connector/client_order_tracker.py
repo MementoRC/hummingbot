@@ -5,6 +5,7 @@ from decimal import Decimal
 from itertools import chain
 from typing import TYPE_CHECKING, Callable, Dict
 
+from async_utils.core import safe_ensure_future
 from cachetools import TTLCache
 
 from hummingbot.core.data_type.common import TradeType
@@ -20,7 +21,6 @@ from hummingbot.core.event.events import (
     SellOrderCompletedEvent,
     SellOrderCreatedEvent,
 )
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.logger.logger import HummingbotLogger
 
 if TYPE_CHECKING:

@@ -42,7 +42,7 @@ from hummingbot.core.event.events import (
 )
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.core.Utils cimport getIteratorFromReverseIterator, reverse_iterator
-from hummingbot.core.utils.async_utils import safe_ensure_future
+from async_utils.core import safe_ensure_future
 from hummingbot.core.utils.estimate_fee import build_trade_fee
 
 if TYPE_CHECKING:

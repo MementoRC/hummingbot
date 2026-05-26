@@ -10,6 +10,7 @@ from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
 from aioresponses.core import RequestCall
+from async_utils.core import safe_gather
 from bidict import bidict
 from grpc import RpcError
 from pyinjective import Address, PrivateKey
@@ -46,7 +47,6 @@ from hummingbot.core.event.events import (
     OrderFilledEvent,
 )
 from hummingbot.core.network_iterator import NetworkStatus
-from hummingbot.core.utils.async_utils import safe_gather
 
 
 class InjectiveV2PerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDerivativeTests):

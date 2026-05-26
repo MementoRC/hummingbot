@@ -2,6 +2,8 @@ import asyncio
 from abc import ABC, abstractmethod
 from decimal import Decimal
 
+from async_utils.core import safe_ensure_future, safe_gather
+
 from hummingbot.connector.constants import s_decimal_0, s_decimal_NaN
 from hummingbot.connector.derivative.perpetual_budget_checker import PerpetualBudgetChecker
 from hummingbot.connector.derivative.position import Position
@@ -18,7 +20,6 @@ from hummingbot.core.event.events import (
     MarketEvent,
     PositionModeChangeEvent,
 )
-from hummingbot.core.utils.async_utils import safe_ensure_future, safe_gather
 
 
 class PerpetualDerivativePyBase(ExchangePyBase, ABC):

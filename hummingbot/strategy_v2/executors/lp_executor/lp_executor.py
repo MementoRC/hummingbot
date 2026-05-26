@@ -1,6 +1,5 @@
 import logging
 from decimal import Decimal
-from typing import Dict, Union
 
 from hummingbot.connector.gateway.gateway import AMMPoolInfo, CLMMPoolInfo
 from hummingbot.connector.utils import split_hb_trading_pair
@@ -12,6 +11,7 @@ from hummingbot.core.rate_oracle.rate_oracle import RateOracle
 from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.executor_base import ExecutorBase
+from hummingbot.strategy_v2.executors.executor_factory import ExecutorFactory
 from hummingbot.strategy_v2.executors.gateway_utils import parse_provider, validate_and_normalize_connector
 from hummingbot.strategy_v2.executors.lp_executor.data_types import LPExecutorConfig, LPExecutorState, LPExecutorStates
 from hummingbot.strategy_v2.models.base import RunnableStatus
@@ -21,6 +21,7 @@ from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 DEFAULT_NATIVE_CURRENCY = "SOL"
 
 
+@ExecutorFactory.register(LPExecutorConfig)
 class LPExecutor(ExecutorBase):
     """
     Executor for a single LP position lifecycle.
@@ -58,12 +59,12 @@ class LPExecutor(ExecutorBase):
         self.config: LPExecutorConfig = config
         self._max_retries = max_retries
         self.lp_position_state = LPExecutorState()
-        self._pool_info: Union[CLMMPoolInfo, AMMPoolInfo] | None = None
+        self._pool_info: CLMMPoolInfo | AMMPoolInfo | None = None
         self._current_price: Decimal | None = None  # Updated from pool_info or position_info
         self._max_retries_reached = False  # True when max retries reached, requires intervention
         self._last_attempted_signature: str | None = None  # Track for retry logging
         # Position tracking - store LP position for position aggregation when keep_position=True
-        self._held_position_orders: list[Dict] = []
+        self._held_position_orders: list[dict] = []
         # Swap tracking for close-out flow
         self._swap_not_found_count: int = 0
         # Parse lp_provider into dex_name and trading_type for gateway calls
@@ -941,7 +942,7 @@ class LPExecutor(ExecutorBase):
         # Initial investment value in pool quote currency
         return initial_base * add_price + initial_quote
 
-    def get_custom_info(self) -> Dict:
+    def get_custom_info(self) -> dict:
         """Report LP position state to controller"""
         price_float = float(self._current_price) if self._current_price else 0.0
         current_time = self._strategy.current_timestamp

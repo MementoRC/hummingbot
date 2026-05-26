@@ -2,11 +2,12 @@ import logging
 from decimal import Decimal
 from functools import lru_cache
 
+from async_utils.core import safe_gather
+
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import get_connector_class
 from hummingbot.client.config.security import Security
 from hummingbot.client.settings import AllConnectorSettings, gateway_connector_trading_pairs
-from hummingbot.core.utils.async_utils import safe_gather
 from hummingbot.core.utils.market_price import get_last_price
 
 

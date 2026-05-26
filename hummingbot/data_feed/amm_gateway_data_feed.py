@@ -2,6 +2,7 @@ import asyncio
 import logging
 from decimal import Decimal
 
+from async_utils.core import safe_ensure_future
 from pydantic import BaseModel
 
 from hummingbot.connector.utils import split_hb_trading_pair
@@ -9,7 +10,6 @@ from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.gateway.gateway_http_client import GatewayHttpClient
 from hummingbot.core.network_base import NetworkBase
 from hummingbot.core.network_iterator import NetworkStatus
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.logger import HummingbotLogger
 
 

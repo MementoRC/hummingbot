@@ -6,6 +6,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import Any, Callable, Mapping, Union
 
+from async_utils.core import safe_gather
 from bidict import bidict
 from google.protobuf import any_pb2
 from grpc import RpcError
@@ -41,7 +42,6 @@ from hummingbot.core.event.events import (
     PositionUpdateEvent,
 )
 from hummingbot.core.network_iterator import NetworkStatus
-from hummingbot.core.utils.async_utils import safe_gather
 from hummingbot.logger import HummingbotLogger
 
 

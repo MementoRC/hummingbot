@@ -2,6 +2,7 @@ import os
 import time
 from decimal import Decimal
 
+from async_utils.core import safe_ensure_future
 from pydantic import Field
 
 from hummingbot.connector.connector_base import ConnectorBase
@@ -13,7 +14,6 @@ from hummingbot.connector.exchange.xrpl.xrpl_utils import (
     RemoveLiquidityResponse,
 )
 from hummingbot.core.data_type.common import MarketDict
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base, StrategyV2ConfigBase
 
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from async_utils.core import safe_ensure_future
 from prompt_toolkit.application.current import get_app
 from prompt_toolkit.filters import is_searching, to_filter
 from prompt_toolkit.key_binding import KeyBindings
@@ -7,7 +8,6 @@ from prompt_toolkit.search import SearchDirection, do_incremental_search, start_
 
 from hummingbot.client.ui.scroll_handlers import scroll_down, scroll_up
 from hummingbot.client.ui.style import reset_style
-from hummingbot.core.utils.async_utils import safe_ensure_future
 
 
 def load_key_bindings(hb) -> KeyBindings:

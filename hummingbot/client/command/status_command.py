@@ -5,6 +5,7 @@ from collections import OrderedDict, deque
 from typing import TYPE_CHECKING
 
 import pandas as pd
+from async_utils.core import safe_ensure_future
 
 from hummingbot import check_dev_mode
 from hummingbot.client.command.gateway_command import GatewayCommand
@@ -17,7 +18,6 @@ from hummingbot.client.config.security import Security
 from hummingbot.client.settings import required_exchanges
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.network_iterator import NetworkStatus
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.logger.application_warning import ApplicationWarning
 from hummingbot.user.user_balances import UserBalances
 

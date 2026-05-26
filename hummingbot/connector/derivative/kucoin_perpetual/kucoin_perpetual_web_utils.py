@@ -1,5 +1,6 @@
 from typing import Any, Callable, Dict, List, Optional
 
+from async_utils.tracking_nonce import get_tracking_nonce
 from web_assistant.auth import AuthBase
 from web_assistant.connections.data_types import RESTMethod, RESTRequest
 from web_assistant.rest_pre_processors import RESTPreProcessorBase
@@ -9,7 +10,6 @@ from web_assistant.web_assistants_factory import WebAssistantsFactory
 from hummingbot.connector.derivative.kucoin_perpetual import kucoin_perpetual_constants as CONSTANTS
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
 from hummingbot.connector.utils import TimeSynchronizerRESTPreProcessor
-from hummingbot.core.utils.tracking_nonce import get_tracking_nonce
 
 
 class HeadersContentRESTPreProcessor(RESTPreProcessorBase):

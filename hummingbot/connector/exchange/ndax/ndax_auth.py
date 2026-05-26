@@ -3,11 +3,10 @@ import hmac
 import threading
 import time
 
+from async_utils.tracking_nonce import get_tracking_nonce_low_res
 from web_assistant.auth import AuthBase
 from web_assistant.connections.connections_factory import ConnectionsFactory
 from web_assistant.connections.data_types import RESTMethod, RESTRequest, WSRequest
-
-from hummingbot.core.utils.tracking_nonce import get_tracking_nonce_low_res
 
 ONE_HOUR = 3600
 

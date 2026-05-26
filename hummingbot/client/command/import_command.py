@@ -2,6 +2,8 @@ import asyncio
 import threading
 from typing import TYPE_CHECKING
 
+from async_utils.core import safe_ensure_future
+
 from hummingbot.client.config.client_config_map import AutofillImportEnum
 from hummingbot.client.config.config_helpers import (
     format_config_file_name,
@@ -10,7 +12,6 @@ from hummingbot.client.config.config_helpers import (
     validate_strategy_file,
 )
 from hummingbot.client.settings import CONF_PREFIX, STRATEGIES_CONF_DIR_PATH, required_exchanges
-from hummingbot.core.utils.async_utils import safe_ensure_future
 
 if TYPE_CHECKING:
     from hummingbot.client.hummingbot_application import HummingbotApplication  # noqa: F401

@@ -3,6 +3,8 @@ from decimal import Decimal
 from typing import Any, List
 
 import pandas as pd
+from async_utils.core import safe_ensure_future
+from async_utils.tracking_nonce import NonceCreator
 from bidict import bidict
 from web_assistant.connections.data_types import RESTMethod
 from web_assistant.web_assistants_factory import WebAssistantsFactory
@@ -30,8 +32,6 @@ from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTr
 from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee, TokenAmount, TradeFeeBase
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.event.events import AccountEvent, PositionModeChangeEvent
-from hummingbot.core.utils.async_utils import safe_ensure_future
-from hummingbot.core.utils.tracking_nonce import NonceCreator
 
 
 class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
