@@ -1,10 +1,11 @@
 import logging
 from typing import Any
 
+from web_assistant.throttler.async_throttler import AsyncThrottler
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+
 from hummingbot.connector.exchange.mexc.mexc_post_processor import MexcPostProcessor
-from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 from hummingbot.core.network_iterator import NetworkStatus
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 from hummingbot.data_feed.candles_feed.candles_base import CandlesBase
 from hummingbot.data_feed.candles_feed.mexc_spot_candles import constants as CONSTANTS
 from hummingbot.logger import HummingbotLogger

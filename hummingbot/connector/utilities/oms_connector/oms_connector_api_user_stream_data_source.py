@@ -1,5 +1,8 @@
 import asyncio
 
+from web_assistant.connections.data_types import WSJSONRequest
+from web_assistant.ws_assistant import WSAssistant
+
 from hummingbot.connector.utilities.oms_connector import oms_connector_constants as CONSTANTS
 from hummingbot.connector.utilities.oms_connector.oms_connector_auth import OMSConnectorAuth
 from hummingbot.connector.utilities.oms_connector.oms_connector_web_utils import (
@@ -7,8 +10,6 @@ from hummingbot.connector.utilities.oms_connector.oms_connector_web_utils import
     OMSConnectorWebAssistantsFactory,
 )
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
-from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest
-from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 
 
 class OMSConnectorAPIUserStreamDataSource(UserStreamTrackerDataSource):

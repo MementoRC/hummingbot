@@ -4,7 +4,8 @@ import time
 from abc import ABCMeta
 from typing import Any
 
-from hummingbot.core.web_assistant.ws_assistant import WSAssistant
+from web_assistant.ws_assistant import WSAssistant
+
 from hummingbot.logger import HummingbotLogger
 
 

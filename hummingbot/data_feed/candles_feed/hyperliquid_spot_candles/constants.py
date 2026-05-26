@@ -1,6 +1,5 @@
 from bidict import bidict
-
-from hummingbot.core.api_throttler.data_types import LinkedLimitWeightPair, RateLimit
+from web_assistant.throttler.data_types import LinkedLimitWeightPair, RateLimit
 
 REST_URL = "https://api.hyperliquid.xyz/info"
 HEALTH_CHECK_PAYLOAD = {"type": "spotMeta"}

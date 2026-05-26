@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from enum import Enum
 
-from hummingbot.core.api_throttler.data_types import RateLimit
+from web_assistant.throttler.data_types import RateLimit
 
 # Rate limits ID
 REST_CALL_RATE_LIMIT_ID = "coin_gecko_rest_rate_limit_id"
