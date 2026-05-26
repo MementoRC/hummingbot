@@ -6,9 +6,9 @@ from unittest import TestCase
 from unittest.mock import MagicMock
 
 from typing_extensions import Awaitable
+from web_assistant.connections.data_types import RESTMethod, RESTRequest
 
 from hummingbot.connector.exchange.mexc.mexc_auth import MexcAuth
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest
 
 
 class MexcAuthTests(TestCase):

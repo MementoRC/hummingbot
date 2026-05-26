@@ -3,11 +3,12 @@
 import unittest
 from unittest.mock import MagicMock
 
+from web_assistant.connections.data_types import RESTRequest
+
 from hummingbot.connector.derivative.evedex_perpetual import (
     evedex_perpetual_constants as CONSTANTS,
     evedex_perpetual_web_utils as web_utils,
 )
-from hummingbot.core.web_assistant.connections.data_types import RESTRequest
 
 
 class TestEvedexPerpetualWebUtils(unittest.TestCase):

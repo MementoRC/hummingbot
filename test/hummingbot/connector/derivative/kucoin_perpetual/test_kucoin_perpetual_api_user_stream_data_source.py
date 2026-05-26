@@ -1,11 +1,12 @@
 import asyncio
 import re
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from typing import Any
+from typing import Any, Dict, Optional
 from unittest.mock import AsyncMock, patch
 
 import ujson
 from aioresponses.core import aioresponses
+from web_assistant.throttler.async_throttler import AsyncThrottler
 
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
@@ -20,7 +21,6 @@ from hummingbot.connector.derivative.kucoin_perpetual.kucoin_perpetual_auth impo
 from hummingbot.connector.derivative.kucoin_perpetual.kucoin_perpetual_derivative import KucoinPerpetualDerivative
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
-from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 
 
 class KucoinPerpetualAPIUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
@@ -43,7 +43,7 @@ class KucoinPerpetualAPIUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTest
     def setUp(self) -> None:
         super().setUp()
         self.log_records = []
-        self.listening_task: asyncio.Task | None = None
+        self.listening_task: Optional[asyncio.Task] = None
         client_config_map = ClientConfigAdapter(ClientConfigMap())
 
         self.emulated_time = 1640001112.223
@@ -186,7 +186,7 @@ class KucoinPerpetualAPIUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTest
         }
         return ujson.dumps(resp)
 
-    def _error_response(self) -> dict[str, Any]:
+    def _error_response(self) -> Dict[str, Any]:
         resp = {"code": "400100", "msg": "Invalid Parameter."}
 
         return resp

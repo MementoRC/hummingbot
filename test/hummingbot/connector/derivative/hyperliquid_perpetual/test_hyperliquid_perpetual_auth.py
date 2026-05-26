@@ -4,8 +4,9 @@ from typing import Awaitable
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
+from web_assistant.connections.data_types import RESTMethod, RESTRequest
+
 from hummingbot.connector.derivative.hyperliquid_perpetual.hyperliquid_perpetual_auth import HyperliquidPerpetualAuth
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest
 
 
 class HyperliquidPerpetualAuthTests(TestCase):

@@ -3,10 +3,10 @@ import json
 import base58
 import pytest
 from solders.keypair import Keypair
+from web_assistant.connections.data_types import RESTMethod
 
 # Import the module under test
 from hummingbot.connector.derivative.pacifica_perpetual import pacifica_perpetual_auth as auth_mod
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod
 
 
 def generate_dummy_keypair():

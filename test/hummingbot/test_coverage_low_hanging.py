@@ -101,7 +101,7 @@ def test_market_config_default_config():
 # ---------------------------------------------------------------------------
 def test_rate_limit_repr():
     """Line 46: f-string in RateLimit.__repr__."""
-    from hummingbot.core.api_throttler.data_types import RateLimit
+    from web_assistant.throttler.data_types import RateLimit
 
     rl = RateLimit(limit_id="/api/test", limit=100, time_interval=1.0, weight=2)
     result = repr(rl)

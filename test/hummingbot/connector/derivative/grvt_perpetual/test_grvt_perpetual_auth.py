@@ -3,9 +3,10 @@ from decimal import Decimal
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, patch
 
+from web_assistant.connections.data_types import RESTMethod, RESTRequest
+
 from hummingbot.connector.derivative.grvt_perpetual.grvt_perpetual_auth import GrvtPerpetualAuth
 from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest
 
 
 class GrvtPerpetualAuthTests(IsolatedAsyncioTestCase):
