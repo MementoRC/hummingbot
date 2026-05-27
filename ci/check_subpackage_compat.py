@@ -12,9 +12,55 @@ import importlib
 import sys
 from inspect import iscoroutinefunction
 
+# All 14 sub-package directory names mapped to their top-level import names.
+# Every entry is gated: the script exits non-zero if any import fails.
+SUBPACKAGE_IMPORTS = {
+    "async-utils": "async_utils",
+    "candles-feed": "candles_feed",
+    "connector-utils": "connector_utils",
+    "data-type-primitives": "data_type_primitives",
+    "event-bus": "event_bus",
+    "liquidations-feed": "liquidations_feed",
+    "logger": "logger",
+    "market-connector": "market_connector",
+    "market-data": "market_data",
+    "market-simulator": "market_simulator",
+    "rate-oracle": "rate_oracle",
+    "remote-iface": "remote_iface",
+    "strategy-framework": "strategy_framework",
+    "web-assistant": "web_assistant",
+}
 
-def check_imports():
-    """Verify all sub-package imports resolve."""
+
+def check_subpackage_imports() -> list[str]:
+    """Smoke-test top-level import for all 14 sub-packages.
+
+    Returns a list of failure strings (empty on full success).
+    """
+    failures = []
+
+    print("=" * 60)
+    print("Sub-package top-level import smoke test (all 14)")
+    print("=" * 60)
+
+    for pkg_dir, import_name in SUBPACKAGE_IMPORTS.items():
+        try:
+            importlib.import_module(import_name)
+            print(f"  PASS  {pkg_dir} -> {import_name}")
+        except ImportError as e:
+            msg = f"FAIL  {pkg_dir} -> {import_name}: {e}"
+            print(f"  {msg}")
+            failures.append(msg)
+        except Exception as e:
+            msg = f"FAIL  {pkg_dir} -> {import_name}: unexpected error: {e}"
+            print(f"  {msg}")
+            failures.append(msg)
+
+    return failures
+
+
+def check_imports() -> list[str]:
+    """Verify candles-feed deep imports and attributes resolve."""
     failures = []
 
     packages = [
@@ -43,7 +89,7 @@ def check_imports():
     return failures
 
 
-def check_contracts():
+def check_contracts() -> list[str]:
     """Verify expected public API classes have required methods/attributes."""
     failures = []
 
@@ -155,14 +201,18 @@ def check_contracts():
     return failures
 
 
-def main():
+def main() -> None:
     mode = sys.argv[1] if len(sys.argv) > 1 else "all"
 
-    all_failures = []
+    all_failures: list[str] = []
+
+    # Always run the 14-sub-package smoke test first.
+    subpkg_failures = check_subpackage_imports()
+    all_failures.extend(subpkg_failures)
 
     if mode in ("import", "all"):
         print("=" * 60)
-        print("Sub-package import smoke test")
+        print("Sub-package deep import smoke test (candles-feed)")
         print("=" * 60)
         failures = check_imports()
         all_failures.extend(failures)
@@ -170,7 +220,7 @@ def main():
             for f in failures:
                 print(f"  {f}")
         else:
-            print("  OK: All sub-package imports resolved")
+            print("  OK: All candles-feed deep imports resolved")
 
     if mode in ("contract", "all"):
         print("=" * 60)
