@@ -1,6 +1,6 @@
 import sys
 
-from hummingbot.core.api_throttler.data_types import LinkedLimitWeightPair, RateLimit
+from web_assistant.throttler.data_types import LinkedLimitWeightPair, RateLimit
 
 UNIVERSAL_QUOTE_TOKEN = "USD"  # coincap only works with USD
 

@@ -1,6 +1,10 @@
 import asyncio
 from typing import TYPE_CHECKING, Any, Union
 
+from web_assistant.connections.data_types import RESTMethod, WSJSONRequest
+from web_assistant.rest_assistant import RESTAssistant
+from web_assistant.ws_assistant import WSAssistant
+
 from hummingbot.connector.utilities.oms_connector import oms_connector_constants as CONSTANTS
 from hummingbot.connector.utilities.oms_connector.oms_connector_auth import OMSConnectorAuth
 from hummingbot.connector.utilities.oms_connector.oms_connector_web_utils import (
@@ -10,9 +14,6 @@ from hummingbot.connector.utilities.oms_connector.oms_connector_web_utils import
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
 from hummingbot.core.utils.tracking_nonce import NonceCreator
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, WSJSONRequest
-from hummingbot.core.web_assistant.rest_assistant import RESTAssistant
-from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 
 if TYPE_CHECKING:
     from hummingbot.connector.utilities.oms_connector.oms_connector_exchange import OMSExchange

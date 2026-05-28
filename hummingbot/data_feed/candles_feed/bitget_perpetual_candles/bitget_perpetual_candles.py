@@ -3,10 +3,11 @@ import logging
 import time
 from typing import Any
 
+from web_assistant.connections.data_types import WSPlainTextRequest
+from web_assistant.ws_assistant import WSAssistant
+
 from hummingbot.connector.utils import split_hb_trading_pair
 from hummingbot.core.network_iterator import NetworkStatus
-from hummingbot.core.web_assistant.connections.data_types import WSPlainTextRequest
-from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.data_feed.candles_feed.bitget_perpetual_candles import constants as CONSTANTS
 from hummingbot.data_feed.candles_feed.candles_base import CandlesBase
 from hummingbot.logger import HummingbotLogger

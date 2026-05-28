@@ -1,6 +1,5 @@
 from bidict import bidict
-
-from hummingbot.core.api_throttler.data_types import RateLimit
+from web_assistant.throttler.data_types import RateLimit
 
 REST_URL = "https://api.aevo.xyz"
 WSS_URL = "wss://ws.aevo.xyz"
