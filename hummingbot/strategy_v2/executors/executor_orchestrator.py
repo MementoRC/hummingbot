@@ -3,7 +3,7 @@ import logging
 import uuid
 from collections import deque
 from decimal import Decimal
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Dict, List, Optional
 
 from hummingbot.connector.markets_recorder import MarketsRecorder
 from hummingbot.core.data_type.common import PositionAction, PositionMode, PriceType, TradeType
@@ -40,25 +40,86 @@ class PositionHold:
         # Store only client order IDs
         self.order_ids = set()
 
-        # Pre-calculated metrics
+        # Net position tracking (positive = long, negative = short)
+        self.net_amount_base = Decimal("0")
+        self.avg_entry_price = Decimal("0")
+
+        # Accumulated metrics
+        self.realized_pnl_quote = Decimal("0")
         self.volume_traded_quote = Decimal("0")
         self.cum_fees_quote = Decimal("0")
 
-        # Separate tracking for buys and sells
+        # Separate tracking for buys and sells (for logging/diagnostics)
         self.buy_amount_base = Decimal("0")
         self.buy_amount_quote = Decimal("0")
         self.sell_amount_base = Decimal("0")
         self.sell_amount_quote = Decimal("0")
 
+    def _process_order(self, is_buy: bool, amount_base: Decimal, amount_quote: Decimal):
+        """
+        Process an order incrementally: realize PnL when reducing position,
+        update avg_entry_price when adding to position.
+        """
+        if amount_base == 0:
+            return
+
+        order_price = amount_quote / amount_base
+        is_reducing = (self.net_amount_base > 0 and not is_buy) or (self.net_amount_base < 0 and is_buy)
+
+        if is_reducing:
+            abs_net = abs(self.net_amount_base)
+            matched = min(amount_base, abs_net)
+
+            # Realize PnL on matched portion
+            if self.net_amount_base > 0:
+                self.realized_pnl_quote += (order_price - self.avg_entry_price) * matched
+            else:
+                self.realized_pnl_quote += (self.avg_entry_price - order_price) * matched
+
+            excess = amount_base - matched
+            if excess > 0:
+                # Position flipped to opposite side
+                self.net_amount_base = excess if is_buy else -excess
+                self.avg_entry_price = order_price
+            elif matched == abs_net:
+                # Position fully closed
+                self.net_amount_base = Decimal("0")
+                self.avg_entry_price = Decimal("0")
+            else:
+                # Position partially reduced, avg_entry_price stays the same
+                if self.net_amount_base > 0:
+                    self.net_amount_base -= matched
+                else:
+                    self.net_amount_base += matched
+        else:
+            # Adding to position or first order
+            if self.net_amount_base == 0:
+                self.net_amount_base = amount_base if is_buy else -amount_base
+                self.avg_entry_price = order_price
+            else:
+                abs_net = abs(self.net_amount_base)
+                total_cost = self.avg_entry_price * abs_net + amount_quote
+                new_abs = abs_net + amount_base
+                self.avg_entry_price = total_cost / new_abs
+                self.net_amount_base = new_abs if is_buy else -new_abs
+
     def add_orders_from_executor(self, executor: ExecutorInfo):
         custom_info = executor.custom_info
         if "held_position_orders" not in custom_info or len(custom_info["held_position_orders"]) == 0:
+            logging.getLogger(__name__).warning(
+                f"PositionHold.add_orders: executor {executor.id[:8]} has no held_position_orders. "
+                f"close_type={executor.close_type} side={executor.config.side} "
+                f"level_id={custom_info.get('level_id', 'N/A')}"
+            )
             return
 
         for order in custom_info["held_position_orders"]:
             # Skip if we've already processed this order
             order_id = order.get("client_order_id")
             if order_id in self.order_ids:
+                logging.getLogger(__name__).debug(
+                    f"PositionHold.add_orders: skipping duplicate order {order_id}"
+                )
                 continue
 
             # Add the order ID to our set
@@ -69,11 +130,16 @@ class PositionHold:
             executed_amount_quote = Decimal(str(order.get("executed_amount_quote", 0)))
 
             is_buy = order.get("trade_type") == "BUY"
+            order_type_label = order.get("order_type", "N/A")
+            position_action = order.get("position", "N/A")
+
+            # Snapshot before
+            prev_net = self.net_amount_base
 
             # Update volume traded in quote
             self.volume_traded_quote += executed_amount_quote
 
-            # Update buy/sell amounts
+            # Update buy/sell totals (for logging/diagnostics)
             if is_buy:
                 self.buy_amount_base += executed_amount_base
                 self.buy_amount_quote += executed_amount_quote
@@ -84,62 +150,57 @@ class PositionHold:
             # Update fees (tx fees paid)
             self.cum_fees_quote += Decimal(str(order.get("cumulative_fee_paid_quote", 0)))
 
+            # Process order for incremental PnL calculation
+            self._process_order(is_buy, executed_amount_base, executed_amount_quote)
+
+            logging.getLogger(__name__).debug(
+                f"PositionHold.add_orders: {self.trading_pair} | "
+                f"order={order_id[:12] if order_id else 'N/A'} | "
+                f"trade_type={'BUY' if is_buy else 'SELL'} | "
+                f"order_type={order_type_label} | position_action={position_action} | "
+                f"amount_base={executed_amount_base} amount_quote={executed_amount_quote:.2f} | "
+                f"executor_side={executor.config.side} level={custom_info.get('level_id', 'N/A')} | "
+                f"net_before={prev_net} -> net_after={self.net_amount_base} | "
+                f"avg_entry={self.avg_entry_price:.4f} realized_pnl={self.realized_pnl_quote:.4f} | "
+                f"buy_total={self.buy_amount_base} sell_total={self.sell_amount_base}"
+            )
+
     def get_position_summary(self, mid_price: Decimal):
-        # Calculate buy and sell breakeven prices
-        buy_breakeven_price = self.buy_amount_quote / self.buy_amount_base if self.buy_amount_base > 0 else Decimal("0")
-        sell_breakeven_price = (
-            self.sell_amount_quote / self.sell_amount_base if self.sell_amount_base > 0 else Decimal("0")
-        )
+        abs_amount = abs(self.net_amount_base)
+        is_net_long = self.net_amount_base >= 0
 
-        # Calculate matched volume (minimum of buy and sell base amounts)
-        matched_amount_base = min(self.buy_amount_base, self.sell_amount_base)
-
-        # Calculate realized PnL from matched volume
-        realized_pnl_quote = (
-            (sell_breakeven_price - buy_breakeven_price) * matched_amount_base
-            if matched_amount_base > 0
-            else Decimal("0")
-        )
-
-        # Calculate net position amount and direction
-        net_amount_base = self.buy_amount_base - self.sell_amount_base
-        is_net_long = net_amount_base >= 0
-
-        # Calculate unrealized PnL for the remaining unmatched volume
+        # Calculate unrealized PnL for remaining open position
         unrealized_pnl_quote = Decimal("0")
-        breakeven_price = Decimal("0")
-        if net_amount_base != 0:
+        if abs_amount > 0:
             if is_net_long:
-                # Long position: remaining buy amount
-                remaining_base = net_amount_base
-                remaining_quote = self.buy_amount_quote - (matched_amount_base * buy_breakeven_price)
-                breakeven_price = remaining_quote / remaining_base if remaining_base != 0 else Decimal("0")
-                unrealized_pnl_quote = (mid_price - breakeven_price) * remaining_base
+                unrealized_pnl_quote = (mid_price - self.avg_entry_price) * abs_amount
             else:
-                # Short position: remaining sell amount
-                remaining_base = abs(net_amount_base)
-                remaining_quote = self.sell_amount_quote - (matched_amount_base * sell_breakeven_price)
-                breakeven_price = remaining_quote / remaining_base if remaining_base != 0 else Decimal("0")
-                unrealized_pnl_quote = (breakeven_price - mid_price) * remaining_base
+                unrealized_pnl_quote = (self.avg_entry_price - mid_price) * abs_amount
 
-        return PositionSummary(
+        summary = PositionSummary(
             connector_name=self.connector_name,
             trading_pair=self.trading_pair,
             volume_traded_quote=self.volume_traded_quote,
-            amount=abs(net_amount_base),
+            amount=abs_amount,
             side=TradeType.BUY if is_net_long else TradeType.SELL,
-            breakeven_price=breakeven_price,
+            breakeven_price=self.avg_entry_price,
             unrealized_pnl_quote=unrealized_pnl_quote,
-            realized_pnl_quote=realized_pnl_quote,
-            cum_fees_quote=self.cum_fees_quote,
+            realized_pnl_quote=self.realized_pnl_quote,
+            cum_fees_quote=self.cum_fees_quote)
+
+        logging.getLogger(__name__).debug(
+            f"PositionHold.summary: {self.trading_pair} | "
+            f"net={'LONG' if is_net_long else 'SHORT'} {abs_amount} @ entry={self.avg_entry_price:.4f} | "
+            f"unrealized_pnl={unrealized_pnl_quote:.4f} realized_pnl={self.realized_pnl_quote:.4f} | "
+            f"mid_price={mid_price:.4f} orders={len(self.order_ids)}"
         )
+        return summary
 
 
 class ExecutorOrchestrator:
     """
     Orchestrator for various executors.
     """
-
     _logger = None
     _executor_mapping = {
         "position_executor": PositionExecutor,
@@ -158,13 +219,11 @@ class ExecutorOrchestrator:
             cls._logger = logging.getLogger(__name__)
         return cls._logger
 
-    def __init__(
-        self,
-        strategy: "StrategyV2Base",
-        executors_update_interval: float = 1.0,
-        executors_max_retries: int = 10,
-        initial_positions_by_controller: dict | None = None,
-    ):
+    def __init__(self,
+                 strategy: "StrategyV2Base",
+                 executors_update_interval: float = 1.0,
+                 executors_max_retries: int = 10,
+                 initial_positions_by_controller: Optional[dict] = None):
         self.strategy = strategy
         self.executors_update_interval = executors_update_interval
         self.executors_max_retries = executors_max_retries
@@ -201,14 +260,10 @@ class ExecutorOrchestrator:
             if controller_id in self.initial_positions_by_controller or controller_id not in self.strategy.controllers:
                 continue
             # Skip if the connector/trading pair is not in the current strategy markets
-            if (
-                position.connector_name not in self.strategy.markets
-                or position.trading_pair not in self.strategy.markets.get(position.connector_name, set())
-            ):
-                self.logger().warning(
-                    f"Skipping position for {position.connector_name}.{position.trading_pair} - "
-                    f"not available in current strategy markets"
-                )
+            if (position.connector_name not in self.strategy.markets or
+                    position.trading_pair not in self.strategy.markets.get(position.connector_name, set())):
+                self.logger().warning(f"Skipping position for {position.connector_name}.{position.trading_pair} - "
+                                      f"not available in current strategy markets")
                 continue
             self._load_position_from_db(controller_id, position)
 
@@ -224,9 +279,8 @@ class ExecutorOrchestrator:
             report.realized_pnl_quote += executor_info.net_pnl_quote
             report.volume_traded += executor_info.filled_amount_quote
         if executor_info.close_type:
-            report.close_type_counts[executor_info.close_type] = (
-                report.close_type_counts.get(executor_info.close_type, 0) + 1
-            )
+            report.close_type_counts[executor_info.close_type] = report.close_type_counts.get(executor_info.close_type,
+                                                                                              0) + 1
 
     def _load_position_from_db(self, controller_id: str, db_position: Position):
         """
@@ -242,20 +296,18 @@ class ExecutorOrchestrator:
         position_hold.volume_traded_quote = db_position.volume_traded_quote
         position_hold.cum_fees_quote = db_position.cum_fees_quote
 
-        # Since the database stores the net position, we need to reconstruct the buy/sell amounts
-        # We assume this represents the remaining unmatched position after any realized trades
+        # Restore net position and avg entry price from database
         if db_position.side == "BUY":
-            # This is a net long position
+            position_hold.net_amount_base = db_position.amount
             position_hold.buy_amount_base = db_position.amount
             position_hold.buy_amount_quote = db_position.amount * db_position.breakeven_price
-            position_hold.sell_amount_base = Decimal("0")
-            position_hold.sell_amount_quote = Decimal("0")
         else:
-            # This is a net short position
+            position_hold.net_amount_base = -db_position.amount
             position_hold.sell_amount_base = db_position.amount
             position_hold.sell_amount_quote = db_position.amount * db_position.breakeven_price
-            position_hold.buy_amount_base = Decimal("0")
-            position_hold.buy_amount_quote = Decimal("0")
+        position_hold.avg_entry_price = db_position.breakeven_price
+        # Restore realized PnL if available
+        position_hold.realized_pnl_quote = getattr(db_position, 'realized_pnl_quote', Decimal("0"))
 
         # Add to positions held
         self.positions_held[controller_id].append(position_hold)
@@ -290,32 +342,27 @@ class ExecutorOrchestrator:
 
                 # Create PositionHold object
                 position_hold = PositionHold(
-                    position_config.connector_name, position_config.trading_pair, position_config.side
+                    position_config.connector_name,
+                    position_config.trading_pair,
+                    position_config.side
                 )
 
-                # Set amounts based on side
+                # Set net position and avg entry price
                 if position_config.side == TradeType.BUY:
+                    position_hold.net_amount_base = position_config.amount
                     position_hold.buy_amount_base = position_config.amount
                     position_hold.buy_amount_quote = quote_amount
-                    position_hold.sell_amount_base = Decimal("0")
-                    position_hold.sell_amount_quote = Decimal("0")
                 else:
+                    position_hold.net_amount_base = -position_config.amount
                     position_hold.sell_amount_base = position_config.amount
                     position_hold.sell_amount_quote = quote_amount
-                    position_hold.buy_amount_base = Decimal("0")
-                    position_hold.buy_amount_quote = Decimal("0")
-
-                # Set fees and volume to 0 (as specified - this is a fresh start)
-                position_hold.volume_traded_quote = Decimal("0")
-                position_hold.cum_fees_quote = Decimal("0")
+                position_hold.avg_entry_price = mid_price
 
                 # Add to positions held
                 self.positions_held[controller_id].append(position_hold)
 
-                self.logger().info(
-                    f"Created initial position for controller {controller_id}: {position_config.amount} "
-                    f"{position_config.side.name} {position_config.trading_pair} on {position_config.connector_name}"
-                )
+                self.logger().info(f"Created initial position for controller {controller_id}: {position_config.amount} "
+                                   f"{position_config.side.name} {position_config.trading_pair} on {position_config.connector_name}")
 
     async def stop(self, max_executors_close_attempts: int = 3):
         """
@@ -327,13 +374,8 @@ class ExecutorOrchestrator:
                 if not executor.is_closed:
                     executor.early_stop()
         for i in range(max_executors_close_attempts):
-            if all(
-                [
-                    executor.executor_info.is_done
-                    for executors_list in self.active_executors.values()
-                    for executor in executors_list
-                ]
-            ):
+            if all([executor.executor_info.is_done for executors_list in self.active_executors.values()
+                    for executor in executors_list]):
                 break  # All executors are done, exit early
             await asyncio.sleep(2.0)
         # Store all positions and executors
@@ -353,18 +395,13 @@ class ExecutorOrchestrator:
                 continue
             for position in positions_list:
                 # Skip if the connector/trading pair is not in the current strategy markets
-                if (
-                    position.connector_name not in self.strategy.markets
-                    or position.trading_pair not in self.strategy.markets.get(position.connector_name, set())
-                ):
-                    self.logger().warning(
-                        f"Skipping position storage for {position.connector_name}.{position.trading_pair} - "
-                        f"not available in current strategy markets"
-                    )
+                if (position.connector_name not in self.strategy.markets or
+                        position.trading_pair not in self.strategy.markets.get(position.connector_name, set())):
+                    self.logger().warning(f"Skipping position storage for {position.connector_name}.{position.trading_pair} - "
+                                          f"not available in current strategy markets")
                     continue
                 mid_price = self.strategy.market_data_provider.get_price_by_type(
-                    position.connector_name, position.trading_pair, PriceType.MidPrice
-                )
+                    position.connector_name, position.trading_pair, PriceType.MidPrice)
                 position_summary = position.get_position_summary(mid_price if not mid_price.is_nan() else Decimal("0"))
 
                 # Create a Position record (id will only be used for new positions)
@@ -403,10 +440,8 @@ class ExecutorOrchestrator:
         """
         controller_id = action.controller_id
         if controller_id is None:
-            self.logger().error(
-                f"Received action with controller_id=None: {action}. "
-                "Check that the controller config has a valid 'id' field."
-            )
+            self.logger().error(f"Received action with controller_id=None: {action}. "
+                                "Check that the controller config has a valid 'id' field.")
             return
         if controller_id not in self.cached_performance:
             self.active_executors[controller_id] = []
@@ -420,7 +455,7 @@ class ExecutorOrchestrator:
         elif isinstance(action, StoreExecutorAction):
             self.store_executor(action)
 
-    def execute_actions(self, actions: list[ExecutorAction]):
+    def execute_actions(self, actions: List[ExecutorAction]):
         """
         Execute a list of actions.
         """
@@ -462,8 +497,8 @@ class ExecutorOrchestrator:
         executor_id = action.executor_id
 
         executor = next(
-            (executor for executor in self.active_executors[controller_id] if executor.config.id == executor_id), None
-        )
+            (executor for executor in self.active_executors[controller_id] if executor.config.id == executor_id),
+            None)
         if not executor:
             self.logger().error(f"Executor ID {executor_id} not found for controller {controller_id}.")
             return
@@ -477,13 +512,10 @@ class ExecutorOrchestrator:
         for controller_id, executors_list in self.active_executors.items():
             # Filter executors that need position updates
             executors_to_process = [
-                executor
-                for executor in executors_list
-                if (
-                    executor.executor_info.is_done
-                    and executor.executor_info.close_type == CloseType.POSITION_HOLD
-                    and executor.executor_info.config.id not in self.executors_ids_position_held
-                )
+                executor for executor in executors_list
+                if (executor.executor_info.is_done and
+                    executor.executor_info.close_type == CloseType.POSITION_HOLD and
+                    executor.executor_info.config.id not in self.executors_ids_position_held)
             ]
 
             # Skip if no executors to process
@@ -499,55 +531,78 @@ class ExecutorOrchestrator:
                 # Determine position side (handling perpetual markets)
                 position_side = self._determine_position_side(executor_info)
 
+                held_orders = executor_info.custom_info.get("held_position_orders", [])
+                held_summary = [
+                    f"{o.get('trade_type')}:{o.get('executed_amount_base')}@{o.get('position', 'N/A')}"
+                    for o in held_orders
+                ]
+
+                self.logger().debug(
+                    f"Processing POSITION_HOLD executor: {executor_info.id[:8]} | "
+                    f"controller={controller_id} | side={executor_info.config.side} | "
+                    f"level={executor_info.custom_info.get('level_id', 'N/A')} | "
+                    f"position_side_resolved={position_side} | "
+                    f"held_orders({len(held_orders)}): {held_summary} | "
+                    f"existing_positions={len(positions)}"
+                )
+
                 # Find or create position
                 existing_position = self._find_existing_position(positions, executor_info, position_side)
 
                 if existing_position:
                     existing_position.add_orders_from_executor(executor_info)
+                    self.logger().debug(
+                        f"Merged executor {executor_info.id[:8]} into existing position: "
+                        f"net={existing_position.net_amount_base} avg_entry={existing_position.avg_entry_price:.4f}"
+                    )
                 else:
                     # Create new position (handles both spot/perp and LP)
+                    assigned_side = position_side
+                    self.logger().debug(
+                        f"Creating new PositionHold for executor {executor_info.id[:8]} with side={assigned_side}"
+                    )
                     position = PositionHold(
                         executor_info.connector_name,
                         executor_info.trading_pair,
-                        position_side if position_side else executor_info.config.side,
+                        assigned_side
                     )
                     position.add_orders_from_executor(executor_info)
                     positions.append(position)
 
-    def _determine_position_side(self, executor_info: ExecutorInfo) -> TradeType | None:
+    def _determine_position_side(self, executor_info: ExecutorInfo) -> Optional[TradeType]:
         """
         Determine the position side for an executor, handling perpetual markets.
+        In ONEWAY mode, returns None so all orders (buy/sell) are netted into a single position.
+        In HEDGE mode, returns the appropriate side based on position_action.
         """
         is_perpetual = "_perpetual" in executor_info.connector_name
         if not is_perpetual:
-            return None
+            return executor_info.config.side
 
         market = self.strategy.connectors.get(executor_info.connector_name)
-        if not market or not hasattr(market, "position_mode"):
-            return None
+        if not market or not hasattr(market, 'position_mode'):
+            return executor_info.config.side
 
         position_mode = market.position_mode
-        if hasattr(executor_info.config, "position_action") and position_mode == PositionMode.HEDGE:
-            opposite_side = TradeType.BUY if executor_info.config.side == TradeType.SELL else TradeType.SELL
-            return (
-                opposite_side
-                if executor_info.config.position_action == PositionAction.CLOSE
-                else executor_info.config.side
-            )
+        if position_mode == PositionMode.HEDGE:
+            if hasattr(executor_info.config, "position_action"):
+                opposite_side = TradeType.BUY if executor_info.config.side == TradeType.SELL else TradeType.SELL
+                return opposite_side if executor_info.config.position_action == PositionAction.CLOSE else executor_info.config.side
+            return executor_info.config.side
 
-        return executor_info.config.side
+        # ONEWAY: all orders net into a single position, no side filtering
+        return None
 
-    def _find_existing_position(
-        self, positions: list[PositionHold], executor_info: ExecutorInfo, position_side: TradeType | None
-    ) -> PositionHold | None:
+    def _find_existing_position(self, positions: List[PositionHold],
+                                executor_info: ExecutorInfo,
+                                position_side: Optional[TradeType]) -> Optional[PositionHold]:
         """
         Find an existing position that matches the executor's trading pair and side.
         """
         for position in positions:
-            if (
-                position.trading_pair == executor_info.trading_pair
-                and position.connector_name == executor_info.connector_name
-            ):
+            if (position.trading_pair == executor_info.trading_pair and
+                    position.connector_name == executor_info.connector_name):
+
                 # If we have a specific position side, match it
                 if position_side is not None:
                     if position.side == position_side:
@@ -566,8 +621,8 @@ class ExecutorOrchestrator:
         executor_id = action.executor_id
 
         executor = next(
-            (executor for executor in self.active_executors[controller_id] if executor.config.id == executor_id), None
-        )
+            (executor for executor in self.active_executors[controller_id] if executor.config.id == executor_id),
+            None)
         if not executor:
             self.logger().error(f"Executor ID {executor_id} not found for controller {controller_id}.")
             return
@@ -585,7 +640,7 @@ class ExecutorOrchestrator:
         del executor
         # Trigger garbage collection after executor cleanup
 
-    def get_executors_report(self) -> dict[str, list[ExecutorInfo]]:
+    def get_executors_report(self) -> Dict[str, List[ExecutorInfo]]:
         """
         Generate a report of all executors.
         """
@@ -594,7 +649,7 @@ class ExecutorOrchestrator:
             report[controller_id] = [executor.executor_info for executor in executors_list if executor]
         return report
 
-    def get_positions_report(self) -> dict[str, list[PositionSummary]]:
+    def get_positions_report(self) -> Dict[str, List[PositionSummary]]:
         """
         Generate a report of all positions held.
         """
@@ -603,15 +658,12 @@ class ExecutorOrchestrator:
             positions_summary = []
             for position in positions_list:
                 mid_price = self.strategy.market_data_provider.get_price_by_type(
-                    position.connector_name, position.trading_pair, PriceType.MidPrice
-                )
-                positions_summary.append(
-                    position.get_position_summary(mid_price if not mid_price.is_nan() else Decimal("0"))
-                )
+                    position.connector_name, position.trading_pair, PriceType.MidPrice)
+                positions_summary.append(position.get_position_summary(mid_price if not mid_price.is_nan() else Decimal("0")))
             report[controller_id] = positions_summary
         return report
 
-    def get_all_reports(self) -> dict[str, Dict]:
+    def get_all_reports(self) -> Dict[str, Dict]:
         """
         Generate a unified report containing executors, positions, and performance for all controllers.
         Returns a dictionary with controller_id as key and a dict containing all reports as value.
@@ -624,16 +676,16 @@ class ExecutorOrchestrator:
         positions_report = self.get_positions_report()
 
         # Get all controller IDs
-        all_controller_ids = set(
-            list(self.active_executors.keys()) + list(self.positions_held.keys()) + list(self.cached_performance.keys())
-        )
+        all_controller_ids = set(list(self.active_executors.keys()) +
+                                 list(self.positions_held.keys()) +
+                                 list(self.cached_performance.keys()))
 
         # Use dict comprehension to compile reports for each controller
         return {
             controller_id: {
                 "executors": executors_report.get(controller_id, []),
                 "positions": positions_report.get(controller_id, []),
-                "performance": self.generate_performance_report(controller_id),
+                "performance": self.generate_performance_report(controller_id)
             }
             for controller_id in all_controller_ids
         }
@@ -664,26 +716,19 @@ class ExecutorOrchestrator:
                     report.realized_pnl_quote += executor_info.net_pnl_quote
                     report.volume_traded += executor_info.filled_amount_quote
                 if executor_info.close_type:
-                    report.close_type_counts[executor_info.close_type] = (
-                        report.close_type_counts.get(executor_info.close_type, 0) + 1
-                    )
+                    report.close_type_counts[executor_info.close_type] = report.close_type_counts.get(executor_info.close_type, 0) + 1
 
         # Add data from positions held and collect position summaries
         positions_summary = []
         for position in positions:
             # Skip if the connector/trading pair is not in the current strategy markets
-            if (
-                position.connector_name not in self.strategy.markets
-                or position.trading_pair not in self.strategy.markets.get(position.connector_name, set())
-            ):
-                self.logger().warning(
-                    f"Skipping position in performance report for {position.connector_name}.{position.trading_pair} - "
-                    f"not available in current strategy markets"
-                )
+            if (position.connector_name not in self.strategy.markets or
+                    position.trading_pair not in self.strategy.markets.get(position.connector_name, set())):
+                self.logger().warning(f"Skipping position in performance report for {position.connector_name}.{position.trading_pair} - "
+                                      f"not available in current strategy markets")
                 continue
             mid_price = self.strategy.market_data_provider.get_price_by_type(
-                position.connector_name, position.trading_pair, PriceType.MidPrice
-            )
+                position.connector_name, position.trading_pair, PriceType.MidPrice)
             position_summary = position.get_position_summary(mid_price if not mid_price.is_nan() else Decimal("0"))
 
             # Update report with position data
@@ -698,16 +743,10 @@ class ExecutorOrchestrator:
 
         # Calculate global PNL values
         report.global_pnl_quote = report.unrealized_pnl_quote + report.realized_pnl_quote
-        report.global_pnl_pct = (
-            (report.global_pnl_quote / report.volume_traded) * 100 if report.volume_traded != 0 else Decimal(0)
-        )
+        report.global_pnl_pct = (report.global_pnl_quote / report.volume_traded) * 100 if report.volume_traded != 0 else Decimal(0)
 
         # Calculate individual PNL percentages
-        report.unrealized_pnl_pct = (
-            (report.unrealized_pnl_quote / report.volume_traded) * 100 if report.volume_traded != 0 else Decimal(0)
-        )
-        report.realized_pnl_pct = (
-            (report.realized_pnl_quote / report.volume_traded) * 100 if report.volume_traded != 0 else Decimal(0)
-        )
+        report.unrealized_pnl_pct = (report.unrealized_pnl_quote / report.volume_traded) * 100 if report.volume_traded != 0 else Decimal(0)
+        report.realized_pnl_pct = (report.realized_pnl_quote / report.volume_traded) * 100 if report.volume_traded != 0 else Decimal(0)
 
         return report

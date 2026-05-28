@@ -946,7 +946,7 @@ class OkxPerpetualDerivativeTests(
         mock_response = {"code": str(error_code), "data": [], "msg": error_msg}
         mock_api.post(regex_url, body=json.dumps(mock_response), callback=callback)
 
-        return url, f"ret_code <{error_code}> - {error_msg}"
+        return url, error_msg
 
     def configure_failed_set_leverage(
         self,
