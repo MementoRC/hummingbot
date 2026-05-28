@@ -987,14 +987,25 @@ class TestExecutorOrchestrator(unittest.TestCase):
         """Test add_orders_from_executor with missing held_position_orders logs warning"""
         ph = PositionHold("binance", "ETH-USDT", TradeType.BUY)
         config = PositionExecutorConfig(
-            timestamp=1234, trading_pair="ETH-USDT", connector_name="binance",
-            side=TradeType.BUY, amount=Decimal(10), entry_price=Decimal(100),
+            timestamp=1234,
+            trading_pair="ETH-USDT",
+            connector_name="binance",
+            side=TradeType.BUY,
+            amount=Decimal(10),
+            entry_price=Decimal(100),
         )
         executor_info = ExecutorInfo(
-            id="abcdefgh", timestamp=1234, type="position_executor",
-            status=RunnableStatus.TERMINATED, config=config,
-            filled_amount_quote=Decimal(0), net_pnl_quote=Decimal(0), net_pnl_pct=Decimal(0),
-            cum_fees_quote=Decimal(0), is_trading=False, is_active=False,
+            id="abcdefgh",
+            timestamp=1234,
+            type="position_executor",
+            status=RunnableStatus.TERMINATED,
+            config=config,
+            filled_amount_quote=Decimal(0),
+            net_pnl_quote=Decimal(0),
+            net_pnl_pct=Decimal(0),
+            cum_fees_quote=Decimal(0),
+            is_trading=False,
+            is_active=False,
             custom_info={},
             close_type=CloseType.POSITION_HOLD,
         )
@@ -1005,17 +1016,34 @@ class TestExecutorOrchestrator(unittest.TestCase):
         """Test add_orders_from_executor skips duplicate orders"""
         ph = PositionHold("binance", "ETH-USDT", TradeType.BUY)
         config = PositionExecutorConfig(
-            timestamp=1234, trading_pair="ETH-USDT", connector_name="binance",
-            side=TradeType.BUY, amount=Decimal(10), entry_price=Decimal(100),
+            timestamp=1234,
+            trading_pair="ETH-USDT",
+            connector_name="binance",
+            side=TradeType.BUY,
+            amount=Decimal(10),
+            entry_price=Decimal(100),
         )
-        orders = [{"client_order_id": "dup_order", "executed_amount_base": Decimal("5"),
-                   "executed_amount_quote": Decimal("1000"), "trade_type": "BUY",
-                   "cumulative_fee_paid_quote": Decimal("1")}]
+        orders = [
+            {
+                "client_order_id": "dup_order",
+                "executed_amount_base": Decimal("5"),
+                "executed_amount_quote": Decimal("1000"),
+                "trade_type": "BUY",
+                "cumulative_fee_paid_quote": Decimal("1"),
+            }
+        ]
         executor_info = ExecutorInfo(
-            id="abcdefgh", timestamp=1234, type="position_executor",
-            status=RunnableStatus.TERMINATED, config=config,
-            filled_amount_quote=Decimal(1000), net_pnl_quote=Decimal(0), net_pnl_pct=Decimal(0),
-            cum_fees_quote=Decimal(1), is_trading=False, is_active=False,
+            id="abcdefgh",
+            timestamp=1234,
+            type="position_executor",
+            status=RunnableStatus.TERMINATED,
+            config=config,
+            filled_amount_quote=Decimal(1000),
+            net_pnl_quote=Decimal(0),
+            net_pnl_pct=Decimal(0),
+            cum_fees_quote=Decimal(1),
+            is_trading=False,
+            is_active=False,
             custom_info={"held_position_orders": orders},
             close_type=CloseType.POSITION_HOLD,
         )
@@ -1030,25 +1058,42 @@ class TestExecutorOrchestrator(unittest.TestCase):
         from hummingbot.core.data_type.common import PositionMode
 
         config = PositionExecutorConfig(
-            timestamp=1234, trading_pair="ETH-USDT", connector_name="binance_perpetual",
-            side=TradeType.BUY, amount=Decimal(10), entry_price=Decimal(100),
+            timestamp=1234,
+            trading_pair="ETH-USDT",
+            connector_name="binance_perpetual",
+            side=TradeType.BUY,
+            amount=Decimal(10),
+            entry_price=Decimal(100),
         )
         config.id = "oneway_executor_id"
 
         executor = MagicMock()
         executor.executor_info = ExecutorInfo(
-            id="oneway_executor_id", timestamp=1234, type="position_executor",
-            status=RunnableStatus.TERMINATED, config=config,
-            filled_amount_quote=Decimal(1000), net_pnl_quote=Decimal(50), net_pnl_pct=Decimal(5),
-            cum_fees_quote=Decimal(5), is_trading=False, is_active=False,
-            custom_info={"held_position_orders": [
-                {"client_order_id": "ow_order_1", "executed_amount_base": Decimal("5"),
-                 "executed_amount_quote": Decimal("1000"), "trade_type": "BUY",
-                 "cumulative_fee_paid_quote": Decimal("5")}
-            ]},
+            id="oneway_executor_id",
+            timestamp=1234,
+            type="position_executor",
+            status=RunnableStatus.TERMINATED,
+            config=config,
+            filled_amount_quote=Decimal(1000),
+            net_pnl_quote=Decimal(50),
+            net_pnl_pct=Decimal(5),
+            cum_fees_quote=Decimal(5),
+            is_trading=False,
+            is_active=False,
+            custom_info={
+                "held_position_orders": [
+                    {
+                        "client_order_id": "ow_order_1",
+                        "executed_amount_base": Decimal("5"),
+                        "executed_amount_quote": Decimal("1000"),
+                        "trade_type": "BUY",
+                        "cumulative_fee_paid_quote": Decimal("5"),
+                    }
+                ]
+            },
             close_type=CloseType.POSITION_HOLD,
             connector_name="binance_perpetual",
-            trading_pair="ETH-USDT"
+            trading_pair="ETH-USDT",
         )
 
         mock_market = MagicMock()
