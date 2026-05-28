@@ -1,7 +1,7 @@
 import asyncio
 from decimal import Decimal
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from typing import Any, Dict, Optional
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pandas as pd
@@ -74,7 +74,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         self.exchange._order_tracker.logger().setLevel(1)
         self.exchange._order_tracker.logger().addHandler(self)
         self.mocking_assistant = NetworkMockingAssistant(self.local_event_loop)
-        self.test_task: Optional[asyncio.Task] = None
+        self.test_task: asyncio.Task | None = None
         self.resume_test_event = asyncio.Event()
         self.exchange._set_trading_pair_symbol_map(bidict({self.exchange_symbol: self.trading_pair}))
         # Also set instance-level _trading_pair_symbol_map (used by trading_pair_associated_to_exchange_symbol)
@@ -130,7 +130,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         user_taker_rate: float = 0.00034,
         fee_tier: int = 0,
         active_referral_discount: float = 0.0,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return {
             "account": "0xtest",
             "user_maker_rate": user_maker_rate,
@@ -154,7 +154,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         px_decimals: int = 6,
         sz_decimals: int = 3,
         max_open_interest: int = 1000000000,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return {
             "markets": [
                 {
