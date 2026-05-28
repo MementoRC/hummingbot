@@ -181,7 +181,7 @@ class TradeFeeBase(ABC):
     @staticmethod
     def _get_exchange_rate(
         trading_pair: str,
-        rate_source: "RateOracle" | None = None,  # noqa: F821
+        rate_source: "RateOracle | None" = None,  # noqa: F821
     ) -> Decimal:
         from hummingbot.core.rate_oracle.rate_oracle import RateOracle
 
@@ -200,7 +200,7 @@ class TradeFeeBase(ABC):
         price: Decimal,
         order_amount: Decimal,
         token: str,
-        rate_source: "RateOracle" | None = None,  # noqa: F821
+        rate_source: "RateOracle | None" = None,  # noqa: F821
     ) -> Decimal:
         base, quote = split_hb_trading_pair(trading_pair)
         fee_amount: Decimal = S_DECIMAL_0
