@@ -12,7 +12,6 @@ Usage::
     bridge.register_controller(my_controller)
     # hummingbot Clock calls bridge.on_tick() each tick
 """
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
