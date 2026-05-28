@@ -1,4 +1,5 @@
-from hummingbot.core.api_throttler.data_types import RateLimit
+from web_assistant.throttler.data_types import RateLimit
+
 from hummingbot.core.data_type.common import OrderType, TradeType
 from hummingbot.core.data_type.in_flight_order import OrderState
 

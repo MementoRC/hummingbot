@@ -3,6 +3,8 @@ from decimal import ROUND_UP, Decimal
 from typing import Any, Dict, Literal, Union
 
 from bidict import bidict
+from web_assistant.throttler.data_types import RateLimit
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 import hummingbot.connector.exchange.bitget.bitget_constants as CONSTANTS
 from hummingbot.connector.exchange.bitget import bitget_utils, bitget_web_utils as web_utils
@@ -12,14 +14,12 @@ from hummingbot.connector.exchange.bitget.bitget_auth import BitgetAuth
 from hummingbot.connector.exchange_py_base import ExchangePyBase
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.connector.utils import combine_to_hb_trading_pair
-from hummingbot.core.api_throttler.data_types import RateLimit
 from hummingbot.core.data_type.common import OrderType, TradeType
 from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState, OrderUpdate, TradeUpdate
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
 from hummingbot.core.data_type.trade_fee import TokenAmount, TradeFeeBase, TradeFeeSchema
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.utils.estimate_fee import build_trade_fee
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 
 s_decimal_NaN = Decimal("nan")
 
