@@ -1,7 +1,8 @@
 import unittest
 
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+
 from hummingbot.connector.exchange.derive import derive_constants as CONSTANTS, derive_web_utils as web_utils
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class DeriveWebUtilsTest(unittest.TestCase):

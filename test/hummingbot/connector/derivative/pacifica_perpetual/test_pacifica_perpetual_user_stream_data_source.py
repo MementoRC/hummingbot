@@ -4,6 +4,9 @@ from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCa
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiohttp
+from web_assistant.connections.ws_connection import WSConnection
+from web_assistant.throttler.async_throttler import AsyncThrottler
+from web_assistant.ws_assistant import WSAssistant
 
 from hummingbot.connector.derivative.pacifica_perpetual import pacifica_perpetual_constants as CONSTANTS
 from hummingbot.connector.derivative.pacifica_perpetual.pacifica_perpetual_auth import PacificaPerpetualAuth
@@ -11,9 +14,6 @@ from hummingbot.connector.derivative.pacifica_perpetual.pacifica_perpetual_user_
     PacificaPerpetualUserStreamDataSource,
 )
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
-from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
-from hummingbot.core.web_assistant.connections.ws_connection import WSConnection
-from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 
 
 class PacificaPerpetualUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):

@@ -10,9 +10,9 @@ from unittest.mock import MagicMock
 from urllib.parse import urlencode
 
 from typing_extensions import Awaitable
+from web_assistant.connections.data_types import RESTMethod, RESTRequest
 
 from hummingbot.connector.exchange.htx.htx_auth import HtxAuth
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest
 
 
 class HtxAuthTests(unittest.TestCase):

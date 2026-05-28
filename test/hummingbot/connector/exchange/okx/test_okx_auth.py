@@ -9,8 +9,9 @@ from typing import Awaitable
 from unittest import TestCase
 from unittest.mock import MagicMock
 
+from web_assistant.connections.data_types import RESTMethod, RESTRequest, WSJSONRequest
+
 from hummingbot.connector.exchange.okx.okx_auth import OkxAuth
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest, WSJSONRequest
 
 
 class OkxAuthTests(TestCase):

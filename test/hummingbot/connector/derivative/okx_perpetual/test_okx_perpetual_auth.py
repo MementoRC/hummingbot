@@ -8,8 +8,9 @@ from typing import Awaitable
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
+from web_assistant.connections.data_types import RESTMethod, RESTRequest, WSRequest
+
 from hummingbot.connector.derivative.okx_perpetual.okx_perpetual_auth import OkxPerpetualAuth
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest, WSRequest
 
 
 class OkxPerpetualAuthTests(TestCase):

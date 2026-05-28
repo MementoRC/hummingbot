@@ -4,12 +4,12 @@ from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCa
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
+from web_assistant.connections.connections_factory import ConnectionsFactory
 
 from hummingbot.connector.exchange.dexalot import dexalot_constants as CONSTANTS, dexalot_web_utils as web_utils
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.utils import combine_to_hb_trading_pair
 from hummingbot.core.rate_oracle.sources.dexalot_rate_source import DexalotRateSource
-from hummingbot.core.web_assistant.connections.connections_factory import ConnectionsFactory
 
 
 class DexalotRateSourceTest(IsolatedAsyncioWrapperTestCase):

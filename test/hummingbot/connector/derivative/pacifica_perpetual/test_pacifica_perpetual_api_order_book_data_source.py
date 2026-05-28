@@ -7,19 +7,19 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiohttp
 from aioresponses import aioresponses
+from web_assistant.connections.rest_connection import RESTConnection
+from web_assistant.connections.ws_connection import WSConnection
+from web_assistant.rest_assistant import RESTAssistant
+from web_assistant.throttler.async_throttler import AsyncThrottler
+from web_assistant.ws_assistant import WSAssistant
 
 from hummingbot.connector.derivative.pacifica_perpetual import pacifica_perpetual_constants as CONSTANTS
 from hummingbot.connector.derivative.pacifica_perpetual.pacifica_perpetual_api_order_book_data_source import (
     PacificaPerpetualAPIOrderBookDataSource,
 )
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
-from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 from hummingbot.core.data_type.funding_info import FundingInfo
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
-from hummingbot.core.web_assistant.connections.rest_connection import RESTConnection
-from hummingbot.core.web_assistant.connections.ws_connection import WSConnection
-from hummingbot.core.web_assistant.rest_assistant import RESTAssistant
-from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 
 
 class PacificaPerpetualAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):

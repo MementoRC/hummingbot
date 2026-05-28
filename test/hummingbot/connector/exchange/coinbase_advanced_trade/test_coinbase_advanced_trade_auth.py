@@ -10,6 +10,7 @@ from aioresponses import aioresponses
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec
+from web_assistant.connections.data_types import RESTMethod, RESTRequest, WSJSONRequest
 
 import hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_trade_constants as CONSTANTS
 from hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_trade_auth import CoinbaseAdvancedTradeAuth
@@ -18,7 +19,6 @@ from hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_tra
     private_rest_url,
 )
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest, WSJSONRequest
 
 # This is the algorithm used by Coinbase Advanced Trade
 private_key = ec.generate_private_key(

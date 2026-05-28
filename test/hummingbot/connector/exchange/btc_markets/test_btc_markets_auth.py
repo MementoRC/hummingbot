@@ -7,9 +7,10 @@ from unittest import TestCase
 from unittest.mock import MagicMock
 from urllib.parse import urlencode
 
+from web_assistant.connections.data_types import RESTMethod, RESTRequest, WSJSONRequest
+
 from hummingbot.connector.exchange.btc_markets import btc_markets_constants as CONSTANTS
 from hummingbot.connector.exchange.btc_markets.btc_markets_auth import BtcMarketsAuth
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest, WSJSONRequest
 
 
 class BtcMarketsAuthTest(TestCase):

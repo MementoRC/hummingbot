@@ -4,9 +4,9 @@ from unittest.mock import MagicMock, patch
 
 import eth_utils
 from web3 import Web3
+from web_assistant.connections.data_types import RESTMethod, RESTRequest, WSRequest
 
 from hummingbot.connector.exchange.derive.derive_auth import DeriveAuth
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest, WSRequest
 
 
 class DeriveAuthTests(TestCase):
@@ -47,7 +47,7 @@ class DeriveAuthTests(TestCase):
         self.assertEqual(headers["X-LyraTimestamp"], "1234567890")
         self.assertEqual(headers["X-LyraSignature"], mock_signature)
 
-    @patch("hummingbot.core.web_assistant.connections.data_types.WSRequest.send_with_connection")
+    @patch("web_assistant.connections.data_types.WSRequest.send_with_connection")
     async def test_ws_authenticate(self, mock_send):
         mock_send.return_value = None
         request = MagicMock(spec=WSRequest)
