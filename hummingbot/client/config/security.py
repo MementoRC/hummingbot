@@ -16,7 +16,7 @@ from hummingbot.client.config.config_helpers import (
 )
 
 # from hummingbot.core.utils.async_call_scheduler import AsyncCallScheduler
-# from hummingbot.core.utils.async_utils import safe_ensure_future
+# from async_utils.core import safe_ensure_future
 from hummingbot.logger import HummingbotLogger
 
 

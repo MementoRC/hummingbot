@@ -5,6 +5,7 @@ from collections import deque
 
 import numpy as np
 import pandas as pd
+from async_utils.core import safe_ensure_future
 from bidict import bidict
 from web_assistant.connections.data_types import RESTMethod, WSJSONRequest
 from web_assistant.throttler.async_throttler import AsyncThrottler
@@ -13,7 +14,6 @@ from web_assistant.ws_assistant import WSAssistant
 
 from hummingbot.core.network_base import NetworkBase
 from hummingbot.core.network_iterator import NetworkStatus
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.data_feed.candles_feed.data_types import HistoricalCandlesConfig
 
 

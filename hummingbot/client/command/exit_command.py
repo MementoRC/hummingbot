@@ -3,7 +3,8 @@
 import asyncio
 from typing import TYPE_CHECKING
 
-from hummingbot.core.utils.async_utils import safe_ensure_future
+from async_utils.core import safe_ensure_future
+
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 
 if TYPE_CHECKING:

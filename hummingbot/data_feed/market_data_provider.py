@@ -4,6 +4,7 @@ import time
 from decimal import Decimal
 
 import pandas as pd
+from async_utils.core import safe_ensure_future
 
 from hummingbot.client.config.config_helpers import (
     ClientConfigAdapter,
@@ -17,7 +18,6 @@ from hummingbot.core.data_type.common import GroupedSetDict, LazyDict, PriceType
 from hummingbot.core.data_type.order_book_query_result import OrderBookQueryResult
 from hummingbot.core.gateway.gateway_http_client import GatewayHttpClient
 from hummingbot.core.rate_oracle.rate_oracle import RateOracle
-from hummingbot.core.utils.async_utils import safe_ensure_future
 
 try:
     from candles_feed.hb_compat import CandlesConfig, CandlesFactory

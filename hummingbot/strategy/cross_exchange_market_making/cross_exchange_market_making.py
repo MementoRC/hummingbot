@@ -7,6 +7,7 @@ from math import ceil, floor
 from typing import List, Tuple
 
 import pandas as pd
+from async_utils.core import safe_ensure_future
 from bidict import bidict
 
 from hummingbot.client.performance import PerformanceMetrics
@@ -25,7 +26,6 @@ from hummingbot.core.event.events import (
     SellOrderCompletedEvent,
 )
 from hummingbot.core.network_iterator import NetworkStatus
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.strategy.cross_exchange_market_making.cross_exchange_market_making_config_map_pydantic import (
     CrossExchangeMarketMakingConfigMap,
     PassiveOrderRefreshMode,

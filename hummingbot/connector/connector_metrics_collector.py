@@ -7,12 +7,13 @@ from decimal import Decimal
 from os.path import dirname, join, realpath
 from typing import TYPE_CHECKING
 
+from async_utils.core import safe_ensure_future
+
 from hummingbot.connector.utils import combine_to_hb_trading_pair, split_hb_trading_pair
 from hummingbot.core.event.event_forwarder import EventForwarder
 from hummingbot.core.event.events import MarketEvent, OrderFilledEvent
 from hummingbot.core.py_time_iterator import PyTimeIterator
 from hummingbot.core.rate_oracle.rate_oracle import RateOracle
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.logger import HummingbotLogger
 from hummingbot.logger.log_server_client import LogServerClient
 

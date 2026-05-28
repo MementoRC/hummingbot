@@ -5,6 +5,7 @@ from functools import lru_cache
 from typing import Callable, cast
 
 import pandas as pd
+from async_utils.core import safe_ensure_future
 
 from hummingbot.client.performance import PerformanceMetrics
 from hummingbot.client.settings import AllConnectorSettings
@@ -21,7 +22,6 @@ from hummingbot.core.event.events import (
     SellOrderCompletedEvent,
 )
 from hummingbot.core.rate_oracle.rate_oracle import RateOracle
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.amm_arb.data_types import ArbProposalSide
 from hummingbot.strategy.amm_arb.utils import ArbProposal, create_arb_proposals

@@ -2,6 +2,7 @@ import asyncio
 from decimal import Decimal
 from typing import Any, Dict, Union
 
+from async_utils.core import safe_ensure_future, safe_gather
 from bidict import bidict
 from web_assistant.connections.data_types import RESTMethod
 from web_assistant.throttler.data_types import RateLimit
@@ -27,7 +28,6 @@ from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderUpdate
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
 from hummingbot.core.data_type.trade_fee import TokenAmount, TradeFeeBase
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
-from hummingbot.core.utils.async_utils import safe_ensure_future, safe_gather
 from hummingbot.core.utils.estimate_fee import build_trade_fee
 
 s_decimal_NaN = Decimal("nan")

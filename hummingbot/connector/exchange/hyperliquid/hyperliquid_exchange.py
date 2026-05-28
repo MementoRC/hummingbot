@@ -1,8 +1,9 @@
 import asyncio
 import hashlib
 from decimal import Decimal
-from typing import Any, AsyncIterable, List, Literal
+from typing import Any, AsyncIterable, List, Literal, Tuple
 
+from async_utils.core import safe_ensure_future, safe_gather
 from bidict import bidict
 from web_assistant.throttler.data_types import RateLimit
 from web_assistant.web_assistants_factory import WebAssistantsFactory
@@ -28,7 +29,6 @@ from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTr
 from hummingbot.core.data_type.trade_fee import DeductedFromReturnsTradeFee, TokenAmount, TradeFeeBase
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.event.events import MarketEvent, OrderFilledEvent
-from hummingbot.core.utils.async_utils import safe_ensure_future, safe_gather
 
 
 class HyperliquidExchange(ExchangePyBase):
@@ -354,7 +354,7 @@ class HyperliquidExchange(ExchangePyBase):
         order_type: OrderType,
         price: Decimal,
         **kwargs,
-    ) -> tuple[str, float]:
+    ) -> Tuple[str, float]:
         symbol = await self.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
         param_order_type = {"limit": {"tif": "Gtc"}}
         if order_type is OrderType.LIMIT_MAKER:

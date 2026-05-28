@@ -2,10 +2,10 @@ import asyncio
 import logging
 from typing import Any, Dict
 
+from async_utils.core import safe_ensure_future
 from web_assistant.throttler.async_throttler import AsyncThrottler
 from web_assistant.web_assistants_factory import WebAssistantsFactory
 
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.data_feed.coin_gecko_data_feed.coin_gecko_constants import (
     PING_REST_ENDPOINT,
     PRICES_REST_ENDPOINT,

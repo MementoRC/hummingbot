@@ -3,13 +3,13 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
+from async_utils.tracking_nonce import get_tracking_nonce
 from pydantic import Field, SecretStr
 
 from hummingbot.client.config.config_data_types import BaseConnectorConfigMap
 from hummingbot.connector.exchange.foxbit import foxbit_constants as CONSTANTS
 from hummingbot.core.data_type.in_flight_order import OrderState
 from hummingbot.core.data_type.trade_fee import TradeFeeSchema
-from hummingbot.core.utils.tracking_nonce import get_tracking_nonce
 
 CENTRALIZED = True
 EXAMPLE_PAIR = "BTC-BRL"

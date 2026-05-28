@@ -4,11 +4,12 @@ import logging
 import warnings
 from collections import defaultdict
 
+from async_utils.core import safe_ensure_future
+
 from hummingbot.connector.derivative.position import Position
 from hummingbot.connector.utils import split_hb_trading_pair
 from hummingbot.core.data_type.common import PositionMode, PositionSide
 from hummingbot.core.data_type.funding_info import FundingInfo, FundingInfoUpdate
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.logger import HummingbotLogger
 
 

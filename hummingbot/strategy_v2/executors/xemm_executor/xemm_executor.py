@@ -1,7 +1,6 @@
 import asyncio
 import logging
 from decimal import Decimal
-from typing import Dict
 
 from hummingbot.connector.connector_base import ConnectorBase, Union
 from hummingbot.connector.utils import split_hb_trading_pair
@@ -18,11 +17,13 @@ from hummingbot.core.rate_oracle.rate_oracle import RateOracle
 from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.executor_base import ExecutorBase
+from hummingbot.strategy_v2.executors.executor_factory import ExecutorFactory
 from hummingbot.strategy_v2.executors.xemm_executor.data_types import XEMMExecutorConfig
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 
 
+@ExecutorFactory.register(XEMMExecutorConfig)
 class XEMMExecutor(ExecutorBase):
     _logger = None
 
@@ -49,7 +50,7 @@ class XEMMExecutor(ExecutorBase):
         ]
         same_token_condition = first_token == second_token
         tokens_interchangeable_condition = any(
-            ({first_token, second_token} <= interchangeable_pair for interchangeable_pair in interchangeable_tokens)
+            {first_token, second_token} <= interchangeable_pair for interchangeable_pair in interchangeable_tokens
         )
         # for now, we will consider all the stablecoins interchangeable
         stable_coins_condition = "USD" in first_token and "USD" in second_token
@@ -326,7 +327,7 @@ class XEMMExecutor(ExecutorBase):
             self._current_retries += 1
             self.place_taker_order()
 
-    def get_custom_info(self) -> Dict:
+    def get_custom_info(self) -> dict:
         # Since we can't make this method async, we'll skip the profitability calculation
         # The profitability will still be shown in the status message which is async
         return {

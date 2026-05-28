@@ -4,10 +4,11 @@ from asyncio import Task
 from decimal import Decimal
 from typing import Union
 
+from async_utils.core import safe_gather
+
 from hummingbot.connector.utils import combine_to_hb_trading_pair
 from hummingbot.core.rate_oracle.sources.rate_source_base import RateSourceBase
 from hummingbot.core.utils import async_ttl_cache
-from hummingbot.core.utils.async_utils import safe_gather
 from hummingbot.data_feed.coin_gecko_data_feed import CoinGeckoDataFeed
 from hummingbot.data_feed.coin_gecko_data_feed.coin_gecko_constants import COOLOFF_AFTER_BAN, CoinGeckoAPITier
 
