@@ -1,12 +1,13 @@
 from decimal import ROUND_DOWN, Decimal
 from typing import Any
 
+from web_assistant.auth import AuthBase
+from web_assistant.connections.data_types import RESTMethod, RESTRequest
+from web_assistant.rest_pre_processors import RESTPreProcessorBase
+from web_assistant.throttler.async_throttler import AsyncThrottler
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+
 import hummingbot.connector.derivative.aevo_perpetual.aevo_perpetual_constants as CONSTANTS
-from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
-from hummingbot.core.web_assistant.auth import AuthBase
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest
-from hummingbot.core.web_assistant.rest_pre_processors import RESTPreProcessorBase
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class AevoPerpetualRESTPreProcessor(RESTPreProcessorBase):
