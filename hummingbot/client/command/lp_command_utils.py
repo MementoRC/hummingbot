@@ -2,6 +2,8 @@
 LP-specific utilities for gateway liquidity provision commands.
 """
 
+from __future__ import annotations
+
 from typing import TYPE_CHECKING, Any, Union
 
 import pandas as pd

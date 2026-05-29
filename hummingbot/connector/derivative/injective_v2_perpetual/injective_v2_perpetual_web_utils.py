@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import time
 
 from hummingbot.connector.exchange.injective_v2 import injective_constants as CONSTANTS

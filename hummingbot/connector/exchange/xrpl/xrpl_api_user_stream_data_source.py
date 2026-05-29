@@ -5,6 +5,8 @@ Polling-based user stream data source that periodically fetches account state
 from the XRPL ledger instead of relying on WebSocket subscriptions.
 """
 
+from __future__ import annotations
+
 import asyncio
 import time
 from collections import deque

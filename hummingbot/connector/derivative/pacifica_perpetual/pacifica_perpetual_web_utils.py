@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import time
 
 from hummingbot.connector.derivative.pacifica_perpetual import pacifica_perpetual_constants as CONSTANTS

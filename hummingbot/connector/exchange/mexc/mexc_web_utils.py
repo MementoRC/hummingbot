@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Callable
 
 import hummingbot.connector.exchange.mexc.mexc_constants as CONSTANTS

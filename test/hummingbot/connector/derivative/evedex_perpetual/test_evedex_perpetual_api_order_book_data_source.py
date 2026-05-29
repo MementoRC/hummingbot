@@ -1,5 +1,7 @@
 """Unit tests for Evedex Perpetual API Order Book Data Source."""
 
+from __future__ import annotations
+
 import asyncio
 import time
 import unittest

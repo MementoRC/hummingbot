@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any, Dict
 
 from hummingbot.connector.exchange.vertex.vertex_utils import convert_from_x18, convert_timestamp

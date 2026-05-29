@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from prompt_toolkit.buffer import Buffer
 from prompt_toolkit.layout.containers import Window
 

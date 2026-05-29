@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import re
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase

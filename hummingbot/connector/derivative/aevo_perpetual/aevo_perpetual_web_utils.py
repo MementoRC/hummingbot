@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from decimal import ROUND_DOWN, Decimal
 from typing import Any
 

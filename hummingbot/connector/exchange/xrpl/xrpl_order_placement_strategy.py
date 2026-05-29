@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from decimal import ROUND_DOWN, Decimal
 from typing import TYPE_CHECKING, Union

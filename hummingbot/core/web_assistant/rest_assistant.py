@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 from asyncio import wait_for
 from copy import deepcopy

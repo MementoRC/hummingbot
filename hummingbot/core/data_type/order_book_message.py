@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections import namedtuple
 from enum import Enum
 from functools import total_ordering

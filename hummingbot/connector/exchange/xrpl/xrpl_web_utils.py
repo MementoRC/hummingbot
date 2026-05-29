@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import time
 
 import hummingbot.connector.exchange.cube.cube_constants as CONSTANTS

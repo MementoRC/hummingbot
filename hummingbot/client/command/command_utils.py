@@ -2,6 +2,8 @@
 Shared utilities for gateway commands - UI and display functions.
 """
 
+from __future__ import annotations
+
 import asyncio
 from typing import TYPE_CHECKING, Any
 

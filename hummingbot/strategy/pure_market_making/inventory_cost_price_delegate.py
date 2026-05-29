@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from decimal import Decimal, InvalidOperation
 
 from hummingbot.core.data_type.common import TradeType

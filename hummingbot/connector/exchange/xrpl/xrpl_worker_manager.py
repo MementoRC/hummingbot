@@ -16,6 +16,8 @@ Re-exports:
 - Result dataclasses: QueryResult, TransactionSubmitResult, TransactionVerifyResult
 """
 
+from __future__ import annotations
+
 import logging
 
 from xrpl.wallet import Wallet

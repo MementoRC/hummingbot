@@ -2,6 +2,8 @@
 Tools for running asynchronous functions multiple times.
 """
 
+from __future__ import annotations
+
 import asyncio
 import functools
 import logging

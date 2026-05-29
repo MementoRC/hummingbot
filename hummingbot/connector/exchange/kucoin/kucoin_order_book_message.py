@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import time
 
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType

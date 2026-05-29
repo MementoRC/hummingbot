@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any, Callable
 
 import hummingbot.connector.exchange.gate_io.gate_io_constants as CONSTANTS

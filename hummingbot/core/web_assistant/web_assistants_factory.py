@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from hummingbot.core.api_throttler.async_throttler_base import AsyncThrottlerBase
 from hummingbot.core.web_assistant.auth import AuthBase
 from hummingbot.core.web_assistant.connections.connections_factory import ConnectionsFactory

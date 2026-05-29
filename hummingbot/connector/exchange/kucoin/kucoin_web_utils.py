@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Callable
 
 from hummingbot.connector.exchange.kucoin import kucoin_constants as CONSTANTS

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import unittest
 from decimal import Decimal
 from test.mock.mock_asset_price_delegate import MockAssetPriceDelegate

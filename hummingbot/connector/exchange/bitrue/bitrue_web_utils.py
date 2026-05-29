@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Callable
 
 import hummingbot.connector.exchange.bitrue.bitrue_constants as CONSTANTS

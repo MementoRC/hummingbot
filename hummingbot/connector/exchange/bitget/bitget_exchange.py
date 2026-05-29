@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import ROUND_UP, Decimal
 from typing import Any, Dict, Literal, Union

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Callable
 
 import hummingbot.connector.derivative.backpack_perpetual.backpack_perpetual_constants as CONSTANTS

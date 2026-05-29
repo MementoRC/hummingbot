@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import logging
 import typing
@@ -10,6 +12,7 @@ from hummingbot.core.network_base import NetworkBase
 
 if typing.TYPE_CHECKING:  # avoid circular import problems
     from hummingbot.connector.connector_base import ConnectorBase
+
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.core.rate_oracle.sources.aevo_rate_source import AevoRateSource
 from hummingbot.core.rate_oracle.sources.architect_perpetual_rate_source import ArchitectPerpetualRateSource

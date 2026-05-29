@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Callable
 
 import hummingbot.connector.exchange.htx.htx_constants as CONSTANTS

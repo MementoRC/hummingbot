@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any, Callable
 
 import hummingbot.connector.derivative.evedex_perpetual.evedex_perpetual_constants as CONSTANTS
