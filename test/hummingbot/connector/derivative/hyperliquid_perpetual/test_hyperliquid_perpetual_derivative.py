@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import datetime
 import json
 import logging
 import re
@@ -523,7 +524,9 @@ class HyperliquidPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpe
     def target_funding_info_next_funding_utc_str(self):
         datetime_str = (
             str(
-                pd.Timestamp.fromtimestamp(self.target_funding_info_next_funding_utc_timestamp, tz=pd.Timestamp.UTC)
+                pd.Timestamp.fromtimestamp(
+                    self.target_funding_info_next_funding_utc_timestamp, tz=datetime.timezone.utc
+                )
             ).replace(" ", "T")
             + "Z"
         )
@@ -534,7 +537,7 @@ class HyperliquidPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpe
         datetime_str = (
             str(
                 pd.Timestamp.fromtimestamp(
-                    self.target_funding_info_next_funding_utc_timestamp_ws_updated, tz=pd.Timestamp.UTC
+                    self.target_funding_info_next_funding_utc_timestamp_ws_updated, tz=datetime.timezone.utc
                 )
             ).replace(" ", "T")
             + "Z"
@@ -544,7 +547,7 @@ class HyperliquidPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpe
     @property
     def target_funding_payment_timestamp_str(self):
         datetime_str = (
-            str(pd.Timestamp.fromtimestamp(self.target_funding_payment_timestamp, tz=pd.Timestamp.UTC)).replace(
+            str(pd.Timestamp.fromtimestamp(self.target_funding_payment_timestamp, tz=datetime.timezone.utc)).replace(
                 " ", "T"
             )
             + "Z"
