@@ -13,6 +13,8 @@ This pipeline is shared across all wallet-specific transaction pools to ensure
 global serialization of transaction submissions.
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 import time

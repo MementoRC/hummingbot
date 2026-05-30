@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Callable
 
 from web_assistant.auth import AuthBase

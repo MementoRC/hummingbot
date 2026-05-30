@@ -9,6 +9,8 @@ This controller replicates the legacy pure_market_making strategy with:
 - Minimum spread enforcement
 """
 
+from __future__ import annotations
+
 from decimal import Decimal
 
 import numpy as np

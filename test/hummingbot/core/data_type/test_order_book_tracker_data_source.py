@@ -7,6 +7,8 @@ This module tests:
 - remove_trading_pair: Removes a trading pair from the internal list
 """
 
+from __future__ import annotations
+
 import unittest
 from typing import Any
 

@@ -4,6 +4,8 @@ string and determines whether it is valid input. This file contains many validat
 hummingbot ConfigVars.
 """
 
+from __future__ import annotations
+
 import re
 import time
 from datetime import datetime

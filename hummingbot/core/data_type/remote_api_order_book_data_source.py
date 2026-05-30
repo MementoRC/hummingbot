@@ -4,6 +4,8 @@
 # endpoints. pickle.loads() has been replaced with NotImplementedError to prevent accidental
 # deserialization of attacker-controlled bytes.
 
+from __future__ import annotations
+
 import asyncio
 import base64
 import logging

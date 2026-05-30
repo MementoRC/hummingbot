@@ -12,6 +12,8 @@ SDK Return Types:
   - Failure: Raises ValueError with "Transaction failed: <vm_status>"
 """
 
+from __future__ import annotations
+
 import time
 
 from decibel import MAINNET_CONFIG, TESTNET_CONFIG, BaseSDKOptions, DecibelWriteDex, PlaceOrderFailure, TimeInForce

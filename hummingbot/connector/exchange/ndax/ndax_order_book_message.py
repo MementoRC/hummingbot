@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from __future__ import annotations
+
 from collections import namedtuple
 
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType

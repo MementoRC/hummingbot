@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from decimal import Decimal
 
 import pandas_ta as ta  # noqa: F401

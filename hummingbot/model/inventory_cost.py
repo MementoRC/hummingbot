@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from decimal import Decimal
 
 from sqlalchemy import Column, Integer, Numeric, String, UniqueConstraint
@@ -17,7 +19,7 @@ class InventoryCost(HummingbotBase):
     quote_volume = Column(Numeric(48, 18), nullable=False)
 
     @classmethod
-    def get_record(cls, sql_session: Session, base_asset: str, quote_asset: str) -> "InventoryCost" | None:
+    def get_record(cls, sql_session: Session, base_asset: str, quote_asset: str) -> InventoryCost | None:
         return sql_session.query(cls).filter(cls.base_asset == base_asset, cls.quote_asset == quote_asset).first()
 
     @classmethod

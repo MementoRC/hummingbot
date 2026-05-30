@@ -10,6 +10,8 @@ Architecture:
 - trading_type: Pool type passed to methods (e.g., "clmm", "amm", "router")
 """
 
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 from typing import Any, Dict, Union

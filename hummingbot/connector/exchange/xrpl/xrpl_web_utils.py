@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import time
 
 from web_assistant.throttler.async_throttler import AsyncThrottler

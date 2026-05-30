@@ -2,6 +2,8 @@
 The configuration parameters for a user made liquidity_mining strategy.
 """
 
+from __future__ import annotations
+
 import re
 from decimal import Decimal
 

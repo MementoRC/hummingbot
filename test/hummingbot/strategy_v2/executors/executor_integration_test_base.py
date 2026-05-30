@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import time
 from decimal import Decimal
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase

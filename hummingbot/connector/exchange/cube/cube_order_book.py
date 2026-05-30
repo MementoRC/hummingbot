@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Dict
 
 from hummingbot.core.data_type.order_book import OrderBook

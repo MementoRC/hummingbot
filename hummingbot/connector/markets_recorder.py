@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import asyncio
+import datetime
 import json
 import logging
 import os.path
@@ -523,7 +526,7 @@ class MarketsRecorder:
         if os.path.exists(csv_path) and (not self._csv_matches_header(csv_path, field_names)):
             move(
                 csv_path,
-                csv_path[:-4] + "_old_" + pd.Timestamp.now(pd.Timestamp.UTC).strftime("%Y%m%d-%H%M%S") + ".csv",
+                csv_path[:-4] + "_old_" + pd.Timestamp.now(datetime.timezone.utc).strftime("%Y%m%d-%H%M%S") + ".csv",
             )
 
         if not os.path.exists(csv_path):

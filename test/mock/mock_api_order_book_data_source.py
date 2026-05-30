@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
+from __future__ import annotations
+
 import asyncio
+import datetime
 import logging
 import time
 from typing import Any, AsyncIterable
@@ -140,7 +143,9 @@ class MockAPIOrderBookDataSource(OrderBookTrackerDataSource):
                     except Exception:
                         self.logger().error("Unexpected error.", exc_info=True)
                         await asyncio.sleep(5.0)
-                this_hour: pd.Timestamp = pd.Timestamp.now(pd.Timestamp.UTC).replace(minute=0, second=0, microsecond=0)
+                this_hour: pd.Timestamp = pd.Timestamp.now(datetime.timezone.utc).replace(
+                    minute=0, second=0, microsecond=0
+                )
                 next_hour: pd.Timestamp = this_hour + pd.Timedelta(hours=1)
                 delta: float = next_hour.timestamp() - time.time()
                 await asyncio.sleep(delta)

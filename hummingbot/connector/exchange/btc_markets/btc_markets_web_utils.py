@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Callable
 
 from dateutil.parser import parse as dateparse

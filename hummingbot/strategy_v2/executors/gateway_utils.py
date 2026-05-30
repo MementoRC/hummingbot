@@ -15,6 +15,8 @@ Provider Format:
 - Use parse_provider() to convert between formats
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Callable
 

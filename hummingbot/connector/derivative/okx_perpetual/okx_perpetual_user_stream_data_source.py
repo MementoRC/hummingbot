@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 
 from web_assistant.connections.data_types import WSJSONRequest, WSResponse

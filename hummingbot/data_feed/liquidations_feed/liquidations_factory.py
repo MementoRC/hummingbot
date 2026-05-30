@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pydantic import BaseModel
 
 from hummingbot.data_feed.liquidations_feed.binance.binance_liquidations import BinancePerpetualLiquidations

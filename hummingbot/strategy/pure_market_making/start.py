@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from decimal import Decimal
 
 from hummingbot.connector.exchange.paper_trade import create_paper_trade_market

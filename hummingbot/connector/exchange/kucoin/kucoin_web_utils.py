@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Callable
 
 from async_utils.tracking_nonce import get_tracking_nonce

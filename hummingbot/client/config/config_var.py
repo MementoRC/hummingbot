@@ -4,6 +4,8 @@ of the bot. The client provides a screen prompt to the user, then the user provi
 by ConfigVar.
 """
 
+from __future__ import annotations
+
 import inspect
 from typing import Callable, Union
 

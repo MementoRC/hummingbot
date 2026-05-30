@@ -1,5 +1,7 @@
 """Unit tests for Evedex Perpetual Derivative connector."""
 
+from __future__ import annotations
+
 import asyncio
 import json
 from decimal import Decimal

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any
 
 from hummingbot.core.data_type.common import TradeType

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from decimal import Decimal
 
 from hummingbot.connector.derivative.perpetual_budget_checker import PerpetualBudgetChecker
