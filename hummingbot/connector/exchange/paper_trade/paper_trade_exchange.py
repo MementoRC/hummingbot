@@ -378,7 +378,7 @@ class PaperTradeExchange(ExchangeBase):
 
         if order_type is OrderType.MARKET:
             self._queued_orders.append(
-                QueuedOrder(self._current_timestamp, order_id, True, trading_pair_str, quantized_amount)
+                QueuedOrder(self.current_timestamp, order_id, True, trading_pair_str, quantized_amount)
             )
         elif order_type is OrderType.LIMIT:
             if trading_pair_str not in self._bid_limit_orders:
@@ -392,7 +392,7 @@ class PaperTradeExchange(ExchangeBase):
                 quantized_price,
                 quantized_amount,
                 None,
-                int(self._current_timestamp * 1e6),
+                int(self.current_timestamp * 1e6),
                 LimitOrderStatus.UNKNOWN,
             )
             _insort_limit_order(self._bid_limit_orders[trading_pair_str], new_order)
@@ -401,13 +401,13 @@ class PaperTradeExchange(ExchangeBase):
             self.trigger_event_async(
                 MarketEvent.BuyOrderCreated,
                 BuyOrderCreatedEvent(
-                    self._current_timestamp,
+                    self.current_timestamp,
                     order_type,
                     trading_pair_str,
                     quantized_amount,
                     quantized_price,
                     order_id,
-                    self._current_timestamp,
+                    self.current_timestamp,
                 ),
             )
         )
@@ -435,7 +435,7 @@ class PaperTradeExchange(ExchangeBase):
 
         if order_type is OrderType.MARKET:
             self._queued_orders.append(
-                QueuedOrder(self._current_timestamp, order_id, False, trading_pair_str, quantized_amount)
+                QueuedOrder(self.current_timestamp, order_id, False, trading_pair_str, quantized_amount)
             )
         elif order_type is OrderType.LIMIT:
             if trading_pair_str not in self._ask_limit_orders:
@@ -449,7 +449,7 @@ class PaperTradeExchange(ExchangeBase):
                 quantized_price,
                 quantized_amount,
                 None,
-                int(self._current_timestamp * 1e6),
+                int(self.current_timestamp * 1e6),
                 LimitOrderStatus.UNKNOWN,
             )
             _insort_limit_order(self._ask_limit_orders[trading_pair_str], new_order)
@@ -458,13 +458,13 @@ class PaperTradeExchange(ExchangeBase):
             self.trigger_event_async(
                 MarketEvent.SellOrderCreated,
                 SellOrderCreatedEvent(
-                    self._current_timestamp,
+                    self.current_timestamp,
                     order_type,
                     trading_pair_str,
                     quantized_amount,
                     quantized_price,
                     order_id,
-                    self._current_timestamp,
+                    self.current_timestamp,
                 ),
             )
         )
@@ -513,7 +513,7 @@ class PaperTradeExchange(ExchangeBase):
             )
             self.trigger_event(
                 MarketEvent.OrderFailure,
-                MarketOrderFailureEvent(self._current_timestamp, order_id, OrderType.MARKET),
+                MarketOrderFailureEvent(self.current_timestamp, order_id, OrderType.MARKET),
             )
             return
 
@@ -534,7 +534,7 @@ class PaperTradeExchange(ExchangeBase):
         )
 
         order_filled_events = OrderFilledEvent.order_filled_events_from_order_book_rows(
-            self._current_timestamp, order_id, trading_pair_str, TradeType.BUY, OrderType.MARKET, fees, buy_entries
+            self.current_timestamp, order_id, trading_pair_str, TradeType.BUY, OrderType.MARKET, fees, buy_entries
         )
 
         for order_filled_event in order_filled_events:
@@ -543,7 +543,7 @@ class PaperTradeExchange(ExchangeBase):
         self.trigger_event(
             MarketEvent.BuyOrderCompleted,
             BuyOrderCompletedEvent(
-                self._current_timestamp,
+                self.current_timestamp,
                 order_id,
                 base_asset,
                 quote_asset,
@@ -596,7 +596,7 @@ class PaperTradeExchange(ExchangeBase):
             )
             self.trigger_event(
                 MarketEvent.OrderFailure,
-                MarketOrderFailureEvent(self._current_timestamp, order_id, OrderType.MARKET),
+                MarketOrderFailureEvent(self.current_timestamp, order_id, OrderType.MARKET),
             )
             return
 
@@ -617,7 +617,7 @@ class PaperTradeExchange(ExchangeBase):
         )
 
         order_filled_events = OrderFilledEvent.order_filled_events_from_order_book_rows(
-            self._current_timestamp, order_id, trading_pair_str, TradeType.SELL, OrderType.MARKET, fees, sell_entries
+            self.current_timestamp, order_id, trading_pair_str, TradeType.SELL, OrderType.MARKET, fees, sell_entries
         )
 
         for order_filled_event in order_filled_events:
@@ -626,7 +626,7 @@ class PaperTradeExchange(ExchangeBase):
         self.trigger_event(
             MarketEvent.SellOrderCompleted,
             SellOrderCompletedEvent(
-                self._current_timestamp,
+                self.current_timestamp,
                 order_id,
                 base_asset,
                 quote_asset,
@@ -639,7 +639,7 @@ class PaperTradeExchange(ExchangeBase):
     def c_process_market_orders(self):
         while len(self._queued_orders) > 0:
             front_order: QueuedOrder = self._queued_orders[0]
-            if front_order.create_timestamp <= self._current_timestamp - self.TRADE_EXECUTION_DELAY:
+            if front_order.create_timestamp <= self.current_timestamp - self.TRADE_EXECUTION_DELAY:
                 self._queued_orders.popleft()
                 try:
                     if front_order.is_buy:
@@ -715,7 +715,7 @@ class PaperTradeExchange(ExchangeBase):
             self.c_delete_limit_order(limit_orders_map, trading_pair_str, order_id)
             self.trigger_event(
                 MarketEvent.OrderCancelled,
-                OrderCancelledEvent(self._current_timestamp, order_id),
+                OrderCancelledEvent(self.current_timestamp, order_id),
             )
             return
 
@@ -739,7 +739,7 @@ class PaperTradeExchange(ExchangeBase):
         self.trigger_event(
             MarketEvent.OrderFilled,
             OrderFilledEvent(
-                self._current_timestamp,
+                self.current_timestamp,
                 order_id,
                 order.trading_pair,
                 TradeType.BUY,
@@ -754,7 +754,7 @@ class PaperTradeExchange(ExchangeBase):
         self.trigger_event(
             MarketEvent.BuyOrderCompleted,
             BuyOrderCompletedEvent(
-                self._current_timestamp,
+                self.current_timestamp,
                 order_id,
                 base_asset,
                 quote_asset,
@@ -807,7 +807,7 @@ class PaperTradeExchange(ExchangeBase):
             self.c_delete_limit_order(limit_orders_map, trading_pair_str, order_id)
             self.trigger_event(
                 MarketEvent.OrderCancelled,
-                OrderCancelledEvent(self._current_timestamp, order_id),
+                OrderCancelledEvent(self.current_timestamp, order_id),
             )
             return
 
@@ -831,7 +831,7 @@ class PaperTradeExchange(ExchangeBase):
         self.trigger_event(
             MarketEvent.OrderFilled,
             OrderFilledEvent(
-                self._current_timestamp,
+                self.current_timestamp,
                 order_id,
                 order.trading_pair,
                 TradeType.SELL,
@@ -846,7 +846,7 @@ class PaperTradeExchange(ExchangeBase):
         self.trigger_event(
             MarketEvent.SellOrderCompleted,
             SellOrderCompletedEvent(
-                self._current_timestamp,
+                self.current_timestamp,
                 order_id,
                 base_asset,
                 quote_asset,
@@ -992,7 +992,7 @@ class PaperTradeExchange(ExchangeBase):
                 cancellation_results.append(CancellationResult(cid, delete_success))
                 self.trigger_event(
                     MarketEvent.OrderCancelled,
-                    OrderCancelledEvent(self._current_timestamp, cid),
+                    OrderCancelledEvent(self.current_timestamp, cid),
                 )
             return cancellation_results
         except Exception:
@@ -1030,6 +1030,21 @@ class PaperTradeExchange(ExchangeBase):
             raise ValueError(f"No order book exists for '{trading_pair}'.")
         trading_pair = self._target_market.convert_to_exchange_trading_pair(trading_pair)
         return self._order_book_tracker.order_books[trading_pair]
+
+    def c_get_price(self, trading_pair: str, is_buy: bool) -> Decimal:
+        """Return top bid/ask price for a trading pair, quantized.
+
+        Mirrors ExchangeBase.c_get_price but uses locally-overridden helpers so
+        that pure-Python subclasses reach the correct implementation without
+        attempting a cdef dispatch that fails at runtime.
+        """
+        order_book: OrderBook = self.c_get_order_book(trading_pair)
+        try:
+            top_price = Decimal(str(order_book.get_price(is_buy)))
+        except EnvironmentError:
+            self.logger().warning(f"{'Ask' if is_buy else 'Bid'} orderbook for {trading_pair} is empty.")
+            return Decimal("nan")
+        return self.c_quantize_order_price(trading_pair, top_price)
 
     def c_get_order_price_quantum(self, trading_pair: str, price: object) -> object:
         if trading_pair in self._quantization_params:
