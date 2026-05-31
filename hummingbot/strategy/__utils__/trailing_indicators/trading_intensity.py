@@ -1,32 +1,35 @@
-# distutils: language=c++
-# distutils: sources=hummingbot/core/cpp/OrderBookEntry.cpp
-
 import warnings
 from decimal import Decimal
 from typing import Tuple
 
 import numpy as np
-from scipy.optimize import curve_fit
-from scipy.optimize import OptimizeWarning
+from scipy.optimize import OptimizeWarning, curve_fit
 
-from hummingbot.core.data_type.common import (
-    PriceType,
-)
+from hummingbot.core.data_type.common import PriceType
 from hummingbot.core.data_type.order_book import OrderBook
-from hummingbot.core.event.event_listener cimport EventListener
+from hummingbot.core.event.event_listener import EventListener
 from hummingbot.core.event.events import OrderBookEvent
 from hummingbot.strategy.asset_price_delegate import AssetPriceDelegate
 
-cdef class TradesForwarder(EventListener):
-    def __init__(self, indicator: 'TradingIntensityIndicator'):
+# ---------------------------------------------------------------------------
+# Helper: forwards trade events to TradingIntensityIndicator
+# Uses def __call__ because the Cython PubSub dispatch path calls
+# EventListener.c_call(arg) which in turn calls self(arg) == __call__.
+# A plain "def c_call" on a Python subclass would NOT override the inherited
+# cdef c_call at the C level, so __call__ is the correct protocol entry point.
+# ---------------------------------------------------------------------------
+
+
+class TradesForwarder(EventListener):
+    def __init__(self, indicator: "TradingIntensityIndicator"):
+        super().__init__()
         self._indicator = indicator
 
-    cdef c_call(self, object arg):
+    def __call__(self, arg):
         self._indicator.c_register_trade(arg)
 
 
-cdef class TradingIntensityIndicator:
-
+class TradingIntensityIndicator:
     def __init__(self, order_book: OrderBook, price_delegate: AssetPriceDelegate, sampling_length: int = 30):
         self._alpha = 0
         self._kappa = 0
@@ -78,10 +81,10 @@ cdef class TradingIntensityIndicator:
         """A helper method to be used in unit tests"""
         self.c_calculate(timestamp)
 
-    cdef c_calculate(self, timestamp):
+    def c_calculate(self, timestamp):
         price = self._price_delegate.get_price_by_type(PriceType.MidPrice)
         # Descending order of price-timestamp quotes
-        self._last_quotes = [{'timestamp': timestamp, 'price': price}] + self._last_quotes
+        self._last_quotes = [{"timestamp": timestamp, "price": price}] + self._last_quotes
 
         latest_processed_quote_idx = None
         for trade in self._current_trade_sample:
@@ -97,16 +100,16 @@ cdef class TradingIntensityIndicator:
                     self._trade_samples[quote["timestamp"] + 1] += [trade]
                     break
 
-        # THere are no trades left to process
+        # There are no trades left to process
         self._current_trade_sample = []
         # Store quotes that happened after the latest trade + one before
         if latest_processed_quote_idx is not None:
-            self._last_quotes = self._last_quotes[0:latest_processed_quote_idx + 1]
+            self._last_quotes = self._last_quotes[0 : latest_processed_quote_idx + 1]
 
         if len(self._trade_samples.keys()) > self._sampling_length:
             timestamps = list(self._trade_samples.keys())
             timestamps.sort()
-            timestamps = timestamps[-self._sampling_length:]
+            timestamps = timestamps[-self._sampling_length :]
 
             trade_samples = {}
             for timestamp in timestamps:
@@ -120,28 +123,23 @@ cdef class TradingIntensityIndicator:
         """A helper method to be used in unit tests"""
         self.c_register_trade(trade)
 
-    cdef c_register_trade(self, object trade):
+    def c_register_trade(self, trade):
         self._current_trade_sample.append(trade)
 
-    cdef c_estimate_intensity(self):
-        cdef:
-            dict trades_consolidated
-            list lambdas
-            list price_levels
-
+    def c_estimate_intensity(self):
         # Calculate lambdas / trading intensities
         lambdas = []
 
-        trades_consolidated = {}
-        price_levels = []
+        trades_consolidated: dict = {}
+        price_levels: list = []
         for timestamp in self._trade_samples.keys():
             tick = self._trade_samples[timestamp]
             for trade in tick:
-                if trade['price_level'] not in trades_consolidated.keys():
-                    trades_consolidated[trade['price_level']] = 0
-                    price_levels += [trade['price_level']]
+                if trade["price_level"] not in trades_consolidated.keys():
+                    trades_consolidated[trade["price_level"]] = 0
+                    price_levels += [trade["price_level"]]
 
-                trades_consolidated[trade['price_level']] += trade['amount']
+                trades_consolidated[trade["price_level"]] += trade["amount"]
 
         price_levels = sorted(price_levels, reverse=True)
 
@@ -149,18 +147,20 @@ cdef class TradingIntensityIndicator:
             lambdas += [trades_consolidated[price_level]]
 
         # Adjust to be able to calculate log
-        lambdas_adj = [10**-10 if x==0 else x for x in lambdas]
+        lambdas_adj = [10**-10 if x == 0 else x for x in lambdas]
 
         # Fit the probability density function; reuse previously calculated parameters as initial values
         try:
-            params = curve_fit(lambda t, a, b: a*np.exp(-b*t),
-                               price_levels,
-                               lambdas_adj,
-                               p0=(self._alpha, self._kappa),
-                               method='dogbox',
-                               bounds=([0, 0], [np.inf, np.inf]))
+            params = curve_fit(
+                lambda t, a, b: a * np.exp(-b * t),
+                price_levels,
+                lambdas_adj,
+                p0=(self._alpha, self._kappa),
+                method="dogbox",
+                bounds=([0, 0], [np.inf, np.inf]),
+            )
 
             self._kappa = Decimal(str(params[0][1]))
             self._alpha = Decimal(str(params[0][0]))
-        except (RuntimeError, ValueError) as e:
+        except (RuntimeError, ValueError):
             pass
