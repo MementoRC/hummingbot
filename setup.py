@@ -8,7 +8,7 @@ from Cython.Build import cythonize
 from setuptools import find_packages, setup
 from setuptools.command.build_ext import build_ext
 
-is_posix = (os.name == "posix")
+is_posix = os.name == "posix"
 
 
 # Avoid a gcc warning below:
@@ -24,21 +24,16 @@ class BuildExt(build_ext):
 def main():
     cpu_count = os.cpu_count() or 8
     version = "20260421"
-    all_packages = find_packages(include=["hummingbot", "hummingbot.*"], )
+    all_packages = find_packages(
+        include=["hummingbot", "hummingbot.*"],
+    )
     excluded_paths = [
         "hummingbot.connector.gateway.clob_spot.data_sources.injective",
-        "hummingbot.connector.gateway.clob_perp.data_sources.injective_perpetual"
+        "hummingbot.connector.gateway.clob_perp.data_sources.injective_perpetual",
     ]
-    packages = [
-        pkg for pkg in all_packages
-        if not any(fnmatch.fnmatch(pkg, pattern) for pattern in excluded_paths)
-    ]
+    packages = [pkg for pkg in all_packages if not any(fnmatch.fnmatch(pkg, pattern) for pattern in excluded_paths)]
     package_data = {
-        "hummingbot": [
-            "core/cpp/*",
-            "VERSION",
-            "templates/*TEMPLATE.yml"
-        ],
+        "hummingbot": ["core/cpp/*", "VERSION", "templates/*TEMPLATE.yml"],
     }
     install_requires = [
         "aiohttp>=3.8.5",
@@ -114,33 +109,38 @@ def main():
     if is_posix:
         cython_kwargs["nthreads"] = cpu_count
 
-    cython_sources = ["hummingbot/**/*.pyx"]
+    # Exclude .pyx files that have been converted to pure-Python (.py) equivalents.
+    # These are C9 convention conversions where the .pyx is an orphan pending deletion.
+    _pyx_exclusions = {
+        "hummingbot/core/data_type/composite_order_book.pyx",
+        "hummingbot/core/data_type/transaction_tracker.pyx",
+        "hummingbot/strategy/api_asset_price_delegate.pyx",
+    }
+    import glob as _glob
+
+    cython_sources = [f for f in _glob.glob("hummingbot/**/*.pyx", recursive=True) if f not in _pyx_exclusions]
 
     compiler_directives = {
         "annotation_typing": False,
     }
     if os.environ.get("WITHOUT_CYTHON_OPTIMIZATIONS"):
-        compiler_directives.update({
-            "optimize.use_switch": False,
-            "optimize.unpack_method_calls": False,
-        })
+        compiler_directives.update(
+            {
+                "optimize.use_switch": False,
+                "optimize.unpack_method_calls": False,
+            }
+        )
 
     if "DEV_MODE" in os.environ:
         version += ".dev1"
-        package_data[""] = [
-            "*.pxd", "*.pyx", "*.h"
-        ]
+        package_data[""] = ["*.pxd", "*.pyx", "*.h"]
         package_data["hummingbot"].append("core/cpp/*.cpp")
 
     if len(sys.argv) > 1 and sys.argv[1] == "build_ext" and is_posix:
         sys.argv.append(f"--parallel={cpu_count}")
 
     # --- 3. Generate Extensions & Manually Apply Flags ---
-    extensions = cythonize(
-        cython_sources,
-        compiler_directives=compiler_directives,
-        **cython_kwargs
-    )
+    extensions = cythonize(cython_sources, compiler_directives=compiler_directives, **cython_kwargs)
 
     for ext in extensions:
         ext.extra_compile_args = extra_compile_args
@@ -160,12 +160,8 @@ def main():
         package_data=package_data,
         install_requires=install_requires,
         ext_modules=extensions,  # <--- Use the list we modified
-        include_dirs=[
-            np.get_include()
-        ],
-        scripts=[
-            "bin/hummingbot_quickstart.py"
-        ],
+        include_dirs=[np.get_include()],
+        scripts=["bin/hummingbot_quickstart.py"],
         cmdclass={"build_ext": BuildExt},
     )
 
