@@ -1,14 +1,12 @@
-# distutils: language=c++
-
 import asyncio
-from enum import Enum
 import logging
+from enum import Enum
 from typing import Optional
 
-from hummingbot.core.clock cimport Clock
-from hummingbot.logger import HummingbotLogger
 from async_utils.core import safe_ensure_future
+
 from hummingbot.core.time_iterator import TimeIterator
+from hummingbot.logger import HummingbotLogger
 
 NaN = float("nan")
 ni_logger = None
@@ -20,7 +18,7 @@ class NetworkStatus(Enum):
     CONNECTED = 2
 
 
-cdef class NetworkIterator(TimeIterator):
+class NetworkIterator(TimeIterator):
     @classmethod
     def logger(cls) -> HummingbotLogger:
         global ni_logger
@@ -46,7 +44,7 @@ cdef class NetworkIterator(TimeIterator):
         return self._last_connected_timestamp
 
     @last_connected_timestamp.setter
-    def last_connected_timestamp(self, value):
+    def last_connected_timestamp(self, value: float) -> None:
         self._last_connected_timestamp = value
 
     @property
@@ -58,7 +56,7 @@ cdef class NetworkIterator(TimeIterator):
         return self._check_network_interval
 
     @check_network_interval.setter
-    def check_network_interval(self, double interval):
+    def check_network_interval(self, interval: float) -> None:
         self._check_network_interval = interval
 
     @property
@@ -66,7 +64,7 @@ cdef class NetworkIterator(TimeIterator):
         return self._network_error_wait_time
 
     @network_error_wait_time.setter
-    def network_error_wait_time(self, double wait_time):
+    def network_error_wait_time(self, wait_time: float) -> None:
         self._network_error_wait_time = wait_time
 
     @property
@@ -74,20 +72,20 @@ cdef class NetworkIterator(TimeIterator):
         return self._check_network_timeout
 
     @check_network_timeout.setter
-    def check_network_timeout(self, double timeout):
+    def check_network_timeout(self, timeout: float) -> None:
         self._check_network_timeout = timeout
 
-    async def start_network(self):
+    async def start_network(self) -> None:
         pass
 
-    async def stop_network(self):
+    async def stop_network(self) -> None:
         pass
 
     async def check_network(self) -> NetworkStatus:
         self.logger().warning("check_network() has not been implemented!")
         return NetworkStatus.NOT_CONNECTED
 
-    async def _check_network_loop(self):
+    async def _check_network_loop(self) -> None:
         while True:
             last_status = self._network_status
             try:
@@ -108,17 +106,26 @@ cdef class NetworkIterator(TimeIterator):
                 self._network_status = NetworkStatus.NOT_CONNECTED
                 await asyncio.sleep(self._check_network_interval)
             except Exception as e:
-                self.logger().error(f"Unexpected error while checking for network status: {e}", exc_info=True)
+                self.logger().error(
+                    f"Unexpected error while checking for network status: {e}",
+                    exc_info=True,
+                )
                 self._network_status = NetworkStatus.NOT_CONNECTED
                 await asyncio.sleep(self._network_error_wait_time)
 
+    # Variant B: TimeIterator is still Cython; call its cdef methods via unbound syntax.
+    # c_tick is also exposed here so ConnectorBase can call NetworkIterator.c_tick(self, ...)
+    # as an unbound Python-level call (Variant B pattern from ConnectorBase C8 conversion).
 
-    cdef c_start(self, Clock clock, double timestamp):
+    def c_tick(self, timestamp: float) -> None:
+        TimeIterator.c_tick(self, timestamp)
+
+    def c_start(self, clock, timestamp: float) -> None:
         TimeIterator.c_start(self, clock, timestamp)
         self._check_network_task = safe_ensure_future(self._check_network_loop())
         self._network_status = NetworkStatus.NOT_CONNECTED
 
-    cdef c_stop(self, Clock clock):
+    def c_stop(self, clock) -> None:
         TimeIterator.c_stop(self, clock)
         if self._check_network_task is not None:
             self._check_network_task.cancel()
@@ -126,8 +133,8 @@ cdef class NetworkIterator(TimeIterator):
         self._network_status = NetworkStatus.STOPPED
         safe_ensure_future(self.stop_network())
 
-    def start(self, clock: Clock, timestamp: float):
+    def start(self, clock, timestamp: float) -> None:
         self.c_start(clock, timestamp)
 
-    def stop(self, clock: Clock):
+    def stop(self, clock) -> None:
         self.c_stop(clock)
