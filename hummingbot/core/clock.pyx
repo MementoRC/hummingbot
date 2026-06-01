@@ -6,7 +6,6 @@ import time
 from typing import List
 
 from hummingbot.core.time_iterator import TimeIterator
-from hummingbot.core.time_iterator cimport TimeIterator
 from hummingbot.core.clock_mode import ClockMode
 from hummingbot.logger import HummingbotLogger
 
@@ -66,19 +65,19 @@ cdef class Clock:
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self._current_context is not None:
             for iterator in self._current_context:
-                (<TimeIterator>iterator).c_stop(self)
+                iterator.c_stop(self)
         self._current_context = None
 
     def add_iterator(self, iterator: TimeIterator):
         if self._current_context is not None:
             self._current_context.append(iterator)
         if self._started:
-            (<TimeIterator>iterator).c_start(self, self._current_tick)
+            iterator.c_start(self, self._current_tick)
         self._child_iterators.append(iterator)
 
     def remove_iterator(self, iterator: TimeIterator):
         if self._current_context is not None and iterator in self._current_context:
-            (<TimeIterator>iterator).c_stop(self)
+            iterator.c_stop(self)
             self._current_context.remove(iterator)
         self._child_iterators.remove(iterator)
 
@@ -87,7 +86,6 @@ cdef class Clock:
 
     async def run_til(self, timestamp: float):
         cdef:
-            TimeIterator child_iterator
             double now = time.time()
             double next_tick_time
 
@@ -97,8 +95,7 @@ cdef class Clock:
         self._current_tick = (now // self._tick_size) * self._tick_size
         if not self._started:
             for ci in self._current_context:
-                child_iterator = ci
-                child_iterator.c_start(self, self._current_tick)
+                ci.c_start(self, self._current_tick)
             self._started = True
 
         try:
@@ -114,9 +111,8 @@ cdef class Clock:
 
                 # Run through all the child iterators.
                 for ci in self._current_context:
-                    child_iterator = ci
                     try:
-                        child_iterator.c_tick(self._current_tick)
+                        ci.c_tick(self._current_tick)
                     except StopIteration:
                         self.logger().error("Stop iteration triggered in real time mode. This is not expected.")
                         return
@@ -124,25 +120,20 @@ cdef class Clock:
                         self.logger().error("Unexpected error running clock tick.", exc_info=True)
         finally:
             for ci in self._current_context:
-                child_iterator = ci
-                child_iterator._clock = None
+                ci._clock = None
 
     def backtest_til(self, timestamp: float):
-        cdef TimeIterator child_iterator
-
         if not self._started:
             for ci in self._child_iterators:
-                child_iterator = ci
-                child_iterator.c_start(self, self._start_time)
+                ci.c_start(self, self._start_time)
             self._started = True
 
         try:
             while not (self._current_tick >= timestamp):
                 self._current_tick += self._tick_size
                 for ci in self._child_iterators:
-                    child_iterator = ci
                     try:
-                        child_iterator.c_tick(self._current_tick)
+                        ci.c_tick(self._current_tick)
                     except StopIteration:
                         raise
                     except Exception:
@@ -151,8 +142,7 @@ cdef class Clock:
             return
         finally:
             for ci in self._child_iterators:
-                child_iterator = ci
-                child_iterator._clock = None
+                ci._clock = None
 
     def backtest(self):
         self.backtest_til(self._end_time)

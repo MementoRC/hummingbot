@@ -19,7 +19,6 @@ from typing import List
 
 from hummingbot.logger import HummingbotLogger
 from hummingbot.core.event.event_listener import EventListener
-from hummingbot.core.event.event_listener cimport EventListener
 
 class_logger = None
 
@@ -70,7 +69,7 @@ cdef class PubSub:
     cdef c_log_exception(self, int64_t event_tag, object arg):
         self.logger().error(f"Unexpected error while processing event {event_tag}.", exc_info=True)
 
-    cdef c_add_listener(self, int64_t event_tag, EventListener listener):
+    cdef c_add_listener(self, int64_t event_tag, object listener):
         cdef:
             EventsIterator it = self._events.find(event_tag)
             EventListenersCollection new_listeners
@@ -87,7 +86,7 @@ cdef class PubSub:
         if random.random() < PubSub.ADD_LISTENER_GC_PROBABILITY:
             self.c_remove_dead_listeners(event_tag)
 
-    cdef c_remove_listener(self, int64_t event_tag, EventListener listener):
+    cdef c_remove_listener(self, int64_t event_tag, object listener):
         cdef:
             EventsIterator it = self._events.find(event_tag)
             EventListenersCollection *listeners_ptr
@@ -130,7 +129,7 @@ cdef class PubSub:
             EventsIterator it = self._events.find(event_tag)
             EventListenersCollection *listeners_ptr
             object listener_weafref
-            EventListener typed_listener
+            object typed_listener
 
         if it == self._events.end():
             return []
@@ -150,7 +149,7 @@ cdef class PubSub:
             EventsIterator it = self._events.find(event_tag)
             EventListenersCollection listeners
             object listener_weafref
-            EventListener typed_listener
+            object typed_listener
         if it == self._events.end():
             return
 
