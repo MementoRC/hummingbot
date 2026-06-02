@@ -42,4 +42,4 @@ class TimeIterator(PubSub):
         """
         Method added to be used only for unit testing purposes
         """
-        self._current_timestamp = timestamp
+        self._current_timestamp = float(timestamp)

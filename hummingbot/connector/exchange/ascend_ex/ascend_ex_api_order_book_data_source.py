@@ -90,7 +90,7 @@ class AscendExAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
         order_book_message_content = {
             "trading_pair": trading_pair,
-            "update_id": snapshot_timestamp,
+            "update_id": int(snapshot_timestamp),
             "bids": snapshot_response["data"]["data"]["bids"],
             "asks": snapshot_response["data"]["data"]["asks"],
         }

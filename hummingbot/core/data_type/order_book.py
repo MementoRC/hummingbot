@@ -243,7 +243,7 @@ class OrderBook(PubSub):
         self._apply_snapshot(
             [(r.price, r.amount, r.update_id) for r in bids],
             [(r.price, r.amount, r.update_id) for r in asks],
-            update_id,
+            int(update_id),
         )
 
     def apply_trade(self, trade: OrderBookTradeEvent) -> None:
