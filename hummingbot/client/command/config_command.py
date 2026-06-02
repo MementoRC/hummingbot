@@ -26,7 +26,6 @@ from hummingbot.connector.utils import split_hb_trading_pair
 from hummingbot.core.utils import map_df_to_str
 from hummingbot.model.inventory_cost import InventoryCost
 from hummingbot.strategy.perpetual_market_making import PerpetualMarketMakingStrategy
-from hummingbot.strategy.pure_market_making import PureMarketMakingStrategy
 from hummingbot.user.user_balances import UserBalances
 
 if TYPE_CHECKING:
@@ -332,9 +331,7 @@ class ConfigCommand:
         self.app.app.style = load_style(self.client_config_map)
         for config in missings:
             self.notify(f"{config.key}: {str(config.value)}")
-        if isinstance(self.trading_core.strategy, PureMarketMakingStrategy) or isinstance(
-            self.trading_core.strategy, PerpetualMarketMakingStrategy
-        ):
+        if isinstance(self.trading_core.strategy, PerpetualMarketMakingStrategy):
             updated = ConfigCommand.update_running_mm(self.trading_core.strategy, key, config_var.value)
             if updated:
                 self.notify(

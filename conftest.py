@@ -17,6 +17,10 @@ _SKIP_PATHS = (
     "connector/derivative/dydx_v4_perpetual",
     "connector/exchange/vertex",
     "connector/gateway/test_gateway_lp.py",
+    # Out-of-scope strategies removed in Phase C (source .pyx deleted)
+    "strategy/pure_market_making",
+    "strategy/avellaneda_market_making",
+    "strategy/cross_exchange_mining",
 )
 
 
