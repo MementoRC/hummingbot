@@ -115,6 +115,7 @@ def main():
         "hummingbot/core/data_type/composite_order_book.pyx",
         "hummingbot/core/data_type/transaction_tracker.pyx",
         "hummingbot/strategy/api_asset_price_delegate.pyx",
+        "hummingbot/strategy/order_book_asset_price_delegate.pyx",
     }
     import glob as _glob
 
