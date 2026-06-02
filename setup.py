@@ -114,8 +114,7 @@ def main():
     _pyx_exclusions = {
         "hummingbot/core/data_type/composite_order_book.pyx",
         "hummingbot/core/data_type/transaction_tracker.pyx",
-        "hummingbot/strategy/api_asset_price_delegate.pyx",
-        "hummingbot/strategy/order_book_asset_price_delegate.pyx",
+        "hummingbot/strategy/cross_exchange_market_making/order_id_market_pair_tracker.pyx",
     }
     import glob as _glob
 
