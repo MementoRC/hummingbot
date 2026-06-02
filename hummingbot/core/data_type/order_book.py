@@ -186,7 +186,7 @@ class OrderBook(PubSub):
     def _apply_trade(self, trade_event: object) -> None:
         self._last_trade_price = trade_event.price
         self._last_applied_trade = time.perf_counter()
-        self.c_trigger_event(self.ORDER_BOOK_TRADE_EVENT_TAG, trade_event)
+        self.trigger_event(OrderBookEvent.TradeEvent, trade_event)
 
     # ------------------------------------------------------------------
     # Properties

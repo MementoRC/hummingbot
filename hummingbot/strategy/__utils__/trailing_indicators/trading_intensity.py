@@ -37,7 +37,7 @@ class TradingIntensityIndicator:
         self._current_trade_sample = []
         self._trades_forwarder = TradesForwarder(self)
         self._order_book = order_book
-        self._order_book.c_add_listener(OrderBookEvent.TradeEvent, self._trades_forwarder)
+        self._order_book.add_listener(OrderBookEvent.TradeEvent, self._trades_forwarder)
         self._price_delegate = price_delegate
         self._sampling_length = sampling_length
         self._samples_length = 0

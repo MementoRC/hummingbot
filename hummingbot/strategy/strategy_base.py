@@ -289,46 +289,26 @@ class StrategyBase(TimeIterator):
 
     def c_add_markets(self, markets: list) -> None:
         for market in markets:
-            ConnectorBase.c_add_listener(market, self.BUY_ORDER_CREATED_EVENT_TAG, self._sb_create_buy_order_listener)
-            ConnectorBase.c_add_listener(market, self.SELL_ORDER_CREATED_EVENT_TAG, self._sb_create_sell_order_listener)
-            ConnectorBase.c_add_listener(market, self.ORDER_FILLED_EVENT_TAG, self._sb_fill_order_listener)
-            ConnectorBase.c_add_listener(market, self.ORDER_FAILURE_EVENT_TAG, self._sb_fail_order_listener)
-            ConnectorBase.c_add_listener(market, self.ORDER_CANCELED_EVENT_TAG, self._sb_cancel_order_listener)
-            ConnectorBase.c_add_listener(market, self.ORDER_EXPIRED_EVENT_TAG, self._sb_expire_order_listener)
-            ConnectorBase.c_add_listener(
-                market, self.BUY_ORDER_COMPLETED_EVENT_TAG, self._sb_complete_buy_order_listener
+            market.add_listener(MarketEvent.BuyOrderCreated, self._sb_create_buy_order_listener)
+            market.add_listener(MarketEvent.SellOrderCreated, self._sb_create_sell_order_listener)
+            market.add_listener(MarketEvent.OrderFilled, self._sb_fill_order_listener)
+            market.add_listener(MarketEvent.OrderFailure, self._sb_fail_order_listener)
+            market.add_listener(MarketEvent.OrderCancelled, self._sb_cancel_order_listener)
+            market.add_listener(MarketEvent.OrderExpired, self._sb_expire_order_listener)
+            market.add_listener(MarketEvent.BuyOrderCompleted, self._sb_complete_buy_order_listener)
+            market.add_listener(MarketEvent.SellOrderCompleted, self._sb_complete_sell_order_listener)
+            market.add_listener(MarketEvent.FundingPaymentCompleted, self._sb_complete_funding_payment_listener)
+            market.add_listener(
+                AccountEvent.PositionModeChangeSucceeded, self._sb_position_mode_change_success_listener
             )
-            ConnectorBase.c_add_listener(
-                market, self.SELL_ORDER_COMPLETED_EVENT_TAG, self._sb_complete_sell_order_listener
+            market.add_listener(AccountEvent.PositionModeChangeFailed, self._sb_position_mode_change_failure_listener)
+            market.add_listener(
+                MarketEvent.RangePositionLiquidityAdded, self._sb_range_position_liquidity_added_listener
             )
-            ConnectorBase.c_add_listener(
-                market, self.FUNDING_PAYMENT_COMPLETED_EVENT_TAG, self._sb_complete_funding_payment_listener
+            market.add_listener(
+                MarketEvent.RangePositionLiquidityRemoved, self._sb_range_position_liquidity_removed_listener
             )
-            ConnectorBase.c_add_listener(
-                market,
-                self.POSITION_MODE_CHANGE_SUCCEEDED_EVENT_TAG,
-                self._sb_position_mode_change_success_listener,
-            )
-            ConnectorBase.c_add_listener(
-                market,
-                self.POSITION_MODE_CHANGE_FAILED_EVENT_TAG,
-                self._sb_position_mode_change_failure_listener,
-            )
-            ConnectorBase.c_add_listener(
-                market,
-                self.RANGE_POSITION_LIQUIDITY_ADDED_EVENT_TAG,
-                self._sb_range_position_liquidity_added_listener,
-            )
-            ConnectorBase.c_add_listener(
-                market,
-                self.RANGE_POSITION_LIQUIDITY_REMOVED_EVENT_TAG,
-                self._sb_range_position_liquidity_removed_listener,
-            )
-            ConnectorBase.c_add_listener(
-                market,
-                self.RANGE_POSITION_UPDATE_FAILURE_EVENT_TAG,
-                self._sb_range_position_update_failure_listener,
-            )
+            market.add_listener(MarketEvent.RangePositionUpdateFailure, self._sb_range_position_update_failure_listener)
             self._sb_markets.add(market)
 
     def add_markets(self, markets: List[ConnectorBase]) -> None:
@@ -338,51 +318,29 @@ class StrategyBase(TimeIterator):
         for market in markets:
             if market not in self._sb_markets:
                 continue
-            ConnectorBase.c_remove_listener(
-                market, self.BUY_ORDER_CREATED_EVENT_TAG, self._sb_create_buy_order_listener
+            market.remove_listener(MarketEvent.BuyOrderCreated, self._sb_create_buy_order_listener)
+            market.remove_listener(MarketEvent.SellOrderCreated, self._sb_create_sell_order_listener)
+            market.remove_listener(MarketEvent.OrderFilled, self._sb_fill_order_listener)
+            market.remove_listener(MarketEvent.OrderFailure, self._sb_fail_order_listener)
+            market.remove_listener(MarketEvent.OrderCancelled, self._sb_cancel_order_listener)
+            market.remove_listener(MarketEvent.OrderExpired, self._sb_expire_order_listener)
+            market.remove_listener(MarketEvent.BuyOrderCompleted, self._sb_complete_buy_order_listener)
+            market.remove_listener(MarketEvent.SellOrderCompleted, self._sb_complete_sell_order_listener)
+            market.remove_listener(MarketEvent.FundingPaymentCompleted, self._sb_complete_funding_payment_listener)
+            market.remove_listener(
+                AccountEvent.PositionModeChangeSucceeded, self._sb_position_mode_change_success_listener
             )
-            ConnectorBase.c_remove_listener(
-                market, self.SELL_ORDER_CREATED_EVENT_TAG, self._sb_create_sell_order_listener
+            market.remove_listener(
+                AccountEvent.PositionModeChangeFailed, self._sb_position_mode_change_failure_listener
             )
-            ConnectorBase.c_remove_listener(market, self.ORDER_FILLED_EVENT_TAG, self._sb_fill_order_listener)
-            ConnectorBase.c_remove_listener(market, self.ORDER_FAILURE_EVENT_TAG, self._sb_fail_order_listener)
-            ConnectorBase.c_remove_listener(market, self.ORDER_CANCELED_EVENT_TAG, self._sb_cancel_order_listener)
-            ConnectorBase.c_remove_listener(market, self.ORDER_EXPIRED_EVENT_TAG, self._sb_expire_order_listener)
-            ConnectorBase.c_remove_listener(
-                market, self.BUY_ORDER_COMPLETED_EVENT_TAG, self._sb_complete_buy_order_listener
+            market.remove_listener(
+                MarketEvent.RangePositionLiquidityAdded, self._sb_range_position_liquidity_added_listener
             )
-            ConnectorBase.c_remove_listener(
-                market, self.SELL_ORDER_COMPLETED_EVENT_TAG, self._sb_complete_sell_order_listener
+            market.remove_listener(
+                MarketEvent.RangePositionLiquidityRemoved, self._sb_range_position_liquidity_removed_listener
             )
-            ConnectorBase.c_remove_listener(
-                market,
-                self.FUNDING_PAYMENT_COMPLETED_EVENT_TAG,
-                self._sb_complete_funding_payment_listener,
-            )
-            ConnectorBase.c_remove_listener(
-                market,
-                self.POSITION_MODE_CHANGE_SUCCEEDED_EVENT_TAG,
-                self._sb_position_mode_change_success_listener,
-            )
-            ConnectorBase.c_remove_listener(
-                market,
-                self.POSITION_MODE_CHANGE_FAILED_EVENT_TAG,
-                self._sb_position_mode_change_failure_listener,
-            )
-            ConnectorBase.c_remove_listener(
-                market,
-                self.RANGE_POSITION_LIQUIDITY_ADDED_EVENT_TAG,
-                self._sb_range_position_liquidity_added_listener,
-            )
-            ConnectorBase.c_remove_listener(
-                market,
-                self.RANGE_POSITION_LIQUIDITY_REMOVED_EVENT_TAG,
-                self._sb_range_position_liquidity_removed_listener,
-            )
-            ConnectorBase.c_remove_listener(
-                market,
-                self.RANGE_POSITION_UPDATE_FAILURE_EVENT_TAG,
-                self._sb_range_position_update_failure_listener,
+            market.remove_listener(
+                MarketEvent.RangePositionUpdateFailure, self._sb_range_position_update_failure_listener
             )
             self._sb_markets.remove(market)
 
