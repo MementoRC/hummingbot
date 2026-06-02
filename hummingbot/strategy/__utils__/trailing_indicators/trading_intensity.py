@@ -47,7 +47,9 @@ class TradingIntensityIndicator:
 
     @property
     def current_value(self) -> Tuple[float, float]:
-        return self._alpha, self._kappa
+        # _alpha/_kappa are stored as Decimal after c_estimate_intensity runs.
+        # Cython returned C doubles; convert here to preserve the float contract.
+        return float(self._alpha), float(self._kappa)
 
     @property
     def is_sampling_buffer_full(self) -> bool:

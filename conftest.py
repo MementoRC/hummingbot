@@ -6,6 +6,20 @@ import os as _os
 # The .so has import priority over .py; delete it so the .py is used directly.
 _CONVERTED_SO_FILES = [
     "hummingbot/strategy/order_tracker.cpython-312-x86_64-linux-gnu.so",
+    # strategy_base / strategy_py_base: converted from Cython; .so compiled
+    # against old TimeIterator C-struct (104 bytes) which is now pure Python (88 bytes).
+    "hummingbot/strategy/strategy_base.cpython-312-x86_64-linux-gnu.so",
+    "hummingbot/strategy/strategy_py_base.cpython-312-x86_64-linux-gnu.so",
+    # trading_intensity: converted from Cython; .so compiled against old
+    # EventListener C-struct (48 bytes) which is now pure Python (16 bytes).
+    "hummingbot/strategy/__utils__/trailing_indicators/trading_intensity.cpython-312-x86_64-linux-gnu.so",
+    # api_asset_price_delegate / order_book_asset_price_delegate: .pyx removed.
+    "hummingbot/strategy/api_asset_price_delegate.cpython-312-x86_64-linux-gnu.so",
+    "hummingbot/strategy/order_book_asset_price_delegate.cpython-312-x86_64-linux-gnu.so",
+    # cross_exchange_market_making order_id_market_pair_tracker: .pyx removed.
+    "hummingbot/strategy/cross_exchange_market_making/order_id_market_pair_tracker.cpython-312-x86_64-linux-gnu.so",
+    # transaction_tracker: .pyx removed.
+    "hummingbot/core/data_type/transaction_tracker.cpython-312-x86_64-linux-gnu.so",
 ]
 for _so in _CONVERTED_SO_FILES:
     if _os.path.exists(_so):

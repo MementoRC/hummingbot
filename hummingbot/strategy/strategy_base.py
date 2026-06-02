@@ -490,7 +490,7 @@ class StrategyBase(TimeIterator):
             raise TypeError("price and amount must be Decimal objects.")
 
         kwargs = {
-            "expiration_ts": self.current_timestamp + expiration_seconds,
+            "expiration_ts": self.current_timestamp + float(expiration_seconds),
             "position_action": position_action,
         }
         market: ConnectorBase = market_trading_pair_tuple.market
@@ -543,7 +543,7 @@ class StrategyBase(TimeIterator):
             raise TypeError("price and amount must be Decimal objects.")
 
         kwargs = {
-            "expiration_ts": self.current_timestamp + expiration_seconds,
+            "expiration_ts": self.current_timestamp + float(expiration_seconds),
             "position_action": position_action,
         }
         market: ConnectorBase = market_trading_pair_tuple.market
