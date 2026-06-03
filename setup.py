@@ -140,11 +140,16 @@ def main():
         sys.argv.append(f"--parallel={cpu_count}")
 
     # --- 3. Generate Extensions & Manually Apply Flags ---
-    extensions = cythonize(cython_sources, compiler_directives=compiler_directives, **cython_kwargs)
+    # Opt-out for fast pure-Python installs (e.g., pixi run install-dev).
+    # Set HUMMINGBOT_SKIP_CYTHON=1 to skip ext_modules entirely.
+    if os.environ.get("HUMMINGBOT_SKIP_CYTHON") == "1":
+        extensions = []
+    else:
+        extensions = cythonize(cython_sources, compiler_directives=compiler_directives, **cython_kwargs)
 
-    for ext in extensions:
-        ext.extra_compile_args = extra_compile_args
-        ext.extra_link_args = extra_link_args
+        for ext in extensions:
+            ext.extra_compile_args = extra_compile_args
+            ext.extra_link_args = extra_link_args
 
     # --- 4. Pass the modified extensions to setup ---
     setup(
