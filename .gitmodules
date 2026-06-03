@@ -13,7 +13,7 @@
 [submodule "sub-packages/strategy-framework"]
 	path = sub-packages/strategy-framework
 	url = https://github.com/MementoRC/hb-strategy-framework.git
-	branch = feat/hb-compat
+	branch = development
 [submodule "sub-packages/rate-oracle"]
 	path = sub-packages/rate-oracle
 	url = https://github.com/MementoRC/hb-rate-oracle.git
