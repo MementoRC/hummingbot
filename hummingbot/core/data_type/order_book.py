@@ -455,32 +455,6 @@ class OrderBook(PubSub):
         return OrderBookQueryResult(price, NaN, result_price, cumulative_volume)
 
     # ------------------------------------------------------------------
-    # c_* aliases — required for callers in exchange_base.py that call
-    # order_book.c_XXX() directly (C-level in Cython, Python aliases here)
-    # ------------------------------------------------------------------
-
-    def c_get_price(self, is_buy: bool) -> float:
-        return self.get_price(is_buy)
-
-    def c_get_price_for_volume(self, is_buy: bool, volume: float) -> OrderBookQueryResult:
-        return self.get_price_for_volume(is_buy, volume)
-
-    def c_get_vwap_for_volume(self, is_buy: bool, volume: float) -> OrderBookQueryResult:
-        return self.get_vwap_for_volume(is_buy, volume)
-
-    def c_get_price_for_quote_volume(self, is_buy: bool, quote_volume: float) -> OrderBookQueryResult:
-        return self.get_price_for_quote_volume(is_buy, quote_volume)
-
-    def c_get_quote_volume_for_base_amount(self, is_buy: bool, base_amount: float) -> OrderBookQueryResult:
-        return self.get_quote_volume_for_base_amount(is_buy, base_amount)
-
-    def c_get_volume_for_price(self, is_buy: bool, price: float) -> OrderBookQueryResult:
-        return self.get_volume_for_price(is_buy, price)
-
-    def c_get_quote_volume_for_price(self, is_buy: bool, price: float) -> OrderBookQueryResult:
-        return self.get_quote_volume_for_price(is_buy, price)
-
-    # ------------------------------------------------------------------
     # Restore from snapshot + diffs
     # ------------------------------------------------------------------
 

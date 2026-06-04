@@ -173,7 +173,7 @@ class ExchangeBase(ConnectorBase):
         """
         order_book: OrderBook = self.c_get_order_book(trading_pair)
         try:
-            top_price = Decimal(str(order_book.c_get_price(is_buy)))
+            top_price = Decimal(str(order_book.get_price(is_buy)))
         except EnvironmentError:
             self.logger().warning(f"{'Ask' if is_buy else 'Bid'} orderbook for {trading_pair} is empty.")
             return s_decimal_NaN
@@ -181,7 +181,7 @@ class ExchangeBase(ConnectorBase):
 
     def c_get_vwap_for_volume(self, trading_pair: str, is_buy: bool, volume: Decimal) -> ClientOrderBookQueryResult:
         order_book: OrderBook = self.c_get_order_book(trading_pair)
-        result: OrderBookQueryResult = order_book.c_get_vwap_for_volume(is_buy, float(volume))
+        result: OrderBookQueryResult = order_book.get_vwap_for_volume(is_buy, float(volume))
         query_volume = Decimal(str(result.query_volume))
         result_price = Decimal(str(result.result_price))
         result_volume = Decimal(str(result.result_volume))
@@ -191,7 +191,7 @@ class ExchangeBase(ConnectorBase):
         self, trading_pair: str, is_buy: bool, volume: float
     ) -> ClientOrderBookQueryResult:
         order_book: OrderBook = self.c_get_order_book(trading_pair)
-        result: OrderBookQueryResult = order_book.c_get_price_for_quote_volume(is_buy, float(volume))
+        result: OrderBookQueryResult = order_book.get_price_for_quote_volume(is_buy, float(volume))
         query_volume = Decimal(str(result.query_volume))
         result_price = Decimal(str(result.result_price))
         result_volume = Decimal(str(result.result_volume))
@@ -199,7 +199,7 @@ class ExchangeBase(ConnectorBase):
 
     def c_get_price_for_volume(self, trading_pair: str, is_buy: bool, volume: Decimal) -> ClientOrderBookQueryResult:
         order_book: OrderBook = self.c_get_order_book(trading_pair)
-        result: OrderBookQueryResult = order_book.c_get_price_for_volume(is_buy, float(volume))
+        result: OrderBookQueryResult = order_book.get_price_for_volume(is_buy, float(volume))
         query_volume = Decimal(str(result.query_volume))
         result_price = Decimal(str(result.result_price))
         result_volume = Decimal(str(result.result_volume))
@@ -209,14 +209,14 @@ class ExchangeBase(ConnectorBase):
         self, trading_pair: str, is_buy: bool, base_amount: Decimal
     ) -> ClientOrderBookQueryResult:
         order_book: OrderBook = self.c_get_order_book(trading_pair)
-        result: OrderBookQueryResult = order_book.c_get_quote_volume_for_base_amount(is_buy, float(base_amount))
+        result: OrderBookQueryResult = order_book.get_quote_volume_for_base_amount(is_buy, float(base_amount))
         query_volume = Decimal(str(result.query_volume))
         result_volume = Decimal(str(result.result_volume))
         return ClientOrderBookQueryResult(s_decimal_NaN, query_volume, s_decimal_NaN, result_volume)
 
     def c_get_volume_for_price(self, trading_pair: str, is_buy: bool, price: Decimal) -> ClientOrderBookQueryResult:
         order_book: OrderBook = self.c_get_order_book(trading_pair)
-        result: OrderBookQueryResult = order_book.c_get_volume_for_price(is_buy, float(price))
+        result: OrderBookQueryResult = order_book.get_volume_for_price(is_buy, float(price))
         query_price = Decimal(str(result.query_price))
         result_price = Decimal(str(result.result_price))
         result_volume = Decimal(str(result.result_volume))
@@ -226,7 +226,7 @@ class ExchangeBase(ConnectorBase):
         self, trading_pair: str, is_buy: bool, price: Decimal
     ) -> ClientOrderBookQueryResult:
         order_book: OrderBook = self.c_get_order_book(trading_pair)
-        result: OrderBookQueryResult = order_book.c_get_volume_for_price(is_buy, float(price))
+        result: OrderBookQueryResult = order_book.get_volume_for_price(is_buy, float(price))
         query_price = Decimal(str(result.query_price))
         result_price = Decimal(str(result.result_price))
         result_volume = Decimal(str(result.result_volume))

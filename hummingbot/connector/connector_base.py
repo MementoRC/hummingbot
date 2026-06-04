@@ -113,9 +113,6 @@ class ConnectorBase(NetworkIterator):
     def c_cancel(self, trading_pair: str, client_order_id: str) -> None:
         self.cancel(trading_pair, client_order_id)
 
-    def c_stop_tracking_order(self, order_id: str) -> None:
-        raise NotImplementedError
-
     def c_get_balance(self, currency: str) -> Decimal:
         return self.get_balance(currency)
 
