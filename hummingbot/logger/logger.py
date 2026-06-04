@@ -10,9 +10,4 @@ object as callers doing ``from logger.logger import HummingbotLogger`` — makin
 See MementoRC/hb-logger#9 (dual-import isinstance failure).
 """
 
-from logger.logger import (  # noqa: F401
-    TESTING_TOOLS,
-    HummingbotLogger,
-    _srcfile,
-    currentframe,
-)
+from logger.logger import TESTING_TOOLS, HummingbotLogger, _srcfile, currentframe  # noqa: F401

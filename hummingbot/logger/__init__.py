@@ -11,16 +11,7 @@ See MementoRC/hb-logger#9 (dual-import isinstance failure) for the bug this
 fixes, and MementoRC/hb-logger#1 (full extraction plan) for the larger context.
 """
 
-from logger import (  # noqa: F401
-    CRITICAL,
-    DEBUG,
-    ERROR,
-    INFO,
-    NETWORK,
-    WARNING,
-    HummingbotLogger,
-    log_encoder,
-)
+from logger import CRITICAL, DEBUG, ERROR, INFO, NETWORK, WARNING, HummingbotLogger, log_encoder  # noqa: F401
 
 __all__ = [
     "CRITICAL",
