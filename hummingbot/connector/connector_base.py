@@ -90,54 +90,6 @@ class ConnectorBase(NetworkIterator):
         # Variant B: parent still Cython
         NetworkIterator.c_stop(self, clock)
 
-    def c_buy(
-        self,
-        trading_pair: str,
-        amount: Decimal,
-        order_type: OrderType = OrderType.MARKET,
-        price: Decimal = s_decimal_NaN,
-        **kwargs,
-    ) -> str:
-        return self.buy(trading_pair, amount, order_type, price, **kwargs)
-
-    def c_sell(
-        self,
-        trading_pair: str,
-        amount: Decimal,
-        order_type: OrderType = OrderType.MARKET,
-        price: Decimal = s_decimal_NaN,
-        **kwargs,
-    ) -> str:
-        return self.sell(trading_pair, amount, order_type, price, **kwargs)
-
-    def c_cancel(self, trading_pair: str, client_order_id: str) -> None:
-        self.cancel(trading_pair, client_order_id)
-
-    def c_get_balance(self, currency: str) -> Decimal:
-        return self.get_balance(currency)
-
-    def c_get_available_balance(self, currency: str) -> Decimal:
-        return self.get_available_balance(currency)
-
-    def c_get_price(self, trading_pair: str, is_buy: bool) -> Decimal:
-        return self.get_price(trading_pair, is_buy)
-
-    def c_get_order_price_quantum(self, trading_pair: str, price: Decimal) -> Decimal:
-        return self.get_order_price_quantum(trading_pair, price)
-
-    def c_get_order_size_quantum(self, trading_pair: str, order_size: Decimal) -> Decimal:
-        return self.get_order_size_quantum(trading_pair, order_size)
-
-    def c_quantize_order_price(self, trading_pair: str, price: Decimal) -> Decimal:
-        if price.is_nan():
-            return price
-        price_quantum = self.c_get_order_price_quantum(trading_pair, price)
-        return (price // price_quantum) * price_quantum
-
-    def c_quantize_order_amount(self, trading_pair: str, amount: Decimal, price: Decimal = s_decimal_NaN) -> Decimal:
-        order_size_quantum = self.c_get_order_size_quantum(trading_pair, amount)
-        return (amount // order_size_quantum) * order_size_quantum
-
     # -- Properties --
 
     @property
@@ -471,11 +423,15 @@ class ConnectorBase(NetworkIterator):
 
     def quantize_order_price(self, trading_pair: str, price: Decimal) -> Decimal:
         """Applies trading rule to quantize order price."""
-        return self.c_quantize_order_price(trading_pair, price)
+        if price.is_nan():
+            return price
+        price_quantum = self.get_order_price_quantum(trading_pair, price)
+        return (price // price_quantum) * price_quantum
 
-    def quantize_order_amount(self, trading_pair: str, amount: Decimal) -> Decimal:
+    def quantize_order_amount(self, trading_pair: str, amount: Decimal, price: Decimal = s_decimal_NaN) -> Decimal:
         """Applies trading rule to quantize order amount."""
-        return self.c_quantize_order_amount(trading_pair, amount)
+        order_size_quantum = self.get_order_size_quantum(trading_pair, amount)
+        return (amount // order_size_quantum) * order_size_quantum
 
     async def get_quote_price(self, trading_pair: str, is_buy: bool, amount: Decimal) -> Decimal:
         """

@@ -13,7 +13,7 @@ class OrderBookAssetPriceDelegate(AssetPriceDelegate):
 
     def c_get_mid_price(self) -> Decimal:
         return (
-            self._market.c_get_price(self._trading_pair, True) + self._market.c_get_price(self._trading_pair, False)
+            self._market.get_price(self._trading_pair, True) + self._market.get_price(self._trading_pair, False)
         ) / Decimal("2")
 
     @property

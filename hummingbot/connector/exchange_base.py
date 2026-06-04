@@ -126,29 +126,6 @@ class ExchangeBase(ConnectorBase):
 
     # -- cdef → Python method conversions (Variant C: Python wrapper, no recursion risk) --
 
-    def c_buy(
-        self,
-        trading_pair: str,
-        amount: Decimal,
-        order_type: OrderType = OrderType.MARKET,
-        price: Decimal = s_decimal_NaN,
-        **kwargs,
-    ) -> str:
-        return self.buy(trading_pair, amount, order_type, price, **kwargs)
-
-    def c_sell(
-        self,
-        trading_pair: str,
-        amount: Decimal,
-        order_type: OrderType = OrderType.MARKET,
-        price: Decimal = s_decimal_NaN,
-        **kwargs,
-    ) -> str:
-        return self.sell(trading_pair, amount, order_type, price, **kwargs)
-
-    def c_cancel(self, trading_pair: str, client_order_id: str):
-        return self.cancel(trading_pair, client_order_id)
-
     def c_stop_tracking_order(self, order_id: str):
         raise NotImplementedError
 
@@ -166,18 +143,6 @@ class ExchangeBase(ConnectorBase):
 
     def c_get_order_book(self, trading_pair: str) -> OrderBook:
         return self.get_order_book(trading_pair)
-
-    def c_get_price(self, trading_pair: str, is_buy: bool) -> Decimal:
-        """
-        :returns: Top bid/ask price for a specific trading pair
-        """
-        order_book: OrderBook = self.c_get_order_book(trading_pair)
-        try:
-            top_price = Decimal(str(order_book.get_price(is_buy)))
-        except EnvironmentError:
-            self.logger().warning(f"{'Ask' if is_buy else 'Bid'} orderbook for {trading_pair} is empty.")
-            return s_decimal_NaN
-        return self.quantize_order_price(trading_pair, top_price)
 
     def c_get_vwap_for_volume(self, trading_pair: str, is_buy: bool, volume: Decimal) -> ClientOrderBookQueryResult:
         order_book: OrderBook = self.c_get_order_book(trading_pair)
@@ -265,7 +230,16 @@ class ExchangeBase(ConnectorBase):
         return self.c_get_quote_volume_for_price(trading_pair, is_buy, price)
 
     def get_price(self, trading_pair: str, is_buy: bool) -> Decimal:
-        return self.c_get_price(trading_pair, is_buy)
+        """
+        :returns: Top bid/ask price for a specific trading pair
+        """
+        order_book: OrderBook = self.c_get_order_book(trading_pair)
+        try:
+            top_price = Decimal(str(order_book.get_price(is_buy)))
+        except EnvironmentError:
+            self.logger().warning(f"{'Ask' if is_buy else 'Bid'} orderbook for {trading_pair} is empty.")
+            return s_decimal_NaN
+        return self.quantize_order_price(trading_pair, top_price)
 
     def buy(
         self,
@@ -305,18 +279,6 @@ class ExchangeBase(ConnectorBase):
     ) -> AddedToCostTradeFee:
         raise NotImplementedError
 
-    def get_order_price_quantum(self, trading_pair: str, price: Decimal) -> Decimal:
-        return self.c_get_order_price_quantum(trading_pair, price)
-
-    def get_order_size_quantum(self, trading_pair: str, order_size: Decimal) -> Decimal:
-        return self.c_get_order_size_quantum(trading_pair, order_size)
-
-    def quantize_order_price(self, trading_pair: str, price: Decimal) -> Decimal:
-        return self.c_quantize_order_price(trading_pair, price)
-
-    def quantize_order_amount(self, trading_pair: str, amount: Decimal) -> Decimal:
-        return self.c_quantize_order_amount(trading_pair, amount)
-
     def supported_order_types(self):
         return [OrderType.LIMIT, OrderType.MARKET]
 
@@ -350,11 +312,11 @@ class ExchangeBase(ConnectorBase):
         :returns The price
         """
         if price_type is PriceType.BestBid:
-            return self.c_get_price(trading_pair, False)
+            return self.get_price(trading_pair, False)
         elif price_type is PriceType.BestAsk:
-            return self.c_get_price(trading_pair, True)
+            return self.get_price(trading_pair, True)
         elif price_type is PriceType.MidPrice:
-            return (self.c_get_price(trading_pair, True) + self.c_get_price(trading_pair, False)) / Decimal("2")
+            return (self.get_price(trading_pair, True) + self.get_price(trading_pair, False)) / Decimal("2")
         elif price_type is PriceType.LastTrade:
             return Decimal(self.c_get_order_book(trading_pair).last_trade_price)
 
