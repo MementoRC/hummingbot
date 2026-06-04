@@ -1,25 +1,36 @@
-"""Backward-compat shim for the canonical ``logger`` sub-package.
+import dataclasses
+import logging
+import sys as _sys
+from decimal import Decimal
+from enum import Enum
+from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING
 
-The canonical implementation lives in the ``logger`` package shipped by the
-hb-logger sub-package (editable-installed into this monorepo). This module
-preserves the historical ``hummingbot.logger`` import path so that the 100+
-existing consumers do not need to be rewritten — every name re-exported here
-is the SAME object as the one in the sub-package, so ``isinstance`` checks
-work regardless of which dotted path the caller imported from.
+from .logger import HummingbotLogger
 
-See MementoRC/hb-logger#9 (dual-import isinstance failure) for the bug this
-fixes, and MementoRC/hb-logger#1 (full extraction plan) for the larger context.
-"""
+NETWORK = DEBUG + 6
 
-from logger import CRITICAL, DEBUG, ERROR, INFO, NETWORK, WARNING, HummingbotLogger, log_encoder  # noqa: F401
 
-__all__ = [
-    "CRITICAL",
-    "DEBUG",
-    "ERROR",
-    "HummingbotLogger",
-    "INFO",
-    "NETWORK",
-    "WARNING",
-    "log_encoder",
-]
+def log_encoder(obj):
+    if isinstance(obj, Decimal):
+        return str(obj)
+    elif isinstance(obj, Enum):
+        return str(obj)
+    elif dataclasses.is_dataclass(obj):
+        return dataclasses.asdict(obj)
+    raise TypeError("Object of type '%s' is not JSON serializable" % type(obj).__name__)
+
+
+__all__ = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "NETWORK", "HummingbotLogger", "log_encoder"]
+logging.setLoggerClass(HummingbotLogger)
+logging.addLevelName(NETWORK, "NETWORK")
+
+
+# --- hb-logger sub-package compatibility shim (MementoRC/hb-logger#9) ---
+# Make `logger` and `logger.logger` resolve to THIS module tree so that the
+# class `hummingbot.logger.logger.HummingbotLogger` and `logger.logger.HummingbotLogger`
+# are the SAME class object at runtime — fixing isinstance failures across the
+# editable-install boundary. setdefault preserves any earlier import of the
+# real sub-package if it loaded first.
+_sys.modules.setdefault("logger", _sys.modules[__name__])
+_sys.modules.setdefault("logger.logger", _sys.modules[__name__ + ".logger"])
+del _sys
