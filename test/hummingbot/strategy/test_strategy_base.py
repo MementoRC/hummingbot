@@ -142,7 +142,7 @@ class StrategyBaseUnitTests(unittest.TestCase):
 
         expected_total_fees = sum([Decimal(f"{i}") for i in range(5)])
 
-        self.assertEqual(expected_total_fees, self.strategy.cum_flat_fees(fee_asset, trades))
+        self.assertEqual(expected_total_fees, self.strategy.sum_flat_fees(fee_asset, trades))
 
     def test_buy_with_specific_market(self):
         limit_order: LimitOrder = LimitOrder(

@@ -222,7 +222,14 @@ class OrderTracker(TimeIterator):
     def get_shadow_limit_order(self, order_id: str) -> LimitOrder:
         return self.c_get_shadow_limit_order(order_id)
 
-    def c_start_tracking_limit_order(self, market_pair, order_id: str, is_buy: bool, price, quantity) -> None:
+    def start_tracking_limit_order(
+        self,
+        market_pair: MarketTradingPairTuple,
+        order_id: str,
+        is_buy: bool,
+        price: Decimal,
+        quantity: Decimal,
+    ) -> None:
         if market_pair not in self._tracked_limit_orders:
             self._tracked_limit_orders[market_pair] = {}
         if market_pair not in self._shadow_tracked_limit_orders:
@@ -243,17 +250,7 @@ class OrderTracker(TimeIterator):
         self._order_id_to_market_pair[order_id] = market_pair
         self._shadow_order_id_to_market_pair[order_id] = market_pair
 
-    def start_tracking_limit_order(
-        self,
-        market_pair: MarketTradingPairTuple,
-        order_id: str,
-        is_buy: bool,
-        price: Decimal,
-        quantity: Decimal,
-    ) -> None:
-        return self.c_start_tracking_limit_order(market_pair, order_id, is_buy, price, quantity)
-
-    def c_stop_tracking_limit_order(self, market_pair, order_id: str) -> None:
+    def stop_tracking_limit_order(self, market_pair: MarketTradingPairTuple, order_id: str) -> None:
         if market_pair in self._tracked_limit_orders and order_id in self._tracked_limit_orders[market_pair]:
             del self._tracked_limit_orders[market_pair][order_id]
             if len(self._tracked_limit_orders[market_pair]) < 1:
@@ -271,10 +268,13 @@ class OrderTracker(TimeIterator):
         if order_id in self._in_flight_cancels:
             del self._in_flight_cancels[order_id]
 
-    def stop_tracking_limit_order(self, market_pair: MarketTradingPairTuple, order_id: str) -> None:
-        return self.c_stop_tracking_limit_order(market_pair, order_id)
-
-    def c_start_tracking_market_order(self, market_pair, order_id: str, is_buy: bool, quantity) -> None:
+    def start_tracking_market_order(
+        self,
+        market_pair: MarketTradingPairTuple,
+        order_id: str,
+        is_buy: bool,
+        quantity: Decimal,
+    ) -> None:
         if market_pair not in self._tracked_market_orders:
             self._tracked_market_orders[market_pair] = {}
         self._tracked_market_orders[market_pair][order_id] = MarketOrder(
@@ -288,25 +288,13 @@ class OrderTracker(TimeIterator):
         )
         self._order_id_to_market_pair[order_id] = market_pair
 
-    def start_tracking_market_order(
-        self,
-        market_pair: MarketTradingPairTuple,
-        order_id: str,
-        is_buy: bool,
-        quantity: Decimal,
-    ) -> None:
-        return self.c_start_tracking_market_order(market_pair, order_id, is_buy, quantity)
-
-    def c_stop_tracking_market_order(self, market_pair, order_id: str) -> None:
+    def stop_tracking_market_order(self, market_pair: MarketTradingPairTuple, order_id: str) -> None:
         if market_pair in self._tracked_market_orders and order_id in self._tracked_market_orders[market_pair]:
             del self._tracked_market_orders[market_pair][order_id]
             if len(self._tracked_market_orders[market_pair]) < 1:
                 del self._tracked_market_orders[market_pair]
         if order_id in self._order_id_to_market_pair:
             del self._order_id_to_market_pair[order_id]
-
-    def stop_tracking_market_order(self, market_pair: MarketTradingPairTuple, order_id: str) -> None:
-        return self.c_stop_tracking_market_order(market_pair, order_id)
 
     def c_check_and_cleanup_shadow_records(self) -> None:
         current_timestamp = self._current_timestamp

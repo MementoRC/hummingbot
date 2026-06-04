@@ -30,77 +30,77 @@ class BaseStrategyEventListener(EventListener):
 
 class BuyOrderCompletedListener(BaseStrategyEventListener):
     def __call__(self, arg: object) -> None:
-        self._owner.c_did_complete_buy_order(arg)
-        self._owner.c_did_complete_buy_order_tracker(arg)
+        self._owner.did_complete_buy_order(arg)
+        self._owner.did_complete_buy_order_tracker(arg)
 
 
 class SellOrderCompletedListener(BaseStrategyEventListener):
     def __call__(self, arg: object) -> None:
-        self._owner.c_did_complete_sell_order(arg)
-        self._owner.c_did_complete_sell_order_tracker(arg)
+        self._owner.did_complete_sell_order(arg)
+        self._owner.did_complete_sell_order_tracker(arg)
 
 
 class FundingPaymentCompletedListener(BaseStrategyEventListener):
     def __call__(self, arg: object) -> None:
-        self._owner.c_did_complete_funding_payment(arg)
+        self._owner.did_complete_funding_payment(arg)
 
 
 class PositionModeChangeSuccessListener(BaseStrategyEventListener):
     def __call__(self, arg: object) -> None:
-        self._owner.c_did_change_position_mode_succeed(arg)
+        self._owner.did_change_position_mode_succeed(arg)
 
 
 class PositionModeChangeFailureListener(BaseStrategyEventListener):
     def __call__(self, arg: object) -> None:
-        self._owner.c_did_change_position_mode_fail(arg)
+        self._owner.did_change_position_mode_fail(arg)
 
 
 class OrderFilledListener(BaseStrategyEventListener):
     def __call__(self, arg: object) -> None:
-        self._owner.c_did_fill_order(arg)
+        self._owner.did_fill_order(arg)
 
 
 class OrderFailedListener(BaseStrategyEventListener):
     def __call__(self, arg: object) -> None:
-        self._owner.c_did_fail_order(arg)
-        self._owner.c_did_fail_order_tracker(arg)
+        self._owner.did_fail_order(arg)
+        self._owner.did_fail_order_tracker(arg)
 
 
 class OrderCancelledListener(BaseStrategyEventListener):
     def __call__(self, arg: object) -> None:
-        self._owner.c_did_cancel_order(arg)
-        self._owner.c_did_cancel_order_tracker(arg)
+        self._owner.did_cancel_order(arg)
+        self._owner.did_cancel_order_tracker(arg)
 
 
 class OrderExpiredListener(BaseStrategyEventListener):
     def __call__(self, arg: object) -> None:
-        self._owner.c_did_expire_order(arg)
-        self._owner.c_did_expire_order_tracker(arg)
+        self._owner.did_expire_order(arg)
+        self._owner.did_expire_order_tracker(arg)
 
 
 class BuyOrderCreatedListener(BaseStrategyEventListener):
     def __call__(self, arg: object) -> None:
-        self._owner.c_did_create_buy_order(arg)
+        self._owner.did_create_buy_order(arg)
 
 
 class SellOrderCreatedListener(BaseStrategyEventListener):
     def __call__(self, arg: object) -> None:
-        self._owner.c_did_create_sell_order(arg)
+        self._owner.did_create_sell_order(arg)
 
 
 class RangePositionLiquidityAddedListener(BaseStrategyEventListener):
     def __call__(self, arg: object) -> None:
-        self._owner.c_did_add_liquidity(arg)
+        self._owner.did_add_liquidity(arg)
 
 
 class RangePositionLiquidityRemovedListener(BaseStrategyEventListener):
     def __call__(self, arg: object) -> None:
-        self._owner.c_did_remove_liquidity(arg)
+        self._owner.did_remove_liquidity(arg)
 
 
 class RangePositionUpdateFailureListener(BaseStrategyEventListener):
     def __call__(self, arg: object) -> None:
-        self._owner.c_did_fail_lp_update(arg)
+        self._owner.did_fail_lp_update(arg)
 
 
 # </editor-fold>
@@ -294,9 +294,9 @@ class StrategyBase(TimeIterator):
     def c_stop(self, clock) -> None:
         TimeIterator.c_stop(self, clock)
         OrderTracker.c_stop(self._sb_order_tracker, clock)
-        self.c_remove_markets(list(self._sb_markets))
+        self.remove_markets(list(self._sb_markets))
 
-    def c_add_markets(self, markets: list) -> None:
+    def add_markets(self, markets: List[ConnectorBase]) -> None:
         for market in markets:
             market.add_listener(MarketEvent.BuyOrderCreated, self._sb_create_buy_order_listener)
             market.add_listener(MarketEvent.SellOrderCreated, self._sb_create_sell_order_listener)
@@ -320,10 +320,7 @@ class StrategyBase(TimeIterator):
             market.add_listener(MarketEvent.RangePositionUpdateFailure, self._sb_range_position_update_failure_listener)
             self._sb_markets.add(market)
 
-    def add_markets(self, markets: List[ConnectorBase]) -> None:
-        self.c_add_markets(markets)
-
-    def c_remove_markets(self, markets: list) -> None:
+    def remove_markets(self, markets: List[ConnectorBase]) -> None:
         for market in markets:
             if market not in self._sb_markets:
                 continue
@@ -353,10 +350,7 @@ class StrategyBase(TimeIterator):
             )
             self._sb_markets.remove(market)
 
-    def remove_markets(self, markets: List[ConnectorBase]) -> None:
-        self.c_remove_markets(markets)
-
-    def c_sum_flat_fees(self, quote_asset: str, flat_fees: list) -> Decimal:
+    def sum_flat_fees(self, quote_asset: str, flat_fees: List) -> Decimal:
         """
         Converts flat fees to quote token and sums up all flat fees
         """
@@ -370,12 +364,9 @@ class StrategyBase(TimeIterator):
                 raise Exception("Flat fee in other token than quote asset is not supported.")
         return total_flat_fees
 
-    def cum_flat_fees(self, quote_asset: str, flat_fees: List) -> Decimal:
-        return self.c_sum_flat_fees(quote_asset, flat_fees)
-
     # <editor-fold desc="+ Market event interfaces">
     # ----------------------------------------------------------------------------------------------------------
-    def c_did_create_buy_order(self, order_created_event: object) -> None:
+    def did_create_buy_order(self, order_created_event: object) -> None:
         """
         In the case of asynchronous order creation on the exchange's server, this event is NOT triggered
         upon submission of the order request to the server - it is only triggered once the server has sent
@@ -383,7 +374,7 @@ class StrategyBase(TimeIterator):
         """
         pass
 
-    def c_did_create_sell_order(self, order_created_event: object) -> None:
+    def did_create_sell_order(self, order_created_event: object) -> None:
         """
         In the case of asynchronous order creation on the exchange's server, this event is NOT triggered
         upon submission of the order request to the server - it is only triggered once the server has sent
@@ -391,40 +382,40 @@ class StrategyBase(TimeIterator):
         """
         pass
 
-    def c_did_fill_order(self, order_filled_event: object) -> None:
+    def did_fill_order(self, order_filled_event: object) -> None:
         pass
 
-    def c_did_fail_order(self, order_failed_event: object) -> None:
+    def did_fail_order(self, order_failed_event: object) -> None:
         pass
 
-    def c_did_cancel_order(self, cancelled_event: object) -> None:
+    def did_cancel_order(self, cancelled_event: object) -> None:
         pass
 
-    def c_did_expire_order(self, expired_event: object) -> None:
+    def did_expire_order(self, expired_event: object) -> None:
         pass
 
-    def c_did_complete_buy_order(self, order_completed_event: object) -> None:
+    def did_complete_buy_order(self, order_completed_event: object) -> None:
         pass
 
-    def c_did_complete_sell_order(self, order_completed_event: object) -> None:
+    def did_complete_sell_order(self, order_completed_event: object) -> None:
         pass
 
-    def c_did_complete_funding_payment(self, funding_payment_completed_event: object) -> None:
+    def did_complete_funding_payment(self, funding_payment_completed_event: object) -> None:
         pass
 
-    def c_did_change_position_mode_succeed(self, position_mode_changed_event: object) -> None:
+    def did_change_position_mode_succeed(self, position_mode_changed_event: object) -> None:
         pass
 
-    def c_did_change_position_mode_fail(self, position_mode_changed_event: object) -> None:
+    def did_change_position_mode_fail(self, position_mode_changed_event: object) -> None:
         pass
 
-    def c_did_add_liquidity(self, add_liquidity_event: object) -> None:
+    def did_add_liquidity(self, add_liquidity_event: object) -> None:
         pass
 
-    def c_did_remove_liquidity(self, remove_liquidity_event: object) -> None:
+    def did_remove_liquidity(self, remove_liquidity_event: object) -> None:
         pass
 
-    def c_did_fail_lp_update(self, fail_lp_update_event: object) -> None:
+    def did_fail_lp_update(self, fail_lp_update_event: object) -> None:
         pass
 
     # ----------------------------------------------------------------------------------------------------------
@@ -432,37 +423,37 @@ class StrategyBase(TimeIterator):
 
     # <editor-fold desc="+ Order tracking event handlers">
     # ----------------------------------------------------------------------------------------------------------
-    def c_did_fail_order_tracker(self, order_failed_event: object) -> None:
+    def did_fail_order_tracker(self, order_failed_event: object) -> None:
         order_id: str = order_failed_event.order_id
         order_type = order_failed_event.order_type
         market_pair = self._sb_order_tracker.get_market_pair_from_order_id(order_id)
 
         if order_type.is_limit_type():
-            self.c_stop_tracking_limit_order(market_pair, order_id)
+            self.stop_tracking_limit_order(market_pair, order_id)
         elif order_type == OrderType.MARKET:
-            self.c_stop_tracking_market_order(market_pair, order_id)
+            self.stop_tracking_market_order(market_pair, order_id)
 
-    def c_did_cancel_order_tracker(self, order_cancelled_event: object) -> None:
+    def did_cancel_order_tracker(self, order_cancelled_event: object) -> None:
         order_id: str = order_cancelled_event.order_id
         market_pair = self._sb_order_tracker.get_market_pair_from_order_id(order_id)
-        self.c_stop_tracking_limit_order(market_pair, order_id)
+        self.stop_tracking_limit_order(market_pair, order_id)
 
-    def c_did_expire_order_tracker(self, order_expired_event: object) -> None:
-        self.c_did_cancel_order_tracker(order_expired_event)
+    def did_expire_order_tracker(self, order_expired_event: object) -> None:
+        self.did_cancel_order_tracker(order_expired_event)
 
-    def c_did_complete_buy_order_tracker(self, order_completed_event: object) -> None:
+    def did_complete_buy_order_tracker(self, order_completed_event: object) -> None:
         order_id: str = order_completed_event.order_id
         market_pair = self._sb_order_tracker.get_market_pair_from_order_id(order_id)
         order_type = order_completed_event.order_type
 
         if market_pair is not None:
             if order_type.is_limit_type():
-                self.c_stop_tracking_limit_order(market_pair, order_id)
+                self.stop_tracking_limit_order(market_pair, order_id)
             elif order_type == OrderType.MARKET:
-                self.c_stop_tracking_market_order(market_pair, order_id)
+                self.stop_tracking_market_order(market_pair, order_id)
 
-    def c_did_complete_sell_order_tracker(self, order_completed_event: object) -> None:
-        self.c_did_complete_buy_order_tracker(order_completed_event)
+    def did_complete_sell_order_tracker(self, order_completed_event: object) -> None:
+        self.did_complete_buy_order_tracker(order_completed_event)
 
     # ----------------------------------------------------------------------------------------------------------
     # </editor-fold>
@@ -471,19 +462,6 @@ class StrategyBase(TimeIterator):
     # ----------------------------------------------------------------------------------------------------------
 
     def buy_with_specific_market(
-        self,
-        market_trading_pair_tuple,
-        amount,
-        order_type=OrderType.MARKET,
-        price=s_decimal_nan,
-        expiration_seconds=NaN,
-        position_action=PositionAction.OPEN,
-    ):
-        return self.c_buy_with_specific_market(
-            market_trading_pair_tuple, amount, order_type, price, expiration_seconds, position_action
-        )
-
-    def c_buy_with_specific_market(
         self,
         market_trading_pair_tuple,
         amount,
@@ -517,26 +495,13 @@ class StrategyBase(TimeIterator):
 
         # Start order tracking
         if order_type.is_limit_type():
-            self.c_start_tracking_limit_order(market_trading_pair_tuple, order_id, True, price, amount)
+            self.start_tracking_limit_order(market_trading_pair_tuple, order_id, True, price, amount)
         elif order_type == OrderType.MARKET:
-            self.c_start_tracking_market_order(market_trading_pair_tuple, order_id, True, amount)
+            self.start_tracking_market_order(market_trading_pair_tuple, order_id, True, amount)
 
         return order_id
 
     def sell_with_specific_market(
-        self,
-        market_trading_pair_tuple,
-        amount,
-        order_type=OrderType.MARKET,
-        price=s_decimal_nan,
-        expiration_seconds=NaN,
-        position_action=PositionAction.OPEN,
-    ):
-        return self.c_sell_with_specific_market(
-            market_trading_pair_tuple, amount, order_type, price, expiration_seconds, position_action
-        )
-
-    def c_sell_with_specific_market(
         self,
         market_trading_pair_tuple,
         amount,
@@ -570,13 +535,13 @@ class StrategyBase(TimeIterator):
 
         # Start order tracking
         if order_type.is_limit_type():
-            self.c_start_tracking_limit_order(market_trading_pair_tuple, order_id, False, price, amount)
+            self.start_tracking_limit_order(market_trading_pair_tuple, order_id, False, price, amount)
         elif order_type == OrderType.MARKET:
-            self.c_start_tracking_market_order(market_trading_pair_tuple, order_id, False, amount)
+            self.start_tracking_market_order(market_trading_pair_tuple, order_id, False, amount)
 
         return order_id
 
-    def c_cancel_order(self, market_trading_pair_tuple, order_id: str) -> None:
+    def cancel_order(self, market_trading_pair_tuple: MarketTradingPairTuple, order_id: str) -> None:
         market: ConnectorBase = market_trading_pair_tuple.market
 
         if self._sb_order_tracker.check_and_track_cancel(order_id):
@@ -585,9 +550,6 @@ class StrategyBase(TimeIterator):
             )
             market.cancel(market_trading_pair_tuple.trading_pair, order_id)
 
-    def cancel_order(self, market_trading_pair_tuple: MarketTradingPairTuple, order_id: str) -> None:
-        self.c_cancel_order(market_trading_pair_tuple, order_id)
-
     # ----------------------------------------------------------------------------------------------------------
     # </editor-fold>
 
@@ -595,9 +557,6 @@ class StrategyBase(TimeIterator):
     # The following exposed tracking functions are meant to allow extending order tracking behavior in strategy
     # classes.
     # ----------------------------------------------------------------------------------------------------------
-    def c_start_tracking_limit_order(self, market_pair, order_id: str, is_buy: bool, price, quantity) -> None:
-        self._sb_order_tracker.start_tracking_limit_order(market_pair, order_id, is_buy, price, quantity)
-
     def start_tracking_limit_order(
         self,
         market_pair: MarketTradingPairTuple,
@@ -606,35 +565,26 @@ class StrategyBase(TimeIterator):
         price: Decimal,
         quantity: Decimal,
     ) -> None:
-        self.c_start_tracking_limit_order(market_pair, order_id, is_buy, price, quantity)
-
-    def c_stop_tracking_limit_order(self, market_pair, order_id: str) -> None:
-        self._sb_order_tracker.stop_tracking_limit_order(market_pair, order_id)
+        self._sb_order_tracker.start_tracking_limit_order(market_pair, order_id, is_buy, price, quantity)
 
     def stop_tracking_limit_order(self, market_pair: MarketTradingPairTuple, order_id: str) -> None:
-        self.c_stop_tracking_limit_order(market_pair, order_id)
-
-    def c_start_tracking_market_order(self, market_pair, order_id: str, is_buy: bool, quantity) -> None:
-        self._sb_order_tracker.start_tracking_market_order(market_pair, order_id, is_buy, quantity)
+        self._sb_order_tracker.stop_tracking_limit_order(market_pair, order_id)
 
     def start_tracking_market_order(
         self, market_pair: MarketTradingPairTuple, order_id: str, is_buy: bool, quantity: Decimal
     ) -> None:
-        self.c_start_tracking_market_order(market_pair, order_id, is_buy, quantity)
-
-    def c_stop_tracking_market_order(self, market_pair, order_id: str) -> None:
-        self._sb_order_tracker.stop_tracking_market_order(market_pair, order_id)
+        self._sb_order_tracker.start_tracking_market_order(market_pair, order_id, is_buy, quantity)
 
     def stop_tracking_market_order(self, market_pair: MarketTradingPairTuple, order_id: str) -> None:
-        self.c_stop_tracking_market_order(market_pair, order_id)
+        self._sb_order_tracker.stop_tracking_market_order(market_pair, order_id)
 
-    def c_track_restored_orders(self, market_pair) -> list:
+    def track_restored_orders(self, market_pair: MarketTradingPairTuple) -> list:
         limit_orders = market_pair.market.limit_orders
         restored_order_ids = []
 
         for order in limit_orders:
             restored_order_ids.append(order.client_order_id)
-            self.c_start_tracking_limit_order(
+            self.start_tracking_limit_order(
                 market_pair,
                 order.client_order_id,
                 order.is_buy,
@@ -642,9 +592,6 @@ class StrategyBase(TimeIterator):
                 order.quantity,
             )
         return restored_order_ids
-
-    def track_restored_orders(self, market_pair: MarketTradingPairTuple) -> list:
-        return self.c_track_restored_orders(market_pair)
 
     def notify_hb_app(self, msg: str) -> None:
         """
