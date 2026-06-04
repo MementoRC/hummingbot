@@ -1,10 +1,8 @@
 """Pure-Python port of hummingbot/core/pubsub.pyx (C12 conversion).
 
 Dispatch bridge (audit pattern 4):
-    PubSub.c_trigger_event is the entry point called by Cython callers
-    (cdef classes still inheriting through the old c-vtable convention)
-    as well as plain Python callers.  For every registered listener it
-    performs, at the Python level:
+    PubSub.trigger_event is the entry point called by all callers.
+    For every registered listener it performs, at the Python level:
 
         listener.c_set_event_info(event_tag, self)
         listener.c_call(arg)
@@ -51,21 +49,21 @@ class PubSub:
     This avoids the lapsed listener problem by periodically performing GC
     on dead event listeners.
 
-    Dead listener GC is done by calling ``c_remove_dead_listeners()``,
+    Dead listener GC is done by calling ``remove_dead_listeners()``,
     which checks whether the listener weak references are alive or not,
-    and removes the dead ones.  Each call to ``c_remove_dead_listeners()``
+    and removes the dead ones.  Each call to ``remove_dead_listeners()``
     takes O(n).
 
     Here's how the dead listener GC is performed:
 
-    1. ``c_add_listener()``:
+    1. ``add_listener()``:
        Randomly with ADD_LISTENER_GC_PROBABILITY.  This assumes
-       ``c_add_listener()`` is called frequently and so it doesn't make
+       ``add_listener()`` is called frequently and so it doesn't make
        sense to do the GC every time.
-    2. ``c_remove_listener()``:
-       Every time.  This assumes ``c_remove_listener()`` is called
+    2. ``remove_listener()``:
+       Every time.  This assumes ``remove_listener()`` is called
        infrequently.
-    3. ``c_get_listeners()`` and ``c_trigger_event()``:
+    3. ``get_listeners()`` and ``trigger_event()``:
        Every time.  Both functions take O(n) already.
     """
 
@@ -93,33 +91,15 @@ class PubSub:
         self._events: dict[int, list[weakref.ref]] = {}
 
     # ------------------------------------------------------------------
-    # Public Python API (Enum-keyed wrappers around the c_* methods)
+    # Public Python API
     # ------------------------------------------------------------------
 
     def add_listener(self, event_tag: Enum, listener: EventListener) -> None:
-        self.c_add_listener(event_tag.value, listener)
-
-    def remove_listener(self, event_tag: Enum, listener: EventListener) -> None:
-        self.c_remove_listener(event_tag.value, listener)
-
-    def get_listeners(self, event_tag: Enum) -> list[EventListener]:
-        return self.c_get_listeners(event_tag.value)
-
-    def trigger_event(self, event_tag: Enum, message: Any) -> None:
-        self.c_trigger_event(event_tag.value, message)
-
-    # ------------------------------------------------------------------
-    # c_* back-compat methods (audit pattern 2: cdef-method dispatch)
-    # ------------------------------------------------------------------
-
-    def c_log_exception(self, event_tag: int, arg: Any) -> None:
-        self.logger().error(f"Unexpected error while processing event {event_tag}.", exc_info=True)
-
-    def c_add_listener(self, event_tag: int, listener: EventListener) -> None:
-        listeners = self._events.get(event_tag)
+        tag = event_tag.value
+        listeners = self._events.get(tag)
         listener_weakref = weakref.ref(listener)
         if listeners is None:
-            self._events[event_tag] = [listener_weakref]
+            self._events[tag] = [listener_weakref]
         else:
             # Preserve original set-like semantics: do not add a duplicate
             # listener (referent identity match).
@@ -130,19 +110,58 @@ class PubSub:
                 listeners.append(listener_weakref)
 
         if random.random() < PubSub.ADD_LISTENER_GC_PROBABILITY:
-            self.c_remove_dead_listeners(event_tag)
+            self.remove_dead_listeners(tag)
 
-    def c_remove_listener(self, event_tag: int, listener: EventListener) -> None:
-        listeners = self._events.get(event_tag)
+    def remove_listener(self, event_tag: Enum, listener: EventListener) -> None:
+        tag = event_tag.value
+        listeners = self._events.get(tag)
         if listeners is None:
             return
         for idx, existing in enumerate(listeners):
             if existing() is listener:
                 del listeners[idx]
                 break
-        self.c_remove_dead_listeners(event_tag)
+        self.remove_dead_listeners(tag)
 
-    def c_remove_dead_listeners(self, event_tag: int) -> None:
+    def get_listeners(self, event_tag: Enum) -> list[EventListener]:
+        tag = event_tag.value
+        self.remove_dead_listeners(tag)
+        listeners = self._events.get(tag)
+        if listeners is None:
+            return []
+        retval: list[EventListener] = []
+        for ref in listeners:
+            referent = ref()
+            if referent is not None:
+                retval.append(referent)
+        return retval
+
+    def trigger_event(self, event_tag: Enum, message: Any) -> None:
+        tag = event_tag.value
+        self.remove_dead_listeners(tag)
+        listeners = self._events.get(tag)
+        if listeners is None:
+            return
+
+        # It is extremely important that this is a snapshot copy of the
+        # listener list — listeners are allowed to call
+        # ``remove_listener()`` during dispatch, which would otherwise
+        # mutate the list we are iterating over.  The original .pyx
+        # achieved this with a C++ copy of the unordered_set.
+        listeners_snapshot = list(listeners)
+        for ref in listeners_snapshot:
+            typed_listener = ref()
+            if typed_listener is None:
+                continue
+            try:
+                typed_listener.c_set_event_info(tag, self)
+                typed_listener.c_call(message)
+            except Exception:
+                self.c_log_exception(tag, message)
+            finally:
+                typed_listener.c_set_event_info(0, None)
+
+    def remove_dead_listeners(self, event_tag: int) -> None:
         listeners = self._events.get(event_tag)
         if listeners is None:
             return
@@ -155,38 +174,9 @@ class PubSub:
         else:
             self._events[event_tag] = alive
 
-    def c_get_listeners(self, event_tag: int) -> list[EventListener]:
-        self.c_remove_dead_listeners(event_tag)
-        listeners = self._events.get(event_tag)
-        if listeners is None:
-            return []
-        retval: list[EventListener] = []
-        for ref in listeners:
-            referent = ref()
-            if referent is not None:
-                retval.append(referent)
-        return retval
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
 
-    def c_trigger_event(self, event_tag: int, arg: Any) -> None:
-        self.c_remove_dead_listeners(event_tag)
-        listeners = self._events.get(event_tag)
-        if listeners is None:
-            return
-
-        # It is extremely important that this is a snapshot copy of the
-        # listener list — listeners are allowed to call
-        # ``c_remove_listener()`` during dispatch, which would otherwise
-        # mutate the list we are iterating over.  The original .pyx
-        # achieved this with a C++ copy of the unordered_set.
-        listeners_snapshot = list(listeners)
-        for ref in listeners_snapshot:
-            typed_listener = ref()
-            if typed_listener is None:
-                continue
-            try:
-                typed_listener.c_set_event_info(event_tag, self)
-                typed_listener.c_call(arg)
-            except Exception:
-                self.c_log_exception(event_tag, arg)
-            finally:
-                typed_listener.c_set_event_info(0, None)
+    def c_log_exception(self, event_tag: int, arg: Any) -> None:
+        self.logger().error(f"Unexpected error while processing event {event_tag}.", exc_info=True)
