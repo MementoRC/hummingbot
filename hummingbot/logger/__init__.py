@@ -1,24 +1,34 @@
-import dataclasses
-import logging
-from decimal import Decimal
-from enum import Enum
-from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING
+"""Backward-compat shim for the canonical ``logger`` sub-package.
 
-from .logger import HummingbotLogger
+The canonical implementation lives in the ``logger`` package shipped by the
+hb-logger sub-package (editable-installed into this monorepo). This module
+preserves the historical ``hummingbot.logger`` import path so that the 100+
+existing consumers do not need to be rewritten — every name re-exported here
+is the SAME object as the one in the sub-package, so ``isinstance`` checks
+work regardless of which dotted path the caller imported from.
 
-NETWORK = DEBUG + 6
+See MementoRC/hb-logger#9 (dual-import isinstance failure) for the bug this
+fixes, and MementoRC/hb-logger#1 (full extraction plan) for the larger context.
+"""
 
+from logger import (  # noqa: F401
+    CRITICAL,
+    DEBUG,
+    ERROR,
+    INFO,
+    NETWORK,
+    WARNING,
+    HummingbotLogger,
+    log_encoder,
+)
 
-def log_encoder(obj):
-    if isinstance(obj, Decimal):
-        return str(obj)
-    elif isinstance(obj, Enum):
-        return str(obj)
-    elif dataclasses.is_dataclass(obj):
-        return dataclasses.asdict(obj)
-    raise TypeError("Object of type '%s' is not JSON serializable" % type(obj).__name__)
-
-
-__all__ = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "NETWORK", "HummingbotLogger", "log_encoder"]
-logging.setLoggerClass(HummingbotLogger)
-logging.addLevelName(NETWORK, "NETWORK")
+__all__ = [
+    "CRITICAL",
+    "DEBUG",
+    "ERROR",
+    "HummingbotLogger",
+    "INFO",
+    "NETWORK",
+    "WARNING",
+    "log_encoder",
+]
