@@ -345,7 +345,7 @@ class PaperTradeExchange(ExchangeBase):
     def c_set_balance(self, currency: str, balance: object):
         self._account_balances[currency.upper()] = Decimal(balance)
 
-    def c_get_balance(self, currency: str) -> object:
+    def get_balance(self, currency: str) -> object:
         if currency.upper() not in self._account_balances:
             self.logger().warning(f"Account balance does not have asset {currency.upper()}.")
             return Decimal(0.0)
@@ -356,13 +356,13 @@ class PaperTradeExchange(ExchangeBase):
         self.c_process_market_orders()
         self.c_process_crossed_limit_orders()
 
-    def c_buy(
+    def buy(
         self,
         trading_pair_str: str,
         amount: object,
         order_type: object = OrderType.MARKET,
         price: object = s_decimal_0,
-        kwargs: dict = {},
+        **kwargs,
     ) -> str:
         if trading_pair_str not in self._trading_pairs:
             raise ValueError(f"Trading pair '{trading_pair_str}' does not existing in current data set.")
@@ -372,9 +372,9 @@ class PaperTradeExchange(ExchangeBase):
         base_asset: str = self._trading_pairs[trading_pair_str].base_asset
 
         quantized_price = (
-            self.c_quantize_order_price(trading_pair_str, price) if order_type is OrderType.LIMIT else s_decimal_0
+            self.quantize_order_price(trading_pair_str, price) if order_type is OrderType.LIMIT else s_decimal_0
         )
-        quantized_amount = self.c_quantize_order_amount(trading_pair_str, amount)
+        quantized_amount = self.quantize_order_amount(trading_pair_str, amount)
 
         if order_type is OrderType.MARKET:
             self._queued_orders.append(
@@ -413,13 +413,13 @@ class PaperTradeExchange(ExchangeBase):
         )
         return order_id
 
-    def c_sell(
+    def sell(
         self,
         trading_pair_str: str,
         amount: object,
         order_type: object = OrderType.MARKET,
         price: object = s_decimal_0,
-        kwargs: dict = {},
+        **kwargs,
     ) -> str:
         if trading_pair_str not in self._trading_pairs:
             raise ValueError(f"Trading pair '{trading_pair_str}' does not existing in current data set.")
@@ -429,9 +429,9 @@ class PaperTradeExchange(ExchangeBase):
         quote_asset: str = self._trading_pairs[trading_pair_str].quote_asset
 
         quantized_price = (
-            self.c_quantize_order_price(trading_pair_str, price) if order_type is OrderType.LIMIT else s_decimal_0
+            self.quantize_order_price(trading_pair_str, price) if order_type is OrderType.LIMIT else s_decimal_0
         )
-        quantized_amount = self.c_quantize_order_amount(trading_pair_str, amount)
+        quantized_amount = self.quantize_order_amount(trading_pair_str, amount)
 
         if order_type is OrderType.MARKET:
             self._queued_orders.append(
@@ -473,8 +473,8 @@ class PaperTradeExchange(ExchangeBase):
     def c_execute_buy(self, order_id: str, trading_pair_str: str, amount: object):
         quote_asset: str = self._trading_pairs[trading_pair_str].quote_asset
         base_asset: str = self._trading_pairs[trading_pair_str].base_asset
-        quote_balance: object = self.c_get_balance(quote_asset)
-        base_balance: object = self.c_get_balance(base_asset)
+        quote_balance: object = self.get_balance(quote_asset)
+        base_balance: object = self.get_balance(base_asset)
 
         order_book = self.order_books[trading_pair_str]
 
@@ -556,8 +556,8 @@ class PaperTradeExchange(ExchangeBase):
     def c_execute_sell(self, order_id: str, trading_pair_str: str, amount: object):
         quote_asset: str = self._trading_pairs[trading_pair_str].quote_asset
         base_asset: str = self._trading_pairs[trading_pair_str].base_asset
-        quote_balance: object = self.c_get_balance(quote_asset)
-        base_balance: object = self.c_get_balance(base_asset)
+        quote_balance: object = self.get_balance(quote_asset)
+        base_balance: object = self.get_balance(base_asset)
 
         order_book = self.order_books[trading_pair_str]
 
@@ -685,8 +685,8 @@ class PaperTradeExchange(ExchangeBase):
         order_id: str = order.client_order_id
         amount: object = order.quantity
         price: object = order.price
-        quote_balance: object = self.c_get_balance(quote_asset)
-        base_balance: object = self.c_get_balance(base_asset)
+        quote_balance: object = self.get_balance(quote_asset)
+        base_balance: object = self.get_balance(base_asset)
 
         order_candidate = OrderCandidate(
             trading_pair=order.trading_pair,
@@ -776,8 +776,8 @@ class PaperTradeExchange(ExchangeBase):
         order_id: str = order.client_order_id
         amount: object = order.quantity
         price: object = order.price
-        quote_balance: object = self.c_get_balance(quote_asset)
-        base_balance: object = self.c_get_balance(base_asset)
+        quote_balance: object = self.get_balance(quote_asset)
+        base_balance: object = self.get_balance(base_asset)
 
         order_candidate = OrderCandidate(
             trading_pair=order.trading_pair,
@@ -890,7 +890,7 @@ class PaperTradeExchange(ExchangeBase):
         if not order_list:
             return
 
-        opposite_order_book_price = self.c_get_price(trading_pair_str, is_buy)
+        opposite_order_book_price = self.get_price(trading_pair_str, is_buy)
 
         # Collect orders to process (snapshot before mutation)
         orders_to_process: List[LimitOrder] = []
@@ -953,7 +953,7 @@ class PaperTradeExchange(ExchangeBase):
 
     # </editor-fold>
 
-    def c_get_available_balance(self, currency: str) -> object:
+    def get_available_balance(self, currency: str) -> object:
         return self.available_balances.get(currency.upper(), s_decimal_0)
 
     async def cancel_all(self, timeout_seconds: float) -> List[CancellationResult]:
@@ -998,7 +998,7 @@ class PaperTradeExchange(ExchangeBase):
         except Exception:
             self.logger().error("Error canceling order.", exc_info=True)
 
-    def c_cancel(self, trading_pair_str: str, client_order_id: str):
+    def cancel(self, trading_pair_str: str, client_order_id: str):
         trade_type: str = client_order_id.split("://")[0]
         is_maker_buy: bool = trade_type.upper() == "BUY"
         limit_orders_map = self._bid_limit_orders if is_maker_buy else self._ask_limit_orders
@@ -1031,22 +1031,17 @@ class PaperTradeExchange(ExchangeBase):
         trading_pair = self._target_market.convert_to_exchange_trading_pair(trading_pair)
         return self._order_book_tracker.order_books[trading_pair]
 
-    def c_get_price(self, trading_pair: str, is_buy: bool) -> Decimal:
-        """Return top bid/ask price for a trading pair, quantized.
-
-        Mirrors ExchangeBase.c_get_price but uses locally-overridden helpers so
-        that pure-Python subclasses reach the correct implementation without
-        attempting a cdef dispatch that fails at runtime.
-        """
+    def get_price(self, trading_pair: str, is_buy: bool) -> Decimal:
+        """Return top bid/ask price for a trading pair, quantized."""
         order_book: OrderBook = self.c_get_order_book(trading_pair)
         try:
             top_price = Decimal(str(order_book.get_price(is_buy)))
         except EnvironmentError:
             self.logger().warning(f"{'Ask' if is_buy else 'Bid'} orderbook for {trading_pair} is empty.")
             return Decimal("nan")
-        return self.c_quantize_order_price(trading_pair, top_price)
+        return self.quantize_order_price(trading_pair, top_price)
 
-    def c_get_order_price_quantum(self, trading_pair: str, price: object) -> object:
+    def get_order_price_quantum(self, trading_pair: str, price: object) -> object:
         if trading_pair in self._quantization_params:
             q_params: QuantizationParams = self._quantization_params[trading_pair]
             decimals_quantum = Decimal(f"1e-{q_params.price_decimals}")
@@ -1058,10 +1053,7 @@ class PaperTradeExchange(ExchangeBase):
         else:
             return Decimal("1e-10")
 
-    def get_order_price_quantum(self, trading_pair: str, price: Decimal) -> Decimal:
-        return self.c_get_order_price_quantum(trading_pair, price)
-
-    def c_get_order_size_quantum(self, trading_pair: str, order_size: object) -> object:
+    def get_order_size_quantum(self, trading_pair: str, order_size: object) -> object:
         if trading_pair in self._quantization_params:
             q_params: QuantizationParams = self._quantization_params[trading_pair]
             decimals_quantum = Decimal(f"1e-{q_params.order_size_decimals}")
@@ -1073,20 +1065,17 @@ class PaperTradeExchange(ExchangeBase):
         else:
             return Decimal("1e-7")
 
-    def c_quantize_order_price(self, trading_pair: str, price: object) -> object:
+    def quantize_order_price(self, trading_pair: str, price: object) -> object:
         price = Decimal("%.7g" % price)  # hard code to round to 8 significant digits
-        price_quantum = self.c_get_order_price_quantum(trading_pair, price)
+        price_quantum = self.get_order_price_quantum(trading_pair, price)
         return (price // price_quantum) * price_quantum
 
-    def c_quantize_order_amount(self, trading_pair: str, amount: object, price: object = s_decimal_0) -> object:
+    def quantize_order_amount(self, trading_pair: str, amount: object, price: object = s_decimal_0) -> object:
         amount = amount.quantize(Decimal("1e-7"), rounding=ROUND_DOWN)
         if amount <= 1e-7:
             amount = Decimal("0")
-        order_size_quantum = self.c_get_order_size_quantum(trading_pair, amount)
+        order_size_quantum = self.get_order_size_quantum(trading_pair, amount)
         return (amount // order_size_quantum) * order_size_quantum
-
-    def get_available_balance(self, currency: str) -> Decimal:
-        return self.c_get_available_balance(currency)
 
     def get_all_balances(self) -> Dict[str, Decimal]:
         return self._account_balances.copy()
@@ -1099,32 +1088,6 @@ class PaperTradeExchange(ExchangeBase):
         self.c_set_balance(currency, balance)
 
     # </editor-fold>
-
-    def get_price(self, trading_pair: str, is_buy: bool) -> Decimal:
-        return self.c_get_price(trading_pair, is_buy)
-
-    def buy(
-        self,
-        trading_pair: str,
-        amount: Decimal,
-        order_type=OrderType.MARKET,
-        price: Decimal = s_decimal_0,
-        **kwargs,
-    ) -> str:
-        return self.c_buy(trading_pair, amount, order_type, price, kwargs)
-
-    def sell(
-        self,
-        trading_pair: str,
-        amount: Decimal,
-        order_type=OrderType.MARKET,
-        price: Decimal = s_decimal_0,
-        **kwargs,
-    ) -> str:
-        return self.c_sell(trading_pair, amount, order_type, price, kwargs)
-
-    def cancel(self, trading_pair: str, client_order_id: str):
-        return self.c_cancel(trading_pair, client_order_id)
 
     def get_fee(
         self,

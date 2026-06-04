@@ -111,7 +111,7 @@ class MockPaperExchange(PaperTradeExchange):
         self._trading_pairs[trading_pair] = TradingPair(trading_pair, base_asset, quote_asset)
         self.order_book_tracker._order_books[trading_pair] = order_book
 
-    def c_get_order_price_quantum(self, trading_pair: str, price: object) -> object:
+    def get_order_price_quantum(self, trading_pair: str, price: object) -> object:
         if trading_pair in self._quantization_params:
             q_params: QuantizationParams = self._quantization_params[trading_pair]
             decimals_quantum = Decimal(f"1e-{q_params.price_decimals}")
@@ -123,7 +123,7 @@ class MockPaperExchange(PaperTradeExchange):
         else:
             return Decimal("1e-15")
 
-    def c_get_order_size_quantum(self, trading_pair: str, order_size: object) -> object:
+    def get_order_size_quantum(self, trading_pair: str, order_size: object) -> object:
         if trading_pair in self._quantization_params:
             q_params: QuantizationParams = self._quantization_params[trading_pair]
             decimals_quantum = Decimal(f"1e-{q_params.order_size_decimals}")
@@ -135,14 +135,14 @@ class MockPaperExchange(PaperTradeExchange):
         else:
             return Decimal("1e-15")
 
-    def c_quantize_order_price(self, trading_pair: str, price: object) -> object:
+    def quantize_order_price(self, trading_pair: str, price: object) -> object:
         if price.is_nan():
             return price
-        price_quantum = self.c_get_order_price_quantum(trading_pair, price)
+        price_quantum = self.get_order_price_quantum(trading_pair, price)
         return (price // price_quantum) * price_quantum
 
-    def c_quantize_order_amount(self, trading_pair: str, amount: object, price: object = s_decimal_0) -> object:
-        order_size_quantum = self.c_get_order_size_quantum(trading_pair, amount)
+    def quantize_order_amount(self, trading_pair: str, amount: object, price: object = s_decimal_0) -> object:
+        order_size_quantum = self.get_order_size_quantum(trading_pair, amount)
         return (amount // order_size_quantum) * order_size_quantum
 
     def c_get_order_book(self, trading_pair: str) -> OrderBook:

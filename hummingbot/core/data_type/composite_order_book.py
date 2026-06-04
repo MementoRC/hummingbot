@@ -98,7 +98,7 @@ class CompositeOrderBook(OrderBook):
         if cleanup_asks:
             self._traded_order_book._apply_diffs(cleanup_bids, cleanup_asks, self._last_diff_uid)
 
-    def c_get_price(self, is_buy: bool) -> float:
+    def get_price(self, is_buy: bool) -> float:
         try:
             if is_buy:
                 return next(iter(self.ask_entries())).price
