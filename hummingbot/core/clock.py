@@ -1,18 +1,30 @@
-# distutils: language=c++
+"""Pure-Python port of hummingbot/core/clock.pyx (C19 conversion)."""
 
 import asyncio
 import logging
 import time
 from typing import List
 
-from hummingbot.core.time_iterator import TimeIterator
 from hummingbot.core.clock_mode import ClockMode
+from hummingbot.core.time_iterator import TimeIterator
 from hummingbot.logger import HummingbotLogger
 
 s_logger = None
 
 
-cdef class Clock:
+class Clock:
+    def __new__(cls, *args, **kwargs):
+        instance = super().__new__(cls)
+        instance._clock_mode = None
+        instance._tick_size = 1.0
+        instance._start_time = 0.0
+        instance._end_time = 0.0
+        instance._current_tick = 0.0
+        instance._child_iterators = []
+        instance._current_context = None
+        instance._started = False
+        return instance
+
     @classmethod
     def logger(cls) -> HummingbotLogger:
         global s_logger
@@ -56,7 +68,7 @@ cdef class Clock:
     def current_timestamp(self) -> float:
         return self._current_tick
 
-    def __enter__(self) -> Clock:
+    def __enter__(self) -> "Clock":
         if self._current_context is not None:
             raise EnvironmentError("Clock context is not re-entrant.")
         self._current_context = self._child_iterators.copy()
@@ -85,9 +97,8 @@ cdef class Clock:
         await self.run_til(float("nan"))
 
     async def run_til(self, timestamp: float):
-        cdef:
-            double now = time.time()
-            double next_tick_time
+        now: float = time.time()
+        next_tick_time: float = 0.0
 
         if self._current_context is None:
             raise EnvironmentError("run() and run_til() can only be used within the context of a `with...` statement.")
