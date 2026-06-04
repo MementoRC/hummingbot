@@ -79,6 +79,16 @@ class PubSub:
             cls._logger = logging.getLogger(__name__)
         return cls._logger
 
+    def __new__(cls, *args, **kwargs):
+        # Mirrors Cython's C-level allocation: every PubSub instance has
+        # _events as an empty dict from the moment it exists, regardless of
+        # whether subclasses call super().__init__(). This preserves the
+        # behavior of `cdef Events _events` in the original .pxd, where the
+        # C++ unordered_set was default-initialized at allocation time.
+        instance = super().__new__(cls)
+        instance._events = {}
+        return instance
+
     def __init__(self) -> None:
         self._events: dict[int, list[weakref.ref]] = {}
 
