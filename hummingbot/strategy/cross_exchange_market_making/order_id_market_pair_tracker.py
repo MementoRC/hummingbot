@@ -23,7 +23,7 @@ class OrderIDMarketPairTracker(TimeIterator):
 
     def c_tick(self, timestamp: float) -> None:
         TimeIterator.c_tick(self, timestamp)
-        self.c_check_and_expire_tracking_items()
+        self.check_and_expire_tracking_items()
 
     def get_market_pair_from_order_id(self, order_id: str) -> object:
         item: OrderIDMarketPairTrackingItem = self._order_id_to_tracking_item.get(order_id)
@@ -46,7 +46,7 @@ class OrderIDMarketPairTracker(TimeIterator):
             return
         item.expiry_timestamp = self._current_timestamp + self._expiry_timeout
 
-    def c_check_and_expire_tracking_items(self) -> None:
+    def check_and_expire_tracking_items(self) -> None:
         order_ids_to_delete: list = []
         for order_id, tracking_item in self._order_id_to_tracking_item.items():
             if self._current_timestamp > tracking_item.expiry_timestamp:
@@ -55,6 +55,3 @@ class OrderIDMarketPairTracker(TimeIterator):
                 break
         for order_id in order_ids_to_delete:
             del self._order_id_to_tracking_item[order_id]
-
-    def check_and_expire_tracking_items(self) -> None:
-        self.c_check_and_expire_tracking_items()

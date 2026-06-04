@@ -26,7 +26,7 @@ class TradesForwarder(EventListener):
         self._indicator = indicator
 
     def __call__(self, arg):
-        self._indicator.c_register_trade(arg)
+        self._indicator.register_trade(arg)
 
 
 class TradingIntensityIndicator:
@@ -47,7 +47,7 @@ class TradingIntensityIndicator:
 
     @property
     def current_value(self) -> Tuple[float, float]:
-        # _alpha/_kappa are stored as Decimal after c_estimate_intensity runs.
+        # _alpha/_kappa are stored as Decimal after estimate_intensity runs.
         # Cython returned C doubles; convert here to preserve the float contract.
         return float(self._alpha), float(self._kappa)
 
@@ -80,10 +80,6 @@ class TradingIntensityIndicator:
         self._last_quotes = value
 
     def calculate(self, timestamp):
-        """A helper method to be used in unit tests"""
-        self.c_calculate(timestamp)
-
-    def c_calculate(self, timestamp):
         price = self._price_delegate.get_price_by_type(PriceType.MidPrice)
         # Descending order of price-timestamp quotes
         self._last_quotes = [{"timestamp": timestamp, "price": price}] + self._last_quotes
@@ -119,16 +115,12 @@ class TradingIntensityIndicator:
             self._trade_samples = trade_samples
 
         if self.is_sampling_buffer_full:
-            self.c_estimate_intensity()
+            self.estimate_intensity()
 
     def register_trade(self, trade):
-        """A helper method to be used in unit tests"""
-        self.c_register_trade(trade)
-
-    def c_register_trade(self, trade):
         self._current_trade_sample.append(trade)
 
-    def c_estimate_intensity(self):
+    def estimate_intensity(self):
         # Calculate lambdas / trading intensities
         lambdas = []
 
