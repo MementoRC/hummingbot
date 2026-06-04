@@ -6,6 +6,16 @@ NaN = float("nan")
 
 
 class TimeIterator(PubSub):
+    def __new__(cls, *args, **kwargs):
+        # Mirrors Cython C-level allocation. Cython Clock dispatches c_tick
+        # before any Python __init__ chain may have completed for skipping
+        # subclasses; _current_timestamp must exist as NaN (sentinel for
+        # "unset") and _clock as None.
+        instance = super().__new__(cls)
+        instance._current_timestamp = float("nan")
+        instance._clock = None
+        return instance
+
     def __init__(self):
         self._current_timestamp: float = NaN
         self._clock = None

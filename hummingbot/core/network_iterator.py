@@ -26,6 +26,19 @@ class NetworkIterator(TimeIterator):
             ni_logger = logging.getLogger(__name__)
         return ni_logger
 
+    def __new__(cls, *args, **kwargs):
+        # Mirrors Cython C-level allocation. Connector subclasses sometimes
+        # skip super().__init__() chains; c_start/c_stop access _network_status
+        # before init can run.
+        instance = super().__new__(cls)
+        instance._network_status = NetworkStatus.STOPPED
+        instance._last_connected_timestamp = float("nan")
+        instance._check_network_interval = 10.0
+        instance._check_network_timeout = 5.0
+        instance._network_error_wait_time = 60.0
+        instance._check_network_task = None
+        return instance
+
     def __init__(self):
         super().__init__()
         self._network_status = NetworkStatus.STOPPED

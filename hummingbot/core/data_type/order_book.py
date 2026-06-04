@@ -71,6 +71,25 @@ class OrderBook(PubSub):
             ob_logger = logging.getLogger(__name__)
         return ob_logger
 
+    def __new__(cls, *args, **kwargs):
+        # Mirrors Cython C-level allocation. Order-book mutable state is
+        # accessed by c_apply_diff/c_apply_trade from C-level Clock dispatch
+        # before subclass __init__ chains complete in some failure modes.
+        instance = super().__new__(cls)
+        instance._bid_book = {}
+        instance._bid_prices = []
+        instance._ask_book = {}
+        instance._ask_prices = []
+        instance._snapshot_uid = 0
+        instance._last_diff_uid = 0
+        instance._best_bid = float("nan")
+        instance._best_ask = float("nan")
+        instance._last_trade_price = float("nan")
+        instance._last_applied_trade = -1000.0
+        instance._last_trade_price_rest_updated = -1000.0
+        instance._dex = False
+        return instance
+
     def __init__(self, dex: bool = False) -> None:
         super().__init__()
         # Bid book: price -> (amount, update_id); bids sorted ascending by price

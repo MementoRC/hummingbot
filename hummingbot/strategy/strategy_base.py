@@ -126,6 +126,15 @@ class StrategyBase(TimeIterator):
     def logger(cls) -> logging.Logger:
         raise NotImplementedError
 
+    def __new__(cls, *args, **kwargs):
+        # Mirrors Cython C-level allocation. Only the attrs that don't
+        # require `self` are pre-allocated here; listener attrs and
+        # _sb_order_tracker need self and stay in __init__.
+        instance = super().__new__(cls)
+        instance._sb_markets = set()
+        instance._sb_delegate_lock = False
+        return instance
+
     def __init__(self):
         super().__init__()
         self._sb_markets: set = set()

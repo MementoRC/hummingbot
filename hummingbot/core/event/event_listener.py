@@ -36,6 +36,16 @@ class EventListener:
     Cython cdef class that declared ``object __weakref__``.
     """
 
+    def __new__(cls, *args, **kwargs):
+        # Mirrors Cython C-level allocation: EventListener instances expose
+        # _current_event_tag and _current_event_caller from the moment of
+        # allocation, before any subclass __init__ runs. PubSub.c_trigger_event
+        # writes both via c_set_event_info() during dispatch.
+        instance = super().__new__(cls)
+        instance._current_event_tag = 0
+        instance._current_event_caller = None
+        return instance
+
     def __init__(self) -> None:
         self._current_event_tag: int = 0
         self._current_event_caller: PubSub | None = None

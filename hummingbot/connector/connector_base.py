@@ -37,6 +37,21 @@ class ConnectorBase(NetworkIterator):
         MarketEvent.RangePositionUpdateFailure,
     ]
 
+    def __new__(cls, *args, **kwargs):
+        # Mirrors Cython C-level allocation. Account/balance/order tracking
+        # dicts are accessed from event handlers during live dispatch (e.g.,
+        # by the same chain that surfaced AttributeError in OkxExchange).
+        instance = super().__new__(cls)
+        instance._account_balances = {}
+        instance._account_available_balances = {}
+        instance._real_time_balance_update = True
+        instance._in_flight_orders_snapshot = {}
+        instance._in_flight_orders_snapshot_timestamp = 0.0
+        instance._current_trade_fills = set()
+        instance._exchange_order_ids = {}
+        instance._trade_fee_schema = None
+        return instance
+
     def __init__(self, balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None):
         super().__init__()
 
