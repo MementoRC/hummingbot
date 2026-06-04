@@ -75,21 +75,6 @@ class ConnectorBase(NetworkIterator):
         self._trade_fee_schema = None
         self._balance_asset_limit: Dict[str, Dict[str, object]] = balance_asset_limit or dict()
 
-    # -- cdef → Python method conversions (Variant C: Python wrapper, no recursion risk) --
-
-    def c_tick(self, timestamp: float) -> None:
-        # Variant B: parent still Cython — call unbound c_tick via NetworkIterator
-        NetworkIterator.c_tick(self, timestamp)
-        self.tick(timestamp)
-
-    def c_start(self, clock, timestamp: float) -> None:
-        # Variant B: parent still Cython
-        NetworkIterator.c_start(self, clock, timestamp)
-
-    def c_stop(self, clock) -> None:
-        # Variant B: parent still Cython
-        NetworkIterator.c_stop(self, clock)
-
     # -- Properties --
 
     @property
@@ -172,9 +157,10 @@ class ConnectorBase(NetworkIterator):
 
     def tick(self, timestamp: float) -> None:
         """Is called automatically by the clock for each clock's tick (1 second by default)."""
+        super().tick(timestamp)
 
     def start(self, clock, timestamp: float) -> None:
-        NetworkIterator.c_start(self, clock, timestamp)
+        super().start(clock, timestamp)
 
     def in_flight_asset_balances(self, in_flight_orders: Dict[str, InFlightOrderBase]) -> Dict[str, Decimal]:
         """

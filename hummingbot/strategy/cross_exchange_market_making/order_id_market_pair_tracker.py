@@ -21,8 +21,8 @@ class OrderIDMarketPairTracker(TimeIterator):
         self._order_id_to_tracking_item: OrderedDict = OrderedDict()
         self._expiry_timeout: float = expiry_timeout
 
-    def c_tick(self, timestamp: float) -> None:
-        TimeIterator.c_tick(self, timestamp)
+    def tick(self, timestamp: float) -> None:
+        super().tick(timestamp)
         self.check_and_expire_tracking_items()
 
     def get_market_pair_from_order_id(self, order_id: str) -> object:

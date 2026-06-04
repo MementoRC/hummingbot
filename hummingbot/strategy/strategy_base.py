@@ -283,17 +283,17 @@ class StrategyBase(TimeIterator):
             )
         return warning_lines
 
-    def c_start(self, clock, timestamp: float) -> None:
-        TimeIterator.c_start(self, clock, timestamp)
-        OrderTracker.c_start(self._sb_order_tracker, clock, timestamp)
+    def start(self, clock, timestamp: float) -> None:
+        TimeIterator.start(self, clock, timestamp)
+        TimeIterator.start(self._sb_order_tracker, clock, timestamp)
 
-    def c_tick(self, timestamp: float) -> None:
-        TimeIterator.c_tick(self, timestamp)
-        OrderTracker.c_tick(self._sb_order_tracker, timestamp)
+    def tick(self, timestamp: float) -> None:
+        TimeIterator.tick(self, timestamp)
+        OrderTracker.tick(self._sb_order_tracker, timestamp)
 
-    def c_stop(self, clock) -> None:
-        TimeIterator.c_stop(self, clock)
-        OrderTracker.c_stop(self._sb_order_tracker, clock)
+    def stop(self, clock) -> None:
+        TimeIterator.stop(self, clock)
+        TimeIterator.stop(self._sb_order_tracker, clock)
         self.remove_markets(list(self._sb_markets))
 
     def add_markets(self, markets: List[ConnectorBase]) -> None:

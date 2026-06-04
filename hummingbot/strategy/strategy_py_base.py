@@ -21,23 +21,11 @@ class StrategyPyBase(StrategyBase):
     def __init__(self):
         super().__init__()
 
-    def c_start(self, clock: Clock, timestamp: float):
-        StrategyBase.c_start(self, clock, timestamp)
-        self.start(clock, timestamp)
-
     def start(self, clock: Clock, timestamp: float):
-        pass
-
-    def c_stop(self, clock: Clock):
-        StrategyBase.c_stop(self, clock)
-        self.stop(clock)
+        super().start(clock, timestamp)
 
     def stop(self, clock: Clock):
-        pass
-
-    def c_tick(self, timestamp: float):
-        StrategyBase.c_tick(self, timestamp)
-        self.tick(timestamp)
+        super().stop(clock)
 
     def tick(self, timestamp: float):
         raise NotImplementedError

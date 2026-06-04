@@ -5,6 +5,9 @@ import os as _os
 # Remove stale .so files for modules converted from Cython to pure Python.
 # The .so has import priority over .py; delete it so the .py is used directly.
 _CONVERTED_SO_FILES = [
+    # clock: converted from Cython in C19; .so compiled with c_start/c_stop/c_tick
+    # which no longer exist after C20.
+    "hummingbot/core/clock.cpython-312-x86_64-linux-gnu.so",
     "hummingbot/strategy/order_tracker.cpython-312-x86_64-linux-gnu.so",
     # strategy_base / strategy_py_base: converted from Cython; .so compiled
     # against old TimeIterator C-struct (104 bytes) which is now pure Python (88 bytes).

@@ -329,8 +329,8 @@ class PaperTradeExchange(ExchangeBase):
 
     # </editor-fold>
 
-    def c_start(self, clock: Clock, timestamp: float):
-        ExchangeBase.c_start(self, clock, timestamp)
+    def start(self, clock: Clock, timestamp: float):
+        super().start(clock, timestamp)
 
     async def start_network(self):
         await self.stop_network()
@@ -351,8 +351,8 @@ class PaperTradeExchange(ExchangeBase):
             return Decimal(0.0)
         return self._account_balances[currency.upper()]
 
-    def c_tick(self, timestamp: float):
-        ExchangeBase.c_tick(self, timestamp)
+    def tick(self, timestamp: float):
+        super().tick(timestamp)
         self.c_process_market_orders()
         self.c_process_crossed_limit_orders()
 

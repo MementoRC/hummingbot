@@ -136,8 +136,8 @@ class OrderTracker(TimeIterator):
     def in_flight_pending_created(self) -> set:
         return self._in_flight_pending_created
 
-    def c_tick(self, timestamp: float) -> None:
-        super().c_tick(timestamp)
+    def tick(self, timestamp: float) -> None:
+        super().tick(timestamp)
         self.c_check_and_cleanup_shadow_records()
 
     def c_get_limit_orders(self) -> Dict:

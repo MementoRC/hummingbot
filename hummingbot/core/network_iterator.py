@@ -27,9 +27,8 @@ class NetworkIterator(TimeIterator):
         return ni_logger
 
     def __new__(cls, *args, **kwargs):
-        # Mirrors Cython C-level allocation. Connector subclasses sometimes
-        # skip super().__init__() chains; c_start/c_stop access _network_status
-        # before init can run.
+        # Ensure network state fields exist before __init__ completes, as connector
+        # subclasses sometimes skip super().__init__() chains.
         instance = super().__new__(cls)
         instance._network_status = NetworkStatus.STOPPED
         instance._last_connected_timestamp = float("nan")
@@ -126,28 +125,18 @@ class NetworkIterator(TimeIterator):
                 self._network_status = NetworkStatus.NOT_CONNECTED
                 await asyncio.sleep(self._network_error_wait_time)
 
-    # Variant B: TimeIterator is still Cython; call its cdef methods via unbound syntax.
-    # c_tick is also exposed here so ConnectorBase can call NetworkIterator.c_tick(self, ...)
-    # as an unbound Python-level call (Variant B pattern from ConnectorBase C8 conversion).
+    def tick(self, timestamp: float) -> None:
+        super().tick(timestamp)
 
-    def c_tick(self, timestamp: float) -> None:
-        TimeIterator.c_tick(self, timestamp)
-
-    def c_start(self, clock, timestamp: float) -> None:
-        TimeIterator.c_start(self, clock, timestamp)
+    def start(self, clock, timestamp: float) -> None:
+        super().start(clock, timestamp)
         self._check_network_task = safe_ensure_future(self._check_network_loop())
         self._network_status = NetworkStatus.NOT_CONNECTED
 
-    def c_stop(self, clock) -> None:
-        TimeIterator.c_stop(self, clock)
+    def stop(self, clock) -> None:
+        super().stop(clock)
         if self._check_network_task is not None:
             self._check_network_task.cancel()
             self._check_network_task = None
         self._network_status = NetworkStatus.STOPPED
         safe_ensure_future(self.stop_network())
-
-    def start(self, clock, timestamp: float) -> None:
-        self.c_start(clock, timestamp)
-
-    def stop(self, clock) -> None:
-        self.c_stop(clock)

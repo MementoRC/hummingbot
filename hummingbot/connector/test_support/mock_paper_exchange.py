@@ -161,8 +161,8 @@ class MockPaperExchange(PaperTradeExchange):
     def get_taker_order_type(self):
         return OrderType.MARKET
 
-    def c_start(self, clock: Clock, timestamp: float):
-        PaperTradeExchange.c_start(self, clock, timestamp)
+    def start(self, clock: Clock, timestamp: float):
+        super().start(clock, timestamp)
         self._network_status = NetworkStatus.CONNECTED
 
     async def _check_network_loop(self):

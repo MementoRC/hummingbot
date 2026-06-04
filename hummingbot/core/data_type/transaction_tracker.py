@@ -14,8 +14,8 @@ class TransactionTracker(TimeIterator):
         super().__init__()
         self._tx_time_limits: dict[str, float] = {}
 
-    def c_tick(self, timestamp: float) -> None:
-        super().c_tick(timestamp)
+    def tick(self, timestamp: float) -> None:
+        super().tick(timestamp)
         self.c_process_tx_timeouts()
 
     def c_start_tx_tracking(self, tx_id: str, timeout_seconds: float) -> None:

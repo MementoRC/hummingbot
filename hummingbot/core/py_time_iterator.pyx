@@ -9,8 +9,4 @@ from hummingbot.core.time_iterator import TimeIterator
 
 class PyTimeIterator(TimeIterator):
     def tick(self, timestamp: float) -> None:
-        raise NotImplementedError
-
-    def c_tick(self, timestamp: float) -> None:
-        TimeIterator.c_tick(self, timestamp)
-        self.tick(timestamp)
+        super().tick(timestamp)
