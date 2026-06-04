@@ -383,13 +383,13 @@ class OrderBook(PubSub):
         result_vwap = NaN
         entries = self.ask_entries() if is_buy else self.bid_entries()
         for row in entries:
-            total_cost += row.amount * row.price
-            total_volume += row.amount
+            total_cost += float(row.amount) * float(row.price)
+            total_volume += float(row.amount)
             if total_volume >= volume:
-                total_cost -= row.amount * row.price
-                total_volume -= row.amount
+                total_cost -= float(row.amount) * float(row.price)
+                total_volume -= float(row.amount)
                 incremental = volume - total_volume
-                total_cost += incremental * row.price
+                total_cost += incremental * float(row.price)
                 total_volume += incremental
                 result_vwap = total_cost / total_volume
                 break
@@ -400,9 +400,9 @@ class OrderBook(PubSub):
         result_price = NaN
         entries = self.ask_entries() if is_buy else self.bid_entries()
         for row in entries:
-            cumulative_volume += row.amount * row.price
+            cumulative_volume += float(row.amount) * float(row.price)
             if cumulative_volume >= quote_volume:
-                result_price = row.price
+                result_price = float(row.price)
                 break
         return OrderBookQueryResult(NaN, quote_volume, result_price, min(cumulative_volume, quote_volume))
 
@@ -411,11 +411,11 @@ class OrderBook(PubSub):
         cumulative_base = 0.0
         entries = self.ask_entries() if is_buy else self.bid_entries()
         for row in entries:
-            row_amount = row.amount
+            row_amount = float(row.amount)
             if row_amount + cumulative_base >= base_amount:
                 row_amount = base_amount - cumulative_base
             cumulative_base += row_amount
-            cumulative_volume += row_amount * row.price
+            cumulative_volume += row_amount * float(row.price)
             if cumulative_base >= base_amount:
                 break
         return OrderBookQueryResult(NaN, base_amount, NaN, cumulative_volume)
