@@ -2,15 +2,15 @@ from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCa
 from unittest.mock import AsyncMock, PropertyMock, patch
 
 import aiohttp
+from web_assistant.auth import AuthBase
+from web_assistant.connections.connections_factory import ConnectionsFactory
+from web_assistant.connections.data_types import RESTRequest, WSJSONRequest, WSRequest, WSResponse
+from web_assistant.connections.ws_connection import WSConnection
+from web_assistant.ws_assistant import WSAssistant
+from web_assistant.ws_post_processors import WSPostProcessorBase
+from web_assistant.ws_pre_processors import WSPreProcessorBase
 
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
-from hummingbot.core.web_assistant.auth import AuthBase
-from hummingbot.core.web_assistant.connections.connections_factory import ConnectionsFactory
-from hummingbot.core.web_assistant.connections.data_types import RESTRequest, WSJSONRequest, WSRequest, WSResponse
-from hummingbot.core.web_assistant.connections.ws_connection import WSConnection
-from hummingbot.core.web_assistant.ws_assistant import WSAssistant
-from hummingbot.core.web_assistant.ws_post_processors import WSPostProcessorBase
-from hummingbot.core.web_assistant.ws_pre_processors import WSPreProcessorBase
 
 
 class WSAssistantTest(IsolatedAsyncioWrapperTestCase):
@@ -33,7 +33,7 @@ class WSAssistantTest(IsolatedAsyncioWrapperTestCase):
         await self.aiohttp_client_session.close()
         await super().asyncTearDown()
 
-    @patch("hummingbot.core.web_assistant.connections.ws_connection.WSConnection.connect")
+    @patch("web_assistant.connections.ws_connection.WSConnection.connect")
     async def test_connect(self, connect_mock):
         ws_url = "ws://some.url"
         ping_timeout = 10
@@ -52,13 +52,13 @@ class WSAssistantTest(IsolatedAsyncioWrapperTestCase):
             max_msg_size=max_msg_size,
         )
 
-    @patch("hummingbot.core.web_assistant.connections.ws_connection.WSConnection.disconnect")
+    @patch("web_assistant.connections.ws_connection.WSConnection.disconnect")
     async def test_disconnect(self, disconnect_mock):
         await self.ws_assistant.disconnect()
 
         disconnect_mock.assert_called()
 
-    @patch("hummingbot.core.web_assistant.connections.ws_connection.WSConnection.send")
+    @patch("web_assistant.connections.ws_connection.WSConnection.send")
     async def test_send(self, send_mock):
         sent_requests = []
         send_mock.side_effect = lambda r: sent_requests.append(r)
@@ -74,7 +74,7 @@ class WSAssistantTest(IsolatedAsyncioWrapperTestCase):
         self.assertNotEqual(id(request), id(sent_request))  # has been cloned
         self.assertEqual(request, sent_request)
 
-    @patch("hummingbot.core.web_assistant.connections.ws_connection.WSConnection.send")
+    @patch("web_assistant.connections.ws_connection.WSConnection.send")
     async def test_send_pre_processes(self, send_mock):
         class SomePreProcessor(WSPreProcessorBase):
             async def pre_process(self, request_: RESTRequest) -> RESTRequest:
@@ -94,7 +94,7 @@ class WSAssistantTest(IsolatedAsyncioWrapperTestCase):
 
         self.assertEqual(expected, sent_request.payload)
 
-    @patch("hummingbot.core.web_assistant.connections.ws_connection.WSConnection.send")
+    @patch("web_assistant.connections.ws_connection.WSConnection.send")
     async def test_subscribe(self, send_mock):
         sent_requests = []
         send_mock.side_effect = lambda r: sent_requests.append(r)
@@ -110,7 +110,7 @@ class WSAssistantTest(IsolatedAsyncioWrapperTestCase):
         self.assertNotEqual(id(request), id(sent_request))  # has been cloned
         self.assertEqual(request, sent_request)
 
-    @patch("hummingbot.core.web_assistant.connections.ws_connection.WSConnection.send")
+    @patch("web_assistant.connections.ws_connection.WSConnection.send")
     async def test_ws_assistant_authenticates(self, send_mock):
         class Auth(AuthBase):
             async def rest_authenticate(self, request: RESTRequest) -> RESTRequest:
@@ -138,7 +138,7 @@ class WSAssistantTest(IsolatedAsyncioWrapperTestCase):
         self.assertEqual(expected, sent_request.payload)
         self.assertEqual(auth_expected, auth_sent_request.payload)
 
-    @patch("hummingbot.core.web_assistant.connections.ws_connection.WSConnection.receive")
+    @patch("web_assistant.connections.ws_connection.WSConnection.receive")
     async def test_receive(self, receive_mock):
         data = {"one": 1}
         response_mock = WSResponse(data)
@@ -158,7 +158,7 @@ class WSAssistantTest(IsolatedAsyncioWrapperTestCase):
 
         self.assertEqual(data, response.data)
 
-    @patch("hummingbot.core.web_assistant.connections.ws_connection.WSConnection.receive")
+    @patch("web_assistant.connections.ws_connection.WSConnection.receive")
     async def test_receive_post_processes(self, receive_mock):
         class SomePostProcessor(WSPostProcessorBase):
             async def post_process(self, response_: WSResponse) -> WSResponse:
@@ -177,10 +177,10 @@ class WSAssistantTest(IsolatedAsyncioWrapperTestCase):
         self.assertEqual(expected, response.data)
 
     @patch(
-        "hummingbot.core.web_assistant.connections.ws_connection.WSConnection.connected",
+        "web_assistant.connections.ws_connection.WSConnection.connected",
         new_callable=PropertyMock,
     )
-    @patch("hummingbot.core.web_assistant.connections.ws_connection.WSConnection.receive")
+    @patch("web_assistant.connections.ws_connection.WSConnection.receive")
     async def test_iter_messages(self, receive_mock, connected_mock):
         connected_mock.return_value = True
         data = {"one": 1}
