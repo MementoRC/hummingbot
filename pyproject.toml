@@ -119,6 +119,7 @@ ruff = "==0.15.7"
 mypy = "*"
 pre-commit = ">=3.3.3"
 cython-lint = "*"
+tach = ">=0.20"
 
 [tool.pixi.feature.ci.dependencies]
 bandit = "*"
@@ -156,6 +157,9 @@ compat-integration = { cmd = "pytest sub-packages/candles-feed/tests/unit/test_c
 compat-check = { depends-on = ["compat-import", "compat-contract", "compat-integration"] }
 migrate-pytest = { cmd = "python $HOME/PycharmProjects/refactor-applications/refactor/rules/pytest_migration.py -d --apply --verbose test/", env = { PYTHONPATH = "$HOME/PycharmProjects/refactor-applications:$PYTHONPATH" } }
 migrate-pytest-dry = { cmd = "python $HOME/PycharmProjects/refactor-applications/refactor/rules/pytest_migration.py -d --verbose test/", env = { PYTHONPATH = "$HOME/PycharmProjects/refactor-applications:$PYTHONPATH" } }
+lint-boundaries = { cmd = "tach check", description = "Enforce import boundaries between modules and sub-packages" }
+dep-graph = { cmd = "python ../custom_git_setup/scripts/dep_graph.py", description = "Emit sub-package dependency graph as JSON" }
+test-all-subpackages = { cmd = "bash ../custom_git_setup/scripts/test_all_subpackages.sh", description = "Run tests across all 14 sub-packages" }
 
 [tool.isort]
 line_length = 120
