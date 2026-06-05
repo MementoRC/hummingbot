@@ -10,12 +10,12 @@ class TimeIterator(PubSub):
         # Ensure _current_timestamp and _clock exist before __init__ completes,
         # as subclasses may skip the super().__init__() chain.
         instance = super().__new__(cls)
-        instance._current_timestamp = float("nan")
+        instance._current_timestamp = 0.0
         instance._clock = None
         return instance
 
     def __init__(self):
-        self._current_timestamp: float = NaN
+        self._current_timestamp: float = 0.0
         self._clock = None
 
     def tick(self, timestamp: float) -> None:
@@ -29,8 +29,10 @@ class TimeIterator(PubSub):
     def clock(self) -> Optional[object]:
         return self._clock
 
-    def start(self, clock, timestamp: float) -> None:
+    def start(self, clock, timestamp: float | None = None) -> None:
         self._clock = clock
+        if timestamp is None:
+            timestamp = clock.current_timestamp
         self._current_timestamp = timestamp
 
     def stop(self, clock) -> None:

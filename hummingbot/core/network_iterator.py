@@ -31,7 +31,7 @@ class NetworkIterator(TimeIterator):
         # subclasses sometimes skip super().__init__() chains.
         instance = super().__new__(cls)
         instance._network_status = NetworkStatus.STOPPED
-        instance._last_connected_timestamp = float("nan")
+        instance._last_connected_timestamp = 0.0
         instance._check_network_interval = 10.0
         instance._check_network_timeout = 5.0
         instance._network_error_wait_time = 60.0
@@ -41,7 +41,7 @@ class NetworkIterator(TimeIterator):
     def __init__(self):
         super().__init__()
         self._network_status = NetworkStatus.STOPPED
-        self._last_connected_timestamp = NaN
+        self._last_connected_timestamp = 0.0
         self._check_network_interval = 10.0
         self._check_network_timeout = 5.0
         self._network_error_wait_time = 60.0
