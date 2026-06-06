@@ -262,6 +262,7 @@ class ExecutorOrchestrator:
 
         # Create initial positions from config overrides first
         self._create_initial_positions()
+        self._initial_positions_initialized = True
 
         # Load positions only for active controllers without initial position overrides
         for controller_id in self.strategy.controllers.keys():
