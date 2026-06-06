@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 from decimal import Decimal
 from math import floor
 
@@ -34,7 +33,7 @@ class ProgressiveExecutor(
     @classmethod
     def logger(cls) -> HummingbotLogger:
         if cls._logger is None:
-            cls._logger = logging.getLogger(__name__)
+            cls._logger = HummingbotLogger(__name__)
         return cls._logger
 
     def __init__(

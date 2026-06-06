@@ -1,5 +1,4 @@
 import asyncio
-import logging
 from decimal import Decimal
 
 from hummingbot.connector.connector_base import ConnectorBase
@@ -36,7 +35,7 @@ class PositionOnExchangeExecutor(PositionExecutor):
     @classmethod
     def logger(cls) -> HummingbotLogger:
         if cls._logger is None:
-            cls._logger = logging.getLogger(__name__)
+            cls._logger = HummingbotLogger(__name__)
         return cls._logger
 
     def __init__(
