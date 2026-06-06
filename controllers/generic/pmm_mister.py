@@ -59,7 +59,7 @@ class PMMisterConfig(ControllerConfigBase):
     leverage: int = Field(default=20, json_schema_extra={"is_updatable": True})
     position_mode: PositionMode = Field(default=PositionMode.ONEWAY)
     # LONG: buys accumulate, sells reduce. SHORT: sells accumulate, buys reduce.
-    position_side: TradeType = Field(default=TradeType.BUY)
+    position_side: TradeType = Field(default="BUY")
     take_profit: Decimal | None = Field(default=Decimal("0.0001"), gt=0, json_schema_extra={"is_updatable": True})
     take_profit_order_type: OrderType | None = Field(
         default=OrderType.LIMIT_MAKER, json_schema_extra={"is_updatable": True}
@@ -136,6 +136,12 @@ class PMMisterConfig(ControllerConfigBase):
     def validate_position_side(cls, v) -> TradeType:
         if isinstance(v, TradeType):
             return v
+        # Accept the enum's integer value (e.g. from a serialized/reloaded config)
+        if isinstance(v, int) or (isinstance(v, str) and v.isdigit()):
+            try:
+                return TradeType(int(v))
+            except ValueError:
+                raise ValueError(f"position_side must be BUY/LONG or SELL/SHORT, got {v}")
         mapping = {"BUY": TradeType.BUY, "SELL": TradeType.SELL, "LONG": TradeType.BUY, "SHORT": TradeType.SELL}
         upper = str(v).upper()
         if upper in mapping:
