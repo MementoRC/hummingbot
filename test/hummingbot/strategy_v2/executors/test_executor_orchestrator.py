@@ -818,14 +818,19 @@ class TestExecutorOrchestrator(unittest.TestCase):
         position = self.orchestrator.positions_held["perp_controller"][0]
         self.assertEqual(position.side, TradeType.SELL)  # Opposite of BUY due to CLOSE action
 
-    def _build_position_hold_executor(self, executor_id, connector_name, trading_pair, side,
-                                      trade_type, base, quote, position_action=None):
+    def _build_position_hold_executor(
+        self, executor_id, connector_name, trading_pair, side, trade_type, base, quote, position_action=None
+    ):
         """Helper to build a mock executor that ends as a POSITION_HOLD."""
         from hummingbot.strategy_v2.executors.order_executor.data_types import ExecutionStrategy, OrderExecutorConfig
 
         config_kwargs = dict(
-            timestamp=1234, trading_pair=trading_pair, connector_name=connector_name,
-            side=side, amount=base, execution_strategy=ExecutionStrategy.MARKET,
+            timestamp=1234,
+            trading_pair=trading_pair,
+            connector_name=connector_name,
+            side=side,
+            amount=base,
+            execution_strategy=ExecutionStrategy.MARKET,
         )
         if position_action is not None:
             config_kwargs["position_action"] = position_action
@@ -834,15 +839,28 @@ class TestExecutorOrchestrator(unittest.TestCase):
 
         executor = MagicMock()
         executor.executor_info = ExecutorInfo(
-            id=executor_id, timestamp=1234, type="order_executor",
-            status=RunnableStatus.TERMINATED, config=config,
-            filled_amount_quote=quote, net_pnl_quote=Decimal(0), net_pnl_pct=Decimal(0),
-            cum_fees_quote=Decimal(0), is_trading=False, is_active=False,
-            custom_info={"held_position_orders": [
-                {"client_order_id": f"{executor_id}_order", "executed_amount_base": base,
-                 "executed_amount_quote": quote, "trade_type": trade_type,
-                 "cumulative_fee_paid_quote": Decimal(0)}
-            ]},
+            id=executor_id,
+            timestamp=1234,
+            type="order_executor",
+            status=RunnableStatus.TERMINATED,
+            config=config,
+            filled_amount_quote=quote,
+            net_pnl_quote=Decimal(0),
+            net_pnl_pct=Decimal(0),
+            cum_fees_quote=Decimal(0),
+            is_trading=False,
+            is_active=False,
+            custom_info={
+                "held_position_orders": [
+                    {
+                        "client_order_id": f"{executor_id}_order",
+                        "executed_amount_base": base,
+                        "executed_amount_quote": quote,
+                        "trade_type": trade_type,
+                        "cumulative_fee_paid_quote": Decimal(0),
+                    }
+                ]
+            },
             close_type=CloseType.POSITION_HOLD,
             connector_name=connector_name,
             trading_pair=trading_pair,
@@ -858,12 +876,26 @@ class TestExecutorOrchestrator(unittest.TestCase):
         self.mock_strategy.connectors = {"binance_perpetual": mock_market}
 
         buy_executor = self._build_position_hold_executor(
-            "oneway_buy", "binance_perpetual", "ETH-USDT", TradeType.BUY, "BUY",
-            Decimal("5"), Decimal("1000"), position_action=PositionAction.OPEN)
+            "oneway_buy",
+            "binance_perpetual",
+            "ETH-USDT",
+            TradeType.BUY,
+            "BUY",
+            Decimal("5"),
+            Decimal("1000"),
+            position_action=PositionAction.OPEN,
+        )
         # A reducing SELL executor (opposite side) on the same pair
         sell_executor = self._build_position_hold_executor(
-            "oneway_sell", "binance_perpetual", "ETH-USDT", TradeType.SELL, "SELL",
-            Decimal("2"), Decimal("400"), position_action=PositionAction.CLOSE)
+            "oneway_sell",
+            "binance_perpetual",
+            "ETH-USDT",
+            TradeType.SELL,
+            "SELL",
+            Decimal("2"),
+            Decimal("400"),
+            position_action=PositionAction.CLOSE,
+        )
 
         self.orchestrator.active_executors = {"oneway_controller": [buy_executor, sell_executor]}
         self.orchestrator.positions_held = {"oneway_controller": []}
@@ -887,11 +919,11 @@ class TestExecutorOrchestrator(unittest.TestCase):
         """In spot markets, opposite-side executors must merge into a single net position."""
         # Spot connector (no '_perpetual' suffix)
         buy_executor = self._build_position_hold_executor(
-            "spot_buy", "binance", "ETH-USDT", TradeType.BUY, "BUY",
-            Decimal("4"), Decimal("800"))
+            "spot_buy", "binance", "ETH-USDT", TradeType.BUY, "BUY", Decimal("4"), Decimal("800")
+        )
         sell_executor = self._build_position_hold_executor(
-            "spot_sell", "binance", "ETH-USDT", TradeType.SELL, "SELL",
-            Decimal("1"), Decimal("200"))
+            "spot_sell", "binance", "ETH-USDT", TradeType.SELL, "SELL", Decimal("1"), Decimal("200")
+        )
 
         self.orchestrator.active_executors = {"spot_controller": [buy_executor, sell_executor]}
         self.orchestrator.positions_held = {"spot_controller": []}
@@ -915,12 +947,26 @@ class TestExecutorOrchestrator(unittest.TestCase):
 
         # Open long
         long_executor = self._build_position_hold_executor(
-            "hedge_long", "binance_perpetual", "ETH-USDT", TradeType.BUY, "BUY",
-            Decimal("5"), Decimal("1000"), position_action=PositionAction.OPEN)
+            "hedge_long",
+            "binance_perpetual",
+            "ETH-USDT",
+            TradeType.BUY,
+            "BUY",
+            Decimal("5"),
+            Decimal("1000"),
+            position_action=PositionAction.OPEN,
+        )
         # Open short (independent position in hedge mode)
         short_executor = self._build_position_hold_executor(
-            "hedge_short", "binance_perpetual", "ETH-USDT", TradeType.SELL, "SELL",
-            Decimal("3"), Decimal("600"), position_action=PositionAction.OPEN)
+            "hedge_short",
+            "binance_perpetual",
+            "ETH-USDT",
+            TradeType.SELL,
+            "SELL",
+            Decimal("3"),
+            Decimal("600"),
+            position_action=PositionAction.OPEN,
+        )
 
         self.orchestrator.active_executors = {"hedge_controller": [long_executor, short_executor]}
         self.orchestrator.positions_held = {"hedge_controller": []}
