@@ -144,6 +144,12 @@ class Clock:
                 self._current_tick += self._tick_size
                 for ci in self._child_iterators:
                     try:
+                        # Mirror Cython c_tick semantics: _current_timestamp is
+                        # always updated by the clock framework before the
+                        # user-overridable tick() callback runs.  Subclasses that
+                        # override tick() without calling super() therefore still
+                        # expose the correct current_timestamp via the property.
+                        ci._current_timestamp = self._current_tick
                         ci.tick(self._current_tick)
                     except StopIteration:
                         raise

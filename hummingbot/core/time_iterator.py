@@ -9,13 +9,15 @@ class TimeIterator(PubSub):
     def __new__(cls, *args, **kwargs):
         # Ensure _current_timestamp and _clock exist before __init__ completes,
         # as subclasses may skip the super().__init__() chain.
+        # NaN matches the original Cython TimeIterator semantics: timestamp is
+        # undefined until start() is called (not yet ticking = not 0 epoch time).
         instance = super().__new__(cls)
-        instance._current_timestamp = 0.0
+        instance._current_timestamp = NaN
         instance._clock = None
         return instance
 
     def __init__(self):
-        self._current_timestamp: float = 0.0
+        self._current_timestamp: float = NaN
         self._clock = None
 
     def tick(self, timestamp: float) -> None:
