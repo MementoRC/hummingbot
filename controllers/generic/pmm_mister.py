@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from collections import defaultdict
 from decimal import Decimal
 from typing import Dict, Union
