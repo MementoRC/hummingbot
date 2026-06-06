@@ -1,0 +1,44 @@
+# tach configuration — module boundary enforcement
+# See https://docs.gauge.sh/tach for full documentation
+#
+# C2b-minimal: infrastructure stub only.
+# modules=[] means tach check is a trivial no-op (passes "all modules validated"
+# with WARN "no first-party imports found"). Real enforcement requires
+# resolving the layout/tooling mismatch: hummingbot's sub-packages live at
+# sub-packages/<hyphen-dir>/<underscore-pkg>/__init__.py (git submodules) and
+# tach 0.35 prunes them under every tested source_roots configuration.
+#
+# Future work needs to choose:
+#   - import-linter (regex-based contracts, may fit this layout better)
+#   - Restructure sub-packages to src/ layout
+#   - Different tach version or config we haven't found yet
+#
+# Plan: hummingbot_ai_docs/2026-06-04-tach-mod-integration-plan.md
+# Investigation memory: project_tach_mod_audit_2026_06_04.md
+
+source_roots = [
+  ".",
+]
+
+exclude = [
+  "**/tests/**",
+  "**/__pycache__/**",
+  "**/.pixi/**",
+  "**/build/**",
+  "**/.git/**",
+  # Cython artifacts — .so not parseable Python, .pyx uses cdef/cimport
+  "**/*.so",
+  "**/*.pyd",
+  "**/*.pyx",
+  "**/*.pxd",
+  # Rust crate — no Python modules; _hb_rust .so lands in site-packages
+  "**/rust/**",
+  # Build/dist artifacts
+  "**/target/**",
+  "**/dist/**",
+  "**/*.egg-info/**",
+  # Worktree artifacts (submodule .worktrees pattern per sub-package skill)
+  "**/.worktrees/**",
+]
+
+modules = []
