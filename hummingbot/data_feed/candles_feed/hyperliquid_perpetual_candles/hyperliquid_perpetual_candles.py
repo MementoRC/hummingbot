@@ -10,7 +10,7 @@ from web_assistant.ws_assistant import WSAssistant
 
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.data_feed.candles_feed.candles_base import CandlesBase
-from hummingbot.data_feed.candles_feed.hyperliquid_spot_candles import constants as CONSTANTS
+from hummingbot.data_feed.candles_feed.hyperliquid_perpetual_candles import constants as CONSTANTS
 from hummingbot.logger import HummingbotLogger
 
 
