@@ -363,7 +363,7 @@ class AscendExAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
 
         msg: OrderBookMessage = await msg_queue.get()
 
-        self.assertEqual(1573165838.976, msg.update_id)
+        self.assertEqual(1573165838, msg.update_id)
 
     # Dynamic subscription tests
     async def test_subscribe_to_trading_pair_successful(self):
