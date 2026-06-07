@@ -17,6 +17,7 @@ from hummingbot.core.event.events import BuyOrderCompletedEvent, PositionModeCha
 from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple
 from hummingbot.strategy.spot_perpetual_arbitrage.arb_proposal import ArbProposal, ArbProposalSide
+from hummingbot.strategy.strategy_base import StrategyBase
 from hummingbot.strategy.strategy_py_base import StrategyPyBase
 
 NaN = float("nan")
@@ -143,6 +144,11 @@ class SpotPerpetualArbitrageStrategy(StrategyPyBase):
         Clock tick entry point, is run every second (on normal tick setting).
         :param timestamp: current tick timestamp
         """
+        # Replicate the Cython c_tick two-layer dispatch:
+        # StrategyPyBase.c_tick called StrategyBase.c_tick (updating _current_timestamp
+        # and _sb_order_tracker timestamps) before calling Python tick().
+        # StrategyPyBase.tick() raises NotImplementedError so we call StrategyBase directly.
+        StrategyBase.tick(self, timestamp)
         if not self._all_markets_ready or not self._position_mode_ready or not self._trading_started:
             self._all_markets_ready = self.all_markets_ready()
             if not self._all_markets_ready:
@@ -544,6 +550,10 @@ class SpotPerpetualArbitrageStrategy(StrategyPyBase):
         return self._sb_order_tracker.tracked_limit_orders
 
     def start(self, clock: Clock, timestamp: float):
+        # super().start() must be called first to replicate the Cython c_start chain:
+        # StrategyPyBase.c_start -> StrategyBase.c_start -> add_markets + listener wiring.
+        # Without it, _current_timestamp is NaN and clock.backtest_til int() conversion fails.
+        super().start(clock, timestamp)
         self._ready_to_start = False
         self.apply_initial_settings()
 

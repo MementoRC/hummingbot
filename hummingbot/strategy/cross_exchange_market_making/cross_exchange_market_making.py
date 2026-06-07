@@ -32,6 +32,7 @@ from hummingbot.strategy.cross_exchange_market_making.cross_exchange_market_maki
 )
 from hummingbot.strategy.maker_taker_market_pair import MakerTakerMarketPair
 from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple
+from hummingbot.strategy.strategy_base import StrategyBase
 from hummingbot.strategy.strategy_py_base import StrategyPyBase
 
 from .order_id_market_pair_tracker import OrderIDMarketPairTracker
@@ -419,6 +420,11 @@ class CrossExchangeMarketMakingStrategy(StrategyPyBase):
 
         :param timestamp: current tick timestamp
         """
+        # Replicate the Cython c_tick two-layer dispatch:
+        # StrategyPyBase.c_tick called StrategyBase.c_tick (updating _current_timestamp
+        # and _sb_order_tracker timestamps) before calling Python tick().
+        # StrategyPyBase.tick() raises NotImplementedError so we call StrategyBase directly.
+        StrategyBase.tick(self, timestamp)
         current_tick = timestamp // self._status_report_interval
         last_tick = self._last_timestamp // self._status_report_interval
         should_report_warnings = (current_tick > last_tick) and (LogOption.STATUS_REPORT in self.logging_options)

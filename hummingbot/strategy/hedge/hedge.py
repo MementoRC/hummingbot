@@ -14,6 +14,7 @@ from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.hedge.hedge_config_map_pydantic import HedgeConfigMap
 from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple
+from hummingbot.strategy.strategy_base import StrategyBase
 from hummingbot.strategy.strategy_py_base import StrategyPyBase
 from hummingbot.strategy.utils import order_age
 
@@ -296,6 +297,10 @@ class HedgeStrategy(StrategyPyBase):
         :param clock: Clock to use.
         :param timestamp: Current time.
         """
+        # super().start() must be called first to replicate the Cython c_start chain:
+        # StrategyPyBase.c_start -> StrategyBase.c_start -> add_markets + listener wiring.
+        # Without it, _current_timestamp is NaN and clock.backtest_til int() conversion fails.
+        super().start(clock, timestamp)
         self._last_timestamp = timestamp
         self.apply_initial_setting()
 
@@ -338,6 +343,11 @@ class HedgeStrategy(StrategyPyBase):
         Check if hedge interval has passed and process hedge if so
         :param timestamp: clock timestamp
         """
+        # Replicate the Cython c_tick two-layer dispatch:
+        # StrategyPyBase.c_tick called StrategyBase.c_tick (updating _current_timestamp
+        # and _sb_order_tracker timestamps) before calling Python tick().
+        # StrategyPyBase.tick() raises NotImplementedError so we call StrategyBase directly.
+        StrategyBase.tick(self, timestamp)
         if self.check_and_cancel_active_orders():
             self.interval_log("hedge", "Active orders present. Skipping hedge check until active orders expires.")
             return

@@ -28,6 +28,7 @@ from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.amm_arb.data_types import ArbProposalSide
 from hummingbot.strategy.amm_arb.utils import ArbProposal, create_arb_proposals
 from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple
+from hummingbot.strategy.strategy_base import StrategyBase
 from hummingbot.strategy.strategy_py_base import StrategyPyBase
 
 NaN = float("nan")
@@ -176,6 +177,11 @@ class AmmArbStrategy(StrategyPyBase):
         Clock tick entry point, is run every second (on normal tick setting).
         :param timestamp: current tick timestamp
         """
+        # Replicate the Cython c_tick two-layer dispatch:
+        # StrategyPyBase.c_tick called StrategyBase.c_tick (updating _current_timestamp
+        # and _sb_order_tracker timestamps) before calling Python tick().
+        # StrategyPyBase.tick() raises NotImplementedError so we call StrategyBase directly.
+        StrategyBase.tick(self, timestamp)
         if not self.all_markets_ready:
             self.all_markets_ready = all([market.ready for market in self.active_markets])
             if not self.all_markets_ready:
