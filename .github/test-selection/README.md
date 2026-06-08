@@ -12,8 +12,18 @@ Exit codes: 0 = selection ready, 1 = error, 2 = escape to full suite.
 ## Used by
 
 - `quick-check.yml` — fast PR/push CI check on `_for_bleed/**` and `_for_ci/**` branches
-- `pixi run test-changed` — local iteration: select + run tests for the current branch diff
+- `.github/test-selection/run-changed.sh` — local iteration: select + run tests for the current branch diff
 - `custom_git_setup` cron pipeline — upstream gate verification (Phase 5B will update paths)
+
+## Local iteration
+
+Run diff-driven tests against your branch's base (`origin/ci-base`):
+
+```bash
+bash .github/test-selection/run-changed.sh
+```
+
+This script selects only tests touched by your branch's diff and invokes `pixi run -e ci pytest <list>`. Use it instead of the full suite for fast feedback during feature work.
 
 ## CLI summary
 

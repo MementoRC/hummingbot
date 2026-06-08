@@ -1,6 +1,3 @@
-[tool.pixi.tasks]
-test-changed = "python3 .github/test-selection/select_tests.py --mode branch --base-ref origin/ci-base --head-ref HEAD --config .github/test-selection/test-selection-map.yaml --repo . --no-history > /tmp/selected_tests.txt && pixi run -e ci pytest $(cat /tmp/selected_tests.txt) -v --tb=short"
-
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "function"
 
