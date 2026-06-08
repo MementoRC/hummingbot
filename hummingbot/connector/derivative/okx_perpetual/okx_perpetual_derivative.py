@@ -3,6 +3,7 @@ from decimal import Decimal
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 from bidict import bidict
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 import hummingbot.connector.derivative.okx_perpetual.okx_perpetual_constants as CONSTANTS
 import hummingbot.connector.derivative.okx_perpetual.okx_perpetual_utils as okx_utils
@@ -27,7 +28,6 @@ from hummingbot.core.data_type.user_stream_tracker_data_source import UserStream
 from hummingbot.core.utils.async_utils import safe_gather
 from hummingbot.core.utils.estimate_fee import build_perpetual_trade_fee
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 
 s_decimal_NaN = Decimal("nan")
 s_decimal_0 = Decimal(0)

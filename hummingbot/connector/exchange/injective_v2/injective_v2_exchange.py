@@ -5,6 +5,7 @@ from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from async_timeout import timeout
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 from hummingbot.connector.client_order_tracker import ClientOrderTracker
 from hummingbot.connector.constants import s_decimal_NaN
@@ -37,7 +38,6 @@ from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.core.utils.estimate_fee import build_trade_fee
 from hummingbot.core.web_assistant.auth import AuthBase
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class InjectiveV2Exchange(ExchangePyBase):

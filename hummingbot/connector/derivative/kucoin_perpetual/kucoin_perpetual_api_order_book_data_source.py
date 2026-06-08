@@ -4,6 +4,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import pandas as pd
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 from hummingbot.connector.derivative.kucoin_perpetual import (
     kucoin_perpetual_constants as CONSTANTS,
@@ -15,7 +16,6 @@ from hummingbot.core.data_type.order_book_message import OrderBookMessage, Order
 from hummingbot.core.data_type.perpetual_api_order_book_data_source import PerpetualAPIOrderBookDataSource
 from hummingbot.core.utils.tracking_nonce import NonceCreator
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod, WSJSONRequest
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 
 if TYPE_CHECKING:

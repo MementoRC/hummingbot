@@ -1,6 +1,8 @@
 import asyncio
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+
 # from bidict import bidict
 from hummingbot.connector.exchange.hyperliquid import (
     hyperliquid_constants as CONSTANTS,
@@ -10,7 +12,6 @@ from hummingbot.connector.exchange.hyperliquid.hyperliquid_order_book import Hyp
 from hummingbot.core.data_type.order_book_message import OrderBookMessage
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
 from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.logger import HummingbotLogger
 

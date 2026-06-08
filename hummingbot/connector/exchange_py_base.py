@@ -7,6 +7,7 @@ from decimal import Decimal
 from typing import Any, AsyncIterable, Callable, Dict, List, Optional, Tuple
 
 from async_timeout import timeout
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 from hummingbot.connector.client_order_tracker import ClientOrderTracker
 from hummingbot.connector.constants import MINUTE, TWELVE_HOURS, s_decimal_0, s_decimal_NaN
@@ -30,7 +31,6 @@ from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.core.utils.async_utils import safe_ensure_future, safe_gather
 from hummingbot.core.web_assistant.auth import AuthBase
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 from hummingbot.logger import HummingbotLogger
 
 

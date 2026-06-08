@@ -3,6 +3,7 @@ from decimal import Decimal
 from typing import Any, AsyncIterable, Dict, List, Optional
 
 from bidict import bidict
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 import hummingbot.connector.exchange.htx.htx_constants as CONSTANTS
 from hummingbot.connector.constants import s_decimal_0, s_decimal_NaN
@@ -20,7 +21,6 @@ from hummingbot.core.data_type.trade_fee import TokenAmount, TradeFeeBase
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.core.utils.estimate_fee import build_trade_fee
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class HtxExchange(ExchangePyBase):

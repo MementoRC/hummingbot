@@ -1,5 +1,7 @@
 from typing import Any, Callable, Dict, List, Optional
 
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+
 from hummingbot.connector.derivative.okx_perpetual import okx_perpetual_constants as CONSTANTS
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
 from hummingbot.connector.utils import TimeSynchronizerRESTPreProcessor
@@ -8,7 +10,6 @@ from hummingbot.core.api_throttler.data_types import RateLimit
 from hummingbot.core.web_assistant.auth import AuthBase
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest
 from hummingbot.core.web_assistant.rest_pre_processors import RESTPreProcessorBase
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class HeadersContentRESTPreProcessor(RESTPreProcessorBase):
