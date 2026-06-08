@@ -1,5 +1,7 @@
 from typing import Any, Callable, Dict, List, Optional
 
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+
 from hummingbot.connector.derivative.kucoin_perpetual import kucoin_perpetual_constants as CONSTANTS
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
 from hummingbot.connector.utils import TimeSynchronizerRESTPreProcessor
@@ -8,7 +10,6 @@ from hummingbot.core.utils.tracking_nonce import get_tracking_nonce
 from hummingbot.core.web_assistant.auth import AuthBase
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest
 from hummingbot.core.web_assistant.rest_pre_processors import RESTPreProcessorBase
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class HeadersContentRESTPreProcessor(RESTPreProcessorBase):
@@ -19,10 +20,10 @@ class HeadersContentRESTPreProcessor(RESTPreProcessorBase):
 
 
 def build_api_factory(
-    throttler: Optional[AsyncThrottler] = None,
-    time_synchronizer: Optional[TimeSynchronizer] = None,
-    time_provider: Optional[Callable] = None,
-    auth: Optional[AuthBase] = None,
+        throttler: Optional[AsyncThrottler] = None,
+        time_synchronizer: Optional[TimeSynchronizer] = None,
+        time_provider: Optional[Callable] = None,
+        auth: Optional[AuthBase] = None,
 ) -> WebAssistantsFactory:
     throttler = throttler or create_throttler()
     time_synchronizer = time_synchronizer or TimeSynchronizer()
@@ -92,7 +93,10 @@ def build_api_factory_without_time_synchronizer_pre_processor(throttler: AsyncTh
     return api_factory
 
 
-def get_rest_url_for_endpoint(endpoint: str, domain: str = CONSTANTS.DEFAULT_DOMAIN):
+def get_rest_url_for_endpoint(
+    endpoint: str,
+    domain: str = CONSTANTS.DEFAULT_DOMAIN
+):
     variant = domain if domain else CONSTANTS.DEFAULT_DOMAIN
     return CONSTANTS.REST_URLS.get(variant) + endpoint
 
@@ -123,20 +127,18 @@ def next_message_id() -> str:
     return str(get_tracking_nonce())
 
 
-async def api_request(
-    path: str,
-    api_factory: Optional[WebAssistantsFactory] = None,
-    throttler: Optional[AsyncThrottler] = None,
-    domain: str = CONSTANTS.DEFAULT_DOMAIN,
-    params: Optional[Dict[str, Any]] = None,
-    data: Optional[Dict[str, Any]] = None,
-    method: RESTMethod = RESTMethod.GET,
-    is_auth_required: bool = False,
-    return_err: bool = False,
-    api_version: str = "v1",
-    limit_id: Optional[str] = None,
-    timeout: Optional[float] = None,
-):
+async def api_request(path: str,
+                      api_factory: Optional[WebAssistantsFactory] = None,
+                      throttler: Optional[AsyncThrottler] = None,
+                      domain: str = CONSTANTS.DEFAULT_DOMAIN,
+                      params: Optional[Dict[str, Any]] = None,
+                      data: Optional[Dict[str, Any]] = None,
+                      method: RESTMethod = RESTMethod.GET,
+                      is_auth_required: bool = False,
+                      return_err: bool = False,
+                      api_version: str = "v1",
+                      limit_id: Optional[str] = None,
+                      timeout: Optional[float] = None):
 
     throttler = throttler or create_throttler()
 
@@ -152,7 +154,7 @@ async def api_request(
             params=params,
             data=data,
             is_auth_required=is_auth_required,
-            throttler_limit_id=limit_id if limit_id else path,
+            throttler_limit_id=limit_id if limit_id else path
         )
         response = await rest_assistant.call(request=request, timeout=timeout)
 
@@ -162,9 +164,7 @@ async def api_request(
                 return error_response
             else:
                 error_response = await response.text()
-                raise IOError(
-                    f"Error executing request {method.name} {path}. "
-                    f"HTTP status is {response.status}. "
-                    f"Error: {error_response}"
-                )
+                raise IOError(f"Error executing request {method.name} {path}. "
+                              f"HTTP status is {response.status}. "
+                              f"Error: {error_response}")
         return await response.json()

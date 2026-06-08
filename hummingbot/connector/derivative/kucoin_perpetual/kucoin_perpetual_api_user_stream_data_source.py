@@ -1,7 +1,7 @@
-from __future__ import annotations
-
 import asyncio
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
+
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 from hummingbot.connector.derivative.kucoin_perpetual import (
     kucoin_perpetual_constants as CONSTANTS,
@@ -10,7 +10,6 @@ from hummingbot.connector.derivative.kucoin_perpetual import (
 from hummingbot.connector.derivative.kucoin_perpetual.kucoin_perpetual_auth import KucoinPerpetualAuth
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod, WSJSONRequest
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.logger import HummingbotLogger
 
@@ -19,12 +18,12 @@ if TYPE_CHECKING:
 
 
 class KucoinPerpetualAPIUserStreamDataSource(UserStreamTrackerDataSource):
-    _logger: HummingbotLogger | None = None
+    _logger: Optional[HummingbotLogger] = None
 
     def __init__(
         self,
-        trading_pairs: list[str],
-        connector: "KucoinPerpetualDerivative",
+        trading_pairs: List[str],
+        connector: 'KucoinPerpetualDerivative',
         auth: KucoinPerpetualAuth,
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -35,7 +34,7 @@ class KucoinPerpetualAPIUserStreamDataSource(UserStreamTrackerDataSource):
         self._trading_pairs = trading_pairs
         self._api_factory = api_factory
         self._auth = auth
-        self._ws_assistants: list[WSAssistant] = []
+        self._ws_assistants: List[WSAssistant] = []
         self._current_listen_key = None
         self._listen_for_user_stream_task = None
         self._last_listen_key_ping_ts = None
@@ -67,7 +66,9 @@ class KucoinPerpetualAPIUserStreamDataSource(UserStreamTrackerDataSource):
         try:
             tasks = []
             tasks.append(
-                self._listen_for_user_stream_on_url(url=web_utils.wss_private_url(self._domain), output=output)
+                self._listen_for_user_stream_on_url(
+                    url=web_utils.wss_private_url(self._domain), output=output
+                )
             )
 
             tasks_future = asyncio.gather(*tasks)
@@ -78,7 +79,7 @@ class KucoinPerpetualAPIUserStreamDataSource(UserStreamTrackerDataSource):
             raise
 
     async def _listen_for_user_stream_on_url(self, url: str, output: asyncio.Queue):
-        ws: WSAssistant | None = None
+        ws: Optional[WSAssistant] = None
         while True:
             try:
                 ws = await self._get_connected_websocket_assistant(url)
@@ -112,12 +113,10 @@ class KucoinPerpetualAPIUserStreamDataSource(UserStreamTrackerDataSource):
         token = connection_info["data"]["token"]
 
         ws: WSAssistant = await self._api_factory.get_ws_assistant()
-        await ws.connect(
-            ws_url=f"{ws_url}?token={token}", ping_timeout=self._ping_interval, message_timeout=message_timeout
-        )
+        await ws.connect(ws_url=f"{ws_url}?token={token}", ping_timeout=self._ping_interval, message_timeout=message_timeout)
         return ws
 
-    async def _subscribe_to_channels(self, ws: WSAssistant, url: str, trading_pairs: list[str]):
+    async def _subscribe_to_channels(self, ws: WSAssistant, url: str, trading_pairs: List[str]):
         try:
             symbols = [
                 await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
@@ -155,7 +154,9 @@ class KucoinPerpetualAPIUserStreamDataSource(UserStreamTrackerDataSource):
             await ws.send(subscribe_positions_request)
             await ws.send(subscribe_wallet_request)
 
-            self.logger().info(f"Subscribed to private account and orders channels {url}...")
+            self.logger().info(
+                f"Subscribed to private account and orders channels {url}..."
+            )
         except asyncio.CancelledError:
             raise
         except Exception:
@@ -167,10 +168,10 @@ class KucoinPerpetualAPIUserStreamDataSource(UserStreamTrackerDataSource):
     async def _process_websocket_messages(self, websocket_assistant: WSAssistant, queue: asyncio.Queue):
         while True:
             try:
-                await asyncio.wait_for(
-                    super()._process_websocket_messages(websocket_assistant=websocket_assistant, queue=queue),
-                    timeout=CONSTANTS.WS_CONNECTION_TIME_INTERVAL,
-                )
+                await asyncio.wait_for(super()._process_websocket_messages(
+                    websocket_assistant=websocket_assistant,
+                    queue=queue),
+                    timeout=CONSTANTS.WS_CONNECTION_TIME_INTERVAL)
             except asyncio.TimeoutError:
                 payload = {
                     "id": web_utils.next_message_id(),

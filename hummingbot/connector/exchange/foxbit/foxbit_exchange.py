@@ -7,6 +7,7 @@ from decimal import Decimal
 from typing import Any, Mapping
 
 from bidict import bidict
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 from hummingbot.connector.constants import s_decimal_NaN
 from hummingbot.connector.exchange.foxbit import (
@@ -29,7 +30,6 @@ from hummingbot.core.event.events import MarketEvent, OrderFilledEvent
 from hummingbot.core.utils.async_utils import safe_ensure_future, safe_gather
 from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest, WSResponse
 from hummingbot.core.web_assistant.rest_assistant import RESTAssistant
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 
 s_logger = None
