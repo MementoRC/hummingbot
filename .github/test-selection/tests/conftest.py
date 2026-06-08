@@ -7,6 +7,4 @@ sys.path.insert(0, str(SCRIPTS_DIR))
 
 
 def pytest_configure(config):
-    config.addinivalue_line(
-        "markers", "cli: integration tests that exercise the CLI entry point"
-    )
+    config.addinivalue_line("markers", "cli: integration tests that exercise the CLI entry point")

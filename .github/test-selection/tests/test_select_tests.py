@@ -1,4 +1,5 @@
 """Tests for select_tests.py — diff-driven test selector."""
+
 from __future__ import annotations
 
 import json
@@ -365,9 +366,7 @@ def test_extra_mappings_sub_package_capture(tmp_path: Path) -> None:
         cfg,
         tmp_path,
     )
-    assert Path("sub-packages/foobar/tests/test_y.py") in result, (
-        f"Expected sub-package test in result, got {result}"
-    )
+    assert Path("sub-packages/foobar/tests/test_y.py") in result, f"Expected sub-package test in result, got {result}"
 
 
 def test_extra_mappings_basename_substitution(tmp_path: Path) -> None:
@@ -617,7 +616,9 @@ def _make_minimal_config_file(tmp_path: Path, always_on: list[str] | None = None
 
 
 @pytest.mark.cli
-def test_cli_empty_diff_emits_always_on(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_cli_empty_diff_emits_always_on(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     """--mode branch --diff-file <empty diff> → exit 0, stdout includes always_on path."""
     always_test = tmp_path / "test" / "hummingbot" / "test_always.py"
     always_test.parent.mkdir(parents=True)
@@ -632,13 +633,19 @@ def test_cli_empty_diff_emits_always_on(tmp_path: Path, monkeypatch: pytest.Monk
         "sys.argv",
         [
             "select_tests.py",
-            "--mode", "branch",
-            "--config", str(cfg_file),
-            "--repo", str(tmp_path),
-            "--diff-file", str(diff_file),
-            "--state-file", str(state_file),
+            "--mode",
+            "branch",
+            "--config",
+            str(cfg_file),
+            "--repo",
+            str(tmp_path),
+            "--diff-file",
+            str(diff_file),
+            "--state-file",
+            str(state_file),
             "--no-history",
-            "--escape-threshold-pct", "100",
+            "--escape-threshold-pct",
+            "100",
         ],
     )
     code = select_tests.main()
@@ -648,7 +655,9 @@ def test_cli_empty_diff_emits_always_on(tmp_path: Path, monkeypatch: pytest.Monk
 
 
 @pytest.mark.cli
-def test_cli_diff_with_source_selects_mirror(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_cli_diff_with_source_selects_mirror(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     """--diff-file with hummingbot/foo.py → mirror test selected in stdout."""
     mirror_test = tmp_path / "test" / "hummingbot" / "test_foo.py"
     mirror_test.parent.mkdir(parents=True)
@@ -663,13 +672,19 @@ def test_cli_diff_with_source_selects_mirror(tmp_path: Path, monkeypatch: pytest
         "sys.argv",
         [
             "select_tests.py",
-            "--mode", "branch",
-            "--config", str(cfg_file),
-            "--repo", str(tmp_path),
-            "--diff-file", str(diff_file),
-            "--state-file", str(state_file),
+            "--mode",
+            "branch",
+            "--config",
+            str(cfg_file),
+            "--repo",
+            str(tmp_path),
+            "--diff-file",
+            str(diff_file),
+            "--state-file",
+            str(state_file),
             "--no-history",
-            "--escape-threshold-pct", "100",
+            "--escape-threshold-pct",
+            "100",
         ],
     )
     code = select_tests.main()
@@ -687,7 +702,9 @@ def test_cli_missing_mode_exits(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 @pytest.mark.cli
-def test_cli_shadow_emits_marker(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]) -> None:
+def test_cli_shadow_emits_marker(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
     """--shadow flag emits the SHADOW marker line to stdout."""
     cfg_file = _make_minimal_config_file(tmp_path)
     diff_file = tmp_path / "empty.diff"
@@ -698,11 +715,16 @@ def test_cli_shadow_emits_marker(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
         "sys.argv",
         [
             "select_tests.py",
-            "--mode", "branch",
-            "--config", str(cfg_file),
-            "--repo", str(tmp_path),
-            "--diff-file", str(diff_file),
-            "--state-file", str(state_file),
+            "--mode",
+            "branch",
+            "--config",
+            str(cfg_file),
+            "--repo",
+            str(tmp_path),
+            "--diff-file",
+            str(diff_file),
+            "--state-file",
+            str(state_file),
             "--no-history",
             "--shadow",
         ],
@@ -723,10 +745,14 @@ def test_cli_branch_mode_requires_refs_or_diff_file(tmp_path: Path, monkeypatch:
         "sys.argv",
         [
             "select_tests.py",
-            "--mode", "branch",
-            "--config", str(cfg_file),
-            "--repo", str(tmp_path),
-            "--state-file", str(state_file),
+            "--mode",
+            "branch",
+            "--config",
+            str(cfg_file),
+            "--repo",
+            str(tmp_path),
+            "--state-file",
+            str(state_file),
             "--no-history",
         ],
     )
@@ -745,10 +771,7 @@ def test_files_from_diff_file_deduplicates(tmp_path: Path) -> None:
     """_files_from_diff_file deduplicates paths appearing in both --- and +++ lines."""
     diff_file = tmp_path / "dup.diff"
     diff_file.write_text(
-        "--- a/hummingbot/foo.py\n"
-        "+++ b/hummingbot/foo.py\n"
-        "--- a/hummingbot/bar.py\n"
-        "+++ b/hummingbot/bar.py\n"
+        "--- a/hummingbot/foo.py\n+++ b/hummingbot/foo.py\n--- a/hummingbot/bar.py\n+++ b/hummingbot/bar.py\n"
     )
     result = _files_from_diff_file(diff_file)
     # Each file should appear only once despite appearing in both --- and +++ lines
@@ -760,10 +783,7 @@ def test_files_from_diff_file_deduplicates(tmp_path: Path) -> None:
 def test_files_from_diff_file_excludes_dev_null(tmp_path: Path) -> None:
     """/dev/null in diff lines is excluded from the result."""
     diff_file = tmp_path / "new.diff"
-    diff_file.write_text(
-        "--- /dev/null\n"
-        "+++ b/hummingbot/new_file.py\n"
-    )
+    diff_file.write_text("--- /dev/null\n+++ b/hummingbot/new_file.py\n")
     result = _files_from_diff_file(diff_file)
     paths = [str(p) for p in result]
     assert "hummingbot/new_file.py" in paths
@@ -851,9 +871,7 @@ def test_compute_total_tests_counts_only_test_dir_files(tmp_path: Path) -> None:
 
     state: dict[str, Any] = {}
     count = compute_total_tests(tmp_path, state, force_recompute=True)
-    assert count == len(counted), (
-        f"Expected exactly {len(counted)} test files (only under test/), got {count}"
-    )
+    assert count == len(counted), f"Expected exactly {len(counted)} test files (only under test/), got {count}"
 
 
 def test_compute_total_tests_no_test_dir_returns_zero(tmp_path: Path) -> None:
@@ -903,11 +921,16 @@ def test_upstream_mode_persists_last_synced_sha(
         "sys.argv",
         [
             "select_tests.py",
-            "--mode", "upstream",
-            "--config", str(cfg_file),
-            "--repo", str(tmp_path),
-            "--state-file", str(state_file),
-            "--escape-threshold-pct", "100",
+            "--mode",
+            "upstream",
+            "--config",
+            str(cfg_file),
+            "--repo",
+            str(tmp_path),
+            "--state-file",
+            str(state_file),
+            "--escape-threshold-pct",
+            "100",
         ],
     )
     code = select_tests.main()
@@ -939,9 +962,7 @@ def test_branch_mode_source_branch_uses_merge_base(
             return merge_base_sha
         if args[0] == "diff":
             # Confirm the merge-base SHA was passed as the diff base
-            assert args[2] == merge_base_sha, (
-                f"Expected merge-base SHA as diff base, got {args[2]!r}"
-            )
+            assert args[2] == merge_base_sha, f"Expected merge-base SHA as diff base, got {args[2]!r}"
             return ""
         raise RuntimeError(f"Unexpected git call: {args}")
 
@@ -984,29 +1005,39 @@ def test_branch_mode_dedup_skips_selection_when_previously_passed(
 
     cfg_file = _make_minimal_config_file(tmp_path)
     state_file = tmp_path / "state.json"
-    state_file.write_text(json.dumps({
-        "version": 1,
-        "tested_commits": {
-            fake_sha: {
-                "status": "success",
-                "date": datetime.now(tz=timezone.utc).isoformat(),
-                "mode": "branch",
-            },
-        },
-        "total_test_count_cache": {},
-        "last_synced_upstream_sha": None,
-    }))
+    state_file.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "tested_commits": {
+                    fake_sha: {
+                        "status": "success",
+                        "date": datetime.now(tz=timezone.utc).isoformat(),
+                        "mode": "branch",
+                    },
+                },
+                "total_test_count_cache": {},
+                "last_synced_upstream_sha": None,
+            }
+        )
+    )
 
     monkeypatch.setattr(
         "sys.argv",
         [
             "select_tests.py",
-            "--mode", "branch",
-            "--config", str(cfg_file),
-            "--repo", str(tmp_path),
-            "--base-ref", "origin/development",
-            "--head-ref", "HEAD",
-            "--state-file", str(state_file),
+            "--mode",
+            "branch",
+            "--config",
+            str(cfg_file),
+            "--repo",
+            str(tmp_path),
+            "--base-ref",
+            "origin/development",
+            "--head-ref",
+            "HEAD",
+            "--state-file",
+            str(state_file),
         ],
     )
     code = select_tests.main()
@@ -1026,18 +1057,22 @@ def test_branch_mode_dedup_does_not_skip_when_previously_failed(
     fake_sha = "deadbeef" * 5
     cfg_file = _make_minimal_config_file(tmp_path)
     state_file = tmp_path / "state.json"
-    state_file.write_text(json.dumps({
-        "version": 1,
-        "tested_commits": {
-            fake_sha: {
-                "status": "failure",
-                "date": datetime.now(tz=timezone.utc).isoformat(),
-                "mode": "branch",
-            },
-        },
-        "total_test_count_cache": {},
-        "last_synced_upstream_sha": None,
-    }))
+    state_file.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "tested_commits": {
+                    fake_sha: {
+                        "status": "failure",
+                        "date": datetime.now(tz=timezone.utc).isoformat(),
+                        "mode": "branch",
+                    },
+                },
+                "total_test_count_cache": {},
+                "last_synced_upstream_sha": None,
+            }
+        )
+    )
 
     _build_test_tree(tmp_path, 1)
 
@@ -1058,13 +1093,20 @@ def test_branch_mode_dedup_does_not_skip_when_previously_failed(
         "sys.argv",
         [
             "select_tests.py",
-            "--mode", "branch",
-            "--config", str(cfg_file),
-            "--repo", str(tmp_path),
-            "--base-ref", "origin/development",
-            "--head-ref", "HEAD",
-            "--state-file", str(state_file),
-            "--escape-threshold-pct", "100",
+            "--mode",
+            "branch",
+            "--config",
+            str(cfg_file),
+            "--repo",
+            str(tmp_path),
+            "--base-ref",
+            "origin/development",
+            "--head-ref",
+            "HEAD",
+            "--state-file",
+            str(state_file),
+            "--escape-threshold-pct",
+            "100",
         ],
     )
     code = select_tests.main()
@@ -1096,18 +1138,22 @@ def test_branch_mode_no_history_disables_dedup(
     cfg_file = _make_minimal_config_file(tmp_path)
     state_file = tmp_path / "state.json"
     # State has the commit marked as success — but --no-history should bypass dedup
-    state_file.write_text(json.dumps({
-        "version": 1,
-        "tested_commits": {
-            fake_sha: {
-                "status": "success",
-                "date": datetime.now(tz=timezone.utc).isoformat(),
-                "mode": "branch",
-            },
-        },
-        "total_test_count_cache": {},
-        "last_synced_upstream_sha": None,
-    }))
+    state_file.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "tested_commits": {
+                    fake_sha: {
+                        "status": "success",
+                        "date": datetime.now(tz=timezone.utc).isoformat(),
+                        "mode": "branch",
+                    },
+                },
+                "total_test_count_cache": {},
+                "last_synced_upstream_sha": None,
+            }
+        )
+    )
 
     _build_test_tree(tmp_path, 1)
 
@@ -1115,14 +1161,21 @@ def test_branch_mode_no_history_disables_dedup(
         "sys.argv",
         [
             "select_tests.py",
-            "--mode", "branch",
-            "--config", str(cfg_file),
-            "--repo", str(tmp_path),
-            "--base-ref", "origin/development",
-            "--head-ref", "HEAD",
-            "--state-file", str(state_file),
+            "--mode",
+            "branch",
+            "--config",
+            str(cfg_file),
+            "--repo",
+            str(tmp_path),
+            "--base-ref",
+            "origin/development",
+            "--head-ref",
+            "HEAD",
+            "--state-file",
+            str(state_file),
             "--no-history",
-            "--escape-threshold-pct", "100",
+            "--escape-threshold-pct",
+            "100",
         ],
     )
     code = select_tests.main()
@@ -1153,14 +1206,18 @@ def test_mark_success_for_preserves_existing_state(tmp_path: Path) -> None:
     new_sha = "aabbccdd" * 5
 
     # Pre-populate with an existing entry and other state keys
-    state_file.write_text(json.dumps({
-        "version": 1,
-        "tested_commits": {
-            original_sha: {"status": "success", "mode": "branch", "date": "2026-01-01T00:00:00+00:00"},
-        },
-        "total_test_count_cache": {"value": 42, "ttl_hours": 24},
-        "last_synced_upstream_sha": "oldsha",
-    }))
+    state_file.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "tested_commits": {
+                    original_sha: {"status": "success", "mode": "branch", "date": "2026-01-01T00:00:00+00:00"},
+                },
+                "total_test_count_cache": {"value": 42, "ttl_hours": 24},
+                "last_synced_upstream_sha": "oldsha",
+            }
+        )
+    )
 
     code = _handle_mark_success_for(new_sha, state_file)
     assert code == 0
@@ -1187,12 +1244,16 @@ def test_upstream_mode_no_history_skips_sha_write(
     cfg_file = _make_minimal_config_file(tmp_path)
     state_file = tmp_path / "state.json"
     # Pre-populate state file with a known SHA — should remain unchanged after run
-    state_file.write_text(json.dumps({
-        "version": 1,
-        "tested_commits": {},
-        "total_test_count_cache": {},
-        "last_synced_upstream_sha": "original_sha",
-    }))
+    state_file.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "tested_commits": {},
+                "total_test_count_cache": {},
+                "last_synced_upstream_sha": "original_sha",
+            }
+        )
+    )
 
     def fake_git(repo: Path, *args: str) -> str:
         if args[0] == "rev-parse":
@@ -1210,12 +1271,17 @@ def test_upstream_mode_no_history_skips_sha_write(
         "sys.argv",
         [
             "select_tests.py",
-            "--mode", "upstream",
-            "--config", str(cfg_file),
-            "--repo", str(tmp_path),
-            "--state-file", str(state_file),
+            "--mode",
+            "upstream",
+            "--config",
+            str(cfg_file),
+            "--repo",
+            str(tmp_path),
+            "--state-file",
+            str(state_file),
             "--no-history",
-            "--escape-threshold-pct", "100",
+            "--escape-threshold-pct",
+            "100",
         ],
     )
     code = select_tests.main()

@@ -50,6 +50,7 @@ def log(level: str, msg: str) -> None:
 # Glob matching with ** support
 # ---------------------------------------------------------------------------
 
+
 def _glob_match(path: str, pattern: str) -> bool:
     """Match path against glob pattern with ** recursive support."""
     regex_parts: list[str] = []
@@ -84,6 +85,7 @@ def _glob_match(path: str, pattern: str) -> bool:
 # Config loading
 # ---------------------------------------------------------------------------
 
+
 def load_config(path: Path) -> dict[str, Any]:
     if not path.exists():
         log("ERROR", f"Config file not found: {path}")
@@ -100,6 +102,7 @@ def load_config(path: Path) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 # State file helpers
 # ---------------------------------------------------------------------------
+
 
 def load_state(state_file: Path) -> dict[str, Any]:
     if state_file.exists():
@@ -131,6 +134,7 @@ def save_state(state_file: Path, state: dict[str, Any]) -> None:
 # ---------------------------------------------------------------------------
 # Git helpers
 # ---------------------------------------------------------------------------
+
 
 def _git(repo: Path, *args: str) -> str:
     """Run a git command and return stripped stdout. Raises on error."""
@@ -276,6 +280,7 @@ def get_changed_files(
 # ---------------------------------------------------------------------------
 # Test selection
 # ---------------------------------------------------------------------------
+
 
 def _expand_glob_pattern(pattern: str, repo: Path) -> set[Path]:
     """Expand a glob pattern relative to repo root; return existing paths."""
@@ -481,6 +486,7 @@ def select_tests(
 # Total test count
 # ---------------------------------------------------------------------------
 
+
 def compute_total_tests(
     repo: Path,
     state: dict[str, Any],
@@ -528,6 +534,7 @@ def compute_total_tests(
 # Emit selection
 # ---------------------------------------------------------------------------
 
+
 def emit_selection(
     selected: set[Path],
     total: int,
@@ -561,6 +568,7 @@ def emit_selection(
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
+
 
 def build_parser() -> argparse.ArgumentParser:
     script_dir = Path(__file__).parent
