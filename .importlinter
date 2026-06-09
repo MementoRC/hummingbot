@@ -27,6 +27,12 @@ root_packages =
     strategy_framework
     web_assistant
 
+# Stale ignore_imports lines log a warning instead of erroring. Robust against
+# path drift from in-flight migrations (e.g. web-assistant batches 4-5 moved
+# hummingbot.core.web_assistant submodule paths). Stale entries still appear
+# in cron logs for cleanup; they just don't block the gate.
+unmatched_ignore_imports_alerting = warn
+
 # ---------------------------------------------------------------------------
 # Strict sub-packages (whole package must not import hummingbot)
 # ---------------------------------------------------------------------------
