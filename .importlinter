@@ -90,9 +90,13 @@ forbidden_modules =
 # Carve-out sub-packages (only hb_compat/ may import hummingbot)
 # ---------------------------------------------------------------------------
 
-# TODO(boundary-debt): candles_feed.core.hummingbot_network_client_adapter and
-# candles_feed.integration directly import hummingbot.core.* — these are misplaced
-# adapter modules that should move into candles_feed/hb_compat/ in follow-up PRs.
+# TODO(boundary-debt): candles_feed.core.hummingbot_network_client_adapter
+# imports hummingbot.core.* inside a try/except ImportError fallback. Current
+# import-linter (2.x) doesn't traverse try-blocks so these aren't detected
+# at runtime — the ignore_imports lines below are defensive: they suppress
+# warnings if a future import-linter version starts detecting them, and they
+# document the known coupling. Real fix is to move the adapter into
+# candles_feed/hb_compat/ in a follow-up PR.
 [importlinter:contract:candles-feed-hb-isolation]
 name = candles-feed non-hb_compat modules must not import hummingbot
 type = forbidden
@@ -113,8 +117,6 @@ ignore_imports =
     candles_feed.core.hummingbot_network_client_adapter -> hummingbot.core.web_assistant.rest_assistant
     candles_feed.core.hummingbot_network_client_adapter -> hummingbot.core.web_assistant.web_assistants_factory
     candles_feed.core.hummingbot_network_client_adapter -> hummingbot.core.web_assistant.ws_assistant
-    candles_feed.integration -> hummingbot.core.api_throttler.async_throttler_base
-    candles_feed.integration -> hummingbot.core.web_assistant.web_assistants_factory
 
 [importlinter:contract:liquidations-feed-boundary]
 name = liquidations_feed source modules must not import hummingbot
