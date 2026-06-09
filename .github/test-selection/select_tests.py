@@ -29,7 +29,14 @@ from typing import Any
 try:
     import yaml
 except ImportError:
-    print("PyYAML not installed; pip install pyyaml", file=sys.stderr)
+    print(
+        "PyYAML not installed; this script must run inside the pixi default env "
+        "(pyyaml is declared at pyproject.toml line ~91). "
+        "Invoke via 'pixi run --frozen --manifest-path pyproject.toml python "
+        ".github/test-selection/select_tests.py ...' "
+        "— never call python3 directly.",
+        file=sys.stderr,
+    )
     sys.exit(1)
 
 
