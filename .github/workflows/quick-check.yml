@@ -25,6 +25,9 @@ jobs:
           cache: true
           locked: false
 
+      - name: Install editable sub-packages
+        run: pixi run -e ci install-dev
+
       - name: Branch hygiene check
         run: |
           git fetch origin ci-base --quiet
