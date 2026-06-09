@@ -511,8 +511,8 @@ class TestXRPLExchangeNetwork(XRPLExchangeTestBase, IsolatedAsyncioTestCase):
 
     async def test_get_order_by_sequence_found(self):
         """Returns the matching order when sequence matches."""
-        from hummingbot.core.data_type.common import OrderType, TradeType
-        from hummingbot.core.data_type.in_flight_order import InFlightOrder
+        from data_type_primitives.common import OrderType, TradeType
+        from data_type_primitives.in_flight_order import InFlightOrder
 
         order = InFlightOrder(
             client_order_id="hbot",
@@ -539,8 +539,8 @@ class TestXRPLExchangeNetwork(XRPLExchangeTestBase, IsolatedAsyncioTestCase):
 
     async def test_get_order_by_sequence_no_exchange_id(self):
         """Returns None when the order has no exchange_order_id."""
-        from hummingbot.core.data_type.common import OrderType, TradeType
-        from hummingbot.core.data_type.in_flight_order import InFlightOrder
+        from data_type_primitives.common import OrderType, TradeType
+        from data_type_primitives.in_flight_order import InFlightOrder
 
         order = InFlightOrder(
             client_order_id="test_order",
@@ -744,7 +744,7 @@ class TestXRPLExchangeNetwork(XRPLExchangeTestBase, IsolatedAsyncioTestCase):
         self.assertEqual(self.connector.name, CONSTANTS.EXCHANGE_NAME)
 
     def test_supported_order_types(self):
-        from hummingbot.core.data_type.common import OrderType
+        from data_type_primitives.common import OrderType
 
         types = self.connector.supported_order_types()
         self.assertIn(OrderType.LIMIT, types)

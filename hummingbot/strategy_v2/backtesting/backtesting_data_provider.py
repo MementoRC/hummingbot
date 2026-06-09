@@ -2,11 +2,11 @@ import logging
 from decimal import Decimal
 
 import pandas as pd
+from data_type_primitives.common import LazyDict, PriceType
 
 from hummingbot.client.config.config_helpers import get_connector_class
 from hummingbot.client.settings import AllConnectorSettings, ConnectorType
 from hummingbot.connector.connector_base import ConnectorBase
-from hummingbot.core.data_type.common import LazyDict, PriceType
 from hummingbot.data_feed.candles_feed.candles_base import CandlesBase
 from hummingbot.data_feed.candles_feed.candles_factory import CandlesFactory
 from hummingbot.data_feed.candles_feed.data_types import CandlesConfig, HistoricalCandlesConfig

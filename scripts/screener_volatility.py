@@ -2,11 +2,11 @@ import os
 
 import pandas as pd
 import pandas_ta as ta  # noqa: F401
+from data_type_primitives.common import MarketDict
 from pydantic import Field
 
 from hummingbot.client.ui.interface_utils import format_df_for_printout
 from hummingbot.connector.connector_base import ConnectorBase, Dict
-from hummingbot.core.data_type.common import MarketDict
 from hummingbot.data_feed.candles_feed.candles_factory import CandlesFactory
 from hummingbot.data_feed.candles_feed.data_types import CandlesConfig
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base, StrategyV2ConfigBase

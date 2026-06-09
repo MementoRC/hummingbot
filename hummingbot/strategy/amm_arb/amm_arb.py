@@ -7,14 +7,14 @@ from functools import lru_cache
 from typing import Callable, cast
 
 import pandas as pd
+from data_type_primitives.limit_order import LimitOrder
+from data_type_primitives.trade_fee import TokenAmount
 
 from hummingbot.client.performance import PerformanceMetrics
 from hummingbot.client.settings import AllConnectorSettings
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.clock import Clock
-from hummingbot.core.data_type.limit_order import LimitOrder
 from hummingbot.core.data_type.market_order import MarketOrder
-from hummingbot.core.data_type.trade_fee import TokenAmount
 from hummingbot.core.event.events import (
     BuyOrderCompletedEvent,
     MarketOrderFailureEvent,

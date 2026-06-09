@@ -8,14 +8,14 @@ from typing import List, Tuple
 
 import pandas as pd
 from bidict import bidict
+from data_type_primitives.common import OrderType, TradeType
+from data_type_primitives.limit_order import LimitOrder
+from data_type_primitives.trade_fee import TokenAmount
 
 from hummingbot.client.performance import PerformanceMetrics
 from hummingbot.client.settings import AllConnectorSettings
 from hummingbot.connector.exchange_base import ExchangeBase
 from hummingbot.core.clock import Clock
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.limit_order import LimitOrder
-from hummingbot.core.data_type.trade_fee import TokenAmount
 from hummingbot.core.event.events import (
     BuyOrderCompletedEvent,
     MarketOrderFailureEvent,

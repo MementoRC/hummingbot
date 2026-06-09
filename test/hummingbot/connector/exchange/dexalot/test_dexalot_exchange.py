@@ -11,6 +11,9 @@ from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
 from aioresponses.core import RequestCall
+from data_type_primitives.common import OrderType, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder, OrderState
+from data_type_primitives.trade_fee import DeductedFromReturnsTradeFee, TokenAmount, TradeFeeBase
 
 from hummingbot.connector.exchange.dexalot import dexalot_constants as CONSTANTS, dexalot_web_utils as web_utils
 from hummingbot.connector.exchange.dexalot.dexalot_exchange import DexalotExchange
@@ -18,11 +21,8 @@ from hummingbot.connector.test_support.exchange_connector_test import AbstractEx
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.connector.utils import combine_to_hb_trading_pair
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState
 from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_row import OrderBookRow
-from hummingbot.core.data_type.trade_fee import DeductedFromReturnsTradeFee, TokenAmount, TradeFeeBase
 
 
 class DexalotExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests):

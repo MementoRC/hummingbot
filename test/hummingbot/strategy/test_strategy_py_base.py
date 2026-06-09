@@ -5,9 +5,10 @@ from collections import deque
 from decimal import Decimal
 from typing import Union
 
+from data_type_primitives.common import OrderType, TradeType
+from data_type_primitives.limit_order import LimitOrder
+
 from hummingbot.connector.test_support.mock_paper_exchange import MockPaperExchange
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.limit_order import LimitOrder
 from hummingbot.core.data_type.market_order import MarketOrder
 from hummingbot.core.event.events import (
     BuyOrderCompletedEvent,

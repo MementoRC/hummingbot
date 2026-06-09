@@ -1,8 +1,8 @@
 import pandas as pd
 import pandas_ta as ta  # noqa: F401
+from data_type_primitives.common import MarketDict
 from pydantic import Field, field_validator
 
-from hummingbot.core.data_type.common import MarketDict
 from hummingbot.data_feed.candles_feed.data_types import CandlesConfig
 from hummingbot.strategy_v2.controllers import ControllerBase, ControllerConfigBase
 from hummingbot.strategy_v2.models.executor_actions import ExecutorAction

@@ -7,13 +7,13 @@ from decimal import Decimal
 from typing import Any, Dict
 
 import pandas as pd
+from data_type_primitives.common import MarketDict, OrderType, TradeType
 from pydantic import Field
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.connector.exchange.xrpl.xrpl_exchange import XrplExchange
 from hummingbot.connector.exchange.xrpl.xrpl_utils import PoolInfo
 from hummingbot.connector.exchange_py_base import ExchangePyBase
-from hummingbot.core.data_type.common import MarketDict, OrderType, TradeType
 from hummingbot.core.data_type.order_candidate import OrderCandidate
 from hummingbot.core.event.events import OrderFilledEvent
 from hummingbot.core.utils.async_utils import safe_ensure_future

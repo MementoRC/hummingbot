@@ -8,6 +8,10 @@ from typing import Any, AsyncGenerator, AsyncIterable, Iterable
 
 from async_timeout import timeout
 from bidict import bidict
+from data_type_primitives.cancellation_result import CancellationResult
+from data_type_primitives.common import OrderType, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder, OrderState, OrderUpdate, TradeUpdate
+from data_type_primitives.trade_fee import AddedToCostTradeFee, TokenAmount, TradeFeeBase
 from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 import hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_trade_constants as constants
@@ -32,12 +36,8 @@ from hummingbot.connector.exchange_py_base import ExchangePyBase
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.connector.utils import TradeFillOrderDetails
-from hummingbot.core.data_type.cancellation_result import CancellationResult
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState, OrderUpdate, TradeUpdate
 from hummingbot.core.data_type.order_book_message import OrderBookMessage
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
-from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee, TokenAmount, TradeFeeBase
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.event.events import MarketEvent, OrderFilledEvent
 from hummingbot.core.utils.async_utils import safe_gather

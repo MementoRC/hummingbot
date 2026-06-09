@@ -2,7 +2,8 @@ import asyncio
 from abc import ABC, abstractmethod
 from typing import Any
 
-from hummingbot.core.data_type.funding_info import FundingInfo
+from data_type_primitives.funding_info import FundingInfo
+
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
 
 

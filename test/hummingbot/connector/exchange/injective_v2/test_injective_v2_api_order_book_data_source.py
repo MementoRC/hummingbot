@@ -9,6 +9,7 @@ from unittest import TestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from bidict import bidict
+from data_type_primitives.common import TradeType
 from pyinjective.composer_v2 import Composer
 from pyinjective.core.market_v2 import SpotMarket
 from pyinjective.core.token import Token
@@ -25,7 +26,6 @@ from hummingbot.connector.exchange.injective_v2.injective_v2_utils import (
     InjectiveMessageBasedTransactionFeeCalculatorMode,
     InjectiveTestnetNetworkMode,
 )
-from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 
 

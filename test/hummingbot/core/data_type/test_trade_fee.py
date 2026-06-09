@@ -2,9 +2,9 @@ from decimal import Decimal
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
-from hummingbot.core.data_type.common import PositionAction, TradeType
-from hummingbot.core.data_type.in_flight_order import TradeUpdate
-from hummingbot.core.data_type.trade_fee import (
+from data_type_primitives.common import PositionAction, TradeType
+from data_type_primitives.in_flight_order import TradeUpdate
+from data_type_primitives.trade_fee import (
     AddedToCostTradeFee,
     DeductedFromReturnsTradeFee,
     TokenAmount,

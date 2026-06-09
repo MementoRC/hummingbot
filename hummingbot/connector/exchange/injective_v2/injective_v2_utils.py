@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 from decimal import Decimal
 from typing import TYPE_CHECKING, Dict, Literal, Union
 
+from data_type_primitives.trade_fee import TradeFeeSchema
 from pydantic import ConfigDict, Field, SecretStr, field_validator
 from pyinjective.async_client_v2 import AsyncClient
 from pyinjective.composer_v2 import Composer
@@ -25,7 +26,6 @@ from hummingbot.connector.exchange.injective_v2.data_sources.injective_read_only
     InjectiveReadOnlyDataSource,
 )
 from hummingbot.core.api_throttler.data_types import RateLimit
-from hummingbot.core.data_type.trade_fee import TradeFeeSchema
 
 if TYPE_CHECKING:
     from hummingbot.connector.exchange.injective_v2.data_sources.injective_data_source import InjectiveDataSource

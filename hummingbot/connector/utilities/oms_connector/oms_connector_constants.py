@@ -1,6 +1,7 @@
+from data_type_primitives.common import OrderType, TradeType
+from data_type_primitives.in_flight_order import OrderState
+
 from hummingbot.core.api_throttler.data_types import LinkedLimitWeightPair, RateLimit
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.in_flight_order import OrderState
 
 MAX_ID_BIT_COUNT = 63  # experimentally, 64 bit ints sometimes result in OMS assigning order IDs of zero
 MAX_ORDER_NOT_FOUND_ON_CANCEL = 2

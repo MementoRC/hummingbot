@@ -10,6 +10,9 @@ from typing import Any, Callable
 import pandas as pd
 from aioresponses.core import aioresponses
 from bidict import bidict
+from data_type_primitives.common import OrderType, PositionAction, PositionMode, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder
+from data_type_primitives.trade_fee import TradeFeeSchema
 
 import hummingbot.connector.derivative.pacifica_perpetual.pacifica_perpetual_constants as CONSTANTS
 import hummingbot.connector.derivative.pacifica_perpetual.pacifica_perpetual_web_utils as web_utils
@@ -21,9 +24,6 @@ from hummingbot.connector.derivative.pacifica_perpetual.pacifica_perpetual_deriv
     PacificaPerpetualPriceRecord,
 )
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
-from hummingbot.core.data_type.common import OrderType, PositionAction, PositionMode, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder
-from hummingbot.core.data_type.trade_fee import TradeFeeSchema
 from hummingbot.core.event.event_logger import EventLogger
 from hummingbot.core.event.events import MarketEvent
 from hummingbot.core.network_iterator import NetworkStatus

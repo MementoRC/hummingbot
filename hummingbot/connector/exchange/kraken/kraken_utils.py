@@ -3,13 +3,13 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Tuple
 
+from data_type_primitives.trade_fee import TradeFeeSchema
 from pydantic import ConfigDict, Field, SecretStr, field_validator
 
 import hummingbot.connector.exchange.kraken.kraken_constants as CONSTANTS
 from hummingbot.client.config.config_data_types import BaseConnectorConfigMap
 from hummingbot.connector.exchange.kraken.kraken_constants import KrakenAPITier
 from hummingbot.core.api_throttler.data_types import LinkedLimitWeightPair, RateLimit
-from hummingbot.core.data_type.trade_fee import TradeFeeSchema
 
 CENTRALIZED = True
 

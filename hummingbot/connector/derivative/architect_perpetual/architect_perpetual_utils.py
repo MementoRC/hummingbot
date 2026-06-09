@@ -1,10 +1,10 @@
 from decimal import Decimal
 
+from data_type_primitives.trade_fee import TradeFeeSchema
 from pydantic import ConfigDict, Field, SecretStr
 
 from hummingbot.client.config.config_data_types import BaseConnectorConfigMap
 from hummingbot.connector.derivative.architect_perpetual import architect_perpetual_constants as CONSTANTS
-from hummingbot.core.data_type.trade_fee import TradeFeeSchema
 
 DEFAULT_FEES = TradeFeeSchema(  # https://architect.co/legal/ax-pricing-policy section 5
     maker_percent_fee_decimal=Decimal("0.0002"),

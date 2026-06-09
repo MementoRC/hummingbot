@@ -2,12 +2,12 @@ from abc import ABC, abstractmethod
 from decimal import Decimal
 from typing import Dict, Union
 
+from data_type_primitives.trade_fee import TokenAmount
 from pydantic import ConfigDict, Field, field_validator
 
 from hummingbot.client.config.config_data_types import BaseClientModel
 from hummingbot.client.config.config_validators import validate_bool
 from hummingbot.client.config.strategy_config_data_types import BaseTradingStrategyMakerTakerConfigMap
-from hummingbot.core.data_type.trade_fee import TokenAmount
 from hummingbot.core.rate_oracle.rate_oracle import RateOracle
 from hummingbot.strategy.maker_taker_market_pair import MakerTakerMarketPair
 

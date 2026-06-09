@@ -8,6 +8,7 @@ from typing import Awaitable, Union
 from unittest import TestCase
 from unittest.mock import patch
 
+from data_type_primitives.common import OrderType, TradeType
 from pyinjective.composer_v2 import Composer
 from pyinjective.core.market_v2 import SpotMarket
 from pyinjective.core.network import Network
@@ -26,7 +27,6 @@ from hummingbot.connector.exchange.injective_v2.injective_v2_utils import (
     InjectiveMessageBasedTransactionFeeCalculatorMode,
 )
 from hummingbot.connector.gateway.gateway_in_flight_order import GatewayInFlightOrder
-from hummingbot.core.data_type.common import OrderType, TradeType
 
 
 class InjectiveGranteeDataSourceTests(TestCase):

@@ -1,7 +1,8 @@
 from decimal import Decimal
 from test.hummingbot.strategy_v2.executors.executor_integration_test_base import ExecutorIntegrationTestBase
 
-from hummingbot.core.data_type.common import OrderType, TradeType
+from data_type_primitives.common import OrderType, TradeType
+
 from hummingbot.strategy_v2.executors.progressive_executor.data_types import (
     LadderedTrailingStop,
     ProgressiveExecutorConfig,

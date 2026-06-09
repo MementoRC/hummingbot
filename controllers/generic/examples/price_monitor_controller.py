@@ -1,6 +1,6 @@
+from data_type_primitives.common import MarketDict, PriceType
 from pydantic import Field
 
-from hummingbot.core.data_type.common import MarketDict, PriceType
 from hummingbot.strategy_v2.controllers import ControllerBase, ControllerConfigBase
 from hummingbot.strategy_v2.models.executor_actions import ExecutorAction
 

@@ -1,10 +1,11 @@
 import unittest
 from decimal import Decimal
 
+from data_type_primitives.common import OrderType, TradeType
+from data_type_primitives.trade_fee import AddedToCostTradeFee
+
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee
 from hummingbot.core.event.events import OrderFilledEvent
 from hummingbot.model.inventory_cost import InventoryCost
 from hummingbot.model.sql_connection_manager import SQLConnectionManager, SQLConnectionType

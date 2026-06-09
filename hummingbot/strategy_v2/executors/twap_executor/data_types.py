@@ -4,9 +4,9 @@ from decimal import Decimal
 from enum import Enum
 from typing import Literal
 
+from data_type_primitives.common import OrderType, TradeType
 from pydantic import field_validator
 
-from hummingbot.core.data_type.common import OrderType, TradeType
 from hummingbot.strategy_v2.executors.data_types import ExecutorConfigBase
 
 

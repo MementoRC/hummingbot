@@ -16,13 +16,13 @@ import asyncio
 from decimal import Decimal
 from typing import Any, Dict, Union
 
+from data_type_primitives.common import LPType, OrderType, PriceType, TradeType
+from data_type_primitives.in_flight_order import OrderState, OrderUpdate, TradeUpdate
+from data_type_primitives.trade_fee import AddedToCostTradeFee, TokenAmount, TradeFeeBase
 from pydantic import BaseModel, Field
 
 from hummingbot.connector.gateway.gateway_base import GatewayBase
 from hummingbot.connector.gateway.gateway_in_flight_order import GatewayInFlightOrder
-from hummingbot.core.data_type.common import LPType, OrderType, PriceType, TradeType
-from hummingbot.core.data_type.in_flight_order import OrderState, OrderUpdate, TradeUpdate
-from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee, TokenAmount, TradeFeeBase
 from hummingbot.core.event.events import (
     MarketEvent,
     RangePositionLiquidityAddedEvent,

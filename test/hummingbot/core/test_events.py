@@ -1,8 +1,9 @@
 from decimal import Decimal
 from unittest import TestCase
 
+from data_type_primitives.trade_fee import AddedToCostTradeFee
+
 from hummingbot.core.data_type.order_book_row import OrderBookRow
-from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee
 from hummingbot.core.event.events import OrderFilledEvent, OrderType, TradeType
 
 

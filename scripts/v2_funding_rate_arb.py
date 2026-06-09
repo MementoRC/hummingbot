@@ -3,12 +3,12 @@ from decimal import Decimal
 from typing import Dict
 
 import pandas as pd
+from data_type_primitives.common import MarketDict, OrderType, PositionAction, PositionMode, PriceType, TradeType
 from pydantic import Field, field_validator
 
 from hummingbot.client.ui.interface_utils import format_df_for_printout
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.clock import Clock
-from hummingbot.core.data_type.common import MarketDict, OrderType, PositionAction, PositionMode, PriceType, TradeType
 from hummingbot.core.event.events import FundingPaymentCompletedEvent
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base, StrategyV2ConfigBase
 from hummingbot.strategy_v2.executors.position_executor.data_types import PositionExecutorConfig, TripleBarrierConfig

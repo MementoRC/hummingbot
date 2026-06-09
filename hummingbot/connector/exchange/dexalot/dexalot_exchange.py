@@ -8,6 +8,11 @@ from typing import Any, Dict, List, Tuple
 import dateutil.parser as dp
 from async_timeout import timeout
 from bidict import bidict
+from data_type_primitives.cancellation_result import CancellationResult
+from data_type_primitives.common import OrderType, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder, OrderState, OrderUpdate, TradeUpdate
+from data_type_primitives.limit_order import LimitOrder
+from data_type_primitives.trade_fee import TokenAmount, TradeFeeBase
 from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 from hummingbot.connector.constants import s_decimal_NaN
@@ -24,12 +29,7 @@ from hummingbot.connector.exchange_py_base import ExchangePyBase
 from hummingbot.connector.gateway.gateway_in_flight_order import GatewayInFlightOrder
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.connector.utils import combine_to_hb_trading_pair, get_new_client_order_id
-from hummingbot.core.data_type.cancellation_result import CancellationResult
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState, OrderUpdate, TradeUpdate
-from hummingbot.core.data_type.limit_order import LimitOrder
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
-from hummingbot.core.data_type.trade_fee import TokenAmount, TradeFeeBase
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.core.utils.estimate_fee import build_trade_fee

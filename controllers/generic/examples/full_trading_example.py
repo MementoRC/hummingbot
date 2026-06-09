@@ -1,6 +1,7 @@
 from decimal import Decimal
 
-from hummingbot.core.data_type.common import MarketDict, PriceType
+from data_type_primitives.common import MarketDict, PriceType
+
 from hummingbot.strategy_v2.controllers import ControllerBase, ControllerConfigBase
 from hummingbot.strategy_v2.executors.order_executor.data_types import ExecutionStrategy, LimitChaserConfig
 from hummingbot.strategy_v2.executors.position_executor.data_types import TripleBarrierConfig

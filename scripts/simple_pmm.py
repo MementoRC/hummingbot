@@ -2,10 +2,10 @@ import logging
 import os
 from decimal import Decimal
 
+from data_type_primitives.common import MarketDict, OrderType, PriceType, TradeType
 from pydantic import Field
 
 from hummingbot.connector.connector_base import ConnectorBase
-from hummingbot.core.data_type.common import MarketDict, OrderType, PriceType, TradeType
 from hummingbot.core.data_type.order_candidate import OrderCandidate
 from hummingbot.core.event.events import OrderFilledEvent
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base, StrategyV2ConfigBase

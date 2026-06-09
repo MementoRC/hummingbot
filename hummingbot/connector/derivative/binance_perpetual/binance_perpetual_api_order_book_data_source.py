@@ -6,10 +6,11 @@ from collections import defaultdict
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any, Mapping
 
+from data_type_primitives.common import TradeType
+from data_type_primitives.funding_info import FundingInfo, FundingInfoUpdate
+
 import hummingbot.connector.derivative.binance_perpetual.binance_perpetual_constants as CONSTANTS
 import hummingbot.connector.derivative.binance_perpetual.binance_perpetual_web_utils as web_utils
-from hummingbot.core.data_type.common import TradeType
-from hummingbot.core.data_type.funding_info import FundingInfo, FundingInfoUpdate
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 from hummingbot.core.data_type.perpetual_api_order_book_data_source import PerpetualAPIOrderBookDataSource
 from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest

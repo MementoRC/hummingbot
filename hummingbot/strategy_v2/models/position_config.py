@@ -1,8 +1,8 @@
 from decimal import Decimal
 
+from data_type_primitives.common import TradeType
 from pydantic import BaseModel, ConfigDict, field_validator
 
-from hummingbot.core.data_type.common import TradeType
 from hummingbot.strategy_v2.utils.common import parse_enum_value
 
 

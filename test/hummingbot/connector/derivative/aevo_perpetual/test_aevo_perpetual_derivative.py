@@ -5,16 +5,16 @@ from unittest import TestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from bidict import bidict
+from data_type_primitives.common import OrderType, PositionAction, PositionMode, PositionSide, PriceType, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder, OrderState
+from data_type_primitives.trade_fee import TokenAmount
 
 import hummingbot.connector.derivative.aevo_perpetual.aevo_perpetual_constants as CONSTANTS
 import hummingbot.connector.derivative.aevo_perpetual.aevo_perpetual_web_utils as web_utils
 from hummingbot.connector.derivative.aevo_perpetual.aevo_perpetual_derivative import AevoPerpetualDerivative
 from hummingbot.connector.derivative.position import Position
 from hummingbot.connector.trading_rule import TradingRule
-from hummingbot.core.data_type.common import OrderType, PositionAction, PositionMode, PositionSide, PriceType, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
-from hummingbot.core.data_type.trade_fee import TokenAmount
 
 
 class AevoPerpetualDerivativeTests(TestCase):

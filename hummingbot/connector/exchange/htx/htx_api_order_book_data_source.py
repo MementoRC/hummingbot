@@ -4,11 +4,11 @@ import asyncio
 import uuid
 from typing import TYPE_CHECKING, Any, Dict
 
+from data_type_primitives.common import TradeType
 from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 import hummingbot.connector.exchange.htx.htx_constants as CONSTANTS
 from hummingbot.connector.exchange.htx.htx_web_utils import public_rest_url
-from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod, WSJSONRequest

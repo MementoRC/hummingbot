@@ -3,6 +3,7 @@ from decimal import Decimal
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
+from data_type_primitives.common import TradeType
 from xrpl.models import XRP, IssuedCurrency
 from xrpl.models.response import Response, ResponseStatus, ResponseType
 
@@ -11,7 +12,6 @@ from hummingbot.connector.exchange.xrpl.xrpl_api_order_book_data_source import X
 from hummingbot.connector.exchange.xrpl.xrpl_exchange import XrplExchange
 from hummingbot.connector.exchange.xrpl.xrpl_worker_pool import QueryResult
 from hummingbot.connector.trading_rule import TradingRule
-from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.data_type.order_book import OrderBook
 
 

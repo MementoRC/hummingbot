@@ -7,11 +7,12 @@ from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCa
 from test.mock.mock_cli import CLIMockingAssistant
 from unittest.mock import patch
 
+from data_type_primitives.trade_fee import AddedToCostTradeFee
+
 from hummingbot.client.config.client_config_map import ClientConfigMap, DBSqliteMode
 from hummingbot.client.config.config_helpers import ClientConfigAdapter, read_system_configs_from_yml
 from hummingbot.client.hummingbot_application import HummingbotApplication
 from hummingbot.connector.exchange.paper_trade import PaperTradeExchange
-from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee
 from hummingbot.model.order import Order
 from hummingbot.model.sql_connection_manager import SQLConnectionManager
 from hummingbot.model.trade_fill import TradeFill

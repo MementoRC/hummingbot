@@ -3,6 +3,7 @@ from decimal import Decimal
 from test.mock.mock_perp_connector import MockPerpConnector
 
 import pandas as pd
+from data_type_primitives.common import PositionMode, PositionSide
 
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
@@ -10,7 +11,6 @@ from hummingbot.connector.derivative.position import Position
 from hummingbot.connector.test_support.mock_paper_exchange import MockPaperExchange
 from hummingbot.core.clock import Clock
 from hummingbot.core.clock_mode import ClockMode
-from hummingbot.core.data_type.common import PositionMode, PositionSide
 from hummingbot.strategy.hedge.hedge import HedgeStrategy
 from hummingbot.strategy.hedge.hedge_config_map_pydantic import HedgeConfigMap
 from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple

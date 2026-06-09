@@ -1,9 +1,9 @@
 from decimal import Decimal
 
 import numpy as np
+from data_type_primitives.common import OrderType, PositionAction, PositionMode, PriceType, TradeType
 from sklearn.linear_model import LinearRegression
 
-from hummingbot.core.data_type.common import OrderType, PositionAction, PositionMode, PriceType, TradeType
 from hummingbot.data_feed.candles_feed.data_types import CandlesConfig
 from hummingbot.strategy_v2.controllers import ControllerBase, ControllerConfigBase
 from hummingbot.strategy_v2.executors.data_types import ConnectorPair, PositionSummary

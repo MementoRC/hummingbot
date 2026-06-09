@@ -2,9 +2,9 @@ from decimal import Decimal
 from typing import Union
 
 import pandas_ta as ta  # noqa: F401
+from data_type_primitives.common import OrderType, PositionMode, PriceType, TradeType
 from pydantic import Field, field_validator
 
-from hummingbot.core.data_type.common import OrderType, PositionMode, PriceType, TradeType
 from hummingbot.data_feed.candles_feed.data_types import CandlesConfig
 from hummingbot.strategy_v2.controllers import ControllerBase, ControllerConfigBase
 from hummingbot.strategy_v2.executors.data_types import ConnectorPair

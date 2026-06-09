@@ -1,18 +1,19 @@
 from __future__ import annotations
+
 import asyncio
 import time
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any, Union
 
 import pandas as pd
+from data_type_primitives.common import TradeType
+from data_type_primitives.funding_info import FundingInfo, FundingInfoUpdate
 from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 from hummingbot.connector.derivative.kucoin_perpetual import (
     kucoin_perpetual_constants as CONSTANTS,
     kucoin_perpetual_web_utils as web_utils,
 )
-from hummingbot.core.data_type.common import TradeType
-from hummingbot.core.data_type.funding_info import FundingInfo, FundingInfoUpdate
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 from hummingbot.core.data_type.perpetual_api_order_book_data_source import PerpetualAPIOrderBookDataSource
 from hummingbot.core.utils.tracking_nonce import NonceCreator

@@ -2,6 +2,8 @@ import unittest
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from data_type_primitives.common import OrderType, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder, OrderState
 from xrpl.models import XRP, IssuedCurrencyAmount, PaymentFlag
 from xrpl.utils import xrp_to_drops
 
@@ -14,8 +16,6 @@ from hummingbot.connector.exchange.xrpl.xrpl_order_placement_strategy import (
     OrderPlacementStrategyFactory,
     XRPLOrderPlacementStrategy,
 )
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState
 
 
 class TestXRPLOrderPlacementStrategy(unittest.IsolatedAsyncioTestCase):

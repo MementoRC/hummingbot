@@ -8,6 +8,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pandas as pd
 from bidict import bidict
+from data_type_primitives.common import OrderType, PositionAction, PositionMode, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder, OrderState
 
 import hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_constants as CONSTANTS
 from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_api_order_book_data_source import (
@@ -15,8 +17,6 @@ from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_api_ord
 )
 from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_derivative import DecibelPerpetualDerivative
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
-from hummingbot.core.data_type.common import OrderType, PositionAction, PositionMode, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState
 from hummingbot.core.event.event_logger import EventLogger
 from hummingbot.core.event.events import MarketEvent
 from hummingbot.core.network_iterator import NetworkStatus
@@ -355,7 +355,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
 
     async def test_update_trading_fees_keeps_previous_on_error(self):
         """Transient API failures should not wipe a previously computed schema."""
-        from hummingbot.core.data_type.trade_fee import TradeFeeSchema
+        from data_type_primitives.trade_fee import TradeFeeSchema
 
         previous = TradeFeeSchema(
             maker_percent_fee_decimal=Decimal("0.00009"),
@@ -574,7 +574,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
 
     def test_get_fee_uses_trading_fees_when_populated(self):
         """When _trading_fees has a schema, _get_fee should use the tier-specific rate."""
-        from hummingbot.core.data_type.trade_fee import TradeFeeSchema
+        from data_type_primitives.trade_fee import TradeFeeSchema
 
         tier1_schema = TradeFeeSchema(
             maker_percent_fee_decimal=Decimal("0.00009"),
@@ -597,7 +597,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
 
     def test_get_fee_maker_with_trading_fees_populated(self):
         """_get_fee should use maker rate when _trading_fees is populated and order is LIMIT_MAKER."""
-        from hummingbot.core.data_type.trade_fee import TradeFeeSchema
+        from data_type_primitives.trade_fee import TradeFeeSchema
 
         tier1_schema = TradeFeeSchema(
             maker_percent_fee_decimal=Decimal("0.00009"),

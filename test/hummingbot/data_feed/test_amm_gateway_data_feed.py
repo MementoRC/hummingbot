@@ -105,7 +105,7 @@ class TestAmmGatewayDataFeed(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest)
     @patch("hummingbot.data_feed.amm_gateway_data_feed.AmmGatewayDataFeed.gateway_client", new_callable=AsyncMock)
     async def test_request_token_price_returns_none(self, gateway_client_mock: AsyncMock):
         # Test line 151: _request_token_price returns None when price is not in response
-        from hummingbot.core.data_type.common import TradeType
+        from data_type_primitives.common import TradeType
 
         # get_dex_info returns (dex_name, trading_type, chain, network, error)
         gateway_client_mock.get_dex_info.return_value = ("uniswap", "amm", "ethereum", "mainnet", None)
@@ -170,7 +170,7 @@ class TestAmmGatewayDataFeed(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest)
     @patch("hummingbot.data_feed.amm_gateway_data_feed.AmmGatewayDataFeed.gateway_client", new_callable=AsyncMock)
     async def test_request_token_price_chain_network_error(self, gateway_client_mock: AsyncMock):
         # Test lines 168-169: Chain/network lookup failure
-        from hummingbot.core.data_type.common import TradeType
+        from data_type_primitives.common import TradeType
 
         # Create a fresh instance for this test
         test_feed = AmmGatewayDataFeed(

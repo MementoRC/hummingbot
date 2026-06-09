@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from hummingbot.core.data_type.common import PositionSide
+from data_type_primitives.common import PositionSide
 
 
 class Position:

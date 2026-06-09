@@ -11,6 +11,7 @@ from random import randrange
 from typing import Final, cast
 from urllib.parse import urlparse
 
+from data_type_primitives.trade_fee import TradeFeeSchema
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 from xrpl.asyncio.account import get_next_valid_seq_number
 from xrpl.asyncio.clients import AsyncWebsocketClient, Client, XRPLRequestFailureException
@@ -32,7 +33,6 @@ from yaml.representer import SafeRepresenter
 from hummingbot.client.config.config_data_types import BaseConnectorConfigMap
 from hummingbot.client.config.config_validators import validate_with_regex
 from hummingbot.connector.exchange.xrpl import xrpl_constants as CONSTANTS
-from hummingbot.core.data_type.trade_fee import TradeFeeSchema
 from hummingbot.logger import HummingbotLogger
 
 CENTRALIZED = True

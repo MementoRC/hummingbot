@@ -11,6 +11,8 @@ from typing import Any, Callable, Dict, List, Set
 import numpy as np
 import pandas as pd
 import yaml
+from data_type_primitives.common import MarketDict, PositionMode
+from data_type_primitives.limit_order import LimitOrder
 from pydantic import BaseModel, Field, field_validator
 from remote_iface import ETopicPublisher
 
@@ -21,8 +23,6 @@ from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.connector.markets_recorder import MarketsRecorder
 from hummingbot.connector.utils import split_hb_trading_pair
 from hummingbot.core.clock import Clock
-from hummingbot.core.data_type.common import MarketDict, PositionMode
-from hummingbot.core.data_type.limit_order import LimitOrder
 from hummingbot.core.event.events import OrderType, PositionAction
 from hummingbot.data_feed.candles_feed.data_types import CandlesConfig
 from hummingbot.data_feed.market_data_provider import MarketDataProvider

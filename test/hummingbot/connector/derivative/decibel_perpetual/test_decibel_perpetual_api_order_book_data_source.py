@@ -4,6 +4,8 @@ from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCa
 from unittest.mock import AsyncMock, MagicMock
 
 import aiohttp
+from data_type_primitives.common import TradeType
+from data_type_primitives.funding_info import FundingInfo, FundingInfoUpdate
 
 from hummingbot.connector.derivative.decibel_perpetual import decibel_perpetual_constants as CONSTANTS
 from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_api_order_book_data_source import (
@@ -11,8 +13,6 @@ from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_api_ord
 )
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
-from hummingbot.core.data_type.common import TradeType
-from hummingbot.core.data_type.funding_info import FundingInfo, FundingInfoUpdate
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 from hummingbot.core.web_assistant.connections.rest_connection import RESTConnection
 from hummingbot.core.web_assistant.connections.ws_connection import WSConnection

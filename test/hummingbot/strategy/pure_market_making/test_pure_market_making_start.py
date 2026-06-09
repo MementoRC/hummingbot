@@ -3,11 +3,12 @@ from decimal import Decimal
 from test.hummingbot.strategy import assign_config_default
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
+from data_type_primitives.common import PriceType
+
 import hummingbot.strategy.pure_market_making.start as strategy_start
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
 from hummingbot.connector.exchange_base import ExchangeBase
-from hummingbot.core.data_type.common import PriceType
 from hummingbot.strategy.pure_market_making.pure_market_making_config_map import pure_market_making_config_map as c_map
 
 

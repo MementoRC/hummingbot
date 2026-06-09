@@ -22,10 +22,11 @@ from test.hummingbot.connector.exchange.xrpl.test_xrpl_exchange_base import XRPL
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, patch
 
+from data_type_primitives.common import OrderType, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder, OrderState, OrderUpdate, TradeUpdate
+from data_type_primitives.trade_fee import AddedToCostTradeFee
+
 from hummingbot.connector.exchange.xrpl import xrpl_constants as CONSTANTS
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState, OrderUpdate, TradeUpdate
-from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee
 
 
 class TestXRPLExchangeOrderStatus(XRPLExchangeTestBase, IsolatedAsyncioTestCase):

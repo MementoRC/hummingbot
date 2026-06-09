@@ -6,9 +6,10 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Dict
 
+from data_type_primitives.common import OrderType, PositionAction, TradeType
+from data_type_primitives.trade_fee import TokenAmount, TradeFeeBase
+
 from hummingbot.connector.utils import combine_to_hb_trading_pair, split_hb_trading_pair
-from hummingbot.core.data_type.common import OrderType, PositionAction, TradeType
-from hummingbot.core.data_type.trade_fee import TokenAmount, TradeFeeBase
 from hummingbot.core.utils.estimate_fee import build_perpetual_trade_fee, build_trade_fee
 
 if typing.TYPE_CHECKING:  # avoid circular import problems

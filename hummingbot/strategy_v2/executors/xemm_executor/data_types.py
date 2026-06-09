@@ -1,7 +1,8 @@
 from decimal import Decimal
 from typing import Literal
 
-from hummingbot.core.data_type.common import TradeType
+from data_type_primitives.common import TradeType
+
 from hummingbot.strategy_v2.executors.data_types import ConnectorPair, ExecutorConfigBase
 
 

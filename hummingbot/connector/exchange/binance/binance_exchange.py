@@ -5,6 +5,9 @@ from decimal import Decimal
 from typing import Any
 
 from bidict import bidict
+from data_type_primitives.common import OrderType, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder, OrderUpdate, TradeUpdate
+from data_type_primitives.trade_fee import DeductedFromReturnsTradeFee, TokenAmount, TradeFeeBase
 from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 from hummingbot.connector.constants import s_decimal_NaN
@@ -19,10 +22,7 @@ from hummingbot.connector.exchange.binance.binance_auth import BinanceAuth
 from hummingbot.connector.exchange_py_base import ExchangePyBase
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.connector.utils import TradeFillOrderDetails, combine_to_hb_trading_pair
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderUpdate, TradeUpdate
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
-from hummingbot.core.data_type.trade_fee import DeductedFromReturnsTradeFee, TokenAmount, TradeFeeBase
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.event.events import MarketEvent, OrderFilledEvent
 from hummingbot.core.utils.async_utils import safe_gather

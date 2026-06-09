@@ -5,9 +5,10 @@ import logging
 import typing
 from decimal import Decimal
 
+from data_type_primitives.common import PriceType
+
 import hummingbot.client.settings  # noqa
 from hummingbot.connector.utils import combine_to_hb_trading_pair, split_hb_trading_pair
-from hummingbot.core.data_type.common import PriceType
 from hummingbot.core.network_base import NetworkBase
 
 if typing.TYPE_CHECKING:  # avoid circular import problems

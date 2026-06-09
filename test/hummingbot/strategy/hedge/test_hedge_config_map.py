@@ -4,11 +4,11 @@ from pathlib import Path
 from unittest.mock import patch
 
 import yaml
+from data_type_primitives.trade_fee import TradeFeeSchema
 
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
 from hummingbot.client.config.config_var import ConfigVar
 from hummingbot.client.settings import ConnectorSetting, ConnectorType
-from hummingbot.core.data_type.trade_fee import TradeFeeSchema
 from hummingbot.strategy.hedge.hedge_config_map_pydantic import HedgeConfigMap, MarketConfigMap
 
 

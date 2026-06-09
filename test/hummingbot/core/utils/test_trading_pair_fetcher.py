@@ -6,6 +6,7 @@ from typing import Any, Awaitable
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses import aioresponses
+from data_type_primitives.trade_fee import TradeFeeSchema
 
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
@@ -13,7 +14,6 @@ from hummingbot.client.config.config_var import ConfigVar
 from hummingbot.client.config.security import Security
 from hummingbot.client.settings import ConnectorSetting, ConnectorType
 from hummingbot.connector.exchange.binance import binance_constants as CONSTANTS, binance_web_utils
-from hummingbot.core.data_type.trade_fee import TradeFeeSchema
 from hummingbot.core.utils.trading_pair_fetcher import TradingPairFetcher
 
 

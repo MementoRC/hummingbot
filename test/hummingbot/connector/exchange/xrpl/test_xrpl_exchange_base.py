@@ -11,6 +11,7 @@ import asyncio
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, Mock
 
+from data_type_primitives.common import TradeType
 from xrpl.models import Response
 from xrpl.models.response import ResponseStatus, ResponseType
 
@@ -21,7 +22,6 @@ from hummingbot.connector.exchange.xrpl.xrpl_auth import XRPLAuth
 from hummingbot.connector.exchange.xrpl.xrpl_exchange import XrplExchange
 from hummingbot.connector.exchange.xrpl.xrpl_worker_pool import TransactionSubmitResult, TransactionVerifyResult
 from hummingbot.connector.trading_rule import TradingRule
-from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.data_type.order_book_tracker import OrderBookTracker
 from hummingbot.core.data_type.user_stream_tracker import UserStreamTracker
 

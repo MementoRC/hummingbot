@@ -9,6 +9,7 @@ from urllib.parse import urlencode
 
 from aioresponses import aioresponses
 from bidict import bidict
+from data_type_primitives.funding_info import FundingInfo, FundingInfoUpdate
 
 import hummingbot.connector.derivative.okx_perpetual.okx_perpetual_web_utils as web_utils
 from hummingbot.client.config.client_config_map import ClientConfigMap
@@ -19,7 +20,6 @@ from hummingbot.connector.derivative.okx_perpetual.okx_perpetual_api_order_book_
 )
 from hummingbot.connector.derivative.okx_perpetual.okx_perpetual_derivative import OkxPerpetualDerivative
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
-from hummingbot.core.data_type.funding_info import FundingInfo, FundingInfoUpdate
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 
 BASE_ASSET = "COINALPHA"

@@ -3,8 +3,9 @@ from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCa
 from test.logger_mixin_for_test import LoggerMixinForTest
 from unittest.mock import MagicMock, Mock, PropertyMock, patch
 
+from data_type_primitives.common import OrderType
+
 from hummingbot.connector.connector_base import ConnectorBase
-from hummingbot.core.data_type.common import OrderType
 from hummingbot.core.event.events import MarketOrderFailureEvent
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.arbitrage_executor.arbitrage_executor import ArbitrageExecutor

@@ -1,10 +1,11 @@
 from decimal import Decimal
 from unittest import TestCase
 
+from data_type_primitives.trade_fee import TradeFeeSchema
+
 from hummingbot.client.config.config_var import ConfigVar
 from hummingbot.client.settings import ConnectorSetting, ConnectorType
 from hummingbot.connector.exchange.binance.binance_exchange import BinanceExchange
-from hummingbot.core.data_type.trade_fee import TradeFeeSchema
 
 
 class ConnectorSettingTests(TestCase):

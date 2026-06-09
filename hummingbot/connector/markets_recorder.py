@@ -12,13 +12,13 @@ from shutil import move
 from typing import Union
 
 import pandas as pd
+from data_type_primitives.common import PriceType
 from sqlalchemy.orm import Query, Session
 
 from hummingbot import data_path
 from hummingbot.client.config.client_config_map import MarketDataCollectionConfigMap
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.connector.utils import TradeFillOrderDetails
-from hummingbot.core.data_type.common import PriceType
 from hummingbot.core.event.event_forwarder import SourceInfoEventForwarder
 from hummingbot.core.event.events import (
     BuyOrderCompletedEvent,

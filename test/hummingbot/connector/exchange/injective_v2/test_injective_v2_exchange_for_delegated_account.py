@@ -13,6 +13,10 @@ from unittest.mock import AsyncMock, patch
 from aioresponses import aioresponses
 from aioresponses.core import RequestCall
 from bidict import bidict
+from data_type_primitives.common import OrderType, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder, OrderState
+from data_type_primitives.limit_order import LimitOrder
+from data_type_primitives.trade_fee import AddedToCostTradeFee, TokenAmount, TradeFeeBase
 from grpc import RpcError
 from pyinjective.composer_v2 import Composer
 from pyinjective.core.market_v2 import SpotMarket
@@ -29,13 +33,9 @@ from hummingbot.connector.exchange.injective_v2.injective_v2_utils import (
 from hummingbot.connector.gateway.gateway_in_flight_order import GatewayInFlightOrder
 from hummingbot.connector.test_support.exchange_connector_test import AbstractExchangeConnectorTests
 from hummingbot.connector.trading_rule import TradingRule
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState
-from hummingbot.core.data_type.limit_order import LimitOrder
 from hummingbot.core.data_type.market_order import MarketOrder
 from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_row import OrderBookRow
-from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee, TokenAmount, TradeFeeBase
 from hummingbot.core.event.events import (
     BuyOrderCompletedEvent,
     BuyOrderCreatedEvent,

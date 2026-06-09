@@ -12,6 +12,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pandas as pd
 from aioresponses.core import aioresponses
 from bidict import bidict
+from data_type_primitives.common import OrderType, PositionAction, PositionMode, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder, OrderState
+from data_type_primitives.trade_fee import TokenAmount
 
 import hummingbot.connector.derivative.backpack_perpetual.backpack_perpetual_constants as CONSTANTS
 import hummingbot.connector.derivative.backpack_perpetual.backpack_perpetual_web_utils as web_utils
@@ -21,9 +24,6 @@ from hummingbot.connector.derivative.backpack_perpetual.backpack_perpetual_api_o
 from hummingbot.connector.derivative.backpack_perpetual.backpack_perpetual_derivative import BackpackPerpetualDerivative
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.trading_rule import TradingRule
-from hummingbot.core.data_type.common import OrderType, PositionAction, PositionMode, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState
-from hummingbot.core.data_type.trade_fee import TokenAmount
 from hummingbot.core.event.event_logger import EventLogger
 from hummingbot.core.event.events import MarketEvent, OrderFilledEvent
 

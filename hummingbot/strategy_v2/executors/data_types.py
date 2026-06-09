@@ -7,10 +7,10 @@ from decimal import Decimal
 from typing import Literal
 
 import base58
+from data_type_primitives.common import TradeType
 from pydantic import BaseModel, field_validator, model_validator
 
 from hummingbot.client.settings import AllConnectorSettings
-from hummingbot.core.data_type.common import TradeType
 
 
 class ExecutorConfigBase(BaseModel):

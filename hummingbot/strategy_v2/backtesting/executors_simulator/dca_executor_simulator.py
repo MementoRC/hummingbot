@@ -1,8 +1,8 @@
 from decimal import Decimal
 
 import pandas as pd
+from data_type_primitives.common import TradeType
 
-from hummingbot.core.data_type.common import TradeType
 from hummingbot.strategy_v2.backtesting.executor_simulator_base import ExecutorSimulation, ExecutorSimulatorBase
 from hummingbot.strategy_v2.executors.dca_executor.data_types import DCAExecutorConfig, DCAMode
 from hummingbot.strategy_v2.models.executors import CloseType

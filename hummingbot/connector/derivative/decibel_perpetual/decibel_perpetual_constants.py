@@ -1,9 +1,9 @@
 from decimal import Decimal
 
+from data_type_primitives.in_flight_order import OrderState
 from decibel import MAINNET_CONFIG, NETNA_CONFIG, TESTNET_CONFIG
 
 from hummingbot.core.api_throttler.data_types import LinkedLimitWeightPair, RateLimit
-from hummingbot.core.data_type.in_flight_order import OrderState
 
 EXCHANGE_NAME = "decibel_perpetual"
 DEFAULT_DOMAIN = EXCHANGE_NAME

@@ -5,12 +5,12 @@ from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCa
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import pandas as pd
+from data_type_primitives.common import PositionMode, TradeType
 
 from hummingbot.connector.exchange.paper_trade.paper_trade_exchange import QuantizationParams
 from hummingbot.connector.test_support.mock_paper_exchange import MockPaperExchange
 from hummingbot.core.clock import Clock
 from hummingbot.core.clock_mode import ClockMode
-from hummingbot.core.data_type.common import PositionMode, TradeType
 from hummingbot.core.event.events import OrderType
 from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base, StrategyV2ConfigBase

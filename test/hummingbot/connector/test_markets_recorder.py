@@ -6,14 +6,14 @@ from typing import Awaitable
 from unittest.mock import MagicMock, PropertyMock, patch
 
 import numpy as np
+from data_type_primitives.common import OrderType, PositionAction, PriceType, TradeType
+from data_type_primitives.trade_fee import AddedToCostTradeFee
 from sqlalchemy import create_engine
 
 from hummingbot.client.config.client_config_map import ClientConfigMap, MarketDataCollectionConfigMap
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
 from hummingbot.connector.markets_recorder import MarketsRecorder
-from hummingbot.core.data_type.common import OrderType, PositionAction, PriceType, TradeType
 from hummingbot.core.data_type.order_book import OrderBook
-from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee
 from hummingbot.core.event.events import (
     BuyOrderCompletedEvent,
     BuyOrderCreatedEvent,

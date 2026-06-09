@@ -12,12 +12,12 @@ from unittest.mock import AsyncMock, patch
 from aioresponses import aioresponses
 from aioresponses.core import RequestCall
 from bidict import bidict
+from data_type_primitives.cancellation_result import CancellationResult
+from data_type_primitives.common import OrderType, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder, OrderState
+from data_type_primitives.trade_fee import TradeFeeBase
 
 from hummingbot.connector.trading_rule import TradingRule
-from hummingbot.core.data_type.cancellation_result import CancellationResult
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState
-from hummingbot.core.data_type.trade_fee import TradeFeeBase
 from hummingbot.core.event.event_logger import EventLogger
 from hummingbot.core.event.events import (
     BuyOrderCompletedEvent,

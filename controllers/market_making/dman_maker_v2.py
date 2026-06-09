@@ -3,9 +3,9 @@ from __future__ import annotations
 from decimal import Decimal
 
 import pandas_ta as ta  # noqa: F401
+from data_type_primitives.common import TradeType
 from pydantic import Field, field_validator
 
-from hummingbot.core.data_type.common import TradeType
 from hummingbot.strategy_v2.controllers.market_making_controller_base import (
     MarketMakingControllerBase,
     MarketMakingControllerConfigBase,

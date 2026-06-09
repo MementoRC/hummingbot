@@ -1,6 +1,8 @@
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from data_type_primitives.common import TradeType
+
 from hummingbot.connector.gateway.common_types import ConnectorType
 from hummingbot.connector.gateway.gateway_lp import (
     AMMPoolInfo,
@@ -9,7 +11,6 @@ from hummingbot.connector.gateway.gateway_lp import (
     CLMMPositionInfo,
     GatewayLp,
 )
-from hummingbot.core.data_type.common import TradeType
 
 
 class GatewayLpTest(unittest.TestCase):

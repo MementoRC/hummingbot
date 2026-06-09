@@ -8,12 +8,12 @@ from typing import Callable
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
+from data_type_primitives.common import OrderType, PositionAction, PositionMode, PositionSide, TradeType
+from data_type_primitives.funding_info import FundingInfo
+from data_type_primitives.in_flight_order import InFlightOrder
 
 from hummingbot.connector.derivative.position import Position
 from hummingbot.connector.test_support.exchange_connector_test import AbstractExchangeConnectorTests
-from hummingbot.core.data_type.common import OrderType, PositionAction, PositionMode, PositionSide, TradeType
-from hummingbot.core.data_type.funding_info import FundingInfo
-from hummingbot.core.data_type.in_flight_order import InFlightOrder
 from hummingbot.core.event.event_logger import EventLogger
 from hummingbot.core.event.events import (
     BuyOrderCompletedEvent,

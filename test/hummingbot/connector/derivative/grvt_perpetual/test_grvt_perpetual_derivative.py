@@ -11,6 +11,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from aioresponses import aioresponses
 from aioresponses.core import RequestCall
 from bidict import bidict
+from data_type_primitives.common import OrderType, PositionAction, PositionMode, PositionSide, TradeType
+from data_type_primitives.funding_info import FundingInfo
+from data_type_primitives.in_flight_order import InFlightOrder, OrderState
+from data_type_primitives.trade_fee import AddedToCostTradeFee, DeductedFromReturnsTradeFee, TokenAmount, TradeFeeBase
 
 from hummingbot.connector.derivative.grvt_perpetual import (
     grvt_perpetual_constants as CONSTANTS,
@@ -21,15 +25,6 @@ from hummingbot.connector.derivative.position import Position
 from hummingbot.connector.test_support.perpetual_derivative_test import AbstractPerpetualDerivativeTests
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.connector.utils import combine_to_hb_trading_pair
-from hummingbot.core.data_type.common import OrderType, PositionAction, PositionMode, PositionSide, TradeType
-from hummingbot.core.data_type.funding_info import FundingInfo
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState
-from hummingbot.core.data_type.trade_fee import (
-    AddedToCostTradeFee,
-    DeductedFromReturnsTradeFee,
-    TokenAmount,
-    TradeFeeBase,
-)
 from hummingbot.core.event.events import FundingPaymentCompletedEvent
 from hummingbot.core.network_iterator import NetworkStatus
 

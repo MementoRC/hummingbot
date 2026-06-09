@@ -6,6 +6,9 @@ from decimal import ROUND_DOWN, Decimal
 from typing import Any, Mapping
 
 from bidict import ValueDuplicationError, bidict
+from data_type_primitives.common import OrderType, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder, OrderState, OrderUpdate, TradeUpdate
+from data_type_primitives.trade_fee import DeductedFromReturnsTradeFee, TokenAmount, TradeFeeBase
 from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 from hummingbot.connector.constants import s_decimal_NaN
@@ -18,10 +21,7 @@ from hummingbot.connector.exchange.cube.cube_ws_protobufs import trade_pb2
 from hummingbot.connector.exchange_py_base import ExchangePyBase
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.connector.utils import combine_to_hb_trading_pair, get_new_numeric_client_order_id
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState, OrderUpdate, TradeUpdate
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
-from hummingbot.core.data_type.trade_fee import DeductedFromReturnsTradeFee, TokenAmount, TradeFeeBase
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.core.utils.tracking_nonce import NonceCreator

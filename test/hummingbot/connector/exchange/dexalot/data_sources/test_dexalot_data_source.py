@@ -7,6 +7,7 @@ from unittest import TestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses import aioresponses
+from data_type_primitives.common import OrderType, TradeType
 from web3 import AsyncWeb3
 
 from hummingbot.connector.exchange.dexalot import dexalot_constants as CONSTANTS, dexalot_web_utils as web_utils
@@ -14,7 +15,6 @@ from hummingbot.connector.exchange.dexalot.data_sources.dexalot_data_source impo
 from hummingbot.connector.exchange.dexalot.dexalot_exchange import DexalotExchange
 from hummingbot.connector.exchange_base import bidict
 from hummingbot.connector.gateway.gateway_in_flight_order import GatewayInFlightOrder
-from hummingbot.core.data_type.common import OrderType, TradeType
 
 
 class DexalotClientTests(TestCase):

@@ -5,8 +5,9 @@ import logging
 from decimal import Decimal
 from typing import Dict, Union
 
+from data_type_primitives.common import OrderType, PriceType, TradeType
+
 from hummingbot.connector.connector_base import ConnectorBase
-from hummingbot.core.data_type.common import OrderType, PriceType, TradeType
 from hummingbot.core.data_type.order_candidate import OrderCandidate, PerpetualOrderCandidate
 from hummingbot.core.event.events import (
     BuyOrderCompletedEvent,

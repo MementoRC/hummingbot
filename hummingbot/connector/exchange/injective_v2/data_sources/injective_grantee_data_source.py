@@ -4,6 +4,8 @@ import asyncio
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any, Mapping
 
+from data_type_primitives.common import OrderType, PositionAction, TradeType
+from data_type_primitives.in_flight_order import OrderState, OrderUpdate
 from google.protobuf import any_pb2
 from pyinjective import Transaction
 from pyinjective.async_client_v2 import DEFAULT_TIMEOUTHEIGHT, AsyncClient
@@ -25,8 +27,6 @@ from hummingbot.connector.utils import combine_to_hb_trading_pair
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 from hummingbot.core.api_throttler.async_throttler_base import AsyncThrottlerBase
 from hummingbot.core.api_throttler.data_types import RateLimit
-from hummingbot.core.data_type.common import OrderType, PositionAction, TradeType
-from hummingbot.core.data_type.in_flight_order import OrderState, OrderUpdate
 from hummingbot.core.pubsub import PubSub
 from hummingbot.logger import HummingbotLogger
 

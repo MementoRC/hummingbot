@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses.core import aioresponses
 from bidict import bidict
+from data_type_primitives.funding_info import FundingInfo
 
 from hummingbot.connector.derivative.backpack_perpetual import (
     backpack_perpetual_constants as CONSTANTS,
@@ -17,7 +18,6 @@ from hummingbot.connector.derivative.backpack_perpetual.backpack_perpetual_api_o
 )
 from hummingbot.connector.derivative.backpack_perpetual.backpack_perpetual_derivative import BackpackPerpetualDerivative
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
-from hummingbot.core.data_type.funding_info import FundingInfo
 from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_message import OrderBookMessage
 

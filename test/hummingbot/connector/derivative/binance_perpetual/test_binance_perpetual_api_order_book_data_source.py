@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses.core import aioresponses
 from bidict import bidict
+from data_type_primitives.funding_info import FundingInfo
 
 import hummingbot.connector.derivative.binance_perpetual.binance_perpetual_constants as CONSTANTS
 from hummingbot.client.config.client_config_map import ClientConfigMap
@@ -19,7 +20,6 @@ from hummingbot.connector.derivative.binance_perpetual.binance_perpetual_api_ord
 from hummingbot.connector.derivative.binance_perpetual.binance_perpetual_derivative import BinancePerpetualDerivative
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
-from hummingbot.core.data_type.funding_info import FundingInfo
 from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 

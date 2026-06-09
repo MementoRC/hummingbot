@@ -6,12 +6,12 @@ from typing import List
 
 import numpy as np
 import pandas as pd
+from data_type_primitives.common import OrderType, PositionAction, PositionMode, PriceType, TradeType
+from data_type_primitives.limit_order import LimitOrder
 
 from hummingbot.connector.derivative.position import Position
 from hummingbot.connector.derivative_base import DerivativeBase
 from hummingbot.core.clock import Clock
-from hummingbot.core.data_type.common import OrderType, PositionAction, PositionMode, PriceType, TradeType
-from hummingbot.core.data_type.limit_order import LimitOrder
 from hummingbot.core.data_type.order_candidate import PerpetualOrderCandidate
 from hummingbot.core.event.events import (
     BuyOrderCompletedEvent,

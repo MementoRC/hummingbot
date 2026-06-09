@@ -1,7 +1,7 @@
+from data_type_primitives.common import MarketDict
 from pydantic import Field
 
 from hummingbot.client.ui.interface_utils import format_df_for_printout
-from hummingbot.core.data_type.common import MarketDict
 from hummingbot.data_feed.liquidations_feed.liquidations_factory import LiquidationsConfig, LiquidationsFactory
 from hummingbot.strategy_v2.controllers import ControllerBase, ControllerConfigBase
 from hummingbot.strategy_v2.models.executor_actions import ExecutorAction

@@ -1,7 +1,7 @@
 import math
 from decimal import Decimal
 
-from hummingbot.core.data_type.common import TradeType
+from data_type_primitives.common import TradeType
 
 from .protocols import ProgressiveOrderPNLProtocol, ProgressiveOrderProtocol
 

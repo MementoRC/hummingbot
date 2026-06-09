@@ -4,12 +4,13 @@ import asyncio
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
+from data_type_primitives.funding_info import FundingInfo, FundingInfoUpdate
+
 from hummingbot.connector.derivative.grvt_perpetual import (
     grvt_perpetual_constants as CONSTANTS,
     grvt_perpetual_web_utils as web_utils,
 )
 from hummingbot.connector.derivative.grvt_perpetual.grvt_perpetual_order_book import GrvtPerpetualOrderBook
-from hummingbot.core.data_type.funding_info import FundingInfo, FundingInfoUpdate
 from hummingbot.core.data_type.order_book_message import OrderBookMessage
 from hummingbot.core.data_type.perpetual_api_order_book_data_source import PerpetualAPIOrderBookDataSource
 from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest

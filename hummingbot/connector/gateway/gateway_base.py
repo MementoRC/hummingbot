@@ -10,17 +10,18 @@ from decimal import Decimal
 from enum import Enum
 from typing import Any, Callable, TypeVar, Union, cast
 
+from data_type_primitives.cancellation_result import CancellationResult
+from data_type_primitives.common import OrderType, PriceType, TradeType
+from data_type_primitives.in_flight_order import OrderState, OrderUpdate, TradeFeeBase, TradeUpdate
+from data_type_primitives.limit_order import LimitOrder
+from data_type_primitives.trade_fee import AddedToCostTradeFee, TokenAmount, TradeFeeSchema
+
 from hummingbot.client.config.client_config_map import GatewayConfigMap
 from hummingbot.connector.budget_checker import BudgetChecker
 from hummingbot.connector.client_order_tracker import ClientOrderTracker
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.connector.gateway.common_types import TransactionStatus
 from hummingbot.connector.gateway.gateway_in_flight_order import GatewayInFlightOrder
-from hummingbot.core.data_type.cancellation_result import CancellationResult
-from hummingbot.core.data_type.common import OrderType, PriceType, TradeType
-from hummingbot.core.data_type.in_flight_order import OrderState, OrderUpdate, TradeFeeBase, TradeUpdate
-from hummingbot.core.data_type.limit_order import LimitOrder
-from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee, TokenAmount, TradeFeeSchema
 from hummingbot.core.event.events import MarketEvent, MarketTransactionFailureEvent
 from hummingbot.core.gateway.gateway_http_client import GatewayHttpClient
 from hummingbot.core.network_iterator import NetworkStatus

@@ -3,9 +3,9 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Any, Union
 
+from data_type_primitives.common import TradeType
 from pydantic import BaseModel, field_validator
 
-from hummingbot.core.data_type.common import TradeType
 from hummingbot.strategy_v2.executors.position_executor.data_types import TripleBarrierConfig
 from hummingbot.strategy_v2.utils.distributions import Distributions
 

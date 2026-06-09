@@ -3,11 +3,11 @@ import unittest
 from decimal import Decimal
 
 import pandas as pd
+from data_type_primitives.common import TradeType
 
 from hummingbot.connector.exchange.paper_trade.paper_trade_exchange import QuantizationParams
 from hummingbot.connector.test_support.mock_paper_exchange import MockPaperExchange
 from hummingbot.core.clock import Clock, ClockMode
-from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.event.event_logger import EventLogger
 from hummingbot.core.event.events import MarketEvent, OrderBookTradeEvent
 from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple

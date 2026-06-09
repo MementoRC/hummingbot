@@ -1,8 +1,7 @@
 from typing import NamedTuple
 
 import pandas as pd
-
-from hummingbot.core.data_type.common import OrderType, PositionAction
+from data_type_primitives.common import OrderType, PositionAction
 
 
 class MarketOrder(NamedTuple):

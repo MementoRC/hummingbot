@@ -6,7 +6,8 @@ Targets lines 25 (empty flat_fees) and 44 (non-empty flat_fees).
 from decimal import Decimal
 from unittest.mock import MagicMock
 
-from hummingbot.core.data_type.common import OrderType, TradeType
+from data_type_primitives.common import OrderType, TradeType
+
 from hummingbot.core.data_type.trade import Trade
 
 

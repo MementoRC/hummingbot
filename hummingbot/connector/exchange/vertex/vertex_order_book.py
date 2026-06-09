@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
+from data_type_primitives.common import TradeType
+
 from hummingbot.connector.exchange.vertex.vertex_utils import convert_from_x18, convert_timestamp
-from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 

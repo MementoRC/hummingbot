@@ -10,6 +10,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses import aioresponses
 from bidict import bidict
+from data_type_primitives.funding_info import FundingInfo
 
 import hummingbot.connector.derivative.kucoin_perpetual.kucoin_perpetual_web_utils as web_utils
 from hummingbot.client.config.client_config_map import ClientConfigMap
@@ -21,7 +22,6 @@ from hummingbot.connector.derivative.kucoin_perpetual.kucoin_perpetual_api_order
 from hummingbot.connector.derivative.kucoin_perpetual.kucoin_perpetual_derivative import KucoinPerpetualDerivative
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.trading_rule import TradingRule
-from hummingbot.core.data_type.funding_info import FundingInfo
 from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 from hummingbot.core.web_assistant.connections.connections_factory import ConnectionsFactory

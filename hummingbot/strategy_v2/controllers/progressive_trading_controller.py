@@ -3,10 +3,10 @@ from __future__ import annotations
 from decimal import Decimal
 
 import pandas as pd
+from data_type_primitives.common import OrderType, TradeType
 from pydantic import Field, field_validator
 
 from hummingbot.client.ui.interface_utils import format_df_for_printout
-from hummingbot.core.data_type.common import OrderType, TradeType
 from hummingbot.strategy_v2.controllers import DirectionalTradingControllerBase, DirectionalTradingControllerConfigBase
 from hummingbot.strategy_v2.executors.progressive_executor.data_types import (
     LadderedTrailingStop,

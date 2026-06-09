@@ -4,12 +4,12 @@ from decimal import Decimal
 
 import numpy as np
 import pandas as pd
+from data_type_primitives.common import TradeType
+from data_type_primitives.trade_fee import TradeFeeSchema
 
 from hummingbot.connector.exchange.paper_trade.paper_trade_exchange import QuantizationParams
 from hummingbot.connector.test_support.mock_paper_exchange import MockPaperExchange
-from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.data_type.order_book import OrderBook
-from hummingbot.core.data_type.trade_fee import TradeFeeSchema
 from hummingbot.core.event.events import OrderBookTradeEvent
 from hummingbot.strategy.__utils__.trailing_indicators.trading_intensity import TradingIntensityIndicator
 from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple

@@ -3,7 +3,8 @@ from decimal import Decimal
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from hummingbot.core.data_type.common import MarketDict, OrderType, PositionMode, TradeType
+from data_type_primitives.common import MarketDict, OrderType, PositionMode, TradeType
+
 from hummingbot.data_feed.market_data_provider import MarketDataProvider
 from hummingbot.strategy_v2.controllers.market_making_controller_base import (
     MarketMakingControllerBase,

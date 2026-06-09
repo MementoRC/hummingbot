@@ -1,8 +1,9 @@
 from decimal import Decimal
 from typing import Iterator, NamedTuple
 
+from data_type_primitives.common import PriceType
+
 from hummingbot.connector.exchange_base import ExchangeBase
-from hummingbot.core.data_type.common import PriceType
 from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_query_result import ClientOrderBookQueryResult
 from hummingbot.core.data_type.order_book_row import ClientOrderBookRow

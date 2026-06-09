@@ -1,11 +1,11 @@
 from decimal import Decimal
 from typing import Any
 
+from data_type_primitives.trade_fee import TradeFeeSchema
 from pydantic import ConfigDict, Field, SecretStr
 
 from hummingbot.client.config.config_data_types import BaseConnectorConfigMap
 from hummingbot.connector.utils import split_hb_trading_pair
-from hummingbot.core.data_type.trade_fee import TradeFeeSchema
 
 # https://www.okx.com/es-la/fees/
 DEFAULT_FEES = TradeFeeSchema(

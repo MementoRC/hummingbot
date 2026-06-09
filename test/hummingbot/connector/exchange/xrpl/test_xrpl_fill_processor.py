@@ -8,6 +8,10 @@ import unittest
 from decimal import Decimal
 from unittest.mock import MagicMock
 
+from data_type_primitives.common import TradeType
+from data_type_primitives.in_flight_order import InFlightOrder
+from data_type_primitives.trade_fee import AddedToCostTradeFee
+
 from hummingbot.connector.exchange.xrpl.xrpl_fill_processor import (
     FillExtractionResult,
     FillSource,
@@ -22,9 +26,6 @@ from hummingbot.connector.exchange.xrpl.xrpl_fill_processor import (
     extract_transaction_data,
     find_offer_change_for_order,
 )
-from hummingbot.core.data_type.common import TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder
-from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee
 
 
 class TestFillExtractionResult(unittest.TestCase):

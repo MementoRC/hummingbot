@@ -5,9 +5,10 @@ from decimal import Decimal
 from enum import Enum, IntEnum
 from typing import NamedTuple
 
-from hummingbot.core.data_type.common import LPType, OrderType, PositionAction, PositionMode, PositionSide, TradeType
+from data_type_primitives.common import LPType, OrderType, PositionAction, PositionMode, PositionSide, TradeType
+from data_type_primitives.trade_fee import AddedToCostTradeFee, TokenAmount, TradeFeeBase
+
 from hummingbot.core.data_type.order_book_row import OrderBookRow
-from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee, TokenAmount, TradeFeeBase
 
 s_decimal_0 = Decimal("0")
 
@@ -293,16 +294,6 @@ class RangePositionUpdateFailureEvent:
     timestamp: float
     order_id: str
     order_action: LPType
-
-
-class LimitOrderStatus(Enum):
-    UNKNOWN = 0
-    NEW = 1
-    OPEN = 2
-    CANCELING = 3
-    CANCELED = 4
-    COMPLETED = 5
-    FAILED = 6
 
 
 @dataclass

@@ -4,13 +4,13 @@ from abc import ABC, abstractmethod
 from decimal import ROUND_DOWN, Decimal
 from typing import TYPE_CHECKING, Union
 
+from data_type_primitives.common import OrderType, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder
 from xrpl.models import XRP, IssuedCurrencyAmount, Memo, OfferCreate, Path, PathStep, Payment, PaymentFlag, Transaction
 from xrpl.utils import xrp_to_drops
 
 from hummingbot.connector.exchange.xrpl import xrpl_constants as CONSTANTS
 from hummingbot.connector.exchange.xrpl.xrpl_utils import convert_string_to_hex
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder
 
 if TYPE_CHECKING:
     from hummingbot.connector.exchange.xrpl.xrpl_exchange import XrplExchange

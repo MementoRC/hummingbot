@@ -9,15 +9,15 @@ from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
 from aioresponses.core import RequestCall
+from data_type_primitives.common import OrderType, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder, OrderState
+from data_type_primitives.trade_fee import DeductedFromReturnsTradeFee, TokenAmount, TradeFeeBase
 
 from hummingbot.connector.exchange.binance import binance_constants as CONSTANTS, binance_web_utils as web_utils
 from hummingbot.connector.exchange.binance.binance_exchange import BinanceExchange
 from hummingbot.connector.test_support.exchange_connector_test import AbstractExchangeConnectorTests
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.connector.utils import get_new_client_order_id
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState
-from hummingbot.core.data_type.trade_fee import DeductedFromReturnsTradeFee, TokenAmount, TradeFeeBase
 from hummingbot.core.event.events import MarketOrderFailureEvent, OrderFilledEvent
 
 

@@ -9,6 +9,8 @@ from typing import Awaitable, Union
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from bidict import bidict
+from data_type_primitives.common import TradeType
+from data_type_primitives.funding_info import FundingInfo, FundingInfoUpdate
 from pyinjective import Address, PrivateKey
 from pyinjective.composer_v2 import Composer
 from pyinjective.core.market_v2 import DerivativeMarket, SpotMarket
@@ -27,8 +29,6 @@ from hummingbot.connector.exchange.injective_v2.injective_v2_utils import (
     InjectiveMessageBasedTransactionFeeCalculatorMode,
     InjectiveTestnetNetworkMode,
 )
-from hummingbot.core.data_type.common import TradeType
-from hummingbot.core.data_type.funding_info import FundingInfo, FundingInfoUpdate
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 
 

@@ -4,10 +4,11 @@ from decimal import Decimal
 from typing import Awaitable
 from unittest.mock import MagicMock
 
+from data_type_primitives.common import PositionMode, PositionSide
+from data_type_primitives.funding_info import FundingInfo, FundingInfoUpdate
+
 from hummingbot.connector.derivative.position import Position
 from hummingbot.connector.perpetual_trading import PerpetualTrading
-from hummingbot.core.data_type.common import PositionMode, PositionSide
-from hummingbot.core.data_type.funding_info import FundingInfo, FundingInfoUpdate
 
 
 class PerpetualTest(unittest.TestCase):

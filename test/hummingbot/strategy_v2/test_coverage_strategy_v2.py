@@ -203,8 +203,8 @@ def test_strategy_v2_config_load_controller_configs():
 def test_strategy_v2_base_format_status_with_positions():
     """Line 559: positions_data.append executed when positions list is non-empty."""
     import pandas as pd
+    from data_type_primitives.common import TradeType
 
-    from hummingbot.core.data_type.common import TradeType
     from hummingbot.strategy.strategy_v2_base import StrategyV2Base
     from hummingbot.strategy_v2.executors.data_types import PositionSummary
 

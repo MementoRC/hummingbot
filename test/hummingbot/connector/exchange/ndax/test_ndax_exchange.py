@@ -8,14 +8,14 @@ from typing import Any, Callable
 
 from aioresponses import aioresponses
 from aioresponses.core import RequestCall
+from data_type_primitives.common import OrderType, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder
+from data_type_primitives.trade_fee import DeductedFromReturnsTradeFee, TradeFeeBase
 
 from hummingbot.connector.exchange.ndax import ndax_constants as CONSTANTS, ndax_web_utils as web_utils
 from hummingbot.connector.exchange.ndax.ndax_exchange import NdaxExchange
 from hummingbot.connector.test_support.exchange_connector_test import AbstractExchangeConnectorTests
 from hummingbot.connector.trading_rule import TradingRule
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder
-from hummingbot.core.data_type.trade_fee import DeductedFromReturnsTradeFee, TradeFeeBase
 
 
 class NdaxExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests):

@@ -7,6 +7,10 @@ from test.logger_mixin_for_test import LoggerMixinForTest
 from unittest.mock import MagicMock, PropertyMock, patch
 
 import pandas as pd
+from data_type_primitives.common import OrderType, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder
+from data_type_primitives.limit_order import LimitOrder
+from data_type_primitives.trade_fee import AddedToCostTradeFee
 
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
@@ -15,11 +19,7 @@ from hummingbot.connector.exchange.paper_trade.paper_trade_exchange import Quant
 from hummingbot.connector.test_support.mock_paper_exchange import MockPaperExchange
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.core.clock import Clock, ClockMode
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder
-from hummingbot.core.data_type.limit_order import LimitOrder
 from hummingbot.core.data_type.market_order import MarketOrder
-from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee
 from hummingbot.core.event.event_forwarder import SourceInfoEventForwarder
 from hummingbot.core.event.events import BuyOrderCreatedEvent, MarketEvent, OrderFilledEvent, SellOrderCreatedEvent
 from hummingbot.core.network_iterator import NetworkStatus

@@ -17,11 +17,11 @@ from decimal import Decimal
 from enum import Enum
 from typing import Any
 
+from data_type_primitives.common import TradeType
+from data_type_primitives.in_flight_order import InFlightOrder, TradeUpdate
+from data_type_primitives.trade_fee import TradeFeeBase
 from xrpl.utils import drops_to_xrp, ripple_time_to_posix
 
-from hummingbot.core.data_type.common import TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, TradeUpdate
-from hummingbot.core.data_type.trade_fee import TradeFeeBase
 from hummingbot.logger import HummingbotLogger
 
 # =============================================================================

@@ -3,12 +3,12 @@ from decimal import Decimal
 from typing import Any, Union
 
 import pandas as pd
+from data_type_primitives.common import OrderType, PositionAction, PositionMode, PositionSide, TradeType
+from data_type_primitives.limit_order import LimitOrder
 
 from hummingbot.client.settings import AllConnectorSettings
 from hummingbot.connector.derivative.position import Position
 from hummingbot.core.clock import Clock
-from hummingbot.core.data_type.common import OrderType, PositionAction, PositionMode, PositionSide, TradeType
-from hummingbot.core.data_type.limit_order import LimitOrder
 from hummingbot.core.data_type.order_candidate import OrderCandidate, PerpetualOrderCandidate
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.logger import HummingbotLogger

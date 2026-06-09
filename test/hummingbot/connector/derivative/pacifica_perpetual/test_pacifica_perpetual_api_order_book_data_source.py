@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiohttp
 from aioresponses import aioresponses
+from data_type_primitives.funding_info import FundingInfo
 
 from hummingbot.connector.derivative.pacifica_perpetual import pacifica_perpetual_constants as CONSTANTS
 from hummingbot.connector.derivative.pacifica_perpetual.pacifica_perpetual_api_order_book_data_source import (
@@ -14,7 +15,6 @@ from hummingbot.connector.derivative.pacifica_perpetual.pacifica_perpetual_api_o
 )
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
-from hummingbot.core.data_type.funding_info import FundingInfo
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 from hummingbot.core.web_assistant.connections.rest_connection import RESTConnection
 from hummingbot.core.web_assistant.connections.ws_connection import WSConnection

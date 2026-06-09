@@ -5,9 +5,8 @@ from datetime import datetime
 from typing import List
 
 import pandas as pd
-
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.trade_fee import TradeFeeBase
+from data_type_primitives.common import OrderType, TradeType
+from data_type_primitives.trade_fee import TradeFeeBase
 
 
 class Trade(namedtuple("_Trade", "trading_pair, side, price, amount, order_type, market, timestamp, trade_fee")):

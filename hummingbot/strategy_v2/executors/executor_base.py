@@ -5,10 +5,11 @@ from decimal import Decimal
 from functools import lru_cache
 from typing import Dict, Union
 
+from data_type_primitives.common import OrderType, PositionAction, PriceType, TradeType
+
 from hummingbot.client.settings import AllConnectorSettings
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.connector.trading_rule import TradingRule
-from hummingbot.core.data_type.common import OrderType, PositionAction, PriceType, TradeType
 from hummingbot.core.data_type.order_candidate import OrderCandidate
 from hummingbot.core.event.event_forwarder import SourceInfoEventForwarder
 from hummingbot.core.event.events import (

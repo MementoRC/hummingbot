@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from unittest import TestCase
 
+from data_type_primitives.common import TradeType
+
 from hummingbot.connector.exchange.btc_markets import btc_markets_constants as CONSTANTS
 from hummingbot.connector.exchange.btc_markets.btc_markets_order_book import BtcMarketsOrderBook
-from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType, OrderBookRow
 
 

@@ -4,11 +4,11 @@ import os
 from decimal import Decimal
 from typing import Dict
 
+from data_type_primitives.common import MarketDict
 from pydantic import Field
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.connector.utils import split_hb_trading_pair
-from hummingbot.core.data_type.common import MarketDict
 from hummingbot.core.data_type.order_candidate import OrderCandidate
 from hummingbot.core.event.events import OrderFilledEvent, OrderType, TradeType
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base, StrategyV2ConfigBase

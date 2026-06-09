@@ -6,9 +6,8 @@ from decimal import Decimal
 from typing import Any
 
 from async_timeout import timeout
-
-from hummingbot.core.data_type.common import OrderType, PositionAction, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState, OrderUpdate, TradeUpdate
+from data_type_primitives.common import OrderType, PositionAction, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder, OrderState, OrderUpdate, TradeUpdate
 
 GET_GATEWAY_EX_ORDER_ID_TIMEOUT = 30  # seconds
 GET_GATEWAY_TX_HASH = 30  # seconds

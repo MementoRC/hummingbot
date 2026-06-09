@@ -6,6 +6,9 @@ from decimal import Decimal
 from typing import Any, AsyncIterable
 
 from bidict import bidict
+from data_type_primitives.common import OrderType, PositionAction, PositionMode, PositionSide, PriceType, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder, OrderState, OrderUpdate, TradeUpdate
+from data_type_primitives.trade_fee import TokenAmount, TradeFeeBase
 
 from hummingbot.connector.constants import s_decimal_NaN
 from hummingbot.connector.derivative.bitmart_perpetual import (
@@ -24,10 +27,7 @@ from hummingbot.connector.perpetual_derivative_py_base import PerpetualDerivativ
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.connector.utils import combine_to_hb_trading_pair
 from hummingbot.core.api_throttler.data_types import RateLimit
-from hummingbot.core.data_type.common import OrderType, PositionAction, PositionMode, PositionSide, PriceType, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState, OrderUpdate, TradeUpdate
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
-from hummingbot.core.data_type.trade_fee import TokenAmount, TradeFeeBase
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.utils.async_utils import safe_gather
 from hummingbot.core.utils.estimate_fee import build_perpetual_trade_fee

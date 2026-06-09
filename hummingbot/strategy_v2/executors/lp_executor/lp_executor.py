@@ -3,10 +3,11 @@ from __future__ import annotations
 import logging
 from decimal import Decimal
 
+from data_type_primitives.common import TradeType
+from data_type_primitives.trade_fee import TokenAmount, TradeFeeBase
+
 from hummingbot.connector.gateway.gateway import AMMPoolInfo, CLMMPoolInfo
 from hummingbot.connector.utils import split_hb_trading_pair
-from hummingbot.core.data_type.common import TradeType
-from hummingbot.core.data_type.trade_fee import TokenAmount, TradeFeeBase
 from hummingbot.core.event.events import RangePositionLiquidityAddedEvent, RangePositionLiquidityRemovedEvent
 from hummingbot.core.gateway.gateway_http_client import GatewayHttpClient
 from hummingbot.core.rate_oracle.rate_oracle import RateOracle
@@ -587,7 +588,7 @@ class LPExecutor(ExecutorBase):
                     self.lp_position_state.state = LPExecutorStates.COMPLETE
                 return
 
-            from hummingbot.core.data_type.in_flight_order import OrderState
+            from data_type_primitives.in_flight_order import OrderState
 
             if order.current_state == OrderState.FILLED:
                 self.logger().info(f"Close-out swap completed: {order.client_order_id}")

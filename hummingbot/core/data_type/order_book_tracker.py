@@ -9,8 +9,8 @@ from enum import Enum
 from typing import Deque, Dict
 
 import pandas as pd
+from data_type_primitives.common import TradeType
 
-from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource

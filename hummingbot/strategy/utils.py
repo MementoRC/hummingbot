@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 import time
 
-from hummingbot.core.data_type.limit_order import LimitOrder
+from data_type_primitives.limit_order import LimitOrder
 
 
 def order_age(order: LimitOrder, current_time: float | None = None) -> int:

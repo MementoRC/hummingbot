@@ -5,11 +5,11 @@ from decimal import Decimal
 from random import randint
 from typing import Any, Dict
 
+from data_type_primitives.trade_fee import TradeFeeSchema
 from pydantic import ConfigDict, Field, SecretStr
 
 import hummingbot.connector.exchange.vertex.vertex_constants as CONSTANTS
 from hummingbot.client.config.config_data_types import BaseConnectorConfigMap
-from hummingbot.core.data_type.trade_fee import TradeFeeSchema
 
 CENTRALIZED = True
 USE_ETHEREUM_WALLET = False

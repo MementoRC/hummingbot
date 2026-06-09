@@ -1,6 +1,7 @@
+from data_type_primitives.in_flight_order import OrderState
+
 from hummingbot.connector.constants import MINUTE, SECOND
 from hummingbot.core.api_throttler.data_types import LinkedLimitWeightPair, RateLimit
-from hummingbot.core.data_type.in_flight_order import OrderState
 
 DEFAULT_DOMAIN = "derive"
 BROKER_ID = "HBOT"

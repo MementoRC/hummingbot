@@ -14,6 +14,9 @@ import pytest
 from aioresponses import aioresponses
 from aioresponses.core import RequestCall
 from bidict import bidict
+from data_type_primitives.common import OrderType, PositionAction, PositionMode, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder, OrderState
+from data_type_primitives.trade_fee import DeductedFromReturnsTradeFee, TokenAmount, TradeFeeBase
 
 import hummingbot.connector.derivative.derive_perpetual.derive_perpetual_constants as CONSTANTS
 import hummingbot.connector.derivative.derive_perpetual.derive_perpetual_web_utils as web_utils
@@ -28,9 +31,6 @@ from hummingbot.connector.test_support.perpetual_derivative_test import Abstract
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.connector.utils import combine_to_hb_trading_pair
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
-from hummingbot.core.data_type.common import OrderType, PositionAction, PositionMode, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState
-from hummingbot.core.data_type.trade_fee import DeductedFromReturnsTradeFee, TokenAmount, TradeFeeBase
 from hummingbot.core.event.event_logger import EventLogger
 from hummingbot.core.event.events import (
     BuyOrderCreatedEvent,

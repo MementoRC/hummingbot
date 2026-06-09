@@ -1,10 +1,10 @@
 import sys
 from decimal import Decimal
 
+from data_type_primitives.in_flight_order import OrderState, OrderType
 from xrpl.asyncio.transaction.main import _LEDGER_OFFSET
 
 from hummingbot.core.api_throttler.data_types import RateLimit
-from hummingbot.core.data_type.in_flight_order import OrderState, OrderType
 
 # =============================================================================
 # Exchange Identification

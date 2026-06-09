@@ -6,10 +6,11 @@ from typing import Awaitable
 from unittest import TestCase
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
+from data_type_primitives.common import OrderType, TradeType
+from data_type_primitives.trade_fee import AddedToCostTradeFee
+
 import hummingbot.connector.connector_metrics_collector
 from hummingbot.connector.connector_metrics_collector import TradeVolumeMetricCollector
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee
 from hummingbot.core.event.events import MarketEvent, OrderFilledEvent
 from hummingbot.core.rate_oracle.rate_oracle import RateOracle
 

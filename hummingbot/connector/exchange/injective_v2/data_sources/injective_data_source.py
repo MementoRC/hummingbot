@@ -9,6 +9,10 @@ from enum import Enum
 from typing import Any, Callable, Mapping, Union
 
 from bidict import bidict
+from data_type_primitives.common import OrderType, PositionAction, PositionSide, TradeType
+from data_type_primitives.funding_info import FundingInfo, FundingInfoUpdate
+from data_type_primitives.in_flight_order import OrderState, OrderUpdate, TradeUpdate
+from data_type_primitives.trade_fee import TokenAmount, TradeFeeBase, TradeFeeSchema
 from google.protobuf import any_pb2
 from grpc import RpcError
 from pyinjective import Transaction
@@ -29,11 +33,7 @@ from hummingbot.connector.gateway.common_types import CancelOrderResult, PlaceOr
 from hummingbot.connector.gateway.gateway_in_flight_order import GatewayInFlightOrder, GatewayPerpetualInFlightOrder
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.core.api_throttler.async_throttler_base import AsyncThrottlerBase
-from hummingbot.core.data_type.common import OrderType, PositionAction, PositionSide, TradeType
-from hummingbot.core.data_type.funding_info import FundingInfo, FundingInfoUpdate
-from hummingbot.core.data_type.in_flight_order import OrderState, OrderUpdate, TradeUpdate
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
-from hummingbot.core.data_type.trade_fee import TokenAmount, TradeFeeBase, TradeFeeSchema
 from hummingbot.core.event.event_listener import EventListener
 from hummingbot.core.event.events import (
     AccountEvent,

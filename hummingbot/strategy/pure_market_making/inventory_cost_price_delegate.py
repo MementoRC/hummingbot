@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from decimal import Decimal, InvalidOperation
 
-from hummingbot.core.data_type.common import TradeType
+from data_type_primitives.common import TradeType
+
 from hummingbot.core.event.events import OrderFilledEvent
 from hummingbot.model.inventory_cost import InventoryCost
 from hummingbot.model.sql_connection_manager import SQLConnectionManager

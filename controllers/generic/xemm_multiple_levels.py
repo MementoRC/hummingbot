@@ -4,10 +4,10 @@ import time
 from decimal import Decimal
 
 import pandas as pd
+from data_type_primitives.common import PriceType, TradeType
 from pydantic import Field, field_validator
 
 from hummingbot.client.ui.interface_utils import format_df_for_printout
-from hummingbot.core.data_type.common import PriceType, TradeType
 from hummingbot.core.gateway.gateway_http_client import GatewayHttpClient
 from hummingbot.strategy_v2.controllers.controller_base import ControllerBase, ControllerConfigBase
 from hummingbot.strategy_v2.executors.data_types import ConnectorPair

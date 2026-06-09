@@ -2,11 +2,11 @@ import json
 import os
 from datetime import datetime
 
+from data_type_primitives.common import MarketDict
 from pydantic import Field
 
 from hummingbot import data_path
 from hummingbot.connector.connector_base import ConnectorBase
-from hummingbot.core.data_type.common import MarketDict
 from hummingbot.core.event.event_forwarder import SourceInfoEventForwarder
 from hummingbot.core.event.events import OrderBookEvent, OrderBookTradeEvent
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base, StrategyV2ConfigBase

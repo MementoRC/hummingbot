@@ -3,9 +3,9 @@ from __future__ import annotations
 from decimal import Decimal
 
 import pandas as pd
+from data_type_primitives.common import MarketDict
 
 from hummingbot.client.ui.interface_utils import format_df_for_printout
-from hummingbot.core.data_type.common import MarketDict
 from hummingbot.core.gateway.gateway_http_client import GatewayHttpClient
 from hummingbot.strategy_v2.controllers.controller_base import ControllerBase, ControllerConfigBase
 from hummingbot.strategy_v2.executors.arbitrage_executor.data_types import ArbitrageExecutorConfig

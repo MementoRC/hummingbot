@@ -1,11 +1,12 @@
 import unittest
 from decimal import Decimal
 
+from data_type_primitives.common import OrderType, TradeType
+
 from hummingbot.connector.exchange_base import ExchangeBase
 from hummingbot.connector.gateway.gateway_in_flight_order import GatewayInFlightOrder
 from hummingbot.connector.gateway.gateway_order_tracker import GatewayOrderTracker
 from hummingbot.connector.utils import combine_to_hb_trading_pair
-from hummingbot.core.data_type.common import OrderType, TradeType
 
 
 class MockExchange(ExchangeBase):
