@@ -3,10 +3,11 @@ from __future__ import annotations
 import time
 from typing import Any
 
+from web_assistant.auth import AuthBase
+from web_assistant.throttler.async_throttler import AsyncThrottler
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+
 import hummingbot.connector.derivative.gate_io_perpetual.gate_io_perpetual_constants as CONSTANTS
-from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
-from hummingbot.core.web_assistant.auth import AuthBase
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 def public_rest_url(endpoint: str, domain: str = CONSTANTS.DEFAULT_DOMAIN) -> str:

@@ -5,7 +5,11 @@ import math
 from decimal import ROUND_DOWN, Decimal
 from typing import Any, Mapping
 
+from async_utils.core import safe_ensure_future
+from async_utils.tracking_nonce import NonceCreator
 from bidict import ValueDuplicationError, bidict
+from web_assistant.connections.data_types import RESTMethod
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 from hummingbot.connector.constants import s_decimal_NaN
 from hummingbot.connector.exchange.cube import cube_constants as CONSTANTS, cube_utils, cube_web_utils as web_utils
@@ -22,10 +26,6 @@ from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState,
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
 from hummingbot.core.data_type.trade_fee import DeductedFromReturnsTradeFee, TokenAmount, TradeFeeBase
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
-from hummingbot.core.utils.async_utils import safe_ensure_future
-from hummingbot.core.utils.tracking_nonce import NonceCreator
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class CubeExchange(ExchangePyBase):

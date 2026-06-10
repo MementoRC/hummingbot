@@ -4,8 +4,9 @@ import unittest
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
 
+from web_assistant.connections.data_types import RESTRequest, WSJSONRequest
+
 from hummingbot.connector.derivative.evedex_perpetual.evedex_perpetual_auth import EvedexPerpetualAuth, to_eth_number
-from hummingbot.core.web_assistant.connections.data_types import RESTRequest, WSJSONRequest
 
 
 class TestEvedexPerpetualAuth(unittest.TestCase):

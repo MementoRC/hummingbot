@@ -3,7 +3,7 @@ import threading
 import time
 from typing import TYPE_CHECKING
 
-from hummingbot.core.utils.async_utils import safe_ensure_future
+from async_utils.core import safe_ensure_future
 from remote_iface.hb_compat import create_gateway
 from remote_iface.protocols.config import BrokerConfig, GatewayConfig
 

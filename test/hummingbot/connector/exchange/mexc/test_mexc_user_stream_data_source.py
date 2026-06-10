@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses import aioresponses
 from bidict import bidict
+from web_assistant.throttler.async_throttler import AsyncThrottler
 
 from hummingbot.connector.exchange.mexc import mexc_constants as CONSTANTS, mexc_web_utils as web_utils
 from hummingbot.connector.exchange.mexc.mexc_api_user_stream_data_source import MexcAPIUserStreamDataSource
@@ -16,7 +17,6 @@ from hummingbot.connector.exchange.mexc.mexc_auth import MexcAuth
 from hummingbot.connector.exchange.mexc.mexc_exchange import MexcExchange
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
-from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 
 
 class MexcUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):

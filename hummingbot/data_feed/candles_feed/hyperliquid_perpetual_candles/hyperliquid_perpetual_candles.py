@@ -4,10 +4,11 @@ import asyncio
 import logging
 from typing import Any
 
+from async_utils.core import safe_ensure_future
+from web_assistant.connections.data_types import RESTMethod, WSJSONRequest
+from web_assistant.ws_assistant import WSAssistant
+
 from hummingbot.core.network_iterator import NetworkStatus
-from hummingbot.core.utils.async_utils import safe_ensure_future
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, WSJSONRequest
-from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.data_feed.candles_feed.candles_base import CandlesBase
 from hummingbot.data_feed.candles_feed.hyperliquid_perpetual_candles import constants as CONSTANTS
 from hummingbot.logger import HummingbotLogger

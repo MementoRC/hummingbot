@@ -5,6 +5,8 @@ import json
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, patch
 
+from web_assistant.throttler.async_throttler import AsyncThrottler
+
 import hummingbot.connector.derivative.bitmart_perpetual.bitmart_perpetual_constants as CONSTANTS
 from hummingbot.connector.derivative.bitmart_perpetual import bitmart_perpetual_web_utils as web_utils
 from hummingbot.connector.derivative.bitmart_perpetual.bitmart_perpetual_auth import BitmartPerpetualAuth
@@ -14,7 +16,6 @@ from hummingbot.connector.derivative.bitmart_perpetual.bitmart_perpetual_user_st
 )
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
-from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 
 
 class BitmartPerpetualUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):

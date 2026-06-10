@@ -3,6 +3,9 @@ from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCa
 from unittest.mock import AsyncMock, MagicMock
 
 import aiohttp
+from web_assistant.connections.rest_connection import RESTConnection
+from web_assistant.connections.ws_connection import WSConnection
+from web_assistant.ws_assistant import WSAssistant
 
 from hummingbot.connector.derivative.decibel_perpetual import decibel_perpetual_constants as CONSTANTS
 from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_auth import DecibelPerpetualAuth
@@ -11,9 +14,6 @@ from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_user_st
 )
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
-from hummingbot.core.web_assistant.connections.rest_connection import RESTConnection
-from hummingbot.core.web_assistant.connections.ws_connection import WSConnection
-from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 
 
 class DecibelPerpetualUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):

@@ -4,7 +4,11 @@ import asyncio
 from decimal import Decimal
 from typing import Any
 
+from async_utils.core import safe_ensure_future
+from async_utils.tracking_nonce import NonceCreator
 from bidict import bidict
+from web_assistant.throttler.data_types import RateLimit
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 from hummingbot.connector.constants import s_decimal_NaN
 from hummingbot.connector.derivative.grvt_perpetual import (
@@ -23,17 +27,13 @@ from hummingbot.connector.derivative.position import Position
 from hummingbot.connector.perpetual_derivative_py_base import PerpetualDerivativePyBase
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.connector.utils import combine_to_hb_trading_pair, get_new_numeric_client_order_id
-from hummingbot.core.api_throttler.data_types import RateLimit
 from hummingbot.core.data_type.common import OrderType, PositionAction, PositionMode, PositionSide, TradeType
 from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState, OrderUpdate, TradeUpdate
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
 from hummingbot.core.data_type.trade_fee import TokenAmount, TradeFeeBase
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.event.events import AccountEvent, PositionModeChangeEvent
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.core.utils.estimate_fee import build_trade_fee
-from hummingbot.core.utils.tracking_nonce import NonceCreator
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class GrvtPerpetualDerivative(PerpetualDerivativePyBase):

@@ -1,7 +1,2 @@
 #!/usr/bin/env python
-
-from .avellaneda_market_making import AvellanedaMarketMakingStrategy
-
-__all__ = [
-    AvellanedaMarketMakingStrategy,
-]
+# Strategy removed (out-of-scope for event-bus migration)

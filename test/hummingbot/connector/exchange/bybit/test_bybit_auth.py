@@ -6,8 +6,9 @@ from typing import Awaitable, Dict, Mapping
 from unittest import TestCase
 from unittest.mock import MagicMock
 
+from web_assistant.connections.data_types import RESTMethod, RESTRequest, WSJSONRequest
+
 from hummingbot.connector.exchange.bybit.bybit_auth import BybitAuth
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest, WSJSONRequest
 
 
 class BybitAuthTests(TestCase):

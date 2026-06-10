@@ -10,6 +10,9 @@ from test.logger_mixin_for_test import LoggerMixinForTest
 from typing import Any, AsyncGenerator, Dict
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
+from web_assistant.connections.data_types import WSRequest, WSResponse
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+
 from hummingbot.connector.exchange.coinbase_advanced_trade import coinbase_advanced_trade_constants as CONSTANTS
 from hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_trade_api_user_stream_data_source import (
     CoinbaseAdvancedTradeAPIUserStreamDataSource,
@@ -21,8 +24,6 @@ from hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_tra
 )
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.web_assistant.connections.data_types import WSRequest, WSResponse
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class MockWebAssistant:

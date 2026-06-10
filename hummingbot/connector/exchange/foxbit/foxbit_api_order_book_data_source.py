@@ -1,8 +1,13 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import time
 from typing import TYPE_CHECKING, Any
+
+from web_assistant.connections.data_types import RESTMethod, WSJSONRequest
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+from web_assistant.ws_assistant import WSAssistant
 
 from hummingbot.connector.exchange.foxbit import (
     foxbit_constants as CONSTANTS,
@@ -17,10 +22,7 @@ from hummingbot.connector.exchange.foxbit.foxbit_order_book import (
 from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_message import OrderBookMessage
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, WSJSONRequest
-from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.logger import HummingbotLogger
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 if TYPE_CHECKING:
     from hummingbot.connector.exchange.foxbit.foxbit_exchange import FoxbitExchange
@@ -153,7 +155,7 @@ class FoxbitAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
     async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         if CONSTANTS.WS_SUBSCRIBE_TRADES or CONSTANTS.WS_TRADE_RESPONSE in raw_message["n"]:
-            full_msg = eval(raw_message["o"].replace(",false,", ",False,"))
+            full_msg = json.loads(raw_message["o"])
             for msg in full_msg:
                 instrument_id = int(msg[FoxbitTradeFields.INSTRUMENTID.value])
                 trading_pair = ""
@@ -171,7 +173,7 @@ class FoxbitAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
     async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         if CONSTANTS.WS_ORDER_BOOK_RESPONSE or CONSTANTS.WS_ORDER_STATE in raw_message["n"]:
-            full_msg = eval(raw_message["o"])
+            full_msg = json.loads(raw_message["o"])
             for msg in full_msg:
                 instrument_id = int(msg[FoxbitOrderBookFields.PRODUCTPAIRCODE.value])
 

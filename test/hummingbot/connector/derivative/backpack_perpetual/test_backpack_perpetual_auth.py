@@ -5,9 +5,9 @@ from unittest.mock import MagicMock
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519
+from web_assistant.connections.data_types import RESTMethod, RESTRequest
 
 from hummingbot.connector.derivative.backpack_perpetual.backpack_perpetual_auth import BackpackPerpetualAuth
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest
 
 
 class BackpackPerpetualAuthTests(IsolatedAsyncioTestCase):

@@ -1,7 +1,8 @@
 from decimal import Decimal
 from enum import Enum
 
-from hummingbot.core.utils.async_utils import safe_gather
+from async_utils.core import safe_gather
+
 from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple
 
 from .data_types import ArbProposal, ArbProposalSide, TokenAmount

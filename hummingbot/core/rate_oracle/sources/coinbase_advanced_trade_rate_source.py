@@ -3,12 +3,12 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
+from async_utils.core import safe_gather
 from pydantic import SecretStr
 
 from hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_trade_constants import DEFAULT_DOMAIN
 from hummingbot.core.rate_oracle.sources.rate_source_base import RateSourceBase
 from hummingbot.core.utils import async_ttl_cache
-from hummingbot.core.utils.async_utils import safe_gather
 
 if TYPE_CHECKING:
     from hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_trade_exchange import (

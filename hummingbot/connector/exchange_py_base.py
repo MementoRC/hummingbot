@@ -9,6 +9,10 @@ from decimal import Decimal
 from typing import Any, AsyncIterable, Callable
 
 from async_timeout import timeout
+from async_utils.core import safe_ensure_future, safe_gather
+from web_assistant.auth import AuthBase
+from web_assistant.connections.data_types import RESTMethod
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 from hummingbot.connector.client_order_tracker import ClientOrderTracker
 from hummingbot.connector.constants import MINUTE, TWELVE_HOURS, s_decimal_0, s_decimal_NaN
@@ -29,11 +33,7 @@ from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee
 from hummingbot.core.data_type.user_stream_tracker import UserStreamTracker
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.network_iterator import NetworkStatus
-from hummingbot.core.utils.async_utils import safe_ensure_future, safe_gather
-from hummingbot.core.web_assistant.auth import AuthBase
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod
 from hummingbot.logger import HummingbotLogger
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class ExchangePyBase(ExchangeBase, ABC):

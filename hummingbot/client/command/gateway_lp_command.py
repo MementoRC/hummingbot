@@ -5,12 +5,13 @@ import asyncio
 import time
 from typing import TYPE_CHECKING, Any, Union
 
+from async_utils.core import safe_ensure_future
+
 from hummingbot.client.command.command_utils import GatewayCommandUtils
 from hummingbot.client.command.lp_command_utils import LPCommandUtils
 from hummingbot.connector.gateway.common_types import ConnectorType, TransactionStatus, get_connector_type
 from hummingbot.connector.gateway.gateway import AMMPoolInfo, AMMPositionInfo, CLMMPoolInfo, CLMMPositionInfo, Gateway
 from hummingbot.connector.utils import split_hb_trading_pair
-from hummingbot.core.utils.async_utils import safe_ensure_future
 
 if TYPE_CHECKING:
     from hummingbot.client.hummingbot_application import HummingbotApplication  # noqa: F401

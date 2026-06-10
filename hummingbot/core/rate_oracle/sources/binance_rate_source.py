@@ -3,10 +3,11 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
+from async_utils.core import safe_gather
+
 from hummingbot.connector.utils import split_hb_trading_pair
 from hummingbot.core.rate_oracle.sources.rate_source_base import RateSourceBase
 from hummingbot.core.utils import async_ttl_cache
-from hummingbot.core.utils.async_utils import safe_gather
 
 if TYPE_CHECKING:
     from hummingbot.connector.exchange.binance.binance_exchange import BinanceExchange

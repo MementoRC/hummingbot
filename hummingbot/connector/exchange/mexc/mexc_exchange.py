@@ -4,7 +4,10 @@ import asyncio
 from decimal import Decimal
 from typing import Any
 
+from async_utils.core import safe_gather
 from bidict import bidict
+from web_assistant.connections.data_types import RESTMethod
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 from hummingbot.connector.constants import s_decimal_NaN
 from hummingbot.connector.exchange.mexc import mexc_constants as CONSTANTS, mexc_utils, mexc_web_utils as web_utils
@@ -20,9 +23,6 @@ from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTr
 from hummingbot.core.data_type.trade_fee import DeductedFromReturnsTradeFee, TokenAmount, TradeFeeBase
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.event.events import MarketEvent, OrderFilledEvent
-from hummingbot.core.utils.async_utils import safe_gather
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class MexcExchange(ExchangePyBase):

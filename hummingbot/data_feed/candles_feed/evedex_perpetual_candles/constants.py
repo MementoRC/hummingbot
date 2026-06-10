@@ -1,6 +1,5 @@
 from bidict import bidict
-
-from hummingbot.core.api_throttler.data_types import LinkedLimitWeightPair, RateLimit
+from web_assistant.throttler.data_types import LinkedLimitWeightPair, RateLimit
 
 MARKET_DATA_REST_URL = "https://market-data-api.evedex.com"
 EXCHANGE_REST_URL = "https://exchange-api.evedex.com"

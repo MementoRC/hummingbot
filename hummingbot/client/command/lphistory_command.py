@@ -7,9 +7,9 @@ from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
 import pandas as pd
+from async_utils.core import safe_ensure_future
 
 from hummingbot.core.rate_oracle.rate_oracle import RateOracle
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.model.range_position_update import RangePositionUpdate
 
 if TYPE_CHECKING:

@@ -6,7 +6,12 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any, Mapping
 
+from async_utils.core import safe_ensure_future, safe_gather
 from bidict import bidict
+from web_assistant.connections.data_types import WSJSONRequest, WSResponse
+from web_assistant.rest_assistant import RESTAssistant
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+from web_assistant.ws_assistant import WSAssistant
 
 from hummingbot.connector.constants import s_decimal_NaN
 from hummingbot.connector.exchange.foxbit import (
@@ -26,11 +31,6 @@ from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTr
 from hummingbot.core.data_type.trade_fee import DeductedFromReturnsTradeFee, TokenAmount, TradeFeeBase
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.event.events import MarketEvent, OrderFilledEvent
-from hummingbot.core.utils.async_utils import safe_ensure_future, safe_gather
-from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest, WSResponse
-from hummingbot.core.web_assistant.rest_assistant import RESTAssistant
-from hummingbot.core.web_assistant.ws_assistant import WSAssistant
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 s_logger = None
 s_decimal_0 = Decimal(0)

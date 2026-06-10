@@ -7,6 +7,7 @@ from math import ceil, floor
 from typing import List, Tuple
 
 import pandas as pd
+from async_utils.core import safe_ensure_future
 from bidict import bidict
 
 from hummingbot.client.performance import PerformanceMetrics
@@ -25,13 +26,13 @@ from hummingbot.core.event.events import (
     SellOrderCompletedEvent,
 )
 from hummingbot.core.network_iterator import NetworkStatus
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.strategy.cross_exchange_market_making.cross_exchange_market_making_config_map_pydantic import (
     CrossExchangeMarketMakingConfigMap,
     PassiveOrderRefreshMode,
 )
 from hummingbot.strategy.maker_taker_market_pair import MakerTakerMarketPair
 from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple
+from hummingbot.strategy.strategy_base import StrategyBase
 from hummingbot.strategy.strategy_py_base import StrategyPyBase
 
 from .order_id_market_pair_tracker import OrderIDMarketPairTracker
@@ -419,6 +420,11 @@ class CrossExchangeMarketMakingStrategy(StrategyPyBase):
 
         :param timestamp: current tick timestamp
         """
+        # Replicate the Cython c_tick two-layer dispatch:
+        # StrategyPyBase.c_tick called StrategyBase.c_tick (updating _current_timestamp
+        # and _sb_order_tracker timestamps) before calling Python tick().
+        # StrategyPyBase.tick() raises NotImplementedError so we call StrategyBase directly.
+        StrategyBase.tick(self, timestamp)
         current_tick = timestamp // self._status_report_interval
         last_tick = self._last_timestamp // self._status_report_interval
         should_report_warnings = (current_tick > last_tick) and (LogOption.STATUS_REPORT in self.logging_options)
@@ -922,9 +928,9 @@ class CrossExchangeMarketMakingStrategy(StrategyPyBase):
                 taker_top = order_price
             else:
                 taker_top = taker_market.get_price(taker_trading_pair, False)
-                order_price = taker_market.get_price_for_volume(
-                    taker_trading_pair, False, quantized_hedge_amount
-                ).result_price
+                order_price = Decimal(
+                    taker_market.get_price_for_volume(taker_trading_pair, False, quantized_hedge_amount).result_price
+                )
 
             self.log_with_clock(logging.INFO, f"Calculated by HB order_price: {order_price}")
             order_price *= taker_slippage_adjustment_factor
@@ -964,9 +970,11 @@ class CrossExchangeMarketMakingStrategy(StrategyPyBase):
                     self.logger().warning("Gateway: failed to obtain order price. No hedging order will be submitted.")
                     return
             else:
-                taker_price = taker_market.get_price_for_volume(
-                    taker_trading_pair, True, sell_fill_quantity / base_rate
-                ).result_price
+                taker_price = Decimal(
+                    taker_market.get_price_for_volume(
+                        taker_trading_pair, True, sell_fill_quantity / base_rate
+                    ).result_price
+                )
 
             hedged_order_quantity = min(
                 sell_fill_quantity / base_rate,
@@ -1112,7 +1120,9 @@ class CrossExchangeMarketMakingStrategy(StrategyPyBase):
                     return s_decimal_zero
             else:
                 try:
-                    taker_price = taker_market.get_vwap_for_volume(taker_trading_pair, False, taker_size).result_price
+                    taker_price = Decimal(
+                        taker_market.get_vwap_for_volume(taker_trading_pair, False, taker_size).result_price
+                    )
                 except ZeroDivisionError:
                     assert size == s_decimal_zero
                     return s_decimal_zero
@@ -1146,9 +1156,11 @@ class CrossExchangeMarketMakingStrategy(StrategyPyBase):
                     return s_decimal_zero
             else:
                 try:
-                    taker_price = taker_market.get_price_for_quote_volume(
-                        taker_trading_pair, True, taker_balance_in_quote
-                    ).result_price
+                    taker_price = Decimal(
+                        taker_market.get_price_for_quote_volume(
+                            taker_trading_pair, True, taker_balance_in_quote
+                        ).result_price
+                    )
                 except ZeroDivisionError:
                     assert size == s_decimal_zero
                     return s_decimal_zero
@@ -1206,7 +1218,9 @@ class CrossExchangeMarketMakingStrategy(StrategyPyBase):
                     return s_decimal_nan
             else:
                 try:
-                    taker_price = taker_market.get_vwap_for_volume(taker_trading_pair, False, size).result_price
+                    taker_price = Decimal(
+                        taker_market.get_vwap_for_volume(taker_trading_pair, False, size).result_price
+                    )
                 except ZeroDivisionError:
                     return s_decimal_nan
 
@@ -1248,7 +1262,7 @@ class CrossExchangeMarketMakingStrategy(StrategyPyBase):
                     return s_decimal_nan
             else:
                 try:
-                    taker_price = taker_market.get_vwap_for_volume(taker_trading_pair, True, size).result_price
+                    taker_price = Decimal(taker_market.get_vwap_for_volume(taker_trading_pair, True, size).result_price)
                 except ZeroDivisionError:
                     return s_decimal_nan
 
@@ -1298,7 +1312,9 @@ class CrossExchangeMarketMakingStrategy(StrategyPyBase):
                     return s_decimal_nan
             else:
                 try:
-                    taker_price = taker_market.get_vwap_for_volume(taker_trading_pair, False, size).result_price
+                    taker_price = Decimal(
+                        taker_market.get_vwap_for_volume(taker_trading_pair, False, size).result_price
+                    )
                 except ZeroDivisionError:
                     return None
 
@@ -1318,7 +1334,7 @@ class CrossExchangeMarketMakingStrategy(StrategyPyBase):
                     return s_decimal_nan
             else:
                 try:
-                    taker_price = taker_market.get_vwap_for_volume(taker_trading_pair, True, size).result_price
+                    taker_price = Decimal(taker_market.get_vwap_for_volume(taker_trading_pair, True, size).result_price)
                 except ZeroDivisionError:
                     return None
 
@@ -1577,9 +1593,9 @@ class CrossExchangeMarketMakingStrategy(StrategyPyBase):
                     )
                     return False
             else:
-                taker_price = taker_market.get_price_for_quote_volume(
-                    taker_trading_pair, True, quote_asset_amount
-                ).result_price
+                taker_price = Decimal(
+                    taker_market.get_price_for_quote_volume(taker_trading_pair, True, quote_asset_amount).result_price
+                )
 
             adjusted_taker_price = (taker_price / base_rate) * taker_slippage_adjustment_factor
             order_size_limit = min(base_asset_amount, quote_asset_amount / adjusted_taker_price)

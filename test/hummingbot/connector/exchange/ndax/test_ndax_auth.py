@@ -7,10 +7,10 @@ from unittest import TestCase
 from unittest.mock import patch
 
 from aioresponses import aioresponses
+from web_assistant.connections.data_types import RESTMethod, RESTRequest
 
 from hummingbot.connector.exchange.ndax import ndax_web_utils as web_utils
 from hummingbot.connector.exchange.ndax.ndax_auth import NdaxAuth
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest
 
 
 class NdaxAuthTests(TestCase):

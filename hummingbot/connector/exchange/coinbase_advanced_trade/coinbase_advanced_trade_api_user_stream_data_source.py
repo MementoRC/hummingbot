@@ -5,16 +5,17 @@ import logging
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any, AsyncGenerator, NamedTuple
 
+from web_assistant.connections.data_types import WSJSONRequest
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+from web_assistant.ws_assistant import WSAssistant
+
 import hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_trade_constants as constants
 from hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_trade_web_utils import (
     get_timestamp_from_exchange_time,
 )
 from hummingbot.core.data_type.common import OrderType, TradeType
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
-from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest
-from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.logger import HummingbotLogger
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 if TYPE_CHECKING:
     from hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_trade_exchange import (  # noqa: F401

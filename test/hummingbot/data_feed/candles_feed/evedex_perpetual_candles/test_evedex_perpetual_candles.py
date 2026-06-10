@@ -6,10 +6,10 @@ from test.hummingbot.data_feed.candles_feed.test_candles_base import TestCandles
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses import aioresponses
+from web_assistant.connections.data_types import WSJSONRequest
 
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.core.network_iterator import NetworkStatus
-from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest
 from hummingbot.data_feed.candles_feed.evedex_perpetual_candles import EvedexPerpetualCandles, constants as CONSTANTS
 
 

@@ -78,6 +78,9 @@ class StrategyBaseUnitTests(unittest.TestCase):
         self.strategy: StrategyBase = MockStrategy()
         self.strategy.add_markets([self.market])
         self.strategy.order_tracker._set_current_timestamp(1640001112.223)
+        # TimeIterator.tick raises ValueError for NaN→int in paper_trade.
+        # Cython silently coerced NaN to 0; explicit init is required in pure Python.
+        self.market._set_current_timestamp(1640001112.223)
 
     @staticmethod
     def simulate_order_filled(market_info: MarketTradingPairTuple, order: Union[LimitOrder, MarketOrder]):
@@ -139,7 +142,7 @@ class StrategyBaseUnitTests(unittest.TestCase):
 
         expected_total_fees = sum([Decimal(f"{i}") for i in range(5)])
 
-        self.assertEqual(expected_total_fees, self.strategy.cum_flat_fees(fee_asset, trades))
+        self.assertEqual(expected_total_fees, self.strategy.sum_flat_fees(fee_asset, trades))
 
     def test_buy_with_specific_market(self):
         limit_order: LimitOrder = LimitOrder(

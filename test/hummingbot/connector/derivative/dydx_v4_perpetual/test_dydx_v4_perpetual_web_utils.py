@@ -5,12 +5,12 @@ from typing import Awaitable
 from unittest.mock import Mock, patch
 
 from aioresponses import aioresponses
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 from hummingbot.connector.derivative.dydx_v4_perpetual import (
     dydx_v4_perpetual_constants as CONSTANTS,
     dydx_v4_perpetual_web_utils as web_utils,
 )
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class DydxV4PerpetualWebUtilsTest(unittest.TestCase):

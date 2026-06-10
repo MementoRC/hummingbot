@@ -9,13 +9,13 @@ from enum import Enum
 from typing import Deque, Dict
 
 import pandas as pd
+from async_utils.core import safe_ensure_future
 
 from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
 from hummingbot.core.event.events import OrderBookTradeEvent
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.logger import HummingbotLogger
 
 

@@ -6,12 +6,13 @@ from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCa
 from typing import Dict
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from web_assistant.throttler.async_throttler import AsyncThrottler
+
 from hummingbot.connector.exchange.vertex import vertex_constants as CONSTANTS, vertex_web_utils as web_utils
 from hummingbot.connector.exchange.vertex.vertex_api_user_stream_data_source import VertexAPIUserStreamDataSource
 from hummingbot.connector.exchange.vertex.vertex_auth import VertexAuth
 from hummingbot.connector.exchange.vertex.vertex_exchange import VertexExchange
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
-from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 
 
 class TestVertexAPIUserStreamDataSource(IsolatedAsyncioWrapperTestCase):

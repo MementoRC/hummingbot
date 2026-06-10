@@ -4,9 +4,9 @@ from unittest.mock import MagicMock
 from urllib.parse import urlencode
 
 from typing_extensions import Awaitable
+from web_assistant.connections.data_types import RESTMethod, RESTRequest
 
 from hummingbot.connector.exchange.bitstamp.bitstamp_auth import BitstampAuth
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest
 
 
 class BitstampAuthTests(TestCase):

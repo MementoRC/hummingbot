@@ -1,11 +1,43 @@
 """Root conftest.py — exclude test modules with missing upstream dependencies."""
 
+import os as _os
+
+# Remove stale .so files for modules converted from Cython to pure Python.
+# The .so has import priority over .py; delete it so the .py is used directly.
+_CONVERTED_SO_FILES = [
+    # clock: converted from Cython in C19; .so compiled with c_start/c_stop/c_tick
+    # which no longer exist after C20.
+    "hummingbot/core/clock.cpython-312-x86_64-linux-gnu.so",
+    "hummingbot/strategy/order_tracker.cpython-312-x86_64-linux-gnu.so",
+    # strategy_base / strategy_py_base: converted from Cython; .so compiled
+    # against old TimeIterator C-struct (104 bytes) which is now pure Python (88 bytes).
+    "hummingbot/strategy/strategy_base.cpython-312-x86_64-linux-gnu.so",
+    "hummingbot/strategy/strategy_py_base.cpython-312-x86_64-linux-gnu.so",
+    # trading_intensity: converted from Cython; .so compiled against old
+    # EventListener C-struct (48 bytes) which is now pure Python (16 bytes).
+    "hummingbot/strategy/__utils__/trailing_indicators/trading_intensity.cpython-312-x86_64-linux-gnu.so",
+    # api_asset_price_delegate / order_book_asset_price_delegate: .pyx removed.
+    "hummingbot/strategy/api_asset_price_delegate.cpython-312-x86_64-linux-gnu.so",
+    "hummingbot/strategy/order_book_asset_price_delegate.cpython-312-x86_64-linux-gnu.so",
+    # cross_exchange_market_making order_id_market_pair_tracker: .pyx removed.
+    "hummingbot/strategy/cross_exchange_market_making/order_id_market_pair_tracker.cpython-312-x86_64-linux-gnu.so",
+    # transaction_tracker: .pyx removed.
+    "hummingbot/core/data_type/transaction_tracker.cpython-312-x86_64-linux-gnu.so",
+]
+for _so in _CONVERTED_SO_FILES:
+    if _os.path.exists(_so):
+        _os.remove(_so)
+
 # Directories/files to skip during collection (missing upstream deps)
 _SKIP_PATHS = (
     "connector/derivative/decibel_perpetual",
     "connector/derivative/dydx_v4_perpetual",
     "connector/exchange/vertex",
     "connector/gateway/test_gateway_lp.py",
+    # Out-of-scope strategies removed in Phase C (source .pyx deleted)
+    "strategy/pure_market_making",
+    "strategy/avellaneda_market_making",
+    "strategy/cross_exchange_mining",
 )
 
 

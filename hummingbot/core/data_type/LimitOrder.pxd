@@ -3,7 +3,6 @@
 from libcpp cimport bool as cppbool
 from libcpp.string cimport string
 
-
 cdef extern from "../cpp/LimitOrder.h":
     ctypedef struct PyObject
 

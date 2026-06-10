@@ -2,14 +2,15 @@ import asyncio
 import unittest
 from typing import Awaitable
 
+from web_assistant.connections.data_types import RESTMethod, RESTRequest
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+
 import hummingbot.connector.derivative.binance_perpetual.binance_perpetual_constants as CONSTANTS
 import hummingbot.connector.derivative.binance_perpetual.binance_perpetual_web_utils as web_utils
 from hummingbot.connector.derivative.binance_perpetual.binance_perpetual_web_utils import (
     BinancePerpetualRESTPreProcessor,
 )
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class BinancePerpetualWebUtilsUnitTests(unittest.TestCase):

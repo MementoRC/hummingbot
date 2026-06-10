@@ -7,6 +7,7 @@ from decimal import Decimal
 from typing import Any, Dict
 
 import pandas as pd
+from async_utils.core import safe_ensure_future
 from pydantic import Field
 
 from hummingbot.connector.connector_base import ConnectorBase
@@ -16,7 +17,6 @@ from hummingbot.connector.exchange_py_base import ExchangePyBase
 from hummingbot.core.data_type.common import MarketDict, OrderType, TradeType
 from hummingbot.core.data_type.order_candidate import OrderCandidate
 from hummingbot.core.event.events import OrderFilledEvent
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base, StrategyV2ConfigBase
 
 

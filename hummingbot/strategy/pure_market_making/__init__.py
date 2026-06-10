@@ -1,9 +1,6 @@
 #!/usr/bin/env python
+# Strategy class removed (out-of-scope for event-bus migration).
+# inventory_skew_calculator retained for liquidity_mining dependency.
+from .inventory_skew_calculator import calculate_bid_ask_ratios_from_base_asset_ratio
 
-from .inventory_cost_price_delegate import InventoryCostPriceDelegate
-from .pure_market_making import PureMarketMakingStrategy
-
-__all__ = [
-    PureMarketMakingStrategy,
-    InventoryCostPriceDelegate,
-]
+__all__ = ["calculate_bid_ask_ratios_from_base_asset_ratio"]

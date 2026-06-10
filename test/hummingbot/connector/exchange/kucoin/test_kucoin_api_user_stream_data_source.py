@@ -7,13 +7,13 @@ from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCa
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses import aioresponses
+from web_assistant.throttler.async_throttler import AsyncThrottler
 
 from hummingbot.connector.exchange.kucoin import kucoin_constants as CONSTANTS, kucoin_web_utils as web_utils
 from hummingbot.connector.exchange.kucoin.kucoin_api_user_stream_data_source import KucoinAPIUserStreamDataSource
 from hummingbot.connector.exchange.kucoin.kucoin_auth import KucoinAuth
 from hummingbot.connector.exchange.kucoin.kucoin_exchange import KucoinExchange
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
-from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 
 
 class TestKucoinAPIUserStreamDataSource(IsolatedAsyncioWrapperTestCase):
