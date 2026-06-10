@@ -1,20 +1,23 @@
 from hummingbot.strategy.strategy_base cimport StrategyBase
+
 from hummingbot.core.clock import Clock
+
 from hummingbot.core.clock cimport Clock
+
 from hummingbot.core.event.events import (
+    BuyOrderCompletedEvent,
     BuyOrderCreatedEvent,
-    SellOrderCreatedEvent,
-    OrderFilledEvent,
+    FundingPaymentCompletedEvent,
     MarketOrderFailureEvent,
     OrderCancelledEvent,
     OrderExpiredEvent,
-    BuyOrderCompletedEvent,
-    SellOrderCompletedEvent,
-    FundingPaymentCompletedEvent,
+    OrderFilledEvent,
     PositionModeChangeEvent,
     RangePositionLiquidityAddedEvent,
     RangePositionLiquidityRemovedEvent,
     RangePositionUpdateFailureEvent,
+    SellOrderCompletedEvent,
+    SellOrderCreatedEvent,
 )
 
 

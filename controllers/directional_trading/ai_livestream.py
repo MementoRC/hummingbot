@@ -2,7 +2,6 @@ from decimal import Decimal
 
 import pandas_ta as ta  # noqa: F401
 from pydantic import Field
-from remote_iface import ExternalTopicFactory
 
 from hummingbot.core.data_type.common import TradeType
 from hummingbot.strategy_v2.controllers.directional_trading_controller_base import (
@@ -10,6 +9,7 @@ from hummingbot.strategy_v2.controllers.directional_trading_controller_base impo
     DirectionalTradingControllerConfigBase,
 )
 from hummingbot.strategy_v2.executors.position_executor.data_types import PositionExecutorConfig
+from remote_iface import ExternalTopicFactory
 
 
 class AILivestreamControllerConfig(DirectionalTradingControllerConfigBase):

@@ -1,6 +1,6 @@
 import asyncio
 from decimal import Decimal
-from typing import Dict, List, Iterator, Mapping, Optional
+from typing import Dict, Iterator, List, Mapping, Optional
 
 from bidict import bidict
 
@@ -14,7 +14,6 @@ from hummingbot.core.data_type.order_book_row import ClientOrderBookRow
 from hummingbot.core.data_type.order_book_tracker import OrderBookTracker
 from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee
 from hummingbot.core.utils.async_utils import safe_gather
-
 
 s_float_NaN = float("nan")
 s_decimal_NaN = Decimal("nan")
