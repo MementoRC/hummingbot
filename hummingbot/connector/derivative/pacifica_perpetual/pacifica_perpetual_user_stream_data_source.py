@@ -3,6 +3,8 @@ from __future__ import annotations
 import asyncio
 from typing import TYPE_CHECKING
 
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+
 from hummingbot.connector.derivative.pacifica_perpetual import (
     pacifica_perpetual_constants as CONSTANTS,
     pacifica_perpetual_web_utils as web_utils,
@@ -11,7 +13,6 @@ from hummingbot.connector.derivative.pacifica_perpetual.pacifica_perpetual_auth 
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.logger import HummingbotLogger
 

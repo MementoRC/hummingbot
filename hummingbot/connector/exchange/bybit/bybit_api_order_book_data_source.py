@@ -5,6 +5,8 @@ import time
 from collections import defaultdict
 from typing import TYPE_CHECKING, Any, Mapping
 
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+
 import hummingbot.connector.exchange.bybit.bybit_constants as CONSTANTS
 from hummingbot.connector.exchange.bybit import bybit_web_utils as web_utils
 from hummingbot.connector.exchange.bybit.bybit_order_book import BybitOrderBook
@@ -13,7 +15,6 @@ from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 from hummingbot.core.data_type.order_book_message import OrderBookMessage
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod, WSJSONRequest
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.logger import HummingbotLogger
 
