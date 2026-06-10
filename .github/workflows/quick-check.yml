@@ -39,7 +39,9 @@ jobs:
           fi
 
       - name: Compute selected tests
+        id: select
         run: |
+          set +e
           python3 .github/test-selection/select_tests.py \
             --mode branch \
             --base-ref origin/ci-base \
@@ -48,12 +50,26 @@ jobs:
             --repo . \
             --no-history \
             > /tmp/selected.txt
+          code=$?
+          set -e
+          if [ $code -eq 2 ]; then
+            echo "::notice::Selector requested full-suite fallback (exit 2)."
+            echo "full_suite=true" >> $GITHUB_OUTPUT
+          elif [ $code -ne 0 ]; then
+            echo "::error::select_tests.py failed with exit code $code"
+            exit $code
+          else
+            echo "full_suite=false" >> $GITHUB_OUTPUT
+          fi
           echo "Selected $(wc -l < /tmp/selected.txt) test files:"
           cat /tmp/selected.txt
 
       - name: Run selected tests
         run: |
-          if [ -s /tmp/selected.txt ]; then
+          if [ "${{ steps.select.outputs.full_suite }}" = "true" ]; then
+            echo "Running full suite (fallback)."
+            pixi run -e ci pytest -v --tb=short
+          elif [ -s /tmp/selected.txt ]; then
             pixi run -e ci pytest $(cat /tmp/selected.txt) -v --tb=short
           else
             echo "No tests touched by diff — quick check passes."
