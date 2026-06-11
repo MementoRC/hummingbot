@@ -6,7 +6,7 @@ from decimal import Decimal
 from typing import Dict, Union
 
 from hummingbot.connector.connector_base import ConnectorBase
-from hummingbot.core.data_type.common import OrderType, PositionAction, PriceType, TradeType
+from hummingbot.core.data_type.common import OrderType, PositionAction, PositionMode, PriceType, TradeType
 from hummingbot.core.data_type.order_candidate import OrderCandidate, PerpetualOrderCandidate
 from hummingbot.core.event.events import (
     BuyOrderCompletedEvent,
@@ -226,6 +226,26 @@ class PositionExecutor(ExecutorBase):
     @property
     def close_order_side(self):
         return TradeType.BUY if self.config.side == TradeType.SELL else TradeType.SELL
+
+    @property
+    def close_position_action(self) -> PositionAction:
+        """
+        Position action used for the close orders (take profit / stop loss / time limit).
+
+        In ONEWAY position mode the account holds a single netted position, so tagging the close as
+        ``PositionAction.CLOSE`` — which Binance and Hyperliquid translate into a reduce-only order — is both
+        unnecessary and harmful: opposite-side level executors net against the shared position and their
+        genuine reducing / round-trip orders get rejected ("reduce-only would increase position" / "ReduceOnly
+        Order is rejected.", issues #8269 and #8283). OKX and Gate.io already treat ONEWAY as a plain netting
+        account; we mirror that here by sending the close as a normal order (``PositionAction.OPEN`` carries no
+        reduce-only flag) so buys and sells net freely. HEDGE mode keeps ``PositionAction.CLOSE`` because long
+        and short positions are tracked separately and the close must target the right side.
+        """
+        if self.is_perpetual:
+            connector = self.connectors[self.config.connector_name]
+            if connector.position_mode == PositionMode.ONEWAY:
+                return PositionAction.OPEN
+        return PositionAction.CLOSE
 
     @property
     def trade_pnl_pct(self) -> Decimal:
@@ -521,7 +541,7 @@ class PositionExecutor(ExecutorBase):
                 amount=self.amount_to_close,
                 price=price,
                 side=self.close_order_side,
-                position_action=PositionAction.CLOSE,
+                position_action=self.close_position_action,
             )
             self._close_order = TrackedOrder(order_id=order_id)
             self.logger().debug(
@@ -608,7 +628,7 @@ class PositionExecutor(ExecutorBase):
             amount=self.amount_to_close,
             price=self.take_profit_price,
             order_type=self.config.triple_barrier_config.take_profit_order_type,
-            position_action=PositionAction.CLOSE,
+            position_action=self.close_position_action,
             side=self.close_order_side,
         )
         self._take_profit_limit_order = TrackedOrder(order_id=order_id)
