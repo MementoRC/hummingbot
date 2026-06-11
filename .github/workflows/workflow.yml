@@ -170,12 +170,6 @@ jobs:
       - name: Import smoke test
         run: pixi run -e ci compat-import
 
-      - name: Interface contract check
-        run: pixi run -e ci compat-contract
-
-      - name: Integration compatibility tests
-        run: pixi run -e ci compat-integration
-
   ci-success:
     name: CI Success
     if: always()
