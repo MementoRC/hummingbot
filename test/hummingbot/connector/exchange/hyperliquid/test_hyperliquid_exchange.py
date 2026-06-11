@@ -1,3 +1,4 @@
+from __future__ import annotations
 import asyncio
 import json
 import logging
@@ -5,7 +6,7 @@ import re
 
 # from copy import deepcopy
 from decimal import Decimal
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable
 from unittest import TestCase
 from unittest.mock import AsyncMock, patch
 
@@ -440,7 +441,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         """
         :return: the URL configured for the cancelation
@@ -455,7 +456,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.public_rest_url(CONSTANTS.CANCEL_ORDER_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
@@ -467,7 +468,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         successful_order: InFlightOrder,
         erroneous_order: InFlightOrder,
         mock_api: aioresponses,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         :return: a list of all configured URLs for the cancelations
         """
@@ -479,13 +480,13 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         return all_urls
 
     def configure_order_not_found_error_cancelation_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         # Implement the expected not found response when enabling test_cancel_order_not_found_in_the_exchange
         raise NotImplementedError
 
     def configure_order_not_found_error_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ):
         url_order_status = web_utils.public_rest_url(CONSTANTS.ORDER_URL)
 
@@ -496,7 +497,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         return url_order_status
 
     def configure_completely_filled_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ):
 
         url_order_status = web_utils.public_rest_url(CONSTANTS.ORDER_URL)
@@ -511,7 +512,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ):
 
         url_order_status = web_utils.public_rest_url(CONSTANTS.ORDER_URL)
@@ -527,7 +528,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.public_rest_url(CONSTANTS.ORDER_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
@@ -540,7 +541,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.public_rest_url(CONSTANTS.ORDER_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
@@ -552,7 +553,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.public_rest_url(CONSTANTS.ORDER_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
@@ -565,7 +566,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.public_rest_url(CONSTANTS.ORDER_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
@@ -578,7 +579,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.public_rest_url(
             CONSTANTS.ACCOUNT_TRADE_LIST_URL,
@@ -593,7 +594,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.public_rest_url(CONSTANTS.ACCOUNT_TRADE_LIST_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
@@ -1104,8 +1105,8 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
     def configure_trading_rules_response(
         self,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
 
         url = self.trading_rules_url
         response = self.trading_rules_request_mock_response
@@ -1292,7 +1293,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
             self.assertTrue(self.is_logged("INFO", f"Successfully canceled order {order1.client_order_id}."))
 
     def _configure_balance_response(
-        self, response, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, response, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
 
         url = self.balance_url
@@ -1336,8 +1337,8 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
     def configure_erroneous_trading_rules_response(
         self,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
 
         url = self.trading_rules_url
         response = self.trading_rules_request_erroneous_mock_response
@@ -1354,7 +1355,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         url = self.all_symbols_url
         mock_api.post(url, exception=Exception)
 
-        result: List[str] = self.async_run_with_timeout(self.exchange.all_trading_pairs())
+        result: list[str] = self.async_run_with_timeout(self.exchange.all_trading_pairs())
 
         self.assertEqual(0, len(result))
 
@@ -1374,8 +1375,8 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
     def configure_all_symbols_response(
         self,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
 
         url = self.all_symbols_url
         response = self.all_symbols_request_mock_response
