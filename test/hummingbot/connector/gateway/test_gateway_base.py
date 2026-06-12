@@ -2,10 +2,10 @@ import asyncio
 import unittest
 from decimal import Decimal
 
+from data_type_primitives.common import OrderType, TradeType
+from data_type_primitives.in_flight_order import OrderState, OrderUpdate, TradeUpdate
+from data_type_primitives.trade_fee import AddedToCostTradeFee, TokenAmount
 from hummingbot.connector.gateway.gateway_base import GatewayBase
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.in_flight_order import OrderState, OrderUpdate, TradeUpdate
-from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee, TokenAmount
 from hummingbot.core.event.event_logger import EventLogger
 from hummingbot.core.event.events import BuyOrderCreatedEvent, MarketEvent, SellOrderCreatedEvent
 
