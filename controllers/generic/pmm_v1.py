@@ -16,7 +16,7 @@ from decimal import Decimal
 import numpy as np
 from pydantic import Field, field_validator
 
-from hummingbot.core.data_type.common import MarketDict, PriceType, TradeType
+from data_type_primitives.common import MarketDict, PriceType, TradeType
 from hummingbot.strategy_v2.controllers.controller_base import ControllerBase, ControllerConfigBase
 from hummingbot.strategy_v2.executors.data_types import ConnectorPair
 from hummingbot.strategy_v2.executors.order_executor.data_types import ExecutionStrategy, OrderExecutorConfig

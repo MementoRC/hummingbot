@@ -7,7 +7,7 @@ from typing import Dict
 import pandas as pd
 from pydantic import Field
 
-from hummingbot.core.data_type.common import TradeType
+from data_type_primitives.common import TradeType
 from hummingbot.strategy_v2.backtesting.executor_simulator_base import ExecutorSimulation, ExecutorSimulatorBase
 from hummingbot.strategy_v2.executors.grid_executor.data_types import GridExecutorConfig, GridLevel
 from hummingbot.strategy_v2.models.executors import CloseType

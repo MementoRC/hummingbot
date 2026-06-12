@@ -5,7 +5,7 @@ import logging
 from dataclasses import dataclass, field
 from decimal import Decimal
 
-from hummingbot.core.data_type.trade_fee import TokenAmount, TradeFeeBase
+from data_type_primitives.trade_fee import TokenAmount, TradeFeeBase
 from hummingbot.core.event.events import OrderType, TradeType
 from hummingbot.core.rate_oracle.rate_oracle import RateOracle
 from hummingbot.core.utils.async_utils import safe_gather

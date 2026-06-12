@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, Callable, Dict
 
 from pydantic import ConfigDict, Field, field_validator
 
+from data_type_primitives.common import MarketDict, PositionAction, PriceType, TradeType
 from hummingbot.client.config.config_data_types import BaseClientModel
-from hummingbot.core.data_type.common import MarketDict, PositionAction, PriceType, TradeType
 from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.data_feed.candles_feed.data_types import CandlesConfig
 from hummingbot.data_feed.market_data_provider import MarketDataProvider

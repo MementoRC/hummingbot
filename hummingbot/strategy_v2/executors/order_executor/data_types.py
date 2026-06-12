@@ -7,7 +7,7 @@ from typing import Literal
 from pydantic import BaseModel, field_validator
 from pydantic_core.core_schema import ValidationInfo
 
-from hummingbot.core.data_type.common import PositionAction, TradeType
+from data_type_primitives.common import PositionAction, TradeType
 from hummingbot.strategy_v2.executors.data_types import ExecutorConfigBase
 
 

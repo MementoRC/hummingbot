@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from pydantic import Field, field_validator, model_validator
 
-from hummingbot.core.data_type.common import MarketDict, TradeType
+from data_type_primitives.common import MarketDict, TradeType
 from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.data_feed.candles_feed.data_types import CandlesConfig
 from hummingbot.logger import HummingbotLogger

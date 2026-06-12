@@ -3,8 +3,8 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Protocol, Union
 
+from data_type_primitives.common import TradeType
 from hummingbot.connector.connector_base import ConnectorBase
-from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.event.events import (
     BuyOrderCompletedEvent,
     BuyOrderCreatedEvent,

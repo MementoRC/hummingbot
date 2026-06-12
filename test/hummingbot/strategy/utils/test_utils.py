@@ -2,7 +2,7 @@ from decimal import Decimal
 from unittest import TestCase
 from unittest.mock import patch
 
-from hummingbot.core.data_type.limit_order import LimitOrder
+from data_type_primitives.limit_order import LimitOrder
 from hummingbot.strategy.utils import order_age
 
 

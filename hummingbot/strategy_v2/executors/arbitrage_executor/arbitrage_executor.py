@@ -3,8 +3,8 @@ import logging
 from decimal import Decimal
 from typing import Dict, Union
 
+from data_type_primitives.common import OrderType, TradeType
 from hummingbot.connector.utils import split_hb_trading_pair
-from hummingbot.core.data_type.common import OrderType, TradeType
 from hummingbot.core.event.events import BuyOrderCreatedEvent, MarketOrderFailureEvent, SellOrderCreatedEvent
 from hummingbot.core.rate_oracle.rate_oracle import RateOracle
 from hummingbot.logger import HummingbotLogger

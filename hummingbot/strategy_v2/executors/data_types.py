@@ -9,8 +9,8 @@ from typing import Literal
 import base58
 from pydantic import BaseModel, field_validator, model_validator
 
+from data_type_primitives.common import TradeType
 from hummingbot.client.settings import AllConnectorSettings
-from hummingbot.core.data_type.common import TradeType
 
 
 class ExecutorConfigBase(BaseModel):

@@ -3,12 +3,12 @@ from functools import partial
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import MagicMock, PropertyMock, patch
 
+from data_type_primitives.common import OrderType, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder, OrderState, TradeUpdate
+from data_type_primitives.trade_fee import AddedToCostTradeFee, TokenAmount
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.connector.trading_rule import TradingRule
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState, TradeUpdate
 from hummingbot.core.data_type.order_candidate import OrderCandidate
-from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee, TokenAmount
 from hummingbot.core.event.events import (
     BuyOrderCompletedEvent,
     MarketOrderFailureEvent,
@@ -942,7 +942,7 @@ class TestProgressiveExecutor(IsolatedAsyncioWrapperTestCase):
         executor._status = RunnableStatus.SHUTTING_DOWN
         executor.close_type = CloseType.STOP_LOSS
 
-        from hummingbot.core.data_type.in_flight_order import TradeUpdate
+        from data_type_primitives.in_flight_order import TradeUpdate
 
         executor._open_order = TrackedOrder(order_id="OID-BUY-1")
         open_inflight = InFlightOrder(

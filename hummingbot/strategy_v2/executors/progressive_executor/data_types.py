@@ -5,7 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-from hummingbot.core.data_type.common import OrderType
+from data_type_primitives.common import OrderType
 from hummingbot.strategy_v2.executors.position_executor.data_types import PositionExecutorConfig, TripleBarrierConfig
 
 

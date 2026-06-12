@@ -3,8 +3,8 @@ from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCa
 from test.logger_mixin_for_test import LoggerMixinForTest
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
-from hummingbot.core.data_type.common import TradeType
-from hummingbot.core.data_type.trade_fee import TokenAmount, TradeFeeBase
+from data_type_primitives.common import TradeType
+from data_type_primitives.trade_fee import TokenAmount, TradeFeeBase
 from hummingbot.core.event.events import RangePositionLiquidityAddedEvent, RangePositionLiquidityRemovedEvent
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.lp_executor.data_types import LPExecutorConfig, LPExecutorStates
@@ -1409,7 +1409,7 @@ class TestLPExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
 
     async def test_execute_closeout_swap_active_order_filled(self):
         """Test _execute_closeout_swap handles FILLED swap order"""
-        from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState
+        from data_type_primitives.in_flight_order import InFlightOrder, OrderState
         from hummingbot.strategy_v2.executors.lp_executor.data_types import TrackedOrder
 
         executor = self.get_executor()
@@ -1430,7 +1430,7 @@ class TestLPExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
 
     async def test_execute_closeout_swap_active_order_failed(self):
         """Test _execute_closeout_swap handles FAILED swap order"""
-        from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState
+        from data_type_primitives.in_flight_order import InFlightOrder, OrderState
         from hummingbot.strategy_v2.executors.lp_executor.data_types import TrackedOrder
 
         executor = self.get_executor()
@@ -1450,7 +1450,7 @@ class TestLPExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
 
     async def test_execute_closeout_swap_active_order_canceled(self):
         """Test _execute_closeout_swap handles CANCELED swap order"""
-        from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState
+        from data_type_primitives.in_flight_order import InFlightOrder, OrderState
         from hummingbot.strategy_v2.executors.lp_executor.data_types import TrackedOrder
 
         executor = self.get_executor()

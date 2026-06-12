@@ -3,10 +3,10 @@ import unittest
 from decimal import Decimal
 from unittest.mock import MagicMock, PropertyMock, patch
 
+from data_type_primitives.common import TradeType
 from hummingbot.connector.exchange_py_base import ExchangePyBase
 from hummingbot.connector.markets_recorder import MarketsRecorder
 from hummingbot.connector.trading_rule import TradingRule
-from hummingbot.core.data_type.common import TradeType
 from hummingbot.data_feed.market_data_provider import MarketDataProvider
 from hummingbot.model.position import Position
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
@@ -751,7 +751,7 @@ class TestExecutorOrchestrator(unittest.TestCase):
         """Test get_all_reports with perpetual market executors to exercise position side logic"""
         # This tests lines 454-456,458-460,462-465,467 through high-level functionality
 
-        from hummingbot.core.data_type.common import PositionAction, PositionMode
+        from data_type_primitives.common import PositionAction, PositionMode
         from hummingbot.strategy_v2.executors.order_executor.data_types import ExecutionStrategy, OrderExecutorConfig
 
         # Create config with position_action for perpetual market using OrderExecutorConfig
@@ -869,7 +869,7 @@ class TestExecutorOrchestrator(unittest.TestCase):
 
     def test_oneway_perpetual_only_one_position_per_pair(self):
         """In ONEWAY mode, opposite-side executors must merge into a single net position."""
-        from hummingbot.core.data_type.common import PositionAction, PositionMode
+        from data_type_primitives.common import PositionAction, PositionMode
 
         mock_market = MagicMock()
         mock_market.position_mode = PositionMode.ONEWAY
@@ -939,7 +939,7 @@ class TestExecutorOrchestrator(unittest.TestCase):
 
     def test_hedge_perpetual_allows_separate_long_and_short(self):
         """In HEDGE mode, a long and a short position can coexist for the same pair."""
-        from hummingbot.core.data_type.common import PositionAction, PositionMode
+        from data_type_primitives.common import PositionAction, PositionMode
 
         mock_market = MagicMock()
         mock_market.position_mode = PositionMode.HEDGE
@@ -1222,7 +1222,7 @@ class TestExecutorOrchestrator(unittest.TestCase):
 
     def test_get_all_reports_oneway_position_mode(self):
         """Test that ONEWAY position mode returns None for position side (line 600)"""
-        from hummingbot.core.data_type.common import PositionMode
+        from data_type_primitives.common import PositionMode
 
         config = PositionExecutorConfig(
             timestamp=1234,

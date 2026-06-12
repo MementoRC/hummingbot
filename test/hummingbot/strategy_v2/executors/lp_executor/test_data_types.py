@@ -1,7 +1,7 @@
 from decimal import Decimal
 from unittest import TestCase
 
-from hummingbot.core.data_type.common import TradeType
+from data_type_primitives.common import TradeType
 from hummingbot.strategy_v2.executors.lp_executor.data_types import LPExecutorConfig, LPExecutorState, LPExecutorStates
 from hummingbot.strategy_v2.models.executors import TrackedOrder
 

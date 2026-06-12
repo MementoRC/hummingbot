@@ -5,7 +5,7 @@ from decimal import Decimal
 from math import floor
 from typing import Dict
 
-from hummingbot.core.data_type.common import OrderType, PriceType, TradeType
+from data_type_primitives.common import OrderType, PriceType, TradeType
 from hummingbot.core.data_type.order_candidate import OrderCandidate, PerpetualOrderCandidate
 from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base

@@ -3,7 +3,7 @@ from decimal import Decimal
 import pandas_ta as ta  # noqa: F401
 from pydantic import Field
 
-from hummingbot.core.data_type.common import TradeType
+from data_type_primitives.common import TradeType
 from hummingbot.strategy_v2.controllers.directional_trading_controller_base import (
     DirectionalTradingControllerBase,
     DirectionalTradingControllerConfigBase,

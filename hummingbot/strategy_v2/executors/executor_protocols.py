@@ -1,9 +1,9 @@
 from decimal import Decimal
 from typing import Protocol
 
+from data_type_primitives.common import OrderType, PositionAction, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder
 from hummingbot.connector.trading_rule import TradingRule
-from hummingbot.core.data_type.common import OrderType, PositionAction, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder
 from hummingbot.core.data_type.order_candidate import OrderCandidate
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType

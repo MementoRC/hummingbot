@@ -7,7 +7,7 @@ from typing import Dict, Union
 from pydantic import Field, field_validator
 from pydantic_core.core_schema import ValidationInfo
 
-from hummingbot.core.data_type.common import (
+from data_type_primitives.common import (
     MarketDict,
     OrderType,
     PositionAction,

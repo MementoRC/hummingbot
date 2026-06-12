@@ -4,7 +4,7 @@ from decimal import Decimal
 from enum import Enum
 from typing import Literal
 
-from hummingbot.core.data_type.common import TradeType
+from data_type_primitives.common import TradeType
 from hummingbot.strategy_v2.executors.data_types import ExecutorConfigBase
 from hummingbot.strategy_v2.executors.position_executor.data_types import TrailingStop
 

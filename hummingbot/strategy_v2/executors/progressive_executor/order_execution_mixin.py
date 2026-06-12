@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from hummingbot.core.data_type.common import OrderType, PositionAction, TradeType
+from data_type_primitives.common import OrderType, PositionAction, TradeType
 from hummingbot.strategy_v2.executors.progressive_executor.protocols import (
     ProgressiveOrderExecutionProtocol,
     ProgressiveOrderProtocol,

@@ -7,11 +7,11 @@ from typing import Union
 import numpy as np
 import pandas as pd
 
+from data_type_primitives.common import OrderType, TradeType
+from data_type_primitives.limit_order import LimitOrder
 from hummingbot.connector.exchange_base import ExchangeBase
 from hummingbot.connector.parrot import get_campaign_summary
 from hummingbot.core.clock import Clock
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.limit_order import LimitOrder
 from hummingbot.core.rate_oracle.rate_oracle import RateOracle
 from hummingbot.core.utils.estimate_fee import build_trade_fee
 from hummingbot.logger import HummingbotLogger

@@ -4,8 +4,8 @@ import logging
 from decimal import Decimal
 from typing import Union
 
+from data_type_primitives.limit_order import LimitOrder
 from hummingbot.connector.connector_base import ConnectorBase
-from hummingbot.core.data_type.limit_order import LimitOrder
 from hummingbot.core.event.event_forwarder import SourceInfoEventForwarder
 from hummingbot.core.event.events import (
     BuyOrderCompletedEvent,

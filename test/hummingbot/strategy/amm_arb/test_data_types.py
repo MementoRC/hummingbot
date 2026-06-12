@@ -2,7 +2,7 @@ from decimal import Decimal
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
-from hummingbot.core.data_type.trade_fee import TradeFeeSchema
+from data_type_primitives.trade_fee import TradeFeeSchema
 from hummingbot.core.utils.fixed_rate_source import FixedRateSource
 from hummingbot.strategy.amm_arb.data_types import ArbProposal, ArbProposalSide, TokenAmount
 from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple

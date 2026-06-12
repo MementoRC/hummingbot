@@ -8,16 +8,16 @@ from typing import List
 import numpy as np
 import pandas as pd
 
+from data_type_primitives.common import OrderType, TradeType
+from data_type_primitives.limit_order import LimitOrder
+from data_type_primitives.trade_fee import AddedToCostTradeFee, TradeFeeSchema
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
 from hummingbot.client.settings import AllConnectorSettings
 from hummingbot.connector.exchange.paper_trade.paper_trade_exchange import QuantizationParams
 from hummingbot.connector.test_support.mock_paper_exchange import MockPaperExchange
 from hummingbot.core.clock import Clock, ClockMode
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.limit_order import LimitOrder
 from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_row import OrderBookRow
-from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee, TradeFeeSchema
 from hummingbot.core.event.events import (
     BuyOrderCompletedEvent,
     MarketEvent,

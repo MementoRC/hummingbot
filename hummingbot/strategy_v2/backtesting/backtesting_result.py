@@ -5,7 +5,7 @@ from typing import Dict
 import numpy as np
 import pandas as pd
 
-from hummingbot.core.data_type.common import TradeType
+from data_type_primitives.common import TradeType
 from hummingbot.strategy_v2.backtesting.backtesting_engine_base import BacktestPositionHold
 from hummingbot.strategy_v2.controllers.controller_base import ControllerConfigBase
 from hummingbot.strategy_v2.models.executors import CloseType

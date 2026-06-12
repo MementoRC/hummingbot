@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from pydantic import Field
 
-from hummingbot.core.data_type.common import MarketDict, OrderType, PositionMode, PriceType, TradeType
+from data_type_primitives.common import MarketDict, OrderType, PositionMode, PriceType, TradeType
 from hummingbot.strategy_v2.controllers import ControllerBase, ControllerConfigBase
 from hummingbot.strategy_v2.executors.data_types import ConnectorPair
 from hummingbot.strategy_v2.executors.grid_executor.data_types import GridExecutorConfig

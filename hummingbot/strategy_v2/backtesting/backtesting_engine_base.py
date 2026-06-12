@@ -10,8 +10,8 @@ import numpy as np
 import pandas as pd
 import yaml
 
+from data_type_primitives.common import LazyDict, TradeType
 from hummingbot.client import settings
-from hummingbot.core.data_type.common import LazyDict, TradeType
 from hummingbot.data_feed.candles_feed.data_types import CandlesConfig
 from hummingbot.exceptions import InvalidController
 from hummingbot.strategy_v2.backtesting.backtesting_data_provider import BacktestingDataProvider

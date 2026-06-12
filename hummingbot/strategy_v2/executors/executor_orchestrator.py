@@ -7,8 +7,8 @@ from collections import deque
 from decimal import Decimal
 from typing import TYPE_CHECKING, Dict
 
+from data_type_primitives.common import PositionAction, PositionMode, PriceType, TradeType
 from hummingbot.connector.markets_recorder import MarketsRecorder
-from hummingbot.core.data_type.common import PositionAction, PositionMode, PriceType, TradeType
 from hummingbot.logger import HummingbotLogger
 from hummingbot.model.position import Position
 

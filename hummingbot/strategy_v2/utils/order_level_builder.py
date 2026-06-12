@@ -5,7 +5,7 @@ from typing import Any, Union
 
 from pydantic import BaseModel, field_validator
 
-from hummingbot.core.data_type.common import TradeType
+from data_type_primitives.common import TradeType
 from hummingbot.strategy_v2.executors.position_executor.data_types import TripleBarrierConfig
 from hummingbot.strategy_v2.utils.distributions import Distributions
 

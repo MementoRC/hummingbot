@@ -3,7 +3,7 @@ from __future__ import annotations
 from decimal import Decimal
 from enum import Enum
 
-from hummingbot.core.data_type.in_flight_order import InFlightOrder
+from data_type_primitives.in_flight_order import InFlightOrder
 
 
 class CloseType(Enum):
