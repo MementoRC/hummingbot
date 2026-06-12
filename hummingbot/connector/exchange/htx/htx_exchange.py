@@ -22,7 +22,7 @@ from hummingbot.core.data_type.trade_fee import TokenAmount, TradeFeeBase
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.core.utils.estimate_fee import build_trade_fee
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class HtxExchange(ExchangePyBase):

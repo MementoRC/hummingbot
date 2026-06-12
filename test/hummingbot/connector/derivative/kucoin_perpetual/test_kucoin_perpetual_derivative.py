@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import asyncio
-import datetime
 import json
 import re
 from copy import deepcopy
+from datetime import timezone
 from decimal import Decimal
 from typing import Any, Callable
 from unittest.mock import AsyncMock, patch
@@ -472,24 +472,22 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
     @property
     def target_funding_info_next_funding_utc_str(self):
         datetime_str = str(
-            pd.Timestamp.fromtimestamp(self.target_funding_info_next_funding_utc_timestamp, tz=datetime.timezone.utc)
+            pd.Timestamp.fromtimestamp(self.target_funding_info_next_funding_utc_timestamp, tz=timezone.utc)
         ).replace(" ", "T")  # + "Z"
         return datetime_str
 
     @property
     def target_funding_info_next_funding_utc_str_ws_updated(self):
         datetime_str = str(
-            pd.Timestamp.fromtimestamp(
-                self.target_funding_info_next_funding_utc_timestamp_ws_updated, tz=datetime.timezone.utc
-            )
+            pd.Timestamp.fromtimestamp(self.target_funding_info_next_funding_utc_timestamp_ws_updated, tz=timezone.utc)
         ).replace(" ", "T")  # + "Z"
         return datetime_str
 
     @property
     def target_funding_payment_timestamp_str(self):
-        datetime_str = str(
-            pd.Timestamp.fromtimestamp(self.target_funding_payment_timestamp, tz=datetime.timezone.utc)
-        ).replace(" ", "T")  # + "Z"
+        datetime_str = str(pd.Timestamp.fromtimestamp(self.target_funding_payment_timestamp, tz=timezone.utc)).replace(
+            " ", "T"
+        )  # + "Z"
         return datetime_str
 
     @property
@@ -605,6 +603,8 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self.assertEqual(order.client_order_id, request_data["clientOid"])
         self.assertIn("clientOid", request_data)
         self.assertEqual(order.order_type.name.lower(), request_data["type"])
+        # Orders carry the symbol's margin mode (cached at leverage setup; the default before it's read)
+        self.assertEqual(CONSTANTS.DEFAULT_MARGIN_MODE, request_data["marginMode"])
 
     def validate_order_cancelation_request(self, order: InFlightOrder, request_call: RequestCall):
         request_data = json.loads(request_call.kwargs["data"])
@@ -890,6 +890,22 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         }
 
         mock_api.get(regex_url, body=json.dumps(mock_response), callback=callback)
+
+        # _set_trading_pair_leverage also ensures ISOLATED margin mode; mock the symbol as already
+        # ISOLATED so _set_margin_mode short-circuits without a changeMarginMode call.
+        margin_mode_url = web_utils.get_rest_url_for_endpoint(
+            endpoint=CONSTANTS.GET_MARGIN_MODE_PATH_URL.format(symbol=self.exchange_trading_pair)
+        )
+        margin_mode_regex = re.compile(f"^{margin_mode_url}".replace(".", r"\.").replace("?", r"\?"))
+        mock_api.get(
+            margin_mode_regex,
+            body=json.dumps(
+                {
+                    "code": "200000",
+                    "data": {"symbol": self.exchange_trading_pair, "marginMode": CONSTANTS.DEFAULT_MARGIN_MODE},
+                }
+            ),
+        )
 
         return url
 
@@ -1223,6 +1239,78 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
 
     @aioresponses()
     @patch("asyncio.Queue.get")
+    def test_funding_info_initializes_when_predicted_rate_is_null(self, mock_api, mock_queue_get):
+        # Regression for issue #8256: KuCoin's contract-detail endpoint now returns
+        # "predictedFundingFeeRate": null, which raised decimal.InvalidOperation and left the
+        # connector stuck in "not ready". The rate must fall back to the current "fundingFeeRate"
+        # instead of crashing funding-info initialization.
+        response = deepcopy(self.funding_info_mock_response)
+        response["data"][0]["predictedFundingFeeRate"] = None
+        response["data"][0]["fundingFeeRate"] = 0.00005
+
+        url = web_utils.get_rest_url_for_endpoint(
+            endpoint=CONSTANTS.GET_CONTRACT_INFO_PATH_URL.format(symbol=self.exchange_trading_pair)
+        )
+        regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
+        mock_api.get(regex_url, body=json.dumps(response))
+
+        mock_queue_get.side_effect = [asyncio.CancelledError]
+        try:
+            self.async_run_with_timeout(self.exchange._listen_for_funding_info())
+        except asyncio.CancelledError:
+            pass
+
+        funding_info: FundingInfo = self.exchange.get_funding_info(self.trading_pair)
+        self.assertEqual(self.trading_pair, funding_info.trading_pair)
+        self.assertEqual(Decimal("0.00005"), funding_info.rate)
+
+    @aioresponses()
+    def test_update_margin_mode_caches_symbol_setting(self, mock_api):
+        # Regression for issue #8256: the connector follows the user's per-symbol margin mode. It
+        # reads the symbol's mode from KuCoin and caches it (without changing it) so orders can send
+        # a matching "marginMode" and avoid the 330005 rejection.
+        get_url = web_utils.get_rest_url_for_endpoint(
+            endpoint=CONSTANTS.GET_MARGIN_MODE_PATH_URL.format(symbol=self.exchange_trading_pair)
+        )
+        get_regex = re.compile(f"^{get_url}".replace(".", r"\.").replace("?", r"\?"))
+        mock_api.get(
+            get_regex,
+            body=json.dumps({"code": "200000", "data": {"symbol": self.exchange_trading_pair, "marginMode": "CROSS"}}),
+        )
+
+        self.async_run_with_timeout(self.exchange._update_margin_mode(self.exchange_trading_pair, self.trading_pair))
+
+        self.assertEqual("CROSS", self.exchange._margin_modes.get(self.trading_pair))
+
+    def test_process_order_event_message_ignores_untracked_order(self):
+        # Regression for issue #8256: the order-status poll can return an order that is not tracked
+        # (e.g. a stale order from a previous session). Reading its state used to crash the whole
+        # status-polling cycle with AttributeError; it must now be ignored safely.
+        order_msg = {
+            "id": "451270029397291010",
+            "clientOid": "an-untracked-client-order-id",
+            "cancelExist": False,
+            "isActive": True,
+        }
+        self.exchange._process_order_event_message(order_msg)  # must not raise
+        self.assertEqual(0, len(self.exchange.in_flight_orders))
+
+    def test_position_leverage_falls_back_when_real_leverage_missing(self):
+        # Regression for issue #8256: KuCoin omits "realLeverage" on CROSS-margin positions (it
+        # reports "leverage" instead); ISOLATED positions report both. _update_positions / the
+        # user-stream position handler must use whichever is present instead of crashing on KeyError.
+        self.exchange._perpetual_trading.set_leverage(self.trading_pair, 7)
+        # realLeverage present (ISOLATED) -> used as-is
+        self.assertEqual(Decimal("5"), self.exchange._position_leverage(self.trading_pair, {"realLeverage": "5"}))
+        # realLeverage absent but "leverage" present (CROSS) -> uses "leverage"
+        self.assertEqual(Decimal("6"), self.exchange._position_leverage(self.trading_pair, {"leverage": "6"}))
+        # neither field present -> falls back to the configured leverage (no KeyError)
+        self.assertEqual(Decimal("7"), self.exchange._position_leverage(self.trading_pair, {}))
+        # null -> falls back to the configured leverage
+        self.assertEqual(Decimal("7"), self.exchange._position_leverage(self.trading_pair, {"realLeverage": None}))
+
+    @aioresponses()
+    @patch("asyncio.Queue.get")
     def test_listen_for_funding_info_update_updates_funding_info(self, mock_api, mock_queue_get):
         url = self.funding_info_url
 
@@ -1435,27 +1523,26 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
     def configure_order_not_found_error_cancelation_response(
         self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
-        # Implement the expected not found response when enabling test_cancel_order_not_found_in_the_exchange
-        raise NotImplementedError
+        url = web_utils.get_rest_url_for_endpoint(
+            endpoint=CONSTANTS.CANCEL_ORDER_PATH_URL.format(orderid=order.exchange_order_id)
+        )
+        regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
+        response = {
+            "code": CONSTANTS.RET_CODE_ORDER_CANNOT_BE_CANCELED,
+            "msg": "The order cannot be canceled.",
+        }
+        mock_api.delete(regex_url, body=json.dumps(response), callback=callback)
+        return url
 
     def configure_order_not_found_error_order_status_response(
         self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> list[str]:
-        # Implement the expected not found response when enabling
-        # test_lost_order_removed_if_not_found_during_order_status_update
-        raise NotImplementedError
-
-    @aioresponses()
-    def test_cancel_order_not_found_in_the_exchange(self, mock_api):
-        # Disabling this test because the connector has not been updated yet to validate
-        # order not found during cancellation (check _is_order_not_found_during_cancelation_error)
-        pass
-
-    @aioresponses()
-    def test_lost_order_removed_if_not_found_during_order_status_update(self, mock_api):
-        # Disabling this test because the connector has not been updated yet to validate
-        # order not found during status update (check _is_order_not_found_during_status_update_error)
-        pass
+        url = web_utils.get_rest_url_for_endpoint(
+            endpoint=CONSTANTS.QUERY_ORDER_BY_EXCHANGE_ORDER_ID_PATH_URL.format(orderid=order.exchange_order_id)
+        )
+        response = {"code": "100001", "msg": "error.getOrder.orderNotExist"}
+        mock_api.get(url, body=json.dumps(response), callback=callback)
+        return [url]
 
     @aioresponses()
     def test_create_buy_limit_maker_order_successfully(self, mock_api):

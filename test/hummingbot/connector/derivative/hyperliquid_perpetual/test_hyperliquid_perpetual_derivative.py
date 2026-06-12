@@ -1,13 +1,12 @@
 from __future__ import annotations
-
 import asyncio
-import datetime
 import json
 import logging
 import re
 from copy import deepcopy
 from decimal import Decimal
 from typing import Any, Callable
+from unittest import TestCase
 from unittest.mock import AsyncMock, patch
 
 import pandas as pd
@@ -524,9 +523,7 @@ class HyperliquidPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpe
     def target_funding_info_next_funding_utc_str(self):
         datetime_str = (
             str(
-                pd.Timestamp.fromtimestamp(
-                    self.target_funding_info_next_funding_utc_timestamp, tz=datetime.timezone.utc
-                )
+                pd.Timestamp.fromtimestamp(self.target_funding_info_next_funding_utc_timestamp, tz=pd.Timestamp.UTC)
             ).replace(" ", "T")
             + "Z"
         )
@@ -537,7 +534,7 @@ class HyperliquidPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpe
         datetime_str = (
             str(
                 pd.Timestamp.fromtimestamp(
-                    self.target_funding_info_next_funding_utc_timestamp_ws_updated, tz=datetime.timezone.utc
+                    self.target_funding_info_next_funding_utc_timestamp_ws_updated, tz=pd.Timestamp.UTC
                 )
             ).replace(" ", "T")
             + "Z"
@@ -547,7 +544,7 @@ class HyperliquidPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpe
     @property
     def target_funding_payment_timestamp_str(self):
         datetime_str = (
-            str(pd.Timestamp.fromtimestamp(self.target_funding_payment_timestamp, tz=datetime.timezone.utc)).replace(
+            str(pd.Timestamp.fromtimestamp(self.target_funding_payment_timestamp, tz=pd.Timestamp.UTC)).replace(
                 " ", "T"
             )
             + "Z"
@@ -737,6 +734,7 @@ class HyperliquidPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpe
     def configure_completely_filled_order_status_response(
         self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ):
+
         url_order_status = web_utils.public_rest_url(CONSTANTS.ORDER_URL)
 
         regex_url = re.compile(f"^{url_order_status}".replace(".", r"\.").replace("?", r"\?") + ".*")
@@ -751,6 +749,7 @@ class HyperliquidPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpe
         mock_api: aioresponses,
         callback: Callable | None = lambda *args, **kwargs: None,
     ):
+
         url_order_status = web_utils.public_rest_url(CONSTANTS.ORDER_URL)
 
         regex_url = re.compile(f"^{url_order_status}".replace(".", r"\.").replace("?", r"\?") + ".*")
@@ -1535,6 +1534,7 @@ class HyperliquidPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpe
         mock_api: aioresponses,
         callback: Callable | None = lambda *args, **kwargs: None,
     ) -> list[str]:
+
         url = self.trading_rules_url
         response = self.trading_rules_request_mock_response
         mock_api.post(url, body=json.dumps(response), callback=callback)
@@ -1769,6 +1769,7 @@ class HyperliquidPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpe
         spot_response=None,
         callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
+
         url = self.balance_url
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
         mock_api.post(regex_url, body=json.dumps(response), callback=callback)
@@ -1815,6 +1816,7 @@ class HyperliquidPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpe
         mock_api: aioresponses,
         callback: Callable | None = lambda *args, **kwargs: None,
     ) -> list[str]:
+
         url = self.trading_rules_url
         response = self.trading_rules_request_erroneous_mock_response
         mock_api.post(url, body=json.dumps(response), callback=callback)
@@ -1854,6 +1856,7 @@ class HyperliquidPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpe
         mock_api: aioresponses,
         callback: Callable | None = lambda *args, **kwargs: None,
     ) -> list[str]:
+
         url = self.all_symbols_url
         response = self.all_symbols_request_mock_response
         mock_api.post(url, body=json.dumps(response), callback=callback)
@@ -3957,3 +3960,137 @@ class HyperliquidPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpe
         self.assertEqual("malformed", hydrated[2]["name"])
         self.assertEqual(1, len(hydrated[3]["assetCtxs"]))
         self.assertEqual("exception", hydrated[4]["name"])
+
+
+class HyperliquidPerpetualBuilderCodeTests(TestCase):
+    """Builder-code support (HGP-87) on the Hyperliquid perpetual connector."""
+
+    builder_address = "0xAbC0000000000000000000000000000000000001"
+    api_secret = "13e56ca9cceebf1f33065c2c5376ab38570a114bc1b003b60d838f92be9d7930"  # noqa: mock
+
+    def async_run_with_timeout(self, coroutine, timeout: int = 1):
+        return asyncio.get_event_loop().run_until_complete(asyncio.wait_for(coroutine, timeout))
+
+    def _build_connector(self, domain: str = CONSTANTS.DOMAIN, use_vault: bool = False):
+        return HyperliquidPerpetualDerivative(
+            hyperliquid_perpetual_secret_key=self.api_secret,
+            hyperliquid_perpetual_address="0x1111111111111111111111111111111111111111",
+            use_vault=use_vault,
+            trading_pairs=["BTC-USD"],
+            trading_required=False,
+            domain=domain,
+        )
+
+    def test_default_foundation_address_configured_so_field_injected(self):
+        self.assertIsNotNone(CONSTANTS.FOUNDATION_BUILDER_ADDRESS)
+        connector = self._build_connector()
+        self.assertEqual(CONSTANTS.FOUNDATION_BUILDER_ADDRESS.lower(), connector._builder_address)
+        self.assertTrue(connector._should_inject_builder())
+        self.assertEqual(
+            {"b": CONSTANTS.FOUNDATION_BUILDER_ADDRESS.lower(), "f": 0},
+            connector._build_builder_field(),
+        )
+
+    def test_builder_field_omitted_when_not_supported(self):
+        connector = self._build_connector()
+        connector._builder_address = self.builder_address
+        with patch.object(CONSTANTS, "BUILDER_SUPPORTED", False):
+            self.assertFalse(connector._should_inject_builder())
+
+    def test_builder_field_omitted_on_vault_and_testnet(self):
+        for connector in (
+            self._build_connector(use_vault=True),
+            self._build_connector(domain=CONSTANTS.TESTNET_DOMAIN),
+        ):
+            connector._builder_address = self.builder_address
+            self.assertFalse(connector._should_inject_builder())
+            self.assertIsNone(connector._build_builder_field())
+
+    @patch.object(HyperliquidPerpetualDerivative, "_api_post", new_callable=AsyncMock)
+    def test_place_order_omits_builder_key_on_vault_and_testnet(self, api_post_mock):
+        # The "builder" key must be entirely absent from the signed order action on vault and testnet
+        # orders (not present-but-null) — and present on mainnet. Drives the real _place_order path.
+        api_post_mock.return_value = {"status": "ok", "response": {"data": {"statuses": [{"resting": {"oid": 7}}]}}}
+        for connector, expect_builder in (
+            (self._build_connector(), True),
+            (self._build_connector(use_vault=True), False),
+            (self._build_connector(domain=CONSTANTS.TESTNET_DOMAIN), False),
+        ):
+            connector._builder_fee_tenths_bps = 10  # as if the user approved 1 bps
+            connector.coin_to_asset = {"BTC": 0}
+            with patch.object(
+                connector, "exchange_symbol_associated_to_pair", new_callable=AsyncMock, return_value="BTC"
+            ):
+                self.async_run_with_timeout(
+                    connector._place_order(
+                        order_id="0xabc",
+                        trading_pair="BTC-USD",
+                        amount=Decimal("1"),
+                        trade_type=TradeType.BUY,
+                        order_type=OrderType.LIMIT,
+                        price=Decimal("100"),
+                        position_action=PositionAction.OPEN,
+                    )
+                )
+            sent = api_post_mock.call_args.kwargs["data"]
+            self.assertEqual(expect_builder, "builder" in sent)
+            if expect_builder:
+                self.assertEqual({"b": connector._builder_address, "f": 10}, sent["builder"])
+
+    @patch.object(HyperliquidPerpetualDerivative, "_api_post", new_callable=AsyncMock)
+    def test_initialize_builder_fee_applies_approved(self, api_post_mock):
+        api_post_mock.return_value = 10  # user approved 0.01% = 1 bps
+        connector = self._build_connector()
+        self.async_run_with_timeout(connector._initialize_builder_fee())
+        self.assertEqual(10, connector._builder_fee_tenths_bps)
+        # Charges 1 bps and attributes to the Foundation builder address.
+        self.assertEqual(
+            {"b": CONSTANTS.FOUNDATION_BUILDER_ADDRESS.lower(), "f": 10},
+            connector._build_builder_field(),
+        )
+
+    @patch.object(HyperliquidPerpetualDerivative, "_api_post", new_callable=AsyncMock)
+    def test_initialize_builder_fee_zero_when_not_approved(self, api_post_mock):
+        api_post_mock.return_value = 0  # no approval on record
+        connector = self._build_connector()
+        self.async_run_with_timeout(connector._initialize_builder_fee())
+        self.assertEqual(0, connector._builder_fee_tenths_bps)
+        # Still attributes to the Foundation builder address, just at 0 bps.
+        self.assertEqual(
+            {"b": CONSTANTS.FOUNDATION_BUILDER_ADDRESS.lower(), "f": 0},
+            connector._build_builder_field(),
+        )
+
+    @patch.object(HyperliquidPerpetualDerivative, "_api_post", new_callable=AsyncMock)
+    def test_initialize_builder_fee_clamped_to_configured_fee(self, api_post_mock):
+        api_post_mock.return_value = 10_000  # approval above our fee; charge only the hardcoded fee
+        connector = self._build_connector()
+        self.async_run_with_timeout(connector._initialize_builder_fee())
+        self.assertEqual(CONSTANTS.FOUNDATION_BUILDER_FEE_TENTHS_BPS, connector._builder_fee_tenths_bps)
+        self.assertEqual(10, connector._builder_fee_tenths_bps)
+
+    @patch.object(HyperliquidPerpetualDerivative, "_api_post", new_callable=AsyncMock)
+    def test_initialize_builder_fee_below_configured_charges_approved(self, api_post_mock):
+        api_post_mock.return_value = 5  # user approved less than 1 bps; fail safe to the approved max
+        connector = self._build_connector()
+        self.async_run_with_timeout(connector._initialize_builder_fee())
+        self.assertEqual(5, connector._builder_fee_tenths_bps)
+
+    @patch.object(HyperliquidPerpetualDerivative, "_api_post", new_callable=AsyncMock)
+    def test_initialize_builder_fee_fails_safe_to_zero(self, api_post_mock):
+        api_post_mock.side_effect = Exception("info endpoint down")
+        connector = self._build_connector()
+        connector._builder_fee_tenths_bps = 99  # ensure it is reset
+        self.async_run_with_timeout(connector._initialize_builder_fee())
+        self.assertEqual(0, connector._builder_fee_tenths_bps)
+
+    @patch.object(HyperliquidPerpetualDerivative, "_api_post", new_callable=AsyncMock)
+    def test_initialize_builder_fee_skipped_on_testnet_and_vault(self, api_post_mock):
+        api_post_mock.return_value = 10
+        for connector in (
+            self._build_connector(use_vault=True),
+            self._build_connector(domain=CONSTANTS.TESTNET_DOMAIN),
+        ):
+            self.async_run_with_timeout(connector._initialize_builder_fee())
+            self.assertEqual(0, connector._builder_fee_tenths_bps)
+            api_post_mock.assert_not_called()

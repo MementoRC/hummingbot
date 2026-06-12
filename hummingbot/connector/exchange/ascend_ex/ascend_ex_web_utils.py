@@ -8,7 +8,7 @@ from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 from hummingbot.core.web_assistant.auth import AuthBase
 from hummingbot.core.web_assistant.connections.data_types import RESTRequest
 from hummingbot.core.web_assistant.rest_pre_processors import RESTPreProcessorBase
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class AscendExRESTPreProcessor(RESTPreProcessorBase):

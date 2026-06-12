@@ -16,8 +16,8 @@ from hummingbot.core.api_throttler.async_throttler_base import AsyncThrottlerBas
 from hummingbot.core.utils.tracking_nonce import NonceCreator, get_tracking_nonce
 from hummingbot.core.web_assistant.connections.data_types import RESTRequest, WSResponse
 from hummingbot.core.web_assistant.rest_pre_processors import RESTPreProcessorBase
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 from hummingbot.core.web_assistant.ws_post_processors import WSPostProcessorBase
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 TradeFillOrderDetails = namedtuple("TradeFillOrderDetails", "market exchange_trade_id symbol")
 

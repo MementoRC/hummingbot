@@ -8,9 +8,9 @@ from hummingbot.connector.utilities.oms_connector import oms_connector_constants
 from hummingbot.connector.utilities.oms_connector.oms_connector_auth import OMSConnectorAuth
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 from hummingbot.core.web_assistant.connections.data_types import WSRequest, WSResponse
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 from hummingbot.core.web_assistant.ws_post_processors import WSPostProcessorBase
 from hummingbot.core.web_assistant.ws_pre_processors import WSPreProcessorBase
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class OMSConnectorURLCreatorBase(ABC):

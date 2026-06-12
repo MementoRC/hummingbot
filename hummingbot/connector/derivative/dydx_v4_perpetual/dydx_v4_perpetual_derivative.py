@@ -31,7 +31,7 @@ from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.core.utils.estimate_fee import build_perpetual_trade_fee
 from hummingbot.core.utils.tracking_nonce import NonceCreator
 from hummingbot.core.web_assistant.auth import AuthBase
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class DydxV4PerpetualDerivative(PerpetualDerivativePyBase):

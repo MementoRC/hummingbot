@@ -1,27 +1,24 @@
-from hummingbot.connector.exchange.mexc.protobuf import PublicDealsV3Api_pb2 as _PublicDealsV3Api_pb2
-from hummingbot.connector.exchange.mexc.protobuf import PublicIncreaseDepthsV3Api_pb2 as _PublicIncreaseDepthsV3Api_pb2
-from hummingbot.connector.exchange.mexc.protobuf import PublicLimitDepthsV3Api_pb2 as _PublicLimitDepthsV3Api_pb2
-from hummingbot.connector.exchange.mexc.protobuf import PrivateOrdersV3Api_pb2 as _PrivateOrdersV3Api_pb2
-from hummingbot.connector.exchange.mexc.protobuf import PublicBookTickerV3Api_pb2 as _PublicBookTickerV3Api_pb2
-from hummingbot.connector.exchange.mexc.protobuf import PrivateDealsV3Api_pb2 as _PrivateDealsV3Api_pb2
-from hummingbot.connector.exchange.mexc.protobuf import PrivateAccountV3Api_pb2 as _PrivateAccountV3Api_pb2
-from hummingbot.connector.exchange.mexc.protobuf import PublicSpotKlineV3Api_pb2 as _PublicSpotKlineV3Api_pb2
-from hummingbot.connector.exchange.mexc.protobuf import PublicMiniTickerV3Api_pb2 as _PublicMiniTickerV3Api_pb2
-from hummingbot.connector.exchange.mexc.protobuf import PublicMiniTickersV3Api_pb2 as _PublicMiniTickersV3Api_pb2
-from hummingbot.connector.exchange.mexc.protobuf import (
-    PublicBookTickerBatchV3Api_pb2 as _PublicBookTickerBatchV3Api_pb2,
-)
-from hummingbot.connector.exchange.mexc.protobuf import (
-    PublicIncreaseDepthsBatchV3Api_pb2 as _PublicIncreaseDepthsBatchV3Api_pb2,
-)
-from hummingbot.connector.exchange.mexc.protobuf import PublicAggreDepthsV3Api_pb2 as _PublicAggreDepthsV3Api_pb2
-from hummingbot.connector.exchange.mexc.protobuf import PublicAggreDealsV3Api_pb2 as _PublicAggreDealsV3Api_pb2
-from hummingbot.connector.exchange.mexc.protobuf import (
-    PublicAggreBookTickerV3Api_pb2 as _PublicAggreBookTickerV3Api_pb2,
-)
-from google.protobuf import descriptor as _descriptor
-from google.protobuf import message as _message
 from typing import ClassVar as _ClassVar, Mapping as _Mapping, Optional as _Optional, Union as _Union
+
+from google.protobuf import descriptor as _descriptor, message as _message
+
+from hummingbot.connector.exchange.mexc.protobuf import (
+    PrivateAccountV3Api_pb2 as _PrivateAccountV3Api_pb2,
+    PrivateDealsV3Api_pb2 as _PrivateDealsV3Api_pb2,
+    PrivateOrdersV3Api_pb2 as _PrivateOrdersV3Api_pb2,
+    PublicAggreBookTickerV3Api_pb2 as _PublicAggreBookTickerV3Api_pb2,
+    PublicAggreDealsV3Api_pb2 as _PublicAggreDealsV3Api_pb2,
+    PublicAggreDepthsV3Api_pb2 as _PublicAggreDepthsV3Api_pb2,
+    PublicBookTickerBatchV3Api_pb2 as _PublicBookTickerBatchV3Api_pb2,
+    PublicBookTickerV3Api_pb2 as _PublicBookTickerV3Api_pb2,
+    PublicDealsV3Api_pb2 as _PublicDealsV3Api_pb2,
+    PublicIncreaseDepthsBatchV3Api_pb2 as _PublicIncreaseDepthsBatchV3Api_pb2,
+    PublicIncreaseDepthsV3Api_pb2 as _PublicIncreaseDepthsV3Api_pb2,
+    PublicLimitDepthsV3Api_pb2 as _PublicLimitDepthsV3Api_pb2,
+    PublicMiniTickersV3Api_pb2 as _PublicMiniTickersV3Api_pb2,
+    PublicMiniTickerV3Api_pb2 as _PublicMiniTickerV3Api_pb2,
+    PublicSpotKlineV3Api_pb2 as _PublicSpotKlineV3Api_pb2,
+)
 
 DESCRIPTOR: _descriptor.FileDescriptor
 

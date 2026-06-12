@@ -12,9 +12,9 @@ from hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_tra
 from hummingbot.core.data_type.common import OrderType, TradeType
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.logger import HummingbotLogger
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 if TYPE_CHECKING:
     from hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_trade_exchange import (  # noqa: F401

@@ -12,9 +12,9 @@ from hummingbot.connector.exchange.hyperliquid.hyperliquid_order_book import Hyp
 from hummingbot.core.data_type.order_book_message import OrderBookMessage
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
 from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.logger import HummingbotLogger
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 if TYPE_CHECKING:
     from hummingbot.connector.exchange.hyperliquid.hyperliquid_exchange import HyperliquidExchange
@@ -40,7 +40,12 @@ class HyperliquidAPIOrderBookDataSource(OrderBookTrackerDataSource):
         super().__init__(trading_pairs)
         self._connector = connector
         self._trade_messages_queue_key = CONSTANTS.TRADE_EVENT_TYPE
-        self._diff_messages_queue_key = CONSTANTS.DIFF_EVENT_TYPE
+        # Hyperliquid l2Book pushes the full (top-20-per-side) book every frame with
+        # no incremental deltas and no zero-size removals, so each frame must REPLACE
+        # the local book, not merge into it. Route to the snapshot queue (mirrors the
+        # hyperliquid_perpetual connector). Merging full snapshots as diffs leaves
+        # stale levels that are never removed.
+        self._snapshot_messages_queue_key = "order_book_snapshot"
         self._domain = domain
         self._api_factory = api_factory
 
@@ -144,7 +149,7 @@ class HyperliquidAPIOrderBookDataSource(OrderBookTrackerDataSource):
         if "result" not in event_message:
             stream_name = event_message.get("channel")
             if "l2Book" in stream_name:
-                channel = self._diff_messages_queue_key
+                channel = self._snapshot_messages_queue_key
             elif "trades" in stream_name:
                 channel = self._trade_messages_queue_key
         return channel

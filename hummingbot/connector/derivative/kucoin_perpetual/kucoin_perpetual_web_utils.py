@@ -10,7 +10,7 @@ from hummingbot.core.utils.tracking_nonce import get_tracking_nonce
 from hummingbot.core.web_assistant.auth import AuthBase
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest
 from hummingbot.core.web_assistant.rest_pre_processors import RESTPreProcessorBase
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class HeadersContentRESTPreProcessor(RESTPreProcessorBase):
@@ -61,7 +61,11 @@ async def get_current_server_time(
     )
     server_time = response["data"]
 
-    return server_time * 1e-3
+    # KuCoin returns the server time in milliseconds, which is what TimeSynchronizer expects
+    # (it computes the offset against perf_counter * 1e3). Returning seconds here corrupted the
+    # offset (~1000x off), making signed timestamps invalid (400002) once the auth started using
+    # the synchronizer. Mirror the spot connector and return milliseconds unchanged.
+    return server_time
 
 
 def endpoint_from_message(message: dict[str, Any]) -> str | None:
@@ -135,6 +139,7 @@ async def api_request(
     limit_id: str | None = None,
     timeout: float | None = None,
 ):
+
     throttler = throttler or create_throttler()
 
     api_factory = api_factory or build_api_factory()

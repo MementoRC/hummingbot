@@ -9,7 +9,7 @@ from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 from hummingbot.core.utils.tracking_nonce import get_tracking_nonce
 from hummingbot.core.web_assistant.auth import AuthBase
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 def public_rest_url(path_url: str, domain: str = CONSTANTS.DEFAULT_DOMAIN) -> str:

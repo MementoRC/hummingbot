@@ -48,19 +48,19 @@ class KucoinPerpetualAuthTests(TestCase):
             throttler_limit_id="/api/endpoint",
         )
 
-        self.async_run_with_timeout(self.auth.rest_authenticate(request, use_time_provider=1))
+        self.async_run_with_timeout(self.auth.rest_authenticate(request))
 
         self.assertEqual(self.api_key, request.headers["KC-API-KEY"])
-        self.assertEqual("1000000", request.headers["KC-API-TIMESTAMP"])
+        self.assertEqual("1000000000", request.headers["KC-API-TIMESTAMP"])
         self.assertEqual("2", request.headers["KC-API-KEY-VERSION"])
-        expected_signature = self._sign("1000000" + "GET" + request.throttler_limit_id, key=self.secret_key)
+        expected_signature = self._sign("1000000000" + "GET" + request.throttler_limit_id, key=self.secret_key)
         self.assertEqual(expected_signature, request.headers["KC-API-SIGN"])
         expected_passphrase = self._sign(self.passphrase, key=self.secret_key)
         self.assertEqual(expected_passphrase, request.headers["KC-API-PASSPHRASE"])
 
         self.assertEqual(CONSTANTS.HB_PARTNER_ID, request.headers["KC-API-PARTNER"])
         expected_partner_signature = self._sign(
-            "1000000" + CONSTANTS.HB_PARTNER_ID + self.api_key, key=CONSTANTS.HB_PARTNER_KEY
+            "1000000000" + CONSTANTS.HB_PARTNER_ID + self.api_key, key=CONSTANTS.HB_PARTNER_KEY
         )
         self.assertEqual(expected_partner_signature, request.headers["KC-API-PARTNER-SIGN"])
 
@@ -73,20 +73,20 @@ class KucoinPerpetualAuthTests(TestCase):
             throttler_limit_id="/api/endpoint",
         )
 
-        self.async_run_with_timeout(self.auth.rest_authenticate(request, use_time_provider=1))
+        self.async_run_with_timeout(self.auth.rest_authenticate(request))
 
         self.assertEqual(self.api_key, request.headers["KC-API-KEY"])
-        self.assertEqual("1000000", request.headers["KC-API-TIMESTAMP"])
+        self.assertEqual("1000000000", request.headers["KC-API-TIMESTAMP"])
         self.assertEqual("2", request.headers["KC-API-KEY-VERSION"])
         full_endpoint = f"{request.throttler_limit_id}?param1=value1&param2=value2"
-        expected_signature = self._sign("1000000" + "GET" + full_endpoint, key=self.secret_key)
+        expected_signature = self._sign("1000000000" + "GET" + full_endpoint, key=self.secret_key)
         self.assertEqual(expected_signature, request.headers["KC-API-SIGN"])
         expected_passphrase = self._sign(self.passphrase, key=self.secret_key)
         self.assertEqual(expected_passphrase, request.headers["KC-API-PASSPHRASE"])
 
         self.assertEqual(CONSTANTS.HB_PARTNER_ID, request.headers["KC-API-PARTNER"])
         expected_partner_signature = self._sign(
-            "1000000" + CONSTANTS.HB_PARTNER_ID + self.api_key, key=CONSTANTS.HB_PARTNER_KEY
+            "1000000000" + CONSTANTS.HB_PARTNER_ID + self.api_key, key=CONSTANTS.HB_PARTNER_KEY
         )
         self.assertEqual(expected_partner_signature, request.headers["KC-API-PARTNER-SIGN"])
 
@@ -100,13 +100,13 @@ class KucoinPerpetualAuthTests(TestCase):
             throttler_limit_id="/api/endpoint",
         )
 
-        self.async_run_with_timeout(self.auth.rest_authenticate(request, use_time_provider=1))
+        self.async_run_with_timeout(self.auth.rest_authenticate(request))
 
         self.assertEqual(self.api_key, request.headers["KC-API-KEY"])
-        self.assertEqual("1000000", request.headers["KC-API-TIMESTAMP"])
+        self.assertEqual("1000000000", request.headers["KC-API-TIMESTAMP"])
         self.assertEqual("2", request.headers["KC-API-KEY-VERSION"])
         expected_signature = self._sign(
-            "1000000" + "POST" + request.throttler_limit_id + json.dumps(body), key=self.secret_key
+            "1000000000" + "POST" + request.throttler_limit_id + json.dumps(body), key=self.secret_key
         )
         self.assertEqual(expected_signature, request.headers["KC-API-SIGN"])
         expected_passphrase = self._sign(self.passphrase, key=self.secret_key)
@@ -114,7 +114,7 @@ class KucoinPerpetualAuthTests(TestCase):
 
         self.assertEqual(CONSTANTS.HB_PARTNER_ID, request.headers["KC-API-PARTNER"])
         expected_partner_signature = self._sign(
-            "1000000" + CONSTANTS.HB_PARTNER_ID + self.api_key, key=CONSTANTS.HB_PARTNER_KEY
+            "1000000000" + CONSTANTS.HB_PARTNER_ID + self.api_key, key=CONSTANTS.HB_PARTNER_KEY
         )
         self.assertEqual(expected_partner_signature, request.headers["KC-API-PARTNER-SIGN"])
 

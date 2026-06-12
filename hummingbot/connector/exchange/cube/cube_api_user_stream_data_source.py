@@ -9,9 +9,9 @@ from hummingbot.connector.exchange.cube.cube_auth import CubeAuth
 from hummingbot.connector.exchange.cube.cube_ws_protobufs import trade_pb2
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.web_assistant.connections.data_types import WSBinaryRequest
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.logger import HummingbotLogger
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 if TYPE_CHECKING:
     from hummingbot.connector.exchange.cube.cube_exchange import CubeExchange

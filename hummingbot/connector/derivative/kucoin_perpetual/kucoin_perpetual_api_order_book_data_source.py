@@ -17,8 +17,8 @@ from hummingbot.core.data_type.order_book_message import OrderBookMessage, Order
 from hummingbot.core.data_type.perpetual_api_order_book_data_source import PerpetualAPIOrderBookDataSource
 from hummingbot.core.utils.tracking_nonce import NonceCreator
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod, WSJSONRequest
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 from hummingbot.core.web_assistant.ws_assistant import WSAssistant
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 if TYPE_CHECKING:
     from hummingbot.connector.derivative.kucoin_perpetual.kucoin_perpetual_derivative import KucoinPerpetualDerivative
@@ -50,12 +50,20 @@ class KucoinPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             symbol_info = funding_info_response["data"]
         else:
             symbol_info = funding_info_response["data"][0]
+
+        # KuCoin's contract-detail endpoint now returns "predictedFundingFeeRate": null; use the
+        # current "fundingFeeRate" instead. Parsing the null value raised decimal.InvalidOperation,
+        # which blocked funding-info init and left the connector stuck in "not ready" (issue #8256).
+        rate = symbol_info.get("predictedFundingFeeRate")
+        if rate is None:
+            rate = symbol_info["fundingFeeRate"]
+
         funding_info = FundingInfo(
             trading_pair=trading_pair,
             index_price=Decimal(str(symbol_info["indexPrice"])),
             mark_price=Decimal(str(symbol_info["markPrice"])),
             next_funding_utc_timestamp=int(pd.Timestamp(symbol_info["nextFundingRateTime"]).timestamp()),
-            rate=Decimal(str(symbol_info["predictedFundingFeeRate"])),
+            rate=Decimal(str(rate)),
         )
         return funding_info
 
@@ -133,6 +141,7 @@ class KucoinPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         return channel
 
     async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
+
         event_type = raw_message["type"]
 
         if event_type == "message":
