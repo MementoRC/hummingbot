@@ -27,7 +27,7 @@ jobs:
         if: github.event_name == 'pull_request'
         with:
           PATTERNS: |
-            **/*.+(py|pyx|pyd|yml)
+            **/*.+(py|pyx|pyd|yml|toml)
       - name: Check if client files are modified
         id: check_files
         if: github.event_name == 'push' || env.GIT_DIFF
@@ -174,11 +174,8 @@ jobs:
       - name: Import smoke test
         run: pixi run -e ci compat-import
 
-      - name: Interface contract check
-        run: pixi run -e ci compat-contract
-
-      - name: Integration compatibility tests
-        run: pixi run -e ci compat-integration
+      - name: Run subpackage compat check
+        run: pixi run -e ci compat-check
 
   ci-success:
     name: CI Success
