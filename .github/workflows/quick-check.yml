@@ -64,6 +64,9 @@ jobs:
           echo "Selected $(wc -l < /tmp/selected.txt) test files:"
           cat /tmp/selected.txt
 
+      - name: Install dev (sub-packages + editable install)
+        run: pixi run -e ci install-dev
+
       - name: Run selected tests
         run: |
           if [ "${{ steps.select.outputs.full_suite }}" = "true" ]; then
