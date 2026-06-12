@@ -456,7 +456,7 @@ class TestEvedexPerpetualFundingInfo(unittest.TestCase):
 
     def test_funding_info_fields(self):
         """Test that funding info contains required fields."""
-        from hummingbot.core.data_type.funding_info import FundingInfo
+        from data_type_primitives.funding_info import FundingInfo
 
         funding_info = FundingInfo(
             trading_pair="BTC-USDT",

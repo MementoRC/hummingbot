@@ -11,6 +11,10 @@ import pandas as pd
 from aioresponses import aioresponses
 from aioresponses.core import RequestCall
 
+from data_type_primitives.common import OrderType, PositionAction, PositionMode, PositionSide, TradeType
+from data_type_primitives.funding_info import FundingInfo
+from data_type_primitives.in_flight_order import InFlightOrder, OrderState
+from data_type_primitives.trade_fee import AddedToCostTradeFee, TokenAmount, TradeFeeBase
 from hummingbot.connector.derivative.architect_perpetual import (
     architect_perpetual_constants as CONSTANTS,
     architect_perpetual_web_utils as web_utils,
@@ -22,10 +26,6 @@ from hummingbot.connector.derivative.architect_perpetual.architect_perpetual_der
 from hummingbot.connector.derivative.position import Position
 from hummingbot.connector.test_support.perpetual_derivative_test import AbstractPerpetualDerivativeTests
 from hummingbot.connector.trading_rule import TradingRule
-from hummingbot.core.data_type.common import OrderType, PositionAction, PositionMode, PositionSide, TradeType
-from hummingbot.core.data_type.funding_info import FundingInfo
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState
-from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee, TokenAmount, TradeFeeBase
 from hummingbot.core.event.events import (
     BuyOrderCompletedEvent,
     BuyOrderCreatedEvent,

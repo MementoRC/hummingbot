@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import asyncio
 import json
 import logging
@@ -15,16 +16,16 @@ from aioresponses.core import RequestCall
 
 import hummingbot.connector.derivative.hyperliquid_perpetual.hyperliquid_perpetual_constants as CONSTANTS
 import hummingbot.connector.derivative.hyperliquid_perpetual.hyperliquid_perpetual_web_utils as web_utils
+from data_type_primitives.cancellation_result import CancellationResult
+from data_type_primitives.common import OrderType, PositionAction, PositionMode, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder, OrderState, OrderUpdate
+from data_type_primitives.trade_fee import AddedToCostTradeFee, TokenAmount, TradeFeeBase
 from hummingbot.connector.derivative.hyperliquid_perpetual.hyperliquid_perpetual_derivative import (
     HyperliquidPerpetualDerivative,
 )
 from hummingbot.connector.test_support.perpetual_derivative_test import AbstractPerpetualDerivativeTests
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.connector.utils import combine_to_hb_trading_pair
-from hummingbot.core.data_type.cancellation_result import CancellationResult
-from hummingbot.core.data_type.common import OrderType, PositionAction, PositionMode, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState, OrderUpdate
-from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee, TokenAmount, TradeFeeBase
 from hummingbot.core.event.events import BuyOrderCreatedEvent, MarketOrderFailureEvent, SellOrderCreatedEvent
 from hummingbot.core.network_iterator import NetworkStatus
 
@@ -3140,7 +3141,7 @@ class HyperliquidPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpe
 
         # Verify position has correct side and negative amount
         pos = list(positions.values())[0]
-        from hummingbot.core.data_type.common import PositionSide
+        from data_type_primitives.common import PositionSide
 
         self.assertEqual(PositionSide.SHORT, pos.position_side)
         self.assertLess(pos.amount, 0)

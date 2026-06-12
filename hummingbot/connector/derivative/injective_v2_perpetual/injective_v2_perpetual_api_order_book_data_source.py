@@ -3,9 +3,9 @@ from __future__ import annotations
 import asyncio
 from typing import TYPE_CHECKING, Any
 
+from data_type_primitives.funding_info import FundingInfo, FundingInfoUpdate
 from hummingbot.connector.derivative.injective_v2_perpetual import injective_constants as CONSTANTS
 from hummingbot.connector.exchange.injective_v2.data_sources.injective_data_source import InjectiveDataSource
-from hummingbot.core.data_type.funding_info import FundingInfo, FundingInfoUpdate
 from hummingbot.core.data_type.order_book_message import OrderBookMessage
 from hummingbot.core.data_type.perpetual_api_order_book_data_source import PerpetualAPIOrderBookDataSource
 from hummingbot.core.event.event_forwarder import EventForwarder

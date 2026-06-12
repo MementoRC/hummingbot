@@ -8,6 +8,9 @@ from bidict import bidict
 
 import hummingbot.connector.derivative.bybit_perpetual.bybit_perpetual_constants as CONSTANTS
 import hummingbot.connector.derivative.bybit_perpetual.bybit_perpetual_utils as bybit_utils
+from data_type_primitives.common import OrderType, PositionAction, PositionMode, PositionSide, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder, OrderUpdate, TradeUpdate
+from data_type_primitives.trade_fee import TokenAmount, TradeFeeBase
 from hummingbot.connector.derivative.bybit_perpetual import bybit_perpetual_web_utils as web_utils
 from hummingbot.connector.derivative.bybit_perpetual.bybit_perpetual_api_order_book_data_source import (
     BybitPerpetualAPIOrderBookDataSource,
@@ -22,10 +25,7 @@ from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.connector.utils import combine_to_hb_trading_pair
 from hummingbot.core.api_throttler.data_types import RateLimit
 from hummingbot.core.clock import Clock
-from hummingbot.core.data_type.common import OrderType, PositionAction, PositionMode, PositionSide, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderUpdate, TradeUpdate
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
-from hummingbot.core.data_type.trade_fee import TokenAmount, TradeFeeBase
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.utils.async_utils import safe_ensure_future, safe_gather
 from hummingbot.core.utils.estimate_fee import build_trade_fee

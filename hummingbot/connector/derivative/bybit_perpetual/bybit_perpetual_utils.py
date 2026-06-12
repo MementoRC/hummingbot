@@ -3,9 +3,9 @@ from typing import Any
 
 from pydantic import ConfigDict, Field, SecretStr
 
+from data_type_primitives.trade_fee import TradeFeeSchema
 from hummingbot.client.config.config_data_types import BaseConnectorConfigMap
 from hummingbot.connector.utils import split_hb_trading_pair
-from hummingbot.core.data_type.trade_fee import TradeFeeSchema
 
 # Bybit fees: https://help.bybit.com/hc/en-us/articles/360039261154
 DEFAULT_FEES = TradeFeeSchema(

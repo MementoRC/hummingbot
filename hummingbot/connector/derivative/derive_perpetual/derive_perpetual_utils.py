@@ -2,8 +2,8 @@ from decimal import Decimal
 
 from pydantic import ConfigDict, Field, SecretStr
 
+from data_type_primitives.trade_fee import TradeFeeSchema
 from hummingbot.client.config.config_data_types import BaseConnectorConfigMap
-from hummingbot.core.data_type.trade_fee import TradeFeeSchema
 
 # Maker rebates(-0.02%) are paid out continuously on each trade directly to the trading wallet.(https://derive_perpetual.gitbook.io/derive_perpetual-docs/trading/fees)
 DEFAULT_FEES = TradeFeeSchema(

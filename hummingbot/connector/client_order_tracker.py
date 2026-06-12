@@ -9,9 +9,9 @@ from typing import TYPE_CHECKING, Callable, Dict
 
 from cachetools import TTLCache
 
-from hummingbot.core.data_type.common import TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState, OrderUpdate, TradeUpdate
-from hummingbot.core.data_type.trade_fee import TradeFeeBase
+from data_type_primitives.common import TradeType
+from data_type_primitives.in_flight_order import InFlightOrder, OrderState, OrderUpdate, TradeUpdate
+from data_type_primitives.trade_fee import TradeFeeBase
 from hummingbot.core.event.events import (
     BuyOrderCompletedEvent,
     BuyOrderCreatedEvent,

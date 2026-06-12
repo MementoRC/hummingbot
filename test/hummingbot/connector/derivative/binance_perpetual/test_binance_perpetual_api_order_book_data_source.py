@@ -10,6 +10,7 @@ from aioresponses.core import aioresponses
 from bidict import bidict
 
 import hummingbot.connector.derivative.binance_perpetual.binance_perpetual_constants as CONSTANTS
+from data_type_primitives.funding_info import FundingInfo
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
 from hummingbot.connector.derivative.binance_perpetual import binance_perpetual_web_utils as web_utils
@@ -19,7 +20,6 @@ from hummingbot.connector.derivative.binance_perpetual.binance_perpetual_api_ord
 from hummingbot.connector.derivative.binance_perpetual.binance_perpetual_derivative import BinancePerpetualDerivative
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
-from hummingbot.core.data_type.funding_info import FundingInfo
 from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 

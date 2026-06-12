@@ -2,8 +2,8 @@ from decimal import Decimal
 
 from pydantic import ConfigDict, Field, SecretStr
 
+from data_type_primitives.trade_fee import TradeFeeSchema
 from hummingbot.client.config.config_data_types import BaseConnectorConfigMap
-from hummingbot.core.data_type.trade_fee import TradeFeeSchema
 
 CENTRALIZED = True
 EXAMPLE_PAIR = "BTC-USDT"

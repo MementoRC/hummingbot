@@ -10,6 +10,7 @@ from aioresponses import aioresponses
 from bidict import bidict
 
 import hummingbot.connector.derivative.bybit_perpetual.bybit_perpetual_web_utils as web_utils
+from data_type_primitives.funding_info import FundingInfo, FundingInfoUpdate
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
 from hummingbot.connector.derivative.bybit_perpetual import bybit_perpetual_constants as CONSTANTS
@@ -18,7 +19,6 @@ from hummingbot.connector.derivative.bybit_perpetual.bybit_perpetual_api_order_b
 )
 from hummingbot.connector.derivative.bybit_perpetual.bybit_perpetual_derivative import BybitPerpetualDerivative
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
-from hummingbot.core.data_type.funding_info import FundingInfo, FundingInfoUpdate
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 
 

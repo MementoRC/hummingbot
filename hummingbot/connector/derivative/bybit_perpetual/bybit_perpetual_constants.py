@@ -1,5 +1,5 @@
-from hummingbot.core.data_type.common import OrderType, PositionMode
-from hummingbot.core.data_type.in_flight_order import OrderState
+from data_type_primitives.common import OrderType, PositionMode
+from data_type_primitives.in_flight_order import OrderState
 
 EXCHANGE_NAME = "bybit_perpetual"
 

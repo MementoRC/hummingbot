@@ -5,13 +5,13 @@ import time
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
+from data_type_primitives.common import TradeType
+from data_type_primitives.funding_info import FundingInfo, FundingInfoUpdate
 from hummingbot.connector.derivative.architect_perpetual import (
     architect_perpetual_constants as CONSTANTS,
     architect_perpetual_web_utils as web_utils,
 )
 from hummingbot.connector.derivative.architect_perpetual.architect_perpetual_constants import WSMessageTypes
-from hummingbot.core.data_type.common import TradeType
-from hummingbot.core.data_type.funding_info import FundingInfo, FundingInfoUpdate
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 from hummingbot.core.data_type.perpetual_api_order_book_data_source import PerpetualAPIOrderBookDataSource
 from hummingbot.core.utils.async_utils import safe_gather

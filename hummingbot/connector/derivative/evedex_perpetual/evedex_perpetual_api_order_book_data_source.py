@@ -8,8 +8,8 @@ from typing import TYPE_CHECKING, Any
 
 import hummingbot.connector.derivative.evedex_perpetual.evedex_perpetual_constants as CONSTANTS
 import hummingbot.connector.derivative.evedex_perpetual.evedex_perpetual_web_utils as web_utils
-from hummingbot.core.data_type.common import TradeType
-from hummingbot.core.data_type.funding_info import FundingInfo, FundingInfoUpdate
+from data_type_primitives.common import TradeType
+from data_type_primitives.funding_info import FundingInfo, FundingInfoUpdate
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 from hummingbot.core.data_type.perpetual_api_order_book_data_source import PerpetualAPIOrderBookDataSource
 from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest

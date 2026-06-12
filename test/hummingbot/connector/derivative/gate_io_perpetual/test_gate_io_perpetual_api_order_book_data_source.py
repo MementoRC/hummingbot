@@ -10,6 +10,7 @@ from aioresponses import aioresponses
 from bidict import bidict
 
 import hummingbot.connector.derivative.gate_io_perpetual.gate_io_perpetual_web_utils as web_utils
+from data_type_primitives.funding_info import FundingInfo
 from hummingbot.connector.derivative.gate_io_perpetual import gate_io_perpetual_constants as CONSTANTS
 from hummingbot.connector.derivative.gate_io_perpetual.gate_io_perpetual_api_order_book_data_source import (
     GateIoPerpetualAPIOrderBookDataSource,
@@ -17,7 +18,6 @@ from hummingbot.connector.derivative.gate_io_perpetual.gate_io_perpetual_api_ord
 from hummingbot.connector.derivative.gate_io_perpetual.gate_io_perpetual_derivative import GateIoPerpetualDerivative
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.trading_rule import TradingRule
-from hummingbot.core.data_type.funding_info import FundingInfo
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 
 

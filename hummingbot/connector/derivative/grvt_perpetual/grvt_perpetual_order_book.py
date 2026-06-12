@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from hummingbot.core.data_type.common import TradeType
+from data_type_primitives.common import TradeType
 from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 
