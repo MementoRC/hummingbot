@@ -18,10 +18,12 @@ if TYPE_CHECKING:
 from hummingbot.strategy_v2.executors.arbitrage_executor.arbitrage_executor import ArbitrageExecutor
 from hummingbot.strategy_v2.executors.data_types import PositionSummary
 from hummingbot.strategy_v2.executors.dca_executor.dca_executor import DCAExecutor
+from hummingbot.strategy_v2.executors.executor_factory import ExecutorFactory
 from hummingbot.strategy_v2.executors.grid_executor.grid_executor import GridExecutor
 from hummingbot.strategy_v2.executors.lp_executor.lp_executor import LPExecutor
 from hummingbot.strategy_v2.executors.order_executor.order_executor import OrderExecutor
 from hummingbot.strategy_v2.executors.position_executor.position_executor import PositionExecutor
+from hummingbot.strategy_v2.executors.progressive_executor.progressive_executor import ProgressiveExecutor
 from hummingbot.strategy_v2.executors.twap_executor.twap_executor import TWAPExecutor
 from hummingbot.strategy_v2.executors.xemm_executor.xemm_executor import XEMMExecutor
 from hummingbot.strategy_v2.models.executor_actions import (
@@ -213,6 +215,7 @@ class ExecutorOrchestrator:
         "xemm_executor": XEMMExecutor,
         "order_executor": OrderExecutor,
         "lp_executor": LPExecutor,
+        "progressive_executor": ProgressiveExecutor,
     }
 
     @classmethod
@@ -495,16 +498,25 @@ class ExecutorOrchestrator:
         # compa
         executor_config.controller_id = controller_id
 
-        executor_class = self._executor_mapping.get(executor_config.type)
-        if executor_class is not None:
-            executor = executor_class(
+        try:
+            executor = ExecutorFactory.create(
                 strategy=self.strategy,
                 config=executor_config,
                 update_interval=self.executors_update_interval,
                 max_retries=self.executors_max_retries,
             )
-        else:
-            raise ValueError("Unsupported executor config type")
+        except ValueError:
+            # Fallback to legacy string-keyed mapping
+            executor_class = self._executor_mapping.get(executor_config.type)
+            if executor_class is not None:
+                executor = executor_class(
+                    strategy=self.strategy,
+                    config=executor_config,
+                    update_interval=self.executors_update_interval,
+                    max_retries=self.executors_max_retries,
+                )
+            else:
+                raise ValueError(f"No executor registered for config type: {type(executor_config).__name__}")
 
         executor.start()
         self.active_executors[controller_id].append(executor)
