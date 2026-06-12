@@ -24,7 +24,7 @@ class StructLogger(HummingbotLogger):
     def event_log(self, dict_msg, *args, **kwargs):
         if self.isEnabledFor(EVENT_LOG_LEVEL):
             if not isinstance(dict_msg, dict):
-                self._log(logging.ERROR, "event_log message must be of type dict.", extra={"do_not_send": True})
+                self._log(logging.ERROR, "event_log message must be of type dict.", (), extra={"do_not_send": True})
                 return
             extra = {"dict_msg": dict_msg, "message_type": "event"}
             if "extra" in kwargs:

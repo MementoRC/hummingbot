@@ -28,7 +28,9 @@ else:  # pragma: no cover
         try:
             raise Exception
         except Exception:
-            return sys.exc_info()[2].tb_frame.f_back
+            tb = sys.exc_info()[2]
+            assert tb is not None
+            return tb.tb_frame.f_back
 #  --- Copied from logging module ---
 
 
@@ -91,7 +93,7 @@ class HummingbotLogger(PythonLogger):
             stacklevel -= 1
         if not f:
             f = orig_f
-        rv = "(unknown file)", 0, "(unknown function)", None
+        rv: tuple[str, int, str, str | None] = "(unknown file)", 0, "(unknown function)", None
         while hasattr(f, "f_code"):
             co = f.f_code
             filename = os.path.normcase(co.co_filename)
