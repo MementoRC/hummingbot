@@ -1,21 +1,21 @@
 #!/usr/bin/env python
+# DEPRECATED: This datasource targets the legacy api.coinalpha.com endpoint which is no
+# longer operational. It has zero production callers and must not be used with untrusted
+# endpoints. pickle.loads() has been replaced with NotImplementedError to prevent accidental
+# deserialization of attacker-controlled bytes.
 
 from __future__ import annotations
 
 import asyncio
 import base64
 import logging
-import pickle
-import time
 from typing import AsyncIterable
 
 import aiohttp
-import pandas as pd
 import websockets
 from websockets.exceptions import ConnectionClosed
 
 import conf
-from hummingbot.connector.exchange.binance.binance_order_book import BinanceOrderBook
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
 from hummingbot.core.data_type.order_book_tracker_entry import OrderBookTrackerEntry
 from hummingbot.logger import HummingbotLogger
@@ -58,20 +58,15 @@ class RemoteAPIOrderBookDataSource(OrderBookTrackerDataSource):
         )
         client_session: aiohttp.ClientSession = await self.get_client_session()
         response: aiohttp.ClientResponse = await client_session.get(self.SNAPSHOT_REST_URL, auth=auth)
-        timestamp: float = time.time()
         if response.status != 200:
             raise EnvironmentError(f"Error fetching order book tracker snapshot from {self.SNAPSHOT_REST_URL}.")
 
         binary_data: bytes = await response.read()
-        order_book_tracker_data: dict[str, tuple[pd.DataFrame, pd.DataFrame]] = pickle.loads(binary_data)
-        retval: dict[str, OrderBookTrackerEntry] = {}
-
-        for trading_pair, (bids_df, asks_df) in order_book_tracker_data.items():
-            order_book: BinanceOrderBook = BinanceOrderBook()
-            order_book.apply_numpy_snapshot(bids_df.values, asks_df.values)
-            retval[trading_pair] = OrderBookTrackerEntry(trading_pair, timestamp, order_book)
-
-        return retval
+        raise NotImplementedError(
+            "pickle.loads() removed for security: this datasource is deprecated and must not "
+            "be used with untrusted endpoints. binary_data length was "
+            f"{len(binary_data)} bytes."
+        )
 
     async def _inner_messages(self, ws: websockets.WebSocketClientProtocol) -> AsyncIterable[str]:
         # Terminate the recv() loop as soon as the next message timed out, so the outer loop can reconnect.
