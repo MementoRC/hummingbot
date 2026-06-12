@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import asyncio
 import hashlib
 from decimal import Decimal
@@ -21,7 +22,6 @@ from hummingbot.connector.exchange.hyperliquid.hyperliquid_auth import Hyperliqu
 from hummingbot.connector.exchange_py_base import ExchangePyBase
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.connector.utils import TradeFillOrderDetails, combine_to_hb_trading_pair, get_new_client_order_id
-from hummingbot.core.api_throttler.data_types import RateLimit
 from hummingbot.core.data_type.common import OrderType, TradeType
 from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderUpdate, TradeUpdate
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
@@ -29,7 +29,8 @@ from hummingbot.core.data_type.trade_fee import DeductedFromReturnsTradeFee, Tok
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.event.events import MarketEvent, OrderFilledEvent
 from hummingbot.core.utils.async_utils import safe_ensure_future, safe_gather
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
+from web_assistant.throttler.data_types import RateLimit
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class HyperliquidExchange(ExchangePyBase):
