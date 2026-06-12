@@ -98,12 +98,23 @@ class LambdaDictTests(TestCase):
 
 
 class OrderTypeTests(TestCase):
+    # is_limit_type — true cases
     def test_is_limit_type_for_limit(self):
         self.assertTrue(OrderType.LIMIT.is_limit_type())
 
     def test_is_limit_type_for_limit_maker(self):
         self.assertTrue(OrderType.LIMIT_MAKER.is_limit_type())
 
+    def test_is_limit_type_for_stop_loss_limit(self):
+        self.assertTrue(OrderType.STOP_LOSS_LIMIT.is_limit_type())
+
+    def test_is_limit_type_for_take_profit_limit(self):
+        self.assertTrue(OrderType.TAKE_PROFIT_LIMIT.is_limit_type())
+
+    def test_is_limit_type_for_trailing_stop_limit(self):
+        self.assertTrue(OrderType.TRAILING_STOP_LIMIT.is_limit_type())
+
+    # is_limit_type — false cases (non-LIMIT and conditional-non-LIMIT)
     def test_is_limit_type_for_market(self):
         self.assertFalse(OrderType.MARKET.is_limit_type())
 
@@ -116,17 +127,129 @@ class OrderTypeTests(TestCase):
     def test_is_limit_type_for_amm_remove(self):
         self.assertFalse(OrderType.AMM_REMOVE.is_limit_type())
 
+    def test_is_limit_type_for_stop_loss(self):
+        self.assertFalse(OrderType.STOP_LOSS.is_limit_type())
+
+    def test_is_limit_type_for_take_profit(self):
+        self.assertFalse(OrderType.TAKE_PROFIT.is_limit_type())
+
+    def test_is_limit_type_for_trailing_stop(self):
+        self.assertFalse(OrderType.TRAILING_STOP.is_limit_type())
+
+    # is_delayed_market_type — true cases (conditional, market-execution)
+    def test_is_delayed_market_type_for_stop_loss(self):
+        self.assertTrue(OrderType.STOP_LOSS.is_delayed_market_type())
+
+    def test_is_delayed_market_type_for_take_profit(self):
+        self.assertTrue(OrderType.TAKE_PROFIT.is_delayed_market_type())
+
+    def test_is_delayed_market_type_for_trailing_stop(self):
+        self.assertTrue(OrderType.TRAILING_STOP.is_delayed_market_type())
+
+    # is_delayed_market_type — false cases (LIMIT variants and non-conditional)
+    def test_is_delayed_market_type_for_market(self):
+        self.assertFalse(OrderType.MARKET.is_delayed_market_type())
+
+    def test_is_delayed_market_type_for_limit(self):
+        self.assertFalse(OrderType.LIMIT.is_delayed_market_type())
+
+    def test_is_delayed_market_type_for_stop_loss_limit(self):
+        self.assertFalse(OrderType.STOP_LOSS_LIMIT.is_delayed_market_type())
+
+    # is_conditional_type — true cases (all 6 new conditional members)
+    def test_is_conditional_type_for_stop_loss(self):
+        self.assertTrue(OrderType.STOP_LOSS.is_conditional_type())
+
+    def test_is_conditional_type_for_take_profit(self):
+        self.assertTrue(OrderType.TAKE_PROFIT.is_conditional_type())
+
+    def test_is_conditional_type_for_trailing_stop(self):
+        self.assertTrue(OrderType.TRAILING_STOP.is_conditional_type())
+
+    def test_is_conditional_type_for_stop_loss_limit(self):
+        self.assertTrue(OrderType.STOP_LOSS_LIMIT.is_conditional_type())
+
+    def test_is_conditional_type_for_take_profit_limit(self):
+        self.assertTrue(OrderType.TAKE_PROFIT_LIMIT.is_conditional_type())
+
+    def test_is_conditional_type_for_trailing_stop_limit(self):
+        self.assertTrue(OrderType.TRAILING_STOP_LIMIT.is_conditional_type())
+
+    # is_conditional_type — false cases (non-conditional standard types)
+    def test_is_conditional_type_for_market(self):
+        self.assertFalse(OrderType.MARKET.is_conditional_type())
+
+    def test_is_conditional_type_for_limit(self):
+        self.assertFalse(OrderType.LIMIT.is_conditional_type())
+
+    def test_is_conditional_type_for_limit_maker(self):
+        self.assertFalse(OrderType.LIMIT_MAKER.is_conditional_type())
+
+    def test_is_conditional_type_for_amm_swap(self):
+        self.assertFalse(OrderType.AMM_SWAP.is_conditional_type())
+
     def test_order_type_enum_members(self):
-        """Verify that all expected OrderType enum members exist."""
-        expected_members = {"MARKET", "LIMIT", "LIMIT_MAKER", "AMM_SWAP", "AMM_ADD", "AMM_REMOVE"}
+        """Verify that all expected OrderType enum members exist (extended for conditional types)."""
+        expected_members = {
+            "MARKET",
+            "LIMIT",
+            "LIMIT_MAKER",
+            "AMM_SWAP",
+            "AMM_ADD",
+            "AMM_REMOVE",
+            "STOP_LOSS",
+            "TAKE_PROFIT",
+            "TRAILING_STOP",
+            "STOP_LOSS_LIMIT",
+            "TAKE_PROFIT_LIMIT",
+            "TRAILING_STOP_LIMIT",
+        }
         actual_members = {member.name for member in OrderType}
         self.assertEqual(actual_members, expected_members)
 
     def test_is_limit_type_true_count(self):
-        """Verify that exactly 2 OrderType members return True for is_limit_type()."""
+        """Verify exactly 5 OrderType members return True for is_limit_type() (LIMIT + LIMIT_MAKER + 3 conditional-LIMIT variants)."""
         limit_types = [ot for ot in OrderType if ot.is_limit_type()]
-        self.assertEqual(len(limit_types), 2)
-        self.assertEqual(set(limit_types), {OrderType.LIMIT, OrderType.LIMIT_MAKER})
+        self.assertEqual(len(limit_types), 5)
+        self.assertEqual(
+            set(limit_types),
+            {
+                OrderType.LIMIT,
+                OrderType.LIMIT_MAKER,
+                OrderType.STOP_LOSS_LIMIT,
+                OrderType.TAKE_PROFIT_LIMIT,
+                OrderType.TRAILING_STOP_LIMIT,
+            },
+        )
+
+    def test_is_delayed_market_type_true_count(self):
+        """Verify exactly 3 OrderType members return True for is_delayed_market_type()."""
+        delayed_market_types = [ot for ot in OrderType if ot.is_delayed_market_type()]
+        self.assertEqual(len(delayed_market_types), 3)
+        self.assertEqual(
+            set(delayed_market_types),
+            {
+                OrderType.STOP_LOSS,
+                OrderType.TAKE_PROFIT,
+                OrderType.TRAILING_STOP,
+            },
+        )
+
+    def test_is_conditional_type_true_count(self):
+        """Verify exactly 6 OrderType members return True for is_conditional_type()."""
+        conditional_types = [ot for ot in OrderType if ot.is_conditional_type()]
+        self.assertEqual(len(conditional_types), 6)
+        self.assertEqual(
+            set(conditional_types),
+            {
+                OrderType.STOP_LOSS,
+                OrderType.TAKE_PROFIT,
+                OrderType.TRAILING_STOP,
+                OrderType.STOP_LOSS_LIMIT,
+                OrderType.TAKE_PROFIT_LIMIT,
+                OrderType.TRAILING_STOP_LIMIT,
+            },
+        )
 
 
 if __name__ == "__main__":
