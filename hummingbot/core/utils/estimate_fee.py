@@ -3,9 +3,9 @@ from __future__ import annotations
 import warnings
 from decimal import Decimal
 
+from data_type_primitives.common import OrderType, PositionAction, TradeType
+from data_type_primitives.trade_fee import TokenAmount, TradeFeeBase, TradeFeeSchema
 from hummingbot.client.config.trade_fee_schema_loader import TradeFeeSchemaLoader
-from hummingbot.core.data_type.common import OrderType, PositionAction, TradeType
-from hummingbot.core.data_type.trade_fee import TokenAmount, TradeFeeBase, TradeFeeSchema
 
 
 def build_trade_fee(

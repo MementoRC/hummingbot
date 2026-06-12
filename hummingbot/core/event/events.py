@@ -5,9 +5,9 @@ from decimal import Decimal
 from enum import Enum, IntEnum
 from typing import NamedTuple
 
-from hummingbot.core.data_type.common import LPType, OrderType, PositionAction, PositionMode, PositionSide, TradeType
+from data_type_primitives.common import LPType, OrderType, PositionAction, PositionMode, PositionSide, TradeType
+from data_type_primitives.trade_fee import AddedToCostTradeFee, TokenAmount, TradeFeeBase
 from hummingbot.core.data_type.order_book_row import OrderBookRow
-from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee, TokenAmount, TradeFeeBase
 
 s_decimal_0 = Decimal("0")
 

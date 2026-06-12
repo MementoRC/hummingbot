@@ -3,7 +3,7 @@ Coverage tests for MarketOrder.to_pandas() classmethod.
 Targets line 21 of market_order.py.
 """
 
-from hummingbot.core.data_type.common import PositionAction
+from data_type_primitives.common import PositionAction
 from hummingbot.core.data_type.market_order import MarketOrder
 
 

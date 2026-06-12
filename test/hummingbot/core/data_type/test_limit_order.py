@@ -2,8 +2,8 @@ import time
 import unittest
 from decimal import Decimal
 
-from hummingbot.core.data_type.limit_order import LimitOrder
-from hummingbot.core.event.events import LimitOrderStatus
+from data_type_primitives.common import LimitOrderStatus
+from data_type_primitives.limit_order import LimitOrder
 
 
 class LimitOrderUnitTest(unittest.TestCase):

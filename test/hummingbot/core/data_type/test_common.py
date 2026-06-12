@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from hummingbot.core.data_type.common import GroupedSetDict, LazyDict
+from data_type_primitives.common import GroupedSetDict, LazyDict
 
 
 class GroupedSetDictTests(TestCase):

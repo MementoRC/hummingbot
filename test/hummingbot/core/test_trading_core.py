@@ -8,12 +8,12 @@ from unittest.mock import AsyncMock, Mock, patch
 from pydantic import Field
 from sqlalchemy.orm import Session
 
+from data_type_primitives.common import MarketDict
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
 from hummingbot.connector.connector_metrics_collector import DummyMetricsCollector, MetricsCollector
 from hummingbot.connector.exchange_base import ExchangeBase
 from hummingbot.core.clock import Clock
-from hummingbot.core.data_type.common import MarketDict
 from hummingbot.core.trading_core import StrategyType, TradingCore
 from hummingbot.exceptions import InvalidScriptModule
 from hummingbot.model.trade_fill import TradeFill

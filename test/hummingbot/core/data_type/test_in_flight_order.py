@@ -5,10 +5,10 @@ from decimal import Decimal
 from typing import Awaitable
 from unittest.mock import patch
 
-from hummingbot.core.data_type.common import OrderType, PositionAction, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState, OrderUpdate, TradeUpdate
-from hummingbot.core.data_type.limit_order import LimitOrder
-from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee, TokenAmount
+from data_type_primitives.common import OrderType, PositionAction, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder, OrderState, OrderUpdate, TradeUpdate
+from data_type_primitives.limit_order import LimitOrder
+from data_type_primitives.trade_fee import AddedToCostTradeFee, TokenAmount
 from hummingbot.core.rate_oracle.rate_oracle import RateOracle
 
 
