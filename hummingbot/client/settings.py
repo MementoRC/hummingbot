@@ -9,8 +9,8 @@ from typing import TYPE_CHECKING, Any, Dict, NamedTuple, Union, cast
 
 from pydantic import SecretStr
 
+from data_type_primitives.trade_fee import TradeFeeSchema
 from hummingbot import get_strategy_list, root_path
-from hummingbot.core.data_type.trade_fee import TradeFeeSchema
 
 if TYPE_CHECKING:
     from hummingbot.client.config.client_config_map import GatewayConfigMap

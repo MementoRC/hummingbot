@@ -1,7 +1,7 @@
 from decimal import Decimal
 
+from data_type_primitives.common import PriceType
 from hummingbot.connector.exchange_base import ExchangeBase
-from hummingbot.core.data_type.common import PriceType
 from hummingbot.strategy.asset_price_delegate import AssetPriceDelegate
 
 

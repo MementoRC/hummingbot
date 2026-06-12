@@ -2,9 +2,9 @@ import unittest
 
 from pydantic import SecretStr
 
+from data_type_primitives.trade_fee import TradeFeeSchema
 from hummingbot.client.settings import ConnectorSetting, ConnectorType
 from hummingbot.connector.exchange.binance.binance_utils import BinanceConfigMap
-from hummingbot.core.data_type.trade_fee import TradeFeeSchema
 
 
 class SettingsTest(unittest.TestCase):

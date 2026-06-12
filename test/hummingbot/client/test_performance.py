@@ -5,10 +5,10 @@ from decimal import Decimal
 from typing import Awaitable
 from unittest.mock import MagicMock, patch
 
+from data_type_primitives.common import OrderType, PositionAction, TradeType
+from data_type_primitives.trade_fee import AddedToCostTradeFee, DeductedFromReturnsTradeFee, TokenAmount
 from hummingbot.client.performance import PerformanceMetrics
-from hummingbot.core.data_type.common import OrderType, PositionAction, TradeType
 from hummingbot.core.data_type.trade import Trade
-from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee, DeductedFromReturnsTradeFee, TokenAmount
 from hummingbot.core.rate_oracle.rate_oracle import RateOracle
 from hummingbot.model.order import Order  # noqa — Order needs to be defined for TradeFill
 from hummingbot.model.order_status import OrderStatus  # noqa — Order needs to be defined for TradeFill

@@ -6,8 +6,8 @@ from decimal import Decimal
 
 from pydantic import BaseModel
 
+from data_type_primitives.common import TradeType
 from hummingbot.connector.utils import split_hb_trading_pair
-from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.gateway.gateway_http_client import GatewayHttpClient
 from hummingbot.core.network_base import NetworkBase
 from hummingbot.core.network_iterator import NetworkStatus

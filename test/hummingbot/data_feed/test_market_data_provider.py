@@ -5,9 +5,9 @@ from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import pandas as pd
 
+from data_type_primitives.common import PriceType
+from data_type_primitives.funding_info import FundingInfo
 from hummingbot.connector.trading_rule import TradingRule
-from hummingbot.core.data_type.common import PriceType
-from hummingbot.core.data_type.funding_info import FundingInfo
 from hummingbot.core.data_type.order_book_query_result import OrderBookQueryResult
 from hummingbot.data_feed.candles_feed.candles_base import CandlesBase
 from hummingbot.data_feed.candles_feed.data_types import CandlesConfig

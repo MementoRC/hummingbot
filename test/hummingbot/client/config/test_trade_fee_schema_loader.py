@@ -2,8 +2,8 @@ import unittest
 from decimal import Decimal
 from unittest.mock import MagicMock, patch
 
+from data_type_primitives.trade_fee import TradeFeeSchema
 from hummingbot.client.config.trade_fee_schema_loader import TradeFeeSchemaLoader
-from hummingbot.core.data_type.trade_fee import TradeFeeSchema
 
 
 class TestTradeFeeSchemaLoader(unittest.TestCase):

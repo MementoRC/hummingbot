@@ -7,6 +7,7 @@ from decimal import Decimal
 
 import pandas as pd
 
+from data_type_primitives.common import GroupedSetDict, LazyDict, PriceType, TradeType
 from hummingbot.client.config.config_helpers import (
     ClientConfigAdapter,
     api_keys_from_connector_config_map,
@@ -15,7 +16,6 @@ from hummingbot.client.config.config_helpers import (
 from hummingbot.client.settings import AllConnectorSettings
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.connector.gateway.common_types import Chain
-from hummingbot.core.data_type.common import GroupedSetDict, LazyDict, PriceType, TradeType
 from hummingbot.core.data_type.order_book_query_result import OrderBookQueryResult
 from hummingbot.core.gateway.gateway_http_client import GatewayHttpClient
 from hummingbot.core.rate_oracle.rate_oracle import RateOracle

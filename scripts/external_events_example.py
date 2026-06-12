@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from pydantic import Field
 
-from hummingbot.core.data_type.common import MarketDict, OrderType
+from data_type_primitives.common import MarketDict, OrderType
 from hummingbot.core.event.events import BuyOrderCreatedEvent, MarketOrderFailureEvent, SellOrderCreatedEvent
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base, StrategyV2ConfigBase
 from remote_iface import ExternalEventFactory, ExternalTopicFactory

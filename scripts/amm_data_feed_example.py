@@ -7,9 +7,9 @@ from decimal import Decimal
 import pandas as pd
 from pydantic import Field
 
+from data_type_primitives.common import MarketDict
 from hummingbot.client.ui.interface_utils import format_df_for_printout
 from hummingbot.connector.connector_base import ConnectorBase
-from hummingbot.core.data_type.common import MarketDict
 from hummingbot.data_feed.amm_gateway_data_feed import AmmGatewayDataFeed
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base, StrategyV2ConfigBase
 

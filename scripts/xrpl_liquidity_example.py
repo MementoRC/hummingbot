@@ -4,6 +4,7 @@ from decimal import Decimal
 
 from pydantic import Field
 
+from data_type_primitives.common import MarketDict
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.connector.exchange.xrpl.xrpl_exchange import XrplExchange
 from hummingbot.connector.exchange.xrpl.xrpl_utils import (
@@ -12,7 +13,6 @@ from hummingbot.connector.exchange.xrpl.xrpl_utils import (
     QuoteLiquidityResponse,
     RemoveLiquidityResponse,
 )
-from hummingbot.core.data_type.common import MarketDict
 from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base, StrategyV2ConfigBase
 
