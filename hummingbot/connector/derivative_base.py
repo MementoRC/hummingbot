@@ -1,8 +1,8 @@
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
+from data_type_primitives.common import PositionMode
 from hummingbot.connector.exchange_base import ExchangeBase
-from hummingbot.core.data_type.common import PositionMode
 
 if TYPE_CHECKING:
     from hummingbot.client.config.config_helpers import ClientConfigAdapter

@@ -4,16 +4,16 @@ import asyncio
 from abc import ABC, abstractmethod
 from decimal import Decimal
 
+from data_type_primitives.common import OrderType, PositionAction, PositionMode, TradeType
+from data_type_primitives.funding_info import FundingInfo
+from data_type_primitives.in_flight_order import PerpetualDerivativeInFlightOrder
+from data_type_primitives.trade_fee import TradeFeeBase
 from hummingbot.connector.constants import s_decimal_0, s_decimal_NaN
 from hummingbot.connector.derivative.perpetual_budget_checker import PerpetualBudgetChecker
 from hummingbot.connector.derivative.position import Position
 from hummingbot.connector.exchange_py_base import ExchangePyBase
 from hummingbot.connector.perpetual_trading import PerpetualTrading
-from hummingbot.core.data_type.common import OrderType, PositionAction, PositionMode, TradeType
-from hummingbot.core.data_type.funding_info import FundingInfo
-from hummingbot.core.data_type.in_flight_order import PerpetualDerivativeInFlightOrder
 from hummingbot.core.data_type.perpetual_api_order_book_data_source import PerpetualAPIOrderBookDataSource
-from hummingbot.core.data_type.trade_fee import TradeFeeBase
 from hummingbot.core.event.events import (
     AccountEvent,
     FundingPaymentCompletedEvent,
