@@ -1,0 +1,190 @@
+# Import boundary contracts for hummingbot sub-packages.
+#
+# Enforces: no module outside a sub-package's hb_compat/ may import hummingbot.*
+#
+# Pinned tool: import-linter (see pyproject.toml dev deps).
+# Run with: pixi run lint-boundaries
+#
+# Replaces the earlier tach.toml attempt (which failed on flat sub-package
+# layout, Cython .so files, and missing glob expansion). See
+# hummingbot_ai_docs/project_tach_mod_audit_2026_06_04.md.
+
+[importlinter]
+root_packages =
+    hummingbot
+    async_utils
+    candles_feed
+    connector_utils
+    data_type_primitives
+    event_bus
+    liquidations_feed
+    logger
+    market_connector
+    market_data
+    market_simulator
+    rate_oracle
+    remote_iface
+    strategy_framework
+    web_assistant
+
+# ---------------------------------------------------------------------------
+# Strict sub-packages (whole package must not import hummingbot)
+# ---------------------------------------------------------------------------
+
+[importlinter:contract:async-utils-boundary]
+name = async_utils must not import hummingbot
+type = forbidden
+source_modules =
+    async_utils
+forbidden_modules =
+    hummingbot
+
+[importlinter:contract:connector-utils-boundary]
+name = connector_utils must not import hummingbot
+type = forbidden
+source_modules =
+    connector_utils
+forbidden_modules =
+    hummingbot
+
+[importlinter:contract:data-type-primitives-boundary]
+name = data_type_primitives must not import hummingbot
+type = forbidden
+source_modules =
+    data_type_primitives
+forbidden_modules =
+    hummingbot
+
+[importlinter:contract:event-bus-boundary]
+name = event_bus must not import hummingbot
+type = forbidden
+source_modules =
+    event_bus
+forbidden_modules =
+    hummingbot
+
+# TODO(boundary-debt): market_data.live_market_data imports hummingbot.core.data_type.common.
+# This file likely belongs in market_data/hb_compat/ — move in a follow-up PR.
+[importlinter:contract:market-data-no-hummingbot]
+name = market_data must not import hummingbot
+type = forbidden
+source_modules =
+    market_data
+forbidden_modules =
+    hummingbot
+# Stale ignore_imports lines warn instead of error — robust against path drift
+# from in-flight migrations. Stale entries appear in logs but don't block gate.
+unmatched_ignore_imports_alerting = warn
+ignore_imports =
+    market_data.live_market_data -> hummingbot.core.data_type.common
+
+[importlinter:contract:web-assistant-boundary]
+name = web_assistant must not import hummingbot
+type = forbidden
+source_modules =
+    web_assistant
+forbidden_modules =
+    hummingbot
+
+# ---------------------------------------------------------------------------
+# Carve-out sub-packages (only hb_compat/ may import hummingbot)
+# ---------------------------------------------------------------------------
+
+# TODO(boundary-debt): candles_feed.core.hummingbot_network_client_adapter
+# imports hummingbot.core.* inside a try/except ImportError fallback. Current
+# import-linter (2.x) doesn't traverse try-blocks so these aren't detected
+# at runtime — the ignore_imports lines below are defensive: they suppress
+# warnings if a future import-linter version starts detecting them, and they
+# document the known coupling. Real fix is to move the adapter into
+# candles_feed/hb_compat/ in a follow-up PR.
+[importlinter:contract:candles-feed-hb-isolation]
+name = candles-feed non-hb_compat modules must not import hummingbot
+type = forbidden
+source_modules =
+    candles_feed.adapters
+    candles_feed.core
+    candles_feed.integration
+    candles_feed.mocking_resources
+    candles_feed.monitoring
+    candles_feed.utils
+forbidden_modules =
+    hummingbot
+# Stale ignore_imports lines warn instead of error — robust against path drift
+# from in-flight migrations. Stale entries appear in logs but don't block gate.
+unmatched_ignore_imports_alerting = warn
+ignore_imports =
+    candles_feed.core.hummingbot_network_client_adapter -> hummingbot.core.api_throttler.async_throttler_base
+    candles_feed.core.hummingbot_network_client_adapter -> hummingbot.core.web_assistant.rest_assistant
+    candles_feed.core.hummingbot_network_client_adapter -> hummingbot.core.web_assistant.web_assistants_factory
+    candles_feed.core.hummingbot_network_client_adapter -> hummingbot.core.web_assistant.ws_assistant
+
+[importlinter:contract:liquidations-feed-boundary]
+name = liquidations_feed source modules must not import hummingbot
+type = forbidden
+source_modules =
+    liquidations_feed.adapters
+    liquidations_feed.core
+forbidden_modules =
+    hummingbot
+
+[importlinter:contract:market-connector-boundary]
+name = market_connector source modules must not import hummingbot
+type = forbidden
+source_modules =
+    market_connector.auth
+    market_connector.contracts
+    market_connector.exchanges
+    market_connector.rate_limits
+    market_connector.symbols
+    market_connector.testing
+    market_connector.transport
+    market_connector.ws_models
+forbidden_modules =
+    hummingbot
+
+[importlinter:contract:market-simulator-boundary]
+name = market_simulator source modules must not import hummingbot
+type = forbidden
+source_modules =
+    market_simulator.core
+    market_simulator.metrics
+    market_simulator.protocols
+    market_simulator.replay
+    market_simulator.simulator
+forbidden_modules =
+    hummingbot
+
+[importlinter:contract:rate-oracle-boundary]
+name = rate_oracle source modules must not import hummingbot
+type = forbidden
+source_modules =
+    rate_oracle.core
+    rate_oracle.sources
+forbidden_modules =
+    hummingbot
+
+[importlinter:contract:remote-iface-boundary]
+name = remote_iface source modules must not import hummingbot
+type = forbidden
+source_modules =
+    remote_iface._commlib
+    remote_iface.external
+    remote_iface.gateway
+    remote_iface.protocols
+forbidden_modules =
+    hummingbot
+
+[importlinter:contract:strategy-framework-boundary]
+name = strategy_framework source modules must not import hummingbot
+type = forbidden
+source_modules =
+    strategy_framework.building_blocks
+    strategy_framework.config
+    strategy_framework.executors
+    strategy_framework.mixins
+    strategy_framework.orchestrator
+    strategy_framework.primitives
+    strategy_framework.protocols
+    strategy_framework.testing
+forbidden_modules =
+    hummingbot
