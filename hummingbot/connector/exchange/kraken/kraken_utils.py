@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Tuple
 
 from pydantic import ConfigDict, Field, SecretStr, field_validator
 
@@ -16,8 +15,8 @@ CENTRALIZED = True
 EXAMPLE_PAIR = "ETH-USDC"
 
 DEFAULT_FEES = TradeFeeSchema(
-    maker_percent_fee_decimal=Decimal("0.0025"),
-    taker_percent_fee_decimal=Decimal("0.004"),
+    maker_percent_fee_decimal=Decimal("0.2"),
+    taker_percent_fee_decimal=Decimal("0.35"),
 )
 
 
@@ -39,7 +38,7 @@ def split_to_base_quote(exchange_trading_pair: str) -> tuple[str | None, str | N
 
 
 def convert_from_exchange_trading_pair(
-    exchange_trading_pair: str, available_trading_pairs: Tuple | None = None
+    exchange_trading_pair: str, available_trading_pairs: tuple | None = None
 ) -> str | None:
     base, quote = "", ""
     if "-" in exchange_trading_pair:
