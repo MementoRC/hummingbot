@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import List
 
 from hummingbot.core.api_throttler.data_types import LinkedLimitWeightPair, RateLimit
 from hummingbot.core.data_type.in_flight_order import OrderState
@@ -161,7 +160,7 @@ ALL_ENDPOINTS_LIMIT = "lighter_perpetual_all"
 SEND_TX_LIMIT = "lighter_perpetual_send_tx"
 
 
-def generate_account_limit(account_type: str, staked_lit: int = 0) -> List[RateLimit]:
+def generate_account_limit(account_type: str, staked_lit: int = 0) -> list[RateLimit]:
     """Generate the full list of RateLimit objects for the given account tier.
 
     Parameters

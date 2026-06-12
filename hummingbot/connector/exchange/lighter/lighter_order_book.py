@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any
 
 from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.data_type.order_book import OrderBook
@@ -7,17 +7,17 @@ from hummingbot.core.data_type.order_book_message import OrderBookMessage, Order
 
 class LighterOrderBook(OrderBook):
     @staticmethod
-    def _ws_levels(levels: List[Dict[str, Any]]) -> List[List[float]]:
+    def _ws_levels(levels: list[dict[str, Any]]) -> list[list[float]]:
         return [[float(level["price"]), float(level["size"])] for level in levels]
 
     @staticmethod
-    def _rest_levels(levels: List[Dict[str, Any]]) -> List[List[float]]:
+    def _rest_levels(levels: list[dict[str, Any]]) -> list[list[float]]:
         return [[float(level["price"]), float(level["remaining_base_amount"])] for level in levels]
 
     @classmethod
     def snapshot_message_from_rest(
         cls,
-        msg: Dict[str, Any],
+        msg: dict[str, Any],
         trading_pair: str,
     ) -> OrderBookMessage:
         return OrderBookMessage(
@@ -34,7 +34,7 @@ class LighterOrderBook(OrderBook):
     @classmethod
     def snapshot_message_from_ws(
         cls,
-        msg: Dict[str, Any],
+        msg: dict[str, Any],
         trading_pair: str,
     ) -> OrderBookMessage:
         order_book = msg["order_book"]
@@ -52,7 +52,7 @@ class LighterOrderBook(OrderBook):
     @classmethod
     def diff_message_from_ws(
         cls,
-        msg: Dict[str, Any],
+        msg: dict[str, Any],
         trading_pair: str,
     ) -> OrderBookMessage:
         order_book = msg["order_book"]
@@ -71,7 +71,7 @@ class LighterOrderBook(OrderBook):
     @classmethod
     def trade_message_from_ws(
         cls,
-        trade: Dict[str, Any],
+        trade: dict[str, Any],
         trading_pair: str,
     ) -> OrderBookMessage:
         trade_type = TradeType.BUY if trade.get("is_maker_ask", False) else TradeType.SELL

@@ -1,5 +1,5 @@
+from __future__ import annotations
 from decimal import Decimal
-from typing import Optional
 
 from pydantic import ConfigDict, Field, SecretStr, field_validator
 
@@ -36,7 +36,7 @@ class LighterConfigMap(BaseConnectorConfigMap):
             "prompt_on_new": True,
         },
     )
-    lighter_account_index: Optional[int] = Field(
+    lighter_account_index: int | None = Field(
         default=None,
         json_schema_extra={
             "prompt": "Enter your Lighter account index (leave blank to use the main account for your L1 address)",
@@ -100,7 +100,7 @@ class LighterTestnetConfigMap(BaseConnectorConfigMap):
             "prompt_on_new": True,
         },
     )
-    lighter_testnet_account_index: Optional[int] = Field(
+    lighter_testnet_account_index: int | None = Field(
         default=None,
         json_schema_extra={
             "prompt": "Enter your Lighter Testnet account index (leave blank to use the main account for your L1 address)",

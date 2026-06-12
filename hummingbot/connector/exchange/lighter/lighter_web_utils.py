@@ -1,5 +1,6 @@
+from __future__ import annotations
 import time
-from typing import Any, Dict, Optional
+from typing import Any
 
 from hummingbot.connector.exchange.lighter import lighter_constants as CONSTANTS
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
@@ -39,8 +40,8 @@ def wss_url(domain: str = "lighter") -> str:
 
 
 def build_api_factory(
-    throttler: Optional[AsyncThrottler] = None,
-    auth: Optional[AuthBase] = None,
+    throttler: AsyncThrottler | None = None,
+    auth: AuthBase | None = None,
 ) -> WebAssistantsFactory:
     throttler = throttler or create_throttler()
     return WebAssistantsFactory(
@@ -58,7 +59,7 @@ async def get_current_server_time(throttler: AsyncThrottler, domain: str) -> flo
     return time.time()
 
 
-def is_exchange_information_valid(rule: Dict[str, Any]) -> bool:
+def is_exchange_information_valid(rule: dict[str, Any]) -> bool:
     if rule.get("status") != "active":
         return False
     market_config = rule.get("market_config", {})

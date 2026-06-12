@@ -1,7 +1,7 @@
+from __future__ import annotations
 import asyncio
 import logging
 import time
-from typing import List, Optional
 
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.core.utils.async_utils import safe_ensure_future
@@ -11,7 +11,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class LighterSpotCandles(CandlesBase):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -20,7 +20,7 @@ class LighterSpotCandles(CandlesBase):
         return cls._logger
 
     def __init__(self, trading_pair: str, interval: str = "1m", max_records: int = 150):
-        self._market_id: Optional[int] = None
+        self._market_id: int | None = None
         super().__init__(trading_pair, interval, max_records)
 
     @property
@@ -89,9 +89,9 @@ class LighterSpotCandles(CandlesBase):
 
     def _get_rest_candles_params(
         self,
-        start_time: Optional[int] = None,
-        end_time: Optional[int] = None,
-        limit: Optional[int] = None,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        limit: int | None = None,
     ) -> dict:
         now_ms = int(time.time() * 1000)
         start_ms = int(start_time * 1000) if start_time is not None else now_ms - self.interval_in_seconds * 1000
@@ -106,7 +106,7 @@ class LighterSpotCandles(CandlesBase):
             "count_back": count_back,
         }
 
-    def _parse_rest_candles(self, data: dict, end_time: Optional[int] = None) -> List[List[float]]:
+    def _parse_rest_candles(self, data: dict, end_time: int | None = None) -> list[list[float]]:
         raw_candles = data.get("c", []) if isinstance(data, dict) else []
         result = []
         for c in raw_candles:
