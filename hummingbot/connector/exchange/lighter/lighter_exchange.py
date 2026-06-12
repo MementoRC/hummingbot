@@ -68,7 +68,9 @@ class LighterExchange(ExchangePyBase):
         self._markets_by_trading_pair = {}
         self._markets_by_exchange_symbol = {}
         self._tx_lock = asyncio.Lock()
-        self._signer_client = self._create_signer_client() if trading_required and self._account_index is not None else None
+        self._signer_client = (
+            self._create_signer_client() if trading_required and self._account_index is not None else None
+        )
         super().__init__(balance_asset_limit, rate_limits_share_pct)
 
     @property
@@ -504,9 +506,7 @@ class LighterExchange(ExchangePyBase):
         try:
             from lighter import SignerClient
         except ModuleNotFoundError as exc:
-            raise ModuleNotFoundError(
-                "The lighter-sdk package is required to use the Lighter connector."
-            ) from exc
+            raise ModuleNotFoundError("The lighter-sdk package is required to use the Lighter connector.") from exc
         return SignerClient(
             url=web_utils.public_rest_url(domain=self._domain),
             account_index=self._account_index,
@@ -573,7 +573,10 @@ class LighterExchange(ExchangePyBase):
         for order in orders:
             if str(order.get("client_order_id", "")) == tracked_order.client_order_id:
                 return order
-            if tracked_order.exchange_order_id is not None and str(order.get("order_id", "")) == tracked_order.exchange_order_id:
+            if (
+                tracked_order.exchange_order_id is not None
+                and str(order.get("order_id", "")) == tracked_order.exchange_order_id
+            ):
                 return order
         return None
 
