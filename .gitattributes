@@ -1,3 +1,0 @@
-# Use 'ours' merge strategy for environment.yml — we use pyproject.toml exclusively.
-# Requires `git config merge.ours.driver true` per-clone (auto-set by rebuild script).
-setup/environment.yml merge=ours
