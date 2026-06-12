@@ -96,6 +96,9 @@ class HummingbotApplication(*commands):
         if self.client_config_map.mqtt_bridge.mqtt_autostart:
             self.mqtt_start()
 
+        HummingbotLogger.register_notify_handler(self.notify)
+        HummingbotLogger.register_network_handler(self.add_application_warning)
+
     def _init_ui_components(self):
         """Initialize UI components (CLI, parser, etc.) for non-headless mode."""
         command_tabs = self.init_command_tabs()
