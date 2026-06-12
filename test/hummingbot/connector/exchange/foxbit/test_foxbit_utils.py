@@ -3,8 +3,8 @@ from datetime import datetime
 from decimal import Decimal
 from unittest.mock import MagicMock
 
+from data_type_primitives.in_flight_order import OrderState
 from hummingbot.connector.exchange.foxbit import foxbit_utils as utils
-from hummingbot.core.data_type.in_flight_order import OrderState
 
 
 class FoxbitUtilTestCases(unittest.TestCase):

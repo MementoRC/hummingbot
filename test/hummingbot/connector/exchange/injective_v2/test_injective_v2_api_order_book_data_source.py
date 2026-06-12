@@ -14,6 +14,7 @@ from pyinjective.core.market_v2 import SpotMarket
 from pyinjective.core.token import Token
 from pyinjective.wallet import Address, PrivateKey
 
+from data_type_primitives.common import TradeType
 from hummingbot.connector.exchange.injective_v2.injective_market import InjectiveToken
 from hummingbot.connector.exchange.injective_v2.injective_v2_api_order_book_data_source import (
     InjectiveV2APIOrderBookDataSource,
@@ -25,7 +26,6 @@ from hummingbot.connector.exchange.injective_v2.injective_v2_utils import (
     InjectiveMessageBasedTransactionFeeCalculatorMode,
     InjectiveTestnetNetworkMode,
 )
-from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 
 

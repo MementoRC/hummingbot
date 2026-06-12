@@ -11,14 +11,14 @@ from unittest.mock import AsyncMock
 from aioresponses import aioresponses
 from bidict import bidict
 
+from data_type_primitives.common import OrderType, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder, OrderState
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
 from hummingbot.connector.exchange.bing_x import bing_x_constants as CONSTANTS, bing_x_web_utils as web_utils
 from hummingbot.connector.exchange.bing_x.bing_x_api_order_book_data_source import BingXAPIOrderBookDataSource
 from hummingbot.connector.exchange.bing_x.bing_x_exchange import BingXExchange
 from hummingbot.connector.trading_rule import TradingRule
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState
 from hummingbot.core.event.event_logger import EventLogger
 from hummingbot.core.event.events import BuyOrderCreatedEvent, MarketEvent, OrderCancelledEvent
 from hummingbot.core.network_iterator import NetworkStatus

@@ -10,14 +10,14 @@ from unittest.mock import AsyncMock
 from aioresponses import aioresponses
 from aioresponses.core import RequestCall
 
+from data_type_primitives.common import OrderType, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder, OrderState
+from data_type_primitives.trade_fee import DeductedFromReturnsTradeFee, TokenAmount, TradeFeeBase
 from hummingbot.connector.exchange.cube import cube_constants as CONSTANTS, cube_web_utils as web_utils
 from hummingbot.connector.exchange.cube.cube_exchange import CubeExchange
 from hummingbot.connector.exchange.cube.cube_ws_protobufs import trade_pb2
 from hummingbot.connector.test_support.exchange_connector_test import AbstractExchangeConnectorTests
 from hummingbot.connector.trading_rule import TradingRule
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState
-from hummingbot.core.data_type.trade_fee import DeductedFromReturnsTradeFee, TokenAmount, TradeFeeBase
 from hummingbot.core.event.events import (
     BuyOrderCompletedEvent,
     BuyOrderCreatedEvent,

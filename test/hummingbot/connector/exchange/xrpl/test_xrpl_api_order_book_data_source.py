@@ -6,12 +6,12 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 from xrpl.models import XRP, IssuedCurrency
 from xrpl.models.response import Response, ResponseStatus, ResponseType
 
+from data_type_primitives.common import TradeType
 from hummingbot.connector.exchange.xrpl import xrpl_constants as CONSTANTS
 from hummingbot.connector.exchange.xrpl.xrpl_api_order_book_data_source import XRPLAPIOrderBookDataSource
 from hummingbot.connector.exchange.xrpl.xrpl_exchange import XrplExchange
 from hummingbot.connector.exchange.xrpl.xrpl_worker_pool import QueryResult
 from hummingbot.connector.trading_rule import TradingRule
-from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.data_type.order_book import OrderBook
 
 

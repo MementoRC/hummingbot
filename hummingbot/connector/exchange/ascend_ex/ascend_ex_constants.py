@@ -1,6 +1,6 @@
 # A single source of truth for constant variables related to the exchange
+from data_type_primitives.in_flight_order import OrderState
 from hummingbot.core.api_throttler.data_types import LinkedLimitWeightPair, RateLimit
-from hummingbot.core.data_type.in_flight_order import OrderState
 
 # Max order id allowed by AscendEx is 32. We need to configure it in 22 to unify the timestamp and client_id
 # components in the order id, because AscendEx uses the last 9 characters or the order id to generate the

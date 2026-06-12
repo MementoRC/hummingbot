@@ -8,6 +8,11 @@ from typing import Any, Callable, Union
 
 from async_timeout import timeout
 
+from data_type_primitives.cancellation_result import CancellationResult
+from data_type_primitives.common import OrderType, TradeType
+from data_type_primitives.in_flight_order import OrderState, OrderUpdate, TradeUpdate
+from data_type_primitives.limit_order import LimitOrder
+from data_type_primitives.trade_fee import TradeFeeBase, TradeFeeSchema
 from hummingbot.connector.client_order_tracker import ClientOrderTracker
 from hummingbot.connector.constants import s_decimal_NaN
 from hummingbot.connector.exchange.injective_v2 import (
@@ -25,13 +30,8 @@ from hummingbot.connector.gateway.gateway_order_tracker import GatewayOrderTrack
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.connector.utils import combine_to_hb_trading_pair, get_new_client_order_id
 from hummingbot.core.api_throttler.data_types import RateLimit
-from hummingbot.core.data_type.cancellation_result import CancellationResult
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.in_flight_order import OrderState, OrderUpdate, TradeUpdate
-from hummingbot.core.data_type.limit_order import LimitOrder
 from hummingbot.core.data_type.market_order import MarketOrder
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
-from hummingbot.core.data_type.trade_fee import TradeFeeBase, TradeFeeSchema
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.event.event_forwarder import EventForwarder
 from hummingbot.core.event.events import AccountEvent, BalanceUpdateEvent, MarketEvent

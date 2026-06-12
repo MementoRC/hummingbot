@@ -10,13 +10,13 @@ from unittest.mock import patch
 from aioresponses import aioresponses
 from aioresponses.core import RequestCall
 
+from data_type_primitives.common import OrderType, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder, OrderState
+from data_type_primitives.trade_fee import AddedToCostTradeFee, TokenAmount, TradeFeeBase
 from hummingbot.connector.exchange.kraken import kraken_constants as CONSTANTS, kraken_web_utils as web_utils
 from hummingbot.connector.exchange.kraken.kraken_exchange import KrakenExchange
 from hummingbot.connector.test_support.exchange_connector_test import AbstractExchangeConnectorTests
 from hummingbot.connector.trading_rule import TradingRule
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState
-from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee, TokenAmount, TradeFeeBase
 from hummingbot.core.event.events import MarketOrderFailureEvent
 from hummingbot.core.network_iterator import NetworkStatus
 

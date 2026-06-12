@@ -11,12 +11,12 @@ from xrpl.asyncio.clients import AsyncWebsocketClient
 from xrpl.models.requests import BookOffers, Subscribe, SubscribeBook
 from xrpl.utils import get_order_book_changes, ripple_time_to_posix
 
+from data_type_primitives.common import TradeType
 from hummingbot.connector.exchange.xrpl import xrpl_constants as CONSTANTS
 from hummingbot.connector.exchange.xrpl.xrpl_order_book import XRPLOrderBook
 from hummingbot.connector.exchange.xrpl.xrpl_utils import mask_node_url
 from hummingbot.connector.exchange.xrpl.xrpl_worker_manager import XRPLWorkerPoolManager
 from hummingbot.connector.exchange.xrpl.xrpl_worker_pool import XRPLQueryWorkerPool
-from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.data_type.order_book_message import OrderBookMessage
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
 from hummingbot.core.utils.async_utils import safe_gather

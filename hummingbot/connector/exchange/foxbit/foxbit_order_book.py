@@ -3,8 +3,8 @@ from __future__ import annotations
 from enum import Enum
 from typing import Dict
 
+from data_type_primitives.common import TradeType
 from hummingbot.connector.exchange.foxbit import foxbit_constants as CONSTANTS
-from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 

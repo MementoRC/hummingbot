@@ -11,6 +11,9 @@ from unittest.mock import AsyncMock, patch
 from aioresponses import aioresponses
 from bidict import bidict
 
+from data_type_primitives.cancellation_result import CancellationResult
+from data_type_primitives.common import OrderType, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder, OrderState
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
 from hummingbot.connector.exchange.vertex import vertex_constants as CONSTANTS, vertex_web_utils as web_utils
@@ -18,9 +21,6 @@ from hummingbot.connector.exchange.vertex.vertex_api_order_book_data_source impo
 from hummingbot.connector.exchange.vertex.vertex_exchange import VertexExchange
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.connector.utils import get_new_client_order_id
-from hummingbot.core.data_type.cancellation_result import CancellationResult
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState
 from hummingbot.core.event.event_logger import EventLogger
 from hummingbot.core.event.events import (
     BuyOrderCompletedEvent,

@@ -10,14 +10,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from bidict import bidict
 
 import hummingbot.connector.exchange.bitget.bitget_constants as CONSTANTS
+from data_type_primitives.common import OrderType, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder, OrderState
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
 from hummingbot.connector.exchange.bitget.bitget_api_user_stream_data_source import BitgetAPIUserStreamDataSource
 from hummingbot.connector.exchange.bitget.bitget_auth import BitgetAuth
 from hummingbot.connector.exchange.bitget.bitget_exchange import BitgetExchange
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState
 
 
 class BitgetAPIUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):

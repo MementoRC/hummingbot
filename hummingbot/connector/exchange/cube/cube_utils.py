@@ -3,11 +3,11 @@ from typing import Any
 
 from pydantic import ConfigDict, Field, SecretStr, field_validator
 
+from data_type_primitives.trade_fee import TradeFeeSchema
 from hummingbot.client.config.config_data_types import BaseConnectorConfigMap
 from hummingbot.client.config.config_validators import validate_int, validate_with_regex
 from hummingbot.connector.exchange.cube.cube_constants import DEFAULT_DOMAIN, TESTNET_DOMAIN
 from hummingbot.connector.exchange.cube.cube_ws_protobufs import trade_pb2
-from hummingbot.core.data_type.trade_fee import TradeFeeSchema
 
 CENTRALIZED = True
 EXAMPLE_PAIR = "SOL-USDC"

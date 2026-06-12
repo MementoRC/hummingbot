@@ -3,13 +3,13 @@ from __future__ import annotations
 import logging
 from typing import Dict
 
+from data_type_primitives.common import TradeType
 from hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_trade_constants import (
     WS_ORDER_SUBSCRIPTION_CHANNELS,
 )
 from hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_trade_web_utils import (
     get_timestamp_from_exchange_time,
 )
-from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 from hummingbot.logger import HummingbotLogger

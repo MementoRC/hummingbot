@@ -11,6 +11,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from aioresponses import aioresponses
 from bidict import bidict
 
+from data_type_primitives.cancellation_result import CancellationResult
+from data_type_primitives.common import OrderType, TradeType
+from data_type_primitives.in_flight_order import InFlightOrder, OrderState, TradeUpdate
+from data_type_primitives.trade_fee import TokenAmount, TradeFeeBase, TradeFeeSchema
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
 from hummingbot.connector.client_order_tracker import ClientOrderTracker
@@ -18,10 +22,6 @@ from hummingbot.connector.exchange.kucoin import kucoin_constants as CONSTANTS, 
 from hummingbot.connector.exchange.kucoin.kucoin_exchange import KucoinExchange
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.connector.utils import get_new_client_order_id
-from hummingbot.core.data_type.cancellation_result import CancellationResult
-from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState, TradeUpdate
-from hummingbot.core.data_type.trade_fee import TokenAmount, TradeFeeBase, TradeFeeSchema
 from hummingbot.core.event.event_logger import EventLogger
 from hummingbot.core.event.events import (
     BuyOrderCompletedEvent,

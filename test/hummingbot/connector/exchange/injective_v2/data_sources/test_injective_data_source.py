@@ -14,6 +14,7 @@ from pyinjective.core.network import Network
 from pyinjective.core.token import Token
 from pyinjective.wallet import Address, PrivateKey
 
+from data_type_primitives.common import OrderType, TradeType
 from hummingbot.connector.exchange.injective_v2 import injective_constants as CONSTANTS
 from hummingbot.connector.exchange.injective_v2.data_sources.injective_grantee_data_source import (
     InjectiveGranteeDataSource,
@@ -26,7 +27,6 @@ from hummingbot.connector.exchange.injective_v2.injective_v2_utils import (
     InjectiveMessageBasedTransactionFeeCalculatorMode,
 )
 from hummingbot.connector.gateway.gateway_in_flight_order import GatewayInFlightOrder
-from hummingbot.core.data_type.common import OrderType, TradeType
 
 
 class InjectiveGranteeDataSourceTests(TestCase):

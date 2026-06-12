@@ -29,10 +29,10 @@ from xrpl.utils.txn_parser.utils.order_book_parser import (
 from xrpl.utils.txn_parser.utils.types import AccountOfferChange, AccountOfferChanges, Balance, OfferChange
 from yaml.representer import SafeRepresenter
 
+from data_type_primitives.trade_fee import TradeFeeSchema
 from hummingbot.client.config.config_data_types import BaseConnectorConfigMap
 from hummingbot.client.config.config_validators import validate_with_regex
 from hummingbot.connector.exchange.xrpl import xrpl_constants as CONSTANTS
-from hummingbot.core.data_type.trade_fee import TradeFeeSchema
 from hummingbot.logger import HummingbotLogger
 
 CENTRALIZED = True

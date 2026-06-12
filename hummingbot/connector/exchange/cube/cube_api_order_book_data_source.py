@@ -4,10 +4,10 @@ import asyncio
 import time
 from typing import TYPE_CHECKING, Any
 
+from data_type_primitives.common import TradeType
 from hummingbot.connector.exchange.cube import cube_constants as CONSTANTS, cube_web_utils as web_utils
 from hummingbot.connector.exchange.cube.cube_order_book import CubeOrderBook
 from hummingbot.connector.exchange.cube.cube_ws_protobufs import market_data_pb2
-from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.data_type.order_book_message import OrderBookMessage
 from hummingbot.core.data_type.order_book_row import OrderBookRow
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
