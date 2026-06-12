@@ -65,6 +65,7 @@ extra_mappings:
 
 # Cross-cutting: any change to source_glob triggers tests_globs (broad)
 # Seed minimal — grow from shadow-mode misses.
+# Top-level config files (conftest.py, pyproject.toml) added 2026-06-12 — they affect every test.
 cross_cutting:
   - source_glob: "hummingbot/core/pubsub.*"
     tests_globs: ["test/hummingbot/**/*.py"]
@@ -74,6 +75,10 @@ cross_cutting:
     tests_globs: ["test/hummingbot/strategy_v2/**/*.py"]
   - source_glob: "hummingbot/core/data_type/common.py"
     tests_globs: ["test/hummingbot/**/*.py"]
+  - source_glob: "conftest.py"
+    tests_globs: ["test/**/*.py"]
+  - source_glob: "pyproject.toml"
+    tests_globs: ["test/**/*.py"]
 
 # Selected/total > N% triggers exit code 2 (caller falls back to full suite)
 escape_threshold_pct: 50
