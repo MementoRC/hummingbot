@@ -19,6 +19,7 @@ import json
 from collections import namedtuple
 from typing import Any, Callable
 
+# Sub-package imports below. Installed via `pixi run install-subpackages` (see pyproject.toml).
 from async_utils.tracking_nonce import NonceCreator, get_tracking_nonce
 from connector_utils import combine_to_hb_trading_pair  # noqa: F401  — re-export for callers
 from connector_utils import split_hb_trading_pair  # noqa: F401  — re-export for callers
