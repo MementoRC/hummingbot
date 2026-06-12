@@ -268,8 +268,8 @@ class ExecutorOrchestrator:
         """
         if self._initial_positions_initialized:
             return
-        self._initial_positions_initialized = True
         self._create_initial_positions()
+        self._initial_positions_initialized = True
 
     def _create_initial_positions(self):
         """
