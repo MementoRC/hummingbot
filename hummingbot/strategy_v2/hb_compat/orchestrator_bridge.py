@@ -16,17 +16,16 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from strategy_framework.hb_compat import OrchestratorAdapter
-
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
+from strategy_framework.hb_compat import OrchestratorAdapter
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
+
+    from hummingbot.connector.connector_base import ConnectorBase
     from strategy_framework.primitives.enums import RunnableStatus
     from strategy_framework.protocols import MarketAccessProtocol, MarketDataProtocol
     from strategy_framework.protocols.event_bus import EventBusProtocol
-
-    from hummingbot.connector.connector_base import ConnectorBase
 
 
 class OrchestratorBridge(StrategyV2Base):
