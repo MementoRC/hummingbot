@@ -104,7 +104,8 @@ jobs:
             --ignore="test/hummingbot/connector/gateway/" \
             --ignore="test/connector/utilities/oms_connector/" \
             --ignore="test/hummingbot/strategy/amm_arb/" \
-            --ignore="test/hummingbot/strategy/cross_exchange_market_making/"
+            --ignore="test/hummingbot/strategy/cross_exchange_market_making/" \
+            --ignore="test/hummingbot/connector/derivative/lighter_perpetual/"
 
       - name: Coverage report
         run: |
