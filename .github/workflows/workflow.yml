@@ -159,14 +159,20 @@ jobs:
           # Feature branch pushes (_for_bleed/*, _for_ci/*) run for developer
           # feedback only — partial test selection + WIP code means total
           # coverage assertion is the wrong signal.
-          case "${{ github.event_name }}:${{ github.ref_name }}" in
-            push:ci-base|push:bleeding-edge|push:development|push:master)
-              pixi run -e ci coverage report
-              ;;
-            *)
-              pixi run -e ci coverage report --fail-under=0
-              ;;
-          esac
+          echo "DEBUG: event_name='${{ github.event_name }}' ref_name='${{ github.ref_name }}'"
+          enforce_gate=false
+          if [ "${{ github.event_name }}" = "push" ]; then
+            case "${{ github.ref_name }}" in
+              ci-base|bleeding-edge|development|master)
+                enforce_gate=true
+                ;;
+            esac
+          fi
+          if [ "$enforce_gate" = "true" ]; then
+            pixi run -e ci coverage report
+          else
+            pixi run -e ci coverage report --fail-under=0
+          fi
           pixi run -e ci coverage html
 
       - name: Diff-cover (PRs only)
