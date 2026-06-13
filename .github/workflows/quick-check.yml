@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - '_for_bleed/**'
+      - '_for_ci/**'
   pull_request:
     branches:
       - ci-base
