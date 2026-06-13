@@ -36,7 +36,10 @@ dynamic_context = test_function
 branch = true
 
 [report]
-fail_under = 70
+fail_under = 0
+# fail_under = 0 (was 70). The CI workflow's Coverage gate (canonical pushes)
+# step adds --fail-under=70 to enforce on push to ci-base/bleeding-edge/development/master.
+# PRs and feature-branch pushes rely on diff-cover as the per-PR quality gate.
 precision = 2
 skip_empty = true
 exclude_lines =
