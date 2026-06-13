@@ -770,6 +770,34 @@ def main() -> int:
     # Select tests
     selected = select_tests(changed, config, repo)
 
+    # Filter out paths that conftest._SKIP_PATHS would block at collection time.
+    # pytest_ignore_collect() only fires for directory-walked collection, NOT for
+    # positional file args — so smart-select must apply the same filter here.
+    try:
+        if str(repo) not in sys.path:
+            sys.path.insert(0, str(repo))
+        from conftest import _SKIP_PATHS as _CONFTEST_SKIP_PATHS
+    except ImportError:
+        # MUST be kept in sync with conftest._SKIP_PATHS if this branch is hit.
+        _CONFTEST_SKIP_PATHS = (
+            "connector/derivative/decibel_perpetual",
+            "connector/derivative/dydx_v4_perpetual",
+            "connector/derivative/lighter_perpetual",
+            "connector/exchange/vertex",
+            "connector/gateway/test_gateway_lp.py",
+        )
+        log("WARN", "Could not import _SKIP_PATHS from conftest; using inline fallback (keep in sync!)")
+
+    skip_filtered: set[Path] = set()
+    for p in selected:
+        ps = str(p)
+        if any(skip in ps for skip in _CONFTEST_SKIP_PATHS):
+            log("INFO", f"Skip (conftest._SKIP_PATHS): {ps}")
+            skip_filtered.add(p)
+    if skip_filtered:
+        selected -= skip_filtered
+        log("INFO", f"Filtered {len(skip_filtered)} paths via _SKIP_PATHS; {len(selected)} remain")
+
     # Compute total
     total = compute_total_tests(repo, state, args.recompute_total)
 
