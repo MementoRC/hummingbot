@@ -154,8 +154,8 @@ jobs:
       - name: Coverage report
         if: steps.run-tests.outputs.tests_ran == 'true'
         run: |
-          pixi run -e ci coverage report --fail-under=0
-          pixi run -e ci coverage html
+          pixi run -e ci -- coverage report --fail-under=0
+          pixi run -e ci -- coverage html
 
       - name: Coverage gate (canonical pushes)
         if: |
@@ -165,7 +165,7 @@ jobs:
            github.ref_name == 'bleeding-edge' ||
            github.ref_name == 'development' ||
            github.ref_name == 'master')
-        run: pixi run -e ci coverage report --fail-under=70
+        run: pixi run -e ci -- coverage report --fail-under=70
 
       - name: Diff-cover (PRs only)
         if: github.event_name == 'pull_request' && steps.run-tests.outputs.tests_ran == 'true'
