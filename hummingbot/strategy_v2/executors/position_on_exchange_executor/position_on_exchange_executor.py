@@ -148,6 +148,12 @@ class PositionOnExchangeExecutor(PositionExecutor):
         """
         Place an exchange-native stop-loss order.
 
+        Uses stop_loss_order_type from the triple barrier config (STOP_LOSS or
+        STOP_LOSS_LIMIT).  For both variants the price passed to the connector is
+        stop_loss_price; STOP_LOSS treats it as the trigger price while
+        STOP_LOSS_LIMIT treats it as the limit price (the fill price cap at the
+        stop trigger level).
+
         :return: None
         """
         if not self._stop_loss_order:
@@ -156,7 +162,7 @@ class PositionOnExchangeExecutor(PositionExecutor):
                 trading_pair=self.config.trading_pair,
                 amount=self.amount_to_close,
                 price=self.stop_loss_price,
-                order_type=OrderType.STOP_LOSS,
+                order_type=self.config.triple_barrier_config.stop_loss_order_type,
                 position_action=PositionAction.CLOSE,
                 side=self.close_order_side,
             )

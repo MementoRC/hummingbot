@@ -838,6 +838,66 @@ class TestPositionOnExchangeExecutor(IsolatedAsyncioWrapperTestCase):
         executor = PositionOnExchangeExecutor(self.strategy, config)
         self.assertEqual(executor.entry_price, Decimal("101"))
 
+    def test_process_order_failed_event_for_stop_loss_order(self):
+        position_config = self.get_position_config_market_long()
+        position_on_exchange_executor = self.get_position_on_exchange_executor_running_from_config(position_config)
+        sl_order = TrackedOrder(order_id="OID-SELL-SL")
+        position_on_exchange_executor._stop_loss_order = sl_order
+        market = MagicMock()
+        position_on_exchange_executor.process_order_failed_event(
+            "102",
+            market,
+            MarketOrderFailureEvent(
+                timestamp=1234567890,
+                order_id="OID-SELL-SL",
+                order_type=OrderType.STOP_LOSS,
+            ),
+        )
+        self.assertIsNone(position_on_exchange_executor._stop_loss_order)
+        self.assertIn(sl_order, position_on_exchange_executor._failed_orders)
+
+    def test_process_order_failed_event_for_take_profit_order(self):
+        position_config = self.get_position_config_market_long_tp_order()
+        position_on_exchange_executor = self.get_position_on_exchange_executor_running_from_config(position_config)
+        tp_order = TrackedOrder(order_id="OID-SELL-TP")
+        position_on_exchange_executor._take_profit_order = tp_order
+        market = MagicMock()
+        position_on_exchange_executor.process_order_failed_event(
+            "102",
+            market,
+            MarketOrderFailureEvent(
+                timestamp=1234567890,
+                order_id="OID-SELL-TP",
+                order_type=OrderType.TAKE_PROFIT,
+            ),
+        )
+        self.assertIsNone(position_on_exchange_executor._take_profit_order)
+        self.assertIn(tp_order, position_on_exchange_executor._failed_orders)
+
+    def test_place_stop_loss_order_uses_configured_stop_loss_limit_type(self):
+        position_config = PositionOnExchangeExecutorConfig(
+            id="test-ssl",
+            timestamp=1234567890,
+            trading_pair="ETH-USDT",
+            connector_name="binance",
+            side=TradeType.BUY,
+            entry_price=Decimal("100"),
+            amount=Decimal("1"),
+            triple_barrier_config=TripleBarrierConfig(
+                stop_loss=Decimal("0.05"),
+                take_profit=Decimal("0.1"),
+                time_limit=60,
+                take_profit_order_type=OrderType.LIMIT,
+                stop_loss_order_type=OrderType.STOP_LOSS_LIMIT,
+            ),
+        )
+        position_on_exchange_executor = self.get_position_on_exchange_executor_running_from_config(position_config)
+        self.strategy.connectors["binance"].quantize_order_amount.return_value = position_config.amount
+        with patch.object(PositionOnExchangeExecutor, "place_order", return_value="OID-SELL-1") as mock_place_order:
+            position_on_exchange_executor.place_stop_loss_order()
+        call_kwargs = mock_place_order.call_args.kwargs
+        self.assertEqual(call_kwargs["order_type"], OrderType.STOP_LOSS_LIMIT)
+
     @patch.object(PositionOnExchangeExecutor, "_sleep")
     @patch.object(PositionOnExchangeExecutor, "place_close_order_and_cancel_open_orders")
     async def test_control_shutdown_process(self, place_order_mock, _):
