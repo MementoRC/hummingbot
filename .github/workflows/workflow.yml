@@ -154,14 +154,19 @@ jobs:
       - name: Coverage report
         if: steps.run-tests.outputs.tests_ran == 'true'
         run: |
-          if [ "${{ github.event_name }}" = "pull_request" ] && \
-             [ "${{ steps.select.outputs.full_suite }}" = "false" ]; then
-            # PR smart-select: narrow test subset cannot satisfy total-coverage gate.
-            # Diff-cover (below) is the real per-PR quality gate; skip fail-under here.
-            pixi run -e ci coverage report --fail-under=0
-          else
-            pixi run -e ci coverage report
-          fi
+          # Enforce 70% gate ONLY on push to canonical branches.
+          # PRs use diff-cover (next step) as the per-PR quality gate.
+          # Feature branch pushes (_for_bleed/*, _for_ci/*) run for developer
+          # feedback only — partial test selection + WIP code means total
+          # coverage assertion is the wrong signal.
+          case "${{ github.event_name }}:${{ github.ref_name }}" in
+            push:ci-base|push:bleeding-edge|push:development|push:master)
+              pixi run -e ci coverage report
+              ;;
+            *)
+              pixi run -e ci coverage report --fail-under=0
+              ;;
+          esac
           pixi run -e ci coverage html
 
       - name: Diff-cover (PRs only)
