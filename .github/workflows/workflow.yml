@@ -154,7 +154,14 @@ jobs:
       - name: Coverage report
         if: steps.run-tests.outputs.tests_ran == 'true'
         run: |
-          pixi run -e ci coverage report
+          if [ "${{ github.event_name }}" = "pull_request" ] && \
+             [ "${{ steps.select.outputs.full_suite }}" = "false" ]; then
+            # PR smart-select: narrow test subset cannot satisfy total-coverage gate.
+            # Diff-cover (below) is the real per-PR quality gate; skip fail-under here.
+            pixi run -e ci coverage report --fail-under=0
+          else
+            pixi run -e ci coverage report
+          fi
           pixi run -e ci coverage html
 
       - name: Diff-cover (PRs only)
