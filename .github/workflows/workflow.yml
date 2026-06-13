@@ -154,26 +154,18 @@ jobs:
       - name: Coverage report
         if: steps.run-tests.outputs.tests_ran == 'true'
         run: |
-          # Enforce 70% gate ONLY on push to canonical branches.
-          # PRs use diff-cover (next step) as the per-PR quality gate.
-          # Feature branch pushes (_for_bleed/*, _for_ci/*) run for developer
-          # feedback only — partial test selection + WIP code means total
-          # coverage assertion is the wrong signal.
-          echo "DEBUG: event_name='${{ github.event_name }}' ref_name='${{ github.ref_name }}'"
-          enforce_gate=false
-          if [ "${{ github.event_name }}" = "push" ]; then
-            case "${{ github.ref_name }}" in
-              ci-base|bleeding-edge|development|master)
-                enforce_gate=true
-                ;;
-            esac
-          fi
-          if [ "$enforce_gate" = "true" ]; then
-            pixi run -e ci coverage report
-          else
-            pixi run -e ci coverage report --fail-under=0
-          fi
+          pixi run -e ci coverage report --fail-under=0
           pixi run -e ci coverage html
+
+      - name: Coverage gate (canonical pushes)
+        if: |
+          steps.run-tests.outputs.tests_ran == 'true' &&
+          github.event_name == 'push' &&
+          (github.ref_name == 'ci-base' ||
+           github.ref_name == 'bleeding-edge' ||
+           github.ref_name == 'development' ||
+           github.ref_name == 'master')
+        run: pixi run -e ci coverage report --fail-under=70
 
       - name: Diff-cover (PRs only)
         if: github.event_name == 'pull_request' && steps.run-tests.outputs.tests_ran == 'true'
