@@ -859,31 +859,41 @@ class FoxbitExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests)
     def test_client_order_id_on_order(self):
         self.exchange._set_current_timestamp(1640780000)
 
-        result = self.exchange.buy(
-            trading_pair=self.trading_pair,
-            amount=Decimal("1"),
-            order_type=OrderType.LIMIT,
-            price=Decimal("2"),
-        )
-        expected_client_order_id = utils.get_client_order_id(
-            is_buy=True,
-        )
+        # Patch get_tracking_nonce at the foxbit_utils import site so every call
+        # within this test returns a fixed value. Without this, successive calls
+        # to the microsecond-precision monotone-incrementing nonce provider return
+        # different values, causing the production call inside buy()/sell() and the
+        # verification call to get_client_order_id() to disagree on the [:10] slice.
+        fixed_nonce = 1640780000123456
+        with patch(
+            "hummingbot.connector.exchange.foxbit.foxbit_utils.get_tracking_nonce",
+            return_value=fixed_nonce,
+        ):
+            result = self.exchange.buy(
+                trading_pair=self.trading_pair,
+                amount=Decimal("1"),
+                order_type=OrderType.LIMIT,
+                price=Decimal("2"),
+            )
+            expected_client_order_id = utils.get_client_order_id(
+                is_buy=True,
+            )
 
-        self.assertEqual(result[:10], expected_client_order_id[:10])
-        self.assertEqual(result[3], "0")
-        self.assertLess(len(expected_client_order_id), self.exchange.client_order_id_max_length)
+            self.assertEqual(result[:10], expected_client_order_id[:10])
+            self.assertEqual(result[3], "0")
+            self.assertLess(len(expected_client_order_id), self.exchange.client_order_id_max_length)
 
-        result = self.exchange.sell(
-            trading_pair=self.trading_pair,
-            amount=Decimal("1"),
-            order_type=OrderType.LIMIT,
-            price=Decimal("2"),
-        )
-        expected_client_order_id = utils.get_client_order_id(
-            is_buy=False,
-        )
+            result = self.exchange.sell(
+                trading_pair=self.trading_pair,
+                amount=Decimal("1"),
+                order_type=OrderType.LIMIT,
+                price=Decimal("2"),
+            )
+            expected_client_order_id = utils.get_client_order_id(
+                is_buy=False,
+            )
 
-        self.assertEqual(result[:10], expected_client_order_id[:10])
+            self.assertEqual(result[:10], expected_client_order_id[:10])
 
     @aioresponses()
     async def test_create_order(self, mock_api):
