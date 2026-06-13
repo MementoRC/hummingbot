@@ -119,6 +119,7 @@ jobs:
           fi
 
       - name: Run tests with coverage
+        id: run-tests
         run: |
           IGNORE_FLAGS=(
             --ignore="test/mock"
@@ -138,22 +139,26 @@ jobs:
              [ -s /tmp/selected.txt ]; then
             echo "Running diff-selected tests."
             pixi run -e ci coverage run -m pytest --timeout=30 $(cat /tmp/selected.txt)
+            echo "tests_ran=true" >> $GITHUB_OUTPUT
           elif [ "${{ github.event_name }}" = "pull_request" ] && \
                [ "${{ steps.select.outputs.full_suite }}" = "false" ] && \
                [ ! -s /tmp/selected.txt ]; then
             echo "No tests touched by diff — skipping pytest."
+            echo "tests_ran=false" >> $GITHUB_OUTPUT
           else
             echo "Running full suite."
             pixi run -e ci coverage run -m pytest --timeout=30 "${IGNORE_FLAGS[@]}"
+            echo "tests_ran=true" >> $GITHUB_OUTPUT
           fi
 
       - name: Coverage report
+        if: steps.run-tests.outputs.tests_ran == 'true'
         run: |
           pixi run -e ci coverage report
           pixi run -e ci coverage html
 
       - name: Diff-cover (PRs only)
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && steps.run-tests.outputs.tests_ran == 'true'
         run: |
           git fetch --all -q
           git checkout -b $GITHUB_SHA
