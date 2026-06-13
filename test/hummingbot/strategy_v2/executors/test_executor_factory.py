@@ -1,6 +1,6 @@
 """Integration tests for ExecutorFactory decorator-based registration.
 
-Verifies that all 8 executor types are registered, that create() dispatches
+Verifies that all 9 executor types are registered, that create() dispatches
 to the correct executor class, and that the orchestrator uses the factory.
 """
 
@@ -27,12 +27,16 @@ from hummingbot.strategy_v2.executors.order_executor.data_types import Execution
 from hummingbot.strategy_v2.executors.order_executor.order_executor import OrderExecutor
 from hummingbot.strategy_v2.executors.position_executor.data_types import PositionExecutorConfig, TripleBarrierConfig
 from hummingbot.strategy_v2.executors.position_executor.position_executor import PositionExecutor
+from hummingbot.strategy_v2.executors.position_on_exchange_executor.data_types import PositionOnExchangeExecutorConfig
+from hummingbot.strategy_v2.executors.position_on_exchange_executor.position_on_exchange_executor import (
+    PositionOnExchangeExecutor,
+)
 from hummingbot.strategy_v2.executors.twap_executor.data_types import TWAPExecutorConfig
 from hummingbot.strategy_v2.executors.twap_executor.twap_executor import TWAPExecutor
 from hummingbot.strategy_v2.executors.xemm_executor.data_types import XEMMExecutorConfig
 from hummingbot.strategy_v2.executors.xemm_executor.xemm_executor import XEMMExecutor
 
-# All 8 registered (config_class, executor_class) pairs
+# All 9 registered (config_class, executor_class) pairs
 EXPECTED_REGISTRY = {
     PositionExecutorConfig: PositionExecutor,
     DCAExecutorConfig: DCAExecutor,
@@ -42,6 +46,7 @@ EXPECTED_REGISTRY = {
     XEMMExecutorConfig: XEMMExecutor,
     ArbitrageExecutorConfig: ArbitrageExecutor,
     LPExecutorConfig: LPExecutor,
+    PositionOnExchangeExecutorConfig: PositionOnExchangeExecutor,
 }
 
 
@@ -66,7 +71,7 @@ class TestExecutorFactoryRegistry(unittest.TestCase):
     """Tests that verify the registry state without creating executor instances."""
 
     def test_all_executors_registered(self):
-        """All 8 config types must be in the registry."""
+        """All 9 config types must be in the registry."""
         registry = ExecutorFactory.get_registry()
         for config_cls in EXPECTED_REGISTRY:
             self.assertIn(
@@ -85,10 +90,10 @@ class TestExecutorFactoryRegistry(unittest.TestCase):
                 f"Expected {executor_cls.__name__} for {config_cls.__name__}, got {registry[config_cls].__name__}",
             )
 
-    def test_registry_has_exactly_eight_entries(self):
-        """Registry should contain exactly the 8 known executor types."""
+    def test_registry_has_exactly_nine_entries(self):
+        """Registry should contain exactly the 9 known executor types."""
         registry = ExecutorFactory.get_registry()
-        self.assertEqual(len(registry), 8, f"Expected 8 entries, got {len(registry)}: {list(registry.keys())}")
+        self.assertEqual(len(registry), 9, f"Expected 9 entries, got {len(registry)}: {list(registry.keys())}")
 
     def test_is_registered_true_for_known_types(self):
         """is_registered() returns True for all known config types."""
@@ -325,9 +330,10 @@ class TestOrchestratorNoneControllerId(unittest.TestCase):
         from hummingbot.strategy_v2.executors.executor_orchestrator import ExecutorOrchestrator
         from hummingbot.strategy_v2.models.executor_actions import CreateExecutorAction
 
-        markets_recorder_mock.return_value = MagicMock()
-        markets_recorder_mock.return_value.get_all_executors = MagicMock(return_value=[])
-        markets_recorder_mock.return_value.get_all_positions = MagicMock(return_value=[])
+        mock_recorder = MagicMock()
+        mock_recorder.get_executors_by_controller.return_value = []
+        mock_recorder.get_positions_by_controller.return_value = []
+        markets_recorder_mock.return_value = mock_recorder
 
         strategy = _make_mock_strategy()
         orchestrator = ExecutorOrchestrator(strategy=strategy)
@@ -365,9 +371,10 @@ class TestOrchestratorLegacyFallback(unittest.TestCase):
         from hummingbot.strategy_v2.executors.executor_orchestrator import ExecutorOrchestrator
         from hummingbot.strategy_v2.models.executor_actions import CreateExecutorAction
 
-        markets_recorder_mock.return_value = MagicMock()
-        markets_recorder_mock.return_value.get_all_executors = MagicMock(return_value=[])
-        markets_recorder_mock.return_value.get_all_positions = MagicMock(return_value=[])
+        mock_recorder = MagicMock()
+        mock_recorder.get_executors_by_controller.return_value = []
+        mock_recorder.get_positions_by_controller.return_value = []
+        markets_recorder_mock.return_value = mock_recorder
 
         strategy = _make_mock_strategy()
         orchestrator = ExecutorOrchestrator(strategy=strategy)
@@ -405,9 +412,10 @@ class TestOrchestratorLegacyFallback(unittest.TestCase):
         from hummingbot.strategy_v2.executors.executor_orchestrator import ExecutorOrchestrator
         from hummingbot.strategy_v2.models.executor_actions import CreateExecutorAction
 
-        markets_recorder_mock.return_value = MagicMock()
-        markets_recorder_mock.return_value.get_all_executors = MagicMock(return_value=[])
-        markets_recorder_mock.return_value.get_all_positions = MagicMock(return_value=[])
+        mock_recorder = MagicMock()
+        mock_recorder.get_executors_by_controller.return_value = []
+        mock_recorder.get_positions_by_controller.return_value = []
+        markets_recorder_mock.return_value = mock_recorder
 
         strategy = _make_mock_strategy()
         orchestrator = ExecutorOrchestrator(strategy=strategy)
@@ -441,9 +449,10 @@ class TestOrchestratorUsesFactory(unittest.TestCase):
         from hummingbot.strategy_v2.executors.executor_orchestrator import ExecutorOrchestrator
         from hummingbot.strategy_v2.models.executor_actions import CreateExecutorAction
 
-        markets_recorder_mock.return_value = MagicMock()
-        markets_recorder_mock.return_value.get_all_executors = MagicMock(return_value=[])
-        markets_recorder_mock.return_value.get_all_positions = MagicMock(return_value=[])
+        mock_recorder = MagicMock()
+        mock_recorder.get_executors_by_controller.return_value = []
+        mock_recorder.get_positions_by_controller.return_value = []
+        markets_recorder_mock.return_value = mock_recorder
 
         strategy = _make_mock_strategy()
         orchestrator = ExecutorOrchestrator(strategy=strategy)
@@ -481,9 +490,10 @@ class TestOrchestratorUpdateCachedPerformance(unittest.TestCase):
         mr_patcher = patch("hummingbot.strategy_v2.executors.executor_orchestrator.MarketsRecorder.get_instance")
         mr_mock = mr_patcher.start()
         self.addCleanup(mr_patcher.stop)
-        mr_mock.return_value = MagicMock()
-        mr_mock.return_value.get_all_executors = MagicMock(return_value=[])
-        mr_mock.return_value.get_all_positions = MagicMock(return_value=[])
+        mock_recorder = MagicMock()
+        mock_recorder.get_executors_by_controller.return_value = []
+        mock_recorder.get_positions_by_controller.return_value = []
+        mr_mock.return_value = mock_recorder
 
         self.strategy = _make_mock_strategy()
         self.orchestrator = ExecutorOrchestrator(strategy=self.strategy)

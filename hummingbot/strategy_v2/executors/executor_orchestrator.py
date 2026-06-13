@@ -259,12 +259,12 @@ class ExecutorOrchestrator:
             for executor in db_executors:
                 self._update_cached_performance(controller_id, executor)
 
-        # Load positions from database only for controllers without initial position overrides
-        db_positions = MarketsRecorder.get_instance().get_all_positions()
-        for position in db_positions:
-            controller_id = position.controller_id
-            # Skip if this controller has initial position overrides
-            if controller_id in self.initial_positions_by_controller or controller_id not in self.strategy.controllers:
+        # Create initial positions from config overrides first
+        self._create_initial_positions()
+
+        # Load positions only for active controllers without initial position overrides
+        for controller_id in self.strategy.controllers.keys():
+            if controller_id in self.initial_positions_by_controller:
                 continue
             db_positions = recorder.get_positions_by_controller(controller_id)
             for position in db_positions:
@@ -332,8 +332,8 @@ class ExecutorOrchestrator:
         """
         if self._initial_positions_initialized:
             return
-        self._initial_positions_initialized = True
         self._create_initial_positions()
+        self._initial_positions_initialized = True
 
     def _create_initial_positions(self):
         """
