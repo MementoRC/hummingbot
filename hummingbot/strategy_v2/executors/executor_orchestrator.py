@@ -259,9 +259,6 @@ class ExecutorOrchestrator:
             for executor in db_executors:
                 self._update_cached_performance(controller_id, executor)
 
-        # Create initial positions from config overrides first
-        self._create_initial_positions()
-
         # Load positions only for active controllers without initial position overrides
         for controller_id in self.strategy.controllers.keys():
             if controller_id in self.initial_positions_by_controller:
