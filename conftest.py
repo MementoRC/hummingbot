@@ -4,6 +4,7 @@
 _SKIP_PATHS = (
     "connector/derivative/decibel_perpetual",
     "connector/derivative/dydx_v4_perpetual",
+    "connector/derivative/lighter_perpetual",
     "connector/exchange/vertex",
     "connector/gateway/test_gateway_lp.py",
 )
