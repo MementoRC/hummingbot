@@ -1,6 +1,5 @@
 import json
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
@@ -9,6 +8,7 @@ from hummingbot.connector.utils import combine_to_hb_trading_pair
 from hummingbot.core.rate_oracle.sources.coin_gecko_rate_source import CoinGeckoRateSource
 from hummingbot.data_feed.coin_gecko_data_feed import coin_gecko_constants as CONSTANTS
 from hummingbot.data_feed.coin_gecko_data_feed.coin_gecko_constants import COOLOFF_AFTER_BAN, PUBLIC, CoinGeckoAPITier
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class CoinGeckoRateSourceTest(IsolatedAsyncioWrapperTestCase):

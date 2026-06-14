@@ -1,6 +1,5 @@
 from decimal import Decimal
 from functools import partial
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import MagicMock, PropertyMock, patch
 
 from hummingbot.connector.connector_base import ConnectorBase
@@ -25,6 +24,7 @@ from hummingbot.strategy_v2.executors.progressive_executor.data_types import (
 from hummingbot.strategy_v2.executors.progressive_executor.progressive_executor import ProgressiveExecutor
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class TestProgressiveExecutor(IsolatedAsyncioWrapperTestCase):

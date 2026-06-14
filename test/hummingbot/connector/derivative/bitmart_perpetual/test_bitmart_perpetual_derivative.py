@@ -5,7 +5,6 @@ import functools
 import json
 import re
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from typing import Any, Awaitable, Callable, List
 from unittest.mock import AsyncMock, patch
 
@@ -28,6 +27,7 @@ from hummingbot.core.data_type.limit_order import LimitOrder
 from hummingbot.core.data_type.trade_fee import TokenAmount
 from hummingbot.core.event.event_logger import EventLogger
 from hummingbot.core.event.events import MarketEvent, OrderFilledEvent
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class BitmartPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):

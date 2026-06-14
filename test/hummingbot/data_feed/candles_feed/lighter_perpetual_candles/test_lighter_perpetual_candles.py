@@ -1,7 +1,6 @@
 import asyncio
 import json
 import re
-from test.hummingbot.data_feed.candles_feed.test_candles_base import TestCandlesBase
 from unittest.mock import AsyncMock, patch
 
 import numpy as np
@@ -10,6 +9,7 @@ from aioresponses import aioresponses
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.data_feed.candles_feed.lighter_perpetual_candles import LighterPerpetualCandles, constants as CONSTANTS
+from test.hummingbot.data_feed.candles_feed.test_candles_base import TestCandlesBase
 
 PATCH_FETCH = "hummingbot.data_feed.candles_feed.lighter_perpetual_candles.lighter_perpetual_candles.LighterPerpetualCandles.fetch_candles"
 PATCH_SLEEP = "hummingbot.data_feed.candles_feed.lighter_perpetual_candles.lighter_perpetual_candles.LighterPerpetualCandles._sleep"

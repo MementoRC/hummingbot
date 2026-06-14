@@ -7,6 +7,7 @@ from typing import Any
 
 from bidict import bidict
 from cachetools import TTLCache
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 from hummingbot.connector.constants import DAY, MINUTE, SECOND, TWELVE_HOURS, s_decimal_NaN
 from hummingbot.connector.exchange.bitrue import (
@@ -28,7 +29,6 @@ from hummingbot.core.data_type.trade_fee import DeductedFromReturnsTradeFee, Tok
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class BitrueExchange(ExchangePyBase):

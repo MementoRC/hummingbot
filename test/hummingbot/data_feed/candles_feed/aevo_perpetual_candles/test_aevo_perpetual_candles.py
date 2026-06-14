@@ -1,9 +1,9 @@
 import re
-from test.hummingbot.data_feed.candles_feed.test_candles_base import TestCandlesBase
 
 from aioresponses import aioresponses
 
 from hummingbot.data_feed.candles_feed.aevo_perpetual_candles import AevoPerpetualCandles, constants as CONSTANTS
+from test.hummingbot.data_feed.candles_feed.test_candles_base import TestCandlesBase
 
 
 class TestAevoPerpetualCandles(TestCandlesBase):

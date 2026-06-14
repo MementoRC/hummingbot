@@ -4,6 +4,8 @@ import asyncio
 import time
 from typing import TYPE_CHECKING, Any
 
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+
 from hummingbot.connector.exchange.cube import cube_constants as CONSTANTS, cube_web_utils as web_utils
 from hummingbot.connector.exchange.cube.cube_order_book import CubeOrderBook
 from hummingbot.connector.exchange.cube.cube_ws_protobufs import market_data_pb2
@@ -15,7 +17,6 @@ from hummingbot.core.utils.async_utils import safe_gather
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod, WSBinaryRequest
 from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.logger import HummingbotLogger
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 if TYPE_CHECKING:
     from hummingbot.connector.exchange.cube.cube_exchange import CubeExchange

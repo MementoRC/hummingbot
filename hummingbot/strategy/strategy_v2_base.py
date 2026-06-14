@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import yaml
 from pydantic import BaseModel, Field, field_validator
+from remote_iface import ETopicPublisher
 
 from hummingbot.client import settings
 from hummingbot.client.config.config_data_types import BaseClientModel
@@ -43,7 +44,6 @@ from hummingbot.strategy_v2.models.executor_actions import (
     StoreExecutorAction,
 )
 from hummingbot.strategy_v2.models.executors_info import ExecutorInfo
-from remote_iface import ETopicPublisher
 
 lsb_logger = None
 s_decimal_nan = Decimal("NaN")

@@ -4,7 +4,6 @@ Tests amm_get_pool_info, amm_add_liquidity, amm_remove_liquidity, amm_get_balanc
 """
 
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from xrpl.models import XRP, AMMDeposit, AMMWithdraw, IssuedCurrency, Memo, Response
@@ -18,6 +17,7 @@ from hummingbot.connector.exchange.xrpl.xrpl_utils import (
     QuoteLiquidityResponse,
     RemoveLiquidityResponse,
 )
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class TestXRPLAMMFunctions(IsolatedAsyncioWrapperTestCase):

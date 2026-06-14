@@ -4,6 +4,7 @@ import logging
 from typing import Any, Awaitable, Callable
 
 from async_utils.core import safe_ensure_future
+
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
 from hummingbot.client.settings import AllConnectorSettings, ConnectorSetting
 from hummingbot.logger import HummingbotLogger

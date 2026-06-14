@@ -6,7 +6,6 @@ import json
 from collections import OrderedDict
 from decimal import Decimal
 from functools import partial
-from test.hummingbot.connector.exchange.injective_v2.programmable_query_executor import ProgrammableQueryExecutor
 from typing import Any, Callable, Union
 from unittest.mock import AsyncMock, patch
 
@@ -49,6 +48,7 @@ from hummingbot.core.event.events import (
 )
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.core.utils.async_utils import safe_gather
+from test.hummingbot.connector.exchange.injective_v2.programmable_query_executor import ProgrammableQueryExecutor
 
 
 class InjectiveV2PerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDerivativeTests):

@@ -4,6 +4,8 @@ import asyncio
 import uuid
 from typing import TYPE_CHECKING, Any, Dict
 
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+
 import hummingbot.connector.exchange.htx.htx_constants as CONSTANTS
 from hummingbot.connector.exchange.htx.htx_web_utils import public_rest_url
 from hummingbot.core.data_type.common import TradeType
@@ -12,7 +14,6 @@ from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTr
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod, WSJSONRequest
 from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.logger import HummingbotLogger
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 if TYPE_CHECKING:
     from hummingbot.connector.exchange.htx.htx_exchange import HtxExchange

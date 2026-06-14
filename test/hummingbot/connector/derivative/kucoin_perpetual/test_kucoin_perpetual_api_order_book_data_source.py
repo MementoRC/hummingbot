@@ -4,7 +4,6 @@ import logging
 import os
 import re
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from typing import Dict
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -25,6 +24,7 @@ from hummingbot.core.data_type.funding_info import FundingInfo
 from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 from hummingbot.core.web_assistant.connections.connections_factory import ConnectionsFactory
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 os.environ["PYTHONASYNCIODEBUG"] = "1"
 

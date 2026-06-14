@@ -1,6 +1,5 @@
 import asyncio
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 from xrpl.models import XRP, IssuedCurrency
@@ -13,6 +12,7 @@ from hummingbot.connector.exchange.xrpl.xrpl_worker_pool import QueryResult
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.data_type.order_book import OrderBook
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class XRPLAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):

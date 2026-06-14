@@ -5,7 +5,6 @@ import json
 import re
 from decimal import Decimal
 from functools import partial
-from test.hummingbot.connector.derivative.dydx_v4_perpetual.programmable_v4_client import ProgrammableV4Client
 from typing import Any, Callable
 from unittest.mock import AsyncMock, patch
 
@@ -23,6 +22,7 @@ from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState
 from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_row import OrderBookRow
 from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee, TokenAmount, TradeFeeBase
+from test.hummingbot.connector.derivative.dydx_v4_perpetual.programmable_v4_client import ProgrammableV4Client
 
 
 class DydxV4PerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDerivativeTests):

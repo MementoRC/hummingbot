@@ -4,6 +4,8 @@ import asyncio
 import logging
 import time
 
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+
 import hummingbot.connector.exchange.bing_x.bing_x_constants as CONSTANTS
 import hummingbot.connector.exchange.bing_x.bing_x_utils as utils
 import hummingbot.connector.exchange.bing_x.bing_x_web_utils as web_utils
@@ -14,7 +16,6 @@ from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod, WSJSONRequest
 from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.logger import HummingbotLogger
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class BingXAPIUserStreamDataSource(UserStreamTrackerDataSource):

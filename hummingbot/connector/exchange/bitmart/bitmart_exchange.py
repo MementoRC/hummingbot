@@ -6,6 +6,7 @@ from decimal import Decimal
 from typing import Any
 
 from bidict import bidict
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 from hummingbot.connector.constants import s_decimal_NaN
 from hummingbot.connector.exchange.bitmart import (
@@ -24,7 +25,6 @@ from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState,
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
 from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee, TokenAmount, TradeFeeBase
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class BitmartExchange(ExchangePyBase):

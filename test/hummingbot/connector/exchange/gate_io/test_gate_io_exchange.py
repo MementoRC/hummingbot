@@ -2,7 +2,6 @@ import asyncio
 import json
 import re
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from typing import Any, Awaitable, Dict, List
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -32,6 +31,7 @@ from hummingbot.core.event.events import (
     OrderFilledEvent,
 )
 from hummingbot.core.network_iterator import NetworkStatus
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class TestGateIoExchange(IsolatedAsyncioWrapperTestCase):

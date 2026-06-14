@@ -1,11 +1,11 @@
 import asyncio
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from test.logger_mixin_for_test import LoggerMixinForTest, LogLevel
 from unittest.mock import AsyncMock, patch
 
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.data_feed.amm_gateway_data_feed import AmmGatewayDataFeed
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
+from test.logger_mixin_for_test import LoggerMixinForTest, LogLevel
 
 
 class TestAmmGatewayDataFeed(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):

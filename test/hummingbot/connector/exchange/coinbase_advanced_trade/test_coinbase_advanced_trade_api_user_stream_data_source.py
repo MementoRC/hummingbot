@@ -5,8 +5,6 @@ import decimal
 import functools
 import unittest
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from test.logger_mixin_for_test import LoggerMixinForTest
 from typing import Any, AsyncGenerator, Dict
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
@@ -23,6 +21,8 @@ from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 from hummingbot.core.data_type.common import OrderType, TradeType
 from hummingbot.core.web_assistant.connections.data_types import WSRequest, WSResponse
 from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
+from test.logger_mixin_for_test import LoggerMixinForTest
 
 
 class MockWebAssistant:

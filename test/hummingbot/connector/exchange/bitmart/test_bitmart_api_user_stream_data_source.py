@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aiohttp import WSMsgType
@@ -16,6 +15,7 @@ from hummingbot.connector.exchange.bitmart.bitmart_api_user_stream_data_source i
 from hummingbot.connector.exchange.bitmart.bitmart_auth import BitmartAuth
 from hummingbot.connector.exchange.bitmart.bitmart_exchange import BitmartExchange
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class BitmartAPIUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):

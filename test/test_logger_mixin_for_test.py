@@ -1,9 +1,9 @@
 import asyncio
 import unittest
 from logging import Logger, LogRecord
-from test.logger_mixin_for_test import LoggerMixinForTest, LogLevel
 
 from hummingbot.logger import HummingbotLogger
+from test.logger_mixin_for_test import LoggerMixinForTest, LogLevel
 
 
 class TestTestLoggerMixin(unittest.TestCase):

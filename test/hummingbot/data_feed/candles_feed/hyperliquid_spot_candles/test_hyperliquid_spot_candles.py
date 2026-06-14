@@ -1,12 +1,12 @@
 import asyncio
 import json
 import re
-from test.hummingbot.data_feed.candles_feed.test_candles_base import TestCandlesBase
 
 from aioresponses import aioresponses
 
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.data_feed.candles_feed.hyperliquid_spot_candles import HyperliquidSpotCandles, constants as CONSTANTS
+from test.hummingbot.data_feed.candles_feed.test_candles_base import TestCandlesBase
 
 
 class TestHyperliquidSpotC0andles(TestCandlesBase):

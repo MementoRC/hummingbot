@@ -7,6 +7,7 @@ from types import MethodType
 from typing import Any, Union
 
 from bidict import bidict
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 import hummingbot.connector.exchange.bing_x.bing_x_constants as CONSTANTS
 import hummingbot.connector.exchange.bing_x.bing_x_utils as bing_x_utils
@@ -23,7 +24,6 @@ from hummingbot.core.data_type.trade_fee import TokenAmount, TradeFeeBase
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.utils.estimate_fee import build_trade_fee
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 s_logger = None
 s_decimal_NaN = Decimal("nan")

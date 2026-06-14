@@ -1,12 +1,12 @@
 import asyncio
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from test.mock.mock_cli import CLIMockingAssistant
 from typing import Awaitable
 from unittest.mock import AsyncMock, patch
 
 from hummingbot.client.config.config_helpers import read_system_configs_from_yml
 from hummingbot.client.hummingbot_application import HummingbotApplication
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
+from test.mock.mock_cli import CLIMockingAssistant
 
 
 class BalanceCommandTest(IsolatedAsyncioWrapperTestCase):

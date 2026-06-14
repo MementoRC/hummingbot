@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import re
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from typing import Any
 from unittest.mock import AsyncMock, patch
 
@@ -19,6 +18,7 @@ from hummingbot.connector.derivative.binance_perpetual.binance_perpetual_user_st
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class BinancePerpetualUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):

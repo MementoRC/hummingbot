@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from copy import deepcopy
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from test.mock.mock_cli import CLIMockingAssistant
 from unittest.mock import patch
 
 import pytest
@@ -13,6 +11,8 @@ from hummingbot.client.hummingbot_application import HummingbotApplication
 from hummingbot.connector.utils import combine_to_hb_trading_pair
 from hummingbot.core.rate_oracle.rate_oracle import RateOracle
 from hummingbot.core.rate_oracle.sources.rate_source_base import RateSourceBase
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
+from test.mock.mock_cli import CLIMockingAssistant
 
 
 class DummyRateSource(RateSourceBase):

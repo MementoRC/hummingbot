@@ -1,7 +1,8 @@
+from unittest.mock import AsyncMock
+
 from test.hummingbot.connector.derivative.pacifica_perpetual.test_pacifica_perpetual_derivative import (
     PacificaPerpetualDerivativeUnitTest,
 )
-from unittest.mock import AsyncMock
 
 
 class PacificaPerpetualAPIConfigKeyTest(PacificaPerpetualDerivativeUnitTest):

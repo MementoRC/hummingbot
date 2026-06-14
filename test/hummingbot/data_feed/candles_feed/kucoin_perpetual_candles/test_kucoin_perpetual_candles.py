@@ -1,13 +1,13 @@
 import asyncio
 import json
 import re
-from test.hummingbot.data_feed.candles_feed.test_candles_base import TestCandlesBase
 
 from aioresponses import aioresponses
 
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.core.utils.tracking_nonce import get_tracking_nonce
 from hummingbot.data_feed.candles_feed.kucoin_perpetual_candles import KucoinPerpetualCandles
+from test.hummingbot.data_feed.candles_feed.test_candles_base import TestCandlesBase
 
 
 class TestKucoinPerpetualCandles(TestCandlesBase):

@@ -4,7 +4,6 @@ import asyncio
 import json
 import re
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
@@ -14,6 +13,7 @@ from hummingbot.connector.utils import combine_to_hb_trading_pair
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.core.rate_oracle.sources.coin_cap_rate_source import CoinCapRateSource
 from hummingbot.data_feed.coin_cap_data_feed import coin_cap_constants as CONSTANTS
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class CoinCapRateSourceTest(IsolatedAsyncioWrapperTestCase):

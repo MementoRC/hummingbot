@@ -1,7 +1,5 @@
 import unittest.mock
 from decimal import Decimal
-from test.hummingbot.strategy import assign_config_default
-from test.mock.mock_perp_connector import MockPerpConnector
 
 import hummingbot.strategy.spot_perpetual_arbitrage.start as strategy_start
 from hummingbot.client.config.client_config_map import ClientConfigMap
@@ -10,6 +8,8 @@ from hummingbot.connector.exchange_base import ExchangeBase
 from hummingbot.strategy.spot_perpetual_arbitrage.spot_perpetual_arbitrage_config_map import (
     spot_perpetual_arbitrage_config_map as strategy_cmap,
 )
+from test.hummingbot.strategy import assign_config_default
+from test.mock.mock_perp_connector import MockPerpConnector
 
 
 class SpotPerpetualArbitrageStartTest(unittest.TestCase):

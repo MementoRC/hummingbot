@@ -2,7 +2,6 @@ import asyncio
 import json
 import re
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiohttp
@@ -20,6 +19,7 @@ from hummingbot.core.web_assistant.connections.rest_connection import RESTConnec
 from hummingbot.core.web_assistant.connections.ws_connection import WSConnection
 from hummingbot.core.web_assistant.rest_assistant import RESTAssistant
 from hummingbot.core.web_assistant.ws_assistant import WSAssistant
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class PacificaPerpetualAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):

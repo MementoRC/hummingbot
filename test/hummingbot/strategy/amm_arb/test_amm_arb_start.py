@@ -1,11 +1,11 @@
 import unittest.mock
 from decimal import Decimal
-from test.hummingbot.strategy import assign_config_default
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 import hummingbot.strategy.amm_arb.start as amm_arb_start
 from hummingbot.strategy.amm_arb.amm_arb import AmmArbStrategy
 from hummingbot.strategy.amm_arb.amm_arb_config_map import amm_arb_config_map
+from test.hummingbot.strategy import assign_config_default
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class AMMArbStartTest(IsolatedAsyncioWrapperTestCase):

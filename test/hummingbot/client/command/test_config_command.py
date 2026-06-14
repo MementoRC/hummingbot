@@ -1,6 +1,4 @@
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from test.mock.mock_cli import CLIMockingAssistant
 from typing import Union
 from unittest.mock import patch
 
@@ -11,6 +9,8 @@ from hummingbot.client.config.config_helpers import ClientConfigAdapter, read_sy
 from hummingbot.client.config.config_var import ConfigVar
 from hummingbot.client.config.strategy_config_data_types import BaseStrategyConfigMap
 from hummingbot.client.hummingbot_application import HummingbotApplication
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
+from test.mock.mock_cli import CLIMockingAssistant
 
 
 class ConfigCommandTest(IsolatedAsyncioWrapperTestCase):

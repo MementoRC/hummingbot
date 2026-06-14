@@ -1,6 +1,5 @@
 import asyncio
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock, PropertyMock
 
 from hummingbot.core.data_type.common import PriceType, TradeType
@@ -11,6 +10,7 @@ from hummingbot.strategy_v2.executors.position_executor.data_types import Triple
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType
 from hummingbot.strategy_v2.models.executors_info import ExecutorInfo
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class TestControllerBase(IsolatedAsyncioWrapperTestCase):

@@ -1,6 +1,5 @@
 import asyncio
 import json
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses import aioresponses
@@ -9,6 +8,7 @@ from bidict import bidict
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.data_feed.liquidations_feed.binance import BinancePerpetualLiquidations, constants as CONSTANTS
 from hummingbot.data_feed.liquidations_feed.liquidations_base import LiquidationSide
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class TestBinanceLiquidations(IsolatedAsyncioWrapperTestCase):
