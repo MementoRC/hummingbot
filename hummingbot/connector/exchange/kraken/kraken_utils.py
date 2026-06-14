@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Tuple
 
 from pydantic import ConfigDict, Field, SecretStr, field_validator
+from web_assistant.throttler.data_types import LinkedLimitWeightPair, RateLimit
 
 import hummingbot.connector.exchange.kraken.kraken_constants as CONSTANTS
 from hummingbot.client.config.config_data_types import BaseConnectorConfigMap
 from hummingbot.connector.exchange.kraken.kraken_constants import KrakenAPITier
-from hummingbot.core.api_throttler.data_types import LinkedLimitWeightPair, RateLimit
 from hummingbot.core.data_type.trade_fee import TradeFeeSchema
 
 CENTRALIZED = True
@@ -16,8 +15,8 @@ CENTRALIZED = True
 EXAMPLE_PAIR = "ETH-USDC"
 
 DEFAULT_FEES = TradeFeeSchema(
-    maker_percent_fee_decimal=Decimal("0.0025"),
-    taker_percent_fee_decimal=Decimal("0.004"),
+    maker_percent_fee_decimal=Decimal("0.2"),
+    taker_percent_fee_decimal=Decimal("0.35"),
 )
 
 
@@ -39,7 +38,7 @@ def split_to_base_quote(exchange_trading_pair: str) -> tuple[str | None, str | N
 
 
 def convert_from_exchange_trading_pair(
-    exchange_trading_pair: str, available_trading_pairs: Tuple | None = None
+    exchange_trading_pair: str, available_trading_pairs: tuple | None = None
 ) -> str | None:
     base, quote = "", ""
     if "-" in exchange_trading_pair:

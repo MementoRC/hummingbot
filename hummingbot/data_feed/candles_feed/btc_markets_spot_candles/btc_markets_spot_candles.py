@@ -4,10 +4,10 @@ import asyncio
 import logging
 from datetime import datetime, timezone
 
+from async_utils.core import safe_ensure_future
 from dateutil.parser import parse as dateparse
 
 from hummingbot.core.network_iterator import NetworkStatus
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.data_feed.candles_feed.btc_markets_spot_candles import constants as CONSTANTS
 from hummingbot.data_feed.candles_feed.candles_base import CandlesBase
 from hummingbot.logger import HummingbotLogger

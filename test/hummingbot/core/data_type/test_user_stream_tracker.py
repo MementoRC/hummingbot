@@ -105,7 +105,7 @@ class TestUserStreamTracker(IsolatedAsyncioWrapperTestCase):
         self.tracker._user_stream_tracking_task = mock_existing_task
 
         with (
-            patch("hummingbot.core.utils.async_utils.safe_ensure_future") as mock_safe_ensure_future,
+            patch("async_utils.core.safe_ensure_future") as mock_safe_ensure_future,
             patch.object(self.tracker, "stop") as mock_stop,
         ):
             await self.tracker.start()

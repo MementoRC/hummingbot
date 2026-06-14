@@ -8,11 +8,11 @@ from urllib.parse import urlparse
 import eth_account
 from eth_account.messages import encode_typed_data
 from eth_utils import to_hex
+from web_assistant.auth import AuthBase
+from web_assistant.connections.data_types import RESTMethod, RESTRequest, WSRequest
 from yarl import URL
 
 from hummingbot.connector.derivative.aevo_perpetual import aevo_perpetual_constants as CONSTANTS
-from hummingbot.core.web_assistant.auth import AuthBase
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest, WSRequest
 
 
 class AevoPerpetualAuth(AuthBase):

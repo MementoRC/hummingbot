@@ -22,7 +22,7 @@ class OMSConnectorAuthTest(unittest.TestCase):
         cls.account_id = 3
         cls.ws_url = "ws://someUrl"
 
-    @patch("hummingbot.core.utils.tracking_nonce.NonceCreator._time")
+    @patch("async_utils.tracking_nonce.NonceCreator._time")
     def setUp(self, time_mock: MagicMock) -> None:
         super().setUp()
         time_mock.return_value = self.time_mock

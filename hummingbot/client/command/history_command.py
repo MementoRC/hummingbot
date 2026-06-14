@@ -8,11 +8,11 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 
 import pandas as pd
+from async_utils.core import safe_ensure_future
 
 from hummingbot.client.performance import PerformanceMetrics
 from hummingbot.client.settings import MAXIMUM_TRADE_FILLS_DISPLAY_OUTPUT, AllConnectorSettings
 from hummingbot.client.ui.interface_utils import format_df_for_printout
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.model.trade_fill import TradeFill
 
 s_float_0 = float(0)

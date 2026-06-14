@@ -52,14 +52,11 @@ class HedgedMarketMakingUnitTest(unittest.TestCase):
     trading_pairs_maker: list[str] = ["COINALPHA-WETH", "COINALPHA", "WETH"]
     trading_pairs_taker: list[str] = ["COINALPHA-ETH", "COINALPHA", "ETH"]
 
-    @classmethod
-    def setUpClass(cls) -> None:
-        super().setUpClass()
-        cls.ev_loop = asyncio.get_event_loop()
-
     @patch("hummingbot.client.settings.AllConnectorSettings.get_exchange_names")
     @patch("hummingbot.client.settings.AllConnectorSettings.get_connector_settings")
     def setUp(self, get_connector_settings_mock, get_exchange_names_mock):
+        self.ev_loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.ev_loop)
         get_exchange_names_mock.return_value = set(self.get_mock_connector_settings().keys())
         get_connector_settings_mock.return_value = self.get_mock_connector_settings()
 

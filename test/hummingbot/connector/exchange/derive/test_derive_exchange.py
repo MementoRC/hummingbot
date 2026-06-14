@@ -13,6 +13,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from aioresponses import aioresponses
 from aioresponses.core import RequestCall
+from web_assistant.throttler.async_throttler import AsyncThrottler
 
 import hummingbot.connector.exchange.derive.derive_constants as CONSTANTS
 import hummingbot.connector.exchange.derive.derive_web_utils as web_utils
@@ -20,7 +21,6 @@ from hummingbot.connector.exchange.derive.derive_exchange import DeriveExchange
 from hummingbot.connector.test_support.exchange_connector_test import AbstractExchangeConnectorTests
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.connector.utils import combine_to_hb_trading_pair
-from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 from hummingbot.core.data_type.common import OrderType, TradeType
 from hummingbot.core.data_type.in_flight_order import InFlightOrder
 from hummingbot.core.data_type.trade_fee import DeductedFromReturnsTradeFee, TokenAmount, TradeFeeBase

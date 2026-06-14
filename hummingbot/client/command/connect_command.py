@@ -4,12 +4,12 @@ import asyncio
 from typing import TYPE_CHECKING, Dict
 
 import pandas as pd
+from async_utils.core import safe_ensure_future
 
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
 from hummingbot.client.config.security import Security
 from hummingbot.client.settings import AllConnectorSettings
 from hummingbot.client.ui.interface_utils import format_df_for_printout
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.core.utils.trading_pair_fetcher import TradingPairFetcher
 from hummingbot.user.user_balances import UserBalances
 

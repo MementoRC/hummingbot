@@ -4,7 +4,6 @@ import asyncio
 import logging
 import math
 from decimal import Decimal
-from typing import Dict, Union
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.common import OrderType, PositionAction, PriceType, TradeType
@@ -19,11 +18,17 @@ from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.dca_executor.data_types import DCAExecutorConfig, DCAMode
 from hummingbot.strategy_v2.executors.executor_base import ExecutorBase
+from hummingbot.strategy_v2.executors.executor_factory import ExecutorFactory
+from hummingbot.strategy_v2.executors.mixins.order_tracking import OrderTrackingMixin
+from hummingbot.strategy_v2.executors.mixins.pnl_calculator import PNLCalculatorMixin
+from hummingbot.strategy_v2.executors.mixins.retry import RetryMixin
+from hummingbot.strategy_v2.executors.mixins.trailing_stop import TrailingStopMixin
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 
 
-class DCAExecutor(ExecutorBase):
+@ExecutorFactory.register(DCAExecutorConfig)
+class DCAExecutor(PNLCalculatorMixin, TrailingStopMixin, OrderTrackingMixin, RetryMixin, ExecutorBase):
     _logger = None
 
     @classmethod
@@ -47,6 +52,9 @@ class DCAExecutor(ExecutorBase):
             update_interval=update_interval,
             max_retries=max_retries,
         )
+        self.init_retry(max_retries)
+        self.init_trailing_stop()
+        self.init_order_tracking()
         self.config: DCAExecutorConfig = config
 
         # validate amounts with exchange trading rules
@@ -68,8 +76,6 @@ class DCAExecutor(ExecutorBase):
         # executors tracking
         self._open_orders: list[TrackedOrder] = []
         self._close_orders: list[TrackedOrder] = []  # for now will be just one order but we can have multiple
-        self._failed_orders: list[TrackedOrder] = []
-        self._trailing_stop_trigger_pct: Decimal | None = None
 
         # used to track the total amount filled that is updated by the event in case that the InFlightOrder is
         # not available
@@ -82,6 +88,9 @@ class DCAExecutor(ExecutorBase):
     @property
     def active_close_orders(self) -> list[TrackedOrder]:
         return self._close_orders
+
+    def _get_trackable_orders(self) -> list[TrackedOrder | None]:
+        return self._open_orders + self._close_orders
 
     @property
     def open_order_type(self) -> OrderType:
@@ -523,7 +532,7 @@ class DCAExecutor(ExecutorBase):
                 active_order.order = in_flight_order
 
     def process_order_created_event(
-        self, event_tag: int, market: ConnectorBase, event: Union[BuyOrderCreatedEvent, SellOrderCreatedEvent]
+        self, event_tag: int, market: ConnectorBase, event: BuyOrderCreatedEvent | SellOrderCreatedEvent
     ):
         """
         This method is responsible for processing the order created event. Here we will add the InFlightOrder to the
@@ -568,7 +577,7 @@ class DCAExecutor(ExecutorBase):
             self._total_executed_amount_backup += event.amount
         self.update_tracked_orders_with_order_id(event.order_id)
 
-    def get_custom_info(self) -> Dict:
+    def get_custom_info(self) -> dict:
         return {
             "side": self.config.side,
             "current_position_average_price": self.current_position_average_price,

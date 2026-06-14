@@ -3,7 +3,7 @@ name = "hummingbot"
 version = "20260302"
 description = "Hummingbot"
 authors = [{name = "Hummingbot Foundation", email = "dev@hummingbot.org"}]
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 license = {text = "Apache-2.0"}
 
 [project.scripts]
@@ -57,7 +57,7 @@ channels = ["conda-forge"]
 platforms = ["linux-64"]
 [tool.pixi.dependencies]
 # Build/install
-python = ">=3.10.12,<3.13"
+python = ">=3.12,<3.13"
 cython = ">=3.0.12"
 hatchling = ">=1.29.0"
 maturin = ">=1.5"
@@ -137,9 +137,11 @@ ci = { features = ["ci", "dev"], solve-group = "default" }
 # py310/py311/py312 removed: pandas-ta/numba version conflicts
 
 [tool.pixi.tasks]
-install-subpackages = "python -m pip install --no-deps --no-build-isolation -e sub-packages/async-utils -e sub-packages/candles-feed -e sub-packages/connector-utils -e sub-packages/data-type-primitives -e sub-packages/event-bus -e sub-packages/liquidations-feed -e sub-packages/logger -e sub-packages/market-connector -e sub-packages/market-data -e sub-packages/market-simulator -e sub-packages/rate-oracle -e sub-packages/remote-iface -e sub-packages/strategy-framework -e sub-packages/web-assistant"
-install-dev = { depends-on = ["install-subpackages"], cmd = "python -m pip install --no-deps --no-build-isolation -e ." }
-build = { cmd = "python setup.py build_ext --inplace", depends-on = ["install-dev"] }
+# Sub-package editable install. HUMMINGBOT_SKIP_CYTHON=1 skips Cython compilation during pip install -e (sub-packages don't ship Cython extensions).
+install-subpackages = { cmd = "python -m pip install --no-deps --no-build-isolation -e sub-packages/async-utils -e sub-packages/candles-feed -e sub-packages/connector-utils -e sub-packages/data-type-primitives -e sub-packages/event-bus -e sub-packages/liquidations-feed -e sub-packages/logger -e sub-packages/market-connector -e sub-packages/market-data -e sub-packages/market-simulator -e sub-packages/rate-oracle -e sub-packages/remote-iface -e sub-packages/strategy-framework -e sub-packages/web-assistant", env = { HUMMINGBOT_SKIP_CYTHON = "1" } }
+install-dev = { depends-on = ["install-subpackages"], cmd = "python -m pip install --no-deps --no-build-isolation -e .", env = { HUMMINGBOT_SKIP_CYTHON = "1" } }
+build = { cmd = "python setup.py build_ext --inplace", depends-on = ["install-dev"], env = { WITHOUT_CYTHON_OPTIMIZATIONS = "1" } }
+build-release = { cmd = "python setup.py build_ext --inplace", depends-on = ["install-dev"] }
 rust-build = { cmd = "maturin develop --manifest-path hummingbot/rust/Cargo.toml", depends-on = ["install-dev"] }
 test = { cmd = "pytest test", depends-on = ["build"] }
 test-unit = { cmd = "pytest test/hummingbot", depends-on = ["build"] }
@@ -170,7 +172,6 @@ ensure_newline_before_comments = true
 combine_as_imports = true
 filter_files = true
 skip = ["setup.py"]
-known_first_party = ["hummingbot", "async_utils", "candles_feed", "connector_utils", "data_type_primitives", "event_bus", "liquidations_feed", "logger", "market_connector", "market_data", "market_simulator", "rate_oracle", "remote_iface", "strategy_framework", "web_assistant"]
 
 [tool.ruff]
 line-length = 120

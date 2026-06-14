@@ -6,8 +6,9 @@ from typing import Awaitable
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
+from web_assistant.connections.data_types import RESTMethod, RESTRequest, WSJSONRequest
+
 from hummingbot.connector.derivative.gate_io_perpetual.gate_io_perpetual_auth import GateIoPerpetualAuth
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest, WSJSONRequest
 
 
 class GateIoPerpetualAuthTests(TestCase):

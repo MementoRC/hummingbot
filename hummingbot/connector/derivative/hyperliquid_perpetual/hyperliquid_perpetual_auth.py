@@ -7,13 +7,13 @@ import eth_account
 import msgpack
 from eth_account.messages import encode_typed_data
 from eth_utils import keccak, to_hex
+from web_assistant.auth import AuthBase
+from web_assistant.connections.data_types import RESTMethod, RESTRequest, WSRequest
 
 from hummingbot.connector.derivative.hyperliquid_perpetual import hyperliquid_perpetual_constants as CONSTANTS
 from hummingbot.connector.derivative.hyperliquid_perpetual.hyperliquid_perpetual_web_utils import (
     order_spec_to_order_wire,
 )
-from hummingbot.core.web_assistant.auth import AuthBase
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest, WSRequest
 
 
 class HyperliquidPerpetualAuth(AuthBase):

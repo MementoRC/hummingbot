@@ -7,8 +7,9 @@ import unittest
 from typing import Awaitable
 from urllib.parse import urlencode
 
+from web_assistant.connections.data_types import RESTMethod, RESTRequest, WSJSONRequest
+
 from hummingbot.connector.derivative.binance_perpetual.binance_perpetual_auth import BinancePerpetualAuth
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest, WSJSONRequest
 
 
 class BinancePerpetualAuthUnitTests(unittest.TestCase):

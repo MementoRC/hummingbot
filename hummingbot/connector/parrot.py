@@ -4,8 +4,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 import aiohttp
-
-from hummingbot.core.utils.async_utils import safe_gather
+from async_utils.core import safe_gather
 
 PARROT_MINER_BASE_URL = "https://api.hummingbot.io/bounty/"
 

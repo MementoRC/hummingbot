@@ -1,7 +1,8 @@
 from typing import Any
 
 # A single source of truth for constant variables related to the exchange
-from hummingbot.core.api_throttler.data_types import LinkedLimitWeightPair, RateLimit
+from web_assistant.throttler.data_types import LinkedLimitWeightPair, RateLimit
+
 from hummingbot.core.data_type.in_flight_order import OrderState
 
 # The max size of a digest is 66 characters (Vertex uses digests comprable to client order id).

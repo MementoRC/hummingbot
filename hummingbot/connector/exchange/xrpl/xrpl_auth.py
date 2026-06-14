@@ -1,10 +1,9 @@
 import ecdsa
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from web_assistant.auth import AuthBase
+from web_assistant.connections.data_types import RESTRequest, WSRequest
 from xrpl.constants import CryptoAlgorithm
 from xrpl.wallet import Wallet
-
-from hummingbot.core.web_assistant.auth import AuthBase
-from hummingbot.core.web_assistant.connections.data_types import RESTRequest, WSRequest
 
 
 class XRPLAuth(AuthBase):

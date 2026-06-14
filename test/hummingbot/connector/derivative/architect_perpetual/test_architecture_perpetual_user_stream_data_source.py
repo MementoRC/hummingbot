@@ -7,6 +7,7 @@ from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCa
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
+from web_assistant.throttler.async_throttler import AsyncThrottler
 
 from hummingbot.connector.derivative.architect_perpetual import (
     architect_perpetual_constants as CONSTANTS,
@@ -21,7 +22,6 @@ from hummingbot.connector.derivative.architect_perpetual.architect_perpetual_use
 )
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
-from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 
 
 class ArchitecturePerpetualUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):

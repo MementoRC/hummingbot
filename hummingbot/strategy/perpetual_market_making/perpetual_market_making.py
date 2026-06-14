@@ -28,6 +28,7 @@ from hummingbot.strategy.perpetual_market_making.data_types import PriceSize, Pr
 from hummingbot.strategy.perpetual_market_making.perpetual_market_making_order_tracker import (
     PerpetualMarketMakingOrderTracker,
 )
+from hummingbot.strategy.strategy_base import StrategyBase
 from hummingbot.strategy.strategy_py_base import StrategyPyBase
 from hummingbot.strategy.utils import order_age
 
@@ -440,9 +441,18 @@ class PerpetualMarketMakingStrategy(StrategyPyBase):
         return "\n".join(lines)
 
     def start(self, clock: Clock, timestamp: float):
+        # super().start() must be called first to replicate the Cython c_start chain:
+        # StrategyPyBase.c_start -> StrategyBase.c_start -> add_markets + listener wiring.
+        # Without it, _sb_markets is empty and buy/sell order placement raises ValueError.
+        super().start(clock, timestamp)
         self._market_info.market.set_leverage(self.trading_pair, self._leverage)
 
     def tick(self, timestamp: float):
+        # Replicate the Cython c_tick two-layer dispatch:
+        # StrategyPyBase.c_tick called StrategyBase.c_tick (updating _current_timestamp
+        # and _sb_order_tracker timestamps) before calling Python tick().
+        # StrategyPyBase.tick() raises NotImplementedError so we call StrategyBase directly.
+        StrategyBase.tick(self, timestamp)
         if not self._position_mode_ready:
             self._position_mode_not_ready_counter += 1
             # Attempt to switch position mode every 10 ticks only to not spam and DDOS

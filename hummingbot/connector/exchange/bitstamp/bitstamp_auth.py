@@ -3,9 +3,10 @@ import hmac
 import uuid
 from urllib.parse import urlencode, urlparse
 
+from web_assistant.auth import AuthBase
+from web_assistant.connections.data_types import RESTMethod, RESTRequest, WSRequest
+
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
-from hummingbot.core.web_assistant.auth import AuthBase
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest, WSRequest
 
 
 class BitstampAuth(AuthBase):

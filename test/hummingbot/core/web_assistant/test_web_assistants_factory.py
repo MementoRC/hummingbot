@@ -2,10 +2,11 @@ import asyncio
 import unittest
 from typing import Awaitable
 
+from web_assistant.rest_assistant import RESTAssistant
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+from web_assistant.ws_assistant import WSAssistant
+
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
-from hummingbot.core.web_assistant.rest_assistant import RESTAssistant
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
-from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 
 
 class WebAssistantsFactoryTest(unittest.TestCase):

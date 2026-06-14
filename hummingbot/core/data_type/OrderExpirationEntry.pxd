@@ -2,7 +2,6 @@
 
 from libcpp.string cimport string
 
-
 cdef extern from "../cpp/OrderExpirationEntry.h":
     cdef cppclass OrderExpirationEntry:
         OrderExpirationEntry()

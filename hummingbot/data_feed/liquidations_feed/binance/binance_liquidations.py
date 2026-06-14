@@ -5,11 +5,11 @@ import logging
 from typing import Any
 
 from bidict import bidict
+from web_assistant.connections.data_types import WSJSONRequest
+from web_assistant.ws_assistant import WSAssistant
 
 from hummingbot.connector.utils import combine_to_hb_trading_pair
 from hummingbot.core.network_iterator import NetworkStatus
-from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest
-from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.data_feed.liquidations_feed.binance import constants as CONSTANTS
 from hummingbot.data_feed.liquidations_feed.liquidations_base import Liquidation, LiquidationsBase, LiquidationSide
 from hummingbot.logger import HummingbotLogger

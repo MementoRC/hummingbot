@@ -4,12 +4,13 @@ import time
 from decimal import Decimal
 from typing import Any
 
+from web_assistant.auth import AuthBase
+from web_assistant.connections.data_types import RESTRequest
+from web_assistant.rest_pre_processors import RESTPreProcessorBase
+from web_assistant.throttler.async_throttler import AsyncThrottler
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+
 import hummingbot.connector.derivative.hyperliquid_perpetual.hyperliquid_perpetual_constants as CONSTANTS
-from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
-from hummingbot.core.web_assistant.auth import AuthBase
-from hummingbot.core.web_assistant.connections.data_types import RESTRequest
-from hummingbot.core.web_assistant.rest_pre_processors import RESTPreProcessorBase
-from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class HyperliquidPerpetualRESTPreProcessor(RESTPreProcessorBase):

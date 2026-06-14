@@ -1,5 +1,4 @@
 from decimal import Decimal
-
 import numpy as np
 
 from .data_types import InventorySkewBidAskRatios

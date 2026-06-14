@@ -7,6 +7,9 @@ from enum import Enum
 from typing import Any, Callable, Union
 
 from async_timeout import timeout
+from async_utils.core import safe_ensure_future
+from web_assistant.auth import AuthBase
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 from hummingbot.connector.client_order_tracker import ClientOrderTracker
 from hummingbot.connector.constants import s_decimal_NaN
@@ -36,10 +39,7 @@ from hummingbot.core.data_type.user_stream_tracker_data_source import UserStream
 from hummingbot.core.event.event_forwarder import EventForwarder
 from hummingbot.core.event.events import AccountEvent, BalanceUpdateEvent, MarketEvent
 from hummingbot.core.network_iterator import NetworkStatus
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.core.utils.estimate_fee import build_trade_fee
-from hummingbot.core.web_assistant.auth import AuthBase
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class InjectiveV2Exchange(ExchangePyBase):

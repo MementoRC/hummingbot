@@ -7,6 +7,7 @@ from typing import Any, Awaitable
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from bidict import bidict
+from web_assistant.ws_assistant import WSAssistant
 
 from hummingbot.connector.exchange.foxbit import foxbit_constants as CONSTANTS
 from hummingbot.connector.exchange.foxbit.foxbit_api_user_stream_data_source import FoxbitAPIUserStreamDataSource
@@ -15,7 +16,6 @@ from hummingbot.connector.exchange.foxbit.foxbit_exchange import FoxbitExchange
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
-from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 
 
 @patch(
@@ -132,7 +132,7 @@ class FoxbitUserStreamDataSourceUnitTests(unittest.TestCase):
         mock_ws.connect = AsyncMock()
         mock_ws.send = AsyncMock()
         # Simulate authenticated response
-        mock_ws.receive = AsyncMock(return_value=MagicMock(data={"o": '{"Authenticated": True}'}))
+        mock_ws.receive = AsyncMock(return_value=MagicMock(data={"o": '{"Authenticated": true}'}))
         mock_ws_assistant_cls.return_value = mock_ws
 
         mock_api_factory = MagicMock()

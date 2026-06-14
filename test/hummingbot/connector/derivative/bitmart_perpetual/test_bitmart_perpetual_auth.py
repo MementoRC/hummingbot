@@ -6,8 +6,9 @@ import unittest
 from typing import Awaitable
 from urllib.parse import urlencode
 
+from web_assistant.connections.data_types import RESTRequest, WSJSONRequest
+
 from hummingbot.connector.derivative.bitmart_perpetual.bitmart_perpetual_auth import BitmartPerpetualAuth
-from hummingbot.core.web_assistant.connections.data_types import RESTRequest, WSJSONRequest
 
 
 class BitmartPerpetualAuthUnitTests(unittest.TestCase):

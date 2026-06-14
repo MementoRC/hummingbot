@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Dict
 
 import yaml
+from async_utils.core import safe_ensure_future
 
 from hummingbot.client import settings
 from hummingbot.client.config.config_data_types import BaseClientModel
@@ -32,7 +33,6 @@ from hummingbot.client.config.config_var import ConfigVar
 from hummingbot.client.config.strategy_config_data_types import BaseStrategyConfigMap
 from hummingbot.client.settings import SCRIPT_STRATEGY_CONF_DIR_PATH, STRATEGIES_CONF_DIR_PATH, required_exchanges
 from hummingbot.client.ui.completer import load_completer
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.exceptions import InvalidController, InvalidScriptModule
 from hummingbot.strategy.strategy_v2_base import StrategyV2ConfigBase
 from hummingbot.strategy_v2.controllers.controller_base import ControllerConfigBase

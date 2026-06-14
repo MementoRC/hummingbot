@@ -4,10 +4,11 @@ from __future__ import annotations
 import asyncio
 from typing import TYPE_CHECKING
 
+from async_utils.core import safe_ensure_future
+
 from hummingbot.client.command.command_utils import GatewayCommandUtils
 from hummingbot.connector.gateway.gateway_base import GatewayBase
 from hummingbot.core.gateway.gateway_http_client import GatewayHttpClient
-from hummingbot.core.utils.async_utils import safe_ensure_future
 
 if TYPE_CHECKING:
     from hummingbot.client.hummingbot_application import HummingbotApplication  # noqa: F401

@@ -1,16 +1,15 @@
-from __future__ import annotations
+from typing import Any, Callable, Dict, Optional
 
-from typing import Any, Callable
+from async_utils.tracking_nonce import get_tracking_nonce
+from web_assistant.auth import AuthBase
+from web_assistant.connections.data_types import RESTMethod, RESTRequest
+from web_assistant.rest_pre_processors import RESTPreProcessorBase
+from web_assistant.throttler.async_throttler import AsyncThrottler
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 from hummingbot.connector.derivative.kucoin_perpetual import kucoin_perpetual_constants as CONSTANTS
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
 from hummingbot.connector.utils import TimeSynchronizerRESTPreProcessor
-from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
-from hummingbot.core.utils.tracking_nonce import get_tracking_nonce
-from hummingbot.core.web_assistant.auth import AuthBase
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest
-from hummingbot.core.web_assistant.rest_pre_processors import RESTPreProcessorBase
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class HeadersContentRESTPreProcessor(RESTPreProcessorBase):
@@ -127,19 +126,18 @@ def next_message_id() -> str:
 
 async def api_request(
     path: str,
-    api_factory: WebAssistantsFactory | None = None,
-    throttler: AsyncThrottler | None = None,
+    api_factory: Optional[WebAssistantsFactory] = None,
+    throttler: Optional[AsyncThrottler] = None,
     domain: str = CONSTANTS.DEFAULT_DOMAIN,
-    params: dict[str, Any] | None = None,
-    data: dict[str, Any] | None = None,
+    params: Optional[Dict[str, Any]] = None,
+    data: Optional[Dict[str, Any]] = None,
     method: RESTMethod = RESTMethod.GET,
     is_auth_required: bool = False,
     return_err: bool = False,
     api_version: str = "v1",
-    limit_id: str | None = None,
-    timeout: float | None = None,
+    limit_id: Optional[str] = None,
+    timeout: Optional[float] = None,
 ):
-
     throttler = throttler or create_throttler()
 
     api_factory = api_factory or build_api_factory()

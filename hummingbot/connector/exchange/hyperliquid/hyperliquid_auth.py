@@ -8,11 +8,11 @@ import eth_account
 import msgpack
 from eth_account.messages import encode_typed_data
 from eth_utils import keccak, to_hex
+from web_assistant.auth import AuthBase
+from web_assistant.connections.data_types import RESTMethod, RESTRequest, WSRequest
 
 from hummingbot.connector.exchange.hyperliquid import hyperliquid_constants as CONSTANTS
 from hummingbot.connector.exchange.hyperliquid.hyperliquid_web_utils import order_spec_to_order_wire
-from hummingbot.core.web_assistant.auth import AuthBase
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest, WSRequest
 
 
 class HyperliquidAuth(AuthBase):

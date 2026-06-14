@@ -1,9 +1,9 @@
 from typing import Any
 
+from async_utils.tracking_nonce import get_tracking_nonce
 from pydantic import ConfigDict, Field, SecretStr
 
 from hummingbot.client.config.config_data_types import BaseConnectorConfigMap
-from hummingbot.core.utils.tracking_nonce import get_tracking_nonce
 
 CENTRALIZED = True
 EXAMPLE_PAIR = "BTC-CAD"

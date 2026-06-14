@@ -52,7 +52,7 @@ class OMSConnectorUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
         cls.oms_id = 1
         cls.account_id = 3
 
-    @patch("hummingbot.core.utils.tracking_nonce.NonceCreator._time")
+    @patch("async_utils.tracking_nonce.NonceCreator._time")
     async def asyncSetUp(self, time_mock: MagicMock) -> None:
         await super().asyncSetUp()
         time_mock.return_value = self.time_mock

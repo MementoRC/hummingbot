@@ -13,6 +13,8 @@ from hummingbot.core.network_base import NetworkBase
 if typing.TYPE_CHECKING:  # avoid circular import problems
     from hummingbot.connector.connector_base import ConnectorBase
 
+from async_utils.core import safe_ensure_future
+
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.core.rate_oracle.sources.aevo_rate_source import AevoRateSource
 from hummingbot.core.rate_oracle.sources.architect_perpetual_rate_source import ArchitectPerpetualRateSource
@@ -33,7 +35,6 @@ from hummingbot.core.rate_oracle.sources.mexc_rate_source import MexcRateSource
 from hummingbot.core.rate_oracle.sources.pacifica_perpetual_rate_source import PacificaPerpetualRateSource
 from hummingbot.core.rate_oracle.sources.rate_source_base import RateSourceBase
 from hummingbot.core.rate_oracle.utils import find_rate
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.logger import HummingbotLogger
 
 RATE_ORACLE_SOURCES = {

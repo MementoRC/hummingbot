@@ -4,9 +4,8 @@ from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCa
 
 import aiohttp
 from aioresponses import aioresponses
-
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest, RESTResponse
-from hummingbot.core.web_assistant.connections.rest_connection import RESTConnection
+from web_assistant.connections.data_types import RESTMethod, RESTRequest, RESTResponse
+from web_assistant.connections.rest_connection import RESTConnection
 
 
 class RESTConnectionTest(IsolatedAsyncioWrapperTestCase):

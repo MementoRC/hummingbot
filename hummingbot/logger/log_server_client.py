@@ -5,11 +5,11 @@ import logging
 from typing import Any
 
 import aiohttp
+from async_utils.core import safe_ensure_future
+from async_utils.retry import async_retry
 
 from hummingbot.core.network_base import NetworkBase
 from hummingbot.core.network_iterator import NetworkStatus
-from hummingbot.core.utils.async_retry import async_retry
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.logger import HummingbotLogger
 
 

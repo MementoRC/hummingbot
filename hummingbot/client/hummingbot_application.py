@@ -6,6 +6,7 @@ import time
 from collections import deque
 from typing import Deque, Union
 
+from remote_iface import MQTTGateway
 from sqlalchemy.orm import Session
 
 from hummingbot.client.command import __all__ as commands
@@ -33,7 +34,6 @@ from hummingbot.exceptions import ArgumentParserError
 from hummingbot.logger import HummingbotLogger
 from hummingbot.logger.application_warning import ApplicationWarning
 from hummingbot.model.trade_fill import TradeFill
-from remote_iface import MQTTGateway
 
 s_logger = None
 
@@ -95,6 +95,9 @@ class HummingbotApplication(*commands):
         # MQTT Bridge (always available in both modes)
         if self.client_config_map.mqtt_bridge.mqtt_autostart:
             self.mqtt_start()
+
+        HummingbotLogger.register_notify_handler(self.notify)
+        HummingbotLogger.register_network_handler(self.add_application_warning)
 
     def _init_ui_components(self):
         """Initialize UI components (CLI, parser, etc.) for non-headless mode."""

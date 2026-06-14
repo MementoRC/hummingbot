@@ -19,6 +19,7 @@ from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple
 from hummingbot.strategy.pure_market_making.inventory_skew_calculator import (
     calculate_bid_ask_ratios_from_base_asset_ratio,
 )
+from hummingbot.strategy.strategy_base import StrategyBase
 from hummingbot.strategy.strategy_py_base import StrategyPyBase
 from hummingbot.strategy.utils import order_age
 
@@ -114,6 +115,11 @@ class LiquidityMiningStrategy(StrategyPyBase):
         Clock tick entry point, is run every second (on normal tick setting).
         :param timestamp: current tick timestamp
         """
+        # Replicate the Cython c_tick two-layer dispatch:
+        # StrategyPyBase.c_tick called StrategyBase.c_tick (updating _current_timestamp
+        # and _sb_order_tracker timestamps) before calling Python tick().
+        # StrategyPyBase.tick() raises NotImplementedError so we call StrategyBase directly.
+        StrategyBase.tick(self, timestamp)
         if not self._ready_to_trade:
             # Check if there are restored orders, they should be canceled before strategy starts.
             self._ready_to_trade = self._exchange.ready and len(self._exchange.limit_orders) == 0

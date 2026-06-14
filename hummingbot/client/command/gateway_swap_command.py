@@ -4,11 +4,12 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
+from async_utils.core import safe_ensure_future
+
 from hummingbot.client.command.command_utils import GatewayCommandUtils
 from hummingbot.connector.gateway.gateway import Gateway
 from hummingbot.connector.utils import split_hb_trading_pair
 from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.utils.async_utils import safe_ensure_future
 
 if TYPE_CHECKING:
     from hummingbot.client.hummingbot_application import HummingbotApplication  # noqa: F401

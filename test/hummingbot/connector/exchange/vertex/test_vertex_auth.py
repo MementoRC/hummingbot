@@ -2,10 +2,11 @@ import asyncio
 from typing import Awaitable
 from unittest import TestCase
 
+from web_assistant.connections.data_types import RESTMethod, RESTRequest, WSJSONRequest
+
 import hummingbot.connector.exchange.vertex.vertex_constants as CONSTANTS
 from hummingbot.connector.exchange.vertex.vertex_auth import VertexAuth
 from hummingbot.connector.exchange.vertex.vertex_eip712_structs import Order
-from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest, WSJSONRequest
 
 
 class VertexAuthTests(TestCase):

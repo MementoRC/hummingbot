@@ -1,7 +1,8 @@
 # A single source of truth for constant variables related to the exchange
 # https://api.btcmarkets.net/doc/v3#section/General-notes
 
-from hummingbot.core.api_throttler.data_types import RateLimit
+from web_assistant.throttler.data_types import RateLimit
+
 from hummingbot.core.data_type.in_flight_order import OrderState
 
 EXCHANGE_NAME = "btc_markets"

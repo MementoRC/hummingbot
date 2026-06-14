@@ -3,7 +3,8 @@ from __future__ import annotations
 import asyncio
 import logging
 
-from hummingbot.core.utils.async_utils import safe_ensure_future
+from async_utils.core import safe_ensure_future
+
 from hummingbot.logger import HummingbotLogger
 
 

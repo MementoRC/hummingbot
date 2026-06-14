@@ -19,8 +19,11 @@ class MockNetworkIterator(NetworkIterator):
 
     async def stop_network(self):
         self._stop_network_event.set()
-
-        self._network_status = NetworkStatus.STOPPED
+        # Do NOT set _network_status here.  The real stop_network() base is a
+        # no-op; it is NetworkIterator.stop() (called by the clock) that sets
+        # status to STOPPED.  Overriding status in stop_network() was masking
+        # the NOT_CONNECTED state that _check_network_loop correctly sets before
+        # invoking this callback.
         self._start_network_event = asyncio.Event()
 
     async def check_network(self):

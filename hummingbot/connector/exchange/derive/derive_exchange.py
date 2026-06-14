@@ -6,7 +6,9 @@ from copy import deepcopy
 from decimal import Decimal
 from typing import Any, AsyncIterable, List
 
+from async_utils.core import safe_ensure_future, safe_gather
 from bidict import bidict
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 from hummingbot.connector.constants import SECOND, TWELVE_HOURS, s_decimal_NaN
 from hummingbot.connector.exchange.derive import derive_constants as CONSTANTS, derive_web_utils as web_utils
@@ -23,9 +25,7 @@ from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTr
 from hummingbot.core.data_type.trade_fee import DeductedFromReturnsTradeFee, TokenAmount, TradeFeeBase
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.event.events import MarketEvent, OrderFilledEvent
-from hummingbot.core.utils.async_utils import safe_ensure_future, safe_gather
 from hummingbot.core.utils.estimate_fee import build_trade_fee
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class DeriveExchange(ExchangePyBase):

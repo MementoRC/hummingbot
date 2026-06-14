@@ -3,6 +3,10 @@ from __future__ import annotations
 import asyncio
 from typing import TYPE_CHECKING
 
+from web_assistant.connections.data_types import WSJSONRequest
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+from web_assistant.ws_assistant import WSAssistant
+
 from hummingbot.connector.exchange.foxbit import (
     foxbit_constants as CONSTANTS,
     foxbit_utils as utils,
@@ -10,10 +14,7 @@ from hummingbot.connector.exchange.foxbit import (
 )
 from hummingbot.connector.exchange.foxbit.foxbit_auth import FoxbitAuth
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
-from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest
-from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.logger import HummingbotLogger
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 if TYPE_CHECKING:
     from hummingbot.connector.exchange.foxbit.foxbit_exchange import FoxbitExchange

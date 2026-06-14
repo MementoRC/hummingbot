@@ -16,6 +16,7 @@ import asyncio
 from decimal import Decimal
 from typing import Any, Dict, Union
 
+from async_utils.core import safe_ensure_future
 from pydantic import BaseModel, Field
 
 from hummingbot.connector.gateway.gateway_base import GatewayBase
@@ -31,7 +32,6 @@ from hummingbot.core.event.events import (
 )
 from hummingbot.core.rate_oracle.rate_oracle import RateOracle
 from hummingbot.core.utils import async_ttl_cache
-from hummingbot.core.utils.async_utils import safe_ensure_future
 
 
 class TokenInfo(BaseModel):

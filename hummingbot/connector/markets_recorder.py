@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import datetime
 import json
-import logging
 import os.path
 import threading
 import time
@@ -61,7 +60,7 @@ class MarketsRecorder:
     @classmethod
     def logger(cls) -> HummingbotLogger:
         if cls._logger is None:
-            cls._logger = logging.getLogger(__name__)
+            cls._logger = HummingbotLogger(__name__)
         return cls._logger
 
     @classmethod

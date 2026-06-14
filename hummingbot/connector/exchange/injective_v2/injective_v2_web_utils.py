@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import time
 
+from web_assistant.throttler.async_throttler import AsyncThrottler
+
 from hummingbot.connector.exchange.injective_v2 import injective_constants as CONSTANTS
-from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 
 
 async def get_current_server_time(

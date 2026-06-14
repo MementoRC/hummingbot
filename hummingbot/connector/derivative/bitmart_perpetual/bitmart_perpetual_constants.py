@@ -1,4 +1,4 @@
-from hummingbot.core.api_throttler.data_types import RateLimit
+from web_assistant.throttler.data_types import RateLimit
 
 EXCHANGE_NAME = "bitmart_perpetual"
 BROKER_ID = "hummingbotfound"

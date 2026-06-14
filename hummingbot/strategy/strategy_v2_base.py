@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import yaml
 from pydantic import BaseModel, Field, field_validator
+from remote_iface import ETopicPublisher
 
 from hummingbot.client import settings
 from hummingbot.client.config.config_data_types import BaseClientModel
@@ -28,6 +29,7 @@ from hummingbot.data_feed.market_data_provider import MarketDataProvider
 from hummingbot.exceptions import InvalidController
 from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple
+from hummingbot.strategy.strategy_base import StrategyBase
 from hummingbot.strategy.strategy_py_base import StrategyPyBase
 from hummingbot.strategy_v2.controllers.controller_base import ControllerBase, ControllerConfigBase
 from hummingbot.strategy_v2.controllers.directional_trading_controller_base import (
@@ -43,7 +45,6 @@ from hummingbot.strategy_v2.models.executor_actions import (
     StoreExecutorAction,
 )
 from hummingbot.strategy_v2.models.executors_info import ExecutorInfo
-from remote_iface import ETopicPublisher
 
 lsb_logger = None
 s_decimal_nan = Decimal("NaN")
@@ -313,6 +314,11 @@ class StrategyV2Base(StrategyPyBase):
 
         :param timestamp: current tick timestamp
         """
+        # Replicate the Cython c_tick two-layer dispatch:
+        # StrategyPyBase.c_tick called StrategyBase.c_tick (updating _current_timestamp
+        # and _sb_order_tracker timestamps) before calling Python tick().
+        # StrategyPyBase.tick() raises NotImplementedError so we call StrategyBase directly.
+        StrategyBase.tick(self, timestamp)
         if not self.ready_to_trade:
             self.ready_to_trade = all(ex.ready for ex in self.connectors.values())
             if not self.ready_to_trade:
@@ -651,6 +657,10 @@ class StrategyV2Base(StrategyPyBase):
         :param clock: Clock to use.
         :param timestamp: Current time.
         """
+        # super().start() must be called first to replicate the Cython c_start chain:
+        # StrategyPyBase.c_start -> StrategyBase.c_start -> add_markets + listener wiring.
+        # Without it, _current_timestamp is NaN and clock.backtest_til int() conversion fails.
+        super().start(clock, timestamp)
         self._last_timestamp = timestamp
         self.apply_initial_setting()
         # Check if MQTT is enabled at runtime
