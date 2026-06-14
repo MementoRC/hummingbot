@@ -1,10 +1,15 @@
 from __future__ import annotations
+
 import asyncio
 import json
 import re
 from decimal import Decimal
 from typing import Any, Callable
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+
+pytest.importorskip("lighter")
 
 from aioresponses import aioresponses
 from aioresponses.core import RequestCall
