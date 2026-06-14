@@ -4,7 +4,6 @@ import asyncio
 import json
 import re
 from decimal import Decimal
-from test.logger_mixin_for_test import LoggerMixinForTest
 from typing import Any, Callable
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -42,6 +41,7 @@ from hummingbot.core.event.events import (
     OrderFilledEvent,
     SellOrderCreatedEvent,
 )
+from test.logger_mixin_for_test import LoggerMixinForTest
 
 
 class CoinbaseAdvancedTradeExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests, LoggerMixinForTest):

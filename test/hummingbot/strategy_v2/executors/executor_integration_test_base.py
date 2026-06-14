@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import time
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from test.logger_mixin_for_test import LoggerMixinForTest
 from unittest.mock import MagicMock, PropertyMock, patch
 
 import pandas as pd
@@ -27,6 +25,8 @@ from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base, StrategyV2ConfigBase
 from hummingbot.strategy_v2.executors.data_types import ExecutorConfigBase
 from hummingbot.strategy_v2.models.executor_actions import CreateExecutorAction, ExecutorAction
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
+from test.logger_mixin_for_test import LoggerMixinForTest
 
 
 class ExtendedMockPaperExchange(MockPaperExchange):

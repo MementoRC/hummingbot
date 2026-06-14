@@ -1,7 +1,6 @@
 import asyncio
 import json
 import re
-from test.hummingbot.data_feed.candles_feed.test_candles_base import TestCandlesBase
 
 from aioresponses import aioresponses
 
@@ -10,6 +9,7 @@ from hummingbot.data_feed.candles_feed.hyperliquid_perpetual_candles import (
     HyperliquidPerpetualCandles,
     constants as CONSTANTS,
 )
+from test.hummingbot.data_feed.candles_feed.test_candles_base import TestCandlesBase
 
 
 class TestHyperliquidPerpetualCandles(TestCandlesBase):

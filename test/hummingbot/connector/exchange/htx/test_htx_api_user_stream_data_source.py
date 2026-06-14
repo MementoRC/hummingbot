@@ -1,6 +1,5 @@
 import asyncio
 import json
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiohttp
@@ -9,6 +8,7 @@ from hummingbot.connector.exchange.htx.htx_api_user_stream_data_source import Ht
 from hummingbot.connector.exchange.htx.htx_auth import HtxAuth
 from hummingbot.connector.exchange.htx.htx_web_utils import build_api_factory
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class HtxAPIUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):

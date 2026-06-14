@@ -6,6 +6,7 @@ import time
 from collections import deque
 from typing import Deque, Union
 
+from remote_iface import MQTTGateway
 from sqlalchemy.orm import Session
 
 from hummingbot.client.command import __all__ as commands
@@ -33,7 +34,6 @@ from hummingbot.exceptions import ArgumentParserError
 from hummingbot.logger import HummingbotLogger
 from hummingbot.logger.application_warning import ApplicationWarning
 from hummingbot.model.trade_fill import TradeFill
-from remote_iface import MQTTGateway
 
 s_logger = None
 

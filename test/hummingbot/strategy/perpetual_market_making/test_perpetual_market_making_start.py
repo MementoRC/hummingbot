@@ -1,12 +1,12 @@
 from decimal import Decimal
-from test.hummingbot.strategy import assign_config_default
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 import hummingbot.strategy.perpetual_market_making.start as strategy_start
 from hummingbot.connector.exchange_base import ExchangeBase
 from hummingbot.strategy.perpetual_market_making.perpetual_market_making_config_map import (
     perpetual_market_making_config_map as c_map,
 )
+from test.hummingbot.strategy import assign_config_default
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class PerpetualMarketMakingStartTest(IsolatedAsyncioWrapperTestCase):

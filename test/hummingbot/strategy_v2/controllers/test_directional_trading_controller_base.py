@@ -1,6 +1,5 @@
 import asyncio
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from hummingbot.core.data_type.common import MarketDict, OrderType, PositionMode, TradeType
@@ -11,6 +10,7 @@ from hummingbot.strategy_v2.controllers.directional_trading_controller_base impo
 )
 from hummingbot.strategy_v2.executors.position_executor.data_types import PositionExecutorConfig, TrailingStop
 from hummingbot.strategy_v2.models.executor_actions import ExecutorAction
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class TestDirectionalTradingControllerBase(IsolatedAsyncioWrapperTestCase):

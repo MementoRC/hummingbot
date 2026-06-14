@@ -6,13 +6,14 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Any, Callable
 
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+
 import hummingbot.connector.exchange.derive.derive_constants as CONSTANTS
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
 from hummingbot.connector.utils import TimeSynchronizerRESTPreProcessor
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 from hummingbot.core.web_assistant.auth import AuthBase
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 MAX_INT_256 = 2**255 - 1
 MIN_INT_256 = -(2**255)

@@ -6,6 +6,7 @@ from decimal import Decimal
 from typing import Any, NamedTuple
 
 from bidict import bidict
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 import hummingbot.connector.derivative.pacifica_perpetual.pacifica_perpetual_constants as CONSTANTS
 import hummingbot.connector.derivative.pacifica_perpetual.pacifica_perpetual_web_utils as web_utils
@@ -29,7 +30,6 @@ from hummingbot.core.data_type.trade_fee import TokenAmount, TradeFeeBase, Trade
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.utils.estimate_fee import build_trade_fee
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 s_decimal_0 = Decimal(0)
 

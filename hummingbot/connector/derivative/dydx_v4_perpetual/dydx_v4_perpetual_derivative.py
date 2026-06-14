@@ -6,6 +6,7 @@ from decimal import Decimal
 from typing import Any, Dict, List
 
 from bidict import bidict
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 import hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_constants as CONSTANTS
 from hummingbot.connector.constants import s_decimal_0, s_decimal_NaN
@@ -31,7 +32,6 @@ from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.core.utils.estimate_fee import build_perpetual_trade_fee
 from hummingbot.core.utils.tracking_nonce import NonceCreator
 from hummingbot.core.web_assistant.auth import AuthBase
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class DydxV4PerpetualDerivative(PerpetualDerivativePyBase):

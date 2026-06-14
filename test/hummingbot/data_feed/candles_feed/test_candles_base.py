@@ -7,7 +7,6 @@ import re
 import time
 from abc import ABC
 from collections import deque
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import numpy as np
@@ -16,6 +15,7 @@ from aioresponses import aioresponses
 
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.data_feed.candles_feed.candles_base import CandlesBase
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class TestCandlesBase(IsolatedAsyncioWrapperTestCase, ABC):

@@ -4,6 +4,8 @@ import asyncio
 import logging
 import time
 
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+
 import hummingbot.connector.exchange.bybit.bybit_constants as CONSTANTS
 import hummingbot.connector.exchange.bybit.bybit_web_utils as web_utils
 from hummingbot.connector.exchange.bybit.bybit_auth import BybitAuth
@@ -13,7 +15,6 @@ from hummingbot.core.data_type.user_stream_tracker_data_source import UserStream
 from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest
 from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.logger import HummingbotLogger
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class BybitAPIUserStreamDataSource(UserStreamTrackerDataSource):

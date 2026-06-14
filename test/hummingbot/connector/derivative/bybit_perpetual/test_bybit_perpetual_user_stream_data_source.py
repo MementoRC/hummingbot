@@ -1,6 +1,5 @@
 import asyncio
 import json
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import hummingbot.connector.derivative.bybit_perpetual.bybit_perpetual_constants as CONSTANTS
@@ -10,6 +9,7 @@ from hummingbot.connector.derivative.bybit_perpetual.bybit_perpetual_user_stream
     BybitPerpetualUserStreamDataSource,
 )
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class BybitPerpetualUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):

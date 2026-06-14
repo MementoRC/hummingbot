@@ -1,6 +1,5 @@
 import asyncio
 import json
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, patch
 
 import aiohttp
@@ -9,6 +8,7 @@ from aiohttp import WebSocketError
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest, WSResponse
 from hummingbot.core.web_assistant.connections.ws_connection import WSConnection
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class WSConnectionTest(IsolatedAsyncioWrapperTestCase):

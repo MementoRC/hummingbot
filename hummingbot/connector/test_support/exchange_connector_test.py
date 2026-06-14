@@ -5,7 +5,6 @@ import json
 import re
 from abc import ABC, abstractmethod
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from typing import Any, Awaitable, Callable, Union
 from unittest.mock import AsyncMock, patch
 
@@ -29,6 +28,7 @@ from hummingbot.core.event.events import (
     SellOrderCreatedEvent,
 )
 from hummingbot.core.network_iterator import NetworkStatus
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class AbstractExchangeConnectorTests:

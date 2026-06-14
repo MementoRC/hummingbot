@@ -1,7 +1,6 @@
 import asyncio
 import time
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from typing import Awaitable
 from unittest.mock import MagicMock, PropertyMock, patch
 
@@ -34,6 +33,7 @@ from hummingbot.strategy_v2.executors.position_executor.position_executor import
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType
 from hummingbot.strategy_v2.models.executors_info import ExecutorInfo
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class MarketsRecorderTests(IsolatedAsyncioWrapperTestCase):

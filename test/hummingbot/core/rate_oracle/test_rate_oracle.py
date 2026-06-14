@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from copy import deepcopy
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import MagicMock
 
 from hummingbot.client.config.client_config_map import ClientConfigMap
@@ -13,6 +12,7 @@ from hummingbot.core.rate_oracle.rate_oracle import RateOracle
 from hummingbot.core.rate_oracle.sources.coin_gecko_rate_source import CoinGeckoRateSource
 from hummingbot.core.rate_oracle.sources.rate_source_base import RateSourceBase
 from hummingbot.core.rate_oracle.utils import find_rate
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class DummyRateSource(RateSourceBase):

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from typing import Awaitable
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -16,6 +15,7 @@ from hummingbot.connector.exchange.ndax.ndax_websocket_adaptor import NdaxWebSoc
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class NdaxAPIUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):

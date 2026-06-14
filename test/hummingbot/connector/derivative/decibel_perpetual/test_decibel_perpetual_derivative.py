@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -20,6 +19,7 @@ from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState
 from hummingbot.core.event.event_logger import EventLogger
 from hummingbot.core.event.events import MarketEvent
 from hummingbot.core.network_iterator import NetworkStatus
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class DummyRESTRequest:

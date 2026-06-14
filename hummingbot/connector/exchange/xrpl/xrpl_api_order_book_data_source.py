@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any
 
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+
 # XRPL imports
 from xrpl.asyncio.clients import AsyncWebsocketClient
 from xrpl.models.requests import BookOffers, Subscribe, SubscribeBook
@@ -21,7 +23,6 @@ from hummingbot.core.data_type.order_book_message import OrderBookMessage
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
 from hummingbot.core.utils.async_utils import safe_gather
 from hummingbot.logger import HummingbotLogger
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 if TYPE_CHECKING:
     from hummingbot.connector.exchange.xrpl.xrpl_exchange import XrplExchange

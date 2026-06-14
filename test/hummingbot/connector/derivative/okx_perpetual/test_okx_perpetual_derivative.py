@@ -5,7 +5,6 @@ import datetime
 import json
 import re
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from typing import Any, Callable
 from unittest.mock import patch
 
@@ -32,6 +31,7 @@ from hummingbot.core.event.events import (
     OrderFilledEvent,
     SellOrderCreatedEvent,
 )
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class OkxPerpetualDerivativeTests(

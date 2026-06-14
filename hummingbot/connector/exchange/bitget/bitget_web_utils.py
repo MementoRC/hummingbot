@@ -3,13 +3,14 @@ from __future__ import annotations
 from typing import Callable
 from urllib.parse import urljoin
 
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+
 from hummingbot.connector.exchange.bitget import bitget_constants as CONSTANTS
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
 from hummingbot.connector.utils import TimeSynchronizerRESTPreProcessor
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 from hummingbot.core.web_assistant.auth import AuthBase
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 def public_ws_url(domain: str = CONSTANTS.DEFAULT_DOMAIN) -> str:

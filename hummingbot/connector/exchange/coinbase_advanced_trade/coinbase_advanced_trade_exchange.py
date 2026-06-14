@@ -8,6 +8,7 @@ from typing import Any, AsyncGenerator, AsyncIterable, Iterable
 
 from async_timeout import timeout
 from bidict import bidict
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 import hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_trade_constants as constants
 import hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_trade_web_utils as web_utils
@@ -42,7 +43,6 @@ from hummingbot.core.event.events import MarketEvent, OrderFilledEvent
 from hummingbot.core.utils.async_utils import safe_gather
 from hummingbot.core.utils.estimate_fee import build_trade_fee
 from hummingbot.logger import HummingbotLogger
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class CoinbaseAdvancedTradeExchange(ExchangePyBase):

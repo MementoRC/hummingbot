@@ -1,7 +1,6 @@
 import asyncio
 import time
 from collections import deque
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from xrpl.asyncio.clients import AsyncWebsocketClient, XRPLRequestFailureException
@@ -24,6 +23,7 @@ from hummingbot.connector.exchange.xrpl.xrpl_utils import (
     get_token_from_changes,
     parse_offer_create_transaction,
 )
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class TestXRPLUtils(IsolatedAsyncioWrapperTestCase):

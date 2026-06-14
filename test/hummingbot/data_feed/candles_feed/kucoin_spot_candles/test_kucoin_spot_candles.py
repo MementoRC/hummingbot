@@ -1,9 +1,9 @@
 import asyncio
-from test.hummingbot.data_feed.candles_feed.test_candles_base import TestCandlesBase
 
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.core.utils.tracking_nonce import get_tracking_nonce
 from hummingbot.data_feed.candles_feed.kucoin_spot_candles import KucoinSpotCandles
+from test.hummingbot.data_feed.candles_feed.test_candles_base import TestCandlesBase
 
 
 class TestKucoinSpotCandles(TestCandlesBase):

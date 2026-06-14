@@ -9,6 +9,7 @@ from hashlib import md5
 from typing import Any, Callable
 
 from hexbytes import HexBytes
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
@@ -17,7 +18,6 @@ from hummingbot.core.utils.tracking_nonce import NonceCreator, get_tracking_nonc
 from hummingbot.core.web_assistant.connections.data_types import RESTRequest, WSResponse
 from hummingbot.core.web_assistant.rest_pre_processors import RESTPreProcessorBase
 from hummingbot.core.web_assistant.ws_post_processors import WSPostProcessorBase
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 TradeFillOrderDetails = namedtuple("TradeFillOrderDetails", "market exchange_trade_id symbol")
 

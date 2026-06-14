@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+
 import hummingbot.connector.derivative.evedex_perpetual.evedex_perpetual_constants as CONSTANTS
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
 from hummingbot.connector.utils import TimeSynchronizerRESTPreProcessor
@@ -9,7 +11,6 @@ from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 from hummingbot.core.web_assistant.auth import AuthBase
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest
 from hummingbot.core.web_assistant.rest_pre_processors import RESTPreProcessorBase
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class EvedexPerpetualRESTPreProcessor(RESTPreProcessorBase):

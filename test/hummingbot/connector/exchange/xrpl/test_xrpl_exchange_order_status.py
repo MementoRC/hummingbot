@@ -18,7 +18,6 @@ Covers:
 import asyncio
 import time
 from decimal import Decimal
-from test.hummingbot.connector.exchange.xrpl.test_xrpl_exchange_base import XRPLExchangeTestBase
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, patch
 
@@ -26,6 +25,7 @@ from hummingbot.connector.exchange.xrpl import xrpl_constants as CONSTANTS
 from hummingbot.core.data_type.common import OrderType, TradeType
 from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState, OrderUpdate, TradeUpdate
 from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee
+from test.hummingbot.connector.exchange.xrpl.test_xrpl_exchange_base import XRPLExchangeTestBase
 
 
 class TestXRPLExchangeOrderStatus(XRPLExchangeTestBase, IsolatedAsyncioTestCase):

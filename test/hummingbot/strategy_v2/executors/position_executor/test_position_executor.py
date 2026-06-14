@@ -1,5 +1,4 @@
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import MagicMock, PropertyMock, patch
 
 from hummingbot.connector.exchange_py_base import ExchangePyBase
@@ -15,6 +14,7 @@ from hummingbot.strategy_v2.executors.position_executor.data_types import Positi
 from hummingbot.strategy_v2.executors.position_executor.position_executor import PositionExecutor
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class TestPositionExecutor(IsolatedAsyncioWrapperTestCase):

@@ -1,8 +1,8 @@
 import asyncio
-from test.hummingbot.data_feed.candles_feed.test_candles_base import TestCandlesBase
 
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.data_feed.candles_feed.bybit_perpetual_candles import BybitPerpetualCandles
+from test.hummingbot.data_feed.candles_feed.test_candles_base import TestCandlesBase
 
 
 class TestBybitPerpetualCandles(TestCandlesBase):

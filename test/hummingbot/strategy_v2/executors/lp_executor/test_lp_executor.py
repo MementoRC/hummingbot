@@ -1,6 +1,4 @@
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from test.logger_mixin_for_test import LoggerMixinForTest
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 from hummingbot.core.data_type.common import TradeType
@@ -11,6 +9,8 @@ from hummingbot.strategy_v2.executors.lp_executor.data_types import LPExecutorCo
 from hummingbot.strategy_v2.executors.lp_executor.lp_executor import LPExecutor
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
+from test.logger_mixin_for_test import LoggerMixinForTest
 
 
 def create_mock_remove_event(

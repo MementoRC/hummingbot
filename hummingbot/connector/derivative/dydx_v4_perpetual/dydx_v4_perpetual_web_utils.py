@@ -1,10 +1,11 @@
 from typing import Any
 
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+
 import hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_constants as CONSTANTS
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest
 from hummingbot.core.web_assistant.rest_pre_processors import RESTPreProcessorBase
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class DydxV4PerpetualRESTPreProcessor(RESTPreProcessorBase):

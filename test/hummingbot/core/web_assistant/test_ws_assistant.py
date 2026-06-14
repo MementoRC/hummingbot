@@ -1,4 +1,3 @@
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, PropertyMock, patch
 
 import aiohttp
@@ -11,6 +10,7 @@ from hummingbot.core.web_assistant.connections.ws_connection import WSConnection
 from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.core.web_assistant.ws_post_processors import WSPostProcessorBase
 from hummingbot.core.web_assistant.ws_pre_processors import WSPreProcessorBase
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class WSAssistantTest(IsolatedAsyncioWrapperTestCase):

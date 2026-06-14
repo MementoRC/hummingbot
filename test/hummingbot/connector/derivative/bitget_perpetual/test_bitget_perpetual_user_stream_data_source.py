@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from typing import Any
 from unittest.mock import AsyncMock, patch
 
@@ -18,6 +17,7 @@ from hummingbot.connector.derivative.bitget_perpetual.bitget_perpetual_auth impo
 from hummingbot.connector.derivative.bitget_perpetual.bitget_perpetual_derivative import BitgetPerpetualDerivative
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class BitgetPerpetualUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):

@@ -1,7 +1,6 @@
 import asyncio
 import json
 import re
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -21,6 +20,7 @@ from hummingbot.connector.utilities.oms_connector.oms_connector_web_utils import
 )
 from hummingbot.core.data_type.order_book import OrderBook, OrderBookMessage
 from hummingbot.core.data_type.order_book_message import OrderBookMessageType
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class TestURCreator(OMSConnectorURLCreatorBase):

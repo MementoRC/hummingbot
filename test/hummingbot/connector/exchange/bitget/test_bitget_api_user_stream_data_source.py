@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import json
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -18,6 +17,7 @@ from hummingbot.connector.exchange.bitget.bitget_exchange import BitgetExchange
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.core.data_type.common import OrderType, TradeType
 from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class BitgetAPIUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):

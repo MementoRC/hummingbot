@@ -1,6 +1,5 @@
 import json
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 from aioresponses import aioresponses
 
@@ -10,6 +9,7 @@ from hummingbot.connector.exchange.hyperliquid import (
 )
 from hummingbot.connector.utils import combine_to_hb_trading_pair
 from hummingbot.core.rate_oracle.sources.hyperliquid_rate_source import HyperliquidRateSource
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class HyperliquidRateSourceTest(IsolatedAsyncioWrapperTestCase):

@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import re
 from decimal import Decimal
-from test.hummingbot.connector.exchange.injective_v2.programmable_query_executor import ProgrammableQueryExecutor
 from typing import Awaitable, Union
 from unittest import TestCase
 from unittest.mock import patch
@@ -27,6 +26,7 @@ from hummingbot.connector.exchange.injective_v2.injective_v2_utils import (
 )
 from hummingbot.connector.gateway.gateway_in_flight_order import GatewayInFlightOrder
 from hummingbot.core.data_type.common import OrderType, TradeType
+from test.hummingbot.connector.exchange.injective_v2.programmable_query_executor import ProgrammableQueryExecutor
 
 
 class InjectiveGranteeDataSourceTests(TestCase):

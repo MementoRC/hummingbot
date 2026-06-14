@@ -1,6 +1,5 @@
 import asyncio
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock
 
 from bidict import bidict
@@ -14,6 +13,7 @@ from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.data_type.funding_info import FundingInfo, FundingInfoUpdate
 from hummingbot.core.data_type.order_book_message import OrderBookMessageType
 from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class AevoPerpetualAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):

@@ -13,7 +13,6 @@ Covers:
 """
 
 from decimal import Decimal
-from test.hummingbot.connector.exchange.xrpl.test_xrpl_exchange_base import XRPLExchangeTestBase
 from unittest.async_case import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, patch
 
@@ -22,6 +21,7 @@ from xrpl.models.requests.request import RequestMethod
 from hummingbot.connector.exchange.xrpl import xrpl_constants as CONSTANTS
 from hummingbot.connector.exchange.xrpl.xrpl_utils import PoolInfo, XRPLMarket
 from hummingbot.connector.trading_rule import TradingRule
+from test.hummingbot.connector.exchange.xrpl.test_xrpl_exchange_base import XRPLExchangeTestBase
 
 
 class TestXRPLExchangeTradingRules(XRPLExchangeTestBase, IsolatedAsyncioTestCase):

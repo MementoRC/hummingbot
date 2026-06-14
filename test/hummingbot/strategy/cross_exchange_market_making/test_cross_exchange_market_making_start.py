@@ -1,5 +1,4 @@
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 import hummingbot.strategy.cross_exchange_market_making.start as strategy_start
 from hummingbot.client.config.client_config_map import ClientConfigMap
@@ -9,6 +8,7 @@ from hummingbot.strategy.cross_exchange_market_making.cross_exchange_market_maki
     CrossExchangeMarketMakingConfigMap,
     TakerToMakerConversionRateMode,
 )
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class XEMMStartTest(IsolatedAsyncioWrapperTestCase):

@@ -3,8 +3,6 @@ from datetime import date, datetime, time
 from decimal import Decimal
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from test.mock.mock_cli import CLIMockingAssistant
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from pydantic import Field
@@ -16,6 +14,8 @@ from hummingbot.client.config.config_helpers import ClientConfigAdapter, read_sy
 from hummingbot.client.config.config_var import ConfigVar
 from hummingbot.client.config.strategy_config_data_types import BaseTradingStrategyConfigMap
 from hummingbot.client.hummingbot_application import HummingbotApplication
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
+from test.mock.mock_cli import CLIMockingAssistant
 
 
 class ImportCommandTest(IsolatedAsyncioWrapperTestCase):

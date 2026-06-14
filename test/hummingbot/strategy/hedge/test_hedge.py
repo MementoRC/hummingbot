@@ -1,6 +1,5 @@
 import unittest
 from decimal import Decimal
-from test.mock.mock_perp_connector import MockPerpConnector
 
 import pandas as pd
 
@@ -14,6 +13,7 @@ from hummingbot.core.data_type.common import PositionMode, PositionSide
 from hummingbot.strategy.hedge.hedge import HedgeStrategy
 from hummingbot.strategy.hedge.hedge_config_map_pydantic import HedgeConfigMap
 from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple
+from test.mock.mock_perp_connector import MockPerpConnector
 
 
 class HedgeConfigMapPydanticTest(unittest.TestCase):

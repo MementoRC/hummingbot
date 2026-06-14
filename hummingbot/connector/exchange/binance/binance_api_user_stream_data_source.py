@@ -3,13 +3,14 @@ from __future__ import annotations
 import uuid
 from typing import TYPE_CHECKING, Any
 
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+
 from hummingbot.connector.exchange.binance import binance_constants as CONSTANTS
 from hummingbot.connector.exchange.binance.binance_auth import BinanceAuth
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest, WSResponse
 from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.logger import HummingbotLogger
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 if TYPE_CHECKING:
     from hummingbot.connector.exchange.binance.binance_exchange import BinanceExchange

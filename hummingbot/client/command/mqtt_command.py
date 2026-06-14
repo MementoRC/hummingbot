@@ -3,9 +3,10 @@ import threading
 import time
 from typing import TYPE_CHECKING
 
-from hummingbot.core.utils.async_utils import safe_ensure_future
 from remote_iface.hb_compat import create_gateway
 from remote_iface.protocols.config import BrokerConfig, GatewayConfig
+
+from hummingbot.core.utils.async_utils import safe_ensure_future
 
 if TYPE_CHECKING:
     from hummingbot.client.hummingbot_application import HummingbotApplication  # noqa: F401

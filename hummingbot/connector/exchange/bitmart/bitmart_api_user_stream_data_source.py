@@ -4,13 +4,14 @@ import asyncio
 import json
 from typing import TYPE_CHECKING, Any
 
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+
 from hummingbot.connector.exchange.bitmart import bitmart_constants as CONSTANTS, bitmart_utils as utils
 from hummingbot.connector.exchange.bitmart.bitmart_auth import BitmartAuth
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest, WSResponse
 from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.logger import HummingbotLogger
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 if TYPE_CHECKING:
     from hummingbot.connector.exchange.bitmart.bitmart_exchange import BitmartExchange

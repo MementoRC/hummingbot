@@ -7,6 +7,7 @@ from decimal import Decimal
 from typing import Any, List
 
 from bidict import bidict
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 from hummingbot.connector.constants import s_decimal_NaN
 from hummingbot.connector.exchange.kraken import kraken_constants as CONSTANTS, kraken_web_utils as web_utils
@@ -32,7 +33,6 @@ from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.core.utils.estimate_fee import build_trade_fee
 from hummingbot.core.utils.tracking_nonce import NonceCreator
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 class KrakenExchange(ExchangePyBase):

@@ -9,12 +9,12 @@ Tests for:
 
 import unittest
 from decimal import Decimal
-from test.hummingbot.connector.exchange.xrpl.test_xrpl_exchange_base import XRPLExchangeTestBase
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from hummingbot.core.data_type.common import OrderType, TradeType
 from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState
+from test.hummingbot.connector.exchange.xrpl.test_xrpl_exchange_base import XRPLExchangeTestBase
 
 # ---------------------------------------------------------------------------
 # Helpers

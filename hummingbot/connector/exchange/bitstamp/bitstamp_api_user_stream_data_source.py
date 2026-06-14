@@ -3,13 +3,14 @@ from __future__ import annotations
 import asyncio
 from typing import TYPE_CHECKING, Any
 
+from web_assistant.web_assistants_factory import WebAssistantsFactory
+
 from hummingbot.connector.exchange.bitstamp import bitstamp_constants as CONSTANTS, bitstamp_web_utils as web_utils
 from hummingbot.connector.exchange.bitstamp.bitstamp_auth import BitstampAuth
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod, WSJSONRequest
 from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.logger import HummingbotLogger
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 if TYPE_CHECKING:
     from hummingbot.connector.exchange.bitstamp.bitstamp_exchange import BitstampExchange

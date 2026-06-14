@@ -1,11 +1,11 @@
 import json
 import unittest
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 import aiohttp
 from aioresponses import aioresponses
 
 from hummingbot.core.web_assistant.connections.data_types import EndpointRESTRequest, RESTMethod, RESTResponse
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class DataTypesTest(IsolatedAsyncioWrapperTestCase):

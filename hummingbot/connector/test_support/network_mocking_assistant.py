@@ -10,9 +10,9 @@ from typing import Any, Union
 from unittest.mock import AsyncMock, PropertyMock
 
 import aiohttp
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 from hummingbot.logger import HummingbotLogger
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 
 def get_stable_key(ws: AsyncMock) -> uuid.UUID:

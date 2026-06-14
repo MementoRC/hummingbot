@@ -1,6 +1,5 @@
 import asyncio
 import json
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiohttp
@@ -14,6 +13,7 @@ from hummingbot.connector.test_support.network_mocking_assistant import NetworkM
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 from hummingbot.core.web_assistant.connections.ws_connection import WSConnection
 from hummingbot.core.web_assistant.ws_assistant import WSAssistant
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class PacificaPerpetualUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):

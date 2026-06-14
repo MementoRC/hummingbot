@@ -5,6 +5,7 @@ from decimal import ROUND_UP, Decimal
 from typing import Any, Dict, Literal, Union
 
 from bidict import bidict
+from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 import hummingbot.connector.exchange.bitget.bitget_constants as CONSTANTS
 from hummingbot.connector.exchange.bitget import bitget_utils, bitget_web_utils as web_utils
@@ -21,7 +22,6 @@ from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTr
 from hummingbot.core.data_type.trade_fee import TokenAmount, TradeFeeBase, TradeFeeSchema
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.utils.estimate_fee import build_trade_fee
-from web_assistant.web_assistants_factory import WebAssistantsFactory
 
 s_decimal_NaN = Decimal("nan")
 
