@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import time
 from decimal import Decimal
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
@@ -21,7 +22,6 @@ from hummingbot.core.event.events import (
     OrderFilledEvent,
     SellOrderCreatedEvent,
 )
-from hummingbot.logger import HummingbotLogger
 from hummingbot.model.executors import Executors
 from hummingbot.model.market_data import MarketData
 from hummingbot.model.order import Order
@@ -108,7 +108,7 @@ class MarketsRecorderTests(IsolatedAsyncioWrapperTestCase):
         self.assertEqual(self.manager, recorder.sql_manager)
         self.assertEqual(self.config_file_path, recorder.config_file_path)
         self.assertEqual(self.strategy_name, recorder.strategy_name)
-        self.assertIsInstance(recorder.logger(), HummingbotLogger)
+        self.assertIsInstance(recorder.logger(), logging.Logger)
 
     def test_get_trade_for_config(self):
         recorder = MarketsRecorder(
