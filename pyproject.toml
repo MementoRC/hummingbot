@@ -121,7 +121,6 @@ pytest-timeout = ">=2.1.0"
 coverage = ">=7.2.7"
 diff-cover = ">=7.7.0"
 ruff = "==0.15.7"
-isort = ">=5.12.0"
 mypy = "*"
 pre-commit = ">=3.3.3"
 cython-lint = "*"
@@ -146,7 +145,7 @@ test-unit = { cmd = "pytest test/hummingbot", depends-on = ["build"] }
 test-fast = "pytest --timeout=30 --tb=short -q"
 lint = "ruff check hummingbot test controllers scripts"
 lint-cython = "cython-lint hummingbot"
-format = { cmd = "ruff format hummingbot test controllers scripts && isort hummingbot test controllers scripts" }
+format = { cmd = "ruff format hummingbot test controllers scripts" }
 format-check = "ruff format --check hummingbot test controllers scripts"
 type-check = "mypy hummingbot"
 security-scan = "bandit -c pyproject.toml -r hummingbot/"
@@ -163,25 +162,19 @@ compat-check = { depends-on = ["compat-import", "compat-contract", "compat-integ
 migrate-pytest = { cmd = "python $HOME/PycharmProjects/refactor-applications/refactor/rules/pytest_migration.py -d --apply --verbose test/", env = { PYTHONPATH = "$HOME/PycharmProjects/refactor-applications:$PYTHONPATH" } }
 migrate-pytest-dry = { cmd = "python $HOME/PycharmProjects/refactor-applications/refactor/rules/pytest_migration.py -d --verbose test/", env = { PYTHONPATH = "$HOME/PycharmProjects/refactor-applications:$PYTHONPATH" } }
 
-[tool.isort]
-line_length = 120
-multi_line_output = 3
-include_trailing_comma = true
-use_parentheses = true
-ensure_newline_before_comments = true
-combine_as_imports = true
-filter_files = true
-skip = ["setup.py"]
-known_first_party = ["hummingbot", "async_utils", "candles_feed", "connector_utils", "data_type_primitives", "event_bus", "liquidations_feed", "logger", "market_connector", "market_data", "market_simulator", "rate_oracle", "remote_iface", "strategy_framework", "web_assistant"]
-
 [tool.ruff]
 line-length = 120
 target-version = "py312"
 include = ["hummingbot/**/*.py", "test/**/*.py"]
 
 [tool.ruff.lint]
-select = ["E", "F", "W"]
+select = ["E", "F", "W", "I"]
 ignore = ["E251", "E501", "E702"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["hummingbot"]
+combine-as-imports = true
+force-single-line = false
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
