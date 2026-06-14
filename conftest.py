@@ -28,11 +28,18 @@ for _so in _CONVERTED_SO_FILES:
     if _os.path.exists(_so):
         _os.remove(_so)
 
-# Directories/files to skip during collection (missing upstream deps)
+
+def _can_import(modname: str) -> bool:
+    try:
+        __import__(modname)
+        return True
+    except ImportError:
+        return False
+
+
+# Directories/files to skip during collection unconditionally (missing upstream deps)
 _SKIP_PATHS = (
     "connector/derivative/decibel_perpetual",
-    "connector/derivative/dydx_v4_perpetual",
-    "connector/exchange/vertex",
     "connector/gateway/test_gateway_lp.py",
     # Out-of-scope strategies removed in Phase C (source .pyx deleted)
     "strategy/pure_market_making",
@@ -40,8 +47,17 @@ _SKIP_PATHS = (
     "strategy/cross_exchange_mining",
 )
 
+# Directories to skip only when their optional dependency is not installed
+_CONDITIONAL_SKIPS: list[str] = []
+if not _can_import("lighter"):
+    _CONDITIONAL_SKIPS.append("connector/derivative/lighter_perpetual")
+if not _can_import("v4_proto"):
+    _CONDITIONAL_SKIPS.append("connector/derivative/dydx_v4_perpetual")
+if not _can_import("eip712_structs"):
+    _CONDITIONAL_SKIPS.append("connector/exchange/vertex")
+
 
 def pytest_ignore_collect(collection_path, config):
     """Skip test paths with missing upstream dependencies."""
     path_str = str(collection_path)
-    return any(skip in path_str for skip in _SKIP_PATHS)
+    return any(skip in path_str for skip in _SKIP_PATHS) or any(skip in path_str for skip in _CONDITIONAL_SKIPS)
