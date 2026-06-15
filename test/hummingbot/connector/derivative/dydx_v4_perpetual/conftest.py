@@ -1,3 +1,6 @@
+import importlib.util
+
 import pytest
 
-pytest.importorskip("v4_proto")
+if importlib.util.find_spec("v4_proto") is None:
+    pytest.skip("v4_proto not installed", allow_module_level=True)
