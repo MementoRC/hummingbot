@@ -4,6 +4,10 @@ import asyncio
 import re
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
+
+pytest.importorskip("v4_proto")
+
 import dateutil.parser as dp
 import ujson
 from aioresponses import aioresponses

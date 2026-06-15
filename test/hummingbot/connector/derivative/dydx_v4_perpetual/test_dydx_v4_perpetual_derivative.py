@@ -8,6 +8,10 @@ from functools import partial
 from typing import Any, Callable
 from unittest.mock import AsyncMock, patch
 
+import pytest
+
+pytest.importorskip("v4_proto")
+
 from aioresponses import aioresponses
 from aioresponses.core import RequestCall
 

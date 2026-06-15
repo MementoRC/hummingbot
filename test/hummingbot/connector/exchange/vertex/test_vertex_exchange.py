@@ -8,6 +8,10 @@ from decimal import Decimal
 from typing import Any, Dict
 from unittest.mock import AsyncMock, patch
 
+import pytest
+
+pytest.importorskip("eip712_structs")
+
 from aioresponses import aioresponses
 from bidict import bidict
 

@@ -3,6 +3,10 @@ import json
 from typing import Dict
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
+
+pytest.importorskip("eip712_structs")
+
 from aioresponses import aioresponses
 from bidict import bidict
 

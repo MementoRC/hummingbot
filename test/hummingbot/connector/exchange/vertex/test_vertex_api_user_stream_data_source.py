@@ -5,6 +5,10 @@ import json
 from typing import Dict
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
+
+pytest.importorskip("eip712_structs")
+
 from hummingbot.connector.exchange.vertex import vertex_constants as CONSTANTS, vertex_web_utils as web_utils
 from hummingbot.connector.exchange.vertex.vertex_api_user_stream_data_source import VertexAPIUserStreamDataSource
 from hummingbot.connector.exchange.vertex.vertex_auth import VertexAuth
