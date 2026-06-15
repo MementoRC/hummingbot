@@ -2,6 +2,10 @@ import asyncio
 from typing import Awaitable
 from unittest import TestCase
 
+import pytest
+
+pytest.importorskip("eip712_structs")
+
 import hummingbot.connector.exchange.vertex.vertex_constants as CONSTANTS
 from hummingbot.connector.exchange.vertex.vertex_auth import VertexAuth
 from hummingbot.connector.exchange.vertex.vertex_eip712_structs import Order
