@@ -1,3 +1,6 @@
+import importlib.util
+
 import pytest
 
-pytest.importorskip("eip712_structs")
+if importlib.util.find_spec("eip712_structs") is None:
+    pytest.skip("eip712_structs not installed", allow_module_level=True)
