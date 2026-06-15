@@ -10,6 +10,7 @@ serves with authenticated GET requests) is left to the base class.
 """
 
 from __future__ import annotations
+
 import asyncio
 import json
 import re
