@@ -4,7 +4,6 @@ import asyncio
 
 # from datetime import datetime, timezone
 import json
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from bidict import bidict
@@ -18,6 +17,7 @@ from hummingbot.connector.derivative.derive_perpetual.derive_perpetual_auth impo
 from hummingbot.connector.derivative.derive_perpetual.derive_perpetual_derivative import DerivePerpetualDerivative
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class TestDerivePerpetualAPIUserStreamDataSource(IsolatedAsyncioWrapperTestCase):

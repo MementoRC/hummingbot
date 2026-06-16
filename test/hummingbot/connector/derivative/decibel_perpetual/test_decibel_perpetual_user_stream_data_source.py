@@ -1,5 +1,4 @@
 import asyncio
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock
 
 import aiohttp
@@ -14,6 +13,7 @@ from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_user_st
 )
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class DecibelPerpetualUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):

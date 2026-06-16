@@ -2,7 +2,6 @@ import asyncio
 import time
 from decimal import Decimal
 from pathlib import Path
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, Mock, patch
 
 from pydantic import Field
@@ -19,6 +18,7 @@ from hummingbot.exceptions import InvalidScriptModule
 from hummingbot.model.trade_fill import TradeFill
 from hummingbot.strategy.strategy_base import StrategyBase
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base, StrategyV2ConfigBase
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class MockStrategy(StrategyBase):

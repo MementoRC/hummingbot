@@ -3,8 +3,6 @@ import datetime
 import time
 from decimal import Decimal
 from pathlib import Path
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from test.mock.mock_cli import CLIMockingAssistant
 from unittest.mock import patch
 
 from hummingbot.client.config.client_config_map import ClientConfigMap, DBSqliteMode
@@ -15,6 +13,8 @@ from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee
 from hummingbot.model.order import Order
 from hummingbot.model.sql_connection_manager import SQLConnectionManager
 from hummingbot.model.trade_fill import TradeFill
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
+from test.mock.mock_cli import CLIMockingAssistant
 
 
 class HistoryCommandTest(IsolatedAsyncioWrapperTestCase):

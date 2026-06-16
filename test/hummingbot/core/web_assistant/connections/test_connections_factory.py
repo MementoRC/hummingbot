@@ -1,8 +1,8 @@
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-
 from web_assistant.connections.connections_factory import ConnectionsFactory
 from web_assistant.connections.rest_connection import RESTConnection
 from web_assistant.connections.ws_connection import WSConnection
+
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class ConnectionsFactoryTest(IsolatedAsyncioWrapperTestCase):

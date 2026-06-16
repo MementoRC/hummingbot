@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import json
 import re
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -17,6 +16,7 @@ from hummingbot.connector.exchange.bitrue.bitrue_exchange import BitrueExchange
 from hummingbot.connector.exchange.bitrue.bitrue_user_stream_data_source import BitrueUserStreamDataSource
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class BitrueUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):

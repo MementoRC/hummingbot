@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -15,6 +14,7 @@ from hummingbot.connector.exchange.binance.binance_auth import BinanceAuth
 from hummingbot.connector.exchange.binance.binance_exchange import BinanceExchange
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class BinanceUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):

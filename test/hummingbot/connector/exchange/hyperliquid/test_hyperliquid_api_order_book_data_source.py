@@ -2,7 +2,6 @@ import asyncio
 import json
 import re
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from typing import Dict
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -20,6 +19,7 @@ from hummingbot.connector.exchange.hyperliquid.hyperliquid_exchange import Hyper
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class HyperliquidAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):

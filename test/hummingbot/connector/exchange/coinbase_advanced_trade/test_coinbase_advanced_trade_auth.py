@@ -2,7 +2,6 @@ import hashlib
 import hmac
 import logging
 from copy import copy
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiohttp
@@ -19,6 +18,7 @@ from hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_tra
     private_rest_url,
 )
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 # This is the algorithm used by Coinbase Advanced Trade
 private_key = ec.generate_private_key(

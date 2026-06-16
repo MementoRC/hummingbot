@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import json
 import re
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -17,6 +16,7 @@ from hummingbot.connector.exchange.mexc.mexc_auth import MexcAuth
 from hummingbot.connector.exchange.mexc.mexc_exchange import MexcExchange
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class MexcUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):

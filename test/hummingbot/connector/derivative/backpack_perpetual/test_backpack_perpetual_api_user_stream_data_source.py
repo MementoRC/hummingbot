@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from bidict import bidict
@@ -16,6 +15,7 @@ from hummingbot.connector.derivative.backpack_perpetual.backpack_perpetual_auth 
 from hummingbot.connector.derivative.backpack_perpetual.backpack_perpetual_derivative import BackpackPerpetualDerivative
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class BackpackPerpetualAPIUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):

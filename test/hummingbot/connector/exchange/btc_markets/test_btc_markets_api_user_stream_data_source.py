@@ -5,7 +5,6 @@ import base64
 import hashlib
 import hmac
 import json
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from bidict import bidict
@@ -19,6 +18,7 @@ from hummingbot.connector.exchange.btc_markets.btc_markets_api_user_stream_data_
 from hummingbot.connector.exchange.btc_markets.btc_markets_auth import BtcMarketsAuth
 from hummingbot.connector.exchange.btc_markets.btc_markets_exchange import BtcMarketsExchange
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class BtcMarketsAPIUserStreamDataSourceTest(IsolatedAsyncioWrapperTestCase):

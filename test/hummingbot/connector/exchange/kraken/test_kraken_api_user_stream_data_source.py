@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import json
 import re
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from typing import Awaitable, Dict, List
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -18,6 +17,7 @@ from hummingbot.connector.exchange.kraken.kraken_constants import KrakenAPITier
 from hummingbot.connector.exchange.kraken.kraken_exchange import KrakenExchange
 from hummingbot.connector.exchange.kraken.kraken_utils import build_rate_limits_by_tier
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class KrakenAPIUserStreamDataSourceTest(IsolatedAsyncioWrapperTestCase):

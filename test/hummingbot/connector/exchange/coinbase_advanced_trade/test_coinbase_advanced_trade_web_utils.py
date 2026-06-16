@@ -1,5 +1,4 @@
 import unittest
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import ANY, AsyncMock, Mock, patch
 
 from web_assistant.connections.data_types import RESTMethod
@@ -19,6 +18,7 @@ from hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_tra
     set_exchange_time_from_timestamp,
 )
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class CoinbaseAdvancedTradeUtilTestCases(IsolatedAsyncioWrapperTestCase):

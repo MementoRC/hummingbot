@@ -121,7 +121,6 @@ pytest-timeout = ">=2.1.0"
 coverage = ">=7.2.7"
 diff-cover = ">=7.7.0"
 ruff = "==0.15.7"
-isort = ">=5.12.0"
 mypy = "*"
 pre-commit = ">=3.3.3"
 cython-lint = "*"
@@ -148,7 +147,7 @@ test-unit = { cmd = "pytest test/hummingbot", depends-on = ["build"] }
 test-fast = "pytest --timeout=30 --tb=short -q"
 lint = "ruff check hummingbot test controllers scripts"
 lint-cython = "cython-lint hummingbot"
-format = { cmd = "ruff format hummingbot test controllers scripts && isort hummingbot test controllers scripts" }
+format = { cmd = "ruff format hummingbot test controllers scripts" }
 format-check = "ruff format --check hummingbot test controllers scripts"
 type-check = "mypy hummingbot"
 security-scan = "bandit -c pyproject.toml -r hummingbot/"
@@ -159,19 +158,11 @@ check = { depends-on = ["quality", "test"] }
 hooks-install = "pre-commit install"
 submodule-update = "git submodule update --remote sub-packages/candles-feed"
 compat-import = { cmd = "python ci/check_subpackage_compat.py import", depends-on = ["install-dev"] }
+compat-contract = { cmd = "python ci/check_subpackage_compat.py contract", depends-on = ["install-dev"] }
+compat-integration = { cmd = "pytest sub-packages/candles-feed/tests/unit/test_compatibility.py sub-packages/candles-feed/tests/unit/test_hummingbot_integration.py -v --timeout=30", depends-on = ["install-dev"] }
 compat-check = { cmd = "bash ../custom_git_setup/scripts/check_all_subpackages_compat.sh", description = "Run compat checks across all 14 sub-packages" }
 migrate-pytest = { cmd = "python $HOME/PycharmProjects/refactor-applications/refactor/rules/pytest_migration.py -d --apply --verbose test/", env = { PYTHONPATH = "$HOME/PycharmProjects/refactor-applications:$PYTHONPATH" } }
 migrate-pytest-dry = { cmd = "python $HOME/PycharmProjects/refactor-applications/refactor/rules/pytest_migration.py -d --verbose test/", env = { PYTHONPATH = "$HOME/PycharmProjects/refactor-applications:$PYTHONPATH" } }
-
-[tool.isort]
-line_length = 120
-multi_line_output = 3
-include_trailing_comma = true
-use_parentheses = true
-ensure_newline_before_comments = true
-combine_as_imports = true
-filter_files = true
-skip = ["setup.py"]
 
 [tool.ruff]
 line-length = 120
@@ -179,8 +170,13 @@ target-version = "py312"
 include = ["hummingbot/**/*.py", "test/**/*.py"]
 
 [tool.ruff.lint]
-select = ["E", "F", "W"]
+select = ["E", "F", "W", "I"]
 ignore = ["E251", "E501", "E702"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["hummingbot"]
+combine-as-imports = true
+force-single-line = false
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]

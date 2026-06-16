@@ -1,10 +1,10 @@
 import asyncio
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 import pandas as pd
 
 from hummingbot.core.clock import Clock, ClockMode
 from hummingbot.core.network_iterator import NetworkIterator, NetworkStatus
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class MockNetworkIterator(NetworkIterator):

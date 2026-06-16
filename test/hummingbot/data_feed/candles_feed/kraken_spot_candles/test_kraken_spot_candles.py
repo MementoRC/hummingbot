@@ -2,13 +2,13 @@ import asyncio
 import json
 import re
 import time
-from test.hummingbot.data_feed.candles_feed.test_candles_base import TestCandlesBase
 
 from aioresponses import aioresponses
 
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.data_feed.candles_feed.data_types import HistoricalCandlesConfig
 from hummingbot.data_feed.candles_feed.kraken_spot_candles import KrakenSpotCandles, constants as CONSTANTS
+from test.hummingbot.data_feed.candles_feed.test_candles_base import TestCandlesBase
 
 
 class TestKrakenSpotCandles(TestCandlesBase):

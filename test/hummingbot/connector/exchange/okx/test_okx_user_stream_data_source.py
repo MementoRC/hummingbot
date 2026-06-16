@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aiohttp import WSMessage, WSMsgType
@@ -11,6 +10,7 @@ from hummingbot.connector.exchange.okx.okx_api_user_stream_data_source import Ok
 from hummingbot.connector.exchange.okx.okx_auth import OkxAuth
 from hummingbot.connector.exchange.okx.okx_exchange import OkxExchange
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class OkxUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):

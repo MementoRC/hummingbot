@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import asyncio
 import re
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
+
+pytest.importorskip("v4_proto")
 
 import dateutil.parser as dp
 import ujson
@@ -19,6 +22,7 @@ from hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_derivat
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class DydxV4PerpetualAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):

@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import json
 import re
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -14,6 +13,7 @@ from hummingbot.connector.exchange.bing_x import bing_x_constants as CONSTANTS, 
 from hummingbot.connector.exchange.bing_x.bing_x_api_user_stream_data_source import BingXAPIUserStreamDataSource
 from hummingbot.connector.exchange.bing_x.bing_x_auth import BingXAuth
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class TestBingXAPIUserStreamDataSource(IsolatedAsyncioWrapperTestCase):

@@ -1,7 +1,6 @@
 import asyncio
 import json
 import re
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from typing import Dict
 from unittest.mock import AsyncMock, patch
 
@@ -13,6 +12,7 @@ from hummingbot.connector.exchange.gate_io.gate_io_api_order_book_data_source im
 from hummingbot.connector.exchange.gate_io.gate_io_exchange import GateIoExchange
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.core.data_type.order_book import OrderBook, OrderBookMessage
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class TestGateIoAPIOrderBookDataSource(IsolatedAsyncioWrapperTestCase):

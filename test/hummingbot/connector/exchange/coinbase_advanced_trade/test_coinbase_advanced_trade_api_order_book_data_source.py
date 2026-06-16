@@ -1,8 +1,6 @@
 import asyncio
 import json
 import re
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from test.logger_mixin_for_test import LoggerMixinForTest
 
 # from test.track_memory_usage import track_memory_growth
 from typing import Awaitable
@@ -27,6 +25,8 @@ from hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_tra
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_message import OrderBookMessage
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
+from test.logger_mixin_for_test import LoggerMixinForTest
 
 
 class CoinbaseAdvancedTradeAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):

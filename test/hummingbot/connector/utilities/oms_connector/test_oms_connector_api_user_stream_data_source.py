@@ -4,7 +4,6 @@ import asyncio
 import hashlib
 import hmac
 import json
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -20,6 +19,7 @@ from hummingbot.connector.utilities.oms_connector.oms_connector_web_utils import
     OMSConnectorURLCreatorBase,
     build_api_factory,
 )
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class TestURLCreator(OMSConnectorURLCreatorBase):

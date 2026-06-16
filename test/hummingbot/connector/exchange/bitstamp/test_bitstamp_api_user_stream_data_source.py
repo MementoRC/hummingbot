@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import json
 import re
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses import aioresponses
@@ -13,6 +12,7 @@ from hummingbot.connector.exchange.bitstamp import bitstamp_constants as CONSTAN
 from hummingbot.connector.exchange.bitstamp.bitstamp_api_user_stream_data_source import BitstampAPIUserStreamDataSource
 from hummingbot.connector.exchange.bitstamp.bitstamp_exchange import BitstampExchange
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class BitstampUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):

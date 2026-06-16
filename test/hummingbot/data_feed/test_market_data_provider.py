@@ -1,6 +1,5 @@
 import asyncio
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import pandas as pd
@@ -13,6 +12,7 @@ from hummingbot.data_feed.candles_feed.candles_base import CandlesBase
 from hummingbot.data_feed.candles_feed.data_types import CandlesConfig
 from hummingbot.strategy.strategy_v2_base import MarketDataProvider
 from hummingbot.strategy_v2.executors.data_types import ConnectorPair
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class TestMarketDataProvider(IsolatedAsyncioWrapperTestCase):

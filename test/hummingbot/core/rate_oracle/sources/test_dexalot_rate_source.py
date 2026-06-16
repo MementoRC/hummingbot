@@ -1,6 +1,5 @@
 import json
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
@@ -10,6 +9,7 @@ from hummingbot.connector.exchange.dexalot import dexalot_constants as CONSTANTS
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.utils import combine_to_hb_trading_pair
 from hummingbot.core.rate_oracle.sources.dexalot_rate_source import DexalotRateSource
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class DexalotRateSourceTest(IsolatedAsyncioWrapperTestCase):

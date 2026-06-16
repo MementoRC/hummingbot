@@ -2,7 +2,6 @@ import asyncio
 import json
 import re
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiohttp
@@ -16,6 +15,7 @@ from hummingbot.connector.test_support.network_mocking_assistant import NetworkM
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_message import OrderBookMessage
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class CubeAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):

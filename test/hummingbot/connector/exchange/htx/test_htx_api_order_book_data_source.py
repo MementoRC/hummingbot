@@ -2,7 +2,6 @@ import asyncio
 import gzip
 import json
 import re
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from typing import Any
 from unittest.mock import AsyncMock, patch
 
@@ -15,6 +14,7 @@ from hummingbot.connector.exchange.htx.htx_api_order_book_data_source import Htx
 from hummingbot.connector.exchange.htx.htx_web_utils import build_api_factory
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.core.data_type.order_book import OrderBook
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class HtxAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):

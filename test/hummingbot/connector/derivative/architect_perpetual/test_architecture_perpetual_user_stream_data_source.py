@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import json
 import re
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
@@ -22,6 +21,7 @@ from hummingbot.connector.derivative.architect_perpetual.architect_perpetual_use
 )
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class ArchitecturePerpetualUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):

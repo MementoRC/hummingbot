@@ -6,7 +6,6 @@ import json
 from collections import OrderedDict
 from decimal import Decimal
 from functools import partial
-from test.hummingbot.connector.exchange.injective_v2.programmable_query_executor import ProgrammableQueryExecutor
 from typing import Any, Callable, Union
 from unittest.mock import AsyncMock, patch
 
@@ -45,6 +44,7 @@ from hummingbot.core.event.events import (
     OrderFilledEvent,
 )
 from hummingbot.core.network_iterator import NetworkStatus
+from test.hummingbot.connector.exchange.injective_v2.programmable_query_executor import ProgrammableQueryExecutor
 
 
 class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests):

@@ -1,6 +1,4 @@
 from decimal import Decimal
-from test.hummingbot.strategy import assign_config_default
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 import hummingbot.strategy.liquidity_mining.start as strategy_start
 from hummingbot.client.config.client_config_map import ClientConfigMap
@@ -8,6 +6,8 @@ from hummingbot.connector.exchange_base import ExchangeBase
 from hummingbot.strategy.liquidity_mining.liquidity_mining_config_map import (
     liquidity_mining_config_map as strategy_cmap,
 )
+from test.hummingbot.strategy import assign_config_default
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class LiquidityMiningStartTest(IsolatedAsyncioWrapperTestCase):

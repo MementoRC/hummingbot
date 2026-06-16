@@ -21,9 +21,11 @@ from typing import Any, Callable
 
 # Sub-package imports below. Installed via `pixi run install-subpackages` (see pyproject.toml).
 from async_utils.tracking_nonce import NonceCreator, get_tracking_nonce
-from connector_utils import combine_to_hb_trading_pair  # noqa: F401  — re-export for callers
-from connector_utils import split_hb_trading_pair  # noqa: F401  — re-export for callers
-from connector_utils import validate_trading_pair  # noqa: F401  — re-export for callers
+from connector_utils import (
+    combine_to_hb_trading_pair,  # noqa: F401  — re-export for callers
+    split_hb_trading_pair,  # noqa: F401  — re-export for callers
+    validate_trading_pair,  # noqa: F401  — re-export for callers
+)
 from connector_utils.client_order_id import (
     get_new_client_order_id as _gen_client_order_id,
     get_new_numeric_client_order_id as _gen_numeric_client_order_id,

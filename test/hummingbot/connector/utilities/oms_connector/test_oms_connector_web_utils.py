@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import json
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, patch
 
 from web_assistant.connections.data_types import WSJSONRequest, WSResponse
 
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.utilities.oms_connector.oms_connector_web_utils import build_api_factory
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class OMSConnectorWebUtilsTest(IsolatedAsyncioWrapperTestCase):

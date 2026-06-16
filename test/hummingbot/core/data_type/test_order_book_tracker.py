@@ -13,7 +13,6 @@ import asyncio
 import time
 import unittest
 from collections import deque
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock
 
 import numpy as np
@@ -27,6 +26,7 @@ from hummingbot.core.data_type.order_book_tracker import (
     OrderBookTrackerMetrics,
 )
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 def create_order_book_with_snapshot_uid(snapshot_uid: int) -> OrderBook:

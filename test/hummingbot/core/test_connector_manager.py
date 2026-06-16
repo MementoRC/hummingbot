@@ -1,11 +1,11 @@
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
 from hummingbot.connector.exchange_base import ExchangeBase
 from hummingbot.core.connector_manager import ConnectorManager
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class ConnectorManagerTest(IsolatedAsyncioWrapperTestCase):

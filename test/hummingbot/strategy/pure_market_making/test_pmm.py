@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import unittest
 from decimal import Decimal
-from test.mock.mock_asset_price_delegate import MockAssetPriceDelegate
 
 import pandas as pd
 
@@ -23,6 +22,7 @@ from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple
 from hummingbot.strategy.order_book_asset_price_delegate import OrderBookAssetPriceDelegate
 from hummingbot.strategy.pure_market_making.inventory_cost_price_delegate import InventoryCostPriceDelegate
 from hummingbot.strategy.pure_market_making.pure_market_making import PureMarketMakingStrategy
+from test.mock.mock_asset_price_delegate import MockAssetPriceDelegate
 
 
 # Update the orderbook so that the top bids and asks are lower than actual for a wider bid ask spread

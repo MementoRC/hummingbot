@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import patch
 
 import aiohttp
@@ -14,6 +13,7 @@ from web_assistant.rest_post_processors import RESTPostProcessorBase
 from web_assistant.rest_pre_processors import RESTPreProcessorBase
 
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class RESTAssistantTest(IsolatedAsyncioWrapperTestCase):
