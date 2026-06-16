@@ -363,6 +363,10 @@ class MQTTMarketEventForwarder:
         for key, val in event_data.items():
             if isinstance(val, dict):
                 self._make_event_payload(val)
+            elif isinstance(val, (list, tuple)):
+                event_data[key] = type(val)(
+                    self._make_event_payload(item) if isinstance(item, dict) else item for item in val
+                )
             elif isinstance(val, Decimal):
                 event_data[key] = float(val)
             elif isinstance(val, DeductedFromReturnsTradeFee):
@@ -692,7 +696,7 @@ class MQTTGateway(Node):
         if with_health:
             self._start_health_monitoring_loop()
 
-        self.run()
+        self.run(wait=False)
         self.broadcast_status_update("online", msg_type="availability")
 
     def stop(self, with_health: bool = True):
@@ -754,7 +758,7 @@ class MQTTExternalEvents:
         self._node.create_psubscriber(
             topic=self._topic, msg_type=ExternalEventMessage, on_message=self._on_event_arrived
         )
-        self._listeners: Dict[str, List[Callable[[ExternalEventMessage], str], None]] = {"*": []}
+        self._listeners: Dict[str, List[Callable[[ExternalEventMessage, str], None]]] = {"*": []}
 
     def _event_uri_to_name(self, topic: str) -> str:
         return topic.split("event/")[1].replace("/", ".")
