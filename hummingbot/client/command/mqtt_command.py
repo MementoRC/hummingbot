@@ -70,9 +70,8 @@ class MQTTCommand:
                     else:
                         self.logger().error(f"Failed to connect MQTT Bridge: {str(e)}")
                         self.notify("MQTT Bridge failed to connect to the broker.")
-                    if self._mqtt is not None:
-                        self._mqtt.stop()
-                        self._mqtt = None
+                    self._mqtt.stop()
+                    self._mqtt = None
 
                     if self.client_config_map.mqtt_bridge.mqtt_autostart:
                         await asyncio.sleep(self._mqtt_sleep_rate_autostart_retry)
