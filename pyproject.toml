@@ -172,9 +172,10 @@ select = ["E", "F", "W", "I"]
 ignore = ["E251", "E501", "E702"]
 
 [tool.ruff.lint.isort]
-known-first-party = ["hummingbot"]
+known-first-party = ["hummingbot", "test"]
 combine-as-imports = true
 force-single-line = false
+force-sort-within-sections = true
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
