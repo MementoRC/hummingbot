@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 import logging
-from typing import Any, Optional
+from typing import Any
 
 import aiomqtt
 import ujson
@@ -68,7 +70,7 @@ class FakeMQTTBroker:
         self._connected = False
         self._subscriptions = {}
         self._received_msgs = {}
-        self._incoming: Optional[asyncio.Queue] = None
+        self._incoming: asyncio.Queue | None = None
 
     @property
     def incoming(self) -> asyncio.Queue:
