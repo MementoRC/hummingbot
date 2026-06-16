@@ -10,11 +10,9 @@ Architecture:
 - trading_type: Pool type passed to methods (e.g., "clmm", "amm", "router")
 """
 
-from __future__ import annotations
-
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict, Union
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -71,8 +69,8 @@ class AMMPositionInfo(BaseModel):
     base_token_amount: float = Field(alias="baseTokenAmount")
     quote_token_amount: float = Field(alias="quoteTokenAmount")
     price: float
-    base_token: str | None = None
-    quote_token: str | None = None
+    base_token: Optional[str] = None
+    quote_token: Optional[str] = None
 
 
 class CLMMPositionInfo(BaseModel):
@@ -89,8 +87,8 @@ class CLMMPositionInfo(BaseModel):
     lower_price: float = Field(alias="lowerPrice")
     upper_price: float = Field(alias="upperPrice")
     price: float
-    base_token: str | None = None
-    quote_token: str | None = None
+    base_token: Optional[str] = None
+    quote_token: Optional[str] = None
 
 
 class Gateway(GatewayBase):
@@ -111,7 +109,7 @@ class Gateway(GatewayBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Store LP operation metadata for triggering proper events
-        self._lp_orders_metadata: dict[str, Dict] = {}
+        self._lp_orders_metadata: Dict[str, Dict] = {}
 
     def get_price_by_type(self, trading_pair: str, price_type: PriceType) -> Decimal:
         """
@@ -177,13 +175,13 @@ class Gateway(GatewayBase):
 
     @async_ttl_cache(ttl=5, maxsize=10)
     async def get_quote_price(
-        self,
-        trading_pair: str,
-        is_buy: bool,
-        amount: Decimal,
-        slippage_pct: Decimal | None = None,
-        pool_address: str | None = None,
-    ) -> Decimal | None:
+            self,
+            trading_pair: str,
+            is_buy: bool,
+            amount: Decimal,
+            slippage_pct: Optional[Decimal] = None,
+            pool_address: Optional[str] = None
+    ) -> Optional[Decimal]:
         """
         Retrieves the volume weighted average price for a swap.
 
@@ -198,14 +196,12 @@ class Gateway(GatewayBase):
         side: TradeType = TradeType.BUY if is_buy else TradeType.SELL
 
         if not self._swap_provider:
-            raise ValueError(
-                "No swap provider configured for this network. Set swapProvider in Gateway network config."
-            )
+            raise ValueError("No swap provider configured for this network. Set swapProvider in Gateway network config.")
 
         dex, trading_type = self._parse_dex_name(self._swap_provider)
 
         try:
-            resp: dict[str, Any] = await self._get_gateway_instance().quote_swap(
+            resp: Dict[str, Any] = await self._get_gateway_instance().quote_swap(
                 network=self.network,
                 dex=dex,
                 trading_type=trading_type,
@@ -214,7 +210,7 @@ class Gateway(GatewayBase):
                 amount=amount,
                 side=side,
                 slippage_pct=slippage_pct,
-                pool_address=pool_address,
+                pool_address=pool_address
             )
             price = resp.get("price", None)
             return Decimal(price) if price is not None else None
@@ -224,14 +220,14 @@ class Gateway(GatewayBase):
             self.logger().network(
                 f"Error getting quote price for {trading_pair} {side} order for {amount} amount.",
                 exc_info=True,
-                app_warning_msg=str(e),
+                app_warning_msg=str(e)
             )
 
     async def get_order_price(
-        self,
-        trading_pair: str,
-        is_buy: bool,
-        amount: Decimal,
+            self,
+            trading_pair: str,
+            is_buy: bool,
+            amount: Decimal,
     ) -> Decimal:
         """
         Retrieves the price required for an order of a given amount.
@@ -260,7 +256,13 @@ class Gateway(GatewayBase):
         return order_id
 
     async def _create_order(
-        self, trade_type: TradeType, order_id: str, trading_pair: str, amount: Decimal, price: Decimal, **kwargs
+            self,
+            trade_type: TradeType,
+            order_id: str,
+            trading_pair: str,
+            amount: Decimal,
+            price: Decimal,
+            **kwargs
     ):
         """
         Executes a swap order through Gateway.
@@ -283,9 +285,11 @@ class Gateway(GatewayBase):
             self.logger().debug(f"Order {order_id} already tracked, skipping")
         else:
             # Start tracking - order tracker will emit BuyOrderCreatedEvent when state transitions
-            self.start_tracking_order(
-                order_id=order_id, trading_pair=trading_pair, trade_type=trade_type, price=price, amount=amount
-            )
+            self.start_tracking_order(order_id=order_id,
+                                      trading_pair=trading_pair,
+                                      trade_type=trade_type,
+                                      price=price,
+                                      amount=amount)
 
         # Extract optional parameters
         quote_id = kwargs.get("quote_id")
@@ -298,14 +302,14 @@ class Gateway(GatewayBase):
 
         dex, trading_type = self._parse_dex_name(self._swap_provider)
 
-        async def execute_gateway_swap() -> dict[str, Any]:
+        async def execute_gateway_swap() -> Dict[str, Any]:
             if quote_id:
                 return await self._get_gateway_instance().execute_quote(
                     dex=dex,
                     trading_type=trading_type,
                     quote_id=quote_id,
                     network=self.network,
-                    wallet_address=self.address,
+                    wallet_address=self.address
                 )
             else:
                 return await self._get_gateway_instance().execute_swap(
@@ -318,7 +322,7 @@ class Gateway(GatewayBase):
                     network=self.network,
                     wallet_address=self.address,
                     pool_address=pool_address,
-                    slippage_pct=slippage_pct,
+                    slippage_pct=slippage_pct
                 )
 
         try:
@@ -328,7 +332,7 @@ class Gateway(GatewayBase):
                 max_retries=max_retries,
             )
 
-            transaction_hash: str | None = order_result.get("signature")
+            transaction_hash: Optional[str] = order_result.get("signature")
             if transaction_hash is not None and transaction_hash != "":
                 self.update_order_from_hash(order_id, trading_pair, transaction_hash, order_result)
                 self._store_swap_result(order_id, trade_type, trading_pair, amount, order_result, transaction_hash)
@@ -344,8 +348,8 @@ class Gateway(GatewayBase):
         trade_type: TradeType,
         trading_pair: str,
         amount: Decimal,
-        order_result: dict[str, Any],
-        transaction_hash: str,
+        order_result: Dict[str, Any],
+        transaction_hash: str
     ):
         """Store swap result data by creating a TradeUpdate for proper fill tracking."""
         data = order_result.get("data", {})
@@ -376,7 +380,7 @@ class Gateway(GatewayBase):
             fill_price=executed_price,
             fill_base_amount=fill_base_amount,
             fill_quote_amount=fill_base_amount * executed_price,
-            fee=trade_fee,
+            fee=trade_fee
         )
 
         self.logger().info(
@@ -426,9 +430,7 @@ class Gateway(GatewayBase):
                     trade_fee=TradeFeeBase.new_spot_fee(
                         fee_schema=self.trade_fee_schema(),
                         trade_type=tracked_order.trade_type,
-                        flat_fees=[
-                            TokenAmount(amount=metadata.get("tx_fee", Decimal("0")), token=self._native_currency)
-                        ],
+                        flat_fees=[TokenAmount(amount=metadata.get("tx_fee", Decimal("0")), token=self._native_currency)]
                     ),
                     position_address=metadata.get("position_address", ""),
                     base_amount=metadata.get("base_amount", Decimal("0")),
@@ -445,9 +447,7 @@ class Gateway(GatewayBase):
                     trade_fee=TradeFeeBase.new_spot_fee(
                         fee_schema=self.trade_fee_schema(),
                         trade_type=tracked_order.trade_type,
-                        flat_fees=[
-                            TokenAmount(amount=metadata.get("tx_fee", Decimal("0")), token=self._native_currency)
-                        ],
+                        flat_fees=[TokenAmount(amount=metadata.get("tx_fee", Decimal("0")), token=self._native_currency)]
                     ),
                     position_address=metadata.get("position_address", ""),
                     base_amount=metadata.get("base_amount", Decimal("0")),
@@ -467,7 +467,7 @@ class Gateway(GatewayBase):
                     timestamp=self.current_timestamp,
                     order_id=order_id,
                     order_action=LPType.ADD if metadata["operation"] == "add" else LPType.REMOVE,
-                ),
+                )
             )
         elif tracked_order.is_cancelled:
             operation_type = "add" if metadata["operation"] == "add" else "remove"
@@ -478,7 +478,7 @@ class Gateway(GatewayBase):
         del self._lp_orders_metadata[order_id]
         self.stop_tracking_order(order_id)
 
-    async def update_order_status(self, tracked_orders: list[GatewayInFlightOrder]):
+    async def update_order_status(self, tracked_orders: List[GatewayInFlightOrder]):
         """Override to trigger RangePosition events after LP transactions complete."""
         await super().update_order_status(tracked_orders)
 
@@ -488,9 +488,7 @@ class Gateway(GatewayBase):
                     tx_hash = await tracked_order.get_exchange_order_id()
                     self._trigger_lp_events_if_needed(tracked_order.client_order_id, tx_hash)
                 except Exception as e:
-                    self.logger().warning(
-                        f"Error triggering LP event for {tracked_order.client_order_id}: {e}", exc_info=True
-                    )
+                    self.logger().warning(f"Error triggering LP event for {tracked_order.client_order_id}: {e}", exc_info=True)
 
     def _handle_operation_failure(self, order_id: str, trading_pair: str, operation_name: str, error: Exception):
         """Override to trigger RangePositionUpdateFailureEvent for LP operations."""
@@ -512,7 +510,7 @@ class Gateway(GatewayBase):
                     timestamp=self.current_timestamp,
                     order_id=order_id,
                     order_action=LPType.ADD if operation == "add" else LPType.REMOVE,
-                ),
+                )
             )
             del self._lp_orders_metadata[order_id]
         elif order_id in self._lp_orders_metadata:
@@ -601,7 +599,12 @@ class Gateway(GatewayBase):
         return event
 
     @async_ttl_cache(ttl=300, maxsize=10)
-    async def get_pool_address(self, trading_pair: str, dex_name: str, trading_type: str = "clmm") -> str | None:
+    async def get_pool_address(
+        self,
+        trading_pair: str,
+        dex_name: str,
+        trading_type: str = "clmm"
+    ) -> Optional[str]:
         """
         Get pool address for a trading pair (cached for 5 minutes).
 
@@ -612,7 +615,11 @@ class Gateway(GatewayBase):
         """
         try:
             pool_info = await self._get_gateway_instance().get_pool(
-                trading_pair=trading_pair, dex=dex_name, network=self.network, trading_type=trading_type
+                trading_pair=trading_pair,
+                chain=self.chain,
+                network=self.network,
+                trading_type=trading_type,
+                connector=dex_name
             )
 
             pool_address = pool_info.get("address")
@@ -631,7 +638,7 @@ class Gateway(GatewayBase):
         pool_address: str,
         dex_name: str,
         trading_type: str = "clmm",
-    ) -> Union[AMMPoolInfo, CLMMPoolInfo] | None:
+    ) -> Optional[Union[AMMPoolInfo, CLMMPoolInfo]]:
         """
         Retrieves pool information by pool address directly.
 
@@ -641,7 +648,7 @@ class Gateway(GatewayBase):
         :return: Pool info object or None if not found
         """
         try:
-            resp: dict[str, Any] = await self._get_gateway_instance().pool_info(
+            resp: Dict[str, Any] = await self._get_gateway_instance().pool_info(
                 network=self.network,
                 pool_address=pool_address,
                 dex=dex_name,
@@ -663,13 +670,18 @@ class Gateway(GatewayBase):
             raise
         except Exception as e:
             self.logger().network(
-                f"Error fetching pool info for address {pool_address}.", exc_info=True, app_warning_msg=str(e)
+                f"Error fetching pool info for address {pool_address}.",
+                exc_info=True,
+                app_warning_msg=str(e)
             )
             return None
 
     async def get_pool_info(
-        self, trading_pair: str, dex_name: str, trading_type: str = "clmm"
-    ) -> Union[AMMPoolInfo, CLMMPoolInfo] | None:
+        self,
+        trading_pair: str,
+        dex_name: str,
+        trading_type: str = "clmm"
+    ) -> Optional[Union[AMMPoolInfo, CLMMPoolInfo]]:
         """
         Get pool information for a trading pair.
 
@@ -696,7 +708,7 @@ class Gateway(GatewayBase):
         pool_address: str,
         dex_name: str,
         trading_type: str = "clmm",
-    ) -> dict[str, str] | None:
+    ) -> Optional[Dict[str, str]]:
         """
         Resolve trading pair information from pool address.
         """
@@ -740,7 +752,12 @@ class Gateway(GatewayBase):
             return None
 
     def add_liquidity(
-        self, trading_pair: str, price: float, dex_name: str, trading_type: str = "clmm", **request_args
+        self,
+        trading_pair: str,
+        price: float,
+        dex_name: str,
+        trading_type: str = "clmm",
+        **request_args
     ) -> str:
         """
         Adds liquidity to a pool - either concentrated (CLMM) or regular (AMM).
@@ -756,29 +773,9 @@ class Gateway(GatewayBase):
         order_id: str = self.create_market_order_id(trade_type, trading_pair)
 
         if trading_type == "clmm":
-            safe_ensure_future(
-                self._clmm_add_liquidity(
-                    trade_type,
-                    order_id,
-                    trading_pair,
-                    price,
-                    dex_name=dex_name,
-                    trading_type=trading_type,
-                    **request_args,
-                )
-            )
+            safe_ensure_future(self._clmm_add_liquidity(trade_type, order_id, trading_pair, price, dex_name=dex_name, trading_type=trading_type, **request_args))
         elif trading_type == "amm":
-            safe_ensure_future(
-                self._amm_add_liquidity(
-                    trade_type,
-                    order_id,
-                    trading_pair,
-                    price,
-                    dex_name=dex_name,
-                    trading_type=trading_type,
-                    **request_args,
-                )
-            )
+            safe_ensure_future(self._amm_add_liquidity(trade_type, order_id, trading_pair, price, dex_name=dex_name, trading_type=trading_type, **request_args))
         else:
             raise ValueError(f"Trading type {trading_type} does not support liquidity provision")
 
@@ -790,17 +787,17 @@ class Gateway(GatewayBase):
         order_id: str,
         trading_pair: str,
         price: float,
-        lower_price: float | None = None,
-        upper_price: float | None = None,
-        upper_width_pct: float | None = None,
-        lower_width_pct: float | None = None,
-        base_token_amount: float | None = None,
-        quote_token_amount: float | None = None,
-        slippage_pct: float | None = None,
-        pool_address: str | None = None,
-        extra_params: dict[str, Any] | None = None,
+        lower_price: Optional[float] = None,
+        upper_price: Optional[float] = None,
+        upper_width_pct: Optional[float] = None,
+        lower_width_pct: Optional[float] = None,
+        base_token_amount: Optional[float] = None,
+        quote_token_amount: Optional[float] = None,
+        slippage_pct: Optional[float] = None,
+        pool_address: Optional[str] = None,
+        extra_params: Optional[Dict[str, Any]] = None,
         max_retries: int = 10,
-        dex_name: str | None = None,
+        dex_name: Optional[str] = None,
         trading_type: str = "clmm",
     ):
         """Opens a concentrated liquidity position."""
@@ -821,14 +818,12 @@ class Gateway(GatewayBase):
         if existing_order is not None:
             self.logger().debug(f"Order {order_id} already tracked, skipping start_tracking_order")
         else:
-            self.start_tracking_order(
-                order_id=order_id,
-                trading_pair=trading_pair,
-                trade_type=trade_type,
-                price=Decimal(str(price)),
-                amount=Decimal(str(total_amount_in_base)),
-                order_type=OrderType.AMM_ADD,
-            )
+            self.start_tracking_order(order_id=order_id,
+                                      trading_pair=trading_pair,
+                                      trade_type=trade_type,
+                                      price=Decimal(str(price)),
+                                      amount=Decimal(str(total_amount_in_base)),
+                                      order_type=OrderType.AMM_ADD)
 
         if lower_price is not None and upper_price is not None:
             pass
@@ -838,9 +833,7 @@ class Gateway(GatewayBase):
             lower_price = price * (1 - lower_width_decimal)
             upper_price = price * (1 + upper_width_decimal)
         else:
-            raise ValueError(
-                "Must provide either (lower_price and upper_price) or (upper_width_pct and lower_width_pct)"
-            )
+            raise ValueError("Must provide either (lower_price and upper_price) or (upper_width_pct and lower_width_pct)")
 
         if not pool_address:
             pool_address = await self.get_pool_address(trading_pair, dex_name=dex_name, trading_type=trading_type)
@@ -855,7 +848,7 @@ class Gateway(GatewayBase):
             "fee_tier": pool_address,
         }
 
-        async def execute_open_position() -> dict[str, Any]:
+        async def execute_open_position() -> Dict[str, Any]:
             return await self._get_gateway_instance().clmm_open_position(
                 network=self.network,
                 wallet_address=self.address,
@@ -867,7 +860,7 @@ class Gateway(GatewayBase):
                 base_token_amount=base_token_amount,
                 quote_token_amount=quote_token_amount,
                 slippage_pct=slippage_pct,
-                extra_params=extra_params,
+                extra_params=extra_params
             )
 
         try:
@@ -876,19 +869,17 @@ class Gateway(GatewayBase):
                 operation_name=f"CLMM open position on {trading_pair}",
                 max_retries=max_retries,
             )
-            transaction_hash: str | None = transaction_result.get("signature")
+            transaction_hash: Optional[str] = transaction_result.get("signature")
             if transaction_hash is not None and transaction_hash != "":
                 self.update_order_from_hash(order_id, trading_pair, transaction_hash, transaction_result)
                 data = transaction_result.get("data", {})
-                self._lp_orders_metadata[order_id].update(
-                    {
-                        "position_address": data.get("positionAddress", ""),
-                        "base_amount": Decimal(str(data.get("baseTokenAmountAdded", 0))),
-                        "quote_amount": Decimal(str(data.get("quoteTokenAmountAdded", 0))),
-                        "position_rent": Decimal(str(data.get("positionRent", 0))),
-                        "tx_fee": Decimal(str(data.get("fee", 0))),
-                    }
-                )
+                self._lp_orders_metadata[order_id].update({
+                    "position_address": data.get("positionAddress", ""),
+                    "base_amount": Decimal(str(data.get("baseTokenAmountAdded", 0))),
+                    "quote_amount": Decimal(str(data.get("quoteTokenAmountAdded", 0))),
+                    "position_rent": Decimal(str(data.get("positionRent", 0))),
+                    "tx_fee": Decimal(str(data.get("fee", 0))),
+                })
                 return transaction_hash
             else:
                 raise ValueError("No transaction hash returned from gateway")
@@ -908,7 +899,7 @@ class Gateway(GatewayBase):
         quote_token_amount: float,
         dex_name: str,
         trading_type: str = "amm",
-        slippage_pct: float | None = None,
+        slippage_pct: Optional[float] = None,
     ):
         """Opens a regular AMM liquidity position."""
         tokens = trading_pair.split("-")
@@ -918,14 +909,12 @@ class Gateway(GatewayBase):
         quote_amount_in_base = quote_token_amount / price if price > 0 else 0.0
         total_amount_in_base = base_token_amount + quote_amount_in_base
 
-        self.start_tracking_order(
-            order_id=order_id,
-            trading_pair=trading_pair,
-            trade_type=trade_type,
-            price=Decimal(str(price)),
-            amount=Decimal(str(total_amount_in_base)),
-            order_type=OrderType.AMM_ADD,
-        )
+        self.start_tracking_order(order_id=order_id,
+                                  trading_pair=trading_pair,
+                                  trade_type=trade_type,
+                                  price=Decimal(str(price)),
+                                  amount=Decimal(str(total_amount_in_base)),
+                                  order_type=OrderType.AMM_ADD)
 
         pool_address = await self.get_pool_address(trading_pair, dex_name=dex_name, trading_type=trading_type)
         if not pool_address:
@@ -940,9 +929,9 @@ class Gateway(GatewayBase):
                 quote_token_amount=quote_token_amount,
                 dex=dex_name,
                 trading_type=trading_type,
-                slippage_pct=slippage_pct,
+                slippage_pct=slippage_pct
             )
-            transaction_hash: str | None = transaction_result.get("signature")
+            transaction_hash: Optional[str] = transaction_result.get("signature")
             if transaction_hash is not None and transaction_hash != "":
                 self.update_order_from_hash(order_id, trading_pair, transaction_hash, transaction_result)
                 return transaction_hash
@@ -958,9 +947,9 @@ class Gateway(GatewayBase):
         trading_pair: str,
         dex_name: str,
         trading_type: str = "clmm",
-        position_address: str | None = None,
+        position_address: Optional[str] = None,
         percentage: float = 100.0,
-        **request_args,
+        **request_args
     ) -> str:
         """
         Removes liquidity from a position.
@@ -980,42 +969,11 @@ class Gateway(GatewayBase):
 
         if trading_type == "clmm":
             if percentage == 100.0:
-                safe_ensure_future(
-                    self._clmm_close_position(
-                        trade_type,
-                        order_id,
-                        trading_pair,
-                        position_address,
-                        dex_name=dex_name,
-                        trading_type=trading_type,
-                        **request_args,
-                    )
-                )
+                safe_ensure_future(self._clmm_close_position(trade_type, order_id, trading_pair, position_address, dex_name=dex_name, trading_type=trading_type, **request_args))
             else:
-                safe_ensure_future(
-                    self._clmm_remove_liquidity(
-                        trade_type,
-                        order_id,
-                        trading_pair,
-                        position_address,
-                        percentage,
-                        dex_name=dex_name,
-                        trading_type=trading_type,
-                        **request_args,
-                    )
-                )
+                safe_ensure_future(self._clmm_remove_liquidity(trade_type, order_id, trading_pair, position_address, percentage, dex_name=dex_name, trading_type=trading_type, **request_args))
         elif trading_type == "amm":
-            safe_ensure_future(
-                self._amm_remove_liquidity(
-                    trade_type,
-                    order_id,
-                    trading_pair,
-                    percentage,
-                    dex_name=dex_name,
-                    trading_type=trading_type,
-                    **request_args,
-                )
-            )
+            safe_ensure_future(self._amm_remove_liquidity(trade_type, order_id, trading_pair, percentage, dex_name=dex_name, trading_type=trading_type, **request_args))
         else:
             raise ValueError(f"Trading type {trading_type} does not support liquidity provision")
 
@@ -1029,7 +987,7 @@ class Gateway(GatewayBase):
         position_address: str,
         fail_silently: bool = False,
         max_retries: int = 10,
-        dex_name: str | None = None,
+        dex_name: Optional[str] = None,
         trading_type: str = "clmm",
     ):
         """Closes a concentrated liquidity position."""
@@ -1040,9 +998,10 @@ class Gateway(GatewayBase):
         if existing_order is not None:
             self.logger().debug(f"Order {order_id} already tracked, skipping start_tracking_order")
         else:
-            self.start_tracking_order(
-                order_id=order_id, trading_pair=trading_pair, trade_type=trade_type, order_type=OrderType.AMM_REMOVE
-            )
+            self.start_tracking_order(order_id=order_id,
+                                      trading_pair=trading_pair,
+                                      trade_type=trade_type,
+                                      order_type=OrderType.AMM_REMOVE)
 
         self._lp_orders_metadata[order_id] = {
             "operation": "remove",
@@ -1053,14 +1012,14 @@ class Gateway(GatewayBase):
         _trading_type = trading_type
         _network = self.network
 
-        async def execute_close_position() -> dict[str, Any]:
+        async def execute_close_position() -> Dict[str, Any]:
             return await self._get_gateway_instance().clmm_close_position(
                 network=_network,
                 wallet_address=self.address,
                 position_address=position_address,
                 dex=_dex_name,
                 trading_type=_trading_type,
-                fail_silently=fail_silently,
+                fail_silently=fail_silently
             )
 
         try:
@@ -1069,20 +1028,18 @@ class Gateway(GatewayBase):
                 operation_name=f"CLMM close position {position_address}",
                 max_retries=max_retries,
             )
-            transaction_hash: str | None = transaction_result.get("signature")
+            transaction_hash: Optional[str] = transaction_result.get("signature")
             if transaction_hash is not None and transaction_hash != "":
                 self.update_order_from_hash(order_id, trading_pair, transaction_hash, transaction_result)
                 data = transaction_result.get("data", {})
-                self._lp_orders_metadata[order_id].update(
-                    {
-                        "base_amount": Decimal(str(data.get("baseTokenAmountRemoved", 0))),
-                        "quote_amount": Decimal(str(data.get("quoteTokenAmountRemoved", 0))),
-                        "base_fee": Decimal(str(data.get("baseFeeAmountCollected", 0))),
-                        "quote_fee": Decimal(str(data.get("quoteFeeAmountCollected", 0))),
-                        "position_rent_refunded": Decimal(str(data.get("positionRentRefunded", 0))),
-                        "tx_fee": Decimal(str(data.get("fee", 0))),
-                    }
-                )
+                self._lp_orders_metadata[order_id].update({
+                    "base_amount": Decimal(str(data.get("baseTokenAmountRemoved", 0))),
+                    "quote_amount": Decimal(str(data.get("quoteTokenAmountRemoved", 0))),
+                    "base_fee": Decimal(str(data.get("baseFeeAmountCollected", 0))),
+                    "quote_fee": Decimal(str(data.get("quoteFeeAmountCollected", 0))),
+                    "position_rent_refunded": Decimal(str(data.get("positionRentRefunded", 0))),
+                    "tx_fee": Decimal(str(data.get("fee", 0))),
+                })
                 return transaction_hash
             else:
                 raise ValueError("No transaction hash returned from gateway")
@@ -1108,9 +1065,10 @@ class Gateway(GatewayBase):
         if existing_order is not None:
             self.logger().debug(f"Order {order_id} already tracked, skipping start_tracking_order")
         else:
-            self.start_tracking_order(
-                order_id=order_id, trading_pair=trading_pair, trade_type=trade_type, order_type=OrderType.AMM_REMOVE
-            )
+            self.start_tracking_order(order_id=order_id,
+                                      trading_pair=trading_pair,
+                                      trade_type=trade_type,
+                                      order_type=OrderType.AMM_REMOVE)
 
         self._lp_orders_metadata[order_id] = {
             "operation": "remove",
@@ -1125,22 +1083,20 @@ class Gateway(GatewayBase):
                 percentage=percentage,
                 dex=dex_name,
                 trading_type=trading_type,
-                fail_silently=fail_silently,
+                fail_silently=fail_silently
             )
-            transaction_hash: str | None = transaction_result.get("signature")
+            transaction_hash: Optional[str] = transaction_result.get("signature")
             if transaction_hash is not None and transaction_hash != "":
                 self.update_order_from_hash(order_id, trading_pair, transaction_hash, transaction_result)
                 data = transaction_result.get("data", {})
-                self._lp_orders_metadata[order_id].update(
-                    {
-                        "base_amount": Decimal(str(data.get("baseTokenAmountRemoved", 0))),
-                        "quote_amount": Decimal(str(data.get("quoteTokenAmountRemoved", 0))),
-                        "base_fee": Decimal(str(data.get("baseFeeAmountCollected", 0))),
-                        "quote_fee": Decimal(str(data.get("quoteFeeAmountCollected", 0))),
-                        "position_rent_refunded": Decimal(str(data.get("positionRentRefunded", 0))),
-                        "tx_fee": Decimal(str(data.get("fee", 0))),
-                    }
-                )
+                self._lp_orders_metadata[order_id].update({
+                    "base_amount": Decimal(str(data.get("baseTokenAmountRemoved", 0))),
+                    "quote_amount": Decimal(str(data.get("quoteTokenAmountRemoved", 0))),
+                    "base_fee": Decimal(str(data.get("baseFeeAmountCollected", 0))),
+                    "quote_fee": Decimal(str(data.get("quoteFeeAmountCollected", 0))),
+                    "position_rent_refunded": Decimal(str(data.get("positionRentRefunded", 0))),
+                    "tx_fee": Decimal(str(data.get("fee", 0))),
+                })
                 return transaction_hash
             else:
                 raise ValueError("No transaction hash returned from gateway")
@@ -1164,9 +1120,10 @@ class Gateway(GatewayBase):
         if not pool_address:
             raise ValueError(f"Could not find pool for {trading_pair}")
 
-        self.start_tracking_order(
-            order_id=order_id, trading_pair=trading_pair, trade_type=trade_type, order_type=OrderType.AMM_REMOVE
-        )
+        self.start_tracking_order(order_id=order_id,
+                                  trading_pair=trading_pair,
+                                  trade_type=trade_type,
+                                  order_type=OrderType.AMM_REMOVE)
 
         try:
             transaction_result = await self._get_gateway_instance().amm_remove_liquidity(
@@ -1176,9 +1133,9 @@ class Gateway(GatewayBase):
                 percentage=percentage,
                 dex=dex_name,
                 trading_type=trading_type,
-                fail_silently=fail_silently,
+                fail_silently=fail_silently
             )
-            transaction_hash: str | None = transaction_result.get("signature")
+            transaction_hash: Optional[str] = transaction_result.get("signature")
             if transaction_hash is not None and transaction_hash != "":
                 self.update_order_from_hash(order_id, trading_pair, transaction_hash, transaction_result)
                 return transaction_hash
@@ -1191,7 +1148,11 @@ class Gateway(GatewayBase):
 
     @async_ttl_cache(ttl=5, maxsize=10)
     async def get_position_info(
-        self, trading_pair: str, dex_name: str, trading_type: str = "clmm", position_address: str | None = None
+        self,
+        trading_pair: str,
+        dex_name: str,
+        trading_type: str = "clmm",
+        position_address: Optional[str] = None
     ) -> Union[AMMPositionInfo, CLMMPositionInfo, None]:
         """Retrieves position information for a given liquidity position."""
         try:
@@ -1203,7 +1164,7 @@ class Gateway(GatewayBase):
                 if position_address is None:
                     raise ValueError("position_address is required for CLMM positions")
 
-                resp: dict[str, Any] = await self._get_gateway_instance().clmm_position_info(
+                resp: Dict[str, Any] = await self._get_gateway_instance().clmm_position_info(
                     network=self.network,
                     position_address=position_address,
                     wallet_address=self.address,
@@ -1213,7 +1174,7 @@ class Gateway(GatewayBase):
                 return CLMMPositionInfo(**resp) if resp else None
 
             elif trading_type == "amm":
-                resp: dict[str, Any] = await self._get_gateway_instance().amm_position_info(
+                resp: Dict[str, Any] = await self._get_gateway_instance().amm_position_info(
                     network=self.network,
                     pool_address=position_address,
                     wallet_address=self.address,
@@ -1232,13 +1193,16 @@ class Gateway(GatewayBase):
             self.logger().network(
                 f"Error fetching position info for {addr_info} on {dex_name}/{trading_type}.",
                 exc_info=True,
-                app_warning_msg=str(e),
+                app_warning_msg=str(e)
             )
             return None
 
     async def get_user_positions(
-        self, dex_name: str, trading_type: str = "clmm", pool_address: str | None = None
-    ) -> list[Union[AMMPositionInfo, CLMMPositionInfo]]:
+        self,
+        dex_name: str,
+        trading_type: str = "clmm",
+        pool_address: Optional[str] = None
+    ) -> List[Union[AMMPositionInfo, CLMMPositionInfo]]:
         """Fetch all user positions for this connector and wallet."""
         positions = []
 
@@ -1278,16 +1242,8 @@ class Gateway(GatewayBase):
                     base_token_info = self.get_token_by_address(position.base_token_address)
                     quote_token_info = self.get_token_by_address(position.quote_token_address)
 
-                    position.base_token = (
-                        base_token_info.get("symbol", position.base_token_address)
-                        if base_token_info
-                        else position.base_token_address
-                    )
-                    position.quote_token = (
-                        quote_token_info.get("symbol", position.quote_token_address)
-                        if quote_token_info
-                        else position.quote_token_address
-                    )
+                    position.base_token = base_token_info.get("symbol", position.base_token_address) if base_token_info else position.base_token_address
+                    position.quote_token = quote_token_info.get("symbol", position.quote_token_address) if quote_token_info else position.quote_token_address
                     return [position]
                 else:
                     return []
@@ -1301,16 +1257,8 @@ class Gateway(GatewayBase):
                         base_token_info = self.get_token_by_address(position.base_token_address)
                         quote_token_info = self.get_token_by_address(position.quote_token_address)
 
-                        position.base_token = (
-                            base_token_info.get("symbol", position.base_token_address)
-                            if base_token_info
-                            else position.base_token_address
-                        )
-                        position.quote_token = (
-                            quote_token_info.get("symbol", position.quote_token_address)
-                            if quote_token_info
-                            else position.quote_token_address
-                        )
+                        position.base_token = base_token_info.get("symbol", position.base_token_address) if base_token_info else position.base_token_address
+                        position.quote_token = quote_token_info.get("symbol", position.quote_token_address) if quote_token_info else position.quote_token_address
 
                         positions.append(position)
                     else:
@@ -1319,16 +1267,8 @@ class Gateway(GatewayBase):
                         base_token_info = self.get_token_by_address(position.base_token_address)
                         quote_token_info = self.get_token_by_address(position.quote_token_address)
 
-                        position.base_token = (
-                            base_token_info.get("symbol", position.base_token_address)
-                            if base_token_info
-                            else position.base_token_address
-                        )
-                        position.quote_token = (
-                            quote_token_info.get("symbol", position.quote_token_address)
-                            if quote_token_info
-                            else position.quote_token_address
-                        )
+                        position.base_token = base_token_info.get("symbol", position.base_token_address) if base_token_info else position.base_token_address
+                        position.quote_token = quote_token_info.get("symbol", position.quote_token_address) if quote_token_info else position.quote_token_address
 
                         positions.append(position)
 
@@ -1337,7 +1277,7 @@ class Gateway(GatewayBase):
                     continue
 
             if pool_address and trading_type == "clmm":
-                positions = [p for p in positions if hasattr(p, "pool_address") and p.pool_address == pool_address]
+                positions = [p for p in positions if hasattr(p, 'pool_address') and p.pool_address == pool_address]
 
         except Exception as e:
             self.logger().error(f"Error fetching positions: {e}", exc_info=True)
