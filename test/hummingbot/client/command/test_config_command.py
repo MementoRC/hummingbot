@@ -36,7 +36,6 @@ class ConfigCommandTest(IsolatedAsyncioWrapperTestCase):
         strategy_name = "some-strategy"
         self.app.trading_core.strategy_name = strategy_name
         self.app.client_config_map.commands_timeout.other_commands_timeout = Decimal("30.0")
-        self.app.client_config_map.rate_oracle_source = "binance"
 
         strategy_config_map_mock = {
             "five": ConfigVar(key="five", prompt=""),
@@ -77,7 +76,7 @@ class ConfigCommandTest(IsolatedAsyncioWrapperTestCase):
             "    | ∟ gateway_api_host                | localhost            |\n"
             "    | ∟ gateway_api_port                | 15888                |\n"
             "    | ∟ gateway_use_ssl                 | False                |\n"
-            "    | rate_oracle_source                | binance              |\n"
+            "    | rate_oracle_source                | gate_io              |\n"
             "    | global_token                      |                      |\n"
             "    | ∟ global_token_name               | USDT                 |\n"
             "    | ∟ global_token_symbol             | $                    |\n"

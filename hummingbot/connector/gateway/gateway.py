@@ -612,7 +612,11 @@ class Gateway(GatewayBase):
         """
         try:
             pool_info = await self._get_gateway_instance().get_pool(
-                trading_pair=trading_pair, dex=dex_name, network=self.network, trading_type=trading_type
+                trading_pair=trading_pair,
+                chain=self.chain,
+                network=self.network,
+                trading_type=trading_type,
+                connector=dex_name,
             )
 
             pool_address = pool_info.get("address")
