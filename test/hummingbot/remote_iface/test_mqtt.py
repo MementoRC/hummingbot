@@ -1058,3 +1058,53 @@ class RemoteIfaceMQTTTests(TestCase):
         # stop() must not raise
         listener.stop()
         self.assertTrue(True)
+
+    @patch("hummingbot.client.command.balance_command.BalanceCommand.balance")
+    def test_on_cmd_balance_limit_success(self, balance_mock: MagicMock):
+        """_on_cmd_balance_limit happy path: covers lines 257-258 (data assignment)."""
+        balance_mock.return_value = "500.0"
+        self.start_mqtt()
+
+        msg = {"exchange": "binance", "asset": "BTC", "amount": "1.0"}
+        self.fake_mqtt_broker.publish_to_subscription(self.get_topic_for(self.BALANCE_LIMIT_URI), msg)
+
+        topic = f"test_reply/hbot/{self.instance_id}/balance/limit"
+        expected = {"status": 200, "msg": "", "data": "500.0"}
+        self.async_run_with_timeout(self.wait_for_rcv(topic, expected, msg_key="data"), timeout=10)
+        self.assertTrue(self.is_msg_received(topic, expected, msg_key="data"))
+
+    def test_make_event_payload_with_nested_dict_decimal(self):
+        """_make_event_payload: nested dict containing Decimal is recursed into."""
+        self.start_mqtt()
+        payload = {
+            "outer": {
+                "inner_decimal": Decimal("9.99"),
+            }
+        }
+        result = self.gateway._market_events._make_event_payload(payload)
+        self.assertEqual(result["outer"]["inner_decimal"], 9.99)
+
+    def test_send_mqtt_event_non_iterable_event_data(self):
+        """_send_mqtt_event dict(event) TypeError branch: integer event falls to empty dict."""
+        self.start_mqtt()
+        # An integer cannot be coerced with dict() — hits TypeError branch → event_data = {}
+        self.gateway._market_events._send_mqtt_event(event_tag=999, pubsub=None, event=42)
+        events_topic = f"hbot/{self.instance_id}/events"
+        self.async_run_with_timeout(self.wait_for_rcv(events_topic, {}, msg_key="data"), timeout=10)
+        self.assertTrue(self.is_msg_received(events_topic, {}, msg_key="data"))
+
+    def test_remove_status_updates_noop_when_none(self):
+        """_remove_status_updates with _status_updates already None is a no-op."""
+        self.gateway._status_updates = None
+        # Must not raise
+        self.gateway._remove_status_updates()
+        self.assertIsNone(self.gateway._status_updates)
+
+    def test_start_market_events_fw_mqtt_events_enabled_running(self):
+        """start_market_events_fw with mqtt_events=True on a RUNNING node runs event_fw_pub."""
+        self.gateway.start(with_health=False)
+        # Node is now RUNNING; start_market_events_fw should create forwarder + run publisher
+        self.gateway._market_events = None
+        self.client_config_map.mqtt_bridge.mqtt_events = 1
+        self.gateway.start_market_events_fw()
+        self.assertIsNotNone(self.gateway._market_events)
