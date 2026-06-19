@@ -3,9 +3,9 @@ from typing import List
 
 import pandas_ta as ta  # noqa: F401
 from pydantic import Field
+from remote_iface import ExternalTopicFactory
 
 from hummingbot.core.data_type.common import TradeType
-from hummingbot.remote_iface.mqtt import ExternalTopicFactory
 from hummingbot.strategy_v2.controllers.directional_trading_controller_base import (
     DirectionalTradingControllerBase,
     DirectionalTradingControllerConfigBase,
@@ -30,9 +30,16 @@ class AILivestreamController(DirectionalTradingControllerBase):
     def _init_ml_signal_listener(self):
         """Initialize a listener for ML signals from the MQTT broker"""
         try:
+            from hummingbot.client.hummingbot_application import HummingbotApplication
+
+            app = HummingbotApplication.main_application()
+            if app is None or app._mqtt is None:
+                self._ml_signal_listener = None
+                return
             normalized_pair = self.config.trading_pair.replace("-", "_").lower()
             topic = f"{self.config.topic}/{normalized_pair}/ML_SIGNALS"
             self._ml_signal_listener = ExternalTopicFactory.create_async(
+                app._mqtt,
                 topic=topic,
                 callback=self._handle_ml_signal,
                 use_bot_prefix=False,
@@ -70,7 +77,8 @@ class AILivestreamController(DirectionalTradingControllerBase):
             entry_price=price,
             amount=amount,
             triple_barrier_config=self.config.triple_barrier_config.new_instance_with_adjusted_volatility(
-                volatility_factor=self.processed_data["features"].get("target_pct", 0.01)),
+                volatility_factor=self.processed_data["features"].get("target_pct", 0.01)
+            ),
             leverage=self.config.leverage,
         )
 
