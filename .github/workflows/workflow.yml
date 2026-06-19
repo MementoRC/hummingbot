@@ -153,15 +153,39 @@ jobs:
         run: pixi run -e ci dependency-scan
         continue-on-error: true
 
+  sub-packages-compat:
+    name: Sub-packages compatibility
+    needs: detect-changes
+    if: github.event.pull_request.draft == false && needs.detect-changes.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          submodules: true
+
+      - name: Set up pixi
+        uses: prefix-dev/setup-pixi@v0.9.6
+        with:
+          environments: ci
+          cache: true
+          locked: false
+
+      - name: Import smoke test
+        run: pixi run -e ci compat-import
+
+      - name: Run subpackage compat check
+        run: pixi run -e ci compat-check
+
   ci-success:
     name: CI Success
     if: always()
-    needs: [quality, test, security]
+    needs: [quality, test, security, sub-packages-compat]
     runs-on: ubuntu-latest
     steps:
       - name: Check required jobs
         run: |
-          if [ "${{ needs.quality.result }}" == "failure" ] || [ "${{ needs.test.result }}" == "failure" ]; then
+          if [ "${{ needs.quality.result }}" == "failure" ] || [ "${{ needs.test.result }}" == "failure" ] || [ "${{ needs.sub-packages-compat.result }}" == "failure" ]; then
             echo "Required jobs failed"
             exit 1
           fi

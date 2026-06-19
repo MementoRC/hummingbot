@@ -1,0 +1,56 @@
+[submodule "sub-packages/candles-feed"]
+	path = sub-packages/candles-feed
+	url = https://github.com/MementoRC/hb-candles-feed.git
+	branch = development
+[submodule "sub-packages/liquidations-feed"]
+	path = sub-packages/liquidations-feed
+	url = https://github.com/MementoRC/hb-liquidations-feed.git
+	branch = development
+[submodule "sub-packages/market-simulator"]
+	path = sub-packages/market-simulator
+	url = https://github.com/MementoRC/hb-market-simulator.git
+	branch = development
+[submodule "sub-packages/strategy-framework"]
+	path = sub-packages/strategy-framework
+	url = https://github.com/MementoRC/hb-strategy-framework.git
+	branch = development
+[submodule "sub-packages/rate-oracle"]
+	path = sub-packages/rate-oracle
+	url = https://github.com/MementoRC/hb-rate-oracle.git
+	branch = development
+[submodule "sub-packages/market-connector"]
+	path = sub-packages/market-connector
+	url = https://github.com/MementoRC/hb-market-connector.git
+	branch = development
+[submodule "sub-packages/market-data"]
+	path = sub-packages/market-data
+	url = https://github.com/MementoRC/hb-market-data.git
+	branch = development
+[submodule "sub-packages/remote-iface"]
+	path = sub-packages/remote-iface
+	url = https://github.com/MementoRC/hb-remote-iface.git
+	branch = development
+[submodule "sub-packages/web-assistant"]
+	path = sub-packages/web-assistant
+	url = https://github.com/MementoRC/hb-web-assistant.git
+	branch = development
+[submodule "sub-packages/event-bus"]
+	path = sub-packages/event-bus
+	url = https://github.com/MementoRC/hb-event-bus.git
+	branch = development
+[submodule "sub-packages/async-utils"]
+	path = sub-packages/async-utils
+	url = https://github.com/MementoRC/hb-async-utils.git
+	branch = development
+[submodule "sub-packages/data-type-primitives"]
+	path = sub-packages/data-type-primitives
+	url = https://github.com/MementoRC/hb-data-type-primitives.git
+	branch = development
+[submodule "sub-packages/connector-utils"]
+	path = sub-packages/connector-utils
+	url = https://github.com/MementoRC/hb-connector-utils.git
+	branch = development
+[submodule "sub-packages/logger"]
+	path = sub-packages/logger
+	url = https://github.com/MementoRC/hb-logger.git
+	branch = development
