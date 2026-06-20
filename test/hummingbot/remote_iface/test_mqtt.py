@@ -97,10 +97,28 @@ class RemoteIfaceMQTTTests(TestCase):
         self.patch_loggers_mock.return_value = None
 
     def tearDown(self):
-        self.async_loop.run_until_complete(asyncio.sleep(0.1))
+        # Collect RPC services before stop so we can drain their threads/executors.
+        rpc_services = list(getattr(self.gateway, "_rpc_services", []))
+
+        # Stop the health-monitoring coroutine first so it doesn't race with shutdown.
+        self.gateway._stop_health_monitoring_loop()
+        # Give the async health loop one iteration to see the stop event.
+        self.async_loop.run_until_complete(asyncio.sleep(0.0))
+
         self.gateway.stop()
+
+        # Join every RPCService worker thread and shut down its thread-pool so
+        # ThreadPoolExecutor workers (5 per service, 8 services = up to 40 threads)
+        # don't accumulate across tests and eventually hang the runner.
+        for svc in rpc_services:
+            main_thread = getattr(svc, "_main_thread", None)
+            if main_thread is not None and main_thread.is_alive():
+                main_thread.join(timeout=5.0)
+            executor = getattr(svc, "_executor", None)
+            if executor is not None:
+                executor.shutdown(wait=False, cancel_futures=True)
+
         del self.gateway
-        self.async_loop.run_until_complete(asyncio.sleep(0.1))
         self.fake_mqtt_broker.clear()
         self.restart_interval_patcher.stop()
         self.mqtt_transport_patcher.stop()
