@@ -1,7 +1,7 @@
+from decimal import Decimal
 import hashlib
 import random
 import time
-from decimal import Decimal
 from typing import Literal, Optional
 
 import base58
@@ -13,8 +13,17 @@ from hummingbot.core.data_type.common import TradeType
 
 class ExecutorConfigBase(BaseModel):
     id: str = None  # Make ID optional
-    type: Literal["position_executor", "dca_executor", "grid_executor", "order_executor",
-                  "xemm_executor", "arbitrage_executor", "twap_executor", "lp_executor"]
+    type: Literal[
+        "position_executor",
+        "dca_executor",
+        "grid_executor",
+        "order_executor",
+        "xemm_executor",
+        "arbitrage_executor",
+        "twap_executor",
+        "lp_executor",
+        "position_on_exchange_executor",
+    ]
     timestamp: Optional[float] = None
     controller_id: str = "main"
 
@@ -42,9 +51,7 @@ class ConnectorPair(BaseModel):
     trading_pair: str
 
     def is_amm_connector(self) -> bool:
-        return self.connector_name in sorted(
-            AllConnectorSettings.get_gateway_amm_connector_names()
-        )
+        return self.connector_name in sorted(AllConnectorSettings.get_gateway_amm_connector_names())
 
     class Config:
         frozen = True  # This makes the model immutable and thus hashable
