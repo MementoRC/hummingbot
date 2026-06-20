@@ -1,15 +1,15 @@
 import asyncio
 import json
 import re
-from test.hummingbot.data_feed.candles_feed.test_candles_base import TestCandlesBase
 from unittest.mock import AsyncMock, patch
 
-import numpy as np
 from aioresponses import aioresponses
+import numpy as np
 
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.data_feed.candles_feed.lighter_perpetual_candles import LighterPerpetualCandles, constants as CONSTANTS
+from test.hummingbot.data_feed.candles_feed.test_candles_base import TestCandlesBase
 
 PATCH_FETCH = "hummingbot.data_feed.candles_feed.lighter_perpetual_candles.lighter_perpetual_candles.LighterPerpetualCandles.fetch_candles"
 PATCH_SLEEP = "hummingbot.data_feed.candles_feed.lighter_perpetual_candles.lighter_perpetual_candles.LighterPerpetualCandles._sleep"
@@ -109,13 +109,9 @@ class TestLighterPerpetualCandles(TestCandlesBase):
     @aioresponses()
     async def test_fetch_candles(self, mock_api):
         # Override base test: _market_id is pre-set in setUp so params are built correctly
-        regex_url = re.compile(
-            f"^{self.data_feed.candles_url}".replace(".", r"\.").replace("?", r"\?")
-        )
+        regex_url = re.compile(f"^{self.data_feed.candles_url}".replace(".", r"\.").replace("?", r"\?"))
         mock_api.get(url=regex_url, body=json.dumps(self.get_candles_rest_data_mock()))
-        resp = await self.data_feed.fetch_candles(
-            start_time=int(self.start_time), end_time=int(self.end_time)
-        )
+        resp = await self.data_feed.fetch_candles(start_time=int(self.start_time), end_time=int(self.end_time))
         self.assertEqual(resp.shape[0], len(self.get_fetch_candles_data_mock()))
         self.assertEqual(resp.shape[1], 10)
 
@@ -143,9 +139,7 @@ class TestLighterPerpetualCandles(TestCandlesBase):
         self.assertEqual(self.data_feed._parse_rest_candles({"c": []}), [])
 
     def test_get_rest_candles_params(self):
-        params = self.data_feed._get_rest_candles_params(
-            start_time=1748954160, end_time=1748954400
-        )
+        params = self.data_feed._get_rest_candles_params(start_time=1748954160, end_time=1748954400)
         self.assertEqual(params["market_id"], 3)
         self.assertEqual(params["resolution"], "1m")
         self.assertEqual(params["start_timestamp"], 1748954160000)
@@ -154,9 +148,7 @@ class TestLighterPerpetualCandles(TestCandlesBase):
 
     def test_get_rest_candles_params_count_back(self):
         # 4-hour range at 1m interval → 240 bars
-        params = self.data_feed._get_rest_candles_params(
-            start_time=1748940000, end_time=1748954400
-        )
+        params = self.data_feed._get_rest_candles_params(start_time=1748940000, end_time=1748954400)
         self.assertEqual(params["count_back"], 240)
 
     # ---- initialize_exchange_data tests ----
@@ -164,35 +156,31 @@ class TestLighterPerpetualCandles(TestCandlesBase):
     @aioresponses()
     async def test_initialize_exchange_data_sets_market_id(self, mock_api):
         self.data_feed._market_id = None
-        order_book_details_url = (
-            f"{CONSTANTS.MAINNET_BASE_URL}{CONSTANTS.ORDER_BOOK_DETAILS_PATH_URL}"
-        )
+        order_book_details_url = f"{CONSTANTS.MAINNET_BASE_URL}{CONSTANTS.ORDER_BOOK_DETAILS_PATH_URL}"
         mock_api.get(
             url=order_book_details_url,
-            body=json.dumps({
-                "order_book_details": [
-                    {"market_id": 3, "symbol": "XRP"},
-                    {"market_id": 1, "symbol": "BTC"},
-                ]
-            }),
+            body=json.dumps(
+                {
+                    "order_book_details": [
+                        {"market_id": 3, "symbol": "XRP"},
+                        {"market_id": 1, "symbol": "BTC"},
+                    ]
+                }
+            ),
         )
         await self.data_feed.initialize_exchange_data()
         self.assertEqual(self.data_feed._market_id, 3)
 
     async def test_initialize_exchange_data_skips_if_already_set(self):
         # _market_id already set in setUp — no API call should be made
-        with patch.object(
-            self.data_feed._api_factory, "get_rest_assistant", new_callable=AsyncMock
-        ) as mock_rest:
+        with patch.object(self.data_feed._api_factory, "get_rest_assistant", new_callable=AsyncMock) as mock_rest:
             await self.data_feed.initialize_exchange_data()
             mock_rest.assert_not_called()
 
     @aioresponses()
     async def test_initialize_exchange_data_raises_if_market_not_found(self, mock_api):
         self.data_feed._market_id = None
-        order_book_details_url = (
-            f"{CONSTANTS.MAINNET_BASE_URL}{CONSTANTS.ORDER_BOOK_DETAILS_PATH_URL}"
-        )
+        order_book_details_url = f"{CONSTANTS.MAINNET_BASE_URL}{CONSTANTS.ORDER_BOOK_DETAILS_PATH_URL}"
         mock_api.get(
             url=order_book_details_url,
             body=json.dumps({"order_book_details": [{"market_id": 1, "symbol": "BTC"}]}),
@@ -224,23 +212,21 @@ class TestLighterPerpetualCandles(TestCandlesBase):
     @patch(PATCH_FETCH, new_callable=AsyncMock)
     async def test_listen_for_subscriptions_logs_exception_details(self, mock_fetch, mock_sleep):
         mock_fetch.side_effect = Exception("TEST ERROR.")
-        mock_sleep.side_effect = lambda _: self._create_exception_and_unlock_test_with_event(
-            asyncio.CancelledError()
-        )
+        mock_sleep.side_effect = lambda _: self._create_exception_and_unlock_test_with_event(asyncio.CancelledError())
         self.listening_task = asyncio.create_task(self.data_feed.listen_for_subscriptions())
         await self.resume_test_event.wait()
-        self.assertTrue(
-            self.is_logged("ERROR", "Unexpected error polling Lighter candles. Retrying in 5s...")
-        )
+        self.assertTrue(self.is_logged("ERROR", "Unexpected error polling Lighter candles. Retrying in 5s..."))
 
     async def test_listen_for_subscriptions_subscribes_to_klines(self):
         # Override: lighter polls REST — verify first poll sets _ws_candle_available and schedules fill
-        candle = np.array(
-            [[1748954160.0, 1.4000, 1.4100, 1.3900, 1.4050, 1000.0, 1405.0, 0.0, 0.0, 0.0]]
-        )
-        with patch(PATCH_FETCH, new_callable=AsyncMock) as mock_fetch, \
-             patch(PATCH_SLEEP, new_callable=AsyncMock) as mock_sleep, \
-             patch("hummingbot.data_feed.candles_feed.lighter_perpetual_candles.lighter_perpetual_candles.safe_ensure_future") as mock_future:
+        candle = np.array([[1748954160.0, 1.4000, 1.4100, 1.3900, 1.4050, 1000.0, 1405.0, 0.0, 0.0, 0.0]])
+        with (
+            patch(PATCH_FETCH, new_callable=AsyncMock) as mock_fetch,
+            patch(PATCH_SLEEP, new_callable=AsyncMock) as mock_sleep,
+            patch(
+                "hummingbot.data_feed.candles_feed.lighter_perpetual_candles.lighter_perpetual_candles.safe_ensure_future"
+            ) as mock_future,
+        ):
             mock_fetch.return_value = candle
             mock_sleep.side_effect = asyncio.CancelledError
 
@@ -263,9 +249,7 @@ class TestLighterPerpetualCandles(TestCandlesBase):
     @patch(PATCH_FETCH, new_callable=AsyncMock)
     async def test_process_websocket_messages_empty_candle(self, mock_fetch, mock_sleep, mock_future):
         # Replaces WS base test: first poll with no existing candles triggers fill_historical_candles
-        candle = np.array(
-            [[1748954160.0, 1.4000, 1.4100, 1.3900, 1.4050, 1000.0, 1405.0, 0.0, 0.0, 0.0]]
-        )
+        candle = np.array([[1748954160.0, 1.4000, 1.4100, 1.3900, 1.4050, 1000.0, 1405.0, 0.0, 0.0, 0.0]])
         mock_fetch.return_value = candle
         mock_sleep.side_effect = asyncio.CancelledError
 
@@ -279,16 +263,10 @@ class TestLighterPerpetualCandles(TestCandlesBase):
     @patch("hummingbot.data_feed.candles_feed.lighter_perpetual_candles.lighter_perpetual_candles.safe_ensure_future")
     @patch(PATCH_SLEEP, new_callable=AsyncMock)
     @patch(PATCH_FETCH, new_callable=AsyncMock)
-    async def test_process_websocket_messages_duplicated_candle_not_included(
-        self, mock_fetch, mock_sleep, mock_future
-    ):
+    async def test_process_websocket_messages_duplicated_candle_not_included(self, mock_fetch, mock_sleep, mock_future):
         # Same timestamp on second poll → in-place update, not append
-        candle = np.array(
-            [[1748954160.0, 1.4000, 1.4100, 1.3900, 1.4050, 1000.0, 1405.0, 0.0, 0.0, 0.0]]
-        )
-        updated_candle = np.array(
-            [[1748954160.0, 1.4000, 1.4110, 1.3890, 1.4060, 1050.0, 1477.5, 0.0, 0.0, 0.0]]
-        )
+        candle = np.array([[1748954160.0, 1.4000, 1.4100, 1.3900, 1.4050, 1000.0, 1405.0, 0.0, 0.0, 0.0]])
+        updated_candle = np.array([[1748954160.0, 1.4000, 1.4110, 1.3890, 1.4060, 1050.0, 1477.5, 0.0, 0.0, 0.0]])
         mock_fetch.side_effect = [candle, updated_candle, asyncio.CancelledError()]
         mock_sleep.return_value = None
 
@@ -304,16 +282,10 @@ class TestLighterPerpetualCandles(TestCandlesBase):
     @patch("hummingbot.data_feed.candles_feed.lighter_perpetual_candles.lighter_perpetual_candles.safe_ensure_future")
     @patch(PATCH_SLEEP, new_callable=AsyncMock)
     @patch(PATCH_FETCH, new_callable=AsyncMock)
-    async def test_process_websocket_messages_with_two_valid_messages(
-        self, mock_fetch, mock_sleep, mock_future
-    ):
+    async def test_process_websocket_messages_with_two_valid_messages(self, mock_fetch, mock_sleep, mock_future):
         # Second poll has a newer timestamp → appended
-        candle1 = np.array(
-            [[1748954160.0, 1.4000, 1.4100, 1.3900, 1.4050, 1000.0, 1405.0, 0.0, 0.0, 0.0]]
-        )
-        candle2 = np.array(
-            [[1748954220.0, 1.4050, 1.4120, 1.4020, 1.4080, 850.0, 1196.8, 0.0, 0.0, 0.0]]
-        )
+        candle1 = np.array([[1748954160.0, 1.4000, 1.4100, 1.3900, 1.4050, 1000.0, 1405.0, 0.0, 0.0, 0.0]])
+        candle2 = np.array([[1748954220.0, 1.4050, 1.4120, 1.4020, 1.4080, 850.0, 1196.8, 0.0, 0.0, 0.0]])
         mock_fetch.side_effect = [candle1, candle2, asyncio.CancelledError()]
         mock_sleep.return_value = None
 
@@ -345,8 +317,6 @@ class TestLighterPerpetualCandles(TestCandlesBase):
         with self.assertRaises(asyncio.CancelledError):
             await self.data_feed.listen_for_subscriptions()
 
-        self.assertTrue(
-            self.is_logged("ERROR", "Unexpected error polling Lighter candles. Retrying in 5s...")
-        )
+        self.assertTrue(self.is_logged("ERROR", "Unexpected error polling Lighter candles. Retrying in 5s..."))
         # Sleep was called with 5.0 for the retry
         mock_sleep.assert_called_with(5.0)

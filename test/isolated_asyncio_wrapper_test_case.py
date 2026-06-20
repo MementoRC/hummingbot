@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import asyncio
-import functools
-import sys
-import unittest
 from asyncio import Task
 from collections.abc import Set
+import functools
+import sys
 from typing import Any, Awaitable, Callable, Coroutine, TypeVar
+import unittest
 
 # When pytest with asyncio_mode=auto drives the test suite, it already provides
 # proper event-loop isolation.  The manual save/restore/assert dance in the

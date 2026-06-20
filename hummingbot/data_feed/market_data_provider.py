@@ -1,7 +1,7 @@
 import asyncio
+from decimal import Decimal
 import logging
 import time
-from decimal import Decimal
 from typing import Dict, List, Optional, Tuple
 
 import pandas as pd
@@ -34,9 +34,7 @@ class MarketDataProvider:
             cls._logger = logging.getLogger(__name__)
         return cls._logger
 
-    def __init__(self,
-                 connectors: Dict[str, ConnectorBase],
-                 rates_update_interval: int = 60):
+    def __init__(self, connectors: Dict[str, ConnectorBase], rates_update_interval: int = 60):
         self.candles_feeds = {}  # Stores instances of candle feeds
         self.connectors = connectors  # Stores instances of connectors
         self._rates_update_task = None
@@ -132,13 +130,15 @@ class MarketDataProvider:
                                     base_asset=base,
                                     quote_asset=quote,
                                     amount=Decimal("1"),
-                                    side=TradeType.SELL
+                                    side=TradeType.SELL,
                                 )
                                 gateway_tasks.append(task)
                                 gateway_task_metadata.append((connector_pair, connector_pair.trading_pair))
 
                             except Exception as e:
-                                self.logger().warning(f"Error preparing price request for {connector_pair.trading_pair}: {e}")
+                                self.logger().warning(
+                                    f"Error preparing price request for {connector_pair.trading_pair}: {e}"
+                                )
                                 continue
                     else:
                         # Non-gateway connector
@@ -161,8 +161,8 @@ class MarketDataProvider:
                     try:
                         connector_instance = self._non_trading_connectors[connector]
                         prices = await self._safe_get_last_traded_prices(
-                            connector=connector_instance,
-                            trading_pairs=[pair.trading_pair for pair in connector_pairs])
+                            connector=connector_instance, trading_pairs=[pair.trading_pair for pair in connector_pairs]
+                        )
                         for pair, rate in prices.items():
                             rate_oracle.set_price(pair, rate)
                     except Exception as e:
@@ -204,13 +204,13 @@ class MarketDataProvider:
             return existing_feed
         else:
             # Stop the existing feed if it exists before creating a new one
-            if existing_feed and hasattr(existing_feed, 'stop'):
+            if existing_feed and hasattr(existing_feed, "stop"):
                 existing_feed.stop()
 
             # Create a new feed with updated max_records
             candle_feed = CandlesFactory.get_candle(config)
             self.candles_feeds[key] = candle_feed
-            if hasattr(candle_feed, 'start'):
+            if hasattr(candle_feed, "start"):
                 candle_feed.start()
             return candle_feed
 
@@ -230,7 +230,7 @@ class MarketDataProvider:
         """
         key = self._generate_candle_feed_key(config)
         candle_feed = self.candles_feeds.get(key)
-        if candle_feed and hasattr(candle_feed, 'stop'):
+        if candle_feed and hasattr(candle_feed, "stop"):
             candle_feed.stop()
             del self.candles_feeds[key]
 
@@ -381,7 +381,7 @@ class MarketDataProvider:
         :return: True if successful, False otherwise
         """
         connector = self.get_connector_with_fallback(connector_name)
-        if not hasattr(connector, 'order_book_tracker'):
+        if not hasattr(connector, "order_book_tracker"):
             self.logger().warning(f"Connector {connector_name} does not have order_book_tracker")
             return False
 
@@ -389,9 +389,7 @@ class MarketDataProvider:
         if connector_name not in self.connectors:
             if not self._non_trading_connectors_started.get(connector_name, False):
                 # First time - start the connector with this trading pair as the initial subscription
-                success = await self._ensure_non_trading_connector_started(
-                    connector, connector_name, trading_pair
-                )
+                success = await self._ensure_non_trading_connector_started(connector, connector_name, trading_pair)
                 if not success:
                     return False
                 # The trading pair was added during startup, so we're done
@@ -455,7 +453,7 @@ class MarketDataProvider:
         :return: True if successful, False otherwise
         """
         connector = self.get_connector_with_fallback(connector_name)
-        if not hasattr(connector, 'order_book_tracker'):
+        if not hasattr(connector, "order_book_tracker"):
             self.logger().warning(f"Connector {connector_name} does not have order_book_tracker")
             return False
 
@@ -507,17 +505,26 @@ class MarketDataProvider:
         :param max_records: int
         :return: Candles dataframe.
         """
-        candles = self.get_candles_feed(CandlesConfig(
-            connector=connector_name,
-            trading_pair=trading_pair,
-            interval=interval,
-            max_records=max_records,
-        ))
+        candles = self.get_candles_feed(
+            CandlesConfig(
+                connector=connector_name,
+                trading_pair=trading_pair,
+                interval=interval,
+                max_records=max_records,
+            )
+        )
         return candles.candles_df.iloc[-max_records:]
 
-    async def get_historical_candles_df(self, connector_name: str, trading_pair: str, interval: str,
-                                        start_time: Optional[int] = None, end_time: Optional[int] = None,
-                                        max_records: Optional[int] = None, max_cache_records: int = 10000):
+    async def get_historical_candles_df(
+        self,
+        connector_name: str,
+        trading_pair: str,
+        interval: str,
+        start_time: Optional[int] = None,
+        end_time: Optional[int] = None,
+        max_records: Optional[int] = None,
+        max_cache_records: int = 10000,
+    ):
         """
         Retrieves historical candles with intelligent caching and partial fetch optimization.
 
@@ -541,12 +548,14 @@ class MarketDataProvider:
         # Calculate start_time based on max_records if not provided
         if start_time is None and max_records is not None:
             # Get interval in seconds to calculate approximate start time
-            candles_feed = self.get_candles_feed(CandlesConfig(
-                connector=connector_name,
-                trading_pair=trading_pair,
-                interval=interval,
-                max_records=min(100, max_records)  # Small initial fetch to get interval info
-            ))
+            candles_feed = self.get_candles_feed(
+                CandlesConfig(
+                    connector=connector_name,
+                    trading_pair=trading_pair,
+                    interval=interval,
+                    max_records=min(100, max_records),  # Small initial fetch to get interval info
+                )
+            )
             interval_seconds = candles_feed.interval_in_seconds
             start_time = end_time - (max_records * interval_seconds)
 
@@ -555,26 +564,24 @@ class MarketDataProvider:
             return self.get_candles_df(connector_name, trading_pair, interval, max_records or 500)
 
         # Get or create candles feed with extended cache
-        candles_feed = self.get_candles_feed(CandlesConfig(
-            connector=connector_name,
-            trading_pair=trading_pair,
-            interval=interval,
-            max_records=max_cache_records
-        ))
+        candles_feed = self.get_candles_feed(
+            CandlesConfig(
+                connector=connector_name, trading_pair=trading_pair, interval=interval, max_records=max_cache_records
+            )
+        )
 
         # Check if we have cached data and what range it covers
         current_df = candles_feed.candles_df
 
         if len(current_df) > 0:
-            cached_start = int(current_df['timestamp'].iloc[0])
-            cached_end = int(current_df['timestamp'].iloc[-1])
+            cached_start = int(current_df["timestamp"].iloc[0])
+            cached_end = int(current_df["timestamp"].iloc[-1])
 
             # Check if requested range is completely covered by cache
             if start_time >= cached_start and end_time <= cached_end:
                 # Filter existing data for requested range
                 filtered_df = current_df[
-                    (current_df['timestamp'] >= start_time) &
-                    (current_df['timestamp'] <= end_time)
+                    (current_df["timestamp"] >= start_time) & (current_df["timestamp"] <= end_time)
                 ]
                 return filtered_df.iloc[-max_records:] if max_records else filtered_df
 
@@ -606,7 +613,7 @@ class MarketDataProvider:
                 trading_pair=trading_pair,
                 interval=interval,
                 start_time=fetch_start,
-                end_time=fetch_end
+                end_time=fetch_end,
             )
 
             new_df = await candles_feed.get_historical_candles(historical_config)
@@ -616,8 +623,8 @@ class MarketDataProvider:
                 if len(current_df) > 0:
                     combined_df = pd.concat([current_df, new_df], ignore_index=True)
                     # Remove duplicates and sort
-                    combined_df = combined_df.drop_duplicates(subset=['timestamp'])
-                    combined_df = combined_df.sort_values('timestamp')
+                    combined_df = combined_df.drop_duplicates(subset=["timestamp"])
+                    combined_df = combined_df.sort_values("timestamp")
 
                     # Limit cache size
                     if len(combined_df) > max_cache_records:
@@ -636,10 +643,7 @@ class MarketDataProvider:
 
                 # Return filtered data for requested range
                 final_df = candles_feed.candles_df
-                filtered_df = final_df[
-                    (final_df['timestamp'] >= start_time) &
-                    (final_df['timestamp'] <= end_time)
-                ]
+                filtered_df = final_df[(final_df["timestamp"] >= start_time) & (final_df["timestamp"] <= end_time)]
                 return filtered_df.iloc[-max_records:] if max_records else filtered_df
 
         except Exception as e:
@@ -674,8 +678,9 @@ class MarketDataProvider:
         connector = self.get_connector_with_fallback(connector_name)
         return connector.quantize_order_amount(trading_pair, amount)
 
-    def get_price_for_volume(self, connector_name: str, trading_pair: str, volume: float,
-                             is_buy: bool) -> OrderBookQueryResult:
+    def get_price_for_volume(
+        self, connector_name: str, trading_pair: str, volume: float, is_buy: bool
+    ) -> OrderBookQueryResult:
         """
         Gets the price for a specified volume on the order book.
 
@@ -701,8 +706,9 @@ class MarketDataProvider:
         order_book = connector.get_order_book(trading_pair)
         return order_book.snapshot
 
-    def get_price_for_quote_volume(self, connector_name: str, trading_pair: str, quote_volume: float,
-                                   is_buy: bool) -> OrderBookQueryResult:
+    def get_price_for_quote_volume(
+        self, connector_name: str, trading_pair: str, quote_volume: float, is_buy: bool
+    ) -> OrderBookQueryResult:
         """
         Gets the price for a specified quote volume on the order book.
 
@@ -716,8 +722,9 @@ class MarketDataProvider:
         order_book = connector.get_order_book(trading_pair)
         return order_book.get_price_for_quote_volume(is_buy, quote_volume)
 
-    def get_volume_for_price(self, connector_name: str, trading_pair: str, price: float,
-                             is_buy: bool) -> OrderBookQueryResult:
+    def get_volume_for_price(
+        self, connector_name: str, trading_pair: str, price: float, is_buy: bool
+    ) -> OrderBookQueryResult:
         """
         Gets the volume for a specified price on the order book.
 
@@ -731,8 +738,9 @@ class MarketDataProvider:
         order_book = connector.get_order_book(trading_pair)
         return order_book.get_volume_for_price(is_buy, price)
 
-    def get_quote_volume_for_price(self, connector_name: str, trading_pair: str, price: float,
-                                   is_buy: bool) -> OrderBookQueryResult:
+    def get_quote_volume_for_price(
+        self, connector_name: str, trading_pair: str, price: float, is_buy: bool
+    ) -> OrderBookQueryResult:
         """
         Gets the quote volume for a specified price on the order book.
 
@@ -746,8 +754,9 @@ class MarketDataProvider:
         order_book = connector.get_order_book(trading_pair)
         return order_book.get_quote_volume_for_price(is_buy, price)
 
-    def get_vwap_for_volume(self, connector_name: str, trading_pair: str, volume: float,
-                            is_buy: bool) -> OrderBookQueryResult:
+    def get_vwap_for_volume(
+        self, connector_name: str, trading_pair: str, volume: float, is_buy: bool
+    ) -> OrderBookQueryResult:
         """
         Gets the VWAP (Volume Weighted Average Price) for a specified volume on the order book.
 
@@ -778,7 +787,9 @@ class MarketDataProvider:
             # Filter out None values (failed price fetches) to avoid setting invalid prices
             return {pair: rate for pair, rate in zip(trading_pairs, prices) if rate is not None}
         except Exception as e:
-            logging.error(f"Error getting last traded prices in connector {connector} for trading pairs {trading_pairs}: {e}")
+            logging.error(
+                f"Error getting last traded prices in connector {connector} for trading pairs {trading_pairs}: {e}"
+            )
             return {}
 
     async def _safe_get_last_traded_price(self, connector, trading_pair):

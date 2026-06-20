@@ -1,7 +1,7 @@
 import asyncio
+from decimal import Decimal
 import json
 import re
-from decimal import Decimal
 from typing import Any, Callable, List, Optional, Tuple
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -37,7 +37,6 @@ class MockSignerClient:
 
 
 class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDerivativeTests):
-
     ACCOUNT_INDEX = 724450
 
     @classmethod
@@ -314,9 +313,7 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
                 {
                     "index": self.ACCOUNT_INDEX,
                     "available_balance": "2000",
-                    "assets": [
-                        {"symbol": "USDC", "margin_balance": "2000", "locked_balance": "0"}
-                    ],
+                    "assets": [{"symbol": "USDC", "margin_balance": "2000", "locked_balance": "0"}],
                     "positions": [],
                 }
             ]
@@ -331,9 +328,7 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
         return {
             "channel": f"{CONSTANTS.ACCOUNT_ALL_ASSETS_CHANNEL}:{self.ACCOUNT_INDEX}",
             "available_balance": "2000",
-            "assets": {
-                "usdc": {"symbol": "USDC", "margin_balance": "2000", "locked_balance": "0"}
-            },
+            "assets": {"usdc": {"symbol": "USDC", "margin_balance": "2000", "locked_balance": "0"}},
         }
 
     @property
@@ -1048,9 +1043,7 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
             amount=Decimal("1"),
         )
         order: InFlightOrder = self.exchange.in_flight_orders[self.client_order_id_prefix + "1"]
-        self.exchange._set_current_timestamp(
-            1640780000 + CONSTANTS.ORDER_NOT_FOUND_GRACE_PERIOD + 1
-        )
+        self.exchange._set_current_timestamp(1640780000 + CONSTANTS.ORDER_NOT_FOUND_GRACE_PERIOD + 1)
 
         self.configure_http_error_order_status_response(order=order, mock_api=mock_api)
         await self.exchange._update_order_status()
@@ -1079,9 +1072,7 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
         await self.exchange._update_order_status()
 
         self.assertTrue(order.is_open)
-        self.assertNotIn(
-            order.client_order_id, self.exchange._order_tracker._order_not_found_records
-        )
+        self.assertNotIn(order.client_order_id, self.exchange._order_tracker._order_not_found_records)
 
     @aioresponses()
     async def test_update_order_status_failed_order_includes_failure_metadata(self, mock_api):
@@ -1200,9 +1191,7 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
 
     async def test_lighter_fetch_last_fee_payment_with_entry(self):
         self.exchange._api_get = AsyncMock(
-            return_value={
-                "position_fundings": [{"change": "1.5", "rate": "0.0002", "timestamp": "1000000"}]
-            }
+            return_value={"position_fundings": [{"change": "1.5", "rate": "0.0002", "timestamp": "1000000"}]}
         )
         ts, rate, amount = await self.exchange._fetch_last_fee_payment(self.trading_pair)
         self.assertEqual(1000.0, ts)  # 1_000_000 ms * 1e-3 = 1000 s
@@ -1218,9 +1207,7 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
                     {
                         "index": self.ACCOUNT_INDEX,
                         "available_balance": "80",
-                        "assets": [
-                            {"symbol": "USDC", "margin_balance": "100", "locked_balance": "20"}
-                        ],
+                        "assets": [{"symbol": "USDC", "margin_balance": "100", "locked_balance": "20"}],
                         "positions": [],
                     }
                 ]

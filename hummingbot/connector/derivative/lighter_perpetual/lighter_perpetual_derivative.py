@@ -65,9 +65,7 @@ class LighterPerpetualDerivative(PerpetualDerivativePyBase):
         self._l1_address = lighter_perpetual_l1_address
         self._account_index = None
         self._api_key_index = (
-            int(lighter_perpetual_api_key_index)
-            if lighter_perpetual_api_key_index not in (None, "")
-            else None
+            int(lighter_perpetual_api_key_index) if lighter_perpetual_api_key_index not in (None, "") else None
         )
         self._api_public_key = lighter_perpetual_api_public_key
         self._api_private_key = lighter_perpetual_api_private_key
@@ -84,7 +82,9 @@ class LighterPerpetualDerivative(PerpetualDerivativePyBase):
         # event lacks `available_balance`, so we use the event as a trigger to refresh from REST.
         self._balance_refresh_task: Optional[asyncio.Task] = None
         self._real_time_balance_update = False
-        self._signer_client = self._create_signer_client() if trading_required and self._account_index is not None else None
+        self._signer_client = (
+            self._create_signer_client() if trading_required and self._account_index is not None else None
+        )
         super().__init__(balance_asset_limit, rate_limits_share_pct)
 
     @property
@@ -98,7 +98,9 @@ class LighterPerpetualDerivative(PerpetualDerivativePyBase):
     @property
     def authenticator(self) -> Optional[LighterAuth]:
         if self._trading_required and self._signer_client is not None:
-            return LighterAuth(self._signer_client, api_key_index=self._api_key_index, api_public_key=self._api_public_key)
+            return LighterAuth(
+                self._signer_client, api_key_index=self._api_key_index, api_public_key=self._api_public_key
+            )
         return None
 
     @property
@@ -463,7 +465,9 @@ class LighterPerpetualDerivative(PerpetualDerivativePyBase):
             locked_balance = self._safe_decimal(asset.get("locked_balance", "0"))
             total_balance = self._safe_decimal(asset.get("margin_balance", "0"))
             self._account_balances[asset_name] = total_balance
-            self._account_available_balances[asset_name] = available if asset_name == CONSTANTS.COLLATERAL_TOKEN else total_balance - locked_balance
+            self._account_available_balances[asset_name] = (
+                available if asset_name == CONSTANTS.COLLATERAL_TOKEN else total_balance - locked_balance
+            )
             remote_asset_names.add(asset_name)
 
         for asset_name in local_asset_names.difference(remote_asset_names):
@@ -750,9 +754,7 @@ class LighterPerpetualDerivative(PerpetualDerivativePyBase):
             new_state = order_state_from_order_data(order)
             order_update = OrderUpdate(
                 trading_pair=tracked_order.trading_pair,
-                update_timestamp=normalize_timestamp_to_seconds(
-                    order.get("updated_at", order.get("transaction_time"))
-                ),
+                update_timestamp=normalize_timestamp_to_seconds(order.get("updated_at", order.get("transaction_time"))),
                 new_state=new_state,
                 client_order_id=client_order_id,
                 exchange_order_id=str(order.get("order_id")),

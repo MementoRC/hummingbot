@@ -1,6 +1,4 @@
 import asyncio
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from test.mock.mock_cli import CLIMockingAssistant
 from unittest.mock import patch
 
 import pytest
@@ -8,6 +6,8 @@ import pytest
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import ClientConfigAdapter, read_system_configs_from_yml
 from hummingbot.client.hummingbot_application import HummingbotApplication
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
+from test.mock.mock_cli import CLIMockingAssistant
 
 
 class StatusCommandTest(IsolatedAsyncioWrapperTestCase):
@@ -29,6 +29,7 @@ class StatusCommandTest(IsolatedAsyncioWrapperTestCase):
     def get_async_sleep_fn(delay: float):
         async def async_sleep(*_, **__):
             await asyncio.sleep(delay)
+
         return async_sleep
 
     @pytest.mark.skip(
@@ -36,7 +37,9 @@ class StatusCommandTest(IsolatedAsyncioWrapperTestCase):
     )
     @patch("hummingbot.client.command.status_command.StatusCommand.validate_required_connections")
     @patch("hummingbot.client.config.security.Security.is_decryption_done")
-    async def test_status_check_all_handles_network_timeouts(self, is_decryption_done_mock, validate_required_connections_mock):
+    async def test_status_check_all_handles_network_timeouts(
+        self, is_decryption_done_mock, validate_required_connections_mock
+    ):
         validate_required_connections_mock.side_effect = self.get_async_sleep_fn(delay=0.02)
         self.client_config_map.commands_timeout.other_commands_timeout = 0.01
         is_decryption_done_mock.return_value = True

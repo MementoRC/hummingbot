@@ -113,18 +113,20 @@ class LighterSpotCandles(CandlesBase):
             ts_seconds = self.ensure_timestamp_in_seconds(c["t"])
             if end_time is not None and ts_seconds > end_time:
                 continue
-            result.append([
-                ts_seconds,
-                float(c.get("o", 0)),
-                float(c.get("h", 0)),
-                float(c.get("l", 0)),
-                float(c.get("c", 0)),
-                float(c.get("v", 0)),
-                float(c.get("V", 0)),
-                0.0,
-                0.0,
-                0.0,
-            ])
+            result.append(
+                [
+                    ts_seconds,
+                    float(c.get("o", 0)),
+                    float(c.get("h", 0)),
+                    float(c.get("l", 0)),
+                    float(c.get("c", 0)),
+                    float(c.get("v", 0)),
+                    float(c.get("V", 0)),
+                    0.0,
+                    0.0,
+                    0.0,
+                ]
+            )
         result.sort(key=lambda x: x[0])
         return result
 
@@ -152,9 +154,7 @@ class LighterSpotCandles(CandlesBase):
             except asyncio.CancelledError:
                 raise
             except Exception:
-                self.logger().exception(
-                    "Unexpected error polling Lighter candles. Retrying in 5s..."
-                )
+                self.logger().exception("Unexpected error polling Lighter candles. Retrying in 5s...")
                 await self._sleep(5.0)
 
     def ws_subscription_payload(self):
