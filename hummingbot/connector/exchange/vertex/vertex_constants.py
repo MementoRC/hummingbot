@@ -37,7 +37,7 @@ ARCHIVE_INDEXER_URLS = {
 
 WS_SUBSCRIBE_URLS = {
     DEFAULT_DOMAIN: "wss://gateway.prod.vertexprotocol.com/v1/subscribe",
-    TESTNET_DOMAIN: "wss://gateway.vertexprotocol-vertexprotocol.com/v1/subscribe",
+    TESTNET_DOMAIN: "wss://gateway.sepolia-test.vertexprotocol.com/v1/subscribe",
 }
 
 CONTRACTS = {
@@ -92,7 +92,6 @@ SNAPSHOT_EVENT_TYPE = "market_liquidity"
 TRADE_EVENT_TYPE = "trade"
 DIFF_EVENT_TYPE = "book_depth"
 FILL_EVENT_TYPE = "fill"
-POSITION_CHANGE_EVENT_TYPE = "position_change"
 
 # Products
 # NOTE: Index 7+ is only on testnet
