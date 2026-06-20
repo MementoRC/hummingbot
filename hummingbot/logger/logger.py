@@ -6,7 +6,7 @@ import os
 import sys
 import time
 import traceback
-from typing import Callable, ClassVar, Optional, Type
+from typing import Callable, ClassVar, Type
 
 import pandas as pd
 
@@ -26,7 +26,9 @@ else:  # pragma: no cover
         try:
             raise Exception
         except Exception:
-            return sys.exc_info()[2].tb_frame.f_back
+            tb = sys.exc_info()[2]
+            assert tb is not None
+            return tb.tb_frame.f_back
 #  --- Copied from logging module ---
 
 
@@ -60,7 +62,7 @@ class HummingbotLogger(PythonLogger):
         if not HummingbotLogger.is_testing_mode() and HummingbotLogger._notify_callback is not None:
             HummingbotLogger._notify_callback(f"({pd.Timestamp.fromtimestamp(int(time.time()))}) {msg}")
 
-    def network(self, log_msg: str, app_warning_msg: Optional[str] = None, *args, **kwargs):
+    def network(self, log_msg: str, app_warning_msg: str | None = None, *args, **kwargs):
         from . import NETWORK
 
         self.log(NETWORK, log_msg, *args, **kwargs)
@@ -89,7 +91,7 @@ class HummingbotLogger(PythonLogger):
             stacklevel -= 1
         if not f:
             f = orig_f
-        rv = "(unknown file)", 0, "(unknown function)", None
+        rv: tuple[str, int, str, str | None] = "(unknown file)", 0, "(unknown function)", None
         while hasattr(f, "f_code"):
             co = f.f_code
             filename = os.path.normcase(co.co_filename)
