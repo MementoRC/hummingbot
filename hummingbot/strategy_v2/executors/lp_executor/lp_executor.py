@@ -207,7 +207,7 @@ class LPExecutor(ExecutorBase):
                 trading_pair=self.config.trading_pair,
                 dex_name=self.lp_dex_name,
                 trading_type=self.lp_trading_type,
-                position_address=self.lp_position_state.position_address
+                position_address=self.lp_position_state.position_address,
             )
 
             if position_info:
@@ -320,7 +320,7 @@ class LPExecutor(ExecutorBase):
                 trading_pair=self.config.trading_pair,
                 dex_name=self.lp_dex_name,
                 trading_type=self.lp_trading_type,
-                position_address=position_address
+                position_address=position_address,
             )
 
             if position_info:
@@ -364,7 +364,7 @@ class LPExecutor(ExecutorBase):
             trade_fee = TradeFeeBase.new_spot_fee(
                 fee_schema=connector.trade_fee_schema(),
                 trade_type=TradeType.RANGE,
-                flat_fees=[TokenAmount(amount=self.lp_position_state.tx_fee, token=native_currency)]
+                flat_fees=[TokenAmount(amount=self.lp_position_state.tx_fee, token=native_currency)],
             )
             event = connector._trigger_add_liquidity_event(
                 order_id=order_id,
@@ -416,7 +416,7 @@ class LPExecutor(ExecutorBase):
                 trading_pair=self.config.trading_pair,
                 dex_name=self.lp_dex_name,
                 trading_type=self.lp_trading_type,
-                position_address=self.lp_position_state.position_address
+                position_address=self.lp_position_state.position_address,
             )
             if position_info is None:
                 self.logger().info(
@@ -496,7 +496,7 @@ class LPExecutor(ExecutorBase):
             trade_fee = TradeFeeBase.new_spot_fee(
                 fee_schema=connector.trade_fee_schema(),
                 trade_type=TradeType.RANGE,
-                flat_fees=[TokenAmount(amount=close_tx_fee, token=native_currency)]
+                flat_fees=[TokenAmount(amount=close_tx_fee, token=native_currency)],
             )
             event = connector._trigger_remove_liquidity_event(
                 order_id=order_id,
@@ -674,7 +674,7 @@ class LPExecutor(ExecutorBase):
         trade_fee = TradeFeeBase.new_spot_fee(
             fee_schema=connector.trade_fee_schema(),
             trade_type=TradeType.RANGE,
-            flat_fees=[TokenAmount(amount=Decimal("0"), token=native_currency)]
+            flat_fees=[TokenAmount(amount=Decimal("0"), token=native_currency)],
         )
         connector._trigger_remove_liquidity_event(
             order_id=order_id,
