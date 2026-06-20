@@ -10,11 +10,39 @@ class OrderType(Enum):
     LIMIT = 2
     LIMIT_MAKER = 3
     AMM_SWAP = 4
-    AMM_ADD = 5      # Add liquidity to AMM/CLMM pool
-    AMM_REMOVE = 6   # Remove liquidity from AMM/CLMM pool
+    AMM_ADD = 5  # Add liquidity to AMM/CLMM pool
+    AMM_REMOVE = 6  # Remove liquidity from AMM/CLMM pool
+    # Conditional order types (exchange-native)
+    STOP_LOSS = 7
+    TAKE_PROFIT = 8
+    TRAILING_STOP = 9
+    STOP_LOSS_LIMIT = 10
+    TAKE_PROFIT_LIMIT = 11
+    TRAILING_STOP_LIMIT = 12
 
     def is_limit_type(self):
-        return self in (OrderType.LIMIT, OrderType.LIMIT_MAKER)
+        return self in (
+            OrderType.LIMIT,
+            OrderType.LIMIT_MAKER,
+            OrderType.STOP_LOSS_LIMIT,
+            OrderType.TAKE_PROFIT_LIMIT,
+            OrderType.TRAILING_STOP_LIMIT,
+        )
+
+    def is_delayed_market_type(self):
+        """Returns True for conditional orders that trigger a market execution."""
+        return self in (OrderType.STOP_LOSS, OrderType.TAKE_PROFIT, OrderType.TRAILING_STOP)
+
+    def is_conditional_type(self):
+        """Returns True for any conditional/triggered order type."""
+        return self in (
+            OrderType.STOP_LOSS,
+            OrderType.TAKE_PROFIT,
+            OrderType.TRAILING_STOP,
+            OrderType.STOP_LOSS_LIMIT,
+            OrderType.TAKE_PROFIT_LIMIT,
+            OrderType.TRAILING_STOP_LIMIT,
+        )
 
 
 class OpenOrder(NamedTuple):
@@ -71,8 +99,8 @@ class LPType(Enum):
     COLLECT = 3
 
 
-_KT = TypeVar('_KT')
-_VT = TypeVar('_VT')
+_KT = TypeVar("_KT")
+_VT = TypeVar("_VT")
 
 
 class GroupedSetDict(dict[_KT, Set[_VT]]):
@@ -97,11 +125,7 @@ class GroupedSetDict(dict[_KT, Set[_VT]]):
         _handler: Any,
     ) -> core_schema.CoreSchema:
         return core_schema.no_info_after_validator_function(
-            cls,
-            core_schema.dict_schema(
-                core_schema.any_schema(),
-                core_schema.set_schema(core_schema.any_schema())
-            )
+            cls, core_schema.dict_schema(core_schema.any_schema(), core_schema.set_schema(core_schema.any_schema()))
         )
 
 
