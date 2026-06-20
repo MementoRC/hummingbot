@@ -22,12 +22,14 @@ from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.executor_base import ExecutorBase
 from hummingbot.strategy_v2.executors.grid_executor.data_types import GridExecutorConfig, GridLevel, GridLevelStates
+from hummingbot.strategy_v2.executors.mixins.balance_validation import BalanceValidationMixin
+from hummingbot.strategy_v2.executors.mixins.trailing_stop import TrailingStopMixin
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 from hummingbot.strategy_v2.utils.distributions import Distributions
 
 
-class GridExecutor(ExecutorBase):
+class GridExecutor(BalanceValidationMixin, TrailingStopMixin, ExecutorBase):
     _logger = None
 
     @classmethod
@@ -93,7 +95,7 @@ class GridExecutor(ExecutorBase):
         self.max_close_creation_timestamp = 0
         self._open_fee_in_base = False
 
-        self._trailing_stop_trigger_pct: Decimal | None = None
+        self.init_trailing_stop()
 
     @property
     def is_perpetual(self) -> bool:
@@ -104,11 +106,11 @@ class GridExecutor(ExecutorBase):
         """
         return self.is_perpetual_connector(self.config.connector_name)
 
-    async def validate_sufficient_balance(self):
+    def _create_validation_order_candidate(self):
         mid_price = self.get_price(self.config.connector_name, self.config.trading_pair, PriceType.MidPrice)
         total_amount_base = self.config.total_amount_quote / mid_price
         if self.is_perpetual:
-            order_candidate = PerpetualOrderCandidate(
+            return PerpetualOrderCandidate(
                 trading_pair=self.config.trading_pair,
                 is_maker=self.config.triple_barrier_config.open_order_type.is_limit_type(),
                 order_type=self.config.triple_barrier_config.open_order_type,
@@ -117,20 +119,14 @@ class GridExecutor(ExecutorBase):
                 price=mid_price,
                 leverage=Decimal(self.config.leverage),
             )
-        else:
-            order_candidate = OrderCandidate(
-                trading_pair=self.config.trading_pair,
-                is_maker=self.config.triple_barrier_config.open_order_type.is_limit_type(),
-                order_type=self.config.triple_barrier_config.open_order_type,
-                order_side=self.config.side,
-                amount=total_amount_base,
-                price=mid_price,
-            )
-        adjusted_order_candidates = self.adjust_order_candidates(self.config.connector_name, [order_candidate])
-        if adjusted_order_candidates[0].amount == Decimal("0"):
-            self.close_type = CloseType.INSUFFICIENT_BALANCE
-            self.logger().error("Not enough budget to open position.")
-            self.stop()
+        return OrderCandidate(
+            trading_pair=self.config.trading_pair,
+            is_maker=self.config.triple_barrier_config.open_order_type.is_limit_type(),
+            order_type=self.config.triple_barrier_config.open_order_type,
+            order_side=self.config.side,
+            amount=total_amount_base,
+            price=mid_price,
+        )
 
     def _generate_grid_levels(self):
         grid_levels = []
@@ -357,6 +353,7 @@ class GridExecutor(ExecutorBase):
                 else:
                     await self.control_close_order()
                     self._current_retries += 1
+                    self.evaluate_max_retries()
         else:
             self.cancel_open_orders()
         await self._sleep(5.0)
@@ -652,24 +649,13 @@ class GridExecutor(ExecutorBase):
         return False
 
     def trailing_stop_condition(self):
-        if self.config.triple_barrier_config.trailing_stop:
-            net_pnl_pct = self.position_pnl_pct
-            if not self._trailing_stop_trigger_pct:
-                if net_pnl_pct > self.config.triple_barrier_config.trailing_stop.activation_price:
-                    self._trailing_stop_trigger_pct = (
-                        net_pnl_pct - self.config.triple_barrier_config.trailing_stop.trailing_delta
-                    )
-            else:
-                if net_pnl_pct < self._trailing_stop_trigger_pct:
-                    return True
-                if (
-                    net_pnl_pct - self.config.triple_barrier_config.trailing_stop.trailing_delta
-                    > self._trailing_stop_trigger_pct
-                ):
-                    self._trailing_stop_trigger_pct = (
-                        net_pnl_pct - self.config.triple_barrier_config.trailing_stop.trailing_delta
-                    )
-        return False
+        return self.evaluate_trailing_stop()
+
+    def _get_trailing_stop_pnl_pct(self):
+        return self.position_pnl_pct
+
+    def _get_trailing_stop_config(self):
+        return self.config.triple_barrier_config.trailing_stop
 
     def place_close_order_and_cancel_open_orders(self, close_type: CloseType, price: Decimal = Decimal("NaN")):
         """
