@@ -1,6 +1,5 @@
 import json
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from typing import Optional
 from unittest.mock import AsyncMock, patch
 
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
@@ -35,8 +34,8 @@ class OMSConnectorWebUtilsTest(IsolatedAsyncioWrapperTestCase):
             "o": msg_data,
         }
         msg = WSJSONRequest(payload=msg_payload)
-        await (self.ws_assistant.connect(ws_url=self.ws_url))
-        await (self.ws_assistant.send(msg))
+        await self.ws_assistant.connect(ws_url=self.ws_url)
+        await self.ws_assistant.send(msg)
 
         sent_messages = self.mocking_assistant.json_messages_sent_through_websocket(
             websocket_mock=ws_connect_mock.return_value
@@ -68,8 +67,8 @@ class OMSConnectorWebUtilsTest(IsolatedAsyncioWrapperTestCase):
             message=json.dumps(msg_mock),
         )
 
-        await (self.ws_assistant.connect(ws_url=self.ws_url))
-        resp: Optional[WSResponse] = await (self.ws_assistant.receive())
+        await self.ws_assistant.connect(ws_url=self.ws_url)
+        resp: WSResponse | None = await self.ws_assistant.receive()
 
         self.assertIsNotNone(resp)
 
@@ -95,9 +94,9 @@ class OMSConnectorWebUtilsTest(IsolatedAsyncioWrapperTestCase):
             "o": msg_data,
         }
         msg = WSJSONRequest(payload=msg_payload)
-        await (self.ws_assistant.connect(ws_url=self.ws_url))
-        await (self.ws_assistant.send(msg))
-        await (self.ws_assistant.send(msg))
+        await self.ws_assistant.connect(ws_url=self.ws_url)
+        await self.ws_assistant.send(msg)
+        await self.ws_assistant.send(msg)
 
         sent_messages = self.mocking_assistant.json_messages_sent_through_websocket(
             websocket_mock=ws_connect_mock.return_value

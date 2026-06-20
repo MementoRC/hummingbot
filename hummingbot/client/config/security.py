@@ -1,7 +1,6 @@
 import asyncio
 import logging
 from pathlib import Path
-from typing import Dict, Optional
 
 from hummingbot.client.config.config_crypt import PASSWORD_VERIFICATION_PATH, BaseSecretsManager, validate_password
 from hummingbot.client.config.config_helpers import (
@@ -23,11 +22,11 @@ from hummingbot.logger import HummingbotLogger
 
 class Security:
     __instance = None
-    secrets_manager: Optional[BaseSecretsManager] = None
+    secrets_manager: BaseSecretsManager | None = None
     _secure_configs = {}
     _decryption_done = asyncio.Event()
 
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -94,11 +93,11 @@ class Security:
         return cls._decryption_done.is_set()
 
     @classmethod
-    def decrypted_value(cls, key: str) -> Optional[ClientConfigAdapter]:
+    def decrypted_value(cls, key: str) -> ClientConfigAdapter | None:
         return cls._secure_configs.get(key, None)
 
     @classmethod
-    def all_decrypted_values(cls) -> Dict[str, ClientConfigAdapter]:
+    def all_decrypted_values(cls) -> dict[str, ClientConfigAdapter]:
         return cls._secure_configs.copy()
 
     @classmethod
@@ -106,11 +105,7 @@ class Security:
         await cls._decryption_done.wait()
 
     @classmethod
-    def api_keys(cls, connector_name: str) -> Dict[str, Optional[str]]:
+    def api_keys(cls, connector_name: str) -> dict[str, str | None]:
         connector_config = cls.decrypted_value(connector_name)
-        keys = (
-            api_keys_from_connector_config_map(connector_config)
-            if connector_config is not None
-            else {}
-        )
+        keys = api_keys_from_connector_config_map(connector_config) if connector_config is not None else {}
         return keys

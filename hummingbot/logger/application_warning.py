@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
-from typing import NamedTuple, Optional, Tuple
+from typing import NamedTuple
 
 
 class ApplicationWarning(NamedTuple):
     timestamp: float
     logger_name: str
-    caller_info: Tuple[str, int, str, Optional[str]]
+    caller_info: tuple[str, int, str, str | None]
     warning_msg: str
 
     @property
@@ -22,5 +22,5 @@ class ApplicationWarning(NamedTuple):
         return self.caller_info[2]
 
     @property
-    def stack_info(self) -> Optional[str]:
+    def stack_info(self) -> str | None:
         return self.caller_info[3]

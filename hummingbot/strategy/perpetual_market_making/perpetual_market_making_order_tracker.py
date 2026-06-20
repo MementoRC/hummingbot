@@ -1,5 +1,3 @@
-from typing import Dict, List, Tuple
-
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.limit_order import LimitOrder
 from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple
@@ -17,11 +15,11 @@ class PerpetualMarketMakingOrderTracker(OrderTracker):
         super().__init__()
 
     @property
-    def active_limit_orders(self) -> List[Tuple[ConnectorBase, LimitOrder]]:
+    def active_limit_orders(self) -> list[tuple[ConnectorBase, LimitOrder]]:
         return self.tracked_limit_orders
 
     @property
-    def shadow_limit_orders(self) -> List[Tuple[ConnectorBase, LimitOrder]]:
+    def shadow_limit_orders(self) -> list[tuple[ConnectorBase, LimitOrder]]:
         limit_orders = []
         for market_pair, orders_map in self.get_shadow_limit_orders().items():
             for limit_order in orders_map.values():
@@ -29,7 +27,7 @@ class PerpetualMarketMakingOrderTracker(OrderTracker):
         return limit_orders
 
     @property
-    def market_pair_to_active_orders(self) -> Dict[MarketTradingPairTuple, List[LimitOrder]]:
+    def market_pair_to_active_orders(self) -> dict[MarketTradingPairTuple, list[LimitOrder]]:
         market_pair_to_orders = {}
         for market_pair, orders_map in self.tracked_limit_orders_map.items():
             market_pair_to_orders[market_pair] = list(self.tracked_limit_orders_map[market_pair].values())

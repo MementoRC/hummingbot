@@ -1,18 +1,16 @@
 import logging
 from abc import ABC, abstractmethod
 from decimal import Decimal
-from typing import Dict, Optional
 
 from hummingbot.logger import HummingbotLogger
 
 
 class RateSourceBase(ABC):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @property
     @abstractmethod
-    def name(self) -> str:
-        ...
+    def name(self) -> str: ...
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -21,5 +19,4 @@ class RateSourceBase(ABC):
         return cls._logger
 
     @abstractmethod
-    async def get_prices(self, quote_token: Optional[str] = None) -> Dict[str, Decimal]:
-        ...
+    async def get_prices(self, quote_token: str | None = None) -> dict[str, Decimal]: ...

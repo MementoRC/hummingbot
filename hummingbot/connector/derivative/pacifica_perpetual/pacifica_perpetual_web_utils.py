@@ -1,5 +1,4 @@
 import time
-from typing import Optional
 
 from hummingbot.connector.derivative.pacifica_perpetual import pacifica_perpetual_constants as CONSTANTS
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
@@ -21,8 +20,8 @@ def wss_url(domain: str = CONSTANTS.DEFAULT_DOMAIN) -> str:
 
 
 def build_api_factory(
-    throttler: Optional[AsyncThrottler] = None,
-    auth: Optional[AuthBase] = None,
+    throttler: AsyncThrottler | None = None,
+    auth: AuthBase | None = None,
 ) -> WebAssistantsFactory:
     throttler = throttler or AsyncThrottler(CONSTANTS.RATE_LIMITS)
     api_factory = WebAssistantsFactory(
@@ -33,7 +32,7 @@ def build_api_factory(
 
 
 async def get_current_server_time(
-        throttler: Optional[AsyncThrottler] = None,
-        domain: str = CONSTANTS.DEFAULT_DOMAIN,
+    throttler: AsyncThrottler | None = None,
+    domain: str = CONSTANTS.DEFAULT_DOMAIN,
 ) -> float:
     return time.time()

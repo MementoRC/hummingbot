@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.exchange.ndax import ndax_constants as CONSTANTS
 from hummingbot.connector.exchange.ndax.ndax_auth import NdaxAuth
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 
 class NdaxAPIUserStreamDataSource(UserStreamTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -29,15 +29,15 @@ class NdaxAPIUserStreamDataSource(UserStreamTrackerDataSource):
         trading_pairs: str,
         connector: "NdaxExchange",
         api_factory: WebAssistantsFactory,
-        domain: Optional[str] = None,
+        domain: str | None = None,
     ):
         super().__init__()
         self._trading_pairs = trading_pairs
         self._ws_adaptor = None
         self._auth_assistant: NdaxAuth = auth
         self._last_recv_time: float = 0
-        self._account_id: Optional[int] = None
-        self._oms_id: Optional[int] = None
+        self._account_id: int | None = None
+        self._oms_id: int | None = None
         self._domain = domain
         self._api_factory = api_factory
         self._connector = connector
@@ -65,7 +65,7 @@ class NdaxAPIUserStreamDataSource(UserStreamTrackerDataSource):
                 CONSTANTS.AUTHENTICATE_USER_ENDPOINT_NAME, self._auth_assistant.header_for_authentication()
             )
             auth_resp = await ws.websocket.receive()
-            auth_payload: Dict[str, Any] = ws.payload_from_raw_message(auth_resp.data)
+            auth_payload: dict[str, Any] = ws.payload_from_raw_message(auth_resp.data)
 
             if not auth_payload["Authenticated"]:
                 self.logger().error(f"Response: {auth_payload}", exc_info=True)

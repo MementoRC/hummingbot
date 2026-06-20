@@ -1,7 +1,6 @@
 import logging
 import unittest
 from decimal import Decimal
-from typing import List
 
 import pandas as pd
 
@@ -23,8 +22,8 @@ logging.basicConfig(level=logging.ERROR)
 # Update the orderbook so that the top bids and asks are lower than actual for a wider bid ask spread
 # this basically removes the orderbook entries above top bid and below top ask
 def simulate_order_book_widening(order_book: OrderBook, top_bid: float, top_ask: float):
-    bid_diffs: List[OrderBookRow] = []
-    ask_diffs: List[OrderBookRow] = []
+    bid_diffs: list[OrderBookRow] = []
+    ask_diffs: list[OrderBookRow] = []
     update_id: int = order_book.last_diff_uid + 1
     for row in order_book.bid_entries():
         if row.price > top_bid:
@@ -56,21 +55,18 @@ class PureMMTakeIfCrossUnitTest(unittest.TestCase):
         self.bid_spread = 0.01
         self.ask_spread = 0.01
         self.order_refresh_time = 30
-        self.market.set_balanced_order_book(trading_pair=self.trading_pair,
-                                            mid_price=self.mid_price,
-                                            min_price=1,
-                                            max_price=200,
-                                            price_step_size=1,
-                                            volume_step_size=10)
+        self.market.set_balanced_order_book(
+            trading_pair=self.trading_pair,
+            mid_price=self.mid_price,
+            min_price=1,
+            max_price=200,
+            price_step_size=1,
+            volume_step_size=10,
+        )
         self.market.set_balance("HBOT", 500)
         self.market.set_balance("ETH", 5000)
-        self.market.set_quantization_param(
-            QuantizationParams(
-                self.trading_pair, 6, 6, 6, 6
-            )
-        )
-        self.market_info = MarketTradingPairTuple(self.market, self.trading_pair,
-                                                  self.base_asset, self.quote_asset)
+        self.market.set_quantization_param(QuantizationParams(self.trading_pair, 6, 6, 6, 6))
+        self.market_info = MarketTradingPairTuple(self.market, self.trading_pair, self.base_asset, self.quote_asset)
         self.clock.add_iterator(self.market)
         self.order_fill_logger: EventLogger = EventLogger()
         self.cancel_order_logger: EventLogger = EventLogger()
@@ -81,9 +77,14 @@ class PureMMTakeIfCrossUnitTest(unittest.TestCase):
         self.ext_market_info: MarketTradingPairTuple = MarketTradingPairTuple(
             self.ext_market, self.trading_pair, self.base_asset, self.quote_asset
         )
-        self.ext_market.set_balanced_order_book(trading_pair=self.trading_pair,
-                                                mid_price=100, min_price=1, max_price=400, price_step_size=1,
-                                                volume_step_size=100)
+        self.ext_market.set_balanced_order_book(
+            trading_pair=self.trading_pair,
+            mid_price=100,
+            min_price=1,
+            max_price=400,
+            price_step_size=1,
+            volume_step_size=100,
+        )
         self.order_book_asset_del = OrderBookAssetPriceDelegate(self.ext_market, self.trading_pair)
 
         self.one_level_strategy = PureMarketMakingStrategy()
@@ -97,7 +98,7 @@ class PureMMTakeIfCrossUnitTest(unittest.TestCase):
             order_refresh_tolerance_pct=-1,
             minimum_spread=-1,
             asset_price_delegate=self.order_book_asset_del,
-            take_if_crossed=True
+            take_if_crossed=True,
         )
 
     def simulate_maker_market_trade(self, is_buy: bool, quantity: Decimal, price: Decimal):
@@ -107,7 +108,7 @@ class PureMMTakeIfCrossUnitTest(unittest.TestCase):
             self.clock.current_timestamp,
             TradeType.BUY if is_buy else TradeType.SELL,
             price,
-            quantity
+            quantity,
         )
         order_book.apply_trade(trade_event)
 
@@ -120,23 +121,17 @@ class PureMMTakeIfCrossUnitTest(unittest.TestCase):
         self.assertEqual(1, len(self.strategy.active_buys))
         self.assertEqual(1, len(self.strategy.active_sells))
 
-        self.clock.backtest_til(
-            self.start_timestamp + 2 * self.clock_tick_size
-        )
+        self.clock.backtest_til(self.start_timestamp + 2 * self.clock_tick_size)
         self.assertEqual(1, len(self.order_fill_logger.event_log))
         self.assertEqual(0, len(self.strategy.active_buys))
         self.assertEqual(1, len(self.strategy.active_sells))
 
-        self.clock.backtest_til(
-            self.start_timestamp + 7 * self.clock_tick_size
-        )
+        self.clock.backtest_til(self.start_timestamp + 7 * self.clock_tick_size)
         self.assertEqual(2, len(self.order_fill_logger.event_log))
         self.assertEqual(0, len(self.strategy.active_buys))
         self.assertEqual(1, len(self.strategy.active_sells))
 
-        self.clock.backtest_til(
-            self.start_timestamp + 10 * self.clock_tick_size
-        )
+        self.clock.backtest_til(self.start_timestamp + 10 * self.clock_tick_size)
         self.assertEqual(3, len(self.order_fill_logger.event_log))
         self.assertEqual(0, len(self.strategy.active_buys))
         self.assertEqual(1, len(self.strategy.active_sells))
@@ -152,23 +147,17 @@ class PureMMTakeIfCrossUnitTest(unittest.TestCase):
         self.assertEqual(1, len(self.strategy.active_buys))
         self.assertEqual(1, len(self.strategy.active_sells))
 
-        self.clock.backtest_til(
-            self.start_timestamp + 2 * self.clock_tick_size
-        )
+        self.clock.backtest_til(self.start_timestamp + 2 * self.clock_tick_size)
         self.assertEqual(1, len(self.order_fill_logger.event_log))
         self.assertEqual(1, len(self.strategy.active_buys))
         self.assertEqual(0, len(self.strategy.active_sells))
 
-        self.clock.backtest_til(
-            self.start_timestamp + 6 * self.clock_tick_size
-        )
+        self.clock.backtest_til(self.start_timestamp + 6 * self.clock_tick_size)
         self.assertEqual(2, len(self.order_fill_logger.event_log))
         self.assertEqual(1, len(self.strategy.active_buys))
         self.assertEqual(0, len(self.strategy.active_sells))
 
-        self.clock.backtest_til(
-            self.start_timestamp + 10 * self.clock_tick_size
-        )
+        self.clock.backtest_til(self.start_timestamp + 10 * self.clock_tick_size)
         self.assertEqual(3, len(self.order_fill_logger.event_log))
         self.assertEqual(1, len(self.strategy.active_buys))
         self.assertEqual(0, len(self.strategy.active_sells))

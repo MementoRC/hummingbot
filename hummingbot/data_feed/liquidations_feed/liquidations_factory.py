@@ -1,5 +1,3 @@
-from typing import Dict, Optional, Set, Type
-
 from pydantic import BaseModel
 
 from hummingbot.data_feed.liquidations_feed.binance.binance_liquidations import BinancePerpetualLiquidations
@@ -27,8 +25,9 @@ class LiquidationsConfig(BaseModel):
         max_retention_seconds (int): The maximum duration in seconds that liquidation data should be retained.
                                      Defaults to 60 seconds if not specified.
     """
+
     connector: str
-    trading_pairs: Optional[Set[str]] = None  # Optional, defaults to subscribing to all liquidations on that exchange
+    trading_pairs: set[str] | None = None  # Optional, defaults to subscribing to all liquidations on that exchange
     max_retention_seconds: int = 60  # Default value set to 60 seconds
 
 
@@ -37,7 +36,8 @@ class LiquidationsFactory:
     The LiquidationsFactory class creates and returns a liquidations data-feed object based on the specified
     configuration. It uses a mapping of connector names to their respective data-feed classes.
     """
-    _liquidation_feeds_map: Dict[str, Type[LiquidationsBase]] = {
+
+    _liquidation_feeds_map: dict[str, type[LiquidationsBase]] = {
         "binance": BinancePerpetualLiquidations,
     }
 
@@ -52,9 +52,6 @@ class LiquidationsFactory:
         """
         connector_class = cls._liquidation_feeds_map.get(liquidations_config.connector)
         if connector_class:
-            return connector_class(
-                liquidations_config.trading_pairs,
-                liquidations_config.max_retention_seconds
-            )
+            return connector_class(liquidations_config.trading_pairs, liquidations_config.max_retention_seconds)
         else:
             raise UnsupportedConnectorException(liquidations_config.connector)

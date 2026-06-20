@@ -1,17 +1,21 @@
 #!/usr/bin/env python
 
 from collections import namedtuple
-from typing import Dict, List, Optional
 
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 from hummingbot.core.data_type.order_book_row import OrderBookRow
 
-NdaxOrderBookEntry = namedtuple("NdaxOrderBookEntry", "mdUpdateId accountId actionDateTime actionType lastTradePrice orderId price productPairCode quantity side")
-NdaxTradeEntry = namedtuple("NdaxTradeEntry", "tradeId productPairCode quantity price order1 order2 tradeTime direction takerSide blockTrade orderClientId")
+NdaxOrderBookEntry = namedtuple(
+    "NdaxOrderBookEntry",
+    "mdUpdateId accountId actionDateTime actionType lastTradePrice orderId price productPairCode quantity side",
+)
+NdaxTradeEntry = namedtuple(
+    "NdaxTradeEntry",
+    "tradeId productPairCode quantity price order1 order2 tradeTime direction takerSide blockTrade orderClientId",
+)
 
 
 class NdaxOrderBookMessage(OrderBookMessage):
-
     _DELETE_ACTION_TYPE = 2
     _BUY_SIDE = 0
     _SELL_SIDE = 1
@@ -19,8 +23,8 @@ class NdaxOrderBookMessage(OrderBookMessage):
     def __new__(
         cls,
         message_type: OrderBookMessageType,
-        content: Dict[str, any],
-        timestamp: Optional[float] = None,
+        content: dict[str, any],
+        timestamp: float | None = None,
         *args,
         **kwargs,
     ):
@@ -54,19 +58,19 @@ class NdaxOrderBookMessage(OrderBookMessage):
 
     @property
     def last_traded_price(self) -> float:
-        entries: List[NdaxOrderBookEntry] = [NdaxOrderBookEntry(*entry) for entry in self.content["data"]]
+        entries: list[NdaxOrderBookEntry] = [NdaxOrderBookEntry(*entry) for entry in self.content["data"]]
         return float(entries[-1].lastTradePrice)
 
     @property
-    def asks(self) -> List[OrderBookRow]:
-        entries: List[NdaxOrderBookEntry] = [NdaxOrderBookEntry(*entry) for entry in self.content["data"]]
+    def asks(self) -> list[OrderBookRow]:
+        entries: list[NdaxOrderBookEntry] = [NdaxOrderBookEntry(*entry) for entry in self.content["data"]]
         asks = [self._order_book_row_for_entry(entry) for entry in entries if entry.side == self._SELL_SIDE]
         asks.sort(key=lambda row: (row.price, row.update_id))
         return asks
 
     @property
-    def bids(self) -> List[OrderBookRow]:
-        entries: List[NdaxOrderBookEntry] = [NdaxOrderBookEntry(*entry) for entry in self.content["data"]]
+    def bids(self) -> list[OrderBookRow]:
+        entries: list[NdaxOrderBookEntry] = [NdaxOrderBookEntry(*entry) for entry in self.content["data"]]
         bids = [self._order_book_row_for_entry(entry) for entry in entries if entry.side == self._BUY_SIDE]
         bids.sort(key=lambda row: (row.price, row.update_id))
         return bids
@@ -82,7 +86,9 @@ class NdaxOrderBookMessage(OrderBookMessage):
 
     def __lt__(self, other) -> bool:
         # If timestamp is the same, the ordering is snapshot < diff < trade
-        return (self.timestamp < other.timestamp or (self.timestamp == other.timestamp and self.type.value < other.type.value))
+        return self.timestamp < other.timestamp or (
+            self.timestamp == other.timestamp and self.type.value < other.type.value
+        )
 
     def __hash__(self) -> int:
         return hash((self.type, self.timestamp))

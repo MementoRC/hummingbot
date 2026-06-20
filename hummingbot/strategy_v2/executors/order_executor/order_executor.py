@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from decimal import Decimal
-from typing import Dict, Optional, Union
+from typing import Dict, Union
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.common import OrderType, PriceType, TradeType
@@ -32,8 +32,9 @@ class OrderExecutor(ExecutorBase):
             cls._logger = logging.getLogger(__name__)
         return cls._logger
 
-    def __init__(self, strategy: StrategyV2Base, config: OrderExecutorConfig,
-                 update_interval: float = 1.0, max_retries: int = 10):
+    def __init__(
+        self, strategy: StrategyV2Base, config: OrderExecutorConfig, update_interval: float = 1.0, max_retries: int = 10
+    ):
         """
         Initialize the OrderExecutor instance.
 
@@ -42,12 +43,17 @@ class OrderExecutor(ExecutorBase):
         :param update_interval: The interval at which the OrderExecutor should be updated, defaults to 1.0.
         :param max_retries: The maximum number of retries for the OrderExecutor, defaults to 10.
         """
-        super().__init__(strategy=strategy, config=config, connectors=[config.connector_name],
-                         update_interval=update_interval, max_retries=max_retries)
+        super().__init__(
+            strategy=strategy,
+            config=config,
+            connectors=[config.connector_name],
+            update_interval=update_interval,
+            max_retries=max_retries,
+        )
         self.config: OrderExecutorConfig = config
 
         # Order tracking
-        self._order: Optional[TrackedOrder] = None
+        self._order: TrackedOrder | None = None
         self._failed_orders: list[TrackedOrder] = []
         self._canceled_orders: list[TrackedOrder] = []
         self._partial_filled_orders: list[TrackedOrder] = []
@@ -173,32 +179,18 @@ class OrderExecutor(ExecutorBase):
     def place_open_order(self):
         """
         Place the order based on the execution strategy.
-        Accounts for previously filled amounts so renewals only order the remaining quantity.
         """
-        remaining = self.config.amount - self.executed_amount_base
-        if remaining <= Decimal("0"):
-            self.logger().info(
-                f"Executor {self.config.id}: fully filled ({self.executed_amount_base}/{self.config.amount}). "
-                f"No new order needed."
-            )
-            self._held_position_orders.extend([order.order.to_json() for order in self._partial_filled_orders])
-            self.close_type = CloseType.POSITION_HOLD
-            self.stop()
-            return
         order_id = self.place_order(
             connector_name=self.config.connector_name,
             trading_pair=self.config.trading_pair,
             order_type=self.get_order_type(),
-            amount=remaining,
+            amount=self.config.amount,
             price=self.get_order_price(),
             side=self.config.side,
             position_action=self.config.position_action,
         )
         self._order = TrackedOrder(order_id=order_id)
-        self.logger().debug(
-            f"Executor ID: {self.config.id} - Placing order {order_id} "
-            f"(remaining: {remaining}, filled: {self.executed_amount_base}/{self.config.amount})"
-        )
+        self.logger().debug(f"Executor ID: {self.config.id} - Placing order {order_id}")
 
     def get_order_type(self) -> OrderType:
         """
@@ -263,7 +255,7 @@ class OrderExecutor(ExecutorBase):
             self._strategy.cancel(
                 connector_name=self.config.connector_name,
                 trading_pair=self.config.trading_pair,
-                order_id=self._order.order_id
+                order_id=self._order.order_id,
             )
             self.logger().debug("Cancelling order")
 
@@ -345,11 +337,13 @@ class OrderExecutor(ExecutorBase):
         :param scale: The scale for formatting.
         :return: A list of formatted status lines.
         """
-        lines = [f"""
+        lines = [
+            f"""
 | Trading Pair: {self.config.trading_pair} | Exchange: {self.config.connector_name} | Action: {self.config.position_action}
-| Amount: {self.config.amount} | Price: {self._order.order.price if self._order and self._order.order else 'N/A'}
+| Amount: {self.config.amount} | Price: {self._order.order.price if self._order and self._order.order else "N/A"}
 | Execution Strategy: {self.config.execution_strategy} | Retries: {self._current_retries}/{self._max_retries}
-"""]
+"""
+        ]
         return lines
 
     async def validate_sufficient_balance(self):

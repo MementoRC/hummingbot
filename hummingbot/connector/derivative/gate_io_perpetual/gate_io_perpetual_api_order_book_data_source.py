@@ -2,7 +2,7 @@ import asyncio
 import json
 from collections import defaultdict
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 
@@ -28,26 +28,24 @@ class GateIoPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
     _next_subscribe_id: int = _DYNAMIC_SUBSCRIBE_ID_START
 
     def __init__(
-            self,
-            trading_pairs: List[str],
-            connector: 'GateIoPerpetualDerivative',
-            api_factory: WebAssistantsFactory,
-            domain: str = CONSTANTS.DEFAULT_DOMAIN
+        self,
+        trading_pairs: list[str],
+        connector: "GateIoPerpetualDerivative",
+        api_factory: WebAssistantsFactory,
+        domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
         super().__init__(trading_pairs)
         self._connector = connector
         self._api_factory = api_factory
-        self._trading_pairs: List[str] = trading_pairs
-        self._message_queue: Dict[str, asyncio.Queue] = defaultdict(asyncio.Queue)
+        self._trading_pairs: list[str] = trading_pairs
+        self._message_queue: dict[str, asyncio.Queue] = defaultdict(asyncio.Queue)
 
-    async def get_last_traded_prices(self,
-                                     trading_pairs: List[str],
-                                     domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def get_funding_info(self, trading_pair: str) -> FundingInfo:
         funding_info_response = await self._request_complete_funding_info(trading_pair)
-        symbol_info: Dict[str, Any] = funding_info_response
+        symbol_info: dict[str, Any] = funding_info_response
         funding_info = FundingInfo(
             trading_pair=trading_pair,
             index_price=Decimal(str(symbol_info["index_price"])),
@@ -58,22 +56,27 @@ class GateIoPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         return funding_info
 
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBookMessage:
-        snapshot_response: Dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
+        snapshot_response: dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
         snapshot_timestamp: float = self._time()
         snapshot_msg: OrderBookMessage = OrderBookMessage(
             OrderBookMessageType.SNAPSHOT,
             {
                 "trading_pair": trading_pair,
                 "update_id": snapshot_response["id"],
-                "bids": [[i['p'], self._connector._format_size_to_amount(trading_pair, Decimal(str(i['s'])))] for i in
-                         snapshot_response["bids"]],
-                "asks": [[i['p'], self._connector._format_size_to_amount(trading_pair, Decimal(str(i['s'])))] for i in
-                         snapshot_response["asks"]],
+                "bids": [
+                    [i["p"], self._connector._format_size_to_amount(trading_pair, Decimal(str(i["s"])))]
+                    for i in snapshot_response["bids"]
+                ],
+                "asks": [
+                    [i["p"], self._connector._format_size_to_amount(trading_pair, Decimal(str(i["s"])))]
+                    for i in snapshot_response["asks"]
+                ],
             },
-            timestamp=snapshot_timestamp)
+            timestamp=snapshot_timestamp,
+        )
         return snapshot_msg
 
-    async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, Any]:
+    async def _request_order_book_snapshot(self, trading_pair: str) -> dict[str, Any]:
         """
         Retrieves a copy of the full order book from the exchange, for a particular trading pair.
 
@@ -83,7 +86,7 @@ class GateIoPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         """
         params = {
             "contract": await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair),
-            "with_id": json.dumps(True)
+            "with_id": json.dumps(True),
         }
 
         rest_assistant = await self._api_factory.get_rest_assistant()
@@ -94,29 +97,27 @@ class GateIoPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             throttler_limit_id=CONSTANTS.ORDER_BOOK_PATH_URL,
         )
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         for trade_data in raw_message["result"]:
             trade_timestamp: float = float(trade_data["create_time_ms"]) * 1e-3
             trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(
-                symbol=trade_data["contract"])
+                symbol=trade_data["contract"]
+            )
             message_content = {
                 "trading_pair": trading_pair,
-                "trade_type": (float(TradeType.SELL.value)
-                               if trade_data["size"] < 0
-                               else float(TradeType.BUY.value)),
+                "trade_type": (float(TradeType.SELL.value) if trade_data["size"] < 0 else float(TradeType.BUY.value)),
                 "trade_id": trade_data["id"],
                 "update_id": trade_timestamp,
                 "price": trade_data["price"],
-                "amount": abs(self._connector._format_size_to_amount(trading_pair, (Decimal(str(trade_data["size"])))))
+                "amount": abs(self._connector._format_size_to_amount(trading_pair, (Decimal(str(trade_data["size"]))))),
             }
-            trade_message: Optional[OrderBookMessage] = OrderBookMessage(
-                message_type=OrderBookMessageType.TRADE,
-                content=message_content,
-                timestamp=trade_timestamp)
+            trade_message: OrderBookMessage | None = OrderBookMessage(
+                message_type=OrderBookMessageType.TRADE, content=message_content, timestamp=trade_timestamp
+            )
 
             message_queue.put_nowait(trade_message)
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         diff_data: [str, Any] = raw_message["result"]
         timestamp: float = (diff_data["t"]) * 1e-3
         update_id: int = diff_data["u"]
@@ -127,15 +128,18 @@ class GateIoPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             "trading_pair": trading_pair,
             "update_id": update_id,
             "first_update_id": diff_data["U"],
-            "bids": [[i['p'], self._connector._format_size_to_amount(trading_pair, Decimal(str(i['s'])))] for i in
-                     diff_data["b"]],
-            "asks": [[i['p'], self._connector._format_size_to_amount(trading_pair, Decimal(str(i['s'])))] for i in
-                     diff_data["a"]],
+            "bids": [
+                [i["p"], self._connector._format_size_to_amount(trading_pair, Decimal(str(i["s"])))]
+                for i in diff_data["b"]
+            ],
+            "asks": [
+                [i["p"], self._connector._format_size_to_amount(trading_pair, Decimal(str(i["s"])))]
+                for i in diff_data["a"]
+            ],
         }
         diff_message: OrderBookMessage = OrderBookMessage(
-            OrderBookMessageType.DIFF,
-            order_book_message_content,
-            timestamp)
+            OrderBookMessageType.DIFF, order_book_message_content, timestamp
+        )
 
         message_queue.put_nowait(diff_message)
 
@@ -153,7 +157,7 @@ class GateIoPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
                     "time": int(self._time()),
                     "channel": CONSTANTS.TRADES_ENDPOINT_NAME,
                     "event": "subscribe",
-                    "payload": [symbol]
+                    "payload": [symbol],
                 }
                 subscribe_trade_request: WSJSONRequest = WSJSONRequest(payload=trades_payload)
 
@@ -161,7 +165,7 @@ class GateIoPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
                     "time": int(self._time()),
                     "channel": CONSTANTS.ORDERS_UPDATE_ENDPOINT_NAME,
                     "event": "subscribe",
-                    "payload": [symbol, "100ms"]
+                    "payload": [symbol, "100ms"],
                 }
                 subscribe_orderbook_request: WSJSONRequest = WSJSONRequest(payload=order_book_payload)
 
@@ -175,7 +179,7 @@ class GateIoPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             self.logger().error("Unexpected error occurred subscribing to order book data streams.")
             raise
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         channel = ""
         if event_message.get("error") is not None:
             err_msg = event_message.get("error", {}).get("message", event_message.get("error"))
@@ -193,12 +197,12 @@ class GateIoPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         await ws.connect(ws_url=CONSTANTS.WS_URL, ping_timeout=CONSTANTS.PING_TIMEOUT)
         return ws
 
-    async def _parse_funding_info_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_funding_info_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         event_type = raw_message["event"]
         if event_type == "update":
-            symbol = raw_message['result'][0]["contract"]
+            symbol = raw_message["result"][0]["contract"]
             trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(symbol)
-            entries = raw_message['result']
+            entries = raw_message["result"]
             for entry in entries:
                 info_update = FundingInfoUpdate(trading_pair)
                 if "index_price" in entry:
@@ -210,9 +214,7 @@ class GateIoPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
                         pd.Timestamp(str(entry["next_funding_time"]), tz="UTC").timestamp()
                     )
                 if "funding_rate_indicative" in entry:
-                    info_update.rate = (
-                        Decimal(str(entry["funding_rate_indicative"]))
-                    )
+                    info_update.rate = Decimal(str(entry["funding_rate_indicative"]))
                 message_queue.put_nowait(info_update)
 
     async def _request_complete_funding_info(self, trading_pair: str):
@@ -235,9 +237,7 @@ class GateIoPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         :return: True if subscription was successful, False otherwise
         """
         if self._ws_assistant is None:
-            self.logger().warning(
-                f"Cannot subscribe to {trading_pair}: WebSocket not connected"
-            )
+            self.logger().warning(f"Cannot subscribe to {trading_pair}: WebSocket not connected")
             return False
 
         try:
@@ -247,7 +247,7 @@ class GateIoPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
                 "time": int(self._time()),
                 "channel": CONSTANTS.TRADES_ENDPOINT_NAME,
                 "event": "subscribe",
-                "payload": [symbol]
+                "payload": [symbol],
             }
             subscribe_trade_request: WSJSONRequest = WSJSONRequest(payload=trades_payload)
 
@@ -255,7 +255,7 @@ class GateIoPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
                 "time": int(self._time()),
                 "channel": CONSTANTS.ORDERS_UPDATE_ENDPOINT_NAME,
                 "event": "subscribe",
-                "payload": [symbol, "100ms"]
+                "payload": [symbol, "100ms"],
             }
             subscribe_orderbook_request: WSJSONRequest = WSJSONRequest(payload=order_book_payload)
 
@@ -281,9 +281,7 @@ class GateIoPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         :return: True if unsubscription was successful, False otherwise
         """
         if self._ws_assistant is None:
-            self.logger().warning(
-                f"Cannot unsubscribe from {trading_pair}: WebSocket not connected"
-            )
+            self.logger().warning(f"Cannot unsubscribe from {trading_pair}: WebSocket not connected")
             return False
 
         try:
@@ -293,7 +291,7 @@ class GateIoPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
                 "time": int(self._time()),
                 "channel": CONSTANTS.TRADES_ENDPOINT_NAME,
                 "event": "unsubscribe",
-                "payload": [symbol]
+                "payload": [symbol],
             }
             unsubscribe_trade_request: WSJSONRequest = WSJSONRequest(payload=trades_payload)
 
@@ -301,7 +299,7 @@ class GateIoPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
                 "time": int(self._time()),
                 "channel": CONSTANTS.ORDERS_UPDATE_ENDPOINT_NAME,
                 "event": "unsubscribe",
-                "payload": [symbol, "100ms"]
+                "payload": [symbol, "100ms"],
             }
             unsubscribe_orderbook_request: WSJSONRequest = WSJSONRequest(payload=order_book_payload)
 

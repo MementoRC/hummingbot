@@ -3,7 +3,6 @@ import json
 import re
 from decimal import Decimal
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from typing import Optional
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
@@ -50,7 +49,7 @@ class CoinCapRateSourceTest(IsolatedAsyncioWrapperTestCase):
         self,
         asset_symbol: str,
         asset_price: Decimal,
-        asset_id: Optional[str] = None,
+        asset_id: str | None = None,
     ):
         data = {
             "data": [
@@ -137,9 +136,7 @@ class CoinCapRateSourceTest(IsolatedAsyncioWrapperTestCase):
         # initial request
         rest_rate = Decimal("20")
         data = self.get_coin_cap_assets_data_mock(asset_symbol=self.target_token, asset_price=rest_rate)
-        assets_map = {
-            asset_data["symbol"]: asset_data["id"] for asset_data in data["data"]
-        }
+        assets_map = {asset_data["symbol"]: asset_data["id"] for asset_data in data["data"]}
         rate_source = CoinCapRateSource(assets_map=assets_map, api_key="")
         rate_source._coin_cap_data_feed._get_api_factory()
         web_socket_mock = self.mocking_assistant.configure_web_assistants_factory(
@@ -198,9 +195,7 @@ class CoinCapRateSourceTest(IsolatedAsyncioWrapperTestCase):
         # initial request
         rest_rate = Decimal("20")
         data = self.get_coin_cap_assets_data_mock(asset_symbol=self.target_token, asset_price=rest_rate)
-        assets_map = {
-            asset_data["symbol"]: asset_data["id"] for asset_data in data["data"]
-        }
+        assets_map = {asset_data["symbol"]: asset_data["id"] for asset_data in data["data"]}
         rate_source = CoinCapRateSource(assets_map=assets_map, api_key="")
         rate_source._coin_cap_data_feed._get_api_factory()
         web_socket_mock = self.mocking_assistant.configure_web_assistants_factory(
@@ -237,10 +232,7 @@ class CoinCapRateSourceTest(IsolatedAsyncioWrapperTestCase):
         self.assertEqual(streamed_rate, prices[self.trading_pair])
         log_level = "NETWORK"
         message = "Unexpected error while streaming prices. Restarting the stream."
-        any(
-            record.levelname == log_level and message == record.getMessage() is not None
-            for record in self.log_records
-        )
+        any(record.levelname == log_level and message == record.getMessage() is not None for record in self.log_records)
 
         streamed_rate = rest_rate + Decimal("2")
         stream_response = {self.target_asset_id: str(streamed_rate)}

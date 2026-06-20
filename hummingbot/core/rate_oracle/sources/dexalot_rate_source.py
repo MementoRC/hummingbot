@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING
 
 from hummingbot.core.rate_oracle.sources.rate_source_base import RateSourceBase
 from hummingbot.core.utils import async_ttl_cache
@@ -11,14 +11,14 @@ if TYPE_CHECKING:
 class DexalotRateSource(RateSourceBase):
     def __init__(self):
         super().__init__()
-        self._exchange: Optional[DexalotExchange] = None  # delayed because of circular reference
+        self._exchange: DexalotExchange | None = None  # delayed because of circular reference
 
     @property
     def name(self) -> str:
         return "dexalot"
 
     @async_ttl_cache(ttl=30, maxsize=1)
-    async def get_prices(self, quote_token: Optional[str] = None) -> Dict[str, Decimal]:
+    async def get_prices(self, quote_token: str | None = None) -> dict[str, Decimal]:
         self._ensure_exchange()
         results = {}
         try:
@@ -31,8 +31,7 @@ class DexalotRateSource(RateSourceBase):
                     continue
 
                 if Decimal(str(record["low"])) > 0 and Decimal(str(record["high"])) > 0:
-                    results[pair] = (Decimal(str(record["low"])) +
-                                     Decimal(str(record["high"]))) / Decimal("2")
+                    results[pair] = (Decimal(str(record["low"])) + Decimal(str(record["high"]))) / Decimal("2")
         except Exception:
             self.logger().exception(
                 msg="Unexpected error while retrieving rates from Dexalot. Check the log file for more info.",
@@ -44,7 +43,7 @@ class DexalotRateSource(RateSourceBase):
             self._exchange = self._build_dexalot_connector_without_private_keys()
 
     @staticmethod
-    def _build_dexalot_connector_without_private_keys() -> 'DexalotExchange':
+    def _build_dexalot_connector_without_private_keys() -> "DexalotExchange":
         from hummingbot.connector.exchange.dexalot.dexalot_exchange import DexalotExchange
 
         return DexalotExchange(

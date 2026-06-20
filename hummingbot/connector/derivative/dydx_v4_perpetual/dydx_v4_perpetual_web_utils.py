@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 import hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_constants as CONSTANTS
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
@@ -8,13 +8,10 @@ from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFa
 
 
 class DydxV4PerpetualRESTPreProcessor(RESTPreProcessorBase):
-
     async def pre_process(self, request: RESTRequest) -> RESTRequest:
         if request.headers is None:
             request.headers = {}
-        request.headers["Accept"] = (
-            "application/json"
-        )
+        request.headers["Accept"] = "application/json"
         return request
 
 
@@ -39,7 +36,7 @@ def private_rest_url(path_url: str, domain: str = CONSTANTS.DEFAULT_DOMAIN) -> s
 
 
 def build_api_factory(
-        throttler: AsyncThrottler = None,
+    throttler: AsyncThrottler = None,
 ) -> WebAssistantsFactory:
     throttler = throttler or create_throttler()
     api_factory = WebAssistantsFactory(
@@ -75,7 +72,7 @@ def build_api_factory_without_time_synchronizer_pre_processor(throttler: AsyncTh
     return api_factory
 
 
-def is_exchange_information_valid(rule: Dict[str, Any]) -> bool:
+def is_exchange_information_valid(rule: dict[str, Any]) -> bool:
     """
     Verifies if a trading pair is enabled to operate with based on its exchange information
 

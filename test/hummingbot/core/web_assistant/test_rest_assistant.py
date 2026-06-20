@@ -1,6 +1,5 @@
 import json
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from typing import Optional
 from unittest.mock import patch
 
 import aiohttp
@@ -51,11 +50,12 @@ class RESTAssistantTest(IsolatedAsyncioWrapperTestCase):
             connection=connection,
             throttler=AsyncThrottler(rate_limits=[]),
             rest_pre_processors=pre_processors,
-            rest_post_processors=post_processors)
+            rest_post_processors=post_processors,
+        )
         req = RESTRequest(method=RESTMethod.GET, url=url)
 
-        ret = await (assistant.call(req))
-        ret_json = await (ret.json())
+        ret = await assistant.call(req)
+        ret_json = await ret.json()
 
         self.assertEqual(resp, ret_json)
         self.assertTrue(pre_processor_ran)
@@ -66,7 +66,7 @@ class RESTAssistantTest(IsolatedAsyncioWrapperTestCase):
     async def test_rest_assistant_authenticates(self, mocked_call):
         url = "https://www.test.com/url"
         resp = {"one": 1}
-        call_request: Optional[RESTRequest] = None
+        call_request: RESTRequest | None = None
         auth_header = {"authenticated": True}
 
         async def register_request_and_return(request: RESTRequest):
@@ -90,12 +90,12 @@ class RESTAssistantTest(IsolatedAsyncioWrapperTestCase):
         req = RESTRequest(method=RESTMethod.GET, url=url)
         auth_req = RESTRequest(method=RESTMethod.GET, url=url, is_auth_required=True)
 
-        await (assistant.call(req))
+        await assistant.call(req)
 
         self.assertIsNotNone(call_request)
         self.assertIsNone(call_request.headers)
 
-        await (assistant.call(auth_req))
+        await assistant.call(auth_req)
 
         self.assertIsNotNone(call_request)
         self.assertIsNotNone(call_request.headers)

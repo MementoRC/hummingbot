@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING
 
 from hummingbot.connector.utils import split_hb_trading_pair
 from hummingbot.core.rate_oracle.sources.rate_source_base import RateSourceBase
@@ -13,15 +13,15 @@ if TYPE_CHECKING:
 class CubeRateSource(RateSourceBase):
     def __init__(self):
         super().__init__()
-        self._cube_exchange: Optional[CubeExchange] = None  # delayed because of circular reference
-        self._cube_staging_exchange: Optional[CubeExchange] = None  # delayed because of circular reference
+        self._cube_exchange: CubeExchange | None = None  # delayed because of circular reference
+        self._cube_staging_exchange: CubeExchange | None = None  # delayed because of circular reference
 
     @property
     def name(self) -> str:
         return "cube"
 
     @async_ttl_cache(ttl=30, maxsize=1)
-    async def get_prices(self, quote_token: Optional[str] = None) -> Dict[str, Decimal]:
+    async def get_prices(self, quote_token: str | None = None) -> dict[str, Decimal]:
         self._ensure_exchanges()
         results = {}
         tasks = [
@@ -46,7 +46,7 @@ class CubeRateSource(RateSourceBase):
             self._cube_staging_exchange = self._build_cube_connector_without_private_keys(domain="staging")
 
     @staticmethod
-    async def _get_cube_prices(exchange: 'CubeExchange', quote_token: str = None) -> Dict[str, Decimal]:
+    async def _get_cube_prices(exchange: "CubeExchange", quote_token: str = None) -> dict[str, Decimal]:
         """
         Fetches binance prices
 
@@ -59,7 +59,8 @@ class CubeRateSource(RateSourceBase):
         for pair_price in pairs_prices:
             try:
                 trading_pair = await exchange.trading_pair_associated_to_exchange_symbol(
-                    symbol=pair_price["ticker_id"].upper())
+                    symbol=pair_price["ticker_id"].upper()
+                )
             except KeyError:
                 continue  # skip pairs that we don't track
             if quote_token is not None:
@@ -74,7 +75,7 @@ class CubeRateSource(RateSourceBase):
         return results
 
     @staticmethod
-    def _build_cube_connector_without_private_keys(domain: str) -> 'CubeExchange':
+    def _build_cube_connector_without_private_keys(domain: str) -> "CubeExchange":
         from hummingbot.connector.exchange.cube.cube_exchange import CubeExchange
 
         return CubeExchange(

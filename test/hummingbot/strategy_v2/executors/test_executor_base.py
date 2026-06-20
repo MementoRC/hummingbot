@@ -26,8 +26,9 @@ class TestExecutorBase(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
     def setUp(self):
         self.strategy = self.create_mock_strategy
         self.config = ExecutorConfigBase(id="test", type="position_executor", timestamp=1234567890)
-        self.component = ExecutorBase(strategy=self.strategy, connectors=["connector1"], config=self.config,
-                                      update_interval=0.5)
+        self.component = ExecutorBase(
+            strategy=self.strategy, connectors=["connector1"], config=self.config, update_interval=0.5
+        )
 
     @property
     def create_mock_strategy(self):
@@ -64,7 +65,7 @@ class TestExecutorBase(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             base_asset_amount=Decimal("1.0"),
             quote_asset_amount=Decimal("1.0") * Decimal("1000.0"),
             order_type=OrderType.LIMIT,
-            exchange_order_id="ED140"
+            exchange_order_id="ED140",
         )
         self.component.process_order_completed_event(event_tag, market, event)
         self.assertIsNone(self.component.process_order_completed_event(event_tag, market, event))
@@ -80,7 +81,7 @@ class TestExecutorBase(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             type=OrderType.LIMIT,
             price=Decimal("1000.0"),
             exchange_order_id="ED140",
-            creation_timestamp=1234567890
+            creation_timestamp=1234567890,
         )
         self.component.process_order_created_event(event_tag, market, event)
         self.assertIsNone(self.component.process_order_created_event(event_tag, market, event))
@@ -181,10 +182,12 @@ class TestExecutorBase(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             if call_count >= 2:
                 self.component.stop()
 
-        with patch.object(self.component, "control_task", side_effect=mock_control_task), \
-             patch.object(self.component, "evaluate_max_retries") as mock_eval, \
-             patch.object(self.component, "validate_sufficient_balance", new_callable=AsyncMock), \
-             patch.object(self.component, "on_stop"):
+        with (
+            patch.object(self.component, "control_task", side_effect=mock_control_task),
+            patch.object(self.component, "evaluate_max_retries") as mock_eval,
+            patch.object(self.component, "validate_sufficient_balance", new_callable=AsyncMock),
+            patch.object(self.component, "on_stop"),
+        ):
             self.component.update_interval = 0.01
             await self.component.control_loop()
             self.assertGreaterEqual(call_count, 2)
@@ -201,10 +204,12 @@ class TestExecutorBase(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
                 raise RuntimeError("test error")
             self.component.stop()
 
-        with patch.object(self.component, "control_task", side_effect=mock_control_task), \
-             patch.object(self.component, "evaluate_max_retries"), \
-             patch.object(self.component, "validate_sufficient_balance", new_callable=AsyncMock), \
-             patch.object(self.component, "on_stop"):
+        with (
+            patch.object(self.component, "control_task", side_effect=mock_control_task),
+            patch.object(self.component, "evaluate_max_retries"),
+            patch.object(self.component, "validate_sufficient_balance", new_callable=AsyncMock),
+            patch.object(self.component, "on_stop"),
+        ):
             self.component.update_interval = 0.01
             self.component.terminated.clear()
             await self.component.control_loop()

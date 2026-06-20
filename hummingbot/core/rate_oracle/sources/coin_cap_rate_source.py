@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import Dict, Optional
 
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.core.rate_oracle.sources.rate_source_base import RateSourceBase
@@ -8,9 +7,9 @@ from hummingbot.logger import HummingbotLogger
 
 
 class CoinCapRateSource(RateSourceBase):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
-    def __init__(self, assets_map: Dict[str, str], api_key: str):
+    def __init__(self, assets_map: dict[str, str], api_key: str):
         self._coin_cap_data_feed = CoinCapDataFeed(assets_map=assets_map, api_key=api_key)
 
     @property
@@ -26,7 +25,7 @@ class CoinCapRateSource(RateSourceBase):
     async def check_network(self) -> NetworkStatus:
         return await self._coin_cap_data_feed.check_network()
 
-    async def get_prices(self, quote_token: Optional[str] = None) -> Dict[str, Decimal]:
+    async def get_prices(self, quote_token: str | None = None) -> dict[str, Decimal]:
         prices = {}
 
         if quote_token == self._coin_cap_data_feed.universal_quote_token:

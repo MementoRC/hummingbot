@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Literal, Optional
+from typing import Literal
 
 from hummingbot.strategy_v2.executors.data_types import ConnectorPair, ExecutorConfigBase
 
@@ -10,4 +10,4 @@ class ArbitrageExecutorConfig(ExecutorConfigBase):
     selling_market: ConnectorPair
     order_amount: Decimal
     min_profitability: Decimal
-    gas_conversion_price: Optional[Decimal] = None
+    gas_conversion_price: Decimal | None = None

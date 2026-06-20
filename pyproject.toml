@@ -3,7 +3,7 @@ name = "hummingbot"
 version = "20260302"
 description = "Hummingbot"
 authors = [{name = "Hummingbot Foundation", email = "dev@hummingbot.org"}]
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 license = {text = "Apache-2.0"}
 
 [project.scripts]
@@ -15,11 +15,6 @@ python_files = ["test_*.py"]
 asyncio_default_fixture_loop_scope = "function"
 addopts = "--strict-markers"
 asyncio_mode = "auto"
-# Fail any single test that runs longer than this (seconds) instead of hanging the
-# whole CI run. Uses the SIGALRM-based method so a timed-out test raises in the main
-# thread and the suite continues, surfacing every real failure in one run.
-timeout = 120
-timeout_method = "signal"
 
 [tool.black]
 line-length = 120
@@ -57,7 +52,7 @@ channels = ["conda-forge"]
 platforms = ["linux-64"]
 [tool.pixi.dependencies]
 # Build/install
-python = ">=3.10.12,<3.13"
+python = ">=3.12,<3.13"
 cython = ">=3.0.12"
 hatchling = ">=1.29.0"
 maturin = ">=1.5"
@@ -75,7 +70,7 @@ base58 = ">=2.1.1"
 bidict = ">=0.22.1"
 bip-utils = "*"
 cachetools = ">=5.3.1"
-commlib-py = ">=0.13.2"
+commlib-py = ">=0.11,<0.13"
 cryptography = ">=41.0.2"
 eth-account = ">=0.13.0"
 injective-py = ">=1.12"
@@ -136,8 +131,7 @@ ci = { features = ["ci", "dev"], solve-group = "default" }
 # py310/py311/py312 removed: pandas-ta/numba version conflicts
 
 [tool.pixi.tasks]
-# Sub-package editable install. HUMMINGBOT_SKIP_CYTHON=1 skips Cython compilation during pip install -e (sub-packages don't ship Cython extensions).
-install-subpackages = { cmd = "python -m pip install --no-deps --no-build-isolation -e sub-packages/async-utils -e sub-packages/candles-feed -e sub-packages/connector-utils -e sub-packages/data-type-primitives -e sub-packages/event-bus -e sub-packages/liquidations-feed -e sub-packages/logger -e sub-packages/market-connector -e sub-packages/market-data -e sub-packages/market-simulator -e sub-packages/rate-oracle -e sub-packages/remote-iface -e sub-packages/strategy-framework -e sub-packages/web-assistant", env = { HUMMINGBOT_SKIP_CYTHON = "1" } }
+install-subpackages = "python -m pip install --no-deps --no-build-isolation -e sub-packages/candles-feed -e sub-packages/liquidations-feed -e sub-packages/market-connector -e sub-packages/market-data -e sub-packages/market-simulator -e sub-packages/rate-oracle -e sub-packages/remote-iface -e sub-packages/strategy-framework"
 install-dev = { depends-on = ["install-subpackages"], cmd = "python -m pip install --no-deps --no-build-isolation -e ." }
 build = { cmd = "python setup.py build_ext --inplace", depends-on = ["install-dev"] }
 rust-build = { cmd = "maturin develop --manifest-path hummingbot/rust/Cargo.toml", depends-on = ["install-dev"] }
@@ -146,7 +140,7 @@ test-unit = { cmd = "pytest test/hummingbot", depends-on = ["build"] }
 test-fast = "pytest --timeout=30 --tb=short -q"
 lint = "ruff check hummingbot test controllers scripts"
 lint-cython = "cython-lint hummingbot"
-format = { cmd = "ruff format hummingbot test controllers scripts" }
+format = "ruff format hummingbot test controllers scripts"
 format-check = "ruff format --check hummingbot test controllers scripts"
 type-check = "mypy hummingbot"
 security-scan = "bandit -c pyproject.toml -r hummingbot/"
@@ -159,9 +153,19 @@ submodule-update = "git submodule update --remote sub-packages/candles-feed"
 compat-import = { cmd = "python ci/check_subpackage_compat.py import", depends-on = ["install-dev"] }
 compat-contract = { cmd = "python ci/check_subpackage_compat.py contract", depends-on = ["install-dev"] }
 compat-integration = { cmd = "pytest sub-packages/candles-feed/tests/unit/test_compatibility.py sub-packages/candles-feed/tests/unit/test_hummingbot_integration.py -v --timeout=30", depends-on = ["install-dev"] }
-compat-check = { cmd = "bash ../custom_git_setup/scripts/check_all_subpackages_compat.sh", description = "Run compat checks across all 14 sub-packages" }
+compat-check = { depends-on = ["compat-import", "compat-contract", "compat-integration"] }
 migrate-pytest = { cmd = "python $HOME/PycharmProjects/refactor-applications/refactor/rules/pytest_migration.py -d --apply --verbose test/", env = { PYTHONPATH = "$HOME/PycharmProjects/refactor-applications:$PYTHONPATH" } }
 migrate-pytest-dry = { cmd = "python $HOME/PycharmProjects/refactor-applications/refactor/rules/pytest_migration.py -d --verbose test/", env = { PYTHONPATH = "$HOME/PycharmProjects/refactor-applications:$PYTHONPATH" } }
+
+[tool.isort]
+line_length = 120
+multi_line_output = 3
+include_trailing_comma = true
+use_parentheses = true
+ensure_newline_before_comments = true
+combine_as_imports = true
+filter_files = true
+skip = ["setup.py"]
 
 [tool.ruff]
 line-length = 120
@@ -169,14 +173,8 @@ target-version = "py312"
 include = ["hummingbot/**/*.py", "test/**/*.py"]
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I"]
+select = ["E", "F", "W"]
 ignore = ["E251", "E501", "E702"]
-
-[tool.ruff.lint.isort]
-known-first-party = ["hummingbot"]
-force-sort-within-sections = true
-combine-as-imports = true
-force-single-line = false
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]

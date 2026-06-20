@@ -3,7 +3,7 @@ import json
 import unittest
 from collections.abc import Awaitable
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
@@ -51,7 +51,7 @@ class TestVertexExchange(unittest.TestCase):
         super().setUp()
 
         self.log_records = []
-        self.test_task: Optional[asyncio.Task] = None
+        self.test_task: asyncio.Task | None = None
         self.client_config_map = ClientConfigAdapter(ClientConfigMap())
 
         # NOTE: RANDOM KEYS GENERATED JUST FOR UNIT TESTS
@@ -117,7 +117,7 @@ class TestVertexExchange(unittest.TestCase):
     def get_query_url(self, path: str, endpoint: str) -> str:
         return f"{CONSTANTS.BASE_URLS[self.domain]}{path}?type={endpoint}"
 
-    def get_exchange_symbols_mock(self) -> List[Dict[str, Any]]:
+    def get_exchange_symbols_mock(self) -> list[dict[str, Any]]:
         exchange_symbols = [
             {"product_id": 0, "symbol": "USDC"},
             {"product_id": 1, "symbol": "BTC"},
@@ -753,7 +753,8 @@ class TestVertexExchange(unittest.TestCase):
         )
         request_data = json.loads(order_request[1][0].kwargs["data"])["place_order"]["order"]
         self.assertEqual(
-            "0x2162Db26939B9EAF0C5404217774d166056d31B564656661756c740000000000", request_data["sender"]  # noqa: mock
+            "0x2162Db26939B9EAF0C5404217774d166056d31B564656661756c740000000000",  # noqa: mock
+            request_data["sender"],
         )
         self.assertEqual("10000000000000000000000", request_data["priceX18"])
         self.assertEqual("100000000000000000000", request_data["amount"])
@@ -768,8 +769,11 @@ class TestVertexExchange(unittest.TestCase):
         self.assertEqual("ABC1", create_event.order_id)
 
         self.assertTrue(
-            self._is_logged("INFO", f"Created LIMIT BUY order ABC1 for {Decimal('100.000000')} {self.trading_pair} "
-                                    f"at {Decimal('10000.0000')}.")
+            self._is_logged(
+                "INFO",
+                f"Created LIMIT BUY order ABC1 for {Decimal('100.000000')} {self.trading_pair} "
+                f"at {Decimal('10000.0000')}.",
+            )
         )
 
     @aioresponses()
@@ -805,7 +809,8 @@ class TestVertexExchange(unittest.TestCase):
         )
         request_data = json.loads(order_request[1][0].kwargs["data"])["place_order"]["order"]
         self.assertEqual(
-            "0x2162Db26939B9EAF0C5404217774d166056d31B564656661756c740000000000", request_data["sender"]  # noqa: mock
+            "0x2162Db26939B9EAF0C5404217774d166056d31B564656661756c740000000000",  # noqa: mock
+            request_data["sender"],
         )
         self.assertEqual("10000000000000000000000", request_data["priceX18"])
         self.assertEqual("100000000000000000000", request_data["amount"])
@@ -821,8 +826,9 @@ class TestVertexExchange(unittest.TestCase):
 
         self.assertTrue(
             self._is_logged(
-                "INFO", f"Created LIMIT_MAKER BUY order ABC1 for {Decimal('100.000000')} {self.trading_pair} "
-                        f"at {Decimal('10000.0000')}."
+                "INFO",
+                f"Created LIMIT_MAKER BUY order ABC1 for {Decimal('100.000000')} {self.trading_pair} "
+                f"at {Decimal('10000.0000')}.",
             )
         )
 
@@ -860,7 +866,8 @@ class TestVertexExchange(unittest.TestCase):
         )
         request_data = json.loads(order_request[1][0].kwargs["data"])["place_order"]["order"]
         self.assertEqual(
-            "0x2162Db26939B9EAF0C5404217774d166056d31B564656661756c740000000000", request_data["sender"]  # noqa: mock
+            "0x2162Db26939B9EAF0C5404217774d166056d31B564656661756c740000000000",  # noqa: mock
+            request_data["sender"],
         )
         self.assertEqual("10000000000000000000000", request_data["priceX18"])
         self.assertEqual("-100000000000000000000", request_data["amount"])
@@ -874,8 +881,11 @@ class TestVertexExchange(unittest.TestCase):
         self.assertEqual("ABC1", create_event.order_id)
 
         self.assertTrue(
-            self._is_logged("INFO", f"Created MARKET SELL order ABC1 for {Decimal('100.000000')} {self.trading_pair} "
-                                    f"at {Decimal('10000')}.")
+            self._is_logged(
+                "INFO",
+                f"Created MARKET SELL order ABC1 for {Decimal('100.000000')} {self.trading_pair} "
+                f"at {Decimal('10000')}.",
+            )
         )
 
     @aioresponses()
@@ -954,7 +964,7 @@ class TestVertexExchange(unittest.TestCase):
         self.assertTrue(
             self._is_logged(
                 "NETWORK",
-                f"Error submitting buy LIMIT order to {self.exchange.name_cap} for 100.000000 {self.trading_pair} 10000.0000."
+                f"Error submitting buy LIMIT order to {self.exchange.name_cap} for 100.000000 {self.trading_pair} 10000.0000.",
             )
         )
 

@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod
@@ -10,7 +10,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class HyperliquidSpotCandles(CandlesBase):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -64,24 +64,25 @@ class HyperliquidSpotCandles(CandlesBase):
 
     async def check_network(self) -> NetworkStatus:
         rest_assistant = await self._api_factory.get_rest_assistant()
-        await rest_assistant.execute_request(url=self.rest_url,
-                                             method=RESTMethod.POST,
-                                             throttler_limit_id=self.rest_url,
-                                             data=CONSTANTS.HEALTH_CHECK_PAYLOAD)
+        await rest_assistant.execute_request(
+            url=self.rest_url,
+            method=RESTMethod.POST,
+            throttler_limit_id=self.rest_url,
+            data=CONSTANTS.HEALTH_CHECK_PAYLOAD,
+        )
         return NetworkStatus.CONNECTED
 
     def get_exchange_trading_pair(self, trading_pair):
         return trading_pair.replace("-", "")
 
-    def _rest_payload(self, **kwargs) -> Optional[dict]:
+    def _rest_payload(self, **kwargs) -> dict | None:
         return {
             "type": "candleSnapshot",
             "req": {
                 "interval": CONSTANTS.INTERVALS[self.interval],
-                "coin": self._coins_dict[self._trading_pair],
-                "startTime": kwargs["start_time"] * 1000,
-                "endTime": kwargs["end_time"] * 1000,
-            }
+                "coin": self._coins_dict[self._base_asset],
+                "startTime": kwargs.get("start_time", kwargs.get("end_time", 0)) * 1000,
+            },
         }
 
     @property
@@ -100,36 +101,42 @@ class HyperliquidSpotCandles(CandlesBase):
     def _is_last_candle_not_included_in_rest_request(self):
         return False
 
-    def _get_rest_candles_params(self,
-                                 start_time: Optional[int] = None,
-                                 end_time: Optional[int] = None,
-                                 limit: Optional[int] = None) -> dict:
+    def _get_rest_candles_params(
+        self, start_time: int | None = None, end_time: int | None = None, limit: int | None = None
+    ) -> dict:
         pass
 
     def _get_rest_candles_headers(self):
         return {"Content-Type": "application/json"}
 
-    def _parse_rest_candles(self, data: dict, end_time: Optional[int] = None) -> List[List[float]]:
+    def _parse_rest_candles(self, data: dict, end_time: int | None = None) -> list[list[float]]:
         if len(data) > 0:
             return [
-                [self.ensure_timestamp_in_seconds(row["t"]), row["o"], row["h"], row["l"], row["c"], row["v"], 0.,
-                 row["n"], 0., 0.] for row in data
+                [
+                    self.ensure_timestamp_in_seconds(row["t"]),
+                    row["o"],
+                    row["h"],
+                    row["l"],
+                    row["c"],
+                    row["v"],
+                    0.0,
+                    row["n"],
+                    0.0,
+                    0.0,
+                ]
+                for row in data
             ]
 
     def ws_subscription_payload(self):
         interval = CONSTANTS.INTERVALS[self.interval]
         payload = {
             "method": "subscribe",
-            "subscription": {
-                "type": "candle",
-                "coin": self._coins_dict[self._trading_pair],
-                "interval": interval
-            },
+            "subscription": {"type": "candle", "coin": self._coins_dict[self._base_asset], "interval": interval},
         }
         return payload
 
     def _parse_websocket_message(self, data):
-        candles_row_dict: Dict[str, Any] = {}
+        candles_row_dict: dict[str, Any] = {}
         if data is not None and data.get("channel") == "candle":
             candle = data["data"]
             candles_row_dict["timestamp"] = self.ensure_timestamp_in_seconds(candle["t"])
@@ -138,10 +145,10 @@ class HyperliquidSpotCandles(CandlesBase):
             candles_row_dict["high"] = candle["h"]
             candles_row_dict["close"] = candle["c"]
             candles_row_dict["volume"] = candle["v"]
-            candles_row_dict["quote_asset_volume"] = 0.
+            candles_row_dict["quote_asset_volume"] = 0.0
             candles_row_dict["n_trades"] = candle["n"]
-            candles_row_dict["taker_buy_base_volume"] = 0.
-            candles_row_dict["taker_buy_quote_volume"] = 0.
+            candles_row_dict["taker_buy_base_volume"] = 0.0
+            candles_row_dict["taker_buy_quote_volume"] = 0.0
             return candles_row_dict
 
     async def initialize_exchange_data(self):
@@ -153,15 +160,12 @@ class HyperliquidSpotCandles(CandlesBase):
 
     async def _initialize_coins_dict(self):
         rest_assistant = await self._api_factory.get_rest_assistant()
-        self._universe = await rest_assistant.execute_request(url=self.rest_url,
-                                                              method=RESTMethod.POST,
-                                                              throttler_limit_id=self.rest_url,
-                                                              data=CONSTANTS.HEALTH_CHECK_PAYLOAD)
+        self._universe = await rest_assistant.execute_request(
+            url=self.rest_url,
+            method=RESTMethod.POST,
+            throttler_limit_id=self.rest_url,
+            data=CONSTANTS.HEALTH_CHECK_PAYLOAD,
+        )
+        universe = {token["tokens"][0]: token["name"] for token in self._universe["universe"]}
         tokens = {token["index"]: token["name"] for token in self._universe["tokens"]}
-        # Key by the full BASE-QUOTE pair: a single base token (e.g. HYPE) can be listed
-        # against several quotes (USDC, USDT0, USDH, USDE), each a distinct market. Keying
-        # by base alone would collapse them and pick whichever appears last in the universe.
-        self._coins_dict = {
-            f"{tokens[market['tokens'][0]]}-{tokens[market['tokens'][1]]}": market["name"]
-            for market in self._universe["universe"]
-        }
+        self._coins_dict = {tokens[index]: universe[index] for index in universe.keys()}

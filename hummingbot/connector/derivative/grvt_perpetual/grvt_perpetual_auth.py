@@ -3,7 +3,7 @@ import time
 from datetime import datetime
 from decimal import Decimal
 from http.cookies import SimpleCookie
-from typing import Any, Dict, Optional
+from typing import Any
 
 import aiohttp
 from eth_account import Account
@@ -54,9 +54,9 @@ class GrvtPerpetualAuth(AuthBase):
         self._trading_account_id = trading_account_id
         self._domain = domain
         self._wallet = Account.from_key(private_key) if private_key else None
-        self._session_cookie: Optional[str] = None
+        self._session_cookie: str | None = None
         self._session_expiry_ts: float = 0
-        self._grvt_account_id: Optional[str] = None
+        self._grvt_account_id: str | None = None
         self._session_lock = None
 
     async def rest_authenticate(self, request: RESTRequest) -> RESTRequest:
@@ -69,11 +69,11 @@ class GrvtPerpetualAuth(AuthBase):
     async def ws_authenticate(self, request: WSRequest) -> WSRequest:
         return request
 
-    async def get_rest_auth_headers(self) -> Dict[str, str]:
+    async def get_rest_auth_headers(self) -> dict[str, str]:
         await self._ensure_authenticated()
         return self._auth_headers()
 
-    async def get_ws_auth_headers(self) -> Dict[str, str]:
+    async def get_ws_auth_headers(self) -> dict[str, str]:
         await self._ensure_authenticated()
         return self._auth_headers()
 
@@ -94,7 +94,7 @@ class GrvtPerpetualAuth(AuthBase):
             or self._session_expiry_ts - time.time() <= CONSTANTS.COOKIE_REFRESH_INTERVAL_BUFFER
         )
 
-    def _auth_headers(self) -> Dict[str, str]:
+    def _auth_headers(self) -> dict[str, str]:
         headers = {
             "Cookie": f"gravity={self._session_cookie}",
             "Content-Type": "application/json",
@@ -106,7 +106,9 @@ class GrvtPerpetualAuth(AuthBase):
 
     async def _refresh_session(self):
         url = web_utils.edge_rest_url(CONSTANTS.AUTH_PATH_URL, domain=self._domain)
-        async with aiohttp.ClientSession(headers={"Content-Type": "application/json", "Accept-Encoding": "identity"}) as session:
+        async with aiohttp.ClientSession(
+            headers={"Content-Type": "application/json", "Accept-Encoding": "identity"}
+        ) as session:
             async with session.post(url=url, json={"api_key": self._api_key}, timeout=5) as response:
                 if response.status >= 400:
                     raise IOError(f"GRVT auth failed with status {response.status}")
@@ -124,7 +126,7 @@ class GrvtPerpetualAuth(AuthBase):
 
     def get_order_payload(
         self,
-        instrument: Dict[str, Any],
+        instrument: dict[str, Any],
         client_order_id: str,
         exchange_symbol: str,
         amount: Decimal,
@@ -133,7 +135,7 @@ class GrvtPerpetualAuth(AuthBase):
         order_type: OrderType,
         reduce_only: bool,
         expiration_seconds: int = CONSTANTS.ORDER_SIGNATURE_EXPIRATION_SECS,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         time_in_force = self._time_in_force_for_order_type(order_type=order_type)
         is_market = order_type == OrderType.MARKET
         limit_price = Decimal("0") if is_market else price
@@ -186,7 +188,7 @@ class GrvtPerpetualAuth(AuthBase):
 
     def _signable_message(
         self,
-        instrument: Dict[str, Any],
+        instrument: dict[str, Any],
         amount: Decimal,
         limit_price: Decimal,
         is_buy: bool,

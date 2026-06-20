@@ -1,6 +1,6 @@
 import asyncio
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.exchange.cube import cube_constants as CONSTANTS
 from hummingbot.connector.exchange.cube.cube_auth import CubeAuth
@@ -16,25 +16,28 @@ if TYPE_CHECKING:
 
 
 class CubeAPIUserStreamDataSource(UserStreamTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
-    def __init__(self,
-                 auth: CubeAuth,
-                 trading_pairs: List[str],
-                 connector: 'CubeExchange',
-                 api_factory: WebAssistantsFactory,
-                 domain: str = CONSTANTS.DEFAULT_DOMAIN):
+    def __init__(
+        self,
+        auth: CubeAuth,
+        trading_pairs: list[str],
+        connector: "CubeExchange",
+        api_factory: WebAssistantsFactory,
+        domain: str = CONSTANTS.DEFAULT_DOMAIN,
+    ):
         super().__init__()
         self._api_factory = api_factory
         self._auth: CubeAuth = auth
-        self._trading_pairs: List[str] = trading_pairs
+        self._trading_pairs: list[str] = trading_pairs
         self._connector = connector
         self._domain = domain
 
     async def _connected_websocket_assistant(self) -> WSAssistant:
         ws: WSAssistant = await self._api_factory.get_ws_assistant()
-        await ws.connect(ws_url=CONSTANTS.WSS_TRADE_URL.get(self._domain),
-                         ping_timeout=CONSTANTS.WS_HEARTBEAT_TIME_INTERVAL)
+        await ws.connect(
+            ws_url=CONSTANTS.WSS_TRADE_URL.get(self._domain), ping_timeout=CONSTANTS.WS_HEARTBEAT_TIME_INTERVAL
+        )
 
         return ws
 
@@ -54,7 +57,8 @@ class CubeAPIUserStreamDataSource(UserStreamTrackerDataSource):
                     timestamp=time.time_ns(),
                 )
                 hb_request: WSBinaryRequest = WSBinaryRequest(
-                    payload=trade_pb2.OrderRequest(heartbeat=hb).SerializeToString())
+                    payload=trade_pb2.OrderRequest(heartbeat=hb).SerializeToString()
+                )
                 try:
                     await websocket_assistant.send(hb_request)
                 except asyncio.CancelledError:
@@ -80,5 +84,5 @@ class CubeAPIUserStreamDataSource(UserStreamTrackerDataSource):
             self.logger().exception("Unexpected error occurred subscribing to user streams...")
             raise
 
-    async def _process_event_message(self, event_message: Dict[str, Any], queue: asyncio.Queue):
+    async def _process_event_message(self, event_message: dict[str, Any], queue: asyncio.Queue):
         queue.put_nowait(event_message)

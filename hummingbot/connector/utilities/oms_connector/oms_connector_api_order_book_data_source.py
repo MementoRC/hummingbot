@@ -1,5 +1,5 @@
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Union
 
 from hummingbot.connector.utilities.oms_connector import oms_connector_constants as CONSTANTS
 from hummingbot.connector.utilities.oms_connector.oms_connector_auth import OMSConnectorAuth
@@ -21,8 +21,8 @@ if TYPE_CHECKING:
 class OMSConnectorAPIOrderBookDataSource(OrderBookTrackerDataSource):
     def __init__(
         self,
-        trading_pairs: List[str],
-        connector: 'OMSExchange',
+        trading_pairs: list[str],
+        connector: "OMSExchange",
         api_factory: OMSConnectorWebAssistantsFactory,
         url_provider: OMSConnectorURLCreatorBase,
         oms_id: int,
@@ -30,23 +30,21 @@ class OMSConnectorAPIOrderBookDataSource(OrderBookTrackerDataSource):
         super().__init__(trading_pairs)
         self._connector = connector
         self._api_factory = api_factory
-        self._rest_assistant: Optional[RESTAssistant] = None
-        self._ws_assistant: Optional[WSAssistant] = None
+        self._rest_assistant: RESTAssistant | None = None
+        self._ws_assistant: WSAssistant | None = None
         self._auth: OMSConnectorAuth = api_factory.auth
         self._url_provider = url_provider
         self._oms_id = oms_id
         self._nonce_provider = NonceCreator.for_milliseconds()
 
-    async def get_last_traded_prices(
-        self, trading_pairs: List[str], domain: Optional[str] = None
-    ) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
-    async def _parse_trade_message(self, raw_message: List[Dict[int, Union[int, float]]], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: list[dict[int, Union[int, float]]], message_queue: asyncio.Queue):
         raise NotImplementedError  # OMS connectors do not provide a public trades endpoint
 
     async def _parse_order_book_diff_message(
-        self, raw_message: List[List[Union[int, float]]], message_queue: asyncio.Queue
+        self, raw_message: list[list[Union[int, float]]], message_queue: asyncio.Queue
     ):
         msg_data = raw_message[CONSTANTS.MSG_DATA_FIELD]
         first_row = msg_data[0]
@@ -88,8 +86,8 @@ class OMSConnectorAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
     @staticmethod
     def _get_bids_and_asks_from_snapshot(
-        snapshot: List[List[Union[int, float]]]
-    ) -> Tuple[List[Tuple[float, float]], List[Tuple[float, float]]]:
+        snapshot: list[list[Union[int, float]]],
+    ) -> tuple[list[tuple[float, float]], list[tuple[float, float]]]:
         """OMS connectors do not guarantee that the data is sorted in any way."""
         asks = []
         bids = []
@@ -101,7 +99,7 @@ class OMSConnectorAPIOrderBookDataSource(OrderBookTrackerDataSource):
                 asks.append(update)
         return bids, asks
 
-    async def _request_order_book_snapshot(self, trading_pair: str) -> List[List[Union[int, float]]]:
+    async def _request_order_book_snapshot(self, trading_pair: str) -> list[list[Union[int, float]]]:
         instrument_id = await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
         params = {
             CONSTANTS.OMS_ID_FIELD: self._oms_id,
@@ -198,10 +196,7 @@ class OMSConnectorAPIOrderBookDataSource(OrderBookTrackerDataSource):
         except asyncio.CancelledError:
             raise
         except Exception:
-            self.logger().error(
-                f"Unexpected error occurred subscribing to {trading_pair}...",
-                exc_info=True
-            )
+            self.logger().error(f"Unexpected error occurred subscribing to {trading_pair}...", exc_info=True)
             return False
 
     async def unsubscribe_from_trading_pair(self, trading_pair: str) -> bool:
@@ -236,13 +231,10 @@ class OMSConnectorAPIOrderBookDataSource(OrderBookTrackerDataSource):
         except asyncio.CancelledError:
             raise
         except Exception:
-            self.logger().error(
-                f"Unexpected error occurred unsubscribing from {trading_pair}...",
-                exc_info=True
-            )
+            self.logger().error(f"Unexpected error occurred unsubscribing from {trading_pair}...", exc_info=True)
             return False
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         channel = ""
         if event_message[CONSTANTS.MSG_TYPE_FIELD] != CONSTANTS.ERROR_MSG_TYPE:
             event_channel = event_message[CONSTANTS.MSG_ENDPOINT_FIELD]
@@ -254,7 +246,7 @@ class OMSConnectorAPIOrderBookDataSource(OrderBookTrackerDataSource):
         while True:
             try:
                 async for ws_response in websocket_assistant.iter_messages():
-                    data: Dict[str, Any] = ws_response.data
+                    data: dict[str, Any] = ws_response.data
                     channel: str = self._channel_originating_message(event_message=data)
                     if channel in [self._diff_messages_queue_key, self._trade_messages_queue_key]:
                         self._message_queue[channel].put_nowait(data)

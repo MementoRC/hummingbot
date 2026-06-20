@@ -1,5 +1,4 @@
 import time
-from typing import Dict, List, Optional
 
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 from hummingbot.core.data_type.order_book_row import OrderBookRow
@@ -9,8 +8,8 @@ class KucoinOrderBookMessage(OrderBookMessage):
     def __new__(
         cls,
         message_type: OrderBookMessageType,
-        content: Dict[str, any],
-        timestamp: Optional[float] = None,
+        content: dict[str, any],
+        timestamp: float | None = None,
         *args,
         **kwargs,
     ):
@@ -27,7 +26,7 @@ class KucoinOrderBookMessage(OrderBookMessage):
         return self.content["trading_pair"]
 
     @property
-    def asks(self) -> List[OrderBookRow]:
+    def asks(self) -> list[OrderBookRow]:
         # raise NotImplementedError("Kucoin order book messages have different semantics.")
         return [
             OrderBookRow(float(price), float(amount), self.update_id)
@@ -35,7 +34,7 @@ class KucoinOrderBookMessage(OrderBookMessage):
         ]
 
     @property
-    def bids(self) -> List[OrderBookRow]:
+    def bids(self) -> list[OrderBookRow]:
         # raise NotImplementedError("Kucoin order book messages have different semantics.")
         return [
             OrderBookRow(float(price), float(amount), self.update_id)

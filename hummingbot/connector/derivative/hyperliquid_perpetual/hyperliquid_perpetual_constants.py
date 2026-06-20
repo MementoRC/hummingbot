@@ -6,22 +6,6 @@ BROKER_ID = "HBOT"
 MAX_ORDER_ID_LEN = None
 MIN_NOTIONAL_SIZE = 10
 
-# === Builder code support (HGP-87) ===
-# Attach a Foundation builder code to mainnet orders (omitted on testnet/vault). The fee only takes
-# effect if the user has approved this builder in Condor; otherwise it is 0 bps.
-# See HyperliquidPerpetualDerivative._initialize_builder_fee.
-BUILDER_SUPPORTED = True
-
-# Foundation builder address (set BUILDER_SUPPORTED = False to omit the builder field entirely).
-FOUNDATION_BUILDER_ADDRESS = "0x10BA451e6439Efc6a17dc20d21121Aa838100705"
-
-# Per-order builder fee, in tenths of a basis point (10 = 1 bp = 0.01%). Only takes effect if the
-# user has approved this builder in Condor; otherwise the effective fee is 0 bps.
-FOUNDATION_BUILDER_FEE_TENTHS_BPS = 10
-
-# Info-endpoint request type used to query a user's approved max builder fee for a builder.
-MAX_BUILDER_FEE_TYPE = "maxBuilderFee"
-
 MARKET_ORDER_SLIPPAGE = 0.05
 
 DOMAIN = EXCHANGE_NAME
@@ -98,7 +82,6 @@ ORDER_STATE = {
     "badAloPxRejected": OrderState.FAILED,
     "minTradeNtlRejected": OrderState.FAILED,
     "reduceOnlyCanceled": OrderState.CANCELED,
-    "reduceOnlyRejected": OrderState.FAILED,
     "perpMarginRejected": OrderState.FAILED,
     "selfTradeCanceled": OrderState.CANCELED,
     "siblingFilledCanceled": OrderState.CANCELED,
@@ -107,44 +90,85 @@ ORDER_STATE = {
 }
 
 HEARTBEAT_TIME_INTERVAL = 30.0
-# Max time to wait for a websocket message before assuming the connection is half-open (no data, no close
-# frame) and forcing a keepalive ping / reconnection. Set above HEARTBEAT_TIME_INTERVAL so the periodic ping
-# (and its pong) keeps a healthy connection from timing out.
-WS_MESSAGE_TIMEOUT = 60.0
 
 MAX_REQUEST = 1_200
 ALL_ENDPOINTS_LIMIT = "All"
 
 RATE_LIMITS = [
     RateLimit(ALL_ENDPOINTS_LIMIT, limit=MAX_REQUEST, time_interval=60),
-
     # Weight Limits for individual endpoints
-    RateLimit(limit_id=SNAPSHOT_REST_URL, limit=MAX_REQUEST, time_interval=60,
-              linked_limits=[LinkedLimitWeightPair(ALL_ENDPOINTS_LIMIT)]),
-    RateLimit(limit_id=TICKER_PRICE_CHANGE_URL, limit=MAX_REQUEST, time_interval=60,
-              linked_limits=[LinkedLimitWeightPair(ALL_ENDPOINTS_LIMIT)]),
-    RateLimit(limit_id=EXCHANGE_INFO_URL, limit=MAX_REQUEST, time_interval=60,
-              linked_limits=[LinkedLimitWeightPair(ALL_ENDPOINTS_LIMIT)]),
-    RateLimit(limit_id=PING_URL, limit=MAX_REQUEST, time_interval=60,
-              linked_limits=[LinkedLimitWeightPair(ALL_ENDPOINTS_LIMIT)]),
-    RateLimit(limit_id=ORDER_URL, limit=MAX_REQUEST, time_interval=60,
-              linked_limits=[LinkedLimitWeightPair(ALL_ENDPOINTS_LIMIT)]),
-    RateLimit(limit_id=CREATE_ORDER_URL, limit=MAX_REQUEST, time_interval=60,
-              linked_limits=[LinkedLimitWeightPair(ALL_ENDPOINTS_LIMIT)]),
-    RateLimit(limit_id=CANCEL_ORDER_URL, limit=MAX_REQUEST, time_interval=60,
-              linked_limits=[LinkedLimitWeightPair(ALL_ENDPOINTS_LIMIT)]),
-
-    RateLimit(limit_id=ACCOUNT_TRADE_LIST_URL, limit=MAX_REQUEST, time_interval=60,
-              linked_limits=[LinkedLimitWeightPair(ALL_ENDPOINTS_LIMIT)]),
-    RateLimit(limit_id=SET_LEVERAGE_URL, limit=MAX_REQUEST, time_interval=60,
-              linked_limits=[LinkedLimitWeightPair(ALL_ENDPOINTS_LIMIT)]),
-    RateLimit(limit_id=ACCOUNT_INFO_URL, limit=MAX_REQUEST, time_interval=60,
-              linked_limits=[LinkedLimitWeightPair(ALL_ENDPOINTS_LIMIT)]),
-    RateLimit(limit_id=POSITION_INFORMATION_URL, limit=MAX_REQUEST, time_interval=60,
-              linked_limits=[LinkedLimitWeightPair(ALL_ENDPOINTS_LIMIT)]),
-    RateLimit(limit_id=GET_LAST_FUNDING_RATE_PATH_URL, limit=MAX_REQUEST, time_interval=60,
-              linked_limits=[LinkedLimitWeightPair(ALL_ENDPOINTS_LIMIT)]),
-
+    RateLimit(
+        limit_id=SNAPSHOT_REST_URL,
+        limit=MAX_REQUEST,
+        time_interval=60,
+        linked_limits=[LinkedLimitWeightPair(ALL_ENDPOINTS_LIMIT)],
+    ),
+    RateLimit(
+        limit_id=TICKER_PRICE_CHANGE_URL,
+        limit=MAX_REQUEST,
+        time_interval=60,
+        linked_limits=[LinkedLimitWeightPair(ALL_ENDPOINTS_LIMIT)],
+    ),
+    RateLimit(
+        limit_id=EXCHANGE_INFO_URL,
+        limit=MAX_REQUEST,
+        time_interval=60,
+        linked_limits=[LinkedLimitWeightPair(ALL_ENDPOINTS_LIMIT)],
+    ),
+    RateLimit(
+        limit_id=PING_URL,
+        limit=MAX_REQUEST,
+        time_interval=60,
+        linked_limits=[LinkedLimitWeightPair(ALL_ENDPOINTS_LIMIT)],
+    ),
+    RateLimit(
+        limit_id=ORDER_URL,
+        limit=MAX_REQUEST,
+        time_interval=60,
+        linked_limits=[LinkedLimitWeightPair(ALL_ENDPOINTS_LIMIT)],
+    ),
+    RateLimit(
+        limit_id=CREATE_ORDER_URL,
+        limit=MAX_REQUEST,
+        time_interval=60,
+        linked_limits=[LinkedLimitWeightPair(ALL_ENDPOINTS_LIMIT)],
+    ),
+    RateLimit(
+        limit_id=CANCEL_ORDER_URL,
+        limit=MAX_REQUEST,
+        time_interval=60,
+        linked_limits=[LinkedLimitWeightPair(ALL_ENDPOINTS_LIMIT)],
+    ),
+    RateLimit(
+        limit_id=ACCOUNT_TRADE_LIST_URL,
+        limit=MAX_REQUEST,
+        time_interval=60,
+        linked_limits=[LinkedLimitWeightPair(ALL_ENDPOINTS_LIMIT)],
+    ),
+    RateLimit(
+        limit_id=SET_LEVERAGE_URL,
+        limit=MAX_REQUEST,
+        time_interval=60,
+        linked_limits=[LinkedLimitWeightPair(ALL_ENDPOINTS_LIMIT)],
+    ),
+    RateLimit(
+        limit_id=ACCOUNT_INFO_URL,
+        limit=MAX_REQUEST,
+        time_interval=60,
+        linked_limits=[LinkedLimitWeightPair(ALL_ENDPOINTS_LIMIT)],
+    ),
+    RateLimit(
+        limit_id=POSITION_INFORMATION_URL,
+        limit=MAX_REQUEST,
+        time_interval=60,
+        linked_limits=[LinkedLimitWeightPair(ALL_ENDPOINTS_LIMIT)],
+    ),
+    RateLimit(
+        limit_id=GET_LAST_FUNDING_RATE_PATH_URL,
+        limit=MAX_REQUEST,
+        time_interval=60,
+        linked_limits=[LinkedLimitWeightPair(ALL_ENDPOINTS_LIMIT)],
+    ),
 ]
 ORDER_NOT_EXIST_MESSAGE = "order"
 UNKNOWN_ORDER_MESSAGE = "Order was never placed, already canceled, or filled"

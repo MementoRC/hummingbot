@@ -4,7 +4,6 @@ import logging
 import math
 from abc import ABC, abstractmethod
 from decimal import Decimal
-from typing import Dict, List, Optional, Tuple
 
 from hummingbot.core.api_throttler.async_request_context_base import AsyncRequestContextBase
 from hummingbot.core.api_throttler.data_types import RateLimit, TaskLog
@@ -26,12 +25,13 @@ class AsyncThrottlerBase(ABC):
             cls._logger = logging.getLogger(__name__)
         return cls._logger
 
-    def __init__(self,
-                 rate_limits: List[RateLimit],
-                 retry_interval: float = 0.1,
-                 safety_margin_pct: Optional[float] = 0.05,  # An extra safety margin, in percentage.
-                 limits_share_percentage: Optional[Decimal] = None
-                 ):
+    def __init__(
+        self,
+        rate_limits: list[RateLimit],
+        retry_interval: float = 0.1,
+        safety_margin_pct: float | None = 0.05,  # An extra safety margin, in percentage.
+        limits_share_percentage: Decimal | None = None,
+    ):
         """
         :param rate_limits: List of RateLimit(s).
         :param retry_interval: Time between every capacity check.
@@ -47,7 +47,7 @@ class AsyncThrottlerBase(ABC):
         self.set_rate_limits(rate_limits)
 
         # List of TaskLog used to determine the API requests within a set time window.
-        self._task_logs: List[TaskLog] = []
+        self._task_logs: list[TaskLog] = []
 
         # Throttler Parameters
         self._retry_interval: float = retry_interval
@@ -56,17 +56,17 @@ class AsyncThrottlerBase(ABC):
         # Shared asyncio.Lock instance to prevent multiple async ContextManager from accessing the _task_logs variable
         self._lock = asyncio.Lock()
 
-    def set_rate_limits(self, rate_limits: List[RateLimit]):
+    def set_rate_limits(self, rate_limits: list[RateLimit]):
         # Rate Limit Definitions
-        self._rate_limits: List[RateLimit] = copy.deepcopy(rate_limits)
+        self._rate_limits: list[RateLimit] = copy.deepcopy(rate_limits)
 
         for rate_limit in self._rate_limits:
             rate_limit.limit = max(Decimal("1"), math.floor(Decimal(str(rate_limit.limit)) * self.limits_pct))
 
         # Dictionary of path_url to RateLimit
-        self._id_to_limit_map: Dict[str, RateLimit] = {limit.limit_id: limit for limit in self._rate_limits}
+        self._id_to_limit_map: dict[str, RateLimit] = {limit.limit_id: limit for limit in self._rate_limits}
 
-    def add_rate_limits(self, rate_limits: List[RateLimit]):
+    def add_rate_limits(self, rate_limits: list[RateLimit]):
         """
         Dynamically add new rate limits to the throttler.
         Useful when adding trading pairs at runtime that require pair-specific rate limits.
@@ -88,18 +88,20 @@ class AsyncThrottlerBase(ABC):
 
         return HummingbotApplication.main_application().client_config_map
 
-    def get_related_limits(self, limit_id: str) -> Tuple[RateLimit, List[Tuple[RateLimit, int]]]:
-        rate_limit: Optional[RateLimit] = self._id_to_limit_map.get(limit_id, None)
-        linked_limits: List[RateLimit] = [] if rate_limit is None else rate_limit.linked_limits
+    def get_related_limits(self, limit_id: str) -> tuple[RateLimit, list[tuple[RateLimit, int]]]:
+        rate_limit: RateLimit | None = self._id_to_limit_map.get(limit_id, None)
+        linked_limits: list[RateLimit] = [] if rate_limit is None else rate_limit.linked_limits
 
-        related_limits = [(self._id_to_limit_map[limit_weight_pair.limit_id], limit_weight_pair.weight)
-                          for limit_weight_pair in linked_limits
-                          if limit_weight_pair.limit_id in self._id_to_limit_map]
+        related_limits = [
+            (self._id_to_limit_map[limit_weight_pair.limit_id], limit_weight_pair.weight)
+            for limit_weight_pair in linked_limits
+            if limit_weight_pair.limit_id in self._id_to_limit_map
+        ]
 
         # Append self as part of the related_limits
         # if rate_limit is not None:
         #     related_limits.append((rate_limit, rate_limit.weight))
-#
+        #
         return rate_limit, related_limits
 
     @abstractmethod

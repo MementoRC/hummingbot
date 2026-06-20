@@ -4,7 +4,7 @@ import os
 import platform
 from collections import namedtuple
 from hashlib import md5
-from typing import Any, Callable, Dict, Optional, Tuple
+from typing import Any, Callable
 
 from hexbytes import HexBytes
 
@@ -26,7 +26,7 @@ def build_api_factory(throttler: AsyncThrottlerBase) -> WebAssistantsFactory:
     return api_factory
 
 
-def split_hb_trading_pair(trading_pair: str) -> Tuple[str, str]:
+def split_hb_trading_pair(trading_pair: str) -> tuple[str, str]:
     base, quote = trading_pair.split("-")
     return base, quote
 
@@ -48,7 +48,7 @@ def _bot_instance_id() -> str:
 
 
 def get_new_client_order_id(
-    is_buy: bool, trading_pair: str, hbot_order_id_prefix: str = "", max_id_len: Optional[int] = None
+    is_buy: bool, trading_pair: str, hbot_order_id_prefix: str = "", max_id_len: int | None = None
 ) -> str:
     """
     Creates a client order id for a new order
@@ -83,12 +83,12 @@ def get_new_client_order_id(
     return client_order_id
 
 
-def get_new_numeric_client_order_id(nonce_creator: NonceCreator, max_id_bit_count: Optional[int] = None) -> int:
+def get_new_numeric_client_order_id(nonce_creator: NonceCreator, max_id_bit_count: int | None = None) -> int:
     hexa_hash = _bot_instance_id()
     host_part = int(hexa_hash, 16)
     client_order_id = int(f"{host_part}{nonce_creator.get_tracking_nonce()}")
     if max_id_bit_count:
-        max_int = 2 ** max_id_bit_count - 1
+        max_int = 2**max_id_bit_count - 1
         client_order_id &= max_int
     return client_order_id
 
@@ -119,7 +119,7 @@ class GZipCompressionWSPostProcessor(WSPostProcessorBase):
             # Unlike Market WebSocket, the return data of Account and Order Websocket are not compressed by GZIP.
             return response
         encoded_msg: bytes = gzip.decompress(response.data)
-        msg: Dict[str, Any] = json.loads(encoded_msg.decode("utf-8"))
+        msg: dict[str, Any] = json.loads(encoded_msg.decode("utf-8"))
 
         return WSResponse(data=msg)
 

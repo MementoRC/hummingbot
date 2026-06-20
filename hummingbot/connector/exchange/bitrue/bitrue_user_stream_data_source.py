@@ -1,6 +1,6 @@
 import asyncio
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.exchange.bitrue import bitrue_constants as CONSTANTS
 from hummingbot.connector.exchange.bitrue.bitrue_auth import BitrueAuth
@@ -17,16 +17,15 @@ if TYPE_CHECKING:
 
 
 class BitrueUserStreamDataSource(UserStreamTrackerDataSource):
-
     LISTEN_KEY_KEEP_ALIVE_INTERVAL = 1800  # Recommended to Ping/Update listen key to keep connection alive
     HEARTBEAT_TIME_INTERVAL = 30.0
 
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
         auth: BitrueAuth,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "BitrueExchange",
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -169,7 +168,9 @@ class BitrueUserStreamDataSource(UserStreamTrackerDataSource):
                             self.logger().info(f"Successfully refreshed listen key {self._current_listen_key}")
                             self._last_listen_key_ping_ts = now
                         else:
-                            self.logger().error(f"Failed to refresh listen key {self._current_listen_key}. Getting new key...")
+                            self.logger().error(
+                                f"Failed to refresh listen key {self._current_listen_key}. Getting new key..."
+                            )
                             # Reset state to force new key acquisition on next iteration
                             self._current_listen_key = None
                             self._listen_key_initialized_event.clear()
@@ -197,7 +198,7 @@ class BitrueUserStreamDataSource(UserStreamTrackerDataSource):
             self._ws_assistant = await self._api_factory.get_ws_assistant()
         return self._ws_assistant
 
-    async def _on_user_stream_interruption(self, websocket_assistant: Optional[WSAssistant]):
+    async def _on_user_stream_interruption(self, websocket_assistant: WSAssistant | None):
         """
         Handles websocket disconnection by cleaning up resources.
 
@@ -223,7 +224,7 @@ class BitrueUserStreamDataSource(UserStreamTrackerDataSource):
         self._current_listen_key = None
         self._listen_key_initialized_event.clear()
 
-    def _is_message_response_to_connection_check(self, event_message: Dict[str, Any]) -> bool:
+    def _is_message_response_to_connection_check(self, event_message: dict[str, Any]) -> bool:
         return False
 
     async def _process_websocket_messages(self, websocket_assistant: WSAssistant, queue: asyncio.Queue):
@@ -235,7 +236,7 @@ class BitrueUserStreamDataSource(UserStreamTrackerDataSource):
                 )
 
     async def _process_event_message(
-        self, event_message: Dict[str, Any], queue: asyncio.Queue, websocket_assistant: WSAssistant
+        self, event_message: dict[str, Any], queue: asyncio.Queue, websocket_assistant: WSAssistant
     ):
         if event_message.get("event", "") == "ping":
             # For Bitrue we consider receiving the ping message as indication the websocket is still healthy
@@ -245,6 +246,4 @@ class BitrueUserStreamDataSource(UserStreamTrackerDataSource):
             if event_message.get("status") != "ok":
                 raise ValueError(f"Error subscribing to topic: {event_message.get('channel')} ({event_message})")
         else:
-            await super()._process_event_message(
-                event_message=event_message, queue=queue
-            )
+            await super()._process_event_message(event_message=event_message, queue=queue)

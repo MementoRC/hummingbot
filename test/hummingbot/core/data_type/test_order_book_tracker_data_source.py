@@ -6,8 +6,9 @@ This module tests:
 - add_trading_pair: Adds a trading pair to the internal list
 - remove_trading_pair: Removes a trading pair from the internal list
 """
+
 import unittest
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_message import OrderBookMessage
@@ -18,7 +19,7 @@ from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 class MockOrderBookTrackerDataSource(OrderBookTrackerDataSource):
     """Concrete implementation of OrderBookTrackerDataSource for testing."""
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return {pair: 100.0 for pair in trading_pairs}
 
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBookMessage:
@@ -30,7 +31,7 @@ class MockOrderBookTrackerDataSource(OrderBookTrackerDataSource):
     async def _subscribe_channels(self, ws: WSAssistant):
         raise NotImplementedError
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         return ""
 
     async def subscribe_to_trading_pair(self, trading_pair: str) -> bool:
@@ -128,6 +129,7 @@ class OrderBookTrackerDataSourceTests(unittest.TestCase):
 
     def test_order_book_create_function_setter(self):
         """Test setting a custom order_book_create_function."""
+
         class CustomOrderBook(OrderBook):
             pass
 

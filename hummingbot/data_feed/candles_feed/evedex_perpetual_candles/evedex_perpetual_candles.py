@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest
@@ -12,7 +12,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class EvedexPerpetualCandles(CandlesBase):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -25,13 +25,13 @@ class EvedexPerpetualCandles(CandlesBase):
         trading_pair: str,
         interval: str = "1m",
         max_records: int = 150,
-        ws_access_token: Optional[str] = None,
+        ws_access_token: str | None = None,
     ):
         self._message_id = 0
-        self._ping_task: Optional[asyncio.Task] = None
-        self._ws_assistant: Optional[WSAssistant] = None
+        self._ping_task: asyncio.Task | None = None
+        self._ws_assistant: WSAssistant | None = None
         self._instrument_resolved = False
-        self._ws_access_token: Optional[str] = ws_access_token
+        self._ws_access_token: str | None = ws_access_token
         super().__init__(trading_pair, interval, max_records)
 
     @property
@@ -72,8 +72,9 @@ class EvedexPerpetualCandles(CandlesBase):
 
     async def check_network(self) -> NetworkStatus:
         rest_assistant = await self._api_factory.get_rest_assistant()
-        await rest_assistant.execute_request(url=self.health_check_url,
-                                             throttler_limit_id=CONSTANTS.HEALTH_CHECK_ENDPOINT)
+        await rest_assistant.execute_request(
+            url=self.health_check_url, throttler_limit_id=CONSTANTS.HEALTH_CHECK_ENDPOINT
+        )
         return NetworkStatus.CONNECTED
 
     def get_exchange_trading_pair(self, trading_pair):
@@ -94,8 +95,7 @@ class EvedexPerpetualCandles(CandlesBase):
                 throttler_limit_id=CONSTANTS.INSTRUMENTS_ENDPOINT,
             )
         except Exception:
-            self.logger().warning("Failed to resolve Evedex instrument name from exchange info. "
-                                  "Using derived symbol.")
+            self.logger().warning("Failed to resolve Evedex instrument name from exchange info. Using derived symbol.")
             self._instrument_resolved = True
             return
 
@@ -124,10 +124,9 @@ class EvedexPerpetualCandles(CandlesBase):
         dt = datetime.fromtimestamp(ts, tz=timezone.utc)
         return dt.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
 
-    def _get_rest_candles_params(self,
-                                 start_time: Optional[int] = None,
-                                 end_time: Optional[int] = None,
-                                 limit: Optional[int] = None) -> dict:
+    def _get_rest_candles_params(
+        self, start_time: int | None = None, end_time: int | None = None, limit: int | None = None
+    ) -> dict:
         params = {
             "group": CONSTANTS.INTERVALS[self.interval],
         }
@@ -137,7 +136,7 @@ class EvedexPerpetualCandles(CandlesBase):
             params["before"] = self._format_iso_timestamp(end_time)
         return params
 
-    def _parse_rest_candles(self, data: dict, end_time: Optional[int] = None) -> List[List[float]]:
+    def _parse_rest_candles(self, data: dict, end_time: int | None = None) -> list[list[float]]:
         if data is None:
             return []
 
@@ -148,7 +147,7 @@ class EvedexPerpetualCandles(CandlesBase):
         if not isinstance(raw, list):
             return []
 
-        parsed: List[List[float]] = []
+        parsed: list[list[float]] = []
         for row in raw:
             if isinstance(row, list):
                 parsed_row = self._parse_candle_row(row)
@@ -166,7 +165,7 @@ class EvedexPerpetualCandles(CandlesBase):
         ts = self.ensure_timestamp_in_seconds(timestamp)
         return self._round_timestamp_to_interval_multiple(int(ts))
 
-    def _parse_candle_row(self, row: List[Any]) -> Optional[List[float]]:
+    def _parse_candle_row(self, row: list[Any]) -> list[float] | None:
         if len(row) < 6:
             return None
         timestamp = self._normalize_timestamp(row[0])
@@ -188,12 +187,12 @@ class EvedexPerpetualCandles(CandlesBase):
             close_price,
             volume,
             volume_usd,
-            0.,
-            0.,
-            0.,
+            0.0,
+            0.0,
+            0.0,
         ]
 
-    def _parse_candle_dict(self, data: Dict[str, Any]) -> Optional[List[float]]:
+    def _parse_candle_dict(self, data: dict[str, Any]) -> list[float] | None:
         timestamp = data.get("timestamp") or data.get("t") or data.get("time")
         if timestamp is None:
             return None
@@ -216,16 +215,16 @@ class EvedexPerpetualCandles(CandlesBase):
             close_price,
             volume,
             quote_volume,
-            0.,
-            0.,
-            0.,
+            0.0,
+            0.0,
+            0.0,
         ]
 
     def _next_message_id(self) -> int:
         self._message_id += 1
         return self._message_id
 
-    def _subscription_channels(self) -> List[str]:
+    def _subscription_channels(self) -> list[str]:
         interval = CONSTANTS.INTERVALS[self.interval]
         channels = [f"market-data:last-candlestick-{self._ex_trading_pair}-{interval}"]
         if "-" in self._ex_trading_pair:
@@ -268,10 +267,7 @@ class EvedexPerpetualCandles(CandlesBase):
         except asyncio.CancelledError:
             raise
         except Exception:
-            self.logger().error(
-                "Unexpected error occurred subscribing to public klines...",
-                exc_info=True
-            )
+            self.logger().error("Unexpected error occurred subscribing to public klines...", exc_info=True)
             raise
 
     async def _ping_loop(self, websocket_assistant: WSAssistant):
@@ -300,10 +296,12 @@ class EvedexPerpetualCandles(CandlesBase):
             ping_timeout=CONSTANTS.WS_HEARTBEAT_TIME_INTERVAL + CONSTANTS.WS_PING_TIMEOUT,
         )
 
-        connect_request = WSJSONRequest(payload={
-            "connect": {"name": "js"},
-            "id": self._next_message_id(),
-        })
+        connect_request = WSJSONRequest(
+            payload={
+                "connect": {"name": "js"},
+                "id": self._next_message_id(),
+            }
+        )
         await ws.send(connect_request)
 
         # Centrifugo server sends pings; respond with pong in message handler.
@@ -354,7 +352,7 @@ class EvedexPerpetualCandles(CandlesBase):
             "taker_buy_quote_volume": parsed[9],
         }
 
-    async def _on_order_stream_interruption(self, websocket_assistant: Optional[WSAssistant] = None):
+    async def _on_order_stream_interruption(self, websocket_assistant: WSAssistant | None = None):
         if self._ping_task is not None:
             self._ping_task.cancel()
             self._ping_task = None

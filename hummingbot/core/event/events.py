@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from decimal import Decimal
-from enum import Enum
-from typing import Dict, List, NamedTuple, Optional
+from enum import Enum, IntEnum
+from typing import NamedTuple
 
 from hummingbot.core.data_type.common import LPType, OrderType, PositionAction, PositionMode, PositionSide, TradeType
 from hummingbot.core.data_type.order_book_row import OrderBookRow
@@ -32,12 +32,12 @@ class MarketEvent(Enum):
     RangePositionUpdateFailure = 303
 
 
-class OrderBookEvent(int, Enum):
+class OrderBookEvent(IntEnum):
     TradeEvent = 901
     OrderBookDataSourceUpdateEvent = 904
 
 
-class OrderBookDataSourceEvent(int, Enum):
+class OrderBookDataSourceEvent(IntEnum):
     SNAPSHOT_EVENT = 1001
     DIFF_EVENT = 1002
     TRADE_EVENT = 1003
@@ -75,8 +75,8 @@ class MarketOrderFailureEvent(NamedTuple):
     timestamp: float
     order_id: str
     order_type: OrderType
-    error_message: Optional[str] = None
-    error_type: Optional[str] = None
+    error_message: str | None = None
+    error_type: str | None = None
 
 
 @dataclass
@@ -88,7 +88,7 @@ class BuyOrderCompletedEvent:
     base_asset_amount: Decimal
     quote_asset_amount: Decimal
     order_type: OrderType
-    exchange_order_id: Optional[str] = None
+    exchange_order_id: str | None = None
 
 
 @dataclass
@@ -100,14 +100,14 @@ class SellOrderCompletedEvent:
     base_asset_amount: Decimal
     quote_asset_amount: Decimal
     order_type: OrderType
-    exchange_order_id: Optional[str] = None
+    exchange_order_id: str | None = None
 
 
 @dataclass
 class OrderCancelledEvent:
     timestamp: float
     order_id: str
-    exchange_order_id: Optional[str] = None
+    exchange_order_id: str | None = None
 
 
 class OrderExpiredEvent(NamedTuple):
@@ -151,7 +151,7 @@ class OrderBookTradeEvent(NamedTuple):
     type: TradeType
     price: Decimal
     amount: Decimal
-    trade_id: Optional[str] = None
+    trade_id: str | None = None
     is_taker: bool = True  # CEXs deliver trade events from the taker's perspective
 
 
@@ -166,8 +166,8 @@ class OrderFilledEvent(NamedTuple):
     trade_fee: TradeFeeBase
     exchange_trade_id: str = ""
     exchange_order_id: str = ""
-    leverage: Optional[int] = 1
-    position: Optional[str] = PositionAction.NIL.value
+    leverage: int | None = 1
+    position: str | None = PositionAction.NIL.value
 
     @classmethod
     def order_filled_events_from_order_book_rows(
@@ -178,9 +178,9 @@ class OrderFilledEvent(NamedTuple):
         trade_type: TradeType,
         order_type: OrderType,
         trade_fee: TradeFeeBase,
-        order_book_rows: List[OrderBookRow],
-        exchange_trade_id: Optional[str] = None,
-    ) -> List["OrderFilledEvent"]:
+        order_book_rows: list[OrderBookRow],
+        exchange_trade_id: str | None = None,
+    ) -> list["OrderFilledEvent"]:
         if exchange_trade_id is None:
             exchange_trade_id = order_id
         return [
@@ -199,7 +199,7 @@ class OrderFilledEvent(NamedTuple):
         ]
 
     @classmethod
-    def order_filled_event_from_binance_execution_report(cls, execution_report: Dict[str, any]) -> "OrderFilledEvent":
+    def order_filled_event_from_binance_execution_report(cls, execution_report: dict[str, any]) -> "OrderFilledEvent":
         execution_type: str = execution_report.get("x")
         if execution_type != "TRADE":
             raise ValueError(f"Invalid execution type '{execution_type}'.")
@@ -225,9 +225,9 @@ class BuyOrderCreatedEvent:
     price: Decimal
     order_id: str
     creation_timestamp: float
-    exchange_order_id: Optional[str] = None
-    leverage: Optional[int] = 1
-    position: Optional[str] = PositionAction.NIL.value
+    exchange_order_id: str | None = None
+    leverage: int | None = 1
+    position: str | None = PositionAction.NIL.value
 
 
 @dataclass
@@ -239,9 +239,9 @@ class SellOrderCreatedEvent:
     price: Decimal
     order_id: str
     creation_timestamp: float
-    exchange_order_id: Optional[str] = None
-    leverage: Optional[int] = 1
-    position: Optional[str] = PositionAction.NIL.value
+    exchange_order_id: str | None = None
+    leverage: int | None = 1
+    position: str | None = PositionAction.NIL.value
 
 
 @dataclass
@@ -256,13 +256,13 @@ class RangePositionLiquidityAddedEvent:
     fee_tier: str
     creation_timestamp: float
     trade_fee: TradeFeeBase
-    token_id: Optional[int] = 0
+    token_id: int | None = 0
     # P&L tracking fields
-    position_address: Optional[str] = ""
-    mid_price: Optional[Decimal] = s_decimal_0
-    base_amount: Optional[Decimal] = s_decimal_0
-    quote_amount: Optional[Decimal] = s_decimal_0
-    position_rent: Optional[Decimal] = s_decimal_0  # SOL rent paid to create position
+    position_address: str | None = ""
+    mid_price: Decimal | None = s_decimal_0
+    base_amount: Decimal | None = s_decimal_0
+    quote_amount: Decimal | None = s_decimal_0
+    position_rent: Decimal | None = s_decimal_0  # SOL rent paid to create position
 
 
 @dataclass
@@ -275,15 +275,15 @@ class RangePositionLiquidityRemovedEvent:
     trade_fee: TradeFeeBase
     creation_timestamp: float
     # P&L tracking fields
-    position_address: Optional[str] = ""
-    lower_price: Optional[Decimal] = s_decimal_0
-    upper_price: Optional[Decimal] = s_decimal_0
-    mid_price: Optional[Decimal] = s_decimal_0
-    base_amount: Optional[Decimal] = s_decimal_0
-    quote_amount: Optional[Decimal] = s_decimal_0
-    base_fee: Optional[Decimal] = s_decimal_0
-    quote_fee: Optional[Decimal] = s_decimal_0
-    position_rent_refunded: Optional[Decimal] = s_decimal_0  # SOL rent refunded on close
+    position_address: str | None = ""
+    lower_price: Decimal | None = s_decimal_0
+    upper_price: Decimal | None = s_decimal_0
+    mid_price: Decimal | None = s_decimal_0
+    base_amount: Decimal | None = s_decimal_0
+    quote_amount: Decimal | None = s_decimal_0
+    base_fee: Decimal | None = s_decimal_0
+    quote_fee: Decimal | None = s_decimal_0
+    position_rent_refunded: Decimal | None = s_decimal_0  # SOL rent refunded on close
 
 
 @dataclass
@@ -308,22 +308,22 @@ class PositionModeChangeEvent:
     timestamp: float
     trading_pair: str
     position_mode: PositionMode
-    message: Optional[str] = None
+    message: str | None = None
 
 
 @dataclass
 class BalanceUpdateEvent:
     timestamp: float
     asset_name: str
-    total_balance: Optional[Decimal] = None
-    available_balance: Optional[Decimal] = None
+    total_balance: Decimal | None = None
+    available_balance: Decimal | None = None
 
 
 @dataclass
 class PositionUpdateEvent:
     timestamp: float
     trading_pair: str
-    position_side: Optional[PositionSide]  # None if the event is for a closed position
+    position_side: PositionSide | None  # None if the event is for a closed position
     unrealized_pnl: Decimal
     entry_price: Decimal
     amount: Decimal

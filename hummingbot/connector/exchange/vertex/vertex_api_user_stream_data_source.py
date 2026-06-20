@@ -1,5 +1,5 @@
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.exchange.vertex import (
     vertex_constants as CONSTANTS,
@@ -21,11 +21,11 @@ class VertexAPIUserStreamDataSource(UserStreamTrackerDataSource):
     def __init__(
         self,
         auth: VertexAuth,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "VertexExchange",
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
-        api_factory: Optional[WebAssistantsFactory] = None,
-        throttler: Optional[AsyncThrottler] = None,
+        api_factory: WebAssistantsFactory | None = None,
+        throttler: AsyncThrottler | None = None,
     ):
         super().__init__()
         self._connector = connector
@@ -106,7 +106,7 @@ class VertexAPIUserStreamDataSource(UserStreamTrackerDataSource):
                 await websocket_assistant.ping()
                 self._last_ws_message_sent_timestamp = ping_time
 
-    async def _process_event_message(self, event_message: Dict[str, Any], queue: asyncio.Queue):
+    async def _process_event_message(self, event_message: dict[str, Any], queue: asyncio.Queue):
         if (
             len(event_message) > 0
             and "type" in event_message

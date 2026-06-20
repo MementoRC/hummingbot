@@ -1,10 +1,8 @@
-from typing import Optional
-
 from prompt_toolkit.buffer import Buffer
 from prompt_toolkit.layout.containers import Window
 
 
-def scroll_down(event, window: Optional[Window] = None, buffer: Optional[Buffer] = None):
+def scroll_down(event, window: Window | None = None, buffer: Buffer | None = None):
     w = window or event.app.layout.current_window
     b = buffer or event.app.current_buffer
 
@@ -30,7 +28,7 @@ def scroll_down(event, window: Optional[Window] = None, buffer: Optional[Buffer]
         b.cursor_position = b.document.translate_row_col_to_index(y, 0)
 
 
-def scroll_up(event, window: Optional[Window] = None, buffer: Optional[Buffer] = None):
+def scroll_up(event, window: Window | None = None, buffer: Buffer | None = None):
     w = window or event.app.layout.current_window
     b = buffer or event.app.current_buffer
 

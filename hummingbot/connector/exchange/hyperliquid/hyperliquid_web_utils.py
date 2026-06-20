@@ -1,6 +1,6 @@
 import time
 from decimal import Decimal
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import hummingbot.connector.exchange.hyperliquid.hyperliquid_constants as CONSTANTS
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
@@ -11,13 +11,10 @@ from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFa
 
 
 class HyperliquidPerpetualRESTPreProcessor(RESTPreProcessorBase):
-
     async def pre_process(self, request: RESTRequest) -> RESTRequest:
         if request.headers is None:
             request.headers = {}
-        request.headers["Content-Type"] = (
-            "application/json"
-        )
+        request.headers["Content-Type"] = "application/json"
         return request
 
 
@@ -39,21 +36,18 @@ def wss_url(domain: str = "hyperliquid"):
     return base_ws_url
 
 
-def build_api_factory(
-        throttler: Optional[AsyncThrottler] = None,
-        auth: Optional[AuthBase] = None) -> WebAssistantsFactory:
+def build_api_factory(throttler: AsyncThrottler | None = None, auth: AuthBase | None = None) -> WebAssistantsFactory:
     throttler = throttler or create_throttler()
     api_factory = WebAssistantsFactory(
-        throttler=throttler,
-        rest_pre_processors=[HyperliquidPerpetualRESTPreProcessor()],
-        auth=auth)
+        throttler=throttler, rest_pre_processors=[HyperliquidPerpetualRESTPreProcessor()], auth=auth
+    )
     return api_factory
 
 
 def build_api_factory_without_time_synchronizer_pre_processor(throttler: AsyncThrottler) -> WebAssistantsFactory:
     api_factory = WebAssistantsFactory(
-        throttler=throttler,
-        rest_pre_processors=[HyperliquidPerpetualRESTPreProcessor()])
+        throttler=throttler, rest_pre_processors=[HyperliquidPerpetualRESTPreProcessor()]
+    )
     return api_factory
 
 
@@ -61,14 +55,11 @@ def create_throttler() -> AsyncThrottler:
     return AsyncThrottler(CONSTANTS.RATE_LIMITS)
 
 
-async def get_current_server_time(
-        throttler,
-        domain
-) -> float:
+async def get_current_server_time(throttler, domain) -> float:
     return time.time()
 
 
-def is_exchange_information_valid(rule: Dict[str, Any]) -> bool:
+def is_exchange_information_valid(rule: dict[str, Any]) -> bool:
     """
     Verifies if a trading pair is enabled to operate with based on its exchange information
 
@@ -79,7 +70,7 @@ def is_exchange_information_valid(rule: Dict[str, Any]) -> bool:
     return True
 
 
-def order_type_to_tuple(order_type) -> Tuple[int, float]:
+def order_type_to_tuple(order_type) -> tuple[int, float]:
     if "limit" in order_type:
         tif = order_type["limit"]["tif"]
         if tif == "Gtc":
@@ -107,7 +98,7 @@ def float_to_int_for_hashing(x: float) -> int:
 
 
 def float_to_int(x: float, power: int) -> int:
-    with_decimals = x * 10 ** power
+    with_decimals = x * 10**power
     if abs(round(with_decimals) - with_decimals) >= 1e-3:
         raise ValueError("float_to_int causes rounding", x)
     return round(with_decimals)

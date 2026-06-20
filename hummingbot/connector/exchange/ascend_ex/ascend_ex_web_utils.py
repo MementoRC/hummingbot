@@ -1,5 +1,5 @@
 import time
-from typing import Any, Dict, Optional
+from typing import Any
 
 from hummingbot.connector.exchange.ascend_ex import ascend_ex_constants as CONSTANTS
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
@@ -24,7 +24,7 @@ class AscendExRESTPreProcessor(RESTPreProcessorBase):
         return request
 
 
-def get_hb_id_headers() -> Dict[str, Any]:
+def get_hb_id_headers() -> dict[str, Any]:
     """
     Headers signature to identify user as an HB liquidity provider.
 
@@ -56,9 +56,9 @@ def private_rest_url(path_url: str, domain: str = CONSTANTS.DEFAULT_DOMAIN) -> s
 
 
 def build_api_factory(
-    throttler: Optional[AsyncThrottler] = None,
+    throttler: AsyncThrottler | None = None,
     domain: str = CONSTANTS.DEFAULT_DOMAIN,
-    auth: Optional[AuthBase] = None,
+    auth: AuthBase | None = None,
 ) -> WebAssistantsFactory:
     throttler = throttler or create_throttler()
     api_factory = WebAssistantsFactory(throttler=throttler, auth=auth, rest_pre_processors=[AscendExRESTPreProcessor()])
@@ -70,7 +70,7 @@ def create_throttler() -> AsyncThrottler:
 
 
 async def get_current_server_time(
-    throttler: Optional[AsyncThrottler] = None,
+    throttler: AsyncThrottler | None = None,
     domain: str = CONSTANTS.DEFAULT_DOMAIN,
 ) -> int:
     return int(time.time() * 1e3)

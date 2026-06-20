@@ -2,7 +2,6 @@ import typing
 from collections import defaultdict
 from copy import copy
 from decimal import Decimal
-from typing import Dict, List
 
 from hummingbot.core.data_type.order_candidate import OrderCandidate
 
@@ -27,7 +26,7 @@ class BudgetChecker:
         :param exchange: The exchange against which available collateral assets will be checked.
         """
         self._exchange = exchange
-        self._locked_collateral: Dict[str, Decimal] = defaultdict(lambda: Decimal("0"))
+        self._locked_collateral: dict[str, Decimal] = defaultdict(lambda: Decimal("0"))
 
     def reset_locked_collateral(self):
         """
@@ -36,8 +35,8 @@ class BudgetChecker:
         self._locked_collateral.clear()
 
     def adjust_candidates(
-        self, order_candidates: List[OrderCandidate], all_or_none: bool = True
-    ) -> List[OrderCandidate]:
+        self, order_candidates: list[OrderCandidate], all_or_none: bool = True
+    ) -> list[OrderCandidate]:
         """
         Fills in the collateral and returns fields of the order candidates.
         If there is insufficient assets to cover the collateral requirements, the order amount is adjusted.
@@ -79,9 +78,7 @@ class BudgetChecker:
         self._lock_available_collateral(adjusted_candidate)
         return adjusted_candidate
 
-    def adjust_candidate(
-        self, order_candidate: OrderCandidate, all_or_none: bool = True
-    ) -> OrderCandidate:
+    def adjust_candidate(self, order_candidate: OrderCandidate, all_or_none: bool = True) -> OrderCandidate:
         """
         Fills in the collateral and returns fields of the order candidates.
 
@@ -119,7 +116,7 @@ class BudgetChecker:
         order_candidate.populate_collateral_entries(self._exchange)
         return order_candidate
 
-    def _get_available_balances(self, order_candidate: OrderCandidate) -> Dict[str, Decimal]:
+    def _get_available_balances(self, order_candidate: OrderCandidate) -> dict[str, Decimal]:
         available_balances = {}
         balance_fn = (
             self._exchange.get_available_balance
@@ -129,19 +126,13 @@ class BudgetChecker:
 
         if order_candidate.order_collateral is not None:
             token, _ = order_candidate.order_collateral
-            available_balances[token] = (
-                balance_fn(token) - self._locked_collateral[token]
-            )
+            available_balances[token] = balance_fn(token) - self._locked_collateral[token]
         if order_candidate.percent_fee_collateral is not None:
             token, _ = order_candidate.percent_fee_collateral
-            available_balances[token] = (
-                balance_fn(token) - self._locked_collateral[token]
-            )
+            available_balances[token] = balance_fn(token) - self._locked_collateral[token]
         for entry in order_candidate.fixed_fee_collaterals:
             token, _ = entry
-            available_balances[token] = (
-                balance_fn(token) - self._locked_collateral[token]
-            )
+            available_balances[token] = balance_fn(token) - self._locked_collateral[token]
 
         return available_balances
 

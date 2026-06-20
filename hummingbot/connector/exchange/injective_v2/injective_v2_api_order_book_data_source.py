@@ -1,5 +1,5 @@
 import asyncio
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING
 
 from hummingbot.connector.exchange.injective_v2 import injective_constants as CONSTANTS
 from hummingbot.connector.exchange.injective_v2.data_sources.injective_data_source import InjectiveDataSource
@@ -13,10 +13,9 @@ if TYPE_CHECKING:
 
 
 class InjectiveV2APIOrderBookDataSource(OrderBookTrackerDataSource):
-
     def __init__(
         self,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "InjectiveV2Exchange",
         data_source: InjectiveDataSource,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -29,14 +28,16 @@ class InjectiveV2APIOrderBookDataSource(OrderBookTrackerDataSource):
         self._forwarders = []
         self._configure_event_forwarders()
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def listen_for_subscriptions(self):
         # Subscriptions to streams is handled by the data_source
         # Here we just make sure the data_source is listening to the streams
-        market_ids = [await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
-                      for trading_pair in self._trading_pairs]
+        market_ids = [
+            await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
+            for trading_pair in self._trading_pairs
+        ]
         await self._data_source.start(market_ids=market_ids)
 
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBookMessage:
@@ -57,9 +58,7 @@ class InjectiveV2APIOrderBookDataSource(OrderBookTrackerDataSource):
     def _configure_event_forwarders(self):
         event_forwarder = EventForwarder(to_function=self._process_order_book_event)
         self._forwarders.append(event_forwarder)
-        self._data_source.add_listener(
-            event_tag=OrderBookDataSourceEvent.DIFF_EVENT, listener=event_forwarder
-        )
+        self._data_source.add_listener(event_tag=OrderBookDataSourceEvent.DIFF_EVENT, listener=event_forwarder)
 
         event_forwarder = EventForwarder(to_function=self._process_public_trade_event)
         self._forwarders.append(event_forwarder)
@@ -73,14 +72,10 @@ class InjectiveV2APIOrderBookDataSource(OrderBookTrackerDataSource):
 
     async def subscribe_to_trading_pair(self, trading_pair: str) -> bool:
         """Dynamic subscription not supported for this connector."""
-        self.logger().warning(
-            f"Dynamic subscription not supported for {self.__class__.__name__}"
-        )
+        self.logger().warning(f"Dynamic subscription not supported for {self.__class__.__name__}")
         return False
 
     async def unsubscribe_from_trading_pair(self, trading_pair: str) -> bool:
         """Dynamic unsubscription not supported for this connector."""
-        self.logger().warning(
-            f"Dynamic unsubscription not supported for {self.__class__.__name__}"
-        )
+        self.logger().warning(f"Dynamic unsubscription not supported for {self.__class__.__name__}")
         return False

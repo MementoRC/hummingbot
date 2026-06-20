@@ -2,7 +2,7 @@ import hashlib
 import hmac
 import json
 from collections import OrderedDict
-from typing import Any, Dict
+from typing import Any
 from urllib.parse import urlencode
 
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
@@ -42,8 +42,7 @@ class MexcAuth(AuthBase):
         """
         return request  # pass-through
 
-    def add_auth_to_params(self,
-                           params: Dict[str, Any]):
+    def add_auth_to_params(self, params: dict[str, Any]):
         timestamp = int(self.time_provider.time() * 1e3)
 
         request_params = OrderedDict(params or {})
@@ -54,11 +53,10 @@ class MexcAuth(AuthBase):
 
         return request_params
 
-    def header_for_authentication(self) -> Dict[str, str]:
+    def header_for_authentication(self) -> dict[str, str]:
         return {"X-MEXC-APIKEY": self.api_key, "Content-Type": "application/json"}
 
-    def _generate_signature(self, params: Dict[str, Any]) -> str:
-
+    def _generate_signature(self, params: dict[str, Any]) -> str:
         encoded_params_str = urlencode(params)
         digest = hmac.new(self.secret_key.encode("utf8"), encoded_params_str.encode("utf8"), hashlib.sha256).hexdigest()
         return digest

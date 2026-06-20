@@ -1,7 +1,7 @@
 import asyncio
 import time
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from bidict import bidict
 
@@ -35,9 +35,9 @@ class VertexExchange(ExchangePyBase):
         self,
         vertex_arbitrum_address: str,
         vertex_arbitrum_private_key: str,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
@@ -167,7 +167,7 @@ class VertexExchange(ExchangePyBase):
         order_side: TradeType,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         trading_pair = f"{base_currency}-{quote_currency}"
         is_maker = is_maker or False
@@ -200,7 +200,7 @@ class VertexExchange(ExchangePyBase):
         order_type: OrderType,
         price: Decimal,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         # NOTE: A positive amount indicates a buy, and a negative amount indicates a sell.
         if trade_type == TradeType.SELL:
             amount = -amount
@@ -310,7 +310,7 @@ class VertexExchange(ExchangePyBase):
             return True
         return False
 
-    async def _format_trading_rules(self, exchange_info_dict: Dict[int, Any]) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: dict[int, Any]) -> list[TradingRule]:
         """
         Example:
              "spot_products": [
@@ -365,7 +365,7 @@ class VertexExchange(ExchangePyBase):
                     # NOTE: USDC product doesn't have a market
                     continue
                 trading_pair = utils.market_to_trading_pair(self._exchange_market_info[self._domain][rule]["market"])
-                rule_set: Dict[str, Any] = exchange_info_dict[rule]["book_info"]
+                rule_set: dict[str, Any] = exchange_info_dict[rule]["book_info"]
                 min_order_size = utils.convert_from_x18(rule_set.get("min_size"))
                 min_price_increment = utils.convert_from_x18(rule_set.get("price_increment_x18"))
                 min_base_amount_increment = utils.convert_from_x18(rule_set.get("size_increment"))
@@ -506,7 +506,7 @@ class VertexExchange(ExchangePyBase):
                 self.logger().error("Unexpected error in user stream listener loop.", exc_info=True)
                 await self._sleep(5.0)
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         trade_updates = []
         if order.exchange_order_id is not None:
             exchange_order_id = order.exchange_order_id
@@ -711,7 +711,7 @@ class VertexExchange(ExchangePyBase):
         except Exception:
             self.logger().exception("There was an error requesting exchange info.")
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         mapping = bidict()
         for product_id in filter(utils.is_exchange_information_valid, exchange_info):
             trading_pair = exchange_info[product_id]["market"]
@@ -729,9 +729,7 @@ class VertexExchange(ExchangePyBase):
         try:
             data = {"matches": {"product_ids": [product_id], "limit": 5}}
             matches_response = await self._api_post(
-                path_url=CONSTANTS.INDEXER_PATH_URL,
-                data=data,
-                limit_id=CONSTANTS.INDEXER_PATH_URL
+                path_url=CONSTANTS.INDEXER_PATH_URL, data=data, limit_id=CONSTANTS.INDEXER_PATH_URL
             )
             matches = matches_response.get("matches", [])
             if matches and len(matches) > 0:
@@ -763,7 +761,7 @@ class VertexExchange(ExchangePyBase):
 
     async def _get_account(self):
         sender_address = self.sender_address
-        response: Dict[str, Dict[str, Any]] = await self._api_get(
+        response: dict[str, dict[str, Any]] = await self._api_get(
             path_url=CONSTANTS.QUERY_PATH_URL,
             params={"type": CONSTANTS.SUBACCOUNT_INFO_REQUEST_TYPE, "subaccount": sender_address},
             limit_id=CONSTANTS.SUBACCOUNT_INFO_REQUEST_TYPE,
@@ -847,7 +845,7 @@ class VertexExchange(ExchangePyBase):
 
     async def _get_fee_rates(self):
         sender_address = self.sender_address
-        response: Dict[str, Dict[str, Any]] = await self._api_get(
+        response: dict[str, dict[str, Any]] = await self._api_get(
             path_url=CONSTANTS.QUERY_PATH_URL,
             params={
                 "type": CONSTANTS.FEE_RATES_REQUEST_TYPE,
@@ -866,13 +864,13 @@ class VertexExchange(ExchangePyBase):
         self,
         path_url,
         method: RESTMethod = RESTMethod.GET,
-        params: Optional[Dict[str, Any]] = None,
-        data: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
+        data: dict[str, Any] | None = None,
         is_auth_required: bool = False,
         return_err: bool = False,
-        limit_id: Optional[str] = None,
+        limit_id: str | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         last_exception = None
         rest_assistant = await self._web_assistants_factory.get_rest_assistant()
         url = web_utils.public_rest_url(path_url, domain=self.domain)

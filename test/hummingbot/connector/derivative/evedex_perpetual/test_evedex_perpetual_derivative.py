@@ -1,9 +1,10 @@
 """Unit tests for Evedex Perpetual Derivative connector."""
+
 import asyncio
 import json
 from decimal import Decimal
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from typing import Any, Awaitable, Dict, List, Optional
+from typing import Any, Awaitable
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses.core import aioresponses
@@ -73,7 +74,7 @@ class EvedexPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         self.exchange.logger().addHandler(self)
 
         self.mocking_assistant = NetworkMockingAssistant(self.local_event_loop)
-        self.test_task: Optional[asyncio.Task] = None
+        self.test_task: asyncio.Task | None = None
         self._initialize_event_loggers()
 
     def async_run_with_timeout(self, coroutine: Awaitable, timeout: float = 5) -> Any:
@@ -121,7 +122,7 @@ class EvedexPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
             (MarketEvent.SellOrderCompleted, self.sell_order_completed_logger),
             (MarketEvent.OrderCancelled, self.order_cancelled_logger),
             (MarketEvent.OrderFilled, self.order_filled_logger),
-            (MarketEvent.FundingPaymentCompleted, self.funding_payment_completed_logger)
+            (MarketEvent.FundingPaymentCompleted, self.funding_payment_completed_logger),
         ]
 
         for event, logger in events_and_loggers:
@@ -133,7 +134,7 @@ class EvedexPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
     def _is_logged(self, log_level: str, message: str) -> bool:
         return any(record.levelname == log_level and record.getMessage() == message for record in self.log_records)
 
-    def _instruments_response(self) -> List[Dict[str, Any]]:
+    def _instruments_response(self) -> list[dict[str, Any]]:
         """
         Mock response for GET /api/market/instrument based on Swagger API.
         Instrument schema from official OpenAPI spec.
@@ -151,7 +152,7 @@ class EvedexPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
                     "precision": 8,
                     "showPrecision": 8,
                     "createdAt": "2024-01-01T00:00:00.000Z",
-                    "avgLastPrice": 50000.0
+                    "avgLastPrice": 50000.0,
                 },
                 "to": {
                     "id": "2",
@@ -160,7 +161,7 @@ class EvedexPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
                     "image": None,
                     "precision": 8,
                     "showPrecision": 8,
-                    "createdAt": "2024-01-01T00:00:00.000Z"
+                    "createdAt": "2024-01-01T00:00:00.000Z",
                 },
                 "maxLeverage": 100,
                 "leverageLimit": {"100000": 50, "500000": 20},
@@ -185,30 +186,27 @@ class EvedexPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
                 "updatedAt": "2024-01-01T00:00:00.000Z",
                 "startDate": None,
                 "isPopular": True,
-                "newLabel": False
+                "newLabel": False,
             }
         ]
 
-    def _ping_response(self) -> Dict[str, Any]:
+    def _ping_response(self) -> dict[str, Any]:
         """Mock response for GET /api/ping."""
         return {"time": 1640780000}
 
-    def _balance_response(self) -> Dict[str, Any]:
+    def _balance_response(self) -> dict[str, Any]:
         """
         Mock response for GET /api/market/available-balance based on actual API.
         Returns funding balance info with availableBalance.
         """
         return {
             "currency": "usdt",
-            "funding": {
-                "currency": "usdt",
-                "balance": 5000.0
-            },
+            "funding": {"currency": "usdt", "balance": 5000.0},
             "availableBalance": 4500.0,
-            "maintenanceMargin": 100.0
+            "maintenanceMargin": 100.0,
         }
 
-    def _positions_response(self) -> Dict[str, Any]:
+    def _positions_response(self) -> dict[str, Any]:
         """
         Mock response for GET /api/position based on Swagger API.
         Position schema from official OpenAPI spec.
@@ -229,13 +227,13 @@ class EvedexPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
                     "marginMode": "CROSS",
                     "side": "LONG",
                     "createdAt": "2024-01-01T00:00:00.000Z",
-                    "updatedAt": "2024-01-01T00:00:00.000Z"
+                    "updatedAt": "2024-01-01T00:00:00.000Z",
                 }
             ],
-            "count": 1
+            "count": 1,
         }
 
-    def _order_response(self, status: str = "NEW") -> Dict[str, Any]:
+    def _order_response(self, status: str = "NEW") -> dict[str, Any]:
         """
         Mock response for order operations based on Swagger API Order schema.
         """
@@ -259,10 +257,10 @@ class EvedexPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
             "triggeredAt": None,
             "exchangeRequestId": "req_123",
             "createdAt": "2024-01-01T00:00:00.000Z",
-            "updatedAt": "2024-01-01T00:00:00.000Z"
+            "updatedAt": "2024-01-01T00:00:00.000Z",
         }
 
-    def _fills_response(self) -> Dict[str, Any]:
+    def _fills_response(self) -> dict[str, Any]:
         """
         Mock response for GET /api/fill based on Swagger API.
         """
@@ -278,20 +276,20 @@ class EvedexPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
                     "fee": [{"coin": self.quote_asset, "quantity": 10.0}],
                     "pnl": 0.0,
                     "isPnlRealized": False,
-                    "createdAt": "2024-01-01T00:00:00.000Z"
+                    "createdAt": "2024-01-01T00:00:00.000Z",
                 }
             ],
-            "count": 1
+            "count": 1,
         }
 
-    def _user_me_response(self) -> Dict[str, Any]:
+    def _user_me_response(self) -> dict[str, Any]:
         """Mock response for GET /api/user/me."""
         return {
             "id": "user_001",
             "exchangeId": self.user_exchange_id,
             "email": "test@example.com",
             "status": "ACTIVE",
-            "createdAt": "2024-01-01T00:00:00.000Z"
+            "createdAt": "2024-01-01T00:00:00.000Z",
         }
 
     @aioresponses()
@@ -305,6 +303,7 @@ class EvedexPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         result = self.async_run_with_timeout(self.exchange.check_network())
 
         from hummingbot.core.network_iterator import NetworkStatus
+
         self.assertEqual(result, NetworkStatus.CONNECTED)
 
     @aioresponses()
@@ -318,6 +317,7 @@ class EvedexPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         result = self.async_run_with_timeout(self.exchange.check_network())
 
         from hummingbot.core.network_iterator import NetworkStatus
+
         self.assertNotEqual(result, NetworkStatus.CONNECTED)  # Not connected
 
     @aioresponses()
@@ -410,8 +410,12 @@ class EvedexPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         self.assertEqual(self.exchange.get_sell_collateral_token(self.trading_pair), "USDT")
 
     def test_is_order_not_found_helpers(self):
-        self.assertTrue(self.exchange._is_order_not_found_during_status_update_error(Exception(CONSTANTS.ORDER_NOT_EXIST_MESSAGE)))
-        self.assertTrue(self.exchange._is_order_not_found_during_cancelation_error(Exception(CONSTANTS.ORDER_NOT_EXIST_MESSAGE)))
+        self.assertTrue(
+            self.exchange._is_order_not_found_during_status_update_error(Exception(CONSTANTS.ORDER_NOT_EXIST_MESSAGE))
+        )
+        self.assertTrue(
+            self.exchange._is_order_not_found_during_cancelation_error(Exception(CONSTANTS.ORDER_NOT_EXIST_MESSAGE))
+        )
 
     def test_get_fee(self):
         fee = self.exchange._get_fee(
@@ -969,7 +973,7 @@ class EvedexPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
             "quantity": "5",
             "unFilledQuantity": "3",
             "filledAvgPrice": "10",
-            "fee": [{"coin": "total", "quantity": "1"}, {"coin": "USDT", "quantity": "0.1"}]
+            "fee": [{"coin": "total", "quantity": "1"}, {"coin": "USDT", "quantity": "0.1"}],
         }
         self.async_run_with_timeout(self.exchange._process_order_update(order_data))
         self.exchange._order_tracker.process_trade_update.assert_called()
@@ -1361,12 +1365,14 @@ class EvedexPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         self.exchange.trading_pair_associated_to_exchange_symbol = AsyncMock(return_value=self.trading_pair)
         self.exchange._perpetual_trading.set_position = MagicMock()
         self.exchange._perpetual_trading.remove_position = MagicMock()
-        self.exchange._api_get = AsyncMock(return_value={
-            "list": [
-                {"instrument": self.ex_trading_pair, "quantity": "1", "side": "BUY", "leverage": "2"},
-                {"instrument": self.ex_trading_pair, "quantity": "0", "side": "BUY", "leverage": "2"},
-            ]
-        })
+        self.exchange._api_get = AsyncMock(
+            return_value={
+                "list": [
+                    {"instrument": self.ex_trading_pair, "quantity": "1", "side": "BUY", "leverage": "2"},
+                    {"instrument": self.ex_trading_pair, "quantity": "0", "side": "BUY", "leverage": "2"},
+                ]
+            }
+        )
         self.async_run_with_timeout(self.exchange._update_positions())
         self.exchange._perpetual_trading.set_position.assert_called()
         self.exchange._perpetual_trading.remove_position.assert_called()
@@ -1375,18 +1381,20 @@ class EvedexPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         from hummingbot.core.data_type.common import PositionSide
 
         self.exchange.trading_pair_associated_to_exchange_symbol = AsyncMock(return_value=self.trading_pair)
-        self.exchange._api_get = AsyncMock(return_value={
-            "list": [
-                {
-                    "instrument": self.ex_trading_pair,
-                    "quantity": "2",
-                    "side": "SELL",
-                    "avgPrice": "100",
-                    "leverage": "2",
-                    "unRealizedPnL": "-3",
-                }
-            ]
-        })
+        self.exchange._api_get = AsyncMock(
+            return_value={
+                "list": [
+                    {
+                        "instrument": self.ex_trading_pair,
+                        "quantity": "2",
+                        "side": "SELL",
+                        "avgPrice": "100",
+                        "leverage": "2",
+                        "unRealizedPnL": "-3",
+                    }
+                ]
+            }
+        )
 
         self.async_run_with_timeout(self.exchange._update_positions())
 
@@ -1411,15 +1419,19 @@ class EvedexPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
             position_action=PositionAction.OPEN,
         )
         self.exchange.exchange_symbol_associated_to_pair = AsyncMock(return_value=self.ex_trading_pair)
-        self.exchange._api_get = AsyncMock(return_value={
-            "list": [{
-                "order": order_id,
-                "id": "E1",
-                "fillPrice": "10",
-                "fillQuantity": "1",
-                "createdAt": "2026-02-09T01:24:54.937Z",
-            }]
-        })
+        self.exchange._api_get = AsyncMock(
+            return_value={
+                "list": [
+                    {
+                        "order": order_id,
+                        "id": "E1",
+                        "fillPrice": "10",
+                        "fillQuantity": "1",
+                        "createdAt": "2026-02-09T01:24:54.937Z",
+                    }
+                ]
+            }
+        )
         self.exchange._order_tracker.process_trade_update = MagicMock()
         self.async_run_with_timeout(self.exchange._update_order_fills_from_trades())
         self.exchange._order_tracker.process_trade_update.assert_called()
@@ -1439,15 +1451,19 @@ class EvedexPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
             position_action=PositionAction.OPEN,
         )
         self.exchange.exchange_symbol_associated_to_pair = AsyncMock(return_value=self.ex_trading_pair)
-        self.exchange._api_get = AsyncMock(return_value={
-            "list": [{
-                "order": order_id,
-                "id": "E_SHORT",
-                "fillPrice": "10",
-                "fillQuantity": "1",
-                "createdAt": "2026-02-09T01:24:54.937Z",
-            }]
-        })
+        self.exchange._api_get = AsyncMock(
+            return_value={
+                "list": [
+                    {
+                        "order": order_id,
+                        "id": "E_SHORT",
+                        "fillPrice": "10",
+                        "fillQuantity": "1",
+                        "createdAt": "2026-02-09T01:24:54.937Z",
+                    }
+                ]
+            }
+        )
         self.exchange._order_tracker.process_trade_update = MagicMock()
 
         self.async_run_with_timeout(self.exchange._update_order_fills_from_trades())
@@ -1485,15 +1501,19 @@ class EvedexPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         self.assertEqual(Decimal("1"), tracked_order.executed_amount_base)
         self.assertEqual(1, len(tracked_order.order_fills))
 
-        self.exchange._api_get = AsyncMock(return_value={
-            "list": [{
-                "order": order_id,
-                "id": "REST_FILL_1",
-                "fillPrice": "10",
-                "fillQuantity": "1",
-                "createdAt": "2026-02-09T01:24:54.937Z",
-            }]
-        })
+        self.exchange._api_get = AsyncMock(
+            return_value={
+                "list": [
+                    {
+                        "order": order_id,
+                        "id": "REST_FILL_1",
+                        "fillPrice": "10",
+                        "fillQuantity": "1",
+                        "createdAt": "2026-02-09T01:24:54.937Z",
+                    }
+                ]
+            }
+        )
 
         self.async_run_with_timeout(self.exchange._update_order_fills_from_trades())
 
@@ -1539,10 +1559,14 @@ class EvedexPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
     def test_get_position_mode_and_set_mode(self):
         mode = self.async_run_with_timeout(self.exchange._get_position_mode())
         self.assertEqual(mode, PositionMode.ONEWAY)
-        result, msg = self.async_run_with_timeout(self.exchange._trading_pair_position_mode_set(PositionMode.ONEWAY, self.trading_pair))
+        result, msg = self.async_run_with_timeout(
+            self.exchange._trading_pair_position_mode_set(PositionMode.ONEWAY, self.trading_pair)
+        )
         self.assertTrue(result)
         self.assertEqual(msg, "")
-        result, msg = self.async_run_with_timeout(self.exchange._trading_pair_position_mode_set(PositionMode.HEDGE, self.trading_pair))
+        result, msg = self.async_run_with_timeout(
+            self.exchange._trading_pair_position_mode_set(PositionMode.HEDGE, self.trading_pair)
+        )
         self.assertFalse(result)
         self.assertNotEqual(msg, "")
 
@@ -1560,7 +1584,9 @@ class EvedexPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
 
     def test_fetch_last_fee_payment_success_and_error(self):
         self.exchange.exchange_symbol_associated_to_pair = AsyncMock(return_value=self.ex_trading_pair)
-        self.exchange._api_get = AsyncMock(return_value={"list": [{"coin": self.base_asset, "quantity": "1", "fundingRate": "0.1", "updatedAt": 123}]})
+        self.exchange._api_get = AsyncMock(
+            return_value={"list": [{"coin": self.base_asset, "quantity": "1", "fundingRate": "0.1", "updatedAt": 123}]}
+        )
         ts, rate, payment = self.async_run_with_timeout(self.exchange._fetch_last_fee_payment(self.trading_pair))
         self.assertEqual(ts, 123)
         self.assertEqual(rate, Decimal("0.1"))
@@ -1593,7 +1619,7 @@ class EvedexPerpetualOrderCreationTests(IsolatedAsyncioWrapperTestCase):
         )
         self.exchange._set_current_timestamp(1640780000)
 
-    def _limit_order_response(self) -> Dict[str, Any]:
+    def _limit_order_response(self) -> dict[str, Any]:
         """Mock response for POST /api/v2/order/limit."""
         return {
             "id": "00001:00000000000000000000000001",
@@ -1615,10 +1641,10 @@ class EvedexPerpetualOrderCreationTests(IsolatedAsyncioWrapperTestCase):
             "triggeredAt": None,
             "exchangeRequestId": "req_123",
             "createdAt": "2024-01-01T00:00:00.000Z",
-            "updatedAt": "2024-01-01T00:00:00.000Z"
+            "updatedAt": "2024-01-01T00:00:00.000Z",
         }
 
-    def _market_order_response(self) -> Dict[str, Any]:
+    def _market_order_response(self) -> dict[str, Any]:
         """Mock response for POST /api/v2/order/market."""
         return {
             "id": "00001:00000000000000000000000002",
@@ -1640,7 +1666,7 @@ class EvedexPerpetualOrderCreationTests(IsolatedAsyncioWrapperTestCase):
             "triggeredAt": None,
             "exchangeRequestId": "req_124",
             "createdAt": "2024-01-01T00:00:00.000Z",
-            "updatedAt": "2024-01-01T00:00:00.000Z"
+            "updatedAt": "2024-01-01T00:00:00.000Z",
         }
 
     @aioresponses()
@@ -1662,7 +1688,7 @@ class EvedexPerpetualOrderCreationTests(IsolatedAsyncioWrapperTestCase):
             amount=Decimal("1"),
             order_type=OrderType.LIMIT,
             price=Decimal("50000"),
-            position_action=PositionAction.OPEN
+            position_action=PositionAction.OPEN,
         )
 
         self.assertIsNotNone(order_id)
@@ -1687,7 +1713,7 @@ class EvedexPerpetualOrderCreationTests(IsolatedAsyncioWrapperTestCase):
             amount=Decimal("1"),
             order_type=OrderType.LIMIT,
             price=Decimal("50000"),
-            position_action=PositionAction.CLOSE
+            position_action=PositionAction.CLOSE,
         )
 
         self.assertIsNotNone(order_id)
@@ -1715,7 +1741,7 @@ class EvedexPerpetualPositionTests(IsolatedAsyncioWrapperTestCase):
         )
         self.exchange._set_current_timestamp(1640780000)
 
-    def _positions_response(self) -> Dict[str, Any]:
+    def _positions_response(self) -> dict[str, Any]:
         """Mock response for GET /api/position."""
         return {
             "list": [
@@ -1733,10 +1759,10 @@ class EvedexPerpetualPositionTests(IsolatedAsyncioWrapperTestCase):
                     "marginMode": "CROSS",
                     "side": "LONG",
                     "createdAt": "2024-01-01T00:00:00.000Z",
-                    "updatedAt": "2024-01-01T00:00:00.000Z"
+                    "updatedAt": "2024-01-01T00:00:00.000Z",
                 }
             ],
-            "count": 1
+            "count": 1,
         }
 
     def test_position_mode_is_oneway(self):
@@ -1746,6 +1772,7 @@ class EvedexPerpetualPositionTests(IsolatedAsyncioWrapperTestCase):
 
 class EvedexPerpetualWebSocketTests(IsolatedAsyncioWrapperTestCase):
     """Test WebSocket functionality with Centrifuge protocol."""
+
     level = 0
 
     @classmethod
@@ -1779,7 +1806,7 @@ class EvedexPerpetualWebSocketTests(IsolatedAsyncioWrapperTestCase):
     def async_run_with_timeout(self, coroutine, timeout: float = 5):
         return self.local_event_loop.run_until_complete(asyncio.wait_for(coroutine, timeout))
 
-    def _order_ws_update(self, status: str = "NEW") -> Dict[str, Any]:
+    def _order_ws_update(self, status: str = "NEW") -> dict[str, Any]:
         """
         Mock WebSocket message from order-{userExchangeId} channel.
         """
@@ -1805,11 +1832,11 @@ class EvedexPerpetualWebSocketTests(IsolatedAsyncioWrapperTestCase):
                 "triggeredAt": None,
                 "exchangeRequestId": "req_123",
                 "createdAt": "2024-01-01T00:00:00.000Z",
-                "updatedAt": "2024-01-01T00:00:00.000Z"
-            }
+                "updatedAt": "2024-01-01T00:00:00.000Z",
+            },
         }
 
-    def _fill_ws_update(self) -> Dict[str, Any]:
+    def _fill_ws_update(self) -> dict[str, Any]:
         """
         Mock WebSocket message from orderFills-{userExchangeId} channel.
         """
@@ -1826,24 +1853,20 @@ class EvedexPerpetualWebSocketTests(IsolatedAsyncioWrapperTestCase):
                 "fee": [{"coin": self.quote_asset, "quantity": 10.0}],
                 "pnl": 0.0,
                 "isPnlRealized": False,
-                "createdAt": "2024-01-01T00:00:00.000Z"
-            }
+                "createdAt": "2024-01-01T00:00:00.000Z",
+            },
         }
 
-    def _funding_ws_update(self) -> Dict[str, Any]:
+    def _funding_ws_update(self) -> dict[str, Any]:
         """
         Mock WebSocket message from funding-{userExchangeId} channel.
         """
         return {
             "channel": f"funding-{self.user_exchange_id}",
-            "data": {
-                "coin": self.quote_asset.lower(),
-                "quantity": "8.0",
-                "updatedAt": "2024-01-01T00:00:00.000Z"
-            }
+            "data": {"coin": self.quote_asset.lower(), "quantity": "8.0", "updatedAt": "2024-01-01T00:00:00.000Z"},
         }
 
-    def _position_ws_update(self) -> Dict[str, Any]:
+    def _position_ws_update(self) -> dict[str, Any]:
         """
         Mock WebSocket message for position update from position-{userExchangeId} channel.
         """
@@ -1857,8 +1880,8 @@ class EvedexPerpetualWebSocketTests(IsolatedAsyncioWrapperTestCase):
                 "unrealizedPnL": 1000.0,
                 "leverage": 10,
                 "side": "LONG",
-                "updatedAt": "2024-01-01T00:00:00.000Z"
-            }
+                "updatedAt": "2024-01-01T00:00:00.000Z",
+            },
         }
 
     def test_centrifuge_channel_naming(self):
@@ -1886,7 +1909,7 @@ class EvedexPerpetualWebSocketTests(IsolatedAsyncioWrapperTestCase):
             "REJECTED",
             "EXPIRED",
             "REPLACED",
-            "ERROR"
+            "ERROR",
         ]
         for status in statuses:
             self.assertIn(status, CONSTANTS.ORDER_STATE)
@@ -1903,9 +1926,7 @@ class EvedexPerpetualWebSocketTests(IsolatedAsyncioWrapperTestCase):
         self.assertTrue(self._is_logged("WARNING", "Failed to fetch access token: boom"))
 
     def test_get_all_pairs_prices_list_response(self):
-        self.exchange._api_get = AsyncMock(return_value=[
-            {"name": self.ex_trading_pair, "markPrice": 100.5}
-        ])
+        self.exchange._api_get = AsyncMock(return_value=[{"name": self.ex_trading_pair, "markPrice": 100.5}])
         result = self.async_run_with_timeout(self.exchange.get_all_pairs_prices())
         self.assertEqual(result, [{"symbol": self.ex_trading_pair, "price": "100.5"}])
 
@@ -2193,21 +2214,20 @@ class EvedexPerpetualWebSocketTests(IsolatedAsyncioWrapperTestCase):
             price=Decimal("10"),
             creation_timestamp=self.exchange.current_timestamp,
         )
-        self.exchange._api_get = AsyncMock(return_value={
-            "list": [
-                {
-                    "id": "200",
-                    "exchangeRequestId": "req_1",
-                    "quantity": "2",
-                    "unFilledQuantity": "0",
-                    "filledAvgPrice": "10",
-                    "fee": [
-                        {"coin": "usdt", "quantity": "0.1"},
-                        {"coin": "total", "quantity": "0"}
-                    ]
-                }
-            ]
-        })
+        self.exchange._api_get = AsyncMock(
+            return_value={
+                "list": [
+                    {
+                        "id": "200",
+                        "exchangeRequestId": "req_1",
+                        "quantity": "2",
+                        "unFilledQuantity": "0",
+                        "filledAvgPrice": "10",
+                        "fee": [{"coin": "usdt", "quantity": "0.1"}, {"coin": "total", "quantity": "0"}],
+                    }
+                ]
+            }
+        )
         updates = self.async_run_with_timeout(self.exchange._all_trade_updates_for_order(order))
         self.assertEqual(len(updates), 1)
         self.assertEqual(updates[0].trade_id, "req_1")
@@ -2231,20 +2251,22 @@ class EvedexPerpetualWebSocketTests(IsolatedAsyncioWrapperTestCase):
             creation_timestamp=self.exchange.current_timestamp,
             position=PositionAction.OPEN,
         )
-        self.exchange._api_get = AsyncMock(return_value={
-            "list": [
-                {
-                    "id": "201",
-                    "exchangeRequestId": "req_short",
-                    "quantity": "2",
-                    "unFilledQuantity": "0",
-                    "filledAvgPrice": "10",
-                    "fee": [
-                        {"coin": "usdt", "quantity": "0.1"},
-                    ]
-                }
-            ]
-        })
+        self.exchange._api_get = AsyncMock(
+            return_value={
+                "list": [
+                    {
+                        "id": "201",
+                        "exchangeRequestId": "req_short",
+                        "quantity": "2",
+                        "unFilledQuantity": "0",
+                        "filledAvgPrice": "10",
+                        "fee": [
+                            {"coin": "usdt", "quantity": "0.1"},
+                        ],
+                    }
+                ]
+            }
+        )
 
         updates = self.async_run_with_timeout(self.exchange._all_trade_updates_for_order(order))
 
@@ -2268,17 +2290,13 @@ class EvedexPerpetualWebSocketTests(IsolatedAsyncioWrapperTestCase):
 
     def test_process_user_stream_event_order_update(self):
         self.exchange._process_order_update = AsyncMock()
-        event_message = {
-            "push": {"channel": "futures-perp:order:123", "pub": {"data": {"id": "1"}}}
-        }
+        event_message = {"push": {"channel": "futures-perp:order:123", "pub": {"data": {"id": "1"}}}}
         self.async_run_with_timeout(self.exchange._process_user_stream_event(event_message))
         self.exchange._process_order_update.assert_awaited_once()
 
     def test_process_user_stream_event_order_filled(self):
         self.exchange._process_order_fill = AsyncMock()
-        event_message = {
-            "push": {"channel": "futures-perp:orderFilled:123", "pub": {"data": {"id": "1"}}}
-        }
+        event_message = {"push": {"channel": "futures-perp:orderFilled:123", "pub": {"data": {"id": "1"}}}}
         self.async_run_with_timeout(self.exchange._process_user_stream_event(event_message))
         self.exchange._process_order_fill.assert_awaited_once()
 
@@ -2286,9 +2304,7 @@ class EvedexPerpetualWebSocketTests(IsolatedAsyncioWrapperTestCase):
         self.exchange._process_order_update = AsyncMock()
         self.exchange._process_position_update = AsyncMock()
         self.exchange._process_order_fill = AsyncMock()
-        event_message = {
-            "push": {"channel": "futures-perp:user:123", "pub": {"data": {"id": "1"}}}
-        }
+        event_message = {"push": {"channel": "futures-perp:user:123", "pub": {"data": {"id": "1"}}}}
 
         self.async_run_with_timeout(self.exchange._process_user_stream_event(event_message))
 
@@ -2336,9 +2352,7 @@ class EvedexPerpetualWebSocketTests(IsolatedAsyncioWrapperTestCase):
         mock_api.get(positions_url, body=json.dumps({"list": [], "count": 0}))
 
         # Mock trading pair symbol mapping
-        self.exchange._set_trading_pair_symbol_map(
-            {self.ex_trading_pair: self.trading_pair}
-        )
+        self.exchange._set_trading_pair_symbol_map({self.ex_trading_pair: self.trading_pair})
 
         # Run update_positions
         self.async_run_with_timeout(self.exchange._update_positions())
@@ -2445,4 +2459,5 @@ class EvedexPerpetualWebSocketTests(IsolatedAsyncioWrapperTestCase):
 
 if __name__ == "__main__":
     import unittest
+
     unittest.main()

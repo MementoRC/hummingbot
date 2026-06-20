@@ -1,5 +1,5 @@
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.exchange.hyperliquid import (
     hyperliquid_constants as CONSTANTS,
@@ -18,31 +18,28 @@ if TYPE_CHECKING:
 
 
 class HyperliquidAPIUserStreamDataSource(UserStreamTrackerDataSource):
-
     LISTEN_KEY_KEEP_ALIVE_INTERVAL = 1800  # Recommended to Ping/Update listen key to keep connection alive
     HEARTBEAT_TIME_INTERVAL = 30.0
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
-            self,
-            auth: AuthBase,
-            trading_pairs: List[str],
-            connector: 'HyperliquidExchange',
-            api_factory: WebAssistantsFactory,
-            domain: str = CONSTANTS.DOMAIN,
+        self,
+        auth: AuthBase,
+        trading_pairs: list[str],
+        connector: "HyperliquidExchange",
+        api_factory: WebAssistantsFactory,
+        domain: str = CONSTANTS.DOMAIN,
     ):
-
         super().__init__()
         self._domain = domain
         self._api_factory = api_factory
         self._auth = auth
-        self._ws_assistants: List[WSAssistant] = []
+        self._ws_assistants: list[WSAssistant] = []
         self._connector = connector
         self._current_listen_key = None
         self._listen_for_user_stream_task = None
         self._last_listen_key_ping_ts = None
-        self._trading_pairs: List[str] = trading_pairs
-        self._ping_task: Optional[asyncio.Task] = None
+        self._trading_pairs: list[str] = trading_pairs
 
         self.token = None
 
@@ -63,12 +60,8 @@ class HyperliquidAPIUserStreamDataSource(UserStreamTrackerDataSource):
         """
         ws: WSAssistant = await self._get_ws_assistant()
         url = f"{web_utils.wss_url(self._domain)}"
-        await ws.connect(
-            ws_url=url,
-            ping_timeout=self.HEARTBEAT_TIME_INTERVAL,
-            message_timeout=CONSTANTS.WS_MESSAGE_TIMEOUT,
-        )
-        self._ping_task = safe_ensure_future(self._ping_thread(ws))
+        await ws.connect(ws_url=url, ping_timeout=self.HEARTBEAT_TIME_INTERVAL)
+        safe_ensure_future(self._ping_thread(ws))
         return ws
 
     async def _subscribe_channels(self, websocket_assistant: WSAssistant):
@@ -83,22 +76,20 @@ class HyperliquidAPIUserStreamDataSource(UserStreamTrackerDataSource):
                 "subscription": {
                     "type": "orderUpdates",
                     "user": self._connector.hyperliquid_address,
-                }
+                },
             }
             subscribe_order_change_request: WSJSONRequest = WSJSONRequest(
-                payload=orders_change_payload,
-                is_auth_required=True)
+                payload=orders_change_payload, is_auth_required=True
+            )
 
             trades_payload = {
                 "method": "subscribe",
                 "subscription": {
                     "type": "userFills",
                     "user": self._connector.hyperliquid_address,
-                }
+                },
             }
-            subscribe_trades_request: WSJSONRequest = WSJSONRequest(
-                payload=trades_payload,
-                is_auth_required=True)
+            subscribe_trades_request: WSJSONRequest = WSJSONRequest(payload=trades_payload, is_auth_required=True)
             await websocket_assistant.send(subscribe_order_change_request)
             await websocket_assistant.send(subscribe_trades_request)
 
@@ -109,46 +100,32 @@ class HyperliquidAPIUserStreamDataSource(UserStreamTrackerDataSource):
             self.logger().exception("Unexpected error occurred subscribing to user streams...")
             raise
 
-    async def _on_user_stream_interruption(self, websocket_assistant: Optional[WSAssistant]):
-        # Cancel the keepalive ping task tied to this connection so it does not outlive the websocket and
-        # leak across reconnections.
-        if self._ping_task is not None:
-            self._ping_task.cancel()
-            try:
-                await self._ping_task
-            except asyncio.CancelledError:
-                pass
-            self._ping_task = None
-        await super()._on_user_stream_interruption(websocket_assistant=websocket_assistant)
-
-    async def _process_event_message(self, event_message: Dict[str, Any], queue: asyncio.Queue):
+    async def _process_event_message(self, event_message: dict[str, Any], queue: asyncio.Queue):
         if event_message.get("error") is not None:
             err_msg = event_message.get("error", {}).get("message", event_message.get("error"))
-            raise IOError({
-                "label": "WSS_ERROR",
-                "message": f"Error received via websocket - {err_msg}."
-            })
+            raise IOError({"label": "WSS_ERROR", "message": f"Error received via websocket - {err_msg}."})
         elif event_message.get("channel") in [
             CONSTANTS.USER_ORDERS_ENDPOINT_NAME,
             CONSTANTS.USEREVENT_ENDPOINT_NAME,
         ]:
             queue.put_nowait(event_message)
 
-    async def _ping_thread(self, websocket_assistant: WSAssistant,):
+    async def _ping_thread(
+        self,
+        websocket_assistant: WSAssistant,
+    ):
         try:
             while True:
                 ping_request = WSJSONRequest(payload={"method": "ping"})
                 await asyncio.sleep(CONSTANTS.HEARTBEAT_TIME_INTERVAL)
                 await websocket_assistant.send(ping_request)
         except Exception as e:
-            self.logger().debug(f'ping error {e}')
+            self.logger().debug(f"ping error {e}")
 
     async def _process_websocket_messages(self, websocket_assistant: WSAssistant, queue: asyncio.Queue):
         while True:
             try:
-                await super()._process_websocket_messages(
-                    websocket_assistant=websocket_assistant,
-                    queue=queue)
+                await super()._process_websocket_messages(websocket_assistant=websocket_assistant, queue=queue)
             except asyncio.TimeoutError:
                 ping_request = WSJSONRequest(payload={"method": "ping"})
                 await websocket_assistant.send(ping_request)

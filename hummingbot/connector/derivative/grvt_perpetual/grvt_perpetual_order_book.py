@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any
 
 from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.data_type.order_book import OrderBook
@@ -13,9 +13,9 @@ class GrvtPerpetualOrderBook(OrderBook):
     @classmethod
     def snapshot_message_from_exchange(
         cls,
-        msg: Dict[str, Any],
+        msg: dict[str, Any],
         timestamp: float,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> OrderBookMessage:
         data = dict(msg)
         if metadata:
@@ -34,8 +34,8 @@ class GrvtPerpetualOrderBook(OrderBook):
     @classmethod
     def snapshot_message_from_ws(
         cls,
-        msg: Dict[str, Any],
-        metadata: Optional[Dict[str, Any]] = None,
+        msg: dict[str, Any],
+        metadata: dict[str, Any] | None = None,
     ) -> OrderBookMessage:
         data = dict(msg["feed"])
         if metadata:
@@ -54,8 +54,8 @@ class GrvtPerpetualOrderBook(OrderBook):
     @classmethod
     def diff_message_from_exchange(
         cls,
-        msg: Dict[str, Any],
-        metadata: Optional[Dict[str, Any]] = None,
+        msg: dict[str, Any],
+        metadata: dict[str, Any] | None = None,
     ) -> OrderBookMessage:
         data = dict(msg["feed"])
         if metadata:
@@ -74,8 +74,8 @@ class GrvtPerpetualOrderBook(OrderBook):
     @classmethod
     def trade_message_from_exchange(
         cls,
-        msg: Dict[str, Any],
-        metadata: Optional[Dict[str, Any]] = None,
+        msg: dict[str, Any],
+        metadata: dict[str, Any] | None = None,
     ) -> OrderBookMessage:
         data = dict(msg["feed"])
         if metadata:

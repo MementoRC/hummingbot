@@ -1,7 +1,6 @@
 import hashlib
 import hmac
 import json
-from typing import Dict
 
 from hummingbot.connector.utilities.oms_connector import oms_connector_constants as CONSTANTS
 from hummingbot.core.utils.tracking_nonce import NonceCreator
@@ -24,13 +23,13 @@ class OMSConnectorAuth(AuthBase):
     def initialized(self) -> bool:
         return self._initialized
 
-    def get_rest_auth_headers(self) -> Dict[str, str]:
+    def get_rest_auth_headers(self) -> dict[str, str]:
         return self._auth_dict
 
-    def validate_rest_auth(self, auth_resp_data: Dict[str, str]) -> bool:
+    def validate_rest_auth(self, auth_resp_data: dict[str, str]) -> bool:
         return self._validate_auth(auth_resp_data)
 
-    def update_with_rest_response(self, auth_resp_data: Dict[str, str]):
+    def update_with_rest_response(self, auth_resp_data: dict[str, str]):
         self._update_with_auth_response(auth_resp_data)
 
     async def rest_authenticate(self, request: RESTRequest) -> RESTRequest:
@@ -67,10 +66,10 @@ class OMSConnectorAuth(AuthBase):
         return signature
 
     @staticmethod
-    def _validate_auth(data: Dict[str, str]) -> bool:
+    def _validate_auth(data: dict[str, str]) -> bool:
         return data.get(CONSTANTS.AUTHENTICATED_FIELD) or False
 
-    def _update_with_auth_response(self, data: Dict[str, str]):
+    def _update_with_auth_response(self, data: dict[str, str]):
         user_data = data[CONSTANTS.USER_FIELD]
         self.user_name = user_data[CONSTANTS.USER_NAME_FIELD]
         self.account_id = user_data[CONSTANTS.ACCOUNT_ID_FIELD]

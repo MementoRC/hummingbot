@@ -6,7 +6,7 @@ import sys
 import time
 import traceback
 from logging import Logger as PythonLogger
-from typing import Optional, Type
+from typing import Type
 
 import pandas as pd
 
@@ -15,10 +15,12 @@ from .application_warning import ApplicationWarning
 TESTING_TOOLS = ["unittest", "pytest"]
 
 #  --- Copied from logging module ---
-if hasattr(sys, '_getframe'):
+if hasattr(sys, "_getframe"):
+
     def currentframe():
         return sys._getframe(3)
-else:   # pragma: no cover
+else:  # pragma: no cover
+
     def currentframe():
         """Return the frame object for the caller's stack frame."""
         try:
@@ -38,19 +40,19 @@ class HummingbotLogger(PythonLogger):
 
     @staticmethod
     def is_testing_mode() -> bool:
-        return any(tools in arg
-                   for tools in TESTING_TOOLS
-                   for arg in sys.argv)
+        return any(tools in arg for tools in TESTING_TOOLS for arg in sys.argv)
 
     def notify(self, msg: str):
         from . import INFO
+
         self.log(INFO, msg)
         if not HummingbotLogger.is_testing_mode():
             from hummingbot.client.hummingbot_application import HummingbotApplication
+
             hummingbot_app: HummingbotApplication = HummingbotApplication.main_application()
             hummingbot_app.notify(f"({pd.Timestamp.fromtimestamp(int(time.time()))}) {msg}")
 
-    def network(self, log_msg: str, app_warning_msg: Optional[str] = None, *args, **kwargs):
+    def network(self, log_msg: str, app_warning_msg: str | None = None, *args, **kwargs):
         if app_warning_msg is not None and not HummingbotLogger.is_testing_mode():
             from hummingbot.client.hummingbot_application import HummingbotApplication
 
@@ -59,10 +61,7 @@ class HummingbotLogger(PythonLogger):
         self.log(NETWORK, log_msg, *args, **kwargs)
         if app_warning_msg is not None and not HummingbotLogger.is_testing_mode():
             app_warning: ApplicationWarning = ApplicationWarning(
-                time.time(),
-                self.name,
-                self.findCaller(),
-                app_warning_msg
+                time.time(), self.name, self.findCaller(), app_warning_msg
             )
             self.warning(app_warning.warning_msg)
             hummingbot_app: HummingbotApplication = HummingbotApplication.main_application()
@@ -95,15 +94,16 @@ class HummingbotLogger(PythonLogger):
             sinfo = None
             if stack_info:
                 sio = io.StringIO()
-                sio.write('Stack (most recent call last):\n')
+                sio.write("Stack (most recent call last):\n")
                 traceback.print_stack(f, file=sio)
                 sinfo = sio.getvalue()
-                if sinfo[-1] == '\n':
+                if sinfo[-1] == "\n":
                     sinfo = sinfo[:-1]
                 sio.close()
             rv = (co.co_filename, f.f_lineno, co.co_name, sinfo)
             break
         return rv
+
     #  --- Copied from logging module ---
 
 

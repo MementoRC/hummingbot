@@ -1,5 +1,5 @@
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.derivative.grvt_perpetual import (
     grvt_perpetual_constants as CONSTANTS,
@@ -18,12 +18,12 @@ if TYPE_CHECKING:
 
 
 class GrvtPerpetualAPIUserStreamDataSource(UserStreamTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
         auth: AuthBase,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "GrvtPerpetualDerivative",
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -62,7 +62,7 @@ class GrvtPerpetualAPIUserStreamDataSource(UserStreamTrackerDataSource):
             self.logger().exception("Unexpected error occurred subscribing to GRVT user streams...")
             raise
 
-    async def _process_event_message(self, event_message: Dict[str, Any], queue: asyncio.Queue):
+    async def _process_event_message(self, event_message: dict[str, Any], queue: asyncio.Queue):
         if event_message.get("feed") is not None and event_message.get("stream") in {
             CONSTANTS.PRIVATE_WS_CHANNEL_ORDER,
             CONSTANTS.PRIVATE_WS_CHANNEL_STATE,

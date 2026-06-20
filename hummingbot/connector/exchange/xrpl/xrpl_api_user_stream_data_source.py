@@ -4,10 +4,11 @@ XRPL API User Stream Data Source
 Polling-based user stream data source that periodically fetches account state
 from the XRPL ledger instead of relying on WebSocket subscriptions.
 """
+
 import asyncio
 import time
 from collections import deque
-from typing import TYPE_CHECKING, Any, Deque, Dict, List, Optional, Set
+from typing import TYPE_CHECKING, Any, Deque
 
 from xrpl.models import AccountTx, Ledger
 
@@ -36,7 +37,8 @@ class XRPLAPIUserStreamDataSource(UserStreamTrackerDataSource):
     - Deduplicates transactions to avoid processing the same event twice
     - Transforms XRPL transactions into internal event format
     """
-    _logger: Optional[HummingbotLogger] = None
+
+    _logger: HummingbotLogger | None = None
 
     POLL_INTERVAL = CONSTANTS.POLLING_INTERVAL
 
@@ -44,7 +46,7 @@ class XRPLAPIUserStreamDataSource(UserStreamTrackerDataSource):
         self,
         auth: XRPLAuth,
         connector: "XrplExchange",
-        worker_manager: Optional[XRPLWorkerPoolManager] = None,
+        worker_manager: XRPLWorkerPoolManager | None = None,
     ):
         """
         Initialize the polling data source.
@@ -60,11 +62,11 @@ class XRPLAPIUserStreamDataSource(UserStreamTrackerDataSource):
         self._worker_manager = worker_manager
 
         # Polling state
-        self._last_ledger_index: Optional[int] = None
+        self._last_ledger_index: int | None = None
         self._last_recv_time: float = 0
         # Use both deque for FIFO ordering and set for O(1) lookup
         self._seen_tx_hashes_queue: Deque[str] = deque()
-        self._seen_tx_hashes_set: Set[str] = set()
+        self._seen_tx_hashes_set: set[str] = set()
         self._seen_tx_hashes_max_size = CONSTANTS.SEEN_TX_HASHES_MAX_SIZE
 
     # @classmethod
@@ -100,20 +102,14 @@ class XRPLAPIUserStreamDataSource(UserStreamTrackerDataSource):
                     if response.is_successful():
                         self._last_ledger_index = response.result.get("ledger_index")
                         self._last_recv_time = time.time()
-                        self.logger().debug(
-                            f"[POLL] Initialized polling from ledger index: {self._last_ledger_index}"
-                        )
+                        self.logger().debug(f"[POLL] Initialized polling from ledger index: {self._last_ledger_index}")
                         return
 
-            self.logger().warning(
-                "[POLL] Failed to get current ledger index"
-            )
+            self.logger().warning("[POLL] Failed to get current ledger index")
         except KeyError as e:
             self.logger().warning(f"Request lost during client reconnection: {e}")
         except Exception as e:
-            self.logger().warning(
-                f"[POLL] Error initializing ledger index: {e}, will process from account history"
-            )
+            self.logger().warning(f"[POLL] Error initializing ledger index: {e}, will process from account history")
 
     async def listen_for_user_stream(self, output: asyncio.Queue):
         """
@@ -124,9 +120,7 @@ class XRPLAPIUserStreamDataSource(UserStreamTrackerDataSource):
 
         :param output: the queue to use to store the received messages
         """
-        self.logger().info(
-            f"Starting XRPL polling data source for account {self._auth.get_account()}"
-        )
+        self.logger().info(f"Starting XRPL polling data source for account {self._auth.get_account()}")
 
         while True:
             try:
@@ -150,14 +144,11 @@ class XRPLAPIUserStreamDataSource(UserStreamTrackerDataSource):
                 self.logger().info("Polling data source cancelled")
                 raise
             except Exception as e:
-                self.logger().error(
-                    f"Error polling account state: {e}",
-                    exc_info=True
-                )
+                self.logger().error(f"Error polling account state: {e}", exc_info=True)
                 # Wait before retrying
                 await asyncio.sleep(self.POLL_INTERVAL)
 
-    async def _poll_account_state(self) -> List[Dict[str, Any]]:
+    async def _poll_account_state(self) -> list[dict[str, Any]]:
         """
         Poll the account's transaction history for new transactions.
 
@@ -260,9 +251,7 @@ class XRPLAPIUserStreamDataSource(UserStreamTrackerDataSource):
                     self.logger().debug(f"[POLL_DEBUG] Event created: {tx_hash}, ledger={ledger_index}")
                     events.append(event)
 
-            self.logger().debug(
-                f"Polled {len(transactions)} transactions, {len(events)} new events"
-            )
+            self.logger().debug(f"Polled {len(transactions)} transactions, {len(events)} new events")
 
         except Exception as e:
             self.logger().error(f"Error in _poll_account_state: {e}")
@@ -295,10 +284,10 @@ class XRPLAPIUserStreamDataSource(UserStreamTrackerDataSource):
 
     def _transform_to_event(
         self,
-        tx: Dict[str, Any],
-        meta: Dict[str, Any],
-        tx_data: Dict[str, Any],
-    ) -> Optional[Dict[str, Any]]:
+        tx: dict[str, Any],
+        meta: dict[str, Any],
+        tx_data: dict[str, Any],
+    ) -> dict[str, Any] | None:
         """
         Transform an XRPL transaction into an internal event format.
 

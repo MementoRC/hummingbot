@@ -1,6 +1,6 @@
 import time
 from decimal import Decimal
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable
 
 from eth_account import Account
 from eth_account.messages import encode_typed_data
@@ -51,7 +51,7 @@ def to_eth_number(value: Decimal) -> int:
     Converts a decimal value to an integer using MATCHER_PRECISION.
     Formula: Round(floatValue * 10 ^ 8, HalfUp)
     """
-    multiplier = Decimal(10 ** CONSTANTS.MATCHER_PRECISION)
+    multiplier = Decimal(10**CONSTANTS.MATCHER_PRECISION)
     return int((value * multiplier).quantize(Decimal("1"), rounding="ROUND_HALF_UP"))
 
 
@@ -74,10 +74,10 @@ class EvedexPerpetualAuth(AuthBase):
         """
         self._api_key: str = api_key
         self._time_provider: TimeSynchronizer = time_provider
-        self._access_token: Optional[str] = None
+        self._access_token: str | None = None
         self._access_token_expiry: float = 0
-        self._token_fetcher: Optional[Callable[[], Any]] = None
-        self._wallet: Optional[Account] = None
+        self._token_fetcher: Callable[[], Any] | None = None
+        self._wallet: Account | None = None
 
         # Initialize wallet if private key is provided
         if private_key:
@@ -132,17 +132,17 @@ class EvedexPerpetualAuth(AuthBase):
         """
         return request  # pass-through
 
-    def header_for_authentication(self) -> Dict[str, str]:
+    def header_for_authentication(self) -> dict[str, str]:
         return {"X-API-Key": self._api_key}
 
     @property
-    def wallet_address(self) -> Optional[str]:
+    def wallet_address(self) -> str | None:
         """Returns the wallet address if a private key was provided."""
         if self._wallet:
             return self._wallet.address
         return None
 
-    def _get_domain_data(self, chain_id: int) -> Dict[str, Any]:
+    def _get_domain_data(self, chain_id: int) -> dict[str, Any]:
         """
         Get the EIP-712 domain data for EvedEx.
 

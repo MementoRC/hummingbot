@@ -1,7 +1,7 @@
 import hashlib
 import hmac
 import time
-from typing import Any, Dict
+from typing import Any
 
 from hummingbot.connector.exchange.ascend_ex import ascend_ex_constants as CONSTANTS
 from hummingbot.core.web_assistant.auth import AuthBase
@@ -45,7 +45,7 @@ class AscendExAuth(AuthBase):
         """
         return request  # pass-through
 
-    def get_auth_headers(self, path_url: str, data: Dict[str, Any] = None):
+    def get_auth_headers(self, path_url: str, data: dict[str, Any] = None):
         """
         Generates authentication signature and return it in a dictionary along with other inputs
         :param path_url: URL of the auth API endpoint

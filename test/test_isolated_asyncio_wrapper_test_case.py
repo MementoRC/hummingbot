@@ -3,7 +3,6 @@ import concurrent.futures
 import sys
 import threading
 import unittest
-
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase, async_to_sync
 
 _PYTEST_RUNNER = "pytest" in sys.modules

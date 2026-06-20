@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING
 
 from hummingbot.connector.utils import split_hb_trading_pair
 from hummingbot.core.rate_oracle.sources.rate_source_base import RateSourceBase
@@ -12,20 +12,22 @@ if TYPE_CHECKING:
 class DeriveRateSource(RateSourceBase):
     def __init__(self):
         super().__init__()
-        self._exchange: Optional[DeriveExchange] = None  # delayed because of circular reference
+        self._exchange: DeriveExchange | None = None  # delayed because of circular reference
 
     @property
     def name(self) -> str:
         return "derive"
 
     @async_ttl_cache(ttl=30, maxsize=1)
-    async def get_prices(self, quote_token: Optional[str] = None) -> Dict[str, Decimal]:
+    async def get_prices(self, quote_token: str | None = None) -> dict[str, Decimal]:
         await self._ensure_exchange()
         pairs_prices = await self._exchange.get_all_pairs_prices()
         results = {}
         for pair_price in pairs_prices:
             try:
-                trading_pair = await self._exchange.trading_pair_associated_to_exchange_symbol(symbol=pair_price["symbol"]["instrument_name"])
+                trading_pair = await self._exchange.trading_pair_associated_to_exchange_symbol(
+                    symbol=pair_price["symbol"]["instrument_name"]
+                )
             except KeyError:
                 continue  # skip pairs that we don't track
             if quote_token is not None:
@@ -46,13 +48,13 @@ class DeriveRateSource(RateSourceBase):
             await self._exchange._make_trading_rules_request()
 
     @staticmethod
-    def _build_derive_connector_without_private_keys() -> 'DeriveExchange':
+    def _build_derive_connector_without_private_keys() -> "DeriveExchange":
         from hummingbot.connector.exchange.derive.derive_exchange import DeriveExchange
 
         return DeriveExchange(
             derive_api_secret="",
             trading_pairs=[],
-            sub_id = "",
+            sub_id="",
             derive_api_key="",
             trading_required=False,
         )

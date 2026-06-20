@@ -1,5 +1,5 @@
 import sys
-from enum import Enum
+from enum import StrEnum
 
 from hummingbot.core.api_throttler.data_types import RateLimit
 from hummingbot.core.data_type.in_flight_order import OrderState
@@ -60,7 +60,7 @@ ORDER_FILLS_ENDPOINT = "/orders/order-fills"
 PRIVATE_WS_CONNECTION = "private-ws-connection"
 
 
-class WSMessageTypes(str, Enum):
+class WSMessageTypes(StrEnum):
     ORDER_BOOK_SNAPSHOT = "2"
     TRADE = "t"
 
@@ -80,11 +80,9 @@ RATE_LIMITS = [
     RateLimit(limit_id=FUNDING_INFO_ENDPOINT, limit=10, time_interval=ONE_SECOND),
     RateLimit(limit_id=FUNDING_EVENTS_ENDPOINT, limit=10, time_interval=ONE_SECOND),
     RateLimit(limit_id=RISK_ENDPOINT, limit=10, time_interval=ONE_SECOND),
-
     RateLimit(limit_id=PLACE_ORDER_ENDPOINT, limit=10, time_interval=ONE_SECOND),
     RateLimit(limit_id=CANCEL_ORDER_ENDPOINT, limit=10, time_interval=ONE_SECOND),
     RateLimit(limit_id=ORDER_STATUS_ENDPOINT, limit=10, time_interval=ONE_SECOND),
     RateLimit(limit_id=ORDER_FILLS_ENDPOINT, limit=10, time_interval=ONE_SECOND),
-
     RateLimit(limit_id=PRIVATE_WS_CONNECTION, limit=10, time_interval=ONE_SECOND),
 ]

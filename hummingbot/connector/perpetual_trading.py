@@ -3,7 +3,6 @@ import copy
 import logging
 import warnings
 from collections import defaultdict
-from typing import Dict, List, Optional
 
 from hummingbot.connector.derivative.position import Position
 from hummingbot.connector.utils import split_hb_trading_pair
@@ -16,19 +15,19 @@ from hummingbot.logger import HummingbotLogger
 class PerpetualTrading:
     """Keeps perpetual trading state."""
 
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
-    def __init__(self, trading_pairs: List[str]):
-        self._account_positions: Dict[str, Position] = {}
+    def __init__(self, trading_pairs: list[str]):
+        self._account_positions: dict[str, Position] = {}
         self._position_mode: PositionMode = PositionMode.ONEWAY
-        self._leverage: Dict[str, int] = defaultdict(lambda: 1)
+        self._leverage: dict[str, int] = defaultdict(lambda: 1)
         self._trading_pairs = trading_pairs
 
-        self._funding_info: Dict[str, FundingInfo] = {}
-        self._funding_payment_span: List[int] = [0, 0]
+        self._funding_info: dict[str, FundingInfo] = {}
+        self._funding_payment_span: list[int] = [0, 0]
         self._funding_info_stream = asyncio.Queue()
 
-        self._funding_info_updater_task: Optional[asyncio.Task] = None
+        self._funding_info_updater_task: asyncio.Task | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -37,14 +36,14 @@ class PerpetualTrading:
         return cls._logger
 
     @property
-    def account_positions(self) -> Dict[str, Position]:
+    def account_positions(self) -> dict[str, Position]:
         """
         Returns a dictionary of current active open positions
         """
         return self._account_positions
 
     @property
-    def funding_info(self) -> Dict[str, FundingInfo]:
+    def funding_info(self) -> dict[str, FundingInfo]:
         """
         The funding information per trading pair.
         """
@@ -61,7 +60,7 @@ class PerpetualTrading:
         self.logger().debug(f"Setting position {pos_key} to {Position}")
         self._account_positions[pos_key] = position
 
-    def remove_position(self, post_key: str) -> Optional[Position]:
+    def remove_position(self, post_key: str) -> Position | None:
         return self._account_positions.pop(post_key, None)
 
     def initialize_funding_info(self, funding_info: FundingInfo):
@@ -100,19 +99,14 @@ class PerpetualTrading:
         """
         Checks if there is funding information for all trading pairs.
         """
-        return all(
-            trading_pair in self._funding_info
-            for trading_pair in self._trading_pairs
-        )
+        return all(trading_pair in self._funding_info for trading_pair in self._trading_pairs)
 
     def start(self):
         """
         Starts the async task that updates the funding information from the updates stream queue.
         """
         self.stop()
-        self._funding_info_updater_task = safe_ensure_future(
-            self._funding_info_updater()
-        )
+        self._funding_info_updater_task = safe_ensure_future(self._funding_info_updater())
 
     def stop(self):
         """
@@ -138,7 +132,7 @@ class PerpetualTrading:
             pos_key = f"{trading_pair}{side.name}" if self._position_mode == PositionMode.HEDGE else trading_pair
         return pos_key
 
-    def get_position(self, trading_pair: str, side: PositionSide = None) -> Optional[Position]:
+    def get_position(self, trading_pair: str, side: PositionSide = None) -> Position | None:
         """
         Returns an active position if exists, otherwise returns None
         :param trading_pair: The market trading pair
@@ -148,7 +142,7 @@ class PerpetualTrading:
         return self.account_positions.get(self.position_key(trading_pair, side), None)
 
     @property
-    def funding_payment_span(self) -> List[int]:
+    def funding_payment_span(self) -> list[int]:
         """
         Time span(in seconds) before and after funding period when exchanges consider active positions eligible for
         funding payment.

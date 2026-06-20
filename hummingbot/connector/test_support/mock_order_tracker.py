@@ -1,5 +1,4 @@
 import asyncio
-from typing import Dict, List
 
 from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_tracker import OrderBookTracker, OrderBookTrackerDataSource
@@ -7,11 +6,11 @@ from hummingbot.core.data_type.order_book_tracker import OrderBookTracker, Order
 
 class MockOrderBookTrackerDataSource(OrderBookTrackerDataSource):
     @staticmethod
-    async def fetch_trading_pairs() -> List[str]:
+    async def fetch_trading_pairs() -> list[str]:
         pass
 
     @classmethod
-    async def get_last_traded_prices(cls, trading_pairs: List[str]) -> Dict[str, float]:
+    async def get_last_traded_prices(cls, trading_pairs: list[str]) -> dict[str, float]:
         pass
 
     async def get_new_order_book(self, trading_pair: str) -> OrderBook:
@@ -37,7 +36,7 @@ class MockOrderTracker(OrderBookTracker):
     def __init__(self):
         self._data_source: MockOrderBookTrackerDataSource = MockOrderBookTrackerDataSource([])
         # self._trading_pairs: List[str] = trading_pairs
-        self._order_books: Dict[str, OrderBook] = {}
+        self._order_books: dict[str, OrderBook] = {}
 
     # def exchange_name(self):
     #     return "MockPaperExchange" # self.__class__.__name__

@@ -1,7 +1,7 @@
 """Unit tests for Evedex Perpetual User Stream Data Source."""
+
 import asyncio
 import unittest
-from typing import Optional
 from unittest.mock import AsyncMock, MagicMock
 
 from hummingbot.connector.derivative.evedex_perpetual import evedex_perpetual_constants as CONSTANTS
@@ -34,11 +34,13 @@ class TestEvedexPerpetualUserStreamDataSource(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):
         super().setUp()
-        self.listening_task: Optional[asyncio.Task] = None
+        self.listening_task: asyncio.Task | None = None
 
         self.time_provider = MagicMock()
         self.private_key = "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"  # noqa: mock
-        self.auth = EvedexPerpetualAuth(api_key=self.api_key, private_key=self.private_key, time_provider=self.time_provider)
+        self.auth = EvedexPerpetualAuth(
+            api_key=self.api_key, private_key=self.private_key, time_provider=self.time_provider
+        )
 
         self.connector = MagicMock()
         self.connector._domain = CONSTANTS.DEFAULT_DOMAIN
@@ -52,10 +54,7 @@ class TestEvedexPerpetualUserStreamDataSource(unittest.IsolatedAsyncioTestCase):
         self.api_factory.get_ws_assistant = AsyncMock(return_value=self.ws_assistant)
 
         self.data_source = EvedexPerpetualUserStreamDataSource(
-            auth=self.auth,
-            connector=self.connector,
-            api_factory=self.api_factory,
-            domain=CONSTANTS.DEFAULT_DOMAIN
+            auth=self.auth, connector=self.connector, api_factory=self.api_factory, domain=CONSTANTS.DEFAULT_DOMAIN
         )
 
     def tearDown(self):
@@ -70,7 +69,7 @@ class TestEvedexPerpetualUserStreamDataSource(unittest.IsolatedAsyncioTestCase):
             "exchangeId": self.user_exchange_id,
             "email": "test@example.com",
             "status": "ACTIVE",
-            "createdAt": "2024-01-01T00:00:00.000Z"
+            "createdAt": "2024-01-01T00:00:00.000Z",
         }
 
     async def test_get_user_exchange_id(self):
@@ -107,7 +106,10 @@ class TestEvedexPerpetualUserStreamDataSource(unittest.IsolatedAsyncioTestCase):
         self.assertIn("ws_url", call_kwargs)
         self.assertIn("ping_timeout", call_kwargs)
         # ping_timeout = HEARTBEAT_TIME_INTERVAL + PING_TIMEOUT (25 + 10 = 35)
-        expected_timeout = EvedexPerpetualUserStreamDataSource.HEARTBEAT_TIME_INTERVAL + EvedexPerpetualUserStreamDataSource.PING_TIMEOUT
+        expected_timeout = (
+            EvedexPerpetualUserStreamDataSource.HEARTBEAT_TIME_INTERVAL
+            + EvedexPerpetualUserStreamDataSource.PING_TIMEOUT
+        )
         self.assertEqual(call_kwargs["ping_timeout"], expected_timeout)
 
     async def test_connected_websocket_assistant_cancels_ping_task(self):
@@ -145,6 +147,7 @@ class TestEvedexPerpetualUserStreamDataSource(unittest.IsolatedAsyncioTestCase):
             class Msg:
                 def __init__(self, data):
                     self.data = data
+
             yield Msg({})
             yield Msg({"ping": {}})
             raise asyncio.CancelledError
@@ -212,9 +215,9 @@ class TestEvedexPerpetualUserStreamWebSocketMessages(unittest.TestCase):
                         "triggeredAt": None,
                         "exchangeRequestId": "req_123",
                         "createdAt": "2024-01-01T00:00:00.000Z",
-                        "updatedAt": "2024-01-01T00:00:00.000Z"
+                        "updatedAt": "2024-01-01T00:00:00.000Z",
                     }
-                }
+                },
             }
         }
 
@@ -238,9 +241,9 @@ class TestEvedexPerpetualUserStreamWebSocketMessages(unittest.TestCase):
                         "marginMode": "CROSS",
                         "side": "LONG",
                         "createdAt": "2024-01-01T00:00:00.000Z",
-                        "updatedAt": "2024-01-01T00:00:00.000Z"
+                        "updatedAt": "2024-01-01T00:00:00.000Z",
                     }
-                }
+                },
             }
         }
 
@@ -252,16 +255,13 @@ class TestEvedexPerpetualUserStreamWebSocketMessages(unittest.TestCase):
                 "pub": {
                     "data": {
                         "currency": self.quote_asset,
-                        "funding": {
-                            "currency": self.quote_asset,
-                            "balance": 5000.0
-                        },
+                        "funding": {"currency": self.quote_asset, "balance": 5000.0},
                         "availableBalance": 4000.0,
                         "position": [],
                         "openOrder": [],
-                        "updatedAt": "2024-01-01T00:00:00.000Z"
+                        "updatedAt": "2024-01-01T00:00:00.000Z",
                     }
-                }
+                },
             }
         }
 
@@ -274,9 +274,9 @@ class TestEvedexPerpetualUserStreamWebSocketMessages(unittest.TestCase):
                     "data": {
                         "coin": self.quote_asset.lower(),
                         "quantity": "4000.0",
-                        "updatedAt": "2024-01-01T00:00:00.000Z"
+                        "updatedAt": "2024-01-01T00:00:00.000Z",
                     }
-                }
+                },
             }
         }
 
@@ -297,9 +297,9 @@ class TestEvedexPerpetualUserStreamWebSocketMessages(unittest.TestCase):
                         "fee": [{"coin": self.quote_asset, "quantity": 10.0}],
                         "pnl": 0.0,
                         "isPnlRealized": False,
-                        "createdAt": "2024-01-01T00:00:00.000Z"
+                        "createdAt": "2024-01-01T00:00:00.000Z",
                     }
-                }
+                },
             }
         }
 
@@ -329,9 +329,19 @@ class TestEvedexPerpetualUserStreamWebSocketMessages(unittest.TestCase):
         data = msg["push"]["pub"]["data"]
 
         required_fields = [
-            "id", "user", "instrument", "type", "side", "status",
-            "quantity", "limitPrice", "unFilledQuantity", "filledAvgPrice",
-            "fee", "createdAt", "updatedAt"
+            "id",
+            "user",
+            "instrument",
+            "type",
+            "side",
+            "status",
+            "quantity",
+            "limitPrice",
+            "unFilledQuantity",
+            "filledAvgPrice",
+            "fee",
+            "createdAt",
+            "updatedAt",
         ]
         for field in required_fields:
             self.assertIn(field, data)
@@ -342,9 +352,16 @@ class TestEvedexPerpetualUserStreamWebSocketMessages(unittest.TestCase):
         data = msg["push"]["pub"]["data"]
 
         required_fields = [
-            "id", "user", "instrument", "quantity", "entryPrice",
-            "markPrice", "liquidationPrice", "leverage", "unrealizedPnL",
-            "side"
+            "id",
+            "user",
+            "instrument",
+            "quantity",
+            "entryPrice",
+            "markPrice",
+            "liquidationPrice",
+            "leverage",
+            "unrealizedPnL",
+            "side",
         ]
         for field in required_fields:
             self.assertIn(field, data)
@@ -354,18 +371,22 @@ class TestEvedexPerpetualUserStreamWebSocketMessages(unittest.TestCase):
         msg = self._fill_ws_update()
         data = msg["push"]["pub"]["data"]
 
-        required_fields = [
-            "executionId", "orderId", "instrumentName", "side",
-            "fillPrice", "fillQuantity", "fee"
-        ]
+        required_fields = ["executionId", "orderId", "instrumentName", "side", "fillPrice", "fillQuantity", "fee"]
         for field in required_fields:
             self.assertIn(field, data)
 
     def test_all_order_statuses(self):
         """Test all order status values from Swagger API OrderStatus enum."""
         statuses = [
-            "INTENTION", "NEW", "PARTIALLY_FILLED", "FILLED",
-            "CANCELLED", "REJECTED", "EXPIRED", "REPLACED", "ERROR"
+            "INTENTION",
+            "NEW",
+            "PARTIALLY_FILLED",
+            "FILLED",
+            "CANCELLED",
+            "REJECTED",
+            "EXPIRED",
+            "REPLACED",
+            "ERROR",
         ]
 
         for status in statuses:
@@ -387,7 +408,7 @@ class TestEvedexPerpetualUserStreamChannels(unittest.TestCase):
             "user": f"futures-perp:user-{user_exchange_id}",
             "orderFilled": f"futures-perp:orderFilled-{user_exchange_id}",
             "orderBook": f"futures-perp:orderBook-{instrument}-0.1",
-            "trade": f"futures-perp:recent-trade-{instrument}"
+            "trade": f"futures-perp:recent-trade-{instrument}",
         }
 
         # Verify patterns - all channels use futures-perp: namespace
@@ -416,10 +437,7 @@ class TestEvedexPerpetualUserStreamChannels(unittest.TestCase):
             self.assertTrue(channel.startswith("futures-perp:"))
 
         # Public channels - include instrument (with futures-perp: namespace)
-        public_channels = [
-            f"futures-perp:orderBook-{instrument}-0.1",
-            f"futures-perp:recent-trade-{instrument}"
-        ]
+        public_channels = [f"futures-perp:orderBook-{instrument}-0.1", f"futures-perp:recent-trade-{instrument}"]
 
         for channel in public_channels:
             self.assertIn(instrument, channel)

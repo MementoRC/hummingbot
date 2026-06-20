@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from decimal import ROUND_DOWN, Decimal
-from typing import TYPE_CHECKING, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Union
 
 from xrpl.models import XRP, IssuedCurrencyAmount, Memo, OfferCreate, Path, PathStep, Payment, PaymentFlag, Transaction
 from xrpl.utils import xrp_to_drops
@@ -27,7 +27,7 @@ class XRPLOrderPlacementStrategy(ABC):
         pass
 
     @staticmethod
-    def _get_digit_counts(value: Decimal) -> Tuple[int, int]:
+    def _get_digit_counts(value: Decimal) -> tuple[int, int]:
         """Get the number of integer-part digits and fractional-part digits for a Decimal value.
 
         Uses Decimal.normalize().as_tuple() to reliably count significant digits,
@@ -49,8 +49,8 @@ class XRPLOrderPlacementStrategy(ABC):
             return int_digits, frac_digits
 
     def get_base_quote_amounts(
-        self, price: Optional[Decimal] = None
-    ) -> Tuple[Union[str, IssuedCurrencyAmount], Union[str, IssuedCurrencyAmount]]:
+        self, price: Decimal | None = None
+    ) -> tuple[Union[str, IssuedCurrencyAmount], Union[str, IssuedCurrencyAmount]]:
         """Calculate the base and quote amounts for the order"""
         base_currency, quote_currency = self._connector.get_currencies_from_trading_pair(self._order.trading_pair)
         trading_rule = self._connector._trading_rules[self._order.trading_pair]
@@ -205,7 +205,7 @@ class AMMSwapOrderStrategy(XRPLOrderPlacementStrategy):
         else:
             we_pay, we_get = self.get_base_quote_amounts(price * Decimal(1 + fee_rate_pct))
 
-        paths: Optional[List[Path]] = None
+        paths: list[Path] | None = None
 
         # if both we_pay and we_get are not XRP:
         if isinstance(we_pay, IssuedCurrencyAmount) and isinstance(we_get, IssuedCurrencyAmount):

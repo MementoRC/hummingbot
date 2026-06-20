@@ -3,7 +3,7 @@ import re
 from asyncio import Event
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, List
 
 import pandas as pd
 from bidict import bidict
@@ -43,11 +43,11 @@ class ArchitectPerpetualDerivative(PerpetualDerivativePyBase):
 
     def __init__(
         self,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
-        api_key: Optional[str] = None,
-        api_secret: Optional[str] = None,
-        trading_pairs: Optional[List[str]] = None,
+        api_key: str | None = None,
+        api_secret: str | None = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
         use_auth_for_public_endpoints: bool = False,  # used for MarketDataProvider.update_rates_task
@@ -58,7 +58,7 @@ class ArchitectPerpetualDerivative(PerpetualDerivativePyBase):
         self._trading_required = trading_required
         self._domain = domain
         self._client_order_id_nonce_provider = NonceCreator.for_microseconds()
-        self._additional_instruments_info: Dict[str, "AdditionalInstrumentInfo"] = {}
+        self._additional_instruments_info: dict[str, "AdditionalInstrumentInfo"] = {}
         self._real_time_balance_update = False  # no WS updates for balances
         self._trading_rules_updates_event = Event()
         self._trading_pair_parsing_warrning_issued: set[str] = set()
@@ -78,7 +78,7 @@ class ArchitectPerpetualDerivative(PerpetualDerivativePyBase):
         )
 
     @property
-    def rate_limits_rules(self) -> List[RateLimit]:
+    def rate_limits_rules(self) -> list[RateLimit]:
         return CONSTANTS.RATE_LIMITS
 
     @property
@@ -106,7 +106,7 @@ class ArchitectPerpetualDerivative(PerpetualDerivativePyBase):
         return CONSTANTS.SERVER_TIME_ENDPOINT
 
     @property
-    def trading_pairs(self) -> List[str]:
+    def trading_pairs(self) -> list[str]:
         return self._trading_pairs
 
     @property
@@ -121,7 +121,7 @@ class ArchitectPerpetualDerivative(PerpetualDerivativePyBase):
     def funding_fee_poll_interval(self) -> int:
         return CONSTANTS.FUNDING_FEE_POLL_INTERVAL
 
-    def supported_order_types(self) -> List[OrderType]:
+    def supported_order_types(self) -> list[OrderType]:
         return [OrderType.MARKET, OrderType.LIMIT, OrderType.LIMIT_MAKER]
 
     def supported_position_modes(self):
@@ -135,7 +135,7 @@ class ArchitectPerpetualDerivative(PerpetualDerivativePyBase):
         trading_rule: TradingRule = self._trading_rules[trading_pair]
         return trading_rule.sell_order_collateral_token
 
-    async def get_all_pairs_prices(self) -> List[Dict[str, str]]:
+    async def get_all_pairs_prices(self) -> list[dict[str, str]]:
         pairs_prices = await self._api_get(path_url=CONSTANTS.TICKERS_INFO_ENDPOINT, is_auth_required=True)
         return pairs_prices
 
@@ -199,10 +199,7 @@ class ArchitectPerpetualDerivative(PerpetualDerivativePyBase):
             path_url=CONSTANTS.TICKERS_INFO_ENDPOINT,
             is_auth_required=True,
         )
-        tickers_map = {
-            ticker_data["s"]: ticker_data
-            for ticker_data in tickers_info["tickers"]
-        }
+        tickers_map = {ticker_data["s"]: ticker_data for ticker_data in tickers_info["tickers"]}
         self._additional_instruments_info.clear()
         self._trading_rules.clear()
         s_decimal_hundred = Decimal("100")
@@ -235,9 +232,7 @@ class ArchitectPerpetualDerivative(PerpetualDerivativePyBase):
                 if not tickers_info_printed_on_exception:
                     self.logger().error(f"Errors while processing tickers info: {tickers_info}.")
                     tickers_info_printed_on_exception = True
-                self.logger().exception(
-                    f"Error parsing the trading pair rule: {instrument_data}. Skipping."
-                )
+                self.logger().exception(f"Error parsing the trading pair rule: {instrument_data}. Skipping.")
         self._initialize_trading_pair_symbols_from_exchange_info(exchange_info=exchange_info)
         self._trading_rules_updates_event.set()
 
@@ -250,11 +245,11 @@ class ArchitectPerpetualDerivative(PerpetualDerivativePyBase):
     def _is_order_not_found_during_cancelation_error(self, cancelation_exception: Exception) -> bool:
         return "HTTP status is 400. Error:" in str(cancelation_exception)
 
-    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> Tuple[bool, str]:
+    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> tuple[bool, str]:
         success = mode == PositionMode.ONEWAY
         return success, "" if success else "The Architect exchange only supports One-Way position mode."
 
-    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> Tuple[bool, str]:
+    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> tuple[bool, str]:
         await self._trading_rules_updates_event.wait()
         additional_pair_info = self._additional_instruments_info[trading_pair]
         if leverage != additional_pair_info.leverage:
@@ -265,7 +260,7 @@ class ArchitectPerpetualDerivative(PerpetualDerivativePyBase):
             reason = ""
         return success, reason
 
-    async def _fetch_last_fee_payment(self, trading_pair: str) -> Tuple[float, Decimal, Decimal]:
+    async def _fetch_last_fee_payment(self, trading_pair: str) -> tuple[float, Decimal, Decimal]:
         timestamp, funding_rate, payment = 0, Decimal("-1"), Decimal("-1")
         response = await self._api_get(
             path_url=CONSTANTS.FUNDING_EVENTS_ENDPOINT,
@@ -301,7 +296,7 @@ class ArchitectPerpetualDerivative(PerpetualDerivativePyBase):
         position_action: PositionAction,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         is_maker = is_maker or False
         fee = build_trade_fee(
@@ -324,7 +319,7 @@ class ArchitectPerpetualDerivative(PerpetualDerivativePyBase):
 
         trade_fee_schema = TradeFeeSchema(
             maker_percent_fee_decimal=Decimal(user_info["maker_fee"]),
-            taker_percent_fee_decimal=Decimal(user_info["taker_fee"])
+            taker_percent_fee_decimal=Decimal(user_info["taker_fee"]),
         )
         for trading_pair in self._trading_pairs:
             self._trading_fees[trading_pair] = trade_fee_schema
@@ -346,12 +341,10 @@ class ArchitectPerpetualDerivative(PerpetualDerivativePyBase):
                     order_data = event_message["o"]
                     if "cid" in order_data:
                         order_id = str(order_data["cid"])
-                        updatable_order = (
-                            self._order_tracker.all_updatable_orders.get(order_id)
-                        )
+                        updatable_order = self._order_tracker.all_updatable_orders.get(order_id)
                     else:
-                        updatable_order = (
-                            self._order_tracker.all_updatable_orders_by_exchange_order_id.get(order_data["oid"])
+                        updatable_order = self._order_tracker.all_updatable_orders_by_exchange_order_id.get(
+                            order_data["oid"]
                         )
                     if updatable_order is not None:
                         new_state = event_to_state_map[channel]
@@ -375,12 +368,10 @@ class ArchitectPerpetualDerivative(PerpetualDerivativePyBase):
                             fill_price = Decimal(trade_data["p"])
                             fill_base_amount = Decimal(trade_data["q"])
                             fill_quote_amount = fill_base_amount * fill_price
-                            fee_amount = (
-                                fill_quote_amount * (
-                                    DEFAULT_FEES.taker_percent_fee_decimal
-                                    if trade_data["agg"]
-                                    else DEFAULT_FEES.maker_percent_fee_decimal
-                                )
+                            fee_amount = fill_quote_amount * (
+                                DEFAULT_FEES.taker_percent_fee_decimal
+                                if trade_data["agg"]
+                                else DEFAULT_FEES.maker_percent_fee_decimal
                             )
                             flat_fees = [TokenAmount(amount=fee_amount, token=updatable_order.quote_asset)]
                             fee = TradeFeeBase.new_perpetual_fee(
@@ -408,20 +399,17 @@ class ArchitectPerpetualDerivative(PerpetualDerivativePyBase):
             except Exception:
                 self.logger().exception("Unexpected error in user stream listener loop.")
 
-    async def _format_trading_rules(self, exchange_info_dict: Dict[str, Any]) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: dict[str, Any]) -> list[TradingRule]:
         raise NotImplementedError  # _update_trading_rules is re-implemented above
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         response = await self._api_get(
             path_url=CONSTANTS.ORDER_FILLS_ENDPOINT,
             params={"order_id": order.exchange_order_id},
             is_auth_required=True,
         )
         fills_data = response["fills"]
-        order_fills_data = [
-            fill_data for fill_data in fills_data
-            if fill_data["order_id"] == order.exchange_order_id
-        ]
+        order_fills_data = [fill_data for fill_data in fills_data if fill_data["order_id"] == order.exchange_order_id]
 
         trade_updates = []
         for order_fill_data in order_fills_data:
@@ -482,18 +470,15 @@ class ArchitectPerpetualDerivative(PerpetualDerivativePyBase):
             trading_pairs=self._trading_pairs,
             connector=self,
             api_factory=self._web_assistants_factory,
-            domain=self._domain
+            domain=self._domain,
         )
 
     def _create_user_stream_data_source(self) -> UserStreamTrackerDataSource:
         return ArchitectPerpetualUserStreamDataSource(
-            auth=self._auth,
-            connector=self,
-            api_factory=self._web_assistants_factory,
-            domain=self._domain
+            auth=self._auth, connector=self, api_factory=self._web_assistants_factory, domain=self._domain
         )
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         mapping = bidict()
         for instrument_data in exchange_info["instruments"]:
             try:
@@ -512,10 +497,10 @@ class ArchitectPerpetualDerivative(PerpetualDerivativePyBase):
 
     def _get_symbol_base_and_quote_from_exchange_info_instrument(
         self, instrument_data
-    ) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+    ) -> tuple[str | None, str | None, str | None]:
         symbol = instrument_data["symbol"]
         quote = instrument_data["quote_currency"]
-        match = re.match(pattern=fr"([\w-]+){quote}-PERP", string=symbol)
+        match = re.match(pattern=rf"(\w+){quote}-PERP", string=symbol)
         if match is not None:
             base = match.group(1)
         else:
@@ -557,9 +542,9 @@ class ArchitectPerpetualDerivative(PerpetualDerivativePyBase):
         amount: Decimal,
         trade_type: TradeType,
         order_type: OrderType,
-        price: Optional[Decimal],
+        price: Decimal | None,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         exchange_pair = await self.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
         is_buy = trade_type == TradeType.BUY
         if order_type == OrderType.MARKET:

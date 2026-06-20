@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 
 import ssl
-from typing import Optional
 
 import certifi
 from aiohttp import ClientRequest
 
 
 class SSLClientRequest(ClientRequest):
-    _sslcr_default_ssl_context: Optional[ssl.SSLContext] = None
+    _sslcr_default_ssl_context: ssl.SSLContext | None = None
 
     @classmethod
     def default_ssl_context(cls) -> ssl.SSLContext:

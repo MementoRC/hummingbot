@@ -1,5 +1,5 @@
 import asyncio
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from hummingbot.connector.derivative.pacifica_perpetual import (
     pacifica_perpetual_constants as CONSTANTS,
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 
 class PacificaPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
@@ -34,7 +34,7 @@ class PacificaPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
         self._api_factory = api_factory
         self._auth = auth
         self._domain = domain
-        self._ping_task: Optional[asyncio.Task] = None
+        self._ping_task: asyncio.Task | None = None
 
     async def _connected_websocket_assistant(self) -> WSAssistant:
         ws: WSAssistant = await self._api_factory.get_ws_assistant()
@@ -55,7 +55,7 @@ class PacificaPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
                 "params": {
                     "source": CONSTANTS.WS_ACCOUNT_ORDER_UPDATES_CHANNEL,
                     "account": self._auth.user_wallet_public_key,
-                }
+                },
             }
 
             # https://docs.pacifica.fi/api-documentation/api/websocket/subscriptions/account-positions
@@ -64,7 +64,7 @@ class PacificaPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
                 "params": {
                     "source": CONSTANTS.WS_ACCOUNT_POSITIONS_CHANNEL,
                     "account": self._auth.user_wallet_public_key,
-                }
+                },
             }
 
             # https://docs.pacifica.fi/api-documentation/api/websocket/subscriptions/account-info
@@ -73,7 +73,7 @@ class PacificaPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
                 "params": {
                     "source": CONSTANTS.WS_ACCOUNT_INFO_CHANNEL,
                     "account": self._auth.user_wallet_public_key,
-                }
+                },
             }
 
             # https://docs.pacifica.fi/api-documentation/api/websocket/subscriptions/account-trades
@@ -82,7 +82,7 @@ class PacificaPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
                 "params": {
                     "source": CONSTANTS.WS_ACCOUNT_TRADES_CHANNEL,
                     "account": self._auth.user_wallet_public_key,
-                }
+                },
             }
 
             await websocket_assistant.send(WSJSONRequest(account_order_updates_payload))
@@ -97,7 +97,7 @@ class PacificaPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
             self.logger().exception("Unexpected error occurred subscribing to order book trading and delta streams")
             raise
 
-    async def _on_user_stream_interruption(self, websocket_assistant: Optional[WSAssistant]):
+    async def _on_user_stream_interruption(self, websocket_assistant: WSAssistant | None):
         await super()._on_user_stream_interruption(websocket_assistant)
         if self._ping_task is not None:
             self._ping_task.cancel()

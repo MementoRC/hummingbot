@@ -8,32 +8,34 @@ import re
 import time
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
 
 
-def validate_exchange(value: str) -> Optional[str]:
+def validate_exchange(value: str) -> str | None:
     """
     Restrict valid connectors to spot connectors
     """
     from hummingbot.client.settings import AllConnectorSettings
+
     if value not in AllConnectorSettings.get_exchange_names():
         return f"Invalid exchange, please choose value from {AllConnectorSettings.get_exchange_names()}"
 
 
-def validate_derivative(value: str) -> Optional[str]:
+def validate_derivative(value: str) -> str | None:
     """
     Restrict valid connectors to perpetual connectors
     """
     from hummingbot.client.settings import AllConnectorSettings
+
     if value not in AllConnectorSettings.get_derivative_names():
         return f"Invalid derivative, please choose value from {AllConnectorSettings.get_derivative_names()}"
 
 
-def validate_connector(value: str) -> Optional[str]:
+def validate_connector(value: str) -> str | None:
     """
     Restrict valid connectors to ALL spot connectors, including paper trade and Gateway
     """
     from hummingbot.client.settings import GATEWAY_DEXS, AllConnectorSettings
+
     valid_connectors = set(AllConnectorSettings.get_connector_settings().keys())
     valid_connectors.update(AllConnectorSettings.paper_trade_connectors_names)
     valid_connectors.update(GATEWAY_DEXS)
@@ -43,16 +45,17 @@ def validate_connector(value: str) -> Optional[str]:
         return f"Invalid connector, please choose value from {all_options}"
 
 
-def validate_strategy(value: str) -> Optional[str]:
+def validate_strategy(value: str) -> str | None:
     """
     Restrict valid derivatives to the strategy file names
     """
     from hummingbot.client.settings import STRATEGIES
+
     if value not in STRATEGIES:
         return f"Invalid strategy, please choose value from {STRATEGIES}"
 
 
-def validate_decimal(value: str, min_value: Decimal = None, max_value: Decimal = None, inclusive=True) -> Optional[str]:
+def validate_decimal(value: str, min_value: Decimal = None, max_value: Decimal = None, inclusive=True) -> str | None:
     """
     Parse a decimal value from a string. This value can also be clamped.
     """
@@ -78,12 +81,13 @@ def validate_decimal(value: str, min_value: Decimal = None, max_value: Decimal =
             return f"Value must be less than {max_value}."
 
 
-def validate_market_trading_pair(market: str, value: str) -> Optional[str]:
+def validate_market_trading_pair(market: str, value: str) -> str | None:
     """
     Since trading pair validation and autocomplete are UI optimizations that do not impact bot performances,
     in case of network issues or slow wifi, this check returns true and does not prevent users from proceeding,
     """
     from hummingbot.core.utils.trading_pair_fetcher import TradingPairFetcher
+
     trading_pair_fetcher: TradingPairFetcher = TradingPairFetcher.get_instance()
     if trading_pair_fetcher.ready:
         trading_pairs = trading_pair_fetcher.trading_pairs.get(market, [])
@@ -93,16 +97,16 @@ def validate_market_trading_pair(market: str, value: str) -> Optional[str]:
             return f"{value} is not an active market on {market}."
 
 
-def validate_bool(value: str) -> Optional[str]:
+def validate_bool(value: str) -> str | None:
     """
     Permissively interpret a string as a boolean
     """
-    valid_values = ('true', 'yes', 'y', 'false', 'no', 'n')
+    valid_values = ("true", "yes", "y", "false", "no", "n")
     if value.lower() not in valid_values:
         return f"Invalid value, please choose value from {valid_values}"
 
 
-def validate_int(value: str, min_value: int = None, max_value: int = None, inclusive=True) -> Optional[str]:
+def validate_int(value: str, min_value: int = None, max_value: int = None, inclusive=True) -> str | None:
     """
     Parse an int value from a string. This value can also be clamped.
     """
@@ -128,7 +132,7 @@ def validate_int(value: str, min_value: int = None, max_value: int = None, inclu
             return f"Value must be less than {max_value}."
 
 
-def validate_float(value: str, min_value: float = None, max_value: float = None, inclusive=True) -> Optional[str]:
+def validate_float(value: str, min_value: float = None, max_value: float = None, inclusive=True) -> str | None:
     """
     Parse an float value from a string. This value can also be clamped.
     """
@@ -154,21 +158,21 @@ def validate_float(value: str, min_value: float = None, max_value: float = None,
             return f"Value must be less than {max_value}."
 
 
-def validate_datetime_iso_string(value: str) -> Optional[str]:
+def validate_datetime_iso_string(value: str) -> str | None:
     try:
-        datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+        datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
     except ValueError:
         return "Incorrect date time format (expected is YYYY-MM-DD HH:MM:SS)"
 
 
-def validate_time_iso_string(value: str) -> Optional[str]:
+def validate_time_iso_string(value: str) -> str | None:
     try:
-        time.strptime(value, '%H:%M:%S')
+        time.strptime(value, "%H:%M:%S")
     except ValueError:
         return "Incorrect time format (expected is HH:MM:SS)"
 
 
-def validate_with_regex(value: str, pattern: str, error_message: str) -> Optional[str]:
+def validate_with_regex(value: str, pattern: str, error_message: str) -> str | None:
     """
     Validate a string using a regex pattern.
     """

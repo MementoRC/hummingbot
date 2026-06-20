@@ -1,5 +1,3 @@
-from typing import Dict, Type
-
 from hummingbot.data_feed.candles_feed.aevo_perpetual_candles import AevoPerpetualCandles
 from hummingbot.data_feed.candles_feed.ascend_ex_spot_candles.ascend_ex_spot_candles import AscendExSpotCandles
 from hummingbot.data_feed.candles_feed.binance_perpetual_candles import BinancePerpetualCandles
@@ -27,8 +25,6 @@ from hummingbot.data_feed.candles_feed.hyperliquid_spot_candles.hyperliquid_spot
 from hummingbot.data_feed.candles_feed.kraken_spot_candles.kraken_spot_candles import KrakenSpotCandles
 from hummingbot.data_feed.candles_feed.kucoin_perpetual_candles.kucoin_perpetual_candles import KucoinPerpetualCandles
 from hummingbot.data_feed.candles_feed.kucoin_spot_candles.kucoin_spot_candles import KucoinSpotCandles
-from hummingbot.data_feed.candles_feed.lighter_perpetual_candles import LighterPerpetualCandles
-from hummingbot.data_feed.candles_feed.lighter_spot_candles import LighterSpotCandles
 from hummingbot.data_feed.candles_feed.mexc_perpetual_candles.mexc_perpetual_candles import MexcPerpetualCandles
 from hummingbot.data_feed.candles_feed.mexc_spot_candles.mexc_spot_candles import MexcSpotCandles
 from hummingbot.data_feed.candles_feed.okx_perpetual_candles.okx_perpetual_candles import OKXPerpetualCandles
@@ -52,7 +48,7 @@ class CandlesFactory:
     It uses a mapping of connector names to their respective candle classes.
     """
 
-    _candles_map: Dict[str, Type[CandlesBase]] = {
+    _candles_map: dict[str, type[CandlesBase]] = {
         "aevo_perpetual": AevoPerpetualCandles,
         "binance_perpetual": BinancePerpetualCandles,
         "binance": BinanceSpotCandles,
@@ -79,8 +75,6 @@ class CandlesFactory:
         "btc_markets": BtcMarketsSpotCandles,
         "pacifica_perpetual": PacificaPerpetualCandles,
         "decibel_perpetual": DecibelPerpetualCandles,
-        "lighter": LighterSpotCandles,
-        "lighter_perpetual": LighterPerpetualCandles,
     }
 
     @classmethod

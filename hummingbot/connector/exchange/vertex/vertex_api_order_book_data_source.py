@@ -1,6 +1,6 @@
 import asyncio
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.exchange.vertex import (
     vertex_constants as CONSTANTS,
@@ -25,11 +25,11 @@ class VertexAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
     def __init__(
         self,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "VertexExchange",
-        api_factory: Optional[WebAssistantsFactory] = None,
+        api_factory: WebAssistantsFactory | None = None,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
-        throttler: Optional[AsyncThrottler] = None,
+        throttler: AsyncThrottler | None = None,
     ):
         super().__init__(trading_pairs)
         self._connector = connector
@@ -38,11 +38,11 @@ class VertexAPIOrderBookDataSource(OrderBookTrackerDataSource):
         self._api_factory = api_factory or web_utils.build_api_factory(
             throttler=self._throttler,
         )
-        self._message_queue: Dict[str, asyncio.Queue] = defaultdict(asyncio.Queue)
+        self._message_queue: dict[str, asyncio.Queue] = defaultdict(asyncio.Queue)
         self._last_ws_message_sent_timestamp = 0
         self._ping_interval = 0
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBookMessage:
@@ -53,7 +53,7 @@ class VertexAPIOrderBookDataSource(OrderBookTrackerDataSource):
         )
         return snapshot_msg
 
-    async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, Any]:
+    async def _request_order_book_snapshot(self, trading_pair: str) -> dict[str, Any]:
         """
         Retrieves a copy of the full order book from the exchange, for a particular trading pair.
 
@@ -77,7 +77,7 @@ class VertexAPIOrderBookDataSource(OrderBookTrackerDataSource):
         )
         return data
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         trading_pair = utils.market_to_trading_pair(
             self._connector._exchange_market_info[self._domain][raw_message["product_id"]]["market"]
         )
@@ -85,7 +85,7 @@ class VertexAPIOrderBookDataSource(OrderBookTrackerDataSource):
         trade_message: OrderBookMessage = VertexOrderBook.trade_message_from_exchange(raw_message, metadata=metadata)
         message_queue.put_nowait(trade_message)
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         trading_pair = utils.market_to_trading_pair(
             self._connector._exchange_market_info[self._domain][raw_message["product_id"]]["market"]
         )
@@ -135,7 +135,7 @@ class VertexAPIOrderBookDataSource(OrderBookTrackerDataSource):
             )
             raise
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         channel = ""
 
         if "type" in event_message:
@@ -222,10 +222,7 @@ class VertexAPIOrderBookDataSource(OrderBookTrackerDataSource):
         except asyncio.CancelledError:
             raise
         except Exception:
-            self.logger().error(
-                f"Unexpected error occurred subscribing to {trading_pair}...",
-                exc_info=True
-            )
+            self.logger().error(f"Unexpected error occurred subscribing to {trading_pair}...", exc_info=True)
             return False
 
     async def unsubscribe_from_trading_pair(self, trading_pair: str) -> bool:
@@ -268,8 +265,5 @@ class VertexAPIOrderBookDataSource(OrderBookTrackerDataSource):
         except asyncio.CancelledError:
             raise
         except Exception:
-            self.logger().error(
-                f"Unexpected error occurred unsubscribing from {trading_pair}...",
-                exc_info=True
-            )
+            self.logger().error(f"Unexpected error occurred unsubscribing from {trading_pair}...", exc_info=True)
             return False

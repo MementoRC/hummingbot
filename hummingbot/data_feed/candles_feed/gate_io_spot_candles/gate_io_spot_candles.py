@@ -1,6 +1,5 @@
 import logging
 import time
-from typing import List, Optional
 
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.data_feed.candles_feed.candles_base import CandlesBase
@@ -9,7 +8,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class GateioSpotCandles(CandlesBase):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -58,8 +57,9 @@ class GateioSpotCandles(CandlesBase):
 
     async def check_network(self) -> NetworkStatus:
         rest_assistant = await self._api_factory.get_rest_assistant()
-        await rest_assistant.execute_request(url=self.health_check_url,
-                                             throttler_limit_id=CONSTANTS.HEALTH_CHECK_ENDPOINT)
+        await rest_assistant.execute_request(
+            url=self.health_check_url, throttler_limit_id=CONSTANTS.HEALTH_CHECK_ENDPOINT
+        )
         return NetworkStatus.CONNECTED
 
     def get_exchange_trading_pair(self, trading_pair):
@@ -73,10 +73,12 @@ class GateioSpotCandles(CandlesBase):
     def _is_last_candle_not_included_in_rest_request(self):
         return False
 
-    def _get_rest_candles_params(self,
-                                 start_time: Optional[int] = None,
-                                 end_time: Optional[int] = None,
-                                 limit: Optional[int] = CONSTANTS.MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST) -> dict:
+    def _get_rest_candles_params(
+        self,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        limit: int | None = CONSTANTS.MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST,
+    ) -> dict:
         """
         For API documentation, please refer to:
         https://www.gate.io/docs/developers/apiv4/en/#market-candlesticks
@@ -86,14 +88,9 @@ class GateioSpotCandles(CandlesBase):
         candles_ago = (int(time.time()) - start_time) // self.interval_in_seconds
         if candles_ago > CONSTANTS.MAX_CANDLES_AGO:
             raise ValueError("Gate.io REST API does not support fetching more than 10000 candles ago.")
-        return {
-            "currency_pair": self._ex_trading_pair,
-            "interval": self.interval,
-            "from": start_time,
-            "to": end_time
-        }
+        return {"currency_pair": self._ex_trading_pair, "interval": self.interval, "from": start_time, "to": end_time}
 
-    def _parse_rest_candles(self, data: dict, end_time: Optional[int] = None) -> List[List[float]]:
+    def _parse_rest_candles(self, data: dict, end_time: int | None = None) -> list[list[float]]:
         new_hb_candles = []
         for i in data:
             timestamp = self.ensure_timestamp_in_seconds(i[0])
@@ -107,9 +104,20 @@ class GateioSpotCandles(CandlesBase):
             n_trades = 0
             taker_buy_base_volume = 0
             taker_buy_quote_volume = 0
-            new_hb_candles.append([timestamp, open, high, low, close, volume,
-                                   quote_asset_volume, n_trades, taker_buy_base_volume,
-                                   taker_buy_quote_volume])
+            new_hb_candles.append(
+                [
+                    timestamp,
+                    open,
+                    high,
+                    low,
+                    close,
+                    volume,
+                    quote_asset_volume,
+                    n_trades,
+                    taker_buy_base_volume,
+                    taker_buy_quote_volume,
+                ]
+            )
         return new_hb_candles
 
     def ws_subscription_payload(self):
@@ -117,7 +125,7 @@ class GateioSpotCandles(CandlesBase):
             "time": int(self._time()),
             "channel": CONSTANTS.WS_CANDLES_ENDPOINT,
             "event": "subscribe",
-            "payload": [self.interval, self._ex_trading_pair]
+            "payload": [self.interval, self._ex_trading_pair],
         }
 
     def _parse_websocket_message(self, data: dict):

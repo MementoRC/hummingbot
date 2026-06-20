@@ -1,7 +1,6 @@
 import json
 import time
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from hummingbot.connector.utilities.oms_connector import oms_connector_constants as CONSTANTS
 from hummingbot.connector.utilities.oms_connector.oms_connector_auth import OMSConnectorAuth
@@ -47,13 +46,13 @@ class OMSConnectorWSPostProcessor(WSPostProcessorBase):
 
 class OMSConnectorWebAssistantsFactory(WebAssistantsFactory):
     @property
-    def auth(self) -> Optional[OMSConnectorAuth]:
+    def auth(self) -> OMSConnectorAuth | None:
         return self._auth
 
 
 def build_api_factory(
-    throttler: Optional[AsyncThrottler] = None,
-    auth: Optional[OMSConnectorAuth] = None,
+    throttler: AsyncThrottler | None = None,
+    auth: OMSConnectorAuth | None = None,
 ):
     throttler = throttler or create_throttler()
     api_factory = OMSConnectorWebAssistantsFactory(
@@ -69,9 +68,7 @@ def create_throttler() -> AsyncThrottler:
     return AsyncThrottler(CONSTANTS.RATE_LIMITS)
 
 
-async def get_current_server_time(
-    throttler: Optional[AsyncThrottler] = None, domain: str = ""
-) -> float:
+async def get_current_server_time(throttler: AsyncThrottler | None = None, domain: str = "") -> float:
     return _time() * 1e3
 
 

@@ -6,7 +6,7 @@ from collections import deque
 from dataclasses import dataclass, field
 from decimal import Decimal
 from random import randrange
-from typing import Dict, Final, List, Optional, cast
+from typing import Final, cast
 from urllib.parse import urlparse
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
@@ -16,6 +16,7 @@ from xrpl.asyncio.transaction import XRPLReliableSubmissionException
 from xrpl.asyncio.transaction.main import _LEDGER_OFFSET, _calculate_fee_per_transaction_type, _tx_needs_networkID
 from xrpl.models import Currency, IssuedCurrency, Request, Response, ServerInfo, Transaction, TransactionMetadata, Tx
 from xrpl.models.requests.request import LookupByLedgerRequest, RequestMethod
+from xrpl.models.utils import require_kwargs_on_init
 from xrpl.utils.txn_parser.utils import NormalizedNode, normalize_nodes
 from xrpl.utils.txn_parser.utils.order_book_parser import (
     _get_change_amount,
@@ -44,7 +45,7 @@ DEFAULT_FEES = TradeFeeSchema(
 _REQ_ID_MAX: Final[int] = 1_000_000
 
 
-def get_order_book_changes(metadata: TransactionMetadata) -> List[AccountOfferChanges]:
+def get_order_book_changes(metadata: TransactionMetadata) -> list[AccountOfferChanges]:
     """
     Parse all order book changes from a transaction's metadata.
 
@@ -58,7 +59,7 @@ def get_order_book_changes(metadata: TransactionMetadata) -> List[AccountOfferCh
     return compute_order_book_changes(metadata)
 
 
-def _get_offer_change(node: NormalizedNode) -> Optional[AccountOfferChange]:
+def _get_offer_change(node: NormalizedNode) -> AccountOfferChange | None:
     status = _get_offer_status(node)
     taker_gets = _get_change_amount(node, "TakerGets")
     taker_pays = _get_change_amount(node, "TakerPays")
@@ -67,10 +68,7 @@ def _get_offer_change(node: NormalizedNode) -> Optional[AccountOfferChange]:
     flags = _get_fields(node, "Flags")
     # if required fields are None: return None
     if (
-        taker_gets is None
-        or taker_pays is None
-        or account is None
-        or sequence is None
+        taker_gets is None or taker_pays is None or account is None or sequence is None
         # or flags is None # flags can be None
     ):
         return None
@@ -92,7 +90,7 @@ def _get_offer_change(node: NormalizedNode) -> Optional[AccountOfferChange]:
 
 def compute_order_book_changes(
     metadata: TransactionMetadata,
-) -> List[AccountOfferChanges]:
+) -> list[AccountOfferChanges]:
     """
     Compute the offer changes from offer objects affected by the transaction.
 
@@ -124,7 +122,7 @@ def convert_string_to_hex(s, padding: bool = True):
     return s
 
 
-def get_token_from_changes(token_changes: List[Balance], token: str) -> Optional[Balance]:
+def get_token_from_changes(token_changes: list[Balance], token: str) -> Balance | None:
     for token_change in token_changes:
         if token_change["currency"] == token:
             return token_change
@@ -136,12 +134,12 @@ class XRPLMarket(BaseModel):
     quote: str
     base_issuer: str
     quote_issuer: str
-    trading_pair_symbol: Optional[str] = None
+    trading_pair_symbol: str | None = None
 
     def __repr__(self):
         return str(self.model_dump())
 
-    def get_token_symbol(self, code: str, issuer: str) -> Optional[str]:
+    def get_token_symbol(self, code: str, issuer: str) -> str | None:
         if self.trading_pair_symbol is None:
             return None
 
@@ -161,7 +159,8 @@ def represent_xrpl_market(dumper, data):
 SafeRepresenter.add_representer(XRPLMarket, represent_xrpl_market)
 
 
-@dataclass(frozen=True, kw_only=True)
+@require_kwargs_on_init
+@dataclass(frozen=True)
 class Ledger(Request, LookupByLedgerRequest):
     """
     Retrieve information about the public ledger.
@@ -202,7 +201,7 @@ async def get_network_id_and_build_version(client: Client) -> None:
 
 
 async def autofill(
-    transaction: Transaction, client: Client, signers_count: Optional[int] = None, try_count: int = 0
+    transaction: Transaction, client: Client, signers_count: int | None = None, try_count: int = 0
 ) -> Transaction:
     """
     Autofills fields in a transaction. This will set `sequence`, `fee`, and
@@ -345,21 +344,21 @@ class PoolInfo(BaseModel):
     base_token_amount: Decimal
     quote_token_amount: Decimal
     lp_token_amount: Decimal
-    pool_type: Optional[str] = None
+    pool_type: str | None = None
 
 
 class GetPoolInfoRequest(BaseModel):
-    network: Optional[str] = None
+    network: str | None = None
     pool_address: str
 
 
 class AddLiquidityRequest(BaseModel):
-    network: Optional[str] = None
+    network: str | None = None
     wallet_address: str
     pool_address: str
     base_token_amount: Decimal
     quote_token_amount: Decimal
-    slippage_pct: Optional[Decimal] = None
+    slippage_pct: Decimal | None = None
 
 
 class AddLiquidityResponse(BaseModel):
@@ -370,11 +369,11 @@ class AddLiquidityResponse(BaseModel):
 
 
 class QuoteLiquidityRequest(BaseModel):
-    network: Optional[str] = None
+    network: str | None = None
     pool_address: str
     base_token_amount: Decimal
     quote_token_amount: Decimal
-    slippage_pct: Optional[Decimal] = None
+    slippage_pct: Decimal | None = None
 
 
 class QuoteLiquidityResponse(BaseModel):
@@ -386,7 +385,7 @@ class QuoteLiquidityResponse(BaseModel):
 
 
 class RemoveLiquidityRequest(BaseModel):
-    network: Optional[str] = None
+    network: str | None = None
     wallet_address: str
     pool_address: str
     percentage_to_remove: Decimal
@@ -421,7 +420,7 @@ class XRPLConfigMap(BaseConnectorConfigMap):
         },
     )
 
-    custom_markets: Dict[str, XRPLMarket] = Field(
+    custom_markets: dict[str, XRPLMarket] = Field(
         default={
             "SOLO-XRP": XRPLMarket(
                 base="SOLO",
@@ -471,26 +470,31 @@ KEYS = XRPLConfigMap.model_construct()
 # ============================================
 class XRPLConnectionError(Exception):
     """Raised when all connections in the pool have failed."""
+
     pass
 
 
 class XRPLTimeoutError(Exception):
     """Raised when a request times out."""
+
     pass
 
 
 class XRPLTransactionError(Exception):
     """Raised when XRPL rejects a transaction."""
+
     pass
 
 
 class XRPLSystemBusyError(Exception):
     """Raised when the request queue is full."""
+
     pass
 
 
 class XRPLCircuitBreakerOpen(Exception):
     """Raised when too many failures have occurred."""
+
     pass
 
 
@@ -526,8 +530,9 @@ class XRPLConnection:
     Represents a persistent WebSocket connection to an XRPL node.
     Tracks connection health, latency metrics, and usage statistics.
     """
+
     url: str
-    client: Optional[AsyncWebsocketClient] = None
+    client: AsyncWebsocketClient | None = None
     is_healthy: bool = True
     is_reconnecting: bool = False
     last_used: float = field(default_factory=time.time)
@@ -702,6 +707,7 @@ class XRPLNodePool:
     - Graceful degradation when connections fail
     - Singleton pattern: shared across all XrplExchange instances
     """
+
     _logger = None
     DEFAULT_NODES = ["wss://xrplcluster.com/", "wss://s1.ripple.com/", "wss://s2.ripple.com/"]
 
@@ -738,7 +744,7 @@ class XRPLNodePool:
         self._init_time = time.time()
 
         # Connection pool state
-        self._connections: Dict[str, XRPLConnection] = {}
+        self._connections: dict[str, XRPLConnection] = {}
         self._healthy_connections: deque = deque()
         self._connection_lock = asyncio.Lock()
 
@@ -749,8 +755,8 @@ class XRPLNodePool:
 
         # State management
         self._running = False
-        self._health_check_task: Optional[asyncio.Task] = None
-        self._proactive_ping_task: Optional[asyncio.Task] = None
+        self._health_check_task: asyncio.Task | None = None
+        self._proactive_ping_task: asyncio.Task | None = None
 
         # Initialize rate limiter
         self._rate_limiter = RateLimiter(
@@ -762,7 +768,7 @@ class XRPLNodePool:
 
         # Legacy compatibility
         self._cooldown = cooldown
-        self._bad_nodes: Dict[str, float] = {}
+        self._bad_nodes: dict[str, float] = {}
 
         self.logger().debug(
             f"Initialized XRPLNodePool with {len(node_urls)} nodes, "
@@ -891,10 +897,7 @@ class XRPLNodePool:
 
             # Test connection with ServerInfo request and measure latency
             start_time = time.time()
-            response = await asyncio.wait_for(
-                client._request_impl(ServerInfo()),
-                timeout=self._connection_timeout
-            )
+            response = await asyncio.wait_for(client._request_impl(ServerInfo()), timeout=self._connection_timeout)
             latency = time.time() - start_time
 
             if not response.is_successful():
@@ -1137,10 +1140,7 @@ class XRPLNodePool:
 
             # Use ServerInfo as a lightweight ping (small response)
             start_time = time.time()
-            response = await asyncio.wait_for(
-                conn.client._request_impl(ServerInfo()),
-                timeout=10.0
-            )
+            response = await asyncio.wait_for(conn.client._request_impl(ServerInfo()), timeout=10.0)
             latency = time.time() - start_time
             conn.update_latency(latency)
 
@@ -1183,10 +1183,7 @@ class XRPLNodePool:
             elif conn.is_open and conn.client is not None:
                 try:
                     start_time = time.time()
-                    response = await asyncio.wait_for(
-                        conn.client._request_impl(ServerInfo()),
-                        timeout=10.0
-                    )
+                    response = await asyncio.wait_for(conn.client._request_impl(ServerInfo()), timeout=10.0)
                     latency = time.time() - start_time
                     conn.update_latency(latency)
                     conn.last_health_check = now

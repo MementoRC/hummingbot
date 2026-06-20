@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING
 
 from hummingbot.connector.utils import split_hb_trading_pair
 from hummingbot.core.rate_oracle.sources.rate_source_base import RateSourceBase
@@ -12,17 +12,17 @@ if TYPE_CHECKING:
 
 
 class DecibelPerpetualRateSource(RateSourceBase):
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(self, api_key: str | None = None):
         super().__init__()
         self._api_key = api_key
-        self._exchange: Optional[DecibelPerpetualDerivative] = None
+        self._exchange: DecibelPerpetualDerivative | None = None
 
     @property
     def name(self) -> str:
         return "decibel_perpetual"
 
     @async_ttl_cache(ttl=30, maxsize=1)
-    async def get_prices(self, quote_token: Optional[str] = None) -> Dict[str, Decimal]:
+    async def get_prices(self, quote_token: str | None = None) -> dict[str, Decimal]:
         if quote_token is not None and quote_token not in ("USD", "USDC"):
             raise ValueError("Decibel Perpetual only supports USD as quote token.")
 
@@ -48,7 +48,7 @@ class DecibelPerpetualRateSource(RateSourceBase):
         if self._exchange is None:
             self._exchange = self._build_decibel_connector()
 
-    def _build_decibel_connector(self) -> 'DecibelPerpetualDerivative':
+    def _build_decibel_connector(self) -> "DecibelPerpetualDerivative":
         from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_constants import DEFAULT_DOMAIN
         from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_derivative import (
             DecibelPerpetualDerivative,

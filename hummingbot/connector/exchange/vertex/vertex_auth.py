@@ -1,5 +1,5 @@
 import time
-from typing import Any, Tuple
+from typing import Any
 
 import sha3
 from coincurve import PrivateKey
@@ -48,7 +48,7 @@ class VertexAuth(AuthBase):
         headers = {"referer": CONSTANTS.HBOT_BROKER_ID}
         return headers
 
-    def sign_payload(self, payload: Any, contract: str, chain_id: int) -> Tuple[str, str]:
+    def sign_payload(self, payload: Any, contract: str, chain_id: int) -> tuple[str, str]:
         """
         Signs the payload using the sender address (address with subaccount identifier) and private key
         provided in the configuration.

@@ -1,6 +1,6 @@
 from decimal import Decimal
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -109,11 +109,14 @@ class DecibelPerpetualRateSourceTest(IsolatedAsyncioWrapperTestCase):
         # Initially exchange should be None
         self.assertIsNone(rate_source._exchange)
 
-        # Call _ensure_exchange
-        rate_source._ensure_exchange()
+        mock_connector = MagicMock()
+        with patch.object(rate_source, "_build_decibel_connector", return_value=mock_connector):
+            # Call _ensure_exchange
+            rate_source._ensure_exchange()
 
         # Now exchange should be created
         self.assertIsNotNone(rate_source._exchange)
+        self.assertIs(rate_source._exchange, mock_connector)
 
     def test_name_property(self):
         """Test name property returns correct value."""

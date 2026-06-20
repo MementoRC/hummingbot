@@ -3,7 +3,7 @@ import datetime
 import hashlib
 import hmac
 from collections import OrderedDict
-from typing import Any, Dict, Optional
+from typing import Any
 from urllib.parse import urlencode
 
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
@@ -12,7 +12,6 @@ from hummingbot.core.web_assistant.connections.data_types import RESTRequest, WS
 
 
 class OkxAuth(AuthBase):
-
     def __init__(self, api_key: str, secret_key: str, passphrase: str, time_provider: TimeSynchronizer):
         self.api_key: str = api_key
         self.secret_key: str = secret_key
@@ -45,24 +44,24 @@ class OkxAuth(AuthBase):
         return request  # pass-through
 
     @staticmethod
-    def keysort(dictionary: Dict[str, str]) -> Dict[str, str]:
+    def keysort(dictionary: dict[str, str]) -> dict[str, str]:
         return OrderedDict(sorted(dictionary.items(), key=lambda t: t[0]))
 
-    def _generate_signature(self, timestamp: str, method: str, path_url: str, body: Optional[str] = None) -> str:
+    def _generate_signature(self, timestamp: str, method: str, path_url: str, body: str | None = None) -> str:
         unsigned_signature = timestamp + method + path_url
         if body is not None:
             unsigned_signature += body
 
         signature = base64.b64encode(
-            hmac.new(
-                self.secret_key.encode("utf-8"),
-                unsigned_signature.encode("utf-8"),
-                hashlib.sha256).digest()).decode()
+            hmac.new(self.secret_key.encode("utf-8"), unsigned_signature.encode("utf-8"), hashlib.sha256).digest()
+        ).decode()
         return signature
 
-    def authentication_headers(self, request: RESTRequest) -> Dict[str, Any]:
+    def authentication_headers(self, request: RESTRequest) -> dict[str, Any]:
         # timestamp = datetime.utcfromtimestamp(self.time_provider.time()).isoformat(timespec="milliseconds") + "Z"
-        timestamp = datetime.datetime.fromtimestamp(self.time_provider.time(), datetime.UTC).isoformat(timespec="milliseconds")
+        timestamp = datetime.datetime.fromtimestamp(self.time_provider.time(), datetime.UTC).isoformat(
+            timespec="milliseconds"
+        )
         timestamp = timestamp.replace("+00:00", "Z")
 
         path_url = f"/api{request.url.split('/api')[-1]}"
@@ -79,12 +78,12 @@ class OkxAuth(AuthBase):
 
         return header
 
-    def websocket_login_parameters(self) -> Dict[str, Any]:
+    def websocket_login_parameters(self) -> dict[str, Any]:
         timestamp = str(int(self.time_provider.time()))
 
         return {
             "apiKey": self.api_key,
             "passphrase": self.passphrase,
             "timestamp": timestamp,
-            "sign": self._generate_signature(timestamp, "GET", "/users/self/verify")
+            "sign": self._generate_signature(timestamp, "GET", "/users/self/verify"),
         }

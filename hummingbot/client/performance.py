@@ -2,7 +2,7 @@ import logging
 from collections import defaultdict
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from hummingbot.connector.utils import combine_to_hb_trading_pair, split_hb_trading_pair
 from hummingbot.core.data_type.common import PositionAction, TradeType
@@ -54,7 +54,7 @@ class PerformanceMetrics:
 
     def __init__(self):
         # fees is a dictionary of token and total fee amount paid in that token.
-        self.fees: Dict[str, Decimal] = defaultdict(lambda: s_decimal_0)
+        self.fees: dict[str, Decimal] = defaultdict(lambda: s_decimal_0)
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -63,16 +63,15 @@ class PerformanceMetrics:
         return cls._logger
 
     @classmethod
-    async def create(cls,
-                     trading_pair: str,
-                     trades: List[Any],
-                     current_balances: Dict[str, Decimal]) -> 'PerformanceMetrics':
+    async def create(
+        cls, trading_pair: str, trades: list[Any], current_balances: dict[str, Decimal]
+    ) -> "PerformanceMetrics":
         performance = PerformanceMetrics()
         await performance._initialize_metrics(trading_pair, trades, current_balances)
         return performance
 
     @staticmethod
-    def position_order(open: list, close: list) -> Tuple[Any, Any]:
+    def position_order(open: list, close: list) -> tuple[Any, Any]:
         """
         Pair open position order with close position orders
         :param open: a list of orders that may have an open position order
@@ -115,7 +114,7 @@ class PerformanceMetrics:
         return aggregated_orders
 
     @staticmethod
-    def aggregate_position_order(buys: list, sells: list) -> Tuple[list, list]:
+    def aggregate_position_order(buys: list, sells: list) -> tuple[list, list]:
         """
         Aggregate the amount field for orders with multiple fills
         :param buys: a list of buy orders
@@ -128,7 +127,7 @@ class PerformanceMetrics:
         return aggregated_buys, aggregated_sells
 
     @staticmethod
-    def derivative_pnl(long: list, short: list) -> List[Decimal]:
+    def derivative_pnl(long: list, short: list) -> list[Decimal]:
         # It is assumed that the amount and leverage for both open and close orders are the same.
         """
         Calculates PnL for a close position
@@ -144,11 +143,11 @@ class PerformanceMetrics:
         return pnls
 
     @staticmethod
-    def smart_round(value: Decimal, precision: Optional[int] = None) -> Decimal:
+    def smart_round(value: Decimal, precision: int | None = None) -> Decimal:
         if value is None or value.is_nan():
             return value
         if precision is not None:
-            precision = 1 / (10 ** precision)
+            precision = 1 / (10**precision)
             return Decimal(str(value)).quantize(Decimal(str(precision)))
         step = Decimal("1")
         if Decimal("10000") > abs(value) > Decimal("100"):
@@ -174,14 +173,12 @@ class PerformanceMetrics:
     def _is_trade_fill(self, trade):
         return isinstance(trade, TradeFill)
 
-    def _are_derivatives(self, trades: List[Any]) -> bool:
+    def _are_derivatives(self, trades: list[Any]) -> bool:
         return (
-            trades
-            and self._is_trade_fill(trades[0])
-            and PositionAction.NIL.value not in [t.position for t in trades]
+            trades and self._is_trade_fill(trades[0]) and PositionAction.NIL.value not in [t.position for t in trades]
         )
 
-    def _preprocess_trades_and_group_by_type(self, trades: List[Any]) -> Tuple[List[Any], List[Any]]:
+    def _preprocess_trades_and_group_by_type(self, trades: list[Any]) -> tuple[list[Any], list[Any]]:
         buys = []
         sells = []
         for trade in trades:
@@ -201,8 +198,9 @@ class PerformanceMetrics:
 
         self.avg_b_price = self.divide(self.b_vol_quote, self.b_vol_base)
         self.avg_s_price = self.divide(self.s_vol_quote, self.s_vol_base)
-        self.avg_tot_price = self.divide(abs(self.b_vol_quote) + abs(self.s_vol_quote),
-                                         abs(self.b_vol_base) + abs(self.s_vol_base))
+        self.avg_tot_price = self.divide(
+            abs(self.b_vol_quote) + abs(self.s_vol_quote), abs(self.b_vol_base) + abs(self.s_vol_base)
+        )
         self.avg_b_price = abs(self.avg_b_price)
         self.avg_s_price = abs(self.avg_s_price)
 
@@ -224,7 +222,7 @@ class PerformanceMetrics:
             impact = Decimal(str(trade.amount)) * Decimal(str(trade.price)) * fee_percent * Decimal("-1")
         return impact
 
-    async def _calculate_fees(self, quote: str, trades: List[Any]):
+    async def _calculate_fees(self, quote: str, trades: list[Any]):
         for trade in trades:
             fee_percent = None
             trade_price = None
@@ -234,8 +232,10 @@ class PerformanceMetrics:
                     trade_price = Decimal(str(trade.price))
                     trade_amount = Decimal(str(trade.amount))
                     fee_percent = Decimal(str(trade.trade_fee["percent"]))
-                flat_fees = [TokenAmount(token=flat_fee["token"], amount=Decimal(flat_fee["amount"]))
-                             for flat_fee in trade.trade_fee.get("flat_fees", [])]
+                flat_fees = [
+                    TokenAmount(token=flat_fee["token"], amount=Decimal(flat_fee["amount"]))
+                    for flat_fee in trade.trade_fee.get("flat_fees", [])
+                ]
             else:  # assume this is Trade object
                 if trade.trade_fee.percent is not None:
                     trade_price = Decimal(trade.price)
@@ -284,10 +284,7 @@ class PerformanceMetrics:
 
             self.trade_pnl = Decimal(str(sum(self.derivative_pnl(long, short))))
 
-    async def _initialize_metrics(self,
-                                  trading_pair: str,
-                                  trades: List[Any],
-                                  current_balances: Dict[str, Decimal]):
+    async def _initialize_metrics(self, trading_pair: str, trades: list[Any], current_balances: dict[str, Decimal]):
         """
         Calculates PnL, fees, Return % and etc...
         :param trading_pair: the trading market to get performance metrics
@@ -311,10 +308,12 @@ class PerformanceMetrics:
         self.cur_price = await RateOracle.get_instance().stored_or_live_rate(trading_pair)
         if self.cur_price is None:
             self.cur_price = Decimal(str(trades[-1].price))
-        self.start_base_ratio_pct = self.divide(self.start_base_bal * self.start_price,
-                                                (self.start_base_bal * self.start_price) + self.start_quote_bal)
-        self.cur_base_ratio_pct = self.divide(self.cur_base_bal * self.cur_price,
-                                              (self.cur_base_bal * self.cur_price) + self.cur_quote_bal)
+        self.start_base_ratio_pct = self.divide(
+            self.start_base_bal * self.start_price, (self.start_base_bal * self.start_price) + self.start_quote_bal
+        )
+        self.cur_base_ratio_pct = self.divide(
+            self.cur_base_bal * self.cur_price, (self.cur_base_bal * self.cur_price) + self.cur_quote_bal
+        )
 
         self.hold_value = (self.start_base_bal * self.cur_price) + self.start_quote_bal
         self.cur_value = (self.cur_base_bal * self.cur_price) + self.cur_quote_bal

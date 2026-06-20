@@ -1,7 +1,7 @@
 import asyncio
 from decimal import Decimal
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from typing import Any, Dict, Optional
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pandas as pd
@@ -74,7 +74,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         self.exchange._order_tracker.logger().setLevel(1)
         self.exchange._order_tracker.logger().addHandler(self)
         self.mocking_assistant = NetworkMockingAssistant(self.local_event_loop)
-        self.test_task: Optional[asyncio.Task] = None
+        self.test_task: asyncio.Task | None = None
         self.resume_test_event = asyncio.Event()
         self.exchange._set_trading_pair_symbol_map(bidict({self.exchange_symbol: self.trading_pair}))
         # Also set instance-level _trading_pair_symbol_map (used by trading_pair_associated_to_exchange_symbol)
@@ -105,7 +105,8 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
             (MarketEvent.SellOrderCompleted, self.sell_order_completed_logger),
             (MarketEvent.OrderCancelled, self.order_cancelled_logger),
             (MarketEvent.OrderFilled, self.order_filled_logger),
-            (MarketEvent.FundingPaymentCompleted, self.funding_payment_completed_logger)]
+            (MarketEvent.FundingPaymentCompleted, self.funding_payment_completed_logger),
+        ]
 
         for event, logger in events_and_loggers:
             self.exchange.add_listener(event, logger)
@@ -123,37 +124,15 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         mock_rest_assistant.execute_request.return_value = return_value
         return mock_rest_assistant
 
-    def _user_fee_rates_response(
-        self,
-        user_maker_rate: float = 0.00011,
-        user_taker_rate: float = 0.00034,
-        fee_tier: int = 0,
-        active_referral_discount: float = 0.0,
-    ) -> Dict[str, Any]:
-        return {
-            "account": "0xtest",
-            "user_maker_rate": user_maker_rate,
-            "user_taker_rate": user_taker_rate,
-            "fee_tier": fee_tier,
-            "active_referral_discount": active_referral_discount,
-            "fee_schedule": {
-                "maker": 0.00011,
-                "taker": 0.00034,
-                "referral_discount": 0.04,
-                "tiers": {"vip": [], "market_maker": []},
-            },
-            "daily_user_volume": [],
-        }
-
     def _get_exchange_info_mock_response(
-            self,
-            min_size: int = 1000,
-            lot_size: int = 1000,
-            tick_size: int = 1000000,
-            px_decimals: int = 6,
-            sz_decimals: int = 3,
-            max_open_interest: int = 1000000000,
-    ) -> Dict[str, Any]:
+        self,
+        min_size: int = 1000,
+        lot_size: int = 1000,
+        tick_size: int = 1000000,
+        px_decimals: int = 6,
+        sz_decimals: int = 3,
+        max_open_interest: int = 1000000000,
+    ) -> dict[str, Any]:
         return {
             "markets": [
                 {
@@ -173,13 +152,12 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         # Call _format_trading_rules directly (no API call)
         trading_rules = await self.exchange._format_trading_rules(mocked_response)
         if trading_rules:
-            self.exchange._trading_rules = {
-                self.trading_pair: trading_rules[0]
-            }
+            self.exchange._trading_rules = {self.trading_pair: trading_rules[0]}
         # Also simulate trading rules for tests that rely on them
         if not trading_rules:
             # Fallback: create a mock trading rule if format_trading_rules failed
             from hummingbot.connector.trading_rule import TradingRule
+
             self.exchange._trading_rules[self.trading_pair] = TradingRule(
                 trading_pair=self.trading_pair,
                 min_order_size=Decimal("0.001"),
@@ -204,10 +182,12 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         self.exchange._account_balances.clear()
         self.exchange._account_available_balances.clear()
 
-        self._mock_rest_assistant({
-            "perp_equity_balance": 1000.50,
-            "usdc_cross_withdrawable_balance": 500.25,
-        })
+        self._mock_rest_assistant(
+            {
+                "perp_equity_balance": 1000.50,
+                "usdc_cross_withdrawable_balance": 500.25,
+            }
+        )
 
         await self.exchange._update_balances()
 
@@ -218,17 +198,19 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         await self._simulate_trading_rules_initialized()
         self.exchange._perpetual_trading.account_positions.clear()
 
-        self._mock_rest_assistant({
-            "positions": [
-                {
-                    "market": self.exchange_symbol,
-                    "size": "1.5",
-                    "entry_price": "50000.0",
-                    "leverage": "10",
-                    "unrealized_pnl": "150.0",
-                }
-            ]
-        })
+        self._mock_rest_assistant(
+            {
+                "positions": [
+                    {
+                        "market": self.exchange_symbol,
+                        "size": "1.5",
+                        "entry_price": "50000.0",
+                        "leverage": "10",
+                        "unrealized_pnl": "150.0",
+                    }
+                ]
+            }
+        )
 
         await self.exchange._update_positions()
 
@@ -253,7 +235,9 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         self.assertTrue(self.exchange.is_cancel_request_in_exchange_synchronous)
         self.assertTrue(self.exchange.is_trading_required)
         self.assertEqual(120, self.exchange.funding_fee_poll_interval)
-        self.assertEqual([OrderType.LIMIT, OrderType.LIMIT_MAKER, OrderType.MARKET], self.exchange.supported_order_types())
+        self.assertEqual(
+            [OrderType.LIMIT, OrderType.LIMIT_MAKER, OrderType.MARKET], self.exchange.supported_order_types()
+        )
         self.assertEqual([PositionMode.ONEWAY], self.exchange.supported_position_modes())
         self.assertEqual(self.quote_asset, self.exchange.get_buy_collateral_token(self.trading_pair))
         self.assertEqual(self.quote_asset, self.exchange.get_sell_collateral_token(self.trading_pair))
@@ -308,27 +292,37 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         self.assertFalse(self.exchange._is_order_not_found_during_cancelation_error(error))
 
     async def test_is_request_exception_related_to_time_synchronizer(self):
-        self.assertTrue(self.exchange._is_request_exception_related_to_time_synchronizer(
-            Exception("timestamp invalid")
-        ))
-        self.assertTrue(self.exchange._is_request_exception_related_to_time_synchronizer(
-            Exception("time sync failed")
-        ))
-        self.assertFalse(self.exchange._is_request_exception_related_to_time_synchronizer(
-            Exception("network error")
-        ))
+        self.assertTrue(
+            self.exchange._is_request_exception_related_to_time_synchronizer(Exception("timestamp invalid"))
+        )
+        self.assertTrue(self.exchange._is_request_exception_related_to_time_synchronizer(Exception("time sync failed")))
+        self.assertFalse(self.exchange._is_request_exception_related_to_time_synchronizer(Exception("network error")))
 
     async def test_update_time_synchronizer_noop(self):
         await self.exchange._update_time_synchronizer()
 
-    async def test_update_trading_fees_uses_api_rates(self):
-        """user_fee_rates returns the user's effective maker/taker rates."""
+    def test_fees_for_30d_volume_matches_tier_schedule(self):
+        """Each documented tier threshold should map to its documented (maker, taker)."""
+        cases = [
+            (Decimal("0"), Decimal("0.00011"), Decimal("0.00034")),  # Tier 0
+            (Decimal("5000000"), Decimal("0.00011"), Decimal("0.00034")),  # Tier 0 (below 10M)
+            (Decimal("10000000"), Decimal("0.00009"), Decimal("0.0003")),  # Tier 1 boundary
+            (Decimal("50000000"), Decimal("0.00006"), Decimal("0.00025")),  # Tier 2 boundary
+            (Decimal("200000000"), Decimal("0.00003"), Decimal("0.00022")),  # Tier 3 boundary
+            (Decimal("1000000000"), Decimal("0"), Decimal("0.00021")),  # Tier 4 boundary
+            (Decimal("4000000000"), Decimal("0"), Decimal("0.00019")),  # Tier 5 boundary
+            (Decimal("15000000000"), Decimal("0"), Decimal("0.00018")),  # Tier 6 boundary
+            (Decimal("100000000000"), Decimal("0"), Decimal("0.00018")),  # Well above Tier 6
+        ]
+        for volume, expected_maker, expected_taker in cases:
+            maker, taker = self.exchange._fees_for_30d_volume(volume)
+            self.assertEqual(expected_maker, maker, f"maker mismatch at volume={volume}")
+            self.assertEqual(expected_taker, taker, f"taker mismatch at volume={volume}")
+
+    async def test_update_trading_fees_uses_30d_volume(self):
+        """Volume above $10M should land the user on Tier 1 fees."""
         self.exchange._trading_fees.clear()
-        self._mock_rest_assistant(self._user_fee_rates_response(
-            user_maker_rate=0.00009,
-            user_taker_rate=0.0003,
-            fee_tier=1,
-        ))
+        self._mock_rest_assistant({"volume": 25000000})  # Tier 1 (>$10M)
 
         await self.exchange._update_trading_fees()
 
@@ -336,10 +330,10 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         self.assertEqual(Decimal("0.00009"), schema.maker_percent_fee_decimal)
         self.assertEqual(Decimal("0.0003"), schema.taker_percent_fee_decimal)
 
-    async def test_update_trading_fees_handles_tier_0_rates(self):
-        """New accounts receive Tier 0 rates from the API."""
+    async def test_update_trading_fees_handles_null_volume(self):
+        """New accounts have volume=null → default to Tier 0."""
         self.exchange._trading_fees.clear()
-        self._mock_rest_assistant(self._user_fee_rates_response())
+        self._mock_rest_assistant({"volume": None})
 
         await self.exchange._update_trading_fees()
 
@@ -350,6 +344,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
     async def test_update_trading_fees_keeps_previous_on_error(self):
         """Transient API failures should not wipe a previously computed schema."""
         from hummingbot.core.data_type.trade_fee import TradeFeeSchema
+
         previous = TradeFeeSchema(
             maker_percent_fee_decimal=Decimal("0.00009"),
             taker_percent_fee_decimal=Decimal("0.0003"),
@@ -373,15 +368,9 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         self.assertFalse(success)
 
     async def test_is_order_not_found_during_status_update_error(self):
-        self.assertTrue(self.exchange._is_order_not_found_during_status_update_error(
-            Exception("not found")
-        ))
-        self.assertTrue(self.exchange._is_order_not_found_during_status_update_error(
-            Exception("does not exist")
-        ))
-        self.assertFalse(self.exchange._is_order_not_found_during_status_update_error(
-            Exception("network error")
-        ))
+        self.assertTrue(self.exchange._is_order_not_found_during_status_update_error(Exception("not found")))
+        self.assertTrue(self.exchange._is_order_not_found_during_status_update_error(Exception("does not exist")))
+        self.assertFalse(self.exchange._is_order_not_found_during_status_update_error(Exception("network error")))
 
     async def test_request_order_status_no_exchange_order_id(self):
         order = InFlightOrder(
@@ -392,7 +381,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
             trade_type=TradeType.BUY,
             amount=Decimal("1"),
             price=Decimal("1000"),
-            creation_timestamp=1640780000
+            creation_timestamp=1640780000,
         )
         update = await self.exchange._request_order_status(order)
         self.assertEqual(OrderState.PENDING_CREATE, update.new_state)
@@ -408,7 +397,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
             trade_type=TradeType.BUY,
             amount=Decimal("1"),
             price=Decimal("1000"),
-            creation_timestamp=1640780000
+            creation_timestamp=1640780000,
         )
         update = await self.exchange._request_order_status(order)
         self.assertEqual(OrderState.CANCELED, update.new_state)
@@ -427,6 +416,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_user_stream_data_source import (
             DecibelPerpetualUserStreamDataSource,
         )
+
         self.assertIsInstance(data_source, DecibelPerpetualUserStreamDataSource)
 
     @patch("hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_derivative.get_market_addr")
@@ -468,17 +458,19 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         market_addr_hex = "0x0b5031a8ca4be089deadbeefcafebabe0123456789abcdef0123456789abcdef"  # noqa: mock
         mock_get_market_addr.return_value = market_addr_hex
 
-        self._mock_rest_assistant({
-            "positions": [
-                {
-                    "market": market_addr_hex,
-                    "size": "1.5",
-                    "entry_price": "50000.0",
-                    "leverage": "10",
-                    "unrealized_pnl": "150.0",
-                }
-            ]
-        })
+        self._mock_rest_assistant(
+            {
+                "positions": [
+                    {
+                        "market": market_addr_hex,
+                        "size": "1.5",
+                        "entry_price": "50000.0",
+                        "leverage": "10",
+                        "unrealized_pnl": "150.0",
+                    }
+                ]
+            }
+        )
 
         await self.exchange._update_positions()
 
@@ -500,16 +492,18 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         self.exchange._market_addr_to_trading_pair.clear()
 
         mock_get_market_addr.return_value = "0xknownmarketaddr"
-        self._mock_rest_assistant({
-            "positions": [
-                {
-                    "market": "0xunknownmarketaddrdoesnotmatch",
-                    "size": "1.5",
-                    "entry_price": "50000.0",
-                    "leverage": "10",
-                }
-            ]
-        })
+        self._mock_rest_assistant(
+            {
+                "positions": [
+                    {
+                        "market": "0xunknownmarketaddrdoesnotmatch",
+                        "size": "1.5",
+                        "entry_price": "50000.0",
+                        "leverage": "10",
+                    }
+                ]
+            }
+        )
 
         await self.exchange._update_positions()
 
@@ -569,6 +563,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
     def test_get_fee_uses_trading_fees_when_populated(self):
         """When _trading_fees has a schema, _get_fee should use the tier-specific rate."""
         from hummingbot.core.data_type.trade_fee import TradeFeeSchema
+
         tier1_schema = TradeFeeSchema(
             maker_percent_fee_decimal=Decimal("0.00009"),
             taker_percent_fee_decimal=Decimal("0.0003"),
@@ -591,6 +586,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
     def test_get_fee_maker_with_trading_fees_populated(self):
         """_get_fee should use maker rate when _trading_fees is populated and order is LIMIT_MAKER."""
         from hummingbot.core.data_type.trade_fee import TradeFeeSchema
+
         tier1_schema = TradeFeeSchema(
             maker_percent_fee_decimal=Decimal("0.00009"),
             taker_percent_fee_decimal=Decimal("0.0003"),
@@ -635,7 +631,9 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         self.assertEqual(0, len(result))
 
     def test_get_perp_engine_global_address(self):
-        with patch("hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_derivative.get_perp_engine_global_address") as mock_get:
+        with patch(
+            "hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_derivative.get_perp_engine_global_address"
+        ) as mock_get:
             mock_get.return_value = "0xperpengine"
             result = self.exchange.get_perp_engine_global_address()
             self.assertEqual("0xperpengine", result)
@@ -643,6 +641,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
     async def test_get_market_addr_for_pair(self):
         # Manually set the trading pair symbol map so the method can derive the address
         from bidict import bidict
+
         self.exchange._trading_pair_symbol_map = bidict()
         self.exchange._trading_pair_symbol_map[self.exchange_symbol] = self.trading_pair
 
@@ -654,6 +653,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
     async def test_get_market_addr_for_pair_not_found(self):
         # Unknown pair still computes an address via SDK (no HTTP needed)
         from bidict import bidict
+
         self.exchange._trading_pair_symbol_map = bidict()
 
         # exchange_symbol_associated_to_pair returns "UNKNOWN-PAIR" as-is when map is empty
@@ -718,10 +718,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
     @patch("hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_derivative.get_market_addr")
     async def test_request_order_status_filled(self, mock_get_market_addr):
         mock_get_market_addr.return_value = "0xmarketaddr123"
-        self._mock_rest_assistant({
-            "status": "Filled",
-            "order": {"unix_ms": 1700000000000}
-        })
+        self._mock_rest_assistant({"status": "Filled", "order": {"unix_ms": 1700000000000}})
 
         order = InFlightOrder(
             client_order_id="test_id",
@@ -731,14 +728,35 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
             trade_type=TradeType.BUY,
             amount=Decimal("1"),
             price=Decimal("1000"),
-            creation_timestamp=1640780000
+            creation_timestamp=1640780000,
         )
         update = await self.exchange._request_order_status(order)
         self.assertEqual(OrderState.FILLED, update.new_state)
 
     async def test_update_trading_rules(self):
-        self._mock_rest_assistant({
-            "markets": [{
+        self._mock_rest_assistant(
+            {
+                "markets": [
+                    {
+                        "market_name": self.exchange_symbol,
+                        "min_size": 1000,
+                        "lot_size": 1000,
+                        "tick_size": 1000000,
+                        "px_decimals": 6,
+                        "sz_decimals": 3,
+                        "max_open_interest": 1000000000,
+                    }
+                ]
+            }
+        )
+
+        await self.exchange._update_trading_rules()
+
+        self.assertIn(self.trading_pair, self.exchange._trading_rules)
+
+    async def test_format_trading_rules_list_format(self):
+        exchange_info = [
+            {
                 "market_name": self.exchange_symbol,
                 "min_size": 1000,
                 "lot_size": 1000,
@@ -746,31 +764,14 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
                 "px_decimals": 6,
                 "sz_decimals": 3,
                 "max_open_interest": 1000000000,
-            }]
-        })
-
-        await self.exchange._update_trading_rules()
-
-        self.assertIn(self.trading_pair, self.exchange._trading_rules)
-
-    async def test_format_trading_rules_list_format(self):
-        exchange_info = [{
-            "market_name": self.exchange_symbol,
-            "min_size": 1000,
-            "lot_size": 1000,
-            "tick_size": 1000000,
-            "px_decimals": 6,
-            "sz_decimals": 3,
-            "max_open_interest": 1000000000,
-        }]
+            }
+        ]
 
         trading_rules = await self.exchange._format_trading_rules(exchange_info)
         self.assertEqual(1, len(trading_rules))
 
     async def test_format_trading_rules_error(self):
-        exchange_info = {
-            "markets": [{"market_name": None}]
-        }
+        exchange_info = {"markets": [{"market_name": None}]}
         trading_rules = await self.exchange._format_trading_rules(exchange_info)
         self.assertEqual(0, len(trading_rules))
 
@@ -784,7 +785,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
             trade_type=TradeType.BUY,
             amount=Decimal("1"),
             price=Decimal("1000"),
-            creation_timestamp=1640780000
+            creation_timestamp=1640780000,
         )
         result = await self.exchange._all_trade_updates_for_order(order)
         self.assertEqual([], result)
@@ -797,17 +798,21 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
     @patch("hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_derivative.get_market_addr")
     async def test_update_order_fills_from_trades_with_data(self, mock_get_market_addr):
         mock_get_market_addr.return_value = "0xmarketaddr123"
-        self._mock_rest_assistant({
-            "trades": [{
-                "order_id": "123",
-                "trade_id": "t1",
-                "price": "50000",
-                "size": "0.5",
-                "fee_rate": 0.0004,
-                "fee_asset": "USD",
-                "timestamp": 1700000000000,
-            }]
-        })
+        self._mock_rest_assistant(
+            {
+                "trades": [
+                    {
+                        "order_id": "123",
+                        "trade_id": "t1",
+                        "price": "50000",
+                        "size": "0.5",
+                        "fee_rate": 0.0004,
+                        "fee_asset": "USD",
+                        "timestamp": 1700000000000,
+                    }
+                ]
+            }
+        )
 
         order = InFlightOrder(
             client_order_id="test_id",
@@ -817,7 +822,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
             trade_type=TradeType.BUY,
             amount=Decimal("1"),
             price=Decimal("50000"),
-            creation_timestamp=1640780000
+            creation_timestamp=1640780000,
         )
         order.exchange_order_id = "123"
         self.exchange._order_tracker.all_fillable_orders_by_exchange_order_id["123"] = order
@@ -842,7 +847,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
             trade_type=TradeType.BUY,
             amount=Decimal("1"),
             price=Decimal("50000"),
-            creation_timestamp=1640780000
+            creation_timestamp=1640780000,
         )
         order._exchange_order_id = "123"
         order.exchange_order_id_update_event.set()
@@ -941,13 +946,17 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
     @patch("hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_derivative.get_market_addr")
     async def test_fetch_last_fee_payment_success(self, mock_get_market_addr):
         mock_get_market_addr.return_value = "0xmarketaddr123"
-        self._mock_rest_assistant({
-            "funding_payments": [{
-                "timestamp": 1700000000000,
-                "funding_rate": "0.0001",
-                "payment": "5.0",
-            }]
-        })
+        self._mock_rest_assistant(
+            {
+                "funding_payments": [
+                    {
+                        "timestamp": 1700000000000,
+                        "funding_rate": "0.0001",
+                        "payment": "5.0",
+                    }
+                ]
+            }
+        )
 
         timestamp, rate, payment = await self.exchange._fetch_last_fee_payment(self.trading_pair)
         self.assertEqual(1700000000.0, timestamp)
@@ -974,7 +983,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
             trade_type=TradeType.BUY,
             amount=Decimal("1"),
             price=Decimal("50000"),
-            creation_timestamp=1640780000
+            creation_timestamp=1640780000,
         )
         order.exchange_order_id = "123"
         self.exchange._order_tracker.all_fillable_orders_by_exchange_order_id["123"] = order
@@ -1086,7 +1095,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
             trade_type=TradeType.BUY,
             amount=Decimal("1"),
             price=Decimal("1000"),
-            creation_timestamp=1640780000
+            creation_timestamp=1640780000,
         )
         order.exchange_order_id = "123"
         self.exchange._order_tracker.all_updatable_orders_by_exchange_order_id["123"] = order
@@ -1107,9 +1116,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         self.assertIsNotNone(factory)
 
     async def test_initialize_trading_pair_symbols_from_exchange_info(self):
-        exchange_info = {
-            "markets": [{"market_name": self.exchange_symbol}]
-        }
+        exchange_info = {"markets": [{"market_name": self.exchange_symbol}]}
         self.exchange._initialize_trading_pair_symbols_from_exchange_info(exchange_info)
         self.assertIsNotNone(self.exchange._trading_pair_symbol_map)
 
@@ -1167,6 +1174,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         # Trading rule is required since MARKET orders now quantize the
         # slippage-adjusted price via self.quantize_order_price().
         from hummingbot.connector.trading_rule import TradingRule
+
         self.exchange._trading_rules[self.trading_pair] = TradingRule(
             trading_pair=self.trading_pair,
             min_order_size=Decimal("0.001"),
@@ -1212,6 +1220,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
 
         # Coarse tick size: 0.01 USD. px_decimals=6 ⇒ tick in chain units = 10000.
         from hummingbot.connector.trading_rule import TradingRule
+
         self.exchange._trading_rules[self.trading_pair] = TradingRule(
             trading_pair=self.trading_pair,
             min_order_size=Decimal("0.001"),
@@ -1242,10 +1251,13 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         call_kwargs = mock_tx_builder.place_order.call_args.kwargs
         chain_price = call_kwargs["price"]
         # tick_size in chain units = min_price_increment * 10^px_decimals = 0.01 * 1e6 = 10_000
-        self.assertEqual(0, chain_price % 10_000,
-                         f"chain_price={chain_price} is not a multiple of 10_000 "
-                         f"(0.01 tick in chain units); Decibel will reject with "
-                         f"EPRICE_NOT_RESPECTING_TICKER_SIZE")
+        self.assertEqual(
+            0,
+            chain_price % 10_000,
+            f"chain_price={chain_price} is not a multiple of 10_000 "
+            f"(0.01 tick in chain units); Decibel will reject with "
+            f"EPRICE_NOT_RESPECTING_TICKER_SIZE",
+        )
 
     @patch("hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_derivative.get_market_addr")
     async def test_place_order_limit_maker_success(self, mock_get_market_addr):
@@ -1274,6 +1286,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         mock_get_market_addr.return_value = "0xmarketaddr123"
 
         from decibel import TxnSubmitError
+
         mock_tx_builder = AsyncMock()
         # Fail twice, succeed on third attempt
         mock_tx_builder.place_order.side_effect = [
@@ -1301,6 +1314,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         mock_get_market_addr.return_value = "0xmarketaddr123"
 
         from decibel import TxnSubmitError
+
         mock_tx_builder = AsyncMock()
         mock_tx_builder.place_order.side_effect = TxnSubmitError("Persistent error")
         self.exchange._transaction_builder = mock_tx_builder
@@ -1332,7 +1346,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
             trade_type=TradeType.BUY,
             amount=Decimal("1"),
             price=Decimal("1000"),
-            creation_timestamp=1640780000
+            creation_timestamp=1640780000,
         )
         # Mock get_exchange_order_id to timeout
         order.get_exchange_order_id = AsyncMock(side_effect=asyncio.TimeoutError())
@@ -1353,7 +1367,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
             trade_type=TradeType.BUY,
             amount=Decimal("1"),
             price=Decimal("1000"),
-            creation_timestamp=1640780000
+            creation_timestamp=1640780000,
         )
         # Mock get_exchange_order_id to return None
         order.get_exchange_order_id = AsyncMock(return_value=None)
@@ -1367,6 +1381,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         mock_get_market_addr.return_value = "0xmarketaddr123"
 
         from decibel import TxnSubmitError
+
         mock_tx_builder = AsyncMock()
         mock_tx_builder.cancel_order.side_effect = TxnSubmitError("Submit error")
         self.exchange._transaction_builder = mock_tx_builder
@@ -1379,9 +1394,9 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
             trade_type=TradeType.BUY,
             amount=Decimal("1"),
             price=Decimal("1000"),
-            creation_timestamp=1640780000
+            creation_timestamp=1640780000,
         )
-        object.__setattr__(order, '_exchange_order_id', "123")
+        object.__setattr__(order, "_exchange_order_id", "123")
         order.exchange_order_id_update_event.set()
 
         result = await self.exchange._place_cancel("test_id", order)
@@ -1404,9 +1419,9 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
             trade_type=TradeType.BUY,
             amount=Decimal("1"),
             price=Decimal("1000"),
-            creation_timestamp=1640780000
+            creation_timestamp=1640780000,
         )
-        object.__setattr__(order, '_exchange_order_id', "123")
+        object.__setattr__(order, "_exchange_order_id", "123")
         order.exchange_order_id_update_event.set()
 
         result = await self.exchange._place_cancel("test_id", order)
@@ -1416,17 +1431,21 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
     async def test_update_order_fills_from_trades_with_matching_order(self, mock_get_market_addr):
         """Test _update_order_fills_from_trades processes trades for tracked orders."""
         mock_get_market_addr.return_value = "0xmarketaddr123"
-        self._mock_rest_assistant({
-            "trades": [{
-                "order_id": "123",
-                "trade_id": "t1",
-                "price": "50000",
-                "size": "0.5",
-                "fee_rate": 0.0004,
-                "fee_asset": "USD",
-                "timestamp": 1700000000000,
-            }]
-        })
+        self._mock_rest_assistant(
+            {
+                "trades": [
+                    {
+                        "order_id": "123",
+                        "trade_id": "t1",
+                        "price": "50000",
+                        "size": "0.5",
+                        "fee_rate": 0.0004,
+                        "fee_asset": "USD",
+                        "timestamp": 1700000000000,
+                    }
+                ]
+            }
+        )
 
         order = InFlightOrder(
             client_order_id="test_id",
@@ -1436,9 +1455,9 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
             trade_type=TradeType.BUY,
             amount=Decimal("1"),
             price=Decimal("50000"),
-            creation_timestamp=1640780000
+            creation_timestamp=1640780000,
         )
-        object.__setattr__(order, '_exchange_order_id', "123")
+        object.__setattr__(order, "_exchange_order_id", "123")
         order.exchange_order_id_update_event.set()
         self.exchange._order_tracker.active_orders["test_id"] = order
 
@@ -1458,14 +1477,18 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
     async def test_update_order_fills_from_trades_no_matching_order(self, mock_get_market_addr):
         """Test _update_order_fills_from_trades skips trades for untracked orders."""
         mock_get_market_addr.return_value = "0xmarketaddr123"
-        self._mock_rest_assistant({
-            "trades": [{
-                "order_id": "999",
-                "trade_id": "t1",
-                "price": "50000",
-                "size": "0.5",
-            }]
-        })
+        self._mock_rest_assistant(
+            {
+                "trades": [
+                    {
+                        "order_id": "999",
+                        "trade_id": "t1",
+                        "price": "50000",
+                        "size": "0.5",
+                    }
+                ]
+            }
+        )
 
         await self.exchange._update_order_fills_from_trades()
 
@@ -1473,12 +1496,16 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
     async def test_update_order_fills_from_trades_exception_in_trade_processing(self, mock_get_market_addr):
         """Test _update_order_fills_from_trades handles errors in individual trade processing."""
         mock_get_market_addr.return_value = "0xmarketaddr123"
-        self._mock_rest_assistant({
-            "trades": [{
-                "order_id": "123",
-                "trade_id": "t1",
-            }]
-        })
+        self._mock_rest_assistant(
+            {
+                "trades": [
+                    {
+                        "order_id": "123",
+                        "trade_id": "t1",
+                    }
+                ]
+            }
+        )
 
         order = InFlightOrder(
             client_order_id="test_id",
@@ -1488,9 +1515,9 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
             trade_type=TradeType.BUY,
             amount=Decimal("1"),
             price=Decimal("50000"),
-            creation_timestamp=1640780000
+            creation_timestamp=1640780000,
         )
-        object.__setattr__(order, '_exchange_order_id', "123")
+        object.__setattr__(order, "_exchange_order_id", "123")
         order.exchange_order_id_update_event.set()
         self.exchange._order_tracker.active_orders["test_id"] = order
 
@@ -1500,13 +1527,17 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
     async def test_fetch_last_fee_payment_with_data(self, mock_get_market_addr):
         """Test _fetch_last_fee_payment returns funding payment data."""
         mock_get_market_addr.return_value = "0xmarketaddr123"
-        self._mock_rest_assistant({
-            "funding_payments": [{
-                "timestamp": 1700000000000,
-                "funding_rate": "0.0001",
-                "payment": "5.0",
-            }]
-        })
+        self._mock_rest_assistant(
+            {
+                "funding_payments": [
+                    {
+                        "timestamp": 1700000000000,
+                        "funding_rate": "0.0001",
+                        "payment": "5.0",
+                    }
+                ]
+            }
+        )
 
         timestamp, rate, payment = await self.exchange._fetch_last_fee_payment(self.trading_pair)
         self.assertEqual(1700000000.0, timestamp)

@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Dict, Generator, Optional
+from typing import TYPE_CHECKING, Any, Generator
 
 from hummingbot.core.gateway.gateway_http_client import GatewayHttpClient
 
@@ -39,13 +39,15 @@ class GatewayChainApiManager:
             return True
         return False
 
-    async def _test_node_url(self, chain: str, network: str) -> Optional[str]:
+    async def _test_node_url(self, chain: str, network: str) -> str | None:
         """
         Get the node url from user input, then check that it is valid.
         """
         with begin_placeholder_mode(self):
             while True:
-                node_url: str = await self.app.prompt(prompt=f"Enter a node url (with API key if necessary) for {chain}-{network}: >>> ")
+                node_url: str = await self.app.prompt(
+                    prompt=f"Enter a node url (with API key if necessary) for {chain}-{network}: >>> "
+                )
 
                 self.app.clear_input()
                 self.app.change_prompt(prompt="")
@@ -75,21 +77,25 @@ class GatewayChainApiManager:
                 except Exception:
                     self.notify(f"Error occurred when trying to ping the node URL: {node_url}.")
 
-    async def _test_node_url_from_gateway_config(self, chain: str, network: str, attempt_connection: bool = True) -> bool:
+    async def _test_node_url_from_gateway_config(
+        self, chain: str, network: str, attempt_connection: bool = True
+    ) -> bool:
         """
         Check if gateway node URL for a chain and network works
         """
         # XXX: This should be removed once nodeAPIKey is deprecated from Gateway service
-        chain_config: Dict[str, Any] = await GatewayHttpClient.get_instance().get_configuration(chain)
+        chain_config: dict[str, Any] = await GatewayHttpClient.get_instance().get_configuration(chain)
         if chain_config is not None:
-            networks: Optional[Dict[str, Any]] = chain_config.get("networks")
+            networks: dict[str, Any] | None = chain_config.get("networks")
             if networks is not None:
-                network_config: Optional[Dict[str, Any]] = networks.get(network)
+                network_config: dict[str, Any] | None = networks.get(network)
                 if network_config is not None:
-                    node_url: Optional[str] = network_config.get("nodeURL")
+                    node_url: str | None = network_config.get("nodeURL")
                     if not attempt_connection:
                         while True:
-                            change_node: str = await self.app.prompt(prompt=f"Do you want to continue to use node url '{node_url}' for {chain}-{network}? (Yes/No) ")
+                            change_node: str = await self.app.prompt(
+                                prompt=f"Do you want to continue to use node url '{node_url}' for {chain}-{network}? (Yes/No) "
+                            )
                             if self.app.to_stop_config:
                                 return
                             if change_node in ["Y", "y", "Yes", "yes", "N", "n", "No", "no"]:
@@ -99,7 +105,9 @@ class GatewayChainApiManager:
                         self.app.clear_input()
                         # they use an existing wallet
                         if change_node is not None and change_node in ["N", "n", "No", "no"]:
-                            node_url: str = await self.app.prompt(prompt=f"Enter a new node url (with API key if necessary) for {chain}-{network}: >>> ")
+                            node_url: str = await self.app.prompt(
+                                prompt=f"Enter a new node url (with API key if necessary) for {chain}-{network}: >>> "
+                            )
                             await self._update_gateway_chain_network_node_url(chain, network, node_url)
                             self.notify("Restarting gateway to update with new node url...")
                             # wait about 30 seconds for the gateway to restart
@@ -110,7 +118,9 @@ class GatewayChainApiManager:
                         try:
                             return await self._test_node_url(chain, network)
                         except Exception:
-                            self.notify(f"Unable to successfully ping the node url for {chain}-{network}: {node_url}. Please try again (it may require an API key).")
+                            self.notify(
+                                f"Unable to successfully ping the node url for {chain}-{network}: {node_url}. Please try again (it may require an API key)."
+                            )
                             return False
                 else:
                     self.notify(f"{chain}.networks.{network} was not found in the gateway config.")
@@ -129,7 +139,7 @@ class GatewayChainApiManager:
         """
         await GatewayHttpClient.get_instance().update_config(f"{chain}-{network}", "nodeURL", node_url)
 
-    async def _get_native_currency_symbol(self, chain: str, network: str) -> Optional[str]:
+    async def _get_native_currency_symbol(self, chain: str, network: str) -> str | None:
         """
         Get the native currency symbol for a chain and network from gateway config
         """

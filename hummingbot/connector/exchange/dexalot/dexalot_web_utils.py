@@ -1,5 +1,5 @@
 import time
-from typing import Callable, Optional
+from typing import Callable
 
 import hummingbot.connector.exchange.dexalot.dexalot_constants as CONSTANTS
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
@@ -25,23 +25,27 @@ def wss_url(domain: str = CONSTANTS.DEFAULT_DOMAIN):
 
 
 def build_api_factory(
-        throttler: Optional[AsyncThrottler] = None,
-        time_synchronizer: Optional[TimeSynchronizer] = None,
-        domain: str = CONSTANTS.DEFAULT_DOMAIN,
-        time_provider: Optional[Callable] = None,
-        auth: Optional[AuthBase] = None, ) -> WebAssistantsFactory:
+    throttler: AsyncThrottler | None = None,
+    time_synchronizer: TimeSynchronizer | None = None,
+    domain: str = CONSTANTS.DEFAULT_DOMAIN,
+    time_provider: Callable | None = None,
+    auth: AuthBase | None = None,
+) -> WebAssistantsFactory:
     throttler = throttler or create_throttler()
     time_synchronizer = time_synchronizer or TimeSynchronizer()
-    time_provider = time_provider or (lambda: get_current_server_time(
-        throttler=throttler,
-        domain=domain,
-    ))
+    time_provider = time_provider or (
+        lambda: get_current_server_time(
+            throttler=throttler,
+            domain=domain,
+        )
+    )
     api_factory = WebAssistantsFactory(
         throttler=throttler,
         auth=auth,
         rest_pre_processors=[
             TimeSynchronizerRESTPreProcessor(synchronizer=time_synchronizer, time_provider=time_provider),
-        ])
+        ],
+    )
     return api_factory
 
 
@@ -54,8 +58,5 @@ def create_throttler() -> AsyncThrottler:
     return AsyncThrottler(CONSTANTS.RATE_LIMITS)
 
 
-async def get_current_server_time(
-        throttler,
-        domain
-) -> float:
+async def get_current_server_time(throttler, domain) -> float:
     return time.time()

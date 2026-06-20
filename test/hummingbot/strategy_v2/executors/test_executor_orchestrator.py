@@ -29,7 +29,6 @@ from hummingbot.strategy_v2.models.executors_info import ExecutorInfo, Performan
 
 
 class TestExecutorOrchestrator(unittest.TestCase):
-
     @patch.object(MarketsRecorder, "get_instance")
     def setUp(self, markets_recorder: MagicMock):
         markets_recorder.return_value = MagicMock(spec=MarketsRecorder)
@@ -69,32 +68,60 @@ class TestExecutorOrchestrator(unittest.TestCase):
     @patch.object(GridExecutor, "start")
     @patch.object(GridExecutor, "_generate_grid_levels")
     @patch.object(MarketsRecorder, "get_instance")
-    def test_execute_actions_create_executor(self, markets_recorder_mock, grid_start_mock: MagicMock,
-                                             generate_grid_levels_mock: MagicMock,
-                                             arbitrage_start_mock: MagicMock, dca_start_mock: MagicMock,
-                                             position_start_mock: MagicMock, twap_start_mock: MagicMock):
+    def test_execute_actions_create_executor(
+        self,
+        markets_recorder_mock,
+        grid_start_mock: MagicMock,
+        generate_grid_levels_mock: MagicMock,
+        arbitrage_start_mock: MagicMock,
+        dca_start_mock: MagicMock,
+        position_start_mock: MagicMock,
+        twap_start_mock: MagicMock,
+    ):
         markets_recorder_mock.return_value = MagicMock(spec=MarketsRecorder)
         markets_recorder_mock.store_or_update_executor = MagicMock(return_value=None)
         position_executor_config = PositionExecutorConfig(
-            timestamp=1234, connector_name="binance",
-            trading_pair="ETH-USDT", side=TradeType.BUY, entry_price=Decimal(100), amount=Decimal(10))
+            timestamp=1234,
+            connector_name="binance",
+            trading_pair="ETH-USDT",
+            side=TradeType.BUY,
+            entry_price=Decimal(100),
+            amount=Decimal(10),
+        )
         arbitrage_executor_config = ArbitrageExecutorConfig(
-            timestamp=1234, order_amount=Decimal(10), min_profitability=Decimal(0.01),
+            timestamp=1234,
+            order_amount=Decimal(10),
+            min_profitability=Decimal(0.01),
             buying_market=ConnectorPair(connector_name="binance", trading_pair="ETH-USDT"),
             selling_market=ConnectorPair(connector_name="coinbase", trading_pair="ETH-USDT"),
         )
         dca_executor_config = DCAExecutorConfig(
-            timestamp=1234, connector_name="binance", trading_pair="ETH-USDT",
-            side=TradeType.BUY, amounts_quote=[Decimal(10)], prices=[Decimal(100)],)
+            timestamp=1234,
+            connector_name="binance",
+            trading_pair="ETH-USDT",
+            side=TradeType.BUY,
+            amounts_quote=[Decimal(10)],
+            prices=[Decimal(100)],
+        )
         twap_executor_config = TWAPExecutorConfig(
-            timestamp=1234, connector_name="binance", trading_pair="ETH-USDT",
-            side=TradeType.BUY, total_amount_quote=Decimal(100), total_duration=10, order_interval=5,
+            timestamp=1234,
+            connector_name="binance",
+            trading_pair="ETH-USDT",
+            side=TradeType.BUY,
+            total_amount_quote=Decimal(100),
+            total_duration=10,
+            order_interval=5,
         )
         grid_executor_config = GridExecutorConfig(
-            timestamp=1234, connector_name="binance", trading_pair="ETH-USDT",
-            side=TradeType.BUY, total_amount_quote=Decimal(100), start_price=Decimal(100),
-            end_price=Decimal(200), limit_price=Decimal(90),
-            triple_barrier_config=TripleBarrierConfig(take_profit=Decimal(0.01), stop_loss=Decimal(0.2))
+            timestamp=1234,
+            connector_name="binance",
+            trading_pair="ETH-USDT",
+            side=TradeType.BUY,
+            total_amount_quote=Decimal(100),
+            start_price=Decimal(100),
+            end_price=Decimal(200),
+            limit_price=Decimal(90),
+            triple_barrier_config=TripleBarrierConfig(take_profit=Decimal(0.01), stop_loss=Decimal(0.2)),
         )
         actions = [
             CreateExecutorAction(executor_config=position_executor_config, controller_id="test"),
@@ -135,48 +162,88 @@ class TestExecutorOrchestrator(unittest.TestCase):
         self.orchestrator.execute_actions(actions)
         self.assertEqual(len(self.orchestrator.active_executors["test"]), 0)
 
-    @patch('hummingbot.connector.markets_recorder.MarketsRecorder.get_instance')
+    @patch("hummingbot.connector.markets_recorder.MarketsRecorder.get_instance")
     def test_generate_performance_report(self, mock_get_instance):
         # Create a mock for MarketsRecorder and its get_executors_by_controller method
         mock_markets_recorder = MagicMock(spec=MarketsRecorder)
         mock_markets_recorder.get_executors_by_controller.return_value = []
         mock_get_instance.return_value = mock_markets_recorder
         config_mock = PositionExecutorConfig(
-            timestamp=1234, trading_pair="ETH-USDT", connector_name="binance",
-            side=TradeType.BUY, amount=Decimal(10), entry_price=Decimal(100),
+            timestamp=1234,
+            trading_pair="ETH-USDT",
+            connector_name="binance",
+            side=TradeType.BUY,
+            amount=Decimal(10),
+            entry_price=Decimal(100),
         )
         position_executor_non_active = MagicMock(spec=PositionExecutor)
         position_executor_non_active.executor_info = ExecutorInfo(
-            id="123", timestamp=1234, type="position_executor",
-            status=RunnableStatus.RUNNING, config=config_mock,
-            filled_amount_quote=Decimal(0), net_pnl_quote=Decimal(0), net_pnl_pct=Decimal(0),
-            cum_fees_quote=Decimal(0), is_trading=False, is_active=True, custom_info={"side": TradeType.BUY}
+            id="123",
+            timestamp=1234,
+            type="position_executor",
+            status=RunnableStatus.RUNNING,
+            config=config_mock,
+            filled_amount_quote=Decimal(0),
+            net_pnl_quote=Decimal(0),
+            net_pnl_pct=Decimal(0),
+            cum_fees_quote=Decimal(0),
+            is_trading=False,
+            is_active=True,
+            custom_info={"side": TradeType.BUY},
         )
         position_executor_active = MagicMock(spec=PositionExecutor)
         position_executor_active.executor_info = ExecutorInfo(
-            id="123", timestamp=1234, type="position_executor",
-            status=RunnableStatus.RUNNING, config=config_mock,
-            filled_amount_quote=Decimal(100), net_pnl_quote=Decimal(10), net_pnl_pct=Decimal(10),
-            cum_fees_quote=Decimal(1), is_trading=True, is_active=True, custom_info={"side": TradeType.BUY}
+            id="123",
+            timestamp=1234,
+            type="position_executor",
+            status=RunnableStatus.RUNNING,
+            config=config_mock,
+            filled_amount_quote=Decimal(100),
+            net_pnl_quote=Decimal(10),
+            net_pnl_pct=Decimal(10),
+            cum_fees_quote=Decimal(1),
+            is_trading=True,
+            is_active=True,
+            custom_info={"side": TradeType.BUY},
         )
         position_executor_failed = MagicMock(spec=PositionExecutor)
         position_executor_failed.executor_info = ExecutorInfo(
-            id="123", timestamp=1234, type="position_executor",
-            status=RunnableStatus.TERMINATED, config=config_mock,
+            id="123",
+            timestamp=1234,
+            type="position_executor",
+            status=RunnableStatus.TERMINATED,
+            config=config_mock,
             close_type=CloseType.FAILED,
-            filled_amount_quote=Decimal(100), net_pnl_quote=Decimal(0), net_pnl_pct=Decimal(0),
-            cum_fees_quote=Decimal(1), is_trading=True, is_active=True, custom_info={"side": TradeType.BUY}
+            filled_amount_quote=Decimal(100),
+            net_pnl_quote=Decimal(0),
+            net_pnl_pct=Decimal(0),
+            cum_fees_quote=Decimal(1),
+            is_trading=True,
+            is_active=True,
+            custom_info={"side": TradeType.BUY},
         )
         position_executor_tp = MagicMock(spec=PositionExecutor)
         position_executor_tp.executor_info = ExecutorInfo(
-            id="123", timestamp=1234, type="position_executor",
-            status=RunnableStatus.TERMINATED, config=config_mock,
+            id="123",
+            timestamp=1234,
+            type="position_executor",
+            status=RunnableStatus.TERMINATED,
+            config=config_mock,
             close_type=CloseType.TAKE_PROFIT,
-            filled_amount_quote=Decimal(100), net_pnl_quote=Decimal(10), net_pnl_pct=Decimal(10),
-            cum_fees_quote=Decimal(1), is_trading=False, is_active=False, custom_info={"side": TradeType.BUY}
+            filled_amount_quote=Decimal(100),
+            net_pnl_quote=Decimal(10),
+            net_pnl_pct=Decimal(10),
+            cum_fees_quote=Decimal(1),
+            is_trading=False,
+            is_active=False,
+            custom_info={"side": TradeType.BUY},
         )
-        self.orchestrator.active_executors["test"] = [position_executor_non_active, position_executor_active,
-                                                      position_executor_failed, position_executor_tp]
+        self.orchestrator.active_executors["test"] = [
+            position_executor_non_active,
+            position_executor_active,
+            position_executor_failed,
+            position_executor_tp,
+        ]
         report = self.orchestrator.generate_performance_report(controller_id="test")
         self.assertEqual(report.realized_pnl_quote, Decimal(10))
         self.assertEqual(report.unrealized_pnl_quote, Decimal(10))
@@ -189,13 +256,25 @@ class TestExecutorOrchestrator(unittest.TestCase):
 
         # Create mock executor info
         executor_info = ExecutorInfo(
-            id="123", timestamp=1234, type="position_executor",
-            status=RunnableStatus.RUNNING, config=PositionExecutorConfig(
-                timestamp=1234, trading_pair="ETH-USDT", connector_name="binance",
-                side=TradeType.BUY, amount=Decimal(10), entry_price=Decimal(100),
+            id="123",
+            timestamp=1234,
+            type="position_executor",
+            status=RunnableStatus.RUNNING,
+            config=PositionExecutorConfig(
+                timestamp=1234,
+                trading_pair="ETH-USDT",
+                connector_name="binance",
+                side=TradeType.BUY,
+                amount=Decimal(10),
+                entry_price=Decimal(100),
             ),
-            filled_amount_quote=Decimal(100), net_pnl_quote=Decimal(10), net_pnl_pct=Decimal(10),
-            cum_fees_quote=Decimal(1), is_trading=True, is_active=True, custom_info={"side": TradeType.BUY},
+            filled_amount_quote=Decimal(100),
+            net_pnl_quote=Decimal(10),
+            net_pnl_pct=Decimal(10),
+            cum_fees_quote=Decimal(1),
+            is_trading=True,
+            is_active=True,
+            custom_info={"side": TradeType.BUY},
             controller_id="test",
         )
 
@@ -228,7 +307,7 @@ class TestExecutorOrchestrator(unittest.TestCase):
             unrealized_pnl_quote=Decimal("50"),
             realized_pnl_quote=Decimal("25"),
             cum_fees_quote=Decimal("5"),
-            volume_traded_quote=Decimal("1000")
+            volume_traded_quote=Decimal("1000"),
         )
 
         position2 = Position(
@@ -243,10 +322,10 @@ class TestExecutorOrchestrator(unittest.TestCase):
             unrealized_pnl_quote=Decimal("-100"),
             realized_pnl_quote=Decimal("-50"),
             cum_fees_quote=Decimal("10"),
-            volume_traded_quote=Decimal("5000")
+            volume_traded_quote=Decimal("5000"),
         )
 
-        # Set up mock to return executor info and positions
+        # Set up mock to return all positions as flat lists (matching get_all_* API)
         mock_markets_recorder.get_all_executors.return_value = []
         mock_markets_recorder.get_all_positions.return_value = [position1, position2]
 
@@ -289,22 +368,40 @@ class TestExecutorOrchestrator(unittest.TestCase):
         markets_recorder_mock.update_or_store_position = MagicMock(return_value=None)
         position_held = PositionHold("binance", "SOL-USDT", side=TradeType.BUY)
         executor_info = ExecutorInfo(
-            id="123", timestamp=1234, type="position_executor",
-            status=RunnableStatus.TERMINATED, config=PositionExecutorConfig(
-                timestamp=1234, trading_pair="SOL-USDT", connector_name="binance",
-                side=TradeType.BUY, amount=Decimal(10), entry_price=Decimal(100),
-            ), net_pnl_pct=Decimal(0), net_pnl_quote=Decimal(0), cum_fees_quote=Decimal(0),
-            filled_amount_quote=Decimal(100), is_active=False, is_trading=False,
-            custom_info={"held_position_orders": [
-                {"order_id": "123", "amount": Decimal(10), "trade_type": "BUY",
-                 "executed_amount_base": Decimal("10"), "executed_amount_quote": Decimal("2300"),
-                 "cumulative_fee_paid_quote": Decimal(0)}]},
-            controller_id="main"
+            id="123",
+            timestamp=1234,
+            type="position_executor",
+            status=RunnableStatus.TERMINATED,
+            config=PositionExecutorConfig(
+                timestamp=1234,
+                trading_pair="SOL-USDT",
+                connector_name="binance",
+                side=TradeType.BUY,
+                amount=Decimal(10),
+                entry_price=Decimal(100),
+            ),
+            net_pnl_pct=Decimal(0),
+            net_pnl_quote=Decimal(0),
+            cum_fees_quote=Decimal(0),
+            filled_amount_quote=Decimal(100),
+            is_active=False,
+            is_trading=False,
+            custom_info={
+                "held_position_orders": [
+                    {
+                        "order_id": "123",
+                        "amount": Decimal(10),
+                        "trade_type": "BUY",
+                        "executed_amount_base": Decimal("10"),
+                        "executed_amount_quote": Decimal("2300"),
+                        "cumulative_fee_paid_quote": Decimal(0),
+                    }
+                ]
+            },
+            controller_id="main",
         )
         position_held.add_orders_from_executor(executor_info)
-        self.orchestrator.positions_held = {
-            "main": [position_held]
-        }
+        self.orchestrator.positions_held = {"main": [position_held]}
         self.orchestrator.store_all_positions()
         self.assertEqual(len(self.orchestrator.positions_held), 0)
 
@@ -316,30 +413,46 @@ class TestExecutorOrchestrator(unittest.TestCase):
 
         # Create a NaN decimal for mid_price
         nan_decimal = Decimal("NaN")
-        self.orchestrator.strategy.market_data_provider.get_price_by_type = MagicMock(
-            return_value=nan_decimal
-        )
+        self.orchestrator.strategy.market_data_provider.get_price_by_type = MagicMock(return_value=nan_decimal)
         # Add SOL-USDT to the mocked markets so it passes the check
         self.orchestrator.strategy.markets = {"binance": {"ETH-USDT", "BTC-USDT", "SOL-USDT"}}
 
         position_held = PositionHold("binance", "SOL-USDT", side=TradeType.BUY)
         executor_info = ExecutorInfo(
-            id="123", timestamp=1234, type="position_executor",
-            status=RunnableStatus.TERMINATED, config=PositionExecutorConfig(
-                timestamp=1234, trading_pair="SOL-USDT", connector_name="binance",
-                side=TradeType.BUY, amount=Decimal(10), entry_price=Decimal(100),
-            ), net_pnl_pct=Decimal(0), net_pnl_quote=Decimal(0), cum_fees_quote=Decimal(0),
-            filled_amount_quote=Decimal(100), is_active=False, is_trading=False,
-            custom_info={"held_position_orders": [
-                {"order_id": "123", "amount": Decimal(10), "trade_type": "BUY",
-                 "executed_amount_base": Decimal("10"), "executed_amount_quote": Decimal("2300"),
-                 "cumulative_fee_paid_quote": Decimal(0)}]},
-            controller_id="main"
+            id="123",
+            timestamp=1234,
+            type="position_executor",
+            status=RunnableStatus.TERMINATED,
+            config=PositionExecutorConfig(
+                timestamp=1234,
+                trading_pair="SOL-USDT",
+                connector_name="binance",
+                side=TradeType.BUY,
+                amount=Decimal(10),
+                entry_price=Decimal(100),
+            ),
+            net_pnl_pct=Decimal(0),
+            net_pnl_quote=Decimal(0),
+            cum_fees_quote=Decimal(0),
+            filled_amount_quote=Decimal(100),
+            is_active=False,
+            is_trading=False,
+            custom_info={
+                "held_position_orders": [
+                    {
+                        "order_id": "123",
+                        "amount": Decimal(10),
+                        "trade_type": "BUY",
+                        "executed_amount_base": Decimal("10"),
+                        "executed_amount_quote": Decimal("2300"),
+                        "cumulative_fee_paid_quote": Decimal(0),
+                    }
+                ]
+            },
+            controller_id="main",
         )
         position_held.add_orders_from_executor(executor_info)
-        self.orchestrator.positions_held = {
-            "main": [position_held]
-        }
+        self.orchestrator.positions_held = {"main": [position_held]}
         # Should use 0 as mid_price when NaN
         self.orchestrator.store_all_positions()
         self.assertEqual(len(self.orchestrator.positions_held), 0)
@@ -347,22 +460,40 @@ class TestExecutorOrchestrator(unittest.TestCase):
     def test_get_positions_report(self):
         position_held = PositionHold("binance", "SOL-USDT", side=TradeType.BUY)
         executor_info = ExecutorInfo(
-            id="123", timestamp=1234, type="position_executor",
-            status=RunnableStatus.TERMINATED, config=PositionExecutorConfig(
-                timestamp=1234, trading_pair="SOL-USDT", connector_name="binance",
-                side=TradeType.BUY, amount=Decimal(10), entry_price=Decimal(100),
-            ), net_pnl_pct=Decimal(0), net_pnl_quote=Decimal(0), cum_fees_quote=Decimal(0),
-            filled_amount_quote=Decimal(100), is_active=False, is_trading=False,
-            custom_info={"held_position_orders": [
-                {"order_id": "123", "amount": Decimal(10), "trade_type": "SELL",
-                 "executed_amount_base": Decimal("10"), "executed_amount_quote": Decimal("2300"),
-                 "cumulative_fee_paid_quote": Decimal(0)}]},
-            controller_id="main"
+            id="123",
+            timestamp=1234,
+            type="position_executor",
+            status=RunnableStatus.TERMINATED,
+            config=PositionExecutorConfig(
+                timestamp=1234,
+                trading_pair="SOL-USDT",
+                connector_name="binance",
+                side=TradeType.BUY,
+                amount=Decimal(10),
+                entry_price=Decimal(100),
+            ),
+            net_pnl_pct=Decimal(0),
+            net_pnl_quote=Decimal(0),
+            cum_fees_quote=Decimal(0),
+            filled_amount_quote=Decimal(100),
+            is_active=False,
+            is_trading=False,
+            custom_info={
+                "held_position_orders": [
+                    {
+                        "order_id": "123",
+                        "amount": Decimal(10),
+                        "trade_type": "SELL",
+                        "executed_amount_base": Decimal("10"),
+                        "executed_amount_quote": Decimal("2300"),
+                        "cumulative_fee_paid_quote": Decimal(0),
+                    }
+                ]
+            },
+            controller_id="main",
         )
         position_held.add_orders_from_executor(executor_info)
-        self.orchestrator.positions_held = {
-            "main": [position_held]
-        }
+        self.orchestrator.positions_held = {"main": [position_held]}
         report = self.orchestrator.get_positions_report()
         self.assertEqual(len(report), 1)
         self.assertEqual(report["main"][0].amount, Decimal(10))
@@ -427,7 +558,7 @@ class TestExecutorOrchestrator(unittest.TestCase):
             unrealized_pnl_quote=Decimal("100"),
             realized_pnl_quote=Decimal("50"),
             cum_fees_quote=Decimal("10"),
-            volume_traded_quote=Decimal("2000")
+            volume_traded_quote=Decimal("2000"),
         )
 
         # Set up mock to return position
@@ -473,7 +604,7 @@ class TestExecutorOrchestrator(unittest.TestCase):
             unrealized_pnl_quote=Decimal("0"),
             realized_pnl_quote=Decimal("0"),
             cum_fees_quote=Decimal("0"),
-            volume_traded_quote=Decimal("10000")
+            volume_traded_quote=Decimal("10000"),
         )
 
         # Import the shared InitialPositionConfig
@@ -483,17 +614,11 @@ class TestExecutorOrchestrator(unittest.TestCase):
         initial_positions = {
             "test_controller": [
                 InitialPositionConfig(
-                    connector_name="binance",
-                    trading_pair="ETH-USDT",
-                    amount=Decimal("2"),
-                    side=TradeType.BUY
+                    connector_name="binance", trading_pair="ETH-USDT", amount=Decimal("2"), side=TradeType.BUY
                 ),
                 InitialPositionConfig(
-                    connector_name="binance",
-                    trading_pair="BTC-USDT",
-                    amount=Decimal("0.1"),
-                    side=TradeType.SELL
-                )
+                    connector_name="binance", trading_pair="BTC-USDT", amount=Decimal("0.1"), side=TradeType.SELL
+                ),
             ]
         }
 
@@ -506,8 +631,7 @@ class TestExecutorOrchestrator(unittest.TestCase):
 
         # Create orchestrator with initial position overrides
         orchestrator = ExecutorOrchestrator(
-            strategy=self.mock_strategy,
-            initial_positions_by_controller=initial_positions
+            strategy=self.mock_strategy, initial_positions_by_controller=initial_positions
         )
 
         # Simulate connectors becoming ready (triggers initial position creation)
@@ -554,25 +678,42 @@ class TestExecutorOrchestrator(unittest.TestCase):
 
         # Create an executor that meets criteria for position hold processing
         config = PositionExecutorConfig(
-            timestamp=1234, trading_pair="ETH-USDT", connector_name="binance",
-            side=TradeType.BUY, amount=Decimal(10), entry_price=Decimal(100),
+            timestamp=1234,
+            trading_pair="ETH-USDT",
+            connector_name="binance",
+            side=TradeType.BUY,
+            amount=Decimal(10),
+            entry_price=Decimal(100),
         )
         config.id = "test_executor_id"
 
         executor = MagicMock()
         executor.executor_info = ExecutorInfo(
-            id="test_executor_id", timestamp=1234, type="position_executor",
-            status=RunnableStatus.TERMINATED, config=config,
-            filled_amount_quote=Decimal(1000), net_pnl_quote=Decimal(50), net_pnl_pct=Decimal(5),
-            cum_fees_quote=Decimal(5), is_trading=False, is_active=False,
-            custom_info={"held_position_orders": [
-                {"client_order_id": "order_1", "executed_amount_base": Decimal("5"),
-                 "executed_amount_quote": Decimal("1000"), "trade_type": "BUY",
-                 "cumulative_fee_paid_quote": Decimal("5")}
-            ]},
+            id="test_executor_id",
+            timestamp=1234,
+            type="position_executor",
+            status=RunnableStatus.TERMINATED,
+            config=config,
+            filled_amount_quote=Decimal(1000),
+            net_pnl_quote=Decimal(50),
+            net_pnl_pct=Decimal(5),
+            cum_fees_quote=Decimal(5),
+            is_trading=False,
+            is_active=False,
+            custom_info={
+                "held_position_orders": [
+                    {
+                        "client_order_id": "order_1",
+                        "executed_amount_base": Decimal("5"),
+                        "executed_amount_quote": Decimal("1000"),
+                        "trade_type": "BUY",
+                        "cumulative_fee_paid_quote": Decimal("5"),
+                    }
+                ]
+            },
             close_type=CloseType.POSITION_HOLD,
             connector_name="binance",
-            trading_pair="ETH-USDT"
+            trading_pair="ETH-USDT",
         )
         # Since is_done is a computed property based on status, and we set status=TERMINATED, is_done will be True
 
@@ -593,12 +734,7 @@ class TestExecutorOrchestrator(unittest.TestCase):
         position = self.orchestrator.positions_held["test_controller"][0]
         self.assertEqual(position.connector_name, "binance")
         self.assertEqual(position.trading_pair, "ETH-USDT")
-        # Spot (and perpetual ONEWAY) markets bucket all activity into a single net
-        # position, so the bucketing side is None and the net direction is derived
-        # from the buy/sell amounts.
-        self.assertIsNone(position.side)
-        self.assertGreater(position.net_amount_base, 0)
-        self.assertEqual(position.get_position_summary(Decimal(100)).side, TradeType.BUY)
+        self.assertEqual(position.side, TradeType.BUY)
 
         # Verify report structure
         self.assertIn("test_controller", result)
@@ -615,26 +751,43 @@ class TestExecutorOrchestrator(unittest.TestCase):
 
         # Create config with position_action for perpetual market using OrderExecutorConfig
         config = OrderExecutorConfig(
-            timestamp=1234, trading_pair="ETH-USDT", connector_name="binance_perpetual",
-            side=TradeType.BUY, amount=Decimal(10), execution_strategy=ExecutionStrategy.MARKET,
-            position_action=PositionAction.CLOSE
+            timestamp=1234,
+            trading_pair="ETH-USDT",
+            connector_name="binance_perpetual",
+            side=TradeType.BUY,
+            amount=Decimal(10),
+            execution_strategy=ExecutionStrategy.MARKET,
+            position_action=PositionAction.CLOSE,
         )
         config.id = "perp_executor_id"
 
         executor = MagicMock()
         executor.executor_info = ExecutorInfo(
-            id="perp_executor_id", timestamp=1234, type="order_executor",
-            status=RunnableStatus.TERMINATED, config=config,
-            filled_amount_quote=Decimal(1000), net_pnl_quote=Decimal(50), net_pnl_pct=Decimal(5),
-            cum_fees_quote=Decimal(5), is_trading=False, is_active=False,
-            custom_info={"held_position_orders": [
-                {"client_order_id": "order_2", "executed_amount_base": Decimal("3"),
-                 "executed_amount_quote": Decimal("600"), "trade_type": "SELL",
-                 "cumulative_fee_paid_quote": Decimal("3")}
-            ]},
+            id="perp_executor_id",
+            timestamp=1234,
+            type="order_executor",
+            status=RunnableStatus.TERMINATED,
+            config=config,
+            filled_amount_quote=Decimal(1000),
+            net_pnl_quote=Decimal(50),
+            net_pnl_pct=Decimal(5),
+            cum_fees_quote=Decimal(5),
+            is_trading=False,
+            is_active=False,
+            custom_info={
+                "held_position_orders": [
+                    {
+                        "client_order_id": "order_2",
+                        "executed_amount_base": Decimal("3"),
+                        "executed_amount_quote": Decimal("600"),
+                        "trade_type": "SELL",
+                        "cumulative_fee_paid_quote": Decimal("3"),
+                    }
+                ]
+            },
             close_type=CloseType.POSITION_HOLD,
             connector_name="binance_perpetual",
-            trading_pair="ETH-USDT"
+            trading_pair="ETH-USDT",
         )
         # Since status=TERMINATED, is_done will be True
 
@@ -660,122 +813,6 @@ class TestExecutorOrchestrator(unittest.TestCase):
         position = self.orchestrator.positions_held["perp_controller"][0]
         self.assertEqual(position.side, TradeType.SELL)  # Opposite of BUY due to CLOSE action
 
-    def _build_position_hold_executor(self, executor_id, connector_name, trading_pair, side,
-                                      trade_type, base, quote, position_action=None):
-        """Helper to build a mock executor that ends as a POSITION_HOLD."""
-        from hummingbot.strategy_v2.executors.order_executor.data_types import ExecutionStrategy, OrderExecutorConfig
-
-        config_kwargs = dict(
-            timestamp=1234, trading_pair=trading_pair, connector_name=connector_name,
-            side=side, amount=base, execution_strategy=ExecutionStrategy.MARKET,
-        )
-        if position_action is not None:
-            config_kwargs["position_action"] = position_action
-        config = OrderExecutorConfig(**config_kwargs)
-        config.id = executor_id
-
-        executor = MagicMock()
-        executor.executor_info = ExecutorInfo(
-            id=executor_id, timestamp=1234, type="order_executor",
-            status=RunnableStatus.TERMINATED, config=config,
-            filled_amount_quote=quote, net_pnl_quote=Decimal(0), net_pnl_pct=Decimal(0),
-            cum_fees_quote=Decimal(0), is_trading=False, is_active=False,
-            custom_info={"held_position_orders": [
-                {"client_order_id": f"{executor_id}_order", "executed_amount_base": base,
-                 "executed_amount_quote": quote, "trade_type": trade_type,
-                 "cumulative_fee_paid_quote": Decimal(0)}
-            ]},
-            close_type=CloseType.POSITION_HOLD,
-            connector_name=connector_name,
-            trading_pair=trading_pair,
-        )
-        return executor
-
-    def test_oneway_perpetual_only_one_position_per_pair(self):
-        """In ONEWAY mode, opposite-side executors must merge into a single net position."""
-        from hummingbot.core.data_type.common import PositionAction, PositionMode
-
-        mock_market = MagicMock()
-        mock_market.position_mode = PositionMode.ONEWAY
-        self.mock_strategy.connectors = {"binance_perpetual": mock_market}
-
-        buy_executor = self._build_position_hold_executor(
-            "oneway_buy", "binance_perpetual", "ETH-USDT", TradeType.BUY, "BUY",
-            Decimal("5"), Decimal("1000"), position_action=PositionAction.OPEN)
-        # A reducing SELL executor (opposite side) on the same pair
-        sell_executor = self._build_position_hold_executor(
-            "oneway_sell", "binance_perpetual", "ETH-USDT", TradeType.SELL, "SELL",
-            Decimal("2"), Decimal("400"), position_action=PositionAction.CLOSE)
-
-        self.orchestrator.active_executors = {"oneway_controller": [buy_executor, sell_executor]}
-        self.orchestrator.positions_held = {"oneway_controller": []}
-        self.orchestrator.executors_ids_position_held = []
-        self.orchestrator.cached_performance = {"oneway_controller": PerformanceReport()}
-
-        self.orchestrator.get_all_reports()
-
-        # Both executors should collapse into a single net position
-        positions = self.orchestrator.positions_held["oneway_controller"]
-        self.assertEqual(len(positions), 1)
-        position = positions[0]
-        self.assertEqual(position.buy_amount_base, Decimal("5"))
-        self.assertEqual(position.sell_amount_base, Decimal("2"))
-        # Net is long 3 ETH
-        summary = position.get_position_summary(Decimal("230"))
-        self.assertEqual(summary.side, TradeType.BUY)
-        self.assertEqual(summary.amount, Decimal("3"))
-
-    def test_spot_only_one_position_per_pair(self):
-        """In spot markets, opposite-side executors must merge into a single net position."""
-        # Spot connector (no '_perpetual' suffix)
-        buy_executor = self._build_position_hold_executor(
-            "spot_buy", "binance", "ETH-USDT", TradeType.BUY, "BUY",
-            Decimal("4"), Decimal("800"))
-        sell_executor = self._build_position_hold_executor(
-            "spot_sell", "binance", "ETH-USDT", TradeType.SELL, "SELL",
-            Decimal("1"), Decimal("200"))
-
-        self.orchestrator.active_executors = {"spot_controller": [buy_executor, sell_executor]}
-        self.orchestrator.positions_held = {"spot_controller": []}
-        self.orchestrator.executors_ids_position_held = []
-        self.orchestrator.cached_performance = {"spot_controller": PerformanceReport()}
-
-        self.orchestrator.get_all_reports()
-
-        positions = self.orchestrator.positions_held["spot_controller"]
-        self.assertEqual(len(positions), 1)
-        self.assertEqual(positions[0].buy_amount_base, Decimal("4"))
-        self.assertEqual(positions[0].sell_amount_base, Decimal("1"))
-
-    def test_hedge_perpetual_allows_separate_long_and_short(self):
-        """In HEDGE mode, a long and a short position can coexist for the same pair."""
-        from hummingbot.core.data_type.common import PositionAction, PositionMode
-
-        mock_market = MagicMock()
-        mock_market.position_mode = PositionMode.HEDGE
-        self.mock_strategy.connectors = {"binance_perpetual": mock_market}
-
-        # Open long
-        long_executor = self._build_position_hold_executor(
-            "hedge_long", "binance_perpetual", "ETH-USDT", TradeType.BUY, "BUY",
-            Decimal("5"), Decimal("1000"), position_action=PositionAction.OPEN)
-        # Open short (independent position in hedge mode)
-        short_executor = self._build_position_hold_executor(
-            "hedge_short", "binance_perpetual", "ETH-USDT", TradeType.SELL, "SELL",
-            Decimal("3"), Decimal("600"), position_action=PositionAction.OPEN)
-
-        self.orchestrator.active_executors = {"hedge_controller": [long_executor, short_executor]}
-        self.orchestrator.positions_held = {"hedge_controller": []}
-        self.orchestrator.executors_ids_position_held = []
-        self.orchestrator.cached_performance = {"hedge_controller": PerformanceReport()}
-
-        self.orchestrator.get_all_reports()
-
-        positions = self.orchestrator.positions_held["hedge_controller"]
-        self.assertEqual(len(positions), 2)
-        sides = {p.side for p in positions}
-        self.assertEqual(sides, {TradeType.BUY, TradeType.SELL})
-
     def test_get_all_reports_with_existing_positions(self):
         """Test get_all_reports with existing positions to exercise find_existing_position logic"""
         # This tests lines 475-476,480-482,485,487 through high-level functionality
@@ -784,29 +821,44 @@ class TestExecutorOrchestrator(unittest.TestCase):
         existing_position = PositionHold("binance", "ETH-USDT", TradeType.BUY)
         existing_position.buy_amount_base = Decimal("2")
         existing_position.buy_amount_quote = Decimal("400")
-        existing_position.net_amount_base = Decimal("2")
-        existing_position.avg_entry_price = Decimal("200")
         existing_position.volume_traded_quote = Decimal("400")
 
         # Create executor that should add to existing position
         config = PositionExecutorConfig(
-            timestamp=1234, trading_pair="ETH-USDT", connector_name="binance",
-            side=TradeType.BUY, amount=Decimal(10), entry_price=Decimal(100),
+            timestamp=1234,
+            trading_pair="ETH-USDT",
+            connector_name="binance",
+            side=TradeType.BUY,
+            amount=Decimal(10),
+            entry_price=Decimal(100),
         )
         config.id = "add_to_position_id"
 
         executor = MagicMock()
         executor.executor_info = ExecutorInfo(
-            id="add_to_position_id", timestamp=1234, type="position_executor",
-            status=RunnableStatus.TERMINATED, config=config,
-            filled_amount_quote=Decimal(600), net_pnl_quote=Decimal(30), net_pnl_pct=Decimal(5),
-            cum_fees_quote=Decimal(3), is_trading=False, is_active=False,
-            custom_info={"held_position_orders": [
-                {"client_order_id": "order_3", "executed_amount_base": Decimal("3"),
-                 "executed_amount_quote": Decimal("600"), "trade_type": "BUY",
-                 "cumulative_fee_paid_quote": Decimal("3")}
-            ]},
-            close_type=CloseType.POSITION_HOLD
+            id="add_to_position_id",
+            timestamp=1234,
+            type="position_executor",
+            status=RunnableStatus.TERMINATED,
+            config=config,
+            filled_amount_quote=Decimal(600),
+            net_pnl_quote=Decimal(30),
+            net_pnl_pct=Decimal(5),
+            cum_fees_quote=Decimal(3),
+            is_trading=False,
+            is_active=False,
+            custom_info={
+                "held_position_orders": [
+                    {
+                        "client_order_id": "order_3",
+                        "executed_amount_base": Decimal("3"),
+                        "executed_amount_quote": Decimal("600"),
+                        "trade_type": "BUY",
+                        "cumulative_fee_paid_quote": Decimal("3"),
+                    }
+                ]
+            },
+            close_type=CloseType.POSITION_HOLD,
         )
         # Since status=TERMINATED, is_done will be True
 
@@ -846,10 +898,7 @@ class TestExecutorOrchestrator(unittest.TestCase):
         initial_positions = {
             "test_controller": [
                 InitialPositionConfig(
-                    connector_name="binance",
-                    trading_pair="ETH-USDT",
-                    amount=Decimal("2"),
-                    side=TradeType.BUY
+                    connector_name="binance", trading_pair="ETH-USDT", amount=Decimal("2"), side=TradeType.BUY
                 ),
             ]
         }
@@ -857,8 +906,7 @@ class TestExecutorOrchestrator(unittest.TestCase):
         self.mock_strategy.controllers = {"test_controller": MagicMock()}
 
         orchestrator = ExecutorOrchestrator(
-            strategy=self.mock_strategy,
-            initial_positions_by_controller=initial_positions
+            strategy=self.mock_strategy, initial_positions_by_controller=initial_positions
         )
 
         # First call creates positions
@@ -868,154 +916,6 @@ class TestExecutorOrchestrator(unittest.TestCase):
         # Second call should be a no-op (early return on line 254)
         orchestrator.initialize_initial_positions()
         self.assertEqual(len(orchestrator.positions_held["test_controller"]), 1)
-
-    def test_position_hold_process_order_open_long(self):
-        """Test _process_order opening a long position"""
-        ph = PositionHold("binance", "ETH-USDT", TradeType.BUY)
-        ph._process_order(is_buy=True, amount_base=Decimal("5"), amount_quote=Decimal("1000"))
-        self.assertEqual(ph.net_amount_base, Decimal("5"))
-        self.assertEqual(ph.avg_entry_price, Decimal("200"))
-
-    def test_position_hold_process_order_open_short(self):
-        """Test _process_order opening a short position"""
-        ph = PositionHold("binance", "ETH-USDT", TradeType.SELL)
-        ph._process_order(is_buy=False, amount_base=Decimal("3"), amount_quote=Decimal("600"))
-        self.assertEqual(ph.net_amount_base, Decimal("-3"))
-        self.assertEqual(ph.avg_entry_price, Decimal("200"))
-
-    def test_position_hold_process_order_add_to_long(self):
-        """Test _process_order adding to an existing long position"""
-        ph = PositionHold("binance", "ETH-USDT", TradeType.BUY)
-        ph._process_order(is_buy=True, amount_base=Decimal("2"), amount_quote=Decimal("400"))
-        ph._process_order(is_buy=True, amount_base=Decimal("3"), amount_quote=Decimal("900"))
-        self.assertEqual(ph.net_amount_base, Decimal("5"))
-        self.assertEqual(ph.avg_entry_price, Decimal("260"))  # (400+900)/5
-
-    def test_position_hold_process_order_partial_close_long(self):
-        """Test _process_order partially closing a long position"""
-        ph = PositionHold("binance", "ETH-USDT", TradeType.BUY)
-        ph._process_order(is_buy=True, amount_base=Decimal("10"), amount_quote=Decimal("2000"))
-        ph._process_order(is_buy=False, amount_base=Decimal("4"), amount_quote=Decimal("1000"))
-        self.assertEqual(ph.net_amount_base, Decimal("6"))
-        self.assertEqual(ph.avg_entry_price, Decimal("200"))
-        self.assertEqual(ph.realized_pnl_quote, Decimal("200"))  # (250-200)*4
-
-    def test_position_hold_process_order_full_close_long(self):
-        """Test _process_order fully closing a long position"""
-        ph = PositionHold("binance", "ETH-USDT", TradeType.BUY)
-        ph._process_order(is_buy=True, amount_base=Decimal("5"), amount_quote=Decimal("1000"))
-        ph._process_order(is_buy=False, amount_base=Decimal("5"), amount_quote=Decimal("1500"))
-        self.assertEqual(ph.net_amount_base, Decimal("0"))
-        self.assertEqual(ph.avg_entry_price, Decimal("0"))
-        self.assertEqual(ph.realized_pnl_quote, Decimal("500"))
-
-    def test_position_hold_process_order_flip_long_to_short(self):
-        """Test _process_order flipping from long to short"""
-        ph = PositionHold("binance", "ETH-USDT", TradeType.BUY)
-        ph._process_order(is_buy=True, amount_base=Decimal("3"), amount_quote=Decimal("600"))
-        ph._process_order(is_buy=False, amount_base=Decimal("5"), amount_quote=Decimal("1250"))
-        self.assertEqual(ph.net_amount_base, Decimal("-2"))
-        self.assertEqual(ph.avg_entry_price, Decimal("250"))
-        self.assertEqual(ph.realized_pnl_quote, Decimal("150"))  # (250-200)*3
-
-    def test_position_hold_process_order_partial_close_short(self):
-        """Test _process_order partially closing a short position"""
-        ph = PositionHold("binance", "ETH-USDT", TradeType.SELL)
-        ph._process_order(is_buy=False, amount_base=Decimal("10"), amount_quote=Decimal("3000"))
-        ph._process_order(is_buy=True, amount_base=Decimal("4"), amount_quote=Decimal("1000"))
-        self.assertEqual(ph.net_amount_base, Decimal("-6"))
-        self.assertEqual(ph.avg_entry_price, Decimal("300"))
-        self.assertEqual(ph.realized_pnl_quote, Decimal("200"))  # (300-250)*4
-
-    def test_position_hold_process_order_zero_amount(self):
-        """Test _process_order with zero amount is a no-op"""
-        ph = PositionHold("binance", "ETH-USDT", TradeType.BUY)
-        ph._process_order(is_buy=True, amount_base=Decimal("0"), amount_quote=Decimal("0"))
-        self.assertEqual(ph.net_amount_base, Decimal("0"))
-
-    def test_position_hold_add_orders_no_held_position_orders(self):
-        """Test add_orders_from_executor with missing held_position_orders logs warning"""
-        ph = PositionHold("binance", "ETH-USDT", TradeType.BUY)
-        config = PositionExecutorConfig(
-            timestamp=1234, trading_pair="ETH-USDT", connector_name="binance",
-            side=TradeType.BUY, amount=Decimal(10), entry_price=Decimal(100),
-        )
-        executor_info = ExecutorInfo(
-            id="abcdefgh", timestamp=1234, type="position_executor",
-            status=RunnableStatus.TERMINATED, config=config,
-            filled_amount_quote=Decimal(0), net_pnl_quote=Decimal(0), net_pnl_pct=Decimal(0),
-            cum_fees_quote=Decimal(0), is_trading=False, is_active=False,
-            custom_info={},
-            close_type=CloseType.POSITION_HOLD,
-        )
-        ph.add_orders_from_executor(executor_info)
-        self.assertEqual(ph.net_amount_base, Decimal("0"))
-
-    def test_position_hold_add_orders_duplicate_order_skipped(self):
-        """Test add_orders_from_executor skips duplicate orders"""
-        ph = PositionHold("binance", "ETH-USDT", TradeType.BUY)
-        config = PositionExecutorConfig(
-            timestamp=1234, trading_pair="ETH-USDT", connector_name="binance",
-            side=TradeType.BUY, amount=Decimal(10), entry_price=Decimal(100),
-        )
-        orders = [{"client_order_id": "dup_order", "executed_amount_base": Decimal("5"),
-                   "executed_amount_quote": Decimal("1000"), "trade_type": "BUY",
-                   "cumulative_fee_paid_quote": Decimal("1")}]
-        executor_info = ExecutorInfo(
-            id="abcdefgh", timestamp=1234, type="position_executor",
-            status=RunnableStatus.TERMINATED, config=config,
-            filled_amount_quote=Decimal(1000), net_pnl_quote=Decimal(0), net_pnl_pct=Decimal(0),
-            cum_fees_quote=Decimal(1), is_trading=False, is_active=False,
-            custom_info={"held_position_orders": orders},
-            close_type=CloseType.POSITION_HOLD,
-        )
-        ph.add_orders_from_executor(executor_info)
-        self.assertEqual(ph.buy_amount_base, Decimal("5"))
-        # Add same executor again - duplicate order should be skipped
-        ph.add_orders_from_executor(executor_info)
-        self.assertEqual(ph.buy_amount_base, Decimal("5"))  # unchanged
-
-    def test_get_all_reports_oneway_position_mode(self):
-        """Test that ONEWAY position mode returns None for position side (line 600)"""
-        from hummingbot.core.data_type.common import PositionMode
-
-        config = PositionExecutorConfig(
-            timestamp=1234, trading_pair="ETH-USDT", connector_name="binance_perpetual",
-            side=TradeType.BUY, amount=Decimal(10), entry_price=Decimal(100),
-        )
-        config.id = "oneway_executor_id"
-
-        executor = MagicMock()
-        executor.executor_info = ExecutorInfo(
-            id="oneway_executor_id", timestamp=1234, type="position_executor",
-            status=RunnableStatus.TERMINATED, config=config,
-            filled_amount_quote=Decimal(1000), net_pnl_quote=Decimal(50), net_pnl_pct=Decimal(5),
-            cum_fees_quote=Decimal(5), is_trading=False, is_active=False,
-            custom_info={"held_position_orders": [
-                {"client_order_id": "ow_order_1", "executed_amount_base": Decimal("5"),
-                 "executed_amount_quote": Decimal("1000"), "trade_type": "BUY",
-                 "cumulative_fee_paid_quote": Decimal("5")}
-            ]},
-            close_type=CloseType.POSITION_HOLD,
-            connector_name="binance_perpetual",
-            trading_pair="ETH-USDT"
-        )
-
-        mock_market = MagicMock()
-        mock_market.position_mode = PositionMode.ONEWAY
-        self.mock_strategy.connectors = {"binance_perpetual": mock_market}
-
-        self.orchestrator.active_executors = {"oneway_ctrl": [executor]}
-        self.orchestrator.positions_held = {"oneway_ctrl": []}
-        self.orchestrator.executors_ids_position_held = []
-        self.orchestrator.cached_performance = {"oneway_ctrl": PerformanceReport()}
-
-        self.orchestrator.get_all_reports()
-
-        # Position should be created with side=None (no side filtering in ONEWAY)
-        self.assertEqual(len(self.orchestrator.positions_held["oneway_ctrl"]), 1)
-        position = self.orchestrator.positions_held["oneway_ctrl"][0]
-        self.assertIsNone(position.side)
 
     def test_get_all_reports_comprehensive_controller_aggregation(self):
         """Test get_all_reports aggregating controllers from different sources"""

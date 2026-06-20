@@ -1,7 +1,7 @@
 import hashlib
 import hmac
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from hummingbot.connector.exchange.bitmart import bitmart_constants as CONSTANTS
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
@@ -46,18 +46,17 @@ class BitmartAuth(AuthBase):
         """
         return request  # pass-through
 
-    def _generate_signature(self, timestamp: str, body: Optional[str] = None) -> str:
+    def _generate_signature(self, timestamp: str, body: str | None = None) -> str:
         body = body or ""
         unsigned_signature = f"{str(timestamp)}#{self.memo}#{body}"
 
         signature = hmac.new(
-            self.secret_key.encode("utf-8"),
-            unsigned_signature.encode("utf-8"),
-            hashlib.sha256).hexdigest()
+            self.secret_key.encode("utf-8"), unsigned_signature.encode("utf-8"), hashlib.sha256
+        ).hexdigest()
 
         return signature
 
-    def authentication_headers(self, request: RESTRequest) -> Dict[str, Any]:
+    def authentication_headers(self, request: RESTRequest) -> dict[str, Any]:
         timestamp = str(int(self.time_provider.time() * 1e3))
 
         params = json.dumps(request.params) if request.params is not None else request.data
@@ -73,13 +72,7 @@ class BitmartAuth(AuthBase):
 
         return header
 
-    def websocket_login_parameters(self) -> List[str]:
+    def websocket_login_parameters(self) -> list[str]:
         timestamp = str(int(self.time_provider.time() * 1e3))
 
-        return [
-            self.api_key,
-            timestamp,
-            self._generate_signature(
-                timestamp=timestamp,
-                body="bitmart.WebSocket")
-        ]
+        return [self.api_key, timestamp, self._generate_signature(timestamp=timestamp, body="bitmart.WebSocket")]

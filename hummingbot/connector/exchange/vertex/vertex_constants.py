@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 # A single source of truth for constant variables related to the exchange
 from hummingbot.core.api_throttler.data_types import LinkedLimitWeightPair, RateLimit
@@ -287,7 +287,7 @@ RATE_LIMITS = [
 """
 https://vertex-protocol.gitbook.io/docs/developer-resources/api/api-errors
 """
-ERRORS: Dict[int, Any] = {
+ERRORS: dict[int, Any] = {
     1000: {
         "code": 1000,
         "error_value": "RateLimit",
