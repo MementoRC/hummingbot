@@ -5,6 +5,7 @@ from unittest import TestCase
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 from async_timeout import timeout
+from test.mock.mock_mqtt_server import FakeMQTTBroker
 
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
@@ -17,7 +18,6 @@ from hummingbot.core.event.events import BuyOrderCreatedEvent, MarketEvent, Orde
 from hummingbot.model.order import Order
 from hummingbot.model.trade_fill import TradeFill
 from hummingbot.remote_iface.mqtt import MQTTGateway, MQTTMarketEventForwarder
-from test.mock.mock_mqtt_server import FakeMQTTBroker
 
 
 @patch("hummingbot.remote_iface.mqtt.MQTTGateway._INTERVAL_HEALTH_CHECK", 0.0)
