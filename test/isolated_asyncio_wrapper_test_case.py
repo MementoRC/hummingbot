@@ -1,9 +1,9 @@
 import asyncio
-import functools
-import unittest
 from asyncio import Task
 from collections.abc import Set
+import functools
 from typing import Any, Awaitable, Callable, Coroutine, List, Optional, TypeVar
+import unittest
 
 T = TypeVar("T")
 
