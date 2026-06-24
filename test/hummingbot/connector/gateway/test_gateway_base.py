@@ -1,7 +1,7 @@
 import asyncio
-import unittest
 from decimal import Decimal
 from typing import List
+import unittest
 
 from hummingbot.connector.gateway.gateway_base import GatewayBase
 from hummingbot.core.data_type.common import OrderType, TradeType
@@ -218,6 +218,7 @@ class GatewayBaseEventOrderingTest(unittest.TestCase):
             events_order.append("OrderFilled")
 
         from hummingbot.core.event.event_forwarder import SourceInfoEventForwarder
+
         created_forwarder = SourceInfoEventForwarder(on_buy_created)
         filled_forwarder = SourceInfoEventForwarder(on_order_filled)
 
@@ -327,7 +328,7 @@ class GatewayBaseEventOrderingTest(unittest.TestCase):
         self.assertEqual(
             ["BuyOrderCreated", "BuyOrderCompleted", "OrderFilled"],
             events_order,
-            "Events must be emitted in order: OrderCreated -> OrderCompleted -> OrderFilled"
+            "Events must be emitted in order: OrderCreated -> OrderCompleted -> OrderFilled",
         )
 
 
