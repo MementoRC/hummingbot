@@ -118,7 +118,7 @@ class TestHyperliquidAPIUserStreamDataSource(IsolatedAsyncioWrapperTestCase):
                         "startPosition": "0.0",
                         "dir": "Open Long",
                         "closedPnl": "0.0",
-                        "hash": "0x544c46b72e0efdada8cd04080bb32b010d005a7d0554c10c4d0287e9a2c237e7",
+                        "hash": "0x544c46b72e0efdada8cd04080bb32b010d005a7d0554c10c4d0287e9a2c237e7",  # noqa: mock
                         "oid": 2260113568,  # noqa: mock
                         "crossed": True,
                         "fee": "0.005228",
