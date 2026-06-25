@@ -1,5 +1,16 @@
-"""Auto-skip hummingbot tests superseded by installed sub-packages.
+"""Root conftest: Phase-C event artifact cleanup + sub-package supersede skip.
 
+PHASE-C CLEANUP  (runs at conftest import time, before any test collection)
+---------------
+EventListener (C1), EventLogger (C2), EventReporter (C3) were converted to
+pure Python.  Any compiled .so built against the old Cython cdef-class
+EventListener (48-byte struct) fails with "size changed, may indicate binary
+incompatibility" at import time.  The pure-Python .py replacements exist for
+every module listed here; removing the stale .so files lets Python fall
+through to the .py versions for the test session.
+
+AUTO-SKIP  (original functionality)
+------------------------------------
 Sub-packages declare which hummingbot test paths they replace via
 [tool.hummingbot.supersedes] in their pyproject.toml:
 
@@ -20,6 +31,7 @@ Adding a new sub-package requires NO changes here — just add the
 
 import importlib
 from pathlib import Path
+import sys
 
 import pytest
 
@@ -27,6 +39,35 @@ try:
     import tomllib
 except ModuleNotFoundError:
     import tomli as tomllib
+
+# ---------------------------------------------------------------------------
+# Phase-C: remove stale compiled artifacts for event subsystem conversions.
+# Pure-Python .py replacements exist for every module listed here.
+# ---------------------------------------------------------------------------
+_HBOT = Path(__file__).parents[1] / "hummingbot"
+_PHASE_C_STEMS = [
+    # C1 — EventListener base class
+    "core/event/event_listener",
+    # C2 — EventLogger
+    "core/event/event_logger",
+    # C3 — EventReporter
+    "core/event/event_reporter",
+]
+_PHASE_C_ORPHANED_SO = [
+    _so for _stem in _PHASE_C_STEMS for _so in (_HBOT / _stem).parent.glob(f"{(_HBOT / _stem).name}.cpython-*.so")
+]
+for _so in _PHASE_C_ORPHANED_SO:
+    _so.unlink()
+
+# Evict any module that may have been cached before this conftest ran.
+_EVICT = {
+    "event_listener",
+    "event_logger",
+    "event_reporter",
+}
+for _key in list(sys.modules):
+    if any(k in _key for k in _EVICT):
+        del sys.modules[_key]
 
 
 def _discover_superseded_tests():
