@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from decimal import Decimal
 from functools import lru_cache
-from typing import Dict, Union
+from typing import List, Optional, Tuple
 
 from hummingbot.client.settings import AllConnectorSettings
 from hummingbot.connector.connector_base import ConnectorBase
@@ -37,7 +37,7 @@ class ExecutorBase(RunnableBase):
     def __init__(
         self,
         strategy: StrategyV2Base,
-        connectors: list[str],
+        connectors: List[str],
         config: ExecutorConfigBase,
         update_interval: float = 0.5,
         max_retries: int = 10,
@@ -148,7 +148,7 @@ class ExecutorBase(RunnableBase):
         )
         return ei
 
-    def get_custom_info(self) -> Dict:
+    def get_custom_info(self) -> dict:
         """
         Returns the custom info of the executor. Returns an empty dictionary by default, and can be reimplemented
         by subclasses.
@@ -305,6 +305,18 @@ class ExecutorBase(RunnableBase):
         """
         return self.connectors[exchange].budget_checker.adjust_candidates(order_candidates)
 
+    def lock_order_candidate(self, exchange: str, order_candidate: OrderCandidate) -> OrderCandidate:
+        """
+        Adjusts and locks the order candidate based on the budget checker of the specified exchange.
+        """
+        return self.connectors[exchange].budget_checker.adjust_candidate_and_lock_available_collateral(order_candidate)
+
+    def unlock_order_candidate(self, exchange: str, order_candidate: OrderCandidate) -> OrderCandidate:
+        """
+        Adjusts and locks the order candidate based on the budget checker of the specified exchange.
+        """
+        return self.connectors[exchange].budget_checker.release_locked_collateral(order_candidate)
+
     def place_order(
         self,
         connector_name: str,
@@ -393,7 +405,7 @@ class ExecutorBase(RunnableBase):
         return self._strategy.get_active_orders(connector_name)
 
     def process_order_completed_event(
-        self, event_tag: int, market: ConnectorBase, event: Union[BuyOrderCompletedEvent, SellOrderCompletedEvent]
+        self, event_tag: int, market: ConnectorBase, event: BuyOrderCompletedEvent | SellOrderCompletedEvent
     ):
         """
         Processes the order completed event. This method should be overridden by subclasses.
@@ -405,7 +417,7 @@ class ExecutorBase(RunnableBase):
         pass
 
     def process_order_created_event(
-        self, event_tag: int, market: ConnectorBase, event: Union[BuyOrderCreatedEvent, SellOrderCreatedEvent]
+        self, event_tag: int, market: ConnectorBase, event: BuyOrderCreatedEvent | SellOrderCreatedEvent
     ):
         """
         Processes the order created event. This method should be overridden by subclasses.
