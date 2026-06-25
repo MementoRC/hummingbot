@@ -1,11 +1,10 @@
 import unittest
 
-import hummingbot.connector.exchange.bitrue.bitrue_constants as CONSTANTS
 from hummingbot.connector.exchange.bitrue import bitrue_web_utils as web_utils
+import hummingbot.connector.exchange.bitrue.bitrue_constants as CONSTANTS
 
 
 class BitrueUtilTestCases(unittest.TestCase):
-
     def test_public_rest_url(self):
         path_url = "/TEST_PATH"
         domain = "com"

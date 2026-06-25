@@ -1,6 +1,5 @@
 from copy import deepcopy
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from typing import Dict, Optional
 from unittest.mock import MagicMock
 
@@ -12,6 +11,7 @@ from hummingbot.core.rate_oracle.rate_oracle import RateOracle
 from hummingbot.core.rate_oracle.sources.coin_gecko_rate_source import CoinGeckoRateSource
 from hummingbot.core.rate_oracle.sources.rate_source_base import RateSourceBase
 from hummingbot.core.rate_oracle.utils import find_rate
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class DummyRateSource(RateSourceBase):
@@ -92,7 +92,7 @@ class RateOracleTest(IsolatedAsyncioWrapperTestCase):
         # Test case 2: common denominator pair has zero price - should skip that path
         prices_with_zero_common = {
             "HBOT-USDT": Decimal("100"),
-            "GBP-USDT": Decimal("0")  # Zero price in common denominator
+            "GBP-USDT": Decimal("0"),  # Zero price in common denominator
         }
         rate = find_rate(prices_with_zero_common, "HBOT-GBP")
         # Should return None since the only route involves dividing by zero
@@ -128,8 +128,8 @@ class RateOracleTest(IsolatedAsyncioWrapperTestCase):
         connector = MagicMock()
         connector.name = name
         connector.order_books = {pair: MagicMock() for pair in order_books}
-        connector.get_price_by_type.side_effect = (
-            lambda pair, price_type: order_books.get(pair) if price_type == PriceType.MidPrice else None
+        connector.get_price_by_type.side_effect = lambda pair, price_type: (
+            order_books.get(pair) if price_type == PriceType.MidPrice else None
         )
         return connector
 
