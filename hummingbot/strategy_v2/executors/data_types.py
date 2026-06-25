@@ -1,10 +1,8 @@
-from __future__ import annotations
-
 from decimal import Decimal
 import hashlib
 import random
 import time
-from typing import Literal
+from typing import Literal, Optional
 
 import base58
 from pydantic import BaseModel, field_validator, model_validator
@@ -24,8 +22,9 @@ class ExecutorConfigBase(BaseModel):
         "arbitrage_executor",
         "twap_executor",
         "lp_executor",
+        "progressive_executor",
     ]
-    timestamp: float | None = None
+    timestamp: Optional[float] = None
     controller_id: str = "main"
 
     @field_validator("timestamp", mode="before")

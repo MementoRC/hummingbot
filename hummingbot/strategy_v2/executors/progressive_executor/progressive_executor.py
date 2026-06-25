@@ -1,7 +1,7 @@
 from decimal import Decimal
 import logging
 from math import floor
-from typing import Dict, List
+from typing import Dict
 
 from hummingbot.core.data_type.common import OrderType, PriceType, TradeType
 from hummingbot.core.data_type.order_candidate import OrderCandidate, PerpetualOrderCandidate
@@ -50,13 +50,12 @@ class ProgressiveExecutor(
             error = "Only market orders are supported for time_limit and stop_loss"
             self.logger().error(error)
             raise ValueError(error)
-        # Current ExecutorBase.__init__ signature: (strategy, connectors, config, update_interval, max_retries)
+        # Current ExecutorBase.__init__ signature: (strategy, connectors, config, update_interval)
         super().__init__(
             strategy,
             [config.connector_name],
             config,
             update_interval,
-            max_retries,
         )
         if not config.entry_price:
             open_order_price_type = PriceType.BestBid if config.side == TradeType.BUY else PriceType.BestAsk
@@ -73,11 +72,13 @@ class ProgressiveExecutor(
         )
         self._open_order: TrackedOrder | None = None
         self._close_order: TrackedOrder | None = None
-        self._realized_orders: List[TrackedOrder] = []
-        self._failed_orders: List[TrackedOrder] = []
-        self._canceled_orders: List[TrackedOrder] = []
+        self._realized_orders: list[TrackedOrder] = []
+        self._failed_orders: list[TrackedOrder] = []
+        self._canceled_orders: list[TrackedOrder] = []
 
         self._total_executed_amount_backup: Decimal = Decimal("0")
+        self._current_retries = 0
+        self._max_retries = max_retries
 
     @property
     def strategy(self) -> StrategyV2Base:
@@ -100,27 +101,27 @@ class ProgressiveExecutor(
         self._close_order = value
 
     @property
-    def realized_orders(self) -> List[TrackedOrder]:
+    def realized_orders(self) -> list[TrackedOrder]:
         return self._realized_orders
 
     @realized_orders.setter
-    def realized_orders(self, value: List[TrackedOrder]):
+    def realized_orders(self, value: list[TrackedOrder]):
         self._realized_orders = value
 
     @property
-    def failed_orders(self) -> List[TrackedOrder]:
+    def failed_orders(self) -> list[TrackedOrder]:
         return self._failed_orders
 
     @failed_orders.setter
-    def failed_orders(self, value: List[TrackedOrder]):
+    def failed_orders(self, value: list[TrackedOrder]):
         self._failed_orders = value
 
     @property
-    def canceled_orders(self) -> List[TrackedOrder]:
+    def canceled_orders(self) -> list[TrackedOrder]:
         return self._canceled_orders
 
     @canceled_orders.setter
-    def canceled_orders(self, value: List[TrackedOrder]):
+    def canceled_orders(self, value: list[TrackedOrder]):
         self._canceled_orders = value
 
     @property
@@ -210,6 +211,11 @@ class ProgressiveExecutor(
     def trailing_stop_manager(self) -> TrailingStopManager:
         return self._trailing_stop_manager
 
+    def evaluate_max_retries(self):
+        if self.current_retries > self.max_retries:
+            self.close_type = CloseType.FAILED
+            self.stop()
+
     async def on_start(self):
         self.logger().debug("Starting ProgressiveExecutor")
         await super().on_start()
@@ -248,7 +254,7 @@ class ProgressiveExecutor(
             "max_retries": self.max_retries,
         }
 
-    def to_format_status(self, scale=1.0) -> List[str]:
+    def to_format_status(self, scale=1.0) -> list[str]:
         lines = []
         current_price = self.get_price(self.config.connector_name, self.config.trading_pair)
         if self.is_trading:

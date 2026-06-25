@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Literal, Tuple
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -10,7 +10,7 @@ from hummingbot.strategy_v2.executors.position_executor.data_types import Positi
 class LadderedTrailingStop(BaseModel):
     activation_pnl_pct: Decimal
     trailing_pct: Decimal
-    take_profit_table: Tuple[Tuple[Decimal, Decimal], ...]
+    take_profit_table: tuple[tuple[Decimal, Decimal], ...]
 
 
 class YieldTripleBarrierConfig(TripleBarrierConfig):
