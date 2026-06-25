@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import time
 from typing import TYPE_CHECKING, Any
 
@@ -27,7 +28,7 @@ if TYPE_CHECKING:
 
 
 class FoxbitAPIOrderBookDataSource(OrderBookTrackerDataSource):
-    _logger: HummingbotLogger | None = None
+    _logger: Optional[HummingbotLogger] = None
     _trading_pair_exc_id = {}
     _trading_pair_hb_dict = {}
     _ORDER_BOOK_INTERVAL = 1.0
@@ -36,7 +37,7 @@ class FoxbitAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
     def __init__(
         self,
-        trading_pairs: list[str],
+        trading_pairs: List[str],
         connector: "FoxbitExchange",
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -151,9 +152,9 @@ class FoxbitAPIOrderBookDataSource(OrderBookTrackerDataSource):
         self._first_update_id[trading_pair] = snapshot["sequence_id"]
         return snapshot_msg
 
-    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
         if CONSTANTS.WS_SUBSCRIBE_TRADES or CONSTANTS.WS_TRADE_RESPONSE in raw_message["n"]:
-            full_msg = eval(raw_message["o"].replace(",false,", ",False,"))
+            full_msg = json.loads(raw_message["o"])
             for msg in full_msg:
                 instrument_id = int(msg[FoxbitTradeFields.INSTRUMENTID.value])
                 trading_pair = ""
@@ -169,9 +170,9 @@ class FoxbitAPIOrderBookDataSource(OrderBookTrackerDataSource):
                 )
                 message_queue.put_nowait(trade_message)
 
-    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
         if CONSTANTS.WS_ORDER_BOOK_RESPONSE or CONSTANTS.WS_ORDER_STATE in raw_message["n"]:
-            full_msg = eval(raw_message["o"])
+            full_msg = json.loads(raw_message["o"])
             for msg in full_msg:
                 instrument_id = int(msg[FoxbitOrderBookFields.PRODUCTPAIRCODE.value])
 
@@ -199,7 +200,7 @@ class FoxbitAPIOrderBookDataSource(OrderBookTrackerDataSource):
                 return self._diff_messages_queue_key
         return channel
 
-    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def _load_exchange_instrument_id(self):

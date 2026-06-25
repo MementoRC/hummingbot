@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 import json
-from typing import Any
+from typing import Any, Dict
 
 from pydantic import Field, SecretStr
 
@@ -37,7 +37,7 @@ def get_ws_message_frame(
     endpoint: str,
     msg_type: str = "0",
     payload: str = "",
-) -> dict[str, Any]:
+) -> Dict[str, Any]:
     retValue = CONSTANTS.WS_MESSAGE_FRAME.copy()
     retValue["m"] = msg_type
     retValue["i"] = _get_next_message_frame_sequence_number()
@@ -67,8 +67,8 @@ def is_exchange_information_valid(exchange_info: dict[str, Any]) -> bool:
     return True
 
 
-def ws_data_to_dict(data: str) -> dict[str, Any]:
-    return eval(data.replace(":null", ":None").replace(":false", ":False").replace(":true", ":True"))
+def ws_data_to_dict(data: str) -> Dict[str, Any]:
+    return json.loads(data)
 
 
 def datetime_val_or_now(
