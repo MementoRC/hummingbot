@@ -34,7 +34,13 @@ REQUEST_WEIGHT = "REQUEST_WEIGHT"
 RATE_LIMITS = [
     RateLimit(REQUEST_WEIGHT, limit=1200, time_interval=60),
     RateLimit(
-        CANDLES_ENDPOINT, weight=2, limit=1200, time_interval=60, linked_limits=[LinkedLimitWeightPair("raw", 1)]
+        CANDLES_ENDPOINT,
+        weight=2,
+        limit=1200,
+        time_interval=60,
+        linked_limits=[LinkedLimitWeightPair(REQUEST_WEIGHT, 1)],
     ),
-    RateLimit(HEALTH_CHECK_ENDPOINT, limit=1200, time_interval=60, linked_limits=[LinkedLimitWeightPair("raw", 1)]),
+    RateLimit(
+        HEALTH_CHECK_ENDPOINT, limit=1200, time_interval=60, linked_limits=[LinkedLimitWeightPair(REQUEST_WEIGHT, 1)]
+    ),
 ]

@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from decimal import Decimal
 import logging
-from typing import Dict, List, Optional, Union
+from typing import Dict, Union
 
 from hummingbot.connector.gateway.gateway import AMMPoolInfo, CLMMPoolInfo
 from hummingbot.connector.utils import split_hb_trading_pair
@@ -47,7 +49,7 @@ class LPExecutor(ExecutorBase):
     without the Clock/tick mechanism (like hummingbot-api).
     """
 
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -68,18 +70,18 @@ class LPExecutor(ExecutorBase):
         self.config: LPExecutorConfig = config
         self._max_retries = max_retries
         self.lp_position_state = LPExecutorState()
-        self._pool_info: Optional[Union[CLMMPoolInfo, AMMPoolInfo]] = None
-        self._current_price: Optional[Decimal] = None  # Updated from pool_info or position_info
+        self._pool_info: Union[CLMMPoolInfo, AMMPoolInfo] | None = None
+        self._current_price: Decimal | None = None  # Updated from pool_info or position_info
         self._max_retries_reached = False  # True when max retries reached, requires intervention
-        self._last_attempted_signature: Optional[str] = None  # Track for retry logging
+        self._last_attempted_signature: str | None = None  # Track for retry logging
         # Position tracking - store LP position for position aggregation when keep_position=True
-        self._held_position_orders: List[Dict] = []
+        self._held_position_orders: list[Dict] = []
         # Swap tracking for close-out flow
         self._swap_not_found_count: int = 0
         # Parse lp_provider into dex_name and trading_type for gateway calls
         self.lp_dex_name, self.lp_trading_type = parse_provider(config.lp_provider, default_trading_type="clmm")
 
-    def _validate_and_normalize_connector(self, connector_name: str) -> Optional[str]:
+    def _validate_and_normalize_connector(self, connector_name: str) -> str | None:
         """
         Validate and normalize connector name for LP executor.
 

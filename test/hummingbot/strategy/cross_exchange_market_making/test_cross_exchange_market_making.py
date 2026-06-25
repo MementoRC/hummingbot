@@ -2,7 +2,7 @@ import asyncio
 from copy import deepcopy
 from decimal import Decimal
 from math import ceil, floor
-from typing import Awaitable, List
+from typing import Awaitable
 import unittest
 from unittest.mock import patch
 
@@ -49,8 +49,8 @@ class HedgedMarketMakingUnitTest(unittest.TestCase):
     end_timestamp: float = end.timestamp()
     exchange_name_maker = "mock_paper_exchange"
     exchange_name_taker = "mock_paper_exchange"
-    trading_pairs_maker: List[str] = ["COINALPHA-WETH", "COINALPHA", "WETH"]
-    trading_pairs_taker: List[str] = ["COINALPHA-ETH", "COINALPHA", "ETH"]
+    trading_pairs_maker: list[str] = ["COINALPHA-WETH", "COINALPHA", "WETH"]
+    trading_pairs_taker: list[str] = ["COINALPHA-ETH", "COINALPHA", "ETH"]
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -204,8 +204,8 @@ class HedgedMarketMakingUnitTest(unittest.TestCase):
 
     @staticmethod
     def simulate_order_book_widening(order_book: OrderBook, top_bid: float, top_ask: float):
-        bid_diffs: List[OrderBookRow] = []
-        ask_diffs: List[OrderBookRow] = []
+        bid_diffs: list[OrderBookRow] = []
+        ask_diffs: list[OrderBookRow] = []
         update_id: int = order_book.last_diff_uid + 1
         for row in order_book.bid_entries():
             if row.price > top_bid:
@@ -599,10 +599,10 @@ class HedgedMarketMakingUnitTest(unittest.TestCase):
         if len(self.taker_order_fill_logger.event_log) == prev_taker_orders_filled_len:
             self.async_run_with_timeout(self.taker_order_fill_logger.wait_for(OrderFilledEvent))
 
-        fill_events: List[OrderFilledEvent] = self.taker_order_fill_logger.event_log
+        fill_events: list[OrderFilledEvent] = self.taker_order_fill_logger.event_log
 
-        bid_hedges: List[OrderFilledEvent] = [evt for evt in fill_events if evt.trade_type is TradeType.SELL]
-        ask_hedges: List[OrderFilledEvent] = [evt for evt in fill_events if evt.trade_type is TradeType.BUY]
+        bid_hedges: list[OrderFilledEvent] = [evt for evt in fill_events if evt.trade_type is TradeType.SELL]
+        ask_hedges: list[OrderFilledEvent] = [evt for evt in fill_events if evt.trade_type is TradeType.BUY]
 
         self.assertEqual(1, len(bid_hedges))
         self.assertEqual(1, len(ask_hedges))

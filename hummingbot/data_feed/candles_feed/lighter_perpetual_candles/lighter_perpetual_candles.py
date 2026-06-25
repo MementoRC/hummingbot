@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 import logging
 import time
-from typing import List, Optional
 
 import numpy as np
 
@@ -13,7 +14,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class LighterPerpetualCandles(CandlesBase):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -22,7 +23,7 @@ class LighterPerpetualCandles(CandlesBase):
         return cls._logger
 
     def __init__(self, trading_pair: str, interval: str = "1m", max_records: int = 150):
-        self._market_id: Optional[int] = None
+        self._market_id: int | None = None
         super().__init__(trading_pair, interval, max_records)
 
     @property
@@ -72,9 +73,19 @@ class LighterPerpetualCandles(CandlesBase):
     def get_exchange_trading_pair(self, trading_pair: str) -> str:
         return trading_pair.split("-")[0].upper()
 
-    async def initialize_exchange_data(self):
-        if self._market_id is not None:
-            return
+    async def _initialize_exchange_data(self):
+        # Reuse the connector's already-loaded market map when backed by a Lighter connector, avoiding
+        # the redundant orderBookDetails fetch. Any miss (map not loaded, pair absent) falls back.
+        if self._connector is not None:
+            try:
+                self._market_id = int(self._connector.market_info_for_trading_pair(self._trading_pair).market_id)
+                return
+            except Exception:
+                self.logger().debug(
+                    f"Could not resolve market_id for {self._trading_pair} via the connector; "
+                    f"falling back to the orderBookDetails fetch.",
+                    exc_info=True,
+                )
         base_symbol = self._trading_pair.split("-")[0].upper()
         rest_assistant = await self._api_factory.get_rest_assistant()
         data = await rest_assistant.execute_request(
@@ -90,9 +101,9 @@ class LighterPerpetualCandles(CandlesBase):
 
     def _get_rest_candles_params(
         self,
-        start_time: Optional[int] = None,
-        end_time: Optional[int] = None,
-        limit: Optional[int] = None,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        limit: int | None = None,
     ) -> dict:
         now_ms = int(time.time() * 1000)
         start_ms = int(start_time * 1000) if start_time is not None else now_ms - self.interval_in_seconds * 1000
@@ -109,7 +120,7 @@ class LighterPerpetualCandles(CandlesBase):
             "count_back": count_back,
         }
 
-    def _parse_rest_candles(self, data: dict, end_time: Optional[int] = None) -> List[List[float]]:
+    def _parse_rest_candles(self, data: dict, end_time: int | None = None) -> list[list[float]]:
         raw_candles = data.get("c", []) if isinstance(data, dict) else []
         result = []
         for c in raw_candles:

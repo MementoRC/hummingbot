@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.core.utils.async_utils import safe_ensure_future
@@ -12,7 +14,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class HyperliquidPerpetualCandles(CandlesBase):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -31,7 +33,7 @@ class HyperliquidPerpetualCandles(CandlesBase):
             self._base_asset = self._base
         super().__init__(trading_pair, interval, max_records)
         self._ping_timeout = CONSTANTS.PING_TIMEOUT
-        self._ping_task: Optional[asyncio.Task] = None
+        self._ping_task: asyncio.Task | None = None
 
     @property
     def name(self):
@@ -110,14 +112,16 @@ class HyperliquidPerpetualCandles(CandlesBase):
         return trading_pair.replace("-", "")
 
     def _get_rest_candles_params(
-        self, start_time: Optional[int] = None, end_time: Optional[int] = None, limit: Optional[int] = None
+        self, start_time: int | None = None, end_time: int | None = None, limit: int | None = None
     ) -> dict:
         pass  # No need to implement this method for Hyperliquid
 
     def _get_rest_candles_headers(self):
         return {"Content-Type": "application/json"}
 
-    def _parse_rest_candles(self, data: dict, end_time: Optional[int] = None) -> List[List[float]]:
+    def _parse_rest_candles(self, data: dict, end_time: int | None = None) -> list[list[float]]:
+        if not data:
+            return []
         return [
             [
                 self.ensure_timestamp_in_seconds(row["t"]),
@@ -143,7 +147,7 @@ class HyperliquidPerpetualCandles(CandlesBase):
         return payload
 
     def _parse_websocket_message(self, data):
-        candles_row_dict: Dict[str, Any] = {}
+        candles_row_dict: dict[str, Any] = {}
         if data is not None and data.get("channel") == "candle":
             candle = data["data"]
             candles_row_dict["timestamp"] = self.ensure_timestamp_in_seconds(candle["t"])
@@ -188,7 +192,7 @@ class HyperliquidPerpetualCandles(CandlesBase):
             self._ping_task.cancel()
         self._ping_task = safe_ensure_future(self._ping_loop(ws))
 
-    async def _on_order_stream_interruption(self, websocket_assistant: Optional[WSAssistant] = None):
+    async def _on_order_stream_interruption(self, websocket_assistant: WSAssistant | None = None):
         """
         Clean up the ping task when the WebSocket connection is interrupted.
         """

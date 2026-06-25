@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import asyncio
 from collections import deque
 import logging
 import time
-from typing import Deque, Dict, List, Optional, Union
+from typing import Deque, Union
 
-from remote_iface import MQTTGateway
 from sqlalchemy.orm import Session
 
 from hummingbot.client.command import __all__ as commands
@@ -32,6 +33,7 @@ from hummingbot.exceptions import ArgumentParserError
 from hummingbot.logger import HummingbotLogger
 from hummingbot.logger.application_warning import ApplicationWarning
 from hummingbot.model.trade_fill import TradeFill
+from hummingbot.remote_iface.mqtt import MQTTGateway
 
 s_logger = None
 
@@ -41,7 +43,7 @@ class HummingbotApplication(*commands):
     APP_WARNING_EXPIRY_DURATION = 3600.0
     APP_WARNING_STATUS_LIMIT = 6
 
-    _main_app: Optional["HummingbotApplication"] = None
+    _main_app: "HummingbotApplication" | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -52,13 +54,13 @@ class HummingbotApplication(*commands):
 
     @classmethod
     def main_application(
-        cls, client_config_map: Optional[ClientConfigAdapter] = None, headless_mode: bool = False
+        cls, client_config_map: ClientConfigAdapter | None = None, headless_mode: bool = False
     ) -> "HummingbotApplication":
         if cls._main_app is None:
             cls._main_app = HummingbotApplication(client_config_map=client_config_map, headless_mode=headless_mode)
         return cls._main_app
 
-    def __init__(self, client_config_map: Optional[ClientConfigAdapter] = None, headless_mode: bool = False):
+    def __init__(self, client_config_map: ClientConfigAdapter | None = None, headless_mode: bool = False):
         self.client_config_map: Union[ClientConfigMap, ClientConfigAdapter] = (  # type-hint enables IDE auto-complete
             client_config_map or load_client_config_map_from_file()
         )
@@ -76,10 +78,10 @@ class HummingbotApplication(*commands):
         self._app_warnings: Deque[ApplicationWarning] = deque()
 
         # MQTT management
-        self._mqtt: Optional[MQTTGateway] = None
+        self._mqtt: MQTTGateway | None = None
 
         # Script configuration support
-        self.script_config: Optional[str] = None
+        self.script_config: str | None = None
 
         # Initialize UI components only if not in headless mode
         if not headless_mode:
@@ -115,7 +117,7 @@ class HummingbotApplication(*commands):
         return self.client_config_map.fetch_pairs_from_all_exchanges
 
     @property
-    def gateway_config_keys(self) -> List[str]:
+    def gateway_config_keys(self) -> list[str]:
         return self.trading_core.gateway_monitor.gateway_config_keys
 
     @property
@@ -123,7 +125,7 @@ class HummingbotApplication(*commands):
         return self.trading_core.strategy_file_name
 
     @strategy_file_name.setter
-    def strategy_file_name(self, value: Optional[str]):
+    def strategy_file_name(self, value: str | None):
         self.trading_core.strategy_file_name = value
 
     @property
@@ -131,15 +133,15 @@ class HummingbotApplication(*commands):
         return self.trading_core.strategy_name
 
     @strategy_name.setter
-    def strategy_name(self, value: Optional[str]):
+    def strategy_name(self, value: str | None):
         self.trading_core.strategy_name = value
 
     @property
-    def markets(self) -> Dict[str, ExchangeBase]:
+    def markets(self) -> dict[str, ExchangeBase]:
         return self.trading_core.markets
 
     @markets.setter
-    def markets(self, value: Dict[str, ExchangeBase]):
+    def markets(self, value: dict[str, ExchangeBase]):
         self.trading_core.connector_manager.connectors = value
 
     @property
@@ -267,20 +269,20 @@ class HummingbotApplication(*commands):
         for notifier in self.trading_core.notifiers:
             notifier.start()
 
-    def init_command_tabs(self) -> Dict[str, CommandTab]:
+    def init_command_tabs(self) -> dict[str, CommandTab]:
         """
         Initiates and returns a CommandTab dictionary with mostly defaults and None values, These values will be
         populated later on by HummingbotCLI
         """
-        command_tabs: Dict[str, CommandTab] = {}
+        command_tabs: dict[str, CommandTab] = {}
         for tab_class in tab_classes:
             name = tab_class.get_command_name()
             command_tabs[name] = CommandTab(name, None, None, None, tab_class)
         return command_tabs
 
     def _get_trades_from_session(
-        self, start_timestamp: int, session: Session, number_of_rows: Optional[int] = None, config_file_path: str = None
-    ) -> List[TradeFill]:
+        self, start_timestamp: int, session: Session, number_of_rows: int | None = None, config_file_path: str = None
+    ) -> list[TradeFill]:
         return self.trading_core._get_trades_from_session(start_timestamp, session, number_of_rows, config_file_path)
 
     def save_client_config(self):

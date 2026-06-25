@@ -1,15 +1,16 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import importlib
 import inspect
 import logging
 import os
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any, Callable, Dict, List, Set
 
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel, Field, field_validator
-from remote_iface import ETopicPublisher
 import yaml
 
 from hummingbot.client import settings
@@ -26,6 +27,7 @@ from hummingbot.data_feed.candles_feed.data_types import CandlesConfig
 from hummingbot.data_feed.market_data_provider import MarketDataProvider
 from hummingbot.exceptions import InvalidController
 from hummingbot.logger import HummingbotLogger
+from hummingbot.remote_iface.mqtt import ETopicPublisher
 from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple
 from hummingbot.strategy.strategy_py_base import StrategyPyBase
 from hummingbot.strategy_v2.controllers.controller_base import ControllerBase, ControllerConfigBase
@@ -77,7 +79,7 @@ class StrategyV2ConfigBase(BaseClientModel):
     """
 
     script_file_name: str = ""
-    controllers_config: List[str] = Field(
+    controllers_config: list[str] = Field(
         default=[],
         json_schema_extra={
             "prompt": "Enter controller configurations (comma-separated file paths), leave it empty if none: ",
@@ -136,7 +138,7 @@ class StrategyV2ConfigBase(BaseClientModel):
         return loaded_configs
 
     @staticmethod
-    def parse_markets_str(v: str) -> Dict[str, Set[str]]:
+    def parse_markets_str(v: str) -> dict[str, set[str]]:
         markets_dict = {}
         if v.strip():
             exchanges = v.split(":")
@@ -151,7 +153,7 @@ class StrategyV2ConfigBase(BaseClientModel):
         return markets_dict
 
     @staticmethod
-    def parse_candles_config_str(v: str) -> List[CandlesConfig]:
+    def parse_candles_config_str(v: str) -> list[CandlesConfig]:
         configs = []
         if v.strip():
             entries = v.split(":")
@@ -197,7 +199,7 @@ class StrategyV2Base(StrategyPyBase):
     """
 
     # Class-level markets definition used by both simple scripts and V2 strategies
-    markets: Dict[str, Set[str]] = {}
+    markets: dict[str, set[str]] = {}
 
     # V2-specific class attributes
     _last_config_update_ts: float = 0
@@ -266,7 +268,7 @@ class StrategyV2Base(StrategyPyBase):
             connector_name=connector_name, trading_pair=trading_pair, interval=interval
         )
 
-    def __init__(self, connectors: Dict[str, ConnectorBase], config: Optional[BaseModel] = None):
+    def __init__(self, connectors: dict[str, ConnectorBase], config: BaseModel | None = None):
         """
         Initialize the strategy.
 
@@ -274,18 +276,18 @@ class StrategyV2Base(StrategyPyBase):
         :param config: Optional configuration. If StrategyV2ConfigBase, enables controller orchestration.
         """
         super().__init__()
-        self.connectors: Dict[str, ConnectorBase] = connectors
+        self.connectors: dict[str, ConnectorBase] = connectors
         self.ready_to_trade: bool = False
         self.add_markets(list(connectors.values()))
         self.config = config
 
         # Always initialize V2 infrastructure
-        self.controllers: Dict[str, ControllerBase] = {}
-        self.controller_reports: Dict[str, Dict] = {}
+        self.controllers: dict[str, ControllerBase] = {}
+        self.controller_reports: dict[str, Dict] = {}
         self.market_data_provider = MarketDataProvider(connectors)
         self._is_stop_triggered = False
         self.mqtt_enabled = False
-        self._pub: Optional[ETopicPublisher] = None
+        self._pub: ETopicPublisher | None = None
 
         self.actions_queue = asyncio.Queue()
         self.listen_to_executor_actions_task: asyncio.Task = asyncio.create_task(self.listen_to_executor_actions())
@@ -330,7 +332,7 @@ class StrategyV2Base(StrategyPyBase):
             self.update_executors_info()
             self.update_controllers_configs()
             if self.market_data_provider.ready and not self._is_stop_triggered:
-                executor_actions: List[ExecutorAction] = self.determine_executor_actions()
+                executor_actions: list[ExecutorAction] = self.determine_executor_actions()
                 for action in executor_actions:
                     self.executor_orchestrator.execute_action(action)
 
@@ -414,7 +416,7 @@ class StrategyV2Base(StrategyPyBase):
         market_pair = self._market_trading_pair_tuple(connector_name, trading_pair)
         self.cancel_order(market_trading_pair_tuple=market_pair, order_id=order_id)
 
-    def get_active_orders(self, connector_name: str) -> List[LimitOrder]:
+    def get_active_orders(self, connector_name: str) -> list[LimitOrder]:
         """
         Returns a list of active orders for a connector.
         :param connector_name: The name of the connector.
@@ -424,7 +426,7 @@ class StrategyV2Base(StrategyPyBase):
         connector = self.connectors[connector_name]
         return [o[1] for o in orders if o[0] == connector]
 
-    def get_assets(self, connector_name: str) -> List[str]:
+    def get_assets(self, connector_name: str) -> list[str]:
         """
         Returns a unique list of unique of token names sorted alphabetically
 
@@ -437,11 +439,11 @@ class StrategyV2Base(StrategyPyBase):
             result.update(split_hb_trading_pair(trading_pair))
         return sorted(result)
 
-    def get_market_trading_pair_tuples(self) -> List[MarketTradingPairTuple]:
+    def get_market_trading_pair_tuples(self) -> list[MarketTradingPairTuple]:
         """
         Returns a list of MarketTradingPairTuple for all connectors and trading pairs combination.
         """
-        result: List[MarketTradingPairTuple] = []
+        result: list[MarketTradingPairTuple] = []
         for name, connector in self.connectors.items():
             for trading_pair in self.markets[name]:
                 result.append(self._market_trading_pair_tuple(name, trading_pair))
@@ -451,8 +453,8 @@ class StrategyV2Base(StrategyPyBase):
         """
         Returns a data frame for all asset balances for displaying purpose.
         """
-        columns: List[str] = ["Exchange", "Asset", "Total Balance", "Available Balance"]
-        data: List[Any] = []
+        columns: list[str] = ["Exchange", "Asset", "Total Balance", "Available Balance"]
+        data: list[Any] = []
         for connector_name, connector in self.connectors.items():
             for asset in self.get_assets(connector_name):
                 data.append(
@@ -654,10 +656,9 @@ class StrategyV2Base(StrategyPyBase):
         # Check if MQTT is enabled at runtime
         from hummingbot.client.hummingbot_application import HummingbotApplication
 
-        app = HummingbotApplication.main_application()
-        if app._mqtt is not None:
+        if HummingbotApplication.main_application()._mqtt is not None:
             self.mqtt_enabled = True
-            self._pub = ETopicPublisher(app._mqtt, "performance", use_bot_prefix=True)
+            self._pub = ETopicPublisher("performance", use_bot_prefix=True)
 
         # Start controllers
         for controller in self.controllers.values():
@@ -669,7 +670,7 @@ class StrategyV2Base(StrategyPyBase):
         """
         pass
 
-    def _collect_initial_positions(self) -> Dict[str, List]:
+    def _collect_initial_positions(self) -> dict[str, List]:
         """
         Collect initial positions from all controller configurations.
         Returns a dictionary mapping controller_id -> list of InitialPositionConfig.
@@ -764,7 +765,7 @@ class StrategyV2Base(StrategyPyBase):
     def is_perpetual(connector: str) -> bool:
         return "perpetual" in connector
 
-    def determine_executor_actions(self) -> List[ExecutorAction]:
+    def determine_executor_actions(self) -> list[ExecutorAction]:
         """
         Determine actions based on the provided executor handler report.
         """
@@ -774,19 +775,19 @@ class StrategyV2Base(StrategyPyBase):
         actions.extend(self.store_actions_proposal())
         return actions
 
-    def create_actions_proposal(self) -> List[CreateExecutorAction]:
+    def create_actions_proposal(self) -> list[CreateExecutorAction]:
         """
         Create actions proposal based on the current state of the executors.
         """
         raise NotImplementedError
 
-    def stop_actions_proposal(self) -> List[StopExecutorAction]:
+    def stop_actions_proposal(self) -> list[StopExecutorAction]:
         """
         Create a list of actions to stop the executors based on order refresh and early stop conditions.
         """
         raise NotImplementedError
 
-    def store_actions_proposal(self) -> List[StoreExecutorAction]:
+    def store_actions_proposal(self) -> list[StoreExecutorAction]:
         """
         Create a list of actions to store the executors that have been stopped.
         """
@@ -801,11 +802,11 @@ class StrategyV2Base(StrategyPyBase):
             ]
         return []
 
-    def get_executors_by_controller(self, controller_id: str) -> List[ExecutorInfo]:
+    def get_executors_by_controller(self, controller_id: str) -> list[ExecutorInfo]:
         """Get executors for a specific controller from the unified reports."""
         return self.controller_reports.get(controller_id, {}).get("executors", [])
 
-    def get_all_executors(self) -> List[ExecutorInfo]:
+    def get_all_executors(self) -> list[ExecutorInfo]:
         """Get all executors from all controllers."""
         return [
             executor
@@ -813,7 +814,7 @@ class StrategyV2Base(StrategyPyBase):
             for executor in executors_list
         ]
 
-    def get_positions_by_controller(self, controller_id: str) -> List[PositionSummary]:
+    def get_positions_by_controller(self, controller_id: str) -> list[PositionSummary]:
         """Get positions for a specific controller from the unified reports."""
         return self.controller_reports.get(controller_id, {}).get("positions", [])
 
@@ -828,12 +829,12 @@ class StrategyV2Base(StrategyPyBase):
         self.connectors[connector].set_position_mode(position_mode)
 
     def filter_executors(
-        self, executors: List[ExecutorInfo], filter_func: Callable[[ExecutorInfo], bool]
-    ) -> List[ExecutorInfo]:
+        self, executors: list[ExecutorInfo], filter_func: Callable[[ExecutorInfo], bool]
+    ) -> list[ExecutorInfo]:
         return [executor for executor in executors if filter_func(executor)]
 
     @staticmethod
-    def executors_info_to_df(executors_info: List[ExecutorInfo]) -> pd.DataFrame:
+    def executors_info_to_df(executors_info: list[ExecutorInfo]) -> pd.DataFrame:
         """
         Convert a list of executor handler info to a dataframe.
         """

@@ -1,6 +1,8 @@
 #!/usr/bin/env python
+from __future__ import annotations
+
 import os
-from typing import TYPE_CHECKING, Any, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.client.command.gateway_api_manager import begin_placeholder_mode
 from hummingbot.core.gateway.gateway_http_client import GatewayStatus
@@ -25,7 +27,7 @@ class GatewayConfigCommand:
     """Commands for managing gateway configuration."""
 
     @ensure_gateway_online
-    def gateway_config(self, namespace: str = None, action: str = None, args: List[str] = None):
+    def gateway_config(self, namespace: str = None, action: str = None, args: list[str] = None):
         """
         Gateway configuration management.
         Usage:
@@ -78,7 +80,7 @@ class GatewayConfigCommand:
 
     async def _show_gateway_configuration(
         self,  # type: HummingbotApplication
-        namespace: Optional[str] = None,
+        namespace: str | None = None,
     ):
         """Show gateway configuration for a namespace."""
         host = self.client_config_map.gateway.gateway_api_host
@@ -248,7 +250,7 @@ class GatewayConfigCommand:
         value: str,
         current_value: Any,
         namespace: str = None,
-    ) -> Optional[Any]:
+    ) -> Any | None:
         """
         Validate and convert the config value based on the current value type.
         Also performs special validation for path values and network values.

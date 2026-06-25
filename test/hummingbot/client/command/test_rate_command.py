@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 from copy import deepcopy
 from decimal import Decimal
-from typing import Dict, Optional
 from unittest.mock import patch
 
 import pytest
@@ -15,14 +16,14 @@ from test.mock.mock_cli import CLIMockingAssistant
 
 
 class DummyRateSource(RateSourceBase):
-    def __init__(self, price_dict: Dict[str, Decimal]):
+    def __init__(self, price_dict: dict[str, Decimal]):
         self._price_dict = price_dict
 
     @property
     def name(self):
         return "dummy_rate_source"
 
-    async def get_prices(self, quote_token: Optional[str] = None) -> Dict[str, Decimal]:
+    async def get_prices(self, quote_token: str | None = None) -> dict[str, Decimal]:
         return deepcopy(self._price_dict)
 
 

@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import pandas as pd
 
@@ -12,7 +14,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class KucoinPerpetualCandles(CandlesBase):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
     _last_ws_message_sent_timestamp = 0
     _ping_interval = 0
 
@@ -107,7 +109,7 @@ class KucoinPerpetualCandles(CandlesBase):
         return False
 
     def _get_rest_candles_params(
-        self, start_time: Optional[int] = None, end_time: Optional[int] = None, limit: Optional[int] = None
+        self, start_time: int | None = None, end_time: int | None = None, limit: int | None = None
     ) -> dict:
         """
         For API documentation, please refer to:
@@ -139,7 +141,7 @@ class KucoinPerpetualCandles(CandlesBase):
         }
         return params
 
-    def _parse_rest_candles(self, data: dict, end_time: Optional[int] = None) -> List[List[float]]:
+    def _parse_rest_candles(self, data: dict, end_time: int | None = None) -> list[list[float]]:
         return [
             [self.ensure_timestamp_in_seconds(row[0]), row[1], row[2], row[3], row[4], row[5], 0.0, 0.0, 0.0, 0.0]
             for row in data["data"]
@@ -157,7 +159,7 @@ class KucoinPerpetualCandles(CandlesBase):
         return payload
 
     def _parse_websocket_message(self, data: dict):
-        candles_row_dict: Dict[str, Any] = {}
+        candles_row_dict: dict[str, Any] = {}
         if data.get("data") is not None:
             if "candles" in data["data"]:
                 candles = data["data"]["candles"]
@@ -173,7 +175,7 @@ class KucoinPerpetualCandles(CandlesBase):
                 candles_row_dict["taker_buy_quote_volume"] = 0.0
                 return candles_row_dict
 
-    async def initialize_exchange_data(self) -> Dict[str, Any]:
+    async def _initialize_exchange_data(self) -> dict[str, Any]:
         await self._get_symbols_dict()
         await self._get_ws_token()
 

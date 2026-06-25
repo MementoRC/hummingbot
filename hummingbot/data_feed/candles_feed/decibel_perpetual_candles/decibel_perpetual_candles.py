@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import logging
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.core.web_assistant.ws_assistant import WSAssistant
@@ -12,7 +14,7 @@ if TYPE_CHECKING:
 
 
 class DecibelPerpetualCandles(CandlesBase):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -26,13 +28,13 @@ class DecibelPerpetualCandles(CandlesBase):
         interval: str = "1m",
         max_records: int = 150,
         domain: str = "decibel_perpetual",
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
     ):
         super().__init__(trading_pair, interval, max_records)
         self._domain = domain
         self._api_key = api_key
-        self._market_addr: Optional[str] = None
-        self._perp_engine_global: Optional[str] = None
+        self._market_addr: str | None = None
+        self._perp_engine_global: str | None = None
 
     @property
     def name(self):
@@ -86,7 +88,7 @@ class DecibelPerpetualCandles(CandlesBase):
             return CONSTANTS.NETNA_WSS_URL
         return CONSTANTS.WSS_URL
 
-    async def initialize_exchange_data(self):
+    async def _initialize_exchange_data(self):
         """
         Initialize market address and perp engine global address.
         These are needed for both REST and WebSocket candle subscriptions.
@@ -155,9 +157,9 @@ class DecibelPerpetualCandles(CandlesBase):
 
     def _get_rest_candles_params(
         self,
-        start_time: Optional[int] = None,
-        end_time: Optional[int] = None,
-        limit: Optional[int] = CONSTANTS.MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        limit: int | None = CONSTANTS.MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST,
     ) -> dict:
         """
         Build REST API parameters for fetching candles.
@@ -183,7 +185,7 @@ class DecibelPerpetualCandles(CandlesBase):
 
         return params
 
-    def _get_rest_candles_headers(self) -> Optional[Dict[str, str]]:
+    def _get_rest_candles_headers(self) -> dict[str, str] | None:
         """
         Decibel candles endpoint requires API key authentication.
         """
@@ -191,7 +193,7 @@ class DecibelPerpetualCandles(CandlesBase):
             return {"Authorization": f"Bearer {self._api_key}"}
         return None
 
-    def _parse_rest_candles(self, data: dict, end_time: Optional[int] = None) -> List[List[float]]:
+    def _parse_rest_candles(self, data: dict, end_time: int | None = None) -> list[list[float]]:
         """
         Parse REST API response into standard candle format.
 
@@ -235,7 +237,7 @@ class DecibelPerpetualCandles(CandlesBase):
 
         return new_hb_candles
 
-    def ws_subscription_payload(self) -> Dict[str, Any]:
+    def ws_subscription_payload(self) -> dict[str, Any]:
         """
         Build WebSocket subscription message.
 
@@ -249,7 +251,7 @@ class DecibelPerpetualCandles(CandlesBase):
             "topic": f"{CONSTANTS.WS_CANDLES_CHANNEL}:{market_param}:{CONSTANTS.INTERVALS[self.interval]}",
         }
 
-    def _parse_websocket_message(self, data: dict) -> Optional[Dict[str, Any]]:
+    def _parse_websocket_message(self, data: dict) -> dict[str, Any] | None:
         """
         Parse WebSocket candle update message.
         """

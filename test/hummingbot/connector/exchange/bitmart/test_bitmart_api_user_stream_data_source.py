@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import asyncio
 import json
-from typing import Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aiohttp import WSMsgType
@@ -32,7 +33,7 @@ class BitmartAPIUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
     async def asyncSetUp(self) -> None:
         await super().asyncSetUp()
         self.log_records = []
-        self.listening_task: Optional[asyncio.Task] = None
+        self.listening_task: asyncio.Task | None = None
         self.mocking_assistant = NetworkMockingAssistant()
         self.client_config_map = ClientConfigAdapter(ClientConfigMap())
 
@@ -112,7 +113,7 @@ class BitmartAPIUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
             "args": [
                 "test_api_key",
                 str(int(self.time_synchronizer.time() * 1e3)),
-                "f0f176c799346a7730c9c237a09d14742971f3ab59848dde75ef1ac95b04c4e5",
+                "f0f176c799346a7730c9c237a09d14742971f3ab59848dde75ef1ac95b04c4e5",  # noqa: mock
             ],  # noqa: mock
         }
         self.assertEqual(expected_login, sent_messages[0])

@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 from collections import defaultdict
 from decimal import Decimal
-from typing import Any, AsyncIterable, Dict, List, Optional, Tuple
+from typing import Any, AsyncIterable
 
 from bidict import bidict
 
@@ -42,12 +44,12 @@ class BitmartPerpetualDerivative(PerpetualDerivativePyBase):
 
     def __init__(
         self,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
         bitmart_perpetual_api_key: str = None,
         bitmart_perpetual_api_secret: str = None,
         bitmart_perpetual_memo: str = None,
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         domain: str = CONSTANTS.DOMAIN,
     ):
@@ -76,7 +78,7 @@ class BitmartPerpetualDerivative(PerpetualDerivativePyBase):
         )
 
     @property
-    def rate_limits_rules(self) -> List[RateLimit]:
+    def rate_limits_rules(self) -> list[RateLimit]:
         return CONSTANTS.RATE_LIMITS
 
     @property
@@ -119,7 +121,7 @@ class BitmartPerpetualDerivative(PerpetualDerivativePyBase):
     def funding_fee_poll_interval(self) -> int:
         return 600
 
-    def supported_order_types(self) -> List[OrderType]:
+    def supported_order_types(self) -> list[OrderType]:
         """
         :return a list of OrderType supported by this connector
         """
@@ -175,6 +177,15 @@ class BitmartPerpetualDerivative(PerpetualDerivativePyBase):
             domain=self.domain,
         )
 
+    def get_contract_size(self, trading_pair: str) -> Decimal | None:
+        """
+        Returns the contract size for the given trading pair as parsed from the exchange's contract
+        details, or ``None`` if the trading rules have not been loaded yet for that pair. Public
+        accessor so callers (e.g. the candles feed) can reuse this cached value instead of fetching
+        the contract details endpoint again.
+        """
+        return self._contract_sizes.get(trading_pair)
+
     def _format_amount_to_size(self, trading_pair, amount: Decimal) -> Decimal:
         return int(amount / self._contract_sizes[trading_pair])
 
@@ -210,7 +221,7 @@ class BitmartPerpetualDerivative(PerpetualDerivativePyBase):
         position_action: PositionAction,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         is_maker = is_maker or False
         fee = build_perpetual_trade_fee(
@@ -259,7 +270,7 @@ class BitmartPerpetualDerivative(PerpetualDerivativePyBase):
         price: Decimal,
         position_action: PositionAction = PositionAction.NIL,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         price_str = f"{price:f}"
         symbol = await self.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
         api_params = {
@@ -313,7 +324,7 @@ class BitmartPerpetualDerivative(PerpetualDerivativePyBase):
             )
             return _order_update
 
-    async def _iter_user_event_queue(self) -> AsyncIterable[Dict[str, any]]:
+    async def _iter_user_event_queue(self) -> AsyncIterable[dict[str, any]]:
         while True:
             try:
                 yield await self._user_stream_tracker.user_stream.get()
@@ -369,7 +380,7 @@ class BitmartPerpetualDerivative(PerpetualDerivativePyBase):
         else:
             raise UnknownOrderStateException(state, size, deal_size)
 
-    async def _process_user_stream_event(self, event_message: Dict[str, Any]):
+    async def _process_user_stream_event(self, event_message: dict[str, Any]):
         event_data = event_message.get("data", {})
         event_group: str = event_message.get("group", "")
         if CONSTANTS.WS_ORDERS_CHANNEL in event_group and bool(event_data):
@@ -459,7 +470,7 @@ class BitmartPerpetualDerivative(PerpetualDerivativePyBase):
                 except KeyError:
                     continue
 
-    async def _format_trading_rules(self, exchange_info_dict: Dict[str, Any]) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: dict[str, Any]) -> list[TradingRule]:
         """
         Queries the necessary API endpoint and initialize the TradingRule object for each trading pair being traded.
 
@@ -501,7 +512,7 @@ class BitmartPerpetualDerivative(PerpetualDerivativePyBase):
                 )
         return return_val
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         mapping = bidict()
         symbols_data = exchange_info.get("data", {})
         for symbol_data in filter(web_utils.is_exchange_information_valid, symbols_data.get("symbols", [])):
@@ -522,7 +533,7 @@ class BitmartPerpetualDerivative(PerpetualDerivativePyBase):
         price = float(response["last_price"])
         return price
 
-    async def get_last_traded_prices(self, trading_pairs: List[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str] = None) -> dict[str, float]:
         response = await self._api_get(path_url=CONSTANTS.EXCHANGE_INFO_URL)
         symbol_map = await self.trading_pair_symbol_map()
         last_traded_prices = {
@@ -611,7 +622,7 @@ class BitmartPerpetualDerivative(PerpetualDerivativePyBase):
             else:
                 self._perpetual_trading.remove_position(pos_key)
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         # since current connector standard reimplemented _update_order_status this method is never reached
         pass
 
@@ -619,7 +630,7 @@ class BitmartPerpetualDerivative(PerpetualDerivativePyBase):
         last_tick = int(self._last_poll_timestamp / self.UPDATE_ORDER_STATUS_MIN_INTERVAL)
         current_tick = int(self.current_timestamp / self.UPDATE_ORDER_STATUS_MIN_INTERVAL)
         if current_tick > last_tick and len(self._order_tracker.active_orders) > 0:
-            trading_pairs_to_order_map: Dict[str, Dict[str, Any]] = defaultdict(lambda: {})
+            trading_pairs_to_order_map: dict[str, dict[str, Any]] = defaultdict(lambda: {})
             for order in self._order_tracker.active_orders.values():
                 trading_pairs_to_order_map[order.trading_pair][order.exchange_order_id] = order
             trading_pairs = list(trading_pairs_to_order_map.keys())
@@ -701,7 +712,7 @@ class BitmartPerpetualDerivative(PerpetualDerivativePyBase):
                 for order in tracked_orders
             ]
             self.logger().debug(f"Polling for order status updates of {len(tasks)} orders.")
-            results: List[Dict[str, Any]] = await safe_gather(*tasks, return_exceptions=True)
+            results: list[dict[str, Any]] = await safe_gather(*tasks, return_exceptions=True)
 
             for order_update, tracked_order in zip(results, tracked_orders):
                 client_order_id = tracked_order.client_order_id
@@ -734,7 +745,7 @@ class BitmartPerpetualDerivative(PerpetualDerivativePyBase):
 
                 self._order_tracker.process_order_update(new_order_update)
 
-    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> Tuple[bool, str]:
+    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> tuple[bool, str]:
         # Set only once because at 2025-04-10 bitmart only supports one position mode accross all markets
         msg = ""
         if not self._position_mode_set:
@@ -757,7 +768,7 @@ class BitmartPerpetualDerivative(PerpetualDerivativePyBase):
             msg = "Position Mode already set."
         return success, msg
 
-    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> Tuple[bool, str]:
+    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> tuple[bool, str]:
         symbol = await self.exchange_symbol_associated_to_pair(trading_pair)
         leverage_str = str(leverage)
         # TODO: Check if there is something to handle cross/isolated
@@ -775,7 +786,7 @@ class BitmartPerpetualDerivative(PerpetualDerivativePyBase):
             msg = "Unable to set leverage"
         return success, msg
 
-    async def _fetch_last_fee_payment(self, trading_pair: str) -> Tuple[int, Decimal, Decimal]:
+    async def _fetch_last_fee_payment(self, trading_pair: str) -> tuple[int, Decimal, Decimal]:
         timestamp, funding_rate, payment = 0, Decimal("-1"), Decimal("-1")
 
         exchange_symbol = await self.exchange_symbol_associated_to_pair(trading_pair)

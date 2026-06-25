@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import logging
-from typing import Dict, Optional, Union
+from typing import Dict, Union
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.common import PositionAction, PriceType, TradeType
@@ -51,7 +53,7 @@ class TWAPExecutor(ExecutorBase):
         if self.config.is_maker:
             self.logger().warning("Maker mode is in beta. Please use with caution.")
         self._start_timestamp = self._strategy.current_timestamp
-        self._order_plan: Dict[float, Optional[TrackedOrder]] = self.create_order_plan()
+        self._order_plan: dict[float, TrackedOrder | None] = self.create_order_plan()
         self._failed_orders = []
         self._refreshed_orders = []
 
@@ -315,3 +317,14 @@ class TWAPExecutor(ExecutorBase):
         Get the total executed amount of the orders in quote asset.
         """
         return self.get_total_executed_amount() * self.get_average_executed_price()
+
+    def get_custom_info(self) -> Dict:
+        return {
+            "side": self.config.side,
+            "current_position_average_price": self.get_average_executed_price(),
+            "filled_amount_base": self.get_total_executed_amount(),
+            "filled_amount_quote": self.get_total_executed_amount_quote(),
+            "current_retries": self._current_retries,
+            "max_retries": self._max_retries,
+            "order_ids": [order.order_id for order in self._order_plan.values() if order],
+        }

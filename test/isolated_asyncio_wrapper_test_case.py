@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from asyncio import Task
 from collections.abc import Set
 import functools
-from typing import Any, Awaitable, Callable, Coroutine, List, Optional, TypeVar
+from typing import Any, Awaitable, Callable, Coroutine, TypeVar
 import unittest
 
 T = TypeVar("T")
@@ -118,7 +120,7 @@ class IsolatedAsyncioWrapperTestCase(unittest.IsolatedAsyncioTestCase):
         return self.local_event_loop.run_until_complete(asyncio.wait_for(coroutine, timeout=timeout))
 
     @staticmethod
-    async def await_task_completion(tasks_name: Optional[str | List[str]]) -> None:
+    async def await_task_completion(tasks_name: str | list[str] | None) -> None:
         """
         Await the completion of the given task.
 
@@ -168,8 +170,8 @@ class LocalClassEventLoopWrapperTestCase(unittest.TestCase):
     - `local_event_loop`: The local asyncio event loop used for each test case.
     """
 
-    main_event_loop: Optional[asyncio.AbstractEventLoop] = None
-    local_event_loop: Optional[asyncio.AbstractEventLoop] = None
+    main_event_loop: asyncio.AbstractEventLoop | None = None
+    local_event_loop: asyncio.AbstractEventLoop | None = None
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -233,8 +235,8 @@ class LocalTestEventLoopWrapperTestCase(unittest.TestCase):
     - `local_event_loop`: The local asyncio event loop used for each test case.
     """
 
-    main_event_loop: Optional[asyncio.AbstractEventLoop] = None
-    local_event_loop: Optional[asyncio.AbstractEventLoop] = None
+    main_event_loop: asyncio.AbstractEventLoop | None = None
+    local_event_loop: asyncio.AbstractEventLoop | None = None
 
     @classmethod
     def setUpClass(cls) -> None:

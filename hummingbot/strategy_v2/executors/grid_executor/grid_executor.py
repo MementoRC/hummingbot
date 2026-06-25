@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import logging
 import math
-from typing import Dict, List, Optional, Union
+from typing import Dict, Union
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.common import OrderType, PositionAction, PriceType, TradeType
@@ -67,7 +69,7 @@ class GridExecutor(ExecutorBase):
         # Grid levels
         self.grid_levels = self._generate_grid_levels()
         self.levels_by_state = {state: [] for state in GridLevelStates}
-        self._close_order: Optional[TrackedOrder] = None
+        self._close_order: TrackedOrder | None = None
         self._filled_orders = []
         self._failed_orders = []
         self._canceled_orders = []
@@ -91,7 +93,7 @@ class GridExecutor(ExecutorBase):
         self.max_close_creation_timestamp = 0
         self._open_fee_in_base = False
 
-        self._trailing_stop_trigger_pct: Optional[Decimal] = None
+        self._trailing_stop_trigger_pct: Decimal | None = None
 
     @property
     def is_perpetual(self) -> bool:
@@ -215,7 +217,7 @@ class GridExecutor(ExecutorBase):
         return grid_levels
 
     @property
-    def end_time(self) -> Optional[float]:
+    def end_time(self) -> float | None:
         """
         Calculate the end time of the position based on the time limit
 
@@ -585,7 +587,7 @@ class GridExecutor(ExecutorBase):
                 return [level for level in not_active_levels if level.price <= activation_bounds_price]
         return not_active_levels
 
-    def _sort_levels_by_proximity(self, levels: List[GridLevel]):
+    def _sort_levels_by_proximity(self, levels: list[GridLevel]):
         return sorted(levels, key=lambda level: abs(level.price - self.mid_price))
 
     def control_triple_barrier(self):
@@ -748,7 +750,7 @@ class GridExecutor(ExecutorBase):
             "realized_pnl_pct": self.realized_pnl_pct,
             "position_size_quote": self.position_size_quote,
             "position_fees_quote": self.position_fees_quote,
-            "break_even_price": self.position_break_even_price,
+            "current_position_average_price": self.position_break_even_price,
             "position_pnl_quote": self.position_pnl_quote,
             "open_liquidity_placed": self.open_liquidity_placed,
             "close_liquidity_placed": self.close_liquidity_placed,

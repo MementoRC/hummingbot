@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from collections.abc import Awaitable
 from decimal import Decimal
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 import unittest
 from unittest.mock import AsyncMock, patch
 
@@ -51,7 +53,7 @@ class TestVertexExchange(unittest.TestCase):
         super().setUp()
 
         self.log_records = []
-        self.test_task: Optional[asyncio.Task] = None
+        self.test_task: asyncio.Task | None = None
         self.client_config_map = ClientConfigAdapter(ClientConfigMap())
 
         # NOTE: RANDOM KEYS GENERATED JUST FOR UNIT TESTS
@@ -117,7 +119,7 @@ class TestVertexExchange(unittest.TestCase):
     def get_query_url(self, path: str, endpoint: str) -> str:
         return f"{CONSTANTS.BASE_URLS[self.domain]}{path}?type={endpoint}"
 
-    def get_exchange_symbols_mock(self) -> List[Dict[str, Any]]:
+    def get_exchange_symbols_mock(self) -> list[dict[str, Any]]:
         exchange_symbols = [
             {"product_id": 0, "symbol": "USDC"},
             {"product_id": 1, "symbol": "BTC"},
@@ -753,7 +755,7 @@ class TestVertexExchange(unittest.TestCase):
         )
         request_data = json.loads(order_request[1][0].kwargs["data"])["place_order"]["order"]
         self.assertEqual(
-            "0x2162Db26939B9EAF0C5404217774d166056d31B564656661756c740000000000",
+            "0x2162Db26939B9EAF0C5404217774d166056d31B564656661756c740000000000",  # noqa: mock
             request_data["sender"],  # noqa: mock
         )
         self.assertEqual("10000000000000000000000", request_data["priceX18"])
@@ -809,7 +811,7 @@ class TestVertexExchange(unittest.TestCase):
         )
         request_data = json.loads(order_request[1][0].kwargs["data"])["place_order"]["order"]
         self.assertEqual(
-            "0x2162Db26939B9EAF0C5404217774d166056d31B564656661756c740000000000",
+            "0x2162Db26939B9EAF0C5404217774d166056d31B564656661756c740000000000",  # noqa: mock
             request_data["sender"],  # noqa: mock
         )
         self.assertEqual("10000000000000000000000", request_data["priceX18"])
@@ -866,7 +868,7 @@ class TestVertexExchange(unittest.TestCase):
         )
         request_data = json.loads(order_request[1][0].kwargs["data"])["place_order"]["order"]
         self.assertEqual(
-            "0x2162Db26939B9EAF0C5404217774d166056d31B564656661756c740000000000",
+            "0x2162Db26939B9EAF0C5404217774d166056d31B564656661756c740000000000",  # noqa: mock
             request_data["sender"],  # noqa: mock
         )
         self.assertEqual("10000000000000000000000", request_data["priceX18"])

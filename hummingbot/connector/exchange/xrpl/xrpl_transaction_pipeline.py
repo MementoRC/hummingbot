@@ -13,10 +13,12 @@ This pipeline is shared across all wallet-specific transaction pools to ensure
 global serialization of transaction submissions.
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 import time
-from typing import Any, Awaitable, Optional, Tuple
+from typing import Any, Awaitable
 import uuid
 
 from hummingbot.connector.exchange.xrpl import xrpl_constants as CONSTANTS
@@ -37,7 +39,7 @@ class XRPLTransactionPipeline:
     could get the same sequence number.
     """
 
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
@@ -55,10 +57,10 @@ class XRPLTransactionPipeline:
         self._delay_seconds = submission_delay_ms / 1000.0
 
         # FIFO queue: (coroutine, future, submission_id)
-        self._submission_queue: asyncio.Queue[Tuple[Awaitable, asyncio.Future, str]] = asyncio.Queue(
+        self._submission_queue: asyncio.Queue[tuple[Awaitable, asyncio.Future, str]] = asyncio.Queue(
             maxsize=max_queue_size
         )
-        self._pipeline_task: Optional[asyncio.Task] = None
+        self._pipeline_task: asyncio.Task | None = None
         self._running = False
         self._started = False  # For lazy initialization
 
@@ -153,7 +155,7 @@ class XRPLTransactionPipeline:
     async def submit(
         self,
         coro: Awaitable,
-        submission_id: Optional[str] = None,
+        submission_id: str | None = None,
     ) -> Any:
         """
         Submit a coroutine to the serialized pipeline.
@@ -183,7 +185,7 @@ class XRPLTransactionPipeline:
             submission_id = str(uuid.uuid4())[:8]
 
         # Create future for the result
-        future: asyncio.Future = asyncio.get_event_loop().create_future()
+        future: asyncio.Future = asyncio.get_running_loop().create_future()
 
         # Add to FIFO queue
         try:

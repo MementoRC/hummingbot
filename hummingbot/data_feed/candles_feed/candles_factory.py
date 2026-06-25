@@ -1,7 +1,11 @@
-from typing import Dict, Type
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from hummingbot.data_feed.candles_feed.aevo_perpetual_candles import AevoPerpetualCandles
 from hummingbot.data_feed.candles_feed.ascend_ex_spot_candles.ascend_ex_spot_candles import AscendExSpotCandles
+from hummingbot.data_feed.candles_feed.backpack_perpetual_candles import BackpackPerpetualCandles
+from hummingbot.data_feed.candles_feed.backpack_spot_candles import BackpackSpotCandles
 from hummingbot.data_feed.candles_feed.binance_perpetual_candles import BinancePerpetualCandles
 from hummingbot.data_feed.candles_feed.binance_spot_candles import BinanceSpotCandles
 from hummingbot.data_feed.candles_feed.bitget_perpetual_candles import BitgetPerpetualCandles
@@ -35,6 +39,9 @@ from hummingbot.data_feed.candles_feed.okx_perpetual_candles.okx_perpetual_candl
 from hummingbot.data_feed.candles_feed.okx_spot_candles.okx_spot_candles import OKXSpotCandles
 from hummingbot.data_feed.candles_feed.pacifica_perpetual_candles import PacificaPerpetualCandles
 
+if TYPE_CHECKING:
+    from hummingbot.connector.connector_base import ConnectorBase
+
 
 class UnsupportedConnectorException(Exception):
     """
@@ -52,8 +59,10 @@ class CandlesFactory:
     It uses a mapping of connector names to their respective candle classes.
     """
 
-    _candles_map: Dict[str, Type[CandlesBase]] = {
+    _candles_map: dict[str, type[CandlesBase]] = {
         "aevo_perpetual": AevoPerpetualCandles,
+        "backpack": BackpackSpotCandles,
+        "backpack_perpetual": BackpackPerpetualCandles,
         "binance_perpetual": BinancePerpetualCandles,
         "binance": BinanceSpotCandles,
         "bitget": BitgetSpotCandles,
@@ -84,16 +93,23 @@ class CandlesFactory:
     }
 
     @classmethod
-    def get_candle(cls, candles_config: CandlesConfig) -> CandlesBase:
+    def get_candle(cls, candles_config: CandlesConfig, connector: "ConnectorBase" | None = None) -> CandlesBase:
         """
         Returns a Candle object based on the specified configuration.
 
         :param candles_config: CandlesConfig
+        :param connector: Optional backing connector (same exchange). When provided, the feed shares
+            the connector's rate-limit budget (its throttler) and reuses the connector's public
+            symbol map and cached exchange-data instead of fetching them itself. When ``None`` the
+            feed keeps its standalone behaviour (own throttler, own symbol/init-data logic).
         :return: Instance of CandleBase or its subclass.
         :raises UnsupportedConnectorException: If the connector is not supported.
         """
         connector_class = cls._candles_map.get(candles_config.connector)
         if connector_class:
-            return connector_class(candles_config.trading_pair, candles_config.interval, candles_config.max_records)
+            candle = connector_class(candles_config.trading_pair, candles_config.interval, candles_config.max_records)
+            if connector is not None:
+                candle.attach_connector(connector)
+            return candle
         else:
             raise UnsupportedConnectorException(candles_config.connector)

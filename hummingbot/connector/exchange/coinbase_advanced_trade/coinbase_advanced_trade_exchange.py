@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import logging
 import math
-from typing import Any, AsyncGenerator, AsyncIterable, Dict, Iterable, List, Optional, Tuple
+from typing import Any, AsyncGenerator, AsyncIterable, Iterable
 
 from async_timeout import timeout
 from bidict import bidict
@@ -61,10 +63,10 @@ class CoinbaseAdvancedTradeExchange(ExchangePyBase):
         self,
         coinbase_advanced_trade_api_key: str,
         coinbase_advanced_trade_api_secret: str,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
         use_auth_for_public_endpoints: bool = False,
-        trading_pairs: List[str] | None = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         domain: str = constants.DEFAULT_DOMAIN,
     ):
@@ -77,10 +79,10 @@ class CoinbaseAdvancedTradeExchange(ExchangePyBase):
         self._last_trades_poll_coinbase_advanced_trade_timestamp = -1
         super().__init__(balance_asset_limit, rate_limits_share_pct)
 
-        self._asset_uuid_map: Dict[str, str] = {}
+        self._asset_uuid_map: dict[str, str] = {}
         self._pair_symbol_map_initialized = False
         self._market_assets_initialized = False
-        self._market_assets: List[Dict[str, Any]] = []
+        self._market_assets: list[dict[str, Any]] = []
 
         # Update the time synchronizer logger to the current class logger
         self._time_synchronizer.logger = self.logger
@@ -102,7 +104,7 @@ class CoinbaseAdvancedTradeExchange(ExchangePyBase):
         return rep
 
     @property
-    def asset_uuid_map(self) -> Dict[str, str]:
+    def asset_uuid_map(self) -> dict[str, str]:
         return self._asset_uuid_map
 
     @staticmethod
@@ -187,11 +189,11 @@ class CoinbaseAdvancedTradeExchange(ExchangePyBase):
         return self._trading_required
 
     @property
-    def in_flight_orders(self) -> Dict[str, InFlightOrder]:
+    def in_flight_orders(self) -> dict[str, InFlightOrder]:
         return self._order_tracker.active_orders
 
     @property
-    def status_dict(self) -> Dict[str, bool]:
+    def status_dict(self) -> dict[str, bool]:
         self.logger().debug(
             f"\n   symbols_mapping_initialized: {self.trading_pair_symbol_map_ready()}\n"
             f"   order_books_initialized: {self.order_book_tracker.ready}\n"
@@ -209,10 +211,10 @@ class CoinbaseAdvancedTradeExchange(ExchangePyBase):
             "user_stream_initialized": self._is_user_stream_initialized(),
         }
 
-    def supported_order_types(self) -> List[OrderType]:
+    def supported_order_types(self) -> list[OrderType]:
         return [OrderType.MARKET, OrderType.LIMIT, OrderType.LIMIT_MAKER]
 
-    async def all_trading_pairs(self) -> List[str]:
+    async def all_trading_pairs(self) -> list[str]:
         """
         List of all trading pairs supported by the connector
 
@@ -313,7 +315,7 @@ class CoinbaseAdvancedTradeExchange(ExchangePyBase):
         order_type: OrderType,
         price: Decimal,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         """
         Places an order with the exchange and returns the order ID and the timestamp of the order.
         reference: https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_postorder
@@ -412,7 +414,7 @@ class CoinbaseAdvancedTradeExchange(ExchangePyBase):
 
         return exchange_order_id
 
-    async def cancel_all(self, timeout_seconds: float) -> List[CancellationResult]:
+    async def cancel_all(self, timeout_seconds: float) -> list[CancellationResult]:
         """
         Cancels all currently active orders. The cancellations are performed in parallel tasks.
 
@@ -420,7 +422,7 @@ class CoinbaseAdvancedTradeExchange(ExchangePyBase):
         :return: a list of CancellationResult instances, one for each of the orders to be cancelled
         """
 
-        async def execute_cancels(order_ids: List[str]) -> List[str]:
+        async def execute_cancels(order_ids: list[str]) -> list[str]:
             """
             Requests the exchange to cancel an active order
 
@@ -457,15 +459,15 @@ class CoinbaseAdvancedTradeExchange(ExchangePyBase):
     async def _cancel_lost_orders(self):
         await self._execute_orders_cancel(orders=[order for _, order in self._order_tracker.lost_orders.items()])
 
-    async def _execute_orders_cancel(self, orders: List[InFlightOrder]) -> List[str]:
+    async def _execute_orders_cancel(self, orders: list[InFlightOrder]) -> list[str]:
         try:
-            cancelled: List[bool] = await self._execute_orders_cancel_and_process_update(orders=orders)
+            cancelled: list[bool] = await self._execute_orders_cancel_and_process_update(orders=orders)
             return [order.client_order_id for order, cancelled in zip(orders, cancelled) if cancelled]
 
         except asyncio.CancelledError:
             raise
 
-    async def _execute_orders_cancel_and_process_update(self, orders: List[InFlightOrder]) -> List[bool]:
+    async def _execute_orders_cancel_and_process_update(self, orders: list[InFlightOrder]) -> list[bool]:
         cancelled = await self._place_cancels(order_ids=[o.exchange_order_id for o in orders])
         for o, c in zip(orders, cancelled):
             if c["success"]:
@@ -535,7 +537,7 @@ class CoinbaseAdvancedTradeExchange(ExchangePyBase):
             )
         return False
 
-    async def _place_cancels(self, order_ids: List[str], max_size: int = 100) -> List[Dict[str, Any]]:
+    async def _place_cancels(self, order_ids: list[str], max_size: int = 100) -> list[dict[str, Any]]:
         """
         Cancels an order with the exchange and returns the order ID and the timestamp of the order.
         https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_cancelorders
@@ -555,7 +557,7 @@ class CoinbaseAdvancedTradeExchange(ExchangePyBase):
             batched_order_ids = order_ids[i : i + max_size]
             api_data = {"order_ids": batched_order_ids}
             try:
-                cancel_result: Dict[str, Any] = await self._api_post(
+                cancel_result: dict[str, Any] = await self._api_post(
                     path_url=constants.BATCH_CANCEL_EP, data=api_data, is_auth_required=True
                 )
 
@@ -566,7 +568,7 @@ class CoinbaseAdvancedTradeExchange(ExchangePyBase):
                     all_results.extend(await self._place_cancels(order_ids=order_ids[i:], max_size=int(limit)))
                     return all_results
 
-                results: List[Dict[str, Any]] = cancel_result.get("results", [])
+                results: list[dict[str, Any]] = cancel_result.get("results", [])
                 all_results.extend(results)
 
             except OSError as e:
@@ -585,7 +587,7 @@ class CoinbaseAdvancedTradeExchange(ExchangePyBase):
         """
         params = {"product_id": await self.trading_pair_associated_to_exchange_symbol(trading_pair)}
 
-        snapshot: Dict[str, Any] = await self._api_get(
+        snapshot: dict[str, Any] = await self._api_get(
             path_url=constants.SNAPSHOT_EP,
             params=params,
             is_auth_required=True,
@@ -657,7 +659,7 @@ class CoinbaseAdvancedTradeExchange(ExchangePyBase):
         if not self._market_assets_initialized:
             await self._initialize_market_assets()
 
-        products: List[Dict[str, Any]] = self._market_assets
+        products: list[dict[str, Any]] = self._market_assets
 
         if products is None or not products:
             return
@@ -708,8 +710,8 @@ class CoinbaseAdvancedTradeExchange(ExchangePyBase):
         Fetch the list of trading pairs from the exchange and map them
         """
         try:
-            params: Dict[str, Any] = {}
-            products: Dict[str, Any] = await self._api_get(
+            params: dict[str, Any] = {}
+            products: dict[str, Any] = await self._api_get(
                 path_url=constants.get_products_endpoint(self._use_auth_for_public_endpoints),
                 params=params,
                 is_auth_required=True,
@@ -768,7 +770,7 @@ class CoinbaseAdvancedTradeExchange(ExchangePyBase):
         self.remove_balances(local_asset_names.difference(remote_asset_names))
         self.logger().debug(f"DBG:Balance '-> Balance updated: {self._account_balances}")
 
-    async def _list_one_page_of_accounts(self, cursor: str) -> Dict[str, Any]:
+    async def _list_one_page_of_accounts(self, cursor: str) -> dict[str, Any]:
         """
         List one page of accounts with maximum of 250 accounts per page.
         https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_getaccounts
@@ -776,19 +778,19 @@ class CoinbaseAdvancedTradeExchange(ExchangePyBase):
         params = {"limit": 250}
         if cursor != "0":
             params["cursor"] = cursor
-        response: Dict[str, Any] = await self._api_get(
+        response: dict[str, Any] = await self._api_get(
             path_url=constants.ACCOUNTS_LIST_EP,
             params=params,
             is_auth_required=True,
         )
         return response
 
-    async def _list_trading_accounts(self) -> AsyncGenerator[Dict[str, Any], None]:
+    async def _list_trading_accounts(self) -> AsyncGenerator[dict[str, Any], None]:
         has_next_page = True
         cursor = "0"
 
         while has_next_page:
-            page: Dict[str, Any] = await self._list_one_page_of_accounts(cursor)
+            page: dict[str, Any] = await self._list_one_page_of_accounts(cursor)
             has_next_page = page.get("has_next")
             cursor = page.get("cursor")
             for account in page.get("accounts"):
@@ -797,20 +799,20 @@ class CoinbaseAdvancedTradeExchange(ExchangePyBase):
 
     async def _get_last_traded_price(self, trading_pair: str) -> float:
         product_id = await self.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
-        params: Dict[str, Any] = {
+        params: dict[str, Any] = {
             "limit": 1,
         }
         path_url, limit_id = constants.get_ticker_endpoint(self._use_auth_for_public_endpoints)
-        trade: Dict[str, Any] = await self._api_get(
+        trade: dict[str, Any] = await self._api_get(
             path_url=path_url.format(product_id=product_id), params=params, limit_id=limit_id, is_auth_required=True
         )
         return float(trade.get("trades")[0]["price"])
 
-    async def get_all_pairs_prices(self) -> AsyncGenerator[Dict[str, str], None]:
+    async def get_all_pairs_prices(self) -> AsyncGenerator[dict[str, str], None]:
         """
         Fetches the prices of all symbols in the exchange with a default quote of USD
         """
-        products: List[Dict[str, str]] = await self._api_get(
+        products: list[dict[str, str]] = await self._api_get(
             path_url=constants.get_products_endpoint(self._use_auth_for_public_endpoints), is_auth_required=True
         )
         for p in products:
@@ -825,11 +827,11 @@ class CoinbaseAdvancedTradeExchange(ExchangePyBase):
             ):
                 yield {p.get("product_id"): p.get("price")}
 
-    async def get_exchange_rates(self, quote_token: str) -> Dict[str, str] | None:
+    async def get_exchange_rates(self, quote_token: str) -> dict[str, str] | None:
         """
         Fetches the prices of all symbols in the exchange with a default quote of USD
         """
-        response: Dict[str, Any] = await self._api_get(
+        response: dict[str, Any] = await self._api_get(
             path_url=constants.EXCHANGE_RATES_QUOTE_EP.format(quote_token=quote_token),
             limit_id=constants.EXCHANGE_RATES_QUOTE_LIMIT_ID,
             is_auth_required=False,
@@ -843,7 +845,7 @@ class CoinbaseAdvancedTradeExchange(ExchangePyBase):
         """
         Update fees information from the exchange
         """
-        fees: Dict[str, Any] = await self._api_get(path_url=constants.TRANSACTIONS_SUMMARY_EP, is_auth_required=True)
+        fees: dict[str, Any] = await self._api_get(path_url=constants.TRANSACTIONS_SUMMARY_EP, is_auth_required=True)
         self._trading_fees = fees
 
     async def _iter_user_event_queue(self) -> AsyncIterable[CoinbaseAdvancedTradeCumulativeUpdate]:
@@ -935,7 +937,7 @@ class CoinbaseAdvancedTradeExchange(ExchangePyBase):
                 in_flight_orders > 0 and small_interval_current_tick > small_interval_last_tick
             )
 
-        async def query_trades(pair: str, timestamp=None) -> List[Dict[str, Any]]:
+        async def query_trades(pair: str, timestamp=None) -> list[dict[str, Any]]:
             """Queries trades for a trading pair."""
             trading_pairs = []
             trading_pair = await self.exchange_symbol_associated_to_pair(trading_pair=pair)
@@ -944,7 +946,7 @@ class CoinbaseAdvancedTradeExchange(ExchangePyBase):
             if timestamp is not None:
                 p["start_sequence_timestamp"] = timestamp
 
-            t: List[Dict[str, Any]] = await self._api_get(path_url=constants.FILLS_EP, params=p, is_auth_required=True)
+            t: list[dict[str, Any]] = await self._api_get(path_url=constants.FILLS_EP, params=p, is_auth_required=True)
             return t
 
         if is_execution_time():
@@ -1033,7 +1035,7 @@ class CoinbaseAdvancedTradeExchange(ExchangePyBase):
                     else:
                         self.logger().debug(f"Trade without matching order_id and not in the DB: {trade}")
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         """
         Queries all trades for an order.
         https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_getfills
@@ -1045,7 +1047,7 @@ class CoinbaseAdvancedTradeExchange(ExchangePyBase):
             order_ids.append(str(order_id))
             # product_id: str = await self.exchange_symbol_associated_to_pair(trading_pair=order.trading_pair)
             params = {"order_ids": order_ids}
-            all_fills_response: Dict[str, Any] = await self._api_get(
+            all_fills_response: dict[str, Any] = await self._api_get(
                 path_url=constants.FILLS_EP, params=params, is_auth_required=True
             )
 
@@ -1091,10 +1093,10 @@ class CoinbaseAdvancedTradeExchange(ExchangePyBase):
         self.logger().debug(f"Checking network status of {self.name} by querying server time.")
         await self._api_get(path_url=constants.SERVER_TIME_EP)
 
-    async def _format_trading_rules(self, e: Dict[str, Any]) -> List[TradingRule]:
+    async def _format_trading_rules(self, e: dict[str, Any]) -> list[TradingRule]:
         raise NotImplementedError(f"This method is not implemented by {self.name} connector")
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         raise NotImplementedError(f"This method is not implemented by {self.name} connector")
 
     def _make_trading_rules_request(self) -> Any:

@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import json
 import re
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
@@ -97,7 +99,7 @@ class AscendExExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTest
         }
 
     @property
-    def all_symbols_including_invalid_pair_mock_response(self) -> Tuple[str, Any]:
+    def all_symbols_including_invalid_pair_mock_response(self) -> tuple[str, Any]:
         response = {
             "code": 0,
             "data": [
@@ -362,7 +364,7 @@ class AscendExExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTest
         self.assertIn("sn", request_params)
 
     def configure_successful_cancelation_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = self.private_rest_url(CONSTANTS.ORDER_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -371,7 +373,7 @@ class AscendExExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTest
         return url
 
     def configure_erroneous_cancelation_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = self.private_rest_url(CONSTANTS.ORDER_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -380,7 +382,7 @@ class AscendExExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTest
 
     def configure_one_successful_one_erroneous_cancel_all_response(
         self, successful_order: InFlightOrder, erroneous_order: InFlightOrder, mock_api: aioresponses
-    ) -> List[str]:
+    ) -> list[str]:
         """
         :return: a list of all configured URLs for the cancelations
         """
@@ -392,20 +394,20 @@ class AscendExExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTest
         return all_urls
 
     def configure_order_not_found_error_cancelation_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         # Implement the expected not found response when enabling test_cancel_order_not_found_in_the_exchange
         raise NotImplementedError
 
     def configure_order_not_found_error_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
-    ) -> List[str]:
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
+    ) -> list[str]:
         # Implement the expected not found response when enabling
         # test_lost_order_removed_if_not_found_during_order_status_update
         raise NotImplementedError
 
     def configure_completely_filled_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = f"{self.private_rest_url(CONSTANTS.ORDER_STATUS_PATH_URL)}?orderId=21"
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -415,7 +417,7 @@ class AscendExExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTest
         return url
 
     def configure_canceled_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = f"{self.private_rest_url(CONSTANTS.ORDER_STATUS_PATH_URL)}?orderId=21"
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -425,7 +427,7 @@ class AscendExExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTest
         return url
 
     def configure_erroneous_http_fill_trade_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.public_rest_url(path_url="")
         url = url.replace("/v1/", f"/{CONSTANTS.BALANCE_HISTORY_PATH_URL}")
@@ -434,7 +436,7 @@ class AscendExExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTest
         return url
 
     def configure_open_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         """
         :return: the URL configured
@@ -450,7 +452,7 @@ class AscendExExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTest
         return url
 
     def configure_http_error_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = f"{self.private_rest_url(CONSTANTS.ORDER_STATUS_PATH_URL)}?orderId=21"
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -462,7 +464,7 @@ class AscendExExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTest
         return url
 
     def configure_partially_filled_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = f"{self.private_rest_url(CONSTANTS.ORDER_STATUS_PATH_URL)}?orderId=21"
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -475,7 +477,7 @@ class AscendExExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTest
         return url
 
     def configure_partial_fill_trade_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.public_rest_url(path_url="")
         url = url.replace("/v1/", f"/{CONSTANTS.BALANCE_HISTORY_PATH_URL}")
@@ -485,7 +487,7 @@ class AscendExExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTest
         return url
 
     def configure_full_fill_trade_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.public_rest_url(path_url="")
         url = url.replace("/v1/", f"/{CONSTANTS.BALANCE_HISTORY_PATH_URL}")
@@ -845,7 +847,7 @@ class AscendExExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTest
         pass
 
     def _validate_auth_credentials_taking_parameters_from_argument(
-        self, request_call_tuple: RequestCall, params: Dict[str, Any]
+        self, request_call_tuple: RequestCall, params: dict[str, Any]
     ):
         self.assertIn("x-auth-timestamp", params)
         self.assertIn("x-auth-signature", params)

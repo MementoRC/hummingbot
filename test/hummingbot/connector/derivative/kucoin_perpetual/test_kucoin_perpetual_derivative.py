@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import asyncio
 from copy import deepcopy
 from decimal import Decimal
 import json
 import re
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Any, Callable
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
@@ -222,7 +224,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         return mock_response
 
     @property
-    def all_symbols_including_invalid_pair_mock_response(self) -> Tuple[str, Any]:
+    def all_symbols_including_invalid_pair_mock_response(self) -> tuple[str, Any]:
         mock_response = {
             "code": "200000",
             "data": [
@@ -463,28 +465,30 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         }
 
     @property
-    def expected_supported_position_modes(self) -> List[PositionMode]:
+    def expected_supported_position_modes(self) -> list[PositionMode]:
         raise NotImplementedError  # test is overwritten
 
     @property
     def target_funding_info_next_funding_utc_str(self):
-        datetime_str = str(pd.Timestamp.utcfromtimestamp(self.target_funding_info_next_funding_utc_timestamp)).replace(
-            " ", "T"
-        )  # + "Z"
+        datetime_str = str(
+            pd.Timestamp.fromtimestamp(self.target_funding_info_next_funding_utc_timestamp, tz=pd.Timestamp.UTC)
+        ).replace(" ", "T")  # + "Z"
         return datetime_str
 
     @property
     def target_funding_info_next_funding_utc_str_ws_updated(self):
         datetime_str = str(
-            pd.Timestamp.utcfromtimestamp(self.target_funding_info_next_funding_utc_timestamp_ws_updated)
+            pd.Timestamp.fromtimestamp(
+                self.target_funding_info_next_funding_utc_timestamp_ws_updated, tz=pd.Timestamp.UTC
+            )
         ).replace(" ", "T")  # + "Z"
         return datetime_str
 
     @property
     def target_funding_payment_timestamp_str(self):
-        datetime_str = str(pd.Timestamp.utcfromtimestamp(self.target_funding_payment_timestamp)).replace(
-            " ", "T"
-        )  # + "Z"
+        datetime_str = str(
+            pd.Timestamp.fromtimestamp(self.target_funding_payment_timestamp, tz=pd.Timestamp.UTC)
+        ).replace(" ", "T")  # + "Z"
         return datetime_str
 
     @property
@@ -622,7 +626,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         """
         :return: the URL configured for the cancelation
@@ -639,7 +643,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.CANCEL_ORDER_PATH_URL.format(orderid=order.exchange_order_id)
@@ -657,7 +661,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         successful_order: InFlightOrder,
         erroneous_order: InFlightOrder,
         mock_api: aioresponses,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         :return: a list of all configured URLs for the cancelations
         """
@@ -669,7 +673,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         return all_urls
 
     def configure_completely_filled_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.QUERY_ORDER_BY_EXCHANGE_ORDER_ID_PATH_URL.format(orderid=order.exchange_order_id)
@@ -682,7 +686,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.QUERY_ORDER_BY_EXCHANGE_ORDER_ID_PATH_URL.format(orderid=order.exchange_order_id)
@@ -695,7 +699,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.QUERY_ORDER_BY_EXCHANGE_ORDER_ID_PATH_URL.format(orderid=order.exchange_order_id)
@@ -709,7 +713,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.QUERY_ORDER_BY_EXCHANGE_ORDER_ID_PATH_URL.format(orderid=order.exchange_order_id)
@@ -722,7 +726,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.QUERY_ORDER_BY_EXCHANGE_ORDER_ID_PATH_URL.format(orderid=order.exchange_order_id)
@@ -735,7 +739,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.QUERY_ALL_ORDER_PATH_URL, exchange_order_id=order.exchange_order_id
@@ -749,7 +753,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.GET_FILL_INFO_PATH_URL.format(orderid=order.exchange_order_id),
@@ -762,7 +766,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.GET_RECENT_FILLS_INFO_PATH_URL,
@@ -775,7 +779,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.ACTIVE_ORDER_PATH_URL, exchange_order_id=order.exchange_order_id
@@ -788,7 +792,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self,
         position_mode: PositionMode,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ):
         url = web_utils.get_rest_url_for_endpoint(endpoint=CONSTANTS.SET_LEVERAGE_PATH_URL)
         response = {"code": "200000", "data": True}
@@ -800,7 +804,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self,
         position_mode: PositionMode,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ):
         url = web_utils.get_rest_url_for_endpoint(endpoint=CONSTANTS.SET_LEVERAGE_PATH_URL)
         error_code = "300016"
@@ -814,8 +818,8 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self,
         leverage: PositionMode,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> Tuple[str, str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> tuple[str, str]:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.GET_RISK_LIMIT_LEVEL_PATH_URL.format(symbol=self.exchange_trading_pair)
         )
@@ -855,7 +859,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self,
         leverage: int,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ):
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.GET_RISK_LIMIT_LEVEL_PATH_URL.format(symbol=self.exchange_trading_pair)
@@ -1518,7 +1522,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         pass
 
     def configure_order_not_found_error_cancelation_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.CANCEL_ORDER_PATH_URL.format(orderid=order.exchange_order_id)
@@ -1532,8 +1536,8 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         return url
 
     def configure_order_not_found_error_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
-    ) -> List[str]:
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
+    ) -> list[str]:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.QUERY_ORDER_BY_EXCHANGE_ORDER_ID_PATH_URL.format(orderid=order.exchange_order_id)
         )
@@ -1797,7 +1801,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self.assertTrue(order.is_failure)
 
     @aioresponses()
-    def test_fail_max_leverage(self, mock_api, callback: Optional[Callable] = lambda *args, **kwargs: None):
+    def test_fail_max_leverage(self, mock_api, callback: Callable | None = lambda *args, **kwargs: None):
         target_leverage = 10000
         request_sent_event = asyncio.Event()
         url = web_utils.get_rest_url_for_endpoint(

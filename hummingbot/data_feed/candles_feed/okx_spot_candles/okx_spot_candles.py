@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import logging
-from typing import List, Optional
 
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.data_feed.candles_feed.candles_base import CandlesBase
@@ -8,7 +9,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class OKXSpotCandles(CandlesBase):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -75,9 +76,9 @@ class OKXSpotCandles(CandlesBase):
 
     def _get_rest_candles_params(
         self,
-        start_time: Optional[int] = None,
-        end_time: Optional[int] = None,
-        limit: Optional[int] = CONSTANTS.MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        limit: int | None = CONSTANTS.MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST,
     ) -> dict:
         """
         For API documentation, please refer to:
@@ -91,7 +92,7 @@ class OKXSpotCandles(CandlesBase):
         params["after"] = end_time * 1000
         return params
 
-    def _parse_rest_candles(self, data: dict, end_time: Optional[int] = None) -> List[List[float]]:
+    def _parse_rest_candles(self, data: dict, end_time: int | None = None) -> list[list[float]]:
         return [
             [self.ensure_timestamp_in_seconds(row[0]), row[1], row[2], row[3], row[4], row[5], row[6], 0.0, 0.0, 0.0]
             for row in data["data"]

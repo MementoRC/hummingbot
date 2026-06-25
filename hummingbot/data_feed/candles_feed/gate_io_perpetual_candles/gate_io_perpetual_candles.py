@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import logging
-from typing import List, Optional
 
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.data_feed.candles_feed.candles_base import CandlesBase
@@ -8,7 +9,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class GateioPerpetualCandles(CandlesBase):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -56,7 +57,15 @@ class GateioPerpetualCandles(CandlesBase):
     def intervals(self):
         return CONSTANTS.INTERVALS
 
-    async def initialize_exchange_data(self):
+    async def _initialize_exchange_data(self):
+        # Reuse the connector's trading rules when backed by a Gate.io perpetual connector: the
+        # quanto_multiplier is stored there as the min base amount increment, avoiding the redundant
+        # contract-info fetch. If the rules are not polled yet, fall back to the feed's own fetch.
+        if self._connector is not None:
+            trading_rule = self._connector.trading_rules.get(self._trading_pair)
+            if trading_rule is not None:
+                self.quanto_multiplier = float(trading_rule.min_base_amount_increment)
+                return
         await self.get_exchange_trading_pair_quanto_multiplier()
 
     async def check_network(self) -> NetworkStatus:
@@ -89,9 +98,9 @@ class GateioPerpetualCandles(CandlesBase):
 
     def _get_rest_candles_params(
         self,
-        start_time: Optional[int] = None,
-        end_time: Optional[int] = None,
-        limit: Optional[int] = CONSTANTS.MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        limit: int | None = CONSTANTS.MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST,
     ) -> dict:
         """
         For API documentation, please refer to:
@@ -99,7 +108,7 @@ class GateioPerpetualCandles(CandlesBase):
         """
         return {"contract": self._ex_trading_pair, "interval": self.interval, "from": start_time, "to": end_time}
 
-    def _parse_rest_candles(self, data: dict, end_time: Optional[int] = None) -> List[List[float]]:
+    def _parse_rest_candles(self, data: dict, end_time: int | None = None) -> list[list[float]]:
         new_hb_candles = []
         for i in data:
             timestamp = i.get("t")

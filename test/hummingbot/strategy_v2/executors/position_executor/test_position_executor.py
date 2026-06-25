@@ -1,4 +1,5 @@
 from decimal import Decimal
+import logging
 from unittest.mock import MagicMock, PropertyMock, patch
 
 from hummingbot.connector.exchange_py_base import ExchangePyBase
@@ -8,7 +9,6 @@ from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState,
 from hummingbot.core.data_type.order_candidate import OrderCandidate
 from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee, TokenAmount
 from hummingbot.core.event.events import BuyOrderCompletedEvent, MarketOrderFailureEvent, OrderCancelledEvent
-from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.position_executor.data_types import PositionExecutorConfig, TripleBarrierConfig
 from hummingbot.strategy_v2.executors.position_executor.position_executor import PositionExecutor
@@ -126,7 +126,7 @@ class TestPositionExecutor(IsolatedAsyncioWrapperTestCase):
         self.assertEqual(position_executor.config.triple_barrier_config.time_limit_order_type, OrderType.MARKET)
         self.assertEqual(position_executor.open_filled_amount, Decimal("0"))
         self.assertEqual(position_executor.config.triple_barrier_config.trailing_stop, None)
-        self.assertIsInstance(position_executor.logger(), HummingbotLogger)
+        self.assertIsInstance(position_executor.logger(), logging.Logger)
 
     def get_position_executor_running_from_config(self, position_config):
         position_executor = PositionExecutor(self.strategy, position_config)

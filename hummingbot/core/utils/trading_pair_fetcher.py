@@ -3,13 +3,12 @@ from __future__ import annotations
 import logging
 from typing import Any, Awaitable, Callable
 
-from async_utils.core import safe_ensure_future
-
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
 from hummingbot.client.settings import AllConnectorSettings, ConnectorSetting
 from hummingbot.logger import HummingbotLogger
 
 from ...client.config.security import Security
+from .async_utils import safe_ensure_future
 
 
 class TradingPairFetcher:
@@ -23,7 +22,7 @@ class TradingPairFetcher:
         return cls._tpf_logger
 
     @classmethod
-    def get_instance(cls, client_config_map: ClientConfigAdapter | None = None) -> "TradingPairFetcher":
+    def get_instance(cls, client_config_map: "ClientConfigAdapter" | None = None) -> "TradingPairFetcher":
         if cls._sf_shared_instance is None:
             client_config_map = client_config_map or cls._get_client_config_map()
             cls._sf_shared_instance = TradingPairFetcher(client_config_map)

@@ -2,7 +2,7 @@ from copy import deepcopy
 import datetime
 from decimal import Decimal
 import math
-from typing import Dict, List, Tuple
+from typing import List
 import unittest
 
 import numpy as np
@@ -145,7 +145,7 @@ class AvellanedaMarketMakingUnitTests(unittest.TestCase):
             AllConnectorSettings.paper_trade_connectors_names = self._original_paper_trade_exchanges
         super().tearDown()
 
-    def get_default_map(self) -> Dict[str, str]:
+    def get_default_map(self) -> dict[str, str]:
         config_settings = {
             "exchange": self.market.name,
             "market": self.trading_pair,
@@ -673,8 +673,8 @@ class AvellanedaMarketMakingUnitTests(unittest.TestCase):
     def test_execute_orders_proposal(self):
         self.assertEqual(0, len(self.strategy.active_orders))
 
-        buys: List[PriceSize] = [PriceSize(price=Decimal("99"), size=Decimal("1"))]
-        sells: List[PriceSize] = [PriceSize(price=Decimal("101"), size=Decimal("1"))]
+        buys: list[PriceSize] = [PriceSize(price=Decimal("99"), size=Decimal("1"))]
+        sells: list[PriceSize] = [PriceSize(price=Decimal("101"), size=Decimal("1"))]
         proposal: Proposal = Proposal(buys, sells)
 
         self.strategy.execute_orders_proposal(proposal)
@@ -693,8 +693,8 @@ class AvellanedaMarketMakingUnitTests(unittest.TestCase):
     def test_cancel_order(self):
         self.assertEqual(0, len(self.strategy.active_orders))
 
-        buys: List[PriceSize] = [PriceSize(price=Decimal("99"), size=Decimal("1"))]
-        sells: List[PriceSize] = [PriceSize(price=Decimal("101"), size=Decimal("1"))]
+        buys: list[PriceSize] = [PriceSize(price=Decimal("99"), size=Decimal("1"))]
+        sells: list[PriceSize] = [PriceSize(price=Decimal("101"), size=Decimal("1"))]
         proposal: Proposal = Proposal(buys, sells)
 
         self.strategy.execute_orders_proposal(proposal)
@@ -817,7 +817,7 @@ class AvellanedaMarketMakingUnitTests(unittest.TestCase):
 
     def test_create_proposal_based_on_order_override(self):
         # Initial check for empty order_override
-        expected_output: Tuple[List, List] = ([], [])
+        expected_output: tuple[List, List] = ([], [])
         self.assertEqual(expected_output, self.strategy.create_proposal_based_on_order_override())
 
         order_override = {"order_1": ["sell", 2.5, 100], "order_2": ["buy", 0.5, 100]}
@@ -1083,7 +1083,7 @@ class AvellanedaMarketMakingUnitTests(unittest.TestCase):
         self.assertEqual(str(expected_proposal), str(self.strategy.create_base_proposal()))
 
     def test_get_adjusted_available_balance(self):
-        expected_available_balance: Tuple[Decimal, Decimal] = (Decimal("1"), Decimal("500"))  # Initial asset balance
+        expected_available_balance: tuple[Decimal, Decimal] = (Decimal("1"), Decimal("500"))  # Initial asset balance
         self.assertEqual(
             expected_available_balance, self.strategy.get_adjusted_available_balance(self.strategy.active_orders)
         )
@@ -1126,8 +1126,8 @@ class AvellanedaMarketMakingUnitTests(unittest.TestCase):
         )
 
         # Intentionally make top_bid/ask_price lower/higher respectively.
-        ob_bids: List[OrderBookRow] = [OrderBookRow(bid_price * Decimal("0.5"), self.order_amount, 2)]
-        ob_asks: List[OrderBookRow] = [OrderBookRow(ask_price * Decimal("1.5"), self.order_amount, 2)]
+        ob_bids: list[OrderBookRow] = [OrderBookRow(bid_price * Decimal("0.5"), self.order_amount, 2)]
+        ob_asks: list[OrderBookRow] = [OrderBookRow(ask_price * Decimal("1.5"), self.order_amount, 2)]
         self.market.order_books[self.trading_pair].apply_snapshot(ob_bids, ob_asks, 2)
 
         new_proposal: Proposal = deepcopy(initial_proposal)
@@ -1191,8 +1191,8 @@ class AvellanedaMarketMakingUnitTests(unittest.TestCase):
         # self.strategy.add_transaction_costs_to_orders = True
 
         #   Intentionally make top_bid/ask_price lower/higher respectively & set TradeFees
-        ob_bids: List[OrderBookRow] = [OrderBookRow(bid_price * Decimal("0.5"), self.order_amount, 2)]
-        ob_asks: List[OrderBookRow] = [OrderBookRow(ask_price * Decimal("1.5"), self.order_amount, 2)]
+        ob_bids: list[OrderBookRow] = [OrderBookRow(bid_price * Decimal("0.5"), self.order_amount, 2)]
+        ob_asks: list[OrderBookRow] = [OrderBookRow(ask_price * Decimal("1.5"), self.order_amount, 2)]
         self.market.order_books[self.trading_pair].apply_snapshot(ob_bids, ob_asks, 2)
 
         expected_bid_price = self.market.quantize_order_price(
@@ -1360,8 +1360,8 @@ class AvellanedaMarketMakingUnitTests(unittest.TestCase):
         bid_price: Decimal = Decimal("99.5")
         ask_price: Decimal = Decimal("101.5")
 
-        buy_prices: List[Decimal] = [bid_price]
-        sell_prices: List[Decimal] = [ask_price]
+        buy_prices: list[Decimal] = [bid_price]
+        sell_prices: list[Decimal] = [ask_price]
 
         bid_price: Decimal = Decimal("98.5")
         ask_price: Decimal = Decimal("100.5")

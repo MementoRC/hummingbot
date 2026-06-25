@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import logging
 import time
-from typing import List, Optional
 
 import pandas as pd
 
@@ -13,7 +14,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class KucoinSpotCandles(CandlesBase):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
     _last_ws_message_sent_timestamp = 0
     _ping_interval = 0
 
@@ -97,9 +98,9 @@ class KucoinSpotCandles(CandlesBase):
 
     def _get_rest_candles_params(
         self,
-        start_time: Optional[int] = None,
-        end_time: Optional[int] = None,
-        limit: Optional[int] = CONSTANTS.MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        limit: int | None = CONSTANTS.MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST,
     ) -> dict:
         """
         For API documentation, please refer to:
@@ -112,7 +113,7 @@ class KucoinSpotCandles(CandlesBase):
             params["endAt"] = end_time
         return params
 
-    def _parse_rest_candles(self, data: dict, end_time: Optional[int] = None) -> List[List[float]]:
+    def _parse_rest_candles(self, data: dict, end_time: int | None = None) -> list[list[float]]:
         return [
             [self.ensure_timestamp_in_seconds(row[0]), row[1], row[3], row[4], row[2], row[5], row[6], 0.0, 0.0, 0.0]
             for row in data["data"]
@@ -145,7 +146,7 @@ class KucoinSpotCandles(CandlesBase):
             candles_row_dict["taker_buy_quote_volume"] = 0.0
             return candles_row_dict
 
-    async def initialize_exchange_data(self):
+    async def _initialize_exchange_data(self):
         rest_assistant = await self._api_factory.get_rest_assistant()
         connection_info = await rest_assistant.execute_request(
             url=self.public_ws_url,
