@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import asyncio
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 from hummingbot.connector.derivative.bitmart_perpetual.bitmart_perpetual_auth import BitmartPerpetualAuth
 import hummingbot.connector.derivative.bitmart_perpetual.bitmart_perpetual_constants as CONSTANTS
@@ -19,7 +21,7 @@ if TYPE_CHECKING:
 class BitmartPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
     LISTEN_KEY_KEEP_ALIVE_INTERVAL = 1800  # Recommended to Ping/Update listen key to keep connection alive
     HEARTBEAT_TIME_INTERVAL = 30.0
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
@@ -33,7 +35,7 @@ class BitmartPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
         self._domain = domain
         self._api_factory = api_factory
         self._auth = auth
-        self._ws_assistants: List[WSAssistant] = []
+        self._ws_assistants: list[WSAssistant] = []
         self._connector = connector
         self._listen_for_user_stream_task = None
 
@@ -52,7 +54,7 @@ class BitmartPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
 
         :param output: the queue to use to store the received messages
         """
-        ws: Optional[WSAssistant] = None
+        ws: WSAssistant | None = None
         url = web_utils.wss_url(CONSTANTS.PRIVATE_WS_ENDPOINT, self._domain)
         while True:
             try:
@@ -93,7 +95,7 @@ class BitmartPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
 
     async def _subscribe_to_channels(self, ws: WSAssistant, url: str):
         try:
-            channels_to_subscribe: List[str] = [
+            channels_to_subscribe: list[str] = [
                 CONSTANTS.WS_POSITIONS_CHANNEL,
                 CONSTANTS.WS_ORDERS_CHANNEL,
                 CONSTANTS.WS_ACCOUNT_CHANNEL,

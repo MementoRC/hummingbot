@@ -1,5 +1,5 @@
-import logging
 from decimal import Decimal
+import logging
 from unittest.mock import MagicMock, PropertyMock, patch
 
 from hummingbot.connector.exchange_py_base import ExchangePyBase

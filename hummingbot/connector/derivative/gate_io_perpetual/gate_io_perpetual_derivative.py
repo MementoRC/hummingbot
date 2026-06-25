@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from bidict import bidict
 
@@ -50,9 +52,9 @@ class GateIoPerpetualDerivative(PerpetualDerivativePyBase):
         gate_io_perpetual_api_key: str,
         gate_io_perpetual_secret_key: str,
         gate_io_perpetual_user_id: str,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         domain: str = DEFAULT_DOMAIN,
     ):
@@ -140,7 +142,7 @@ class GateIoPerpetualDerivative(PerpetualDerivativePyBase):
         amount = size * quanto_multiplier
         return amount
 
-    def supported_order_types(self) -> List[OrderType]:
+    def supported_order_types(self) -> list[OrderType]:
         """
         :return a list of OrderType supported by this connector.
         Note that Market order type is no longer required and will not be used.
@@ -213,7 +215,7 @@ class GateIoPerpetualDerivative(PerpetualDerivativePyBase):
         await self._update_trading_rules()
         await super().start_network()
 
-    async def _format_trading_rules(self, raw_trading_pair_info) -> List[TradingRule]:
+    async def _format_trading_rules(self, raw_trading_pair_info) -> list[TradingRule]:
         """
         Converts json API response into a dictionary of trading rules.
         :param symbols_info: The json API response
@@ -296,7 +298,7 @@ class GateIoPerpetualDerivative(PerpetualDerivativePyBase):
         order_type: OrderType,
         price: Decimal,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         symbol = await self.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
         size = self._format_amount_to_size(trading_pair, amount)
         data = {
@@ -405,7 +407,7 @@ class GateIoPerpetualDerivative(PerpetualDerivativePyBase):
             )
             self._account_balances[asset_name] = Decimal(str(account["balance"]))
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         trade_updates = []
 
         try:
@@ -429,7 +431,7 @@ class GateIoPerpetualDerivative(PerpetualDerivativePyBase):
 
         return trade_updates
 
-    def _create_trade_update_with_order_fill_data(self, order_fill: Dict[str, Any], order: InFlightOrder):
+    def _create_trade_update_with_order_fill_data(self, order_fill: dict[str, Any], order: InFlightOrder):
         fee_asset = order.quote_asset
         # no "position_action" in return, should use AddedToCostTradeFee, same as new_spot_fee
         fee = TradeFeeBase.new_spot_fee(
@@ -474,7 +476,7 @@ class GateIoPerpetualDerivative(PerpetualDerivativePyBase):
 
         return order_update
 
-    def _create_order_update_with_order_status_data(self, order_status: Dict[str, Any], order: InFlightOrder):
+    def _create_order_update_with_order_status_data(self, order_status: dict[str, Any], order: InFlightOrder):
         client_order_id = str(order_status.get("text", ""))
         state = self._normalise_order_message_state(order_status, order) or order.current_state
 
@@ -487,7 +489,7 @@ class GateIoPerpetualDerivative(PerpetualDerivativePyBase):
         )
         return order_update
 
-    def _normalise_order_message_state(self, order_msg: Dict[str, Any], tracked_order):
+    def _normalise_order_message_state(self, order_msg: dict[str, Any], tracked_order):
         state = None
         # we do not handle:
         #   "failed" because it is handled by create order
@@ -519,7 +521,7 @@ class GateIoPerpetualDerivative(PerpetualDerivativePyBase):
         order_side: TradeType,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         is_maker = is_maker or False
         fee = build_trade_fee(
@@ -555,7 +557,7 @@ class GateIoPerpetualDerivative(PerpetualDerivativePyBase):
             try:
                 if isinstance(event_message, dict):
                     channel: str = event_message.get("channel", None)
-                    results: List[Dict[str, Any]] = event_message.get("result", None)
+                    results: list[dict[str, Any]] = event_message.get("result", None)
                 elif event_message is asyncio.CancelledError:
                     raise asyncio.CancelledError
                 else:
@@ -581,7 +583,7 @@ class GateIoPerpetualDerivative(PerpetualDerivativePyBase):
                 self.logger().error("Unexpected error in user stream listener loop.", exc_info=True)
                 await self._sleep(5.0)
 
-    def _process_trade_message(self, trade: Dict[str, Any], client_order_id: Optional[str] = None):
+    def _process_trade_message(self, trade: dict[str, Any], client_order_id: str | None = None):
         """
         Updates in-flight order and trigger order filled event for trade message received. Triggers order completed
         event if the total executed amount equals to the specified order amount.
@@ -597,7 +599,7 @@ class GateIoPerpetualDerivative(PerpetualDerivativePyBase):
             trade_update = self._create_trade_update_with_order_fill_data(order_fill=trade, order=tracked_order)
             self._order_tracker.process_trade_update(trade_update)
 
-    async def _process_account_position_message(self, position_msg: Dict[str, Any]):
+    async def _process_account_position_message(self, position_msg: dict[str, Any]):
         """
         Updates position
         :param position_msg: The position event message payload
@@ -624,7 +626,7 @@ class GateIoPerpetualDerivative(PerpetualDerivativePyBase):
         else:
             await self._update_positions()
 
-    def _process_order_message(self, order_msg: Dict[str, Any]):
+    def _process_order_message(self, order_msg: dict[str, Any]):
         """
         Updates in-flight order and triggers cancelation or failure event if needed.
 
@@ -642,7 +644,7 @@ class GateIoPerpetualDerivative(PerpetualDerivativePyBase):
         order_update = self._create_order_update_with_order_status_data(order_status=order_msg, order=tracked_order)
         self._order_tracker.process_order_update(order_update=order_update)
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         mapping = bidict()
         for symbol_data in filter(web_utils.is_exchange_information_valid, exchange_info):
             exchange_symbol = symbol_data["name"]
@@ -727,7 +729,7 @@ class GateIoPerpetualDerivative(PerpetualDerivativePyBase):
             else:
                 self._perpetual_trading.remove_position(pos_key)
 
-    async def _fetch_account_position_mode(self) -> Optional[PositionMode]:
+    async def _fetch_account_position_mode(self) -> PositionMode | None:
         response = await self._api_get(
             path_url=CONSTANTS.POSITION_INFORMATION_URL,
             is_auth_required=True,
@@ -736,12 +738,12 @@ class GateIoPerpetualDerivative(PerpetualDerivativePyBase):
         self._position_mode = PositionMode.ONEWAY if response[0]["mode"] == "single" else PositionMode.HEDGE
         return self._position_mode
 
-    async def _get_position_mode(self) -> Optional[PositionMode]:
+    async def _get_position_mode(self) -> PositionMode | None:
         if self._position_mode is None:
             await self._fetch_account_position_mode()
         return self._position_mode
 
-    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> Tuple[bool, str]:
+    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> tuple[bool, str]:
         msg = ""
         success = True
 
@@ -760,7 +762,7 @@ class GateIoPerpetualDerivative(PerpetualDerivativePyBase):
             msg = response["detail"]
         return success, msg
 
-    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> Tuple[bool, str]:
+    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> tuple[bool, str]:
         success = True
         msg = ""
         exchange_symbol = await self.exchange_symbol_associated_to_pair(trading_pair)
@@ -786,7 +788,7 @@ class GateIoPerpetualDerivative(PerpetualDerivativePyBase):
             msg = "leverage is diff"
         return success, msg
 
-    async def _fetch_last_fee_payment(self, trading_pair: str) -> Tuple[int, Decimal, Decimal]:
+    async def _fetch_last_fee_payment(self, trading_pair: str) -> tuple[int, Decimal, Decimal]:
         pass
 
     async def _update_funding_payment(self, trading_pair: str, fire_event_on_new: bool) -> bool:

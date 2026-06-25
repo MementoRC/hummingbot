@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import math
-from typing import Any, AsyncIterable, Dict, List, Optional, Tuple
+from typing import Any, AsyncIterable
 
 from bidict import bidict
 from dateutil.parser import parse as dateparse
@@ -49,9 +51,9 @@ class BtcMarketsExchange(ExchangePyBase):
         self,
         btc_markets_api_key: str,
         btc_markets_api_secret: str,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
@@ -187,7 +189,7 @@ class BtcMarketsExchange(ExchangePyBase):
         order_type: OrderType,
         price: Decimal,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         order_result = None
         amount_str = f"{amount:f}"
         price_str = f"{price:f}"
@@ -226,7 +228,7 @@ class BtcMarketsExchange(ExchangePyBase):
         order_side: TradeType,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> AddedToCostTradeFee:
         """
         Calculates the estimated fee an order would pay based on the connector configuration
@@ -272,7 +274,7 @@ class BtcMarketsExchange(ExchangePyBase):
             trading_pair = await self.trading_pair_associated_to_exchange_symbol(symbol=fee_json["marketId"])
             self._trading_fees[trading_pair] = fee_json
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         trade_updates = []
         try:
             if order.exchange_order_id is not None:
@@ -288,7 +290,7 @@ class BtcMarketsExchange(ExchangePyBase):
 
         return trade_updates
 
-    async def _request_order_fills(self, order: InFlightOrder) -> Dict[str, Any]:
+    async def _request_order_fills(self, order: InFlightOrder) -> dict[str, Any]:
         orderId = await order.get_exchange_order_id()
         return await self._api_get(
             path_url=CONSTANTS.TRADES_URL,
@@ -297,10 +299,10 @@ class BtcMarketsExchange(ExchangePyBase):
             limit_id=CONSTANTS.TRADES_URL,
         )
 
-    async def _request_order_update(self, order: InFlightOrder) -> Dict[str, Any]:
+    async def _request_order_update(self, order: InFlightOrder) -> dict[str, Any]:
         return await self._get_order_update(order.exchange_order_id)
 
-    async def _get_order_update(self, orderId: int) -> Dict[str, Any]:
+    async def _get_order_update(self, orderId: int) -> dict[str, Any]:
         return await self._api_get(
             path_url=f"{CONSTANTS.ORDERS_URL}/{orderId}", is_auth_required=True, limit_id=CONSTANTS.ORDERS_URL
         )
@@ -311,7 +313,7 @@ class BtcMarketsExchange(ExchangePyBase):
         order_update = self._create_order_update(order=tracked_order, order_update=updated_order_data)
         return order_update
 
-    async def _format_trading_rules(self, exchange_info_dict: Dict[str, Any]) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: dict[str, Any]) -> list[TradingRule]:
         """
         Example:
                 [
@@ -378,11 +380,11 @@ class BtcMarketsExchange(ExchangePyBase):
                 if event_type == CONSTANTS.HEARTBEAT:
                     continue
                 elif event_type == CONSTANTS.ORDER_CHANGE_EVENT_TYPE:
-                    exchange_order_id: Optional[str] = event_message.get("orderId")
-                    client_order_id: Optional[str] = event_message.get("clientOrderId")
+                    exchange_order_id: str | None = event_message.get("orderId")
+                    client_order_id: str | None = event_message.get("clientOrderId")
                     if client_order_id is None:
                         infligthOrder = await self._get_order_update(exchange_order_id)
-                        client_order_id: Optional[str] = infligthOrder.get("clientOrderId")
+                        client_order_id: str | None = infligthOrder.get("clientOrderId")
 
                     fillable_order = self._order_tracker.all_fillable_orders.get(client_order_id)
                     updatable_order = self._order_tracker.all_updatable_orders.get(client_order_id)
@@ -466,7 +468,7 @@ class BtcMarketsExchange(ExchangePyBase):
             except Exception:
                 self.logger().exception("Unexpected error in user stream listener loop.")
 
-    async def _iter_user_event_queue(self) -> AsyncIterable[Dict[str, any]]:
+    async def _iter_user_event_queue(self) -> AsyncIterable[dict[str, any]]:
         while True:
             try:
                 yield await self._user_stream_tracker.user_stream.get()
@@ -476,7 +478,7 @@ class BtcMarketsExchange(ExchangePyBase):
                 self.logger().exception("Error while reading user events queue. Retrying after 1 second.")
                 await asyncio.sleep(1.0)
 
-    def _create_order_fill_updates(self, order: InFlightOrder, fill_update: Dict[str, Any]) -> List[TradeUpdate]:
+    def _create_order_fill_updates(self, order: InFlightOrder, fill_update: dict[str, Any]) -> list[TradeUpdate]:
         updates = []
         fills_data = fill_update
 
@@ -503,7 +505,7 @@ class BtcMarketsExchange(ExchangePyBase):
 
         return updates
 
-    def _create_order_update(self, order: InFlightOrder, order_update: Dict[str, Any]) -> OrderUpdate:
+    def _create_order_update(self, order: InFlightOrder, order_update: dict[str, Any]) -> OrderUpdate:
         new_state = CONSTANTS.ORDER_STATE[order_update["status"]]
         return OrderUpdate(
             trading_pair=order.trading_pair,
@@ -538,7 +540,7 @@ class BtcMarketsExchange(ExchangePyBase):
     async def _sleep(self, delay: float):
         await asyncio.sleep(delay)
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: List[Dict[str, Any]]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: list[dict[str, Any]]):
         mapping = bidict()
         for symbol_data in filter(utils.is_exchange_information_valid, exchange_info):
             instrument_id = symbol_data["marketId"]

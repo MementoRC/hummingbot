@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import math
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from bidict import bidict
 
@@ -43,9 +45,9 @@ class BitmartExchange(ExchangePyBase):
         bitmart_api_key: str,
         bitmart_secret_key: str,
         bitmart_memo: str,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
     ):
         """
@@ -113,7 +115,7 @@ class BitmartExchange(ExchangePyBase):
     def is_trading_required(self) -> bool:
         return self._trading_required
 
-    def supported_order_types(self) -> List[OrderType]:
+    def supported_order_types(self) -> list[OrderType]:
         """
         :return a list of OrderType supported by this connector.
         """
@@ -166,7 +168,7 @@ class BitmartExchange(ExchangePyBase):
         order_side: TradeType,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> AddedToCostTradeFee:
         """
         To get trading fee, this function is simplified by using fee override configuration. Most parameters to this
@@ -185,7 +187,7 @@ class BitmartExchange(ExchangePyBase):
         order_type: OrderType,
         price: Decimal,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
 
         if order_type is OrderType.MARKET:
             price = await self._get_last_traded_price(trading_pair)
@@ -218,7 +220,7 @@ class BitmartExchange(ExchangePyBase):
         # await cancel_result.get("data", {}).get("result", False)
         return bool(cancel_result["data"]["result"])
 
-    async def _format_trading_rules(self, symbols_details: Dict[str, Any]) -> List[TradingRule]:
+    async def _format_trading_rules(self, symbols_details: dict[str, Any]) -> list[TradingRule]:
         """
         Converts json API response into a dictionary of trading rules.
         :param symbols_details: The json API response
@@ -296,21 +298,21 @@ class BitmartExchange(ExchangePyBase):
             del self._account_available_balances[asset_name]
             del self._account_balances[asset_name]
 
-    async def _request_order_update(self, order: InFlightOrder) -> Dict[str, Any]:
+    async def _request_order_update(self, order: InFlightOrder) -> dict[str, Any]:
         return await self._api_post(
             path_url=CONSTANTS.GET_ORDER_DETAIL_PATH_URL,
             data={"orderId": order.exchange_order_id},
             is_auth_required=True,
         )
 
-    async def _request_order_fills(self, order: InFlightOrder) -> Dict[str, Any]:
+    async def _request_order_fills(self, order: InFlightOrder) -> dict[str, Any]:
         return await self._api_post(
             path_url=CONSTANTS.GET_TRADE_DETAIL_PATH_URL,
             data={"orderId": order.exchange_order_id},
             is_auth_required=True,
         )
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         trade_updates = []
 
         try:
@@ -333,7 +335,7 @@ class BitmartExchange(ExchangePyBase):
         order_update = self._create_order_update(order=tracked_order, order_update=updated_order_data)
         return order_update
 
-    def _create_order_fill_updates(self, order: InFlightOrder, fill_update: Dict[str, Any]) -> List[TradeUpdate]:
+    def _create_order_fill_updates(self, order: InFlightOrder, fill_update: dict[str, Any]) -> list[TradeUpdate]:
         updates = []
         fills_data = fill_update["data"]
 
@@ -359,7 +361,7 @@ class BitmartExchange(ExchangePyBase):
 
         return updates
 
-    def _create_order_update(self, order: InFlightOrder, order_update: Dict[str, Any]) -> OrderUpdate:
+    def _create_order_update(self, order: InFlightOrder, order_update: dict[str, Any]) -> OrderUpdate:
         order_data = order_update["data"]
         new_state = CONSTANTS.ORDER_STATE[order_data["state"]]
         # This is a workaround to account for a MARKET BUY order reporting the state as "partially cancelled"
@@ -389,7 +391,7 @@ class BitmartExchange(ExchangePyBase):
                 if event_type == CONSTANTS.PRIVATE_ORDER_PROGRESS_CHANNEL_NAME:
                     for each_event in execution_data:
                         try:
-                            client_order_id: Optional[str] = each_event.get("client_order_id")
+                            client_order_id: str | None = each_event.get("client_order_id")
                             fillable_order = self._order_tracker.all_fillable_orders.get(client_order_id)
                             updatable_order = self._order_tracker.all_updatable_orders.get(client_order_id)
 
@@ -414,7 +416,7 @@ class BitmartExchange(ExchangePyBase):
                                 )
                                 if is_fill_candidate_by_state and is_fill_candidate_by_amount:
                                     try:
-                                        trade_fills: Dict[str, Any] = await self._request_order_fills(fillable_order)
+                                        trade_fills: dict[str, Any] = await self._request_order_fills(fillable_order)
                                         trade_updates = self._create_order_fill_updates(
                                             order=fillable_order, fill_update=trade_fills
                                         )
@@ -446,7 +448,7 @@ class BitmartExchange(ExchangePyBase):
             except Exception:
                 self.logger().exception("Unexpected error in user stream listener loop.")
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         mapping = bidict()
         for symbol_data in filter(bitmart_utils.is_exchange_information_valid, exchange_info["data"]["symbols"]):
             mapping[symbol_data["symbol"]] = combine_to_hb_trading_pair(

@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from collections import defaultdict
 import logging
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 import hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_trade_constants as constants
 import hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_trade_web_utils as web_utils
@@ -42,7 +44,7 @@ class CoinbaseAdvancedTradeAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
     def __init__(
         self,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "CoinbaseAdvancedTradeExchange",
         api_factory: WebAssistantsFactory,
         domain: str = constants.DEFAULT_DOMAIN,
@@ -60,15 +62,15 @@ class CoinbaseAdvancedTradeAPIOrderBookDataSource(OrderBookTrackerDataSource):
         self._api_factory: WebAssistantsFactory = api_factory
         self._connector: "CoinbaseAdvancedTradeExchange" = connector
 
-        self._subscription_lock: Optional[asyncio.Lock] = None
-        self._ws_assistant: Optional[WSAssistant] = None
-        self._last_traded_prices: Dict[str, float] = defaultdict(lambda: 0.0)
+        self._subscription_lock: asyncio.Lock | None = None
+        self._ws_assistant: WSAssistant | None = None
+        self._last_traded_prices: dict[str, float] = defaultdict(lambda: 0.0)
 
         # Override the default base queue keys
         self._diff_messages_queue_key = constants.WS_ORDER_SUBSCRIPTION_CHANNELS.inverse["order_book_diff"]
         self._trade_messages_queue_key = constants.WS_ORDER_SUBSCRIPTION_CHANNELS.inverse["trade"]
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         # await asyncio.sleep(0)
         return {trading_pair: self._last_traded_prices[trading_pair] or 0.0 for trading_pair in trading_pairs}
 
@@ -78,7 +80,7 @@ class CoinbaseAdvancedTradeAPIOrderBookDataSource(OrderBookTrackerDataSource):
         params = {"product_id": await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair)}
 
         rest_assistant = await self._api_factory.get_rest_assistant()
-        snapshot: Dict[str, Any] = await rest_assistant.execute_request(
+        snapshot: dict[str, Any] = await rest_assistant.execute_request(
             url=web_utils.public_rest_url(path_url=constants.SNAPSHOT_EP, domain=self._domain),
             params=params,
             method=RESTMethod.GET,
@@ -142,14 +144,14 @@ class CoinbaseAdvancedTradeAPIOrderBookDataSource(OrderBookTrackerDataSource):
     # --- Implementation of abstract methods from the Base class ---
     # Unused methods
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBookMessage:
-        snapshot: Dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
+        snapshot: dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
         snapshot_timestamp: float = time.time()
         snapshot_msg: OrderBookMessage = CoinbaseAdvancedTradeOrderBook.snapshot_message_from_exchange(
             snapshot, snapshot_timestamp, metadata={"trading_pair": trading_pair}
         )
         return snapshot_msg
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         if raw_message is not None or "code" not in raw_message:
             event_type = raw_message["events"][0]["type"]
             if event_type == "update":
@@ -163,7 +165,7 @@ class CoinbaseAdvancedTradeAPIOrderBookDataSource(OrderBookTrackerDataSource):
                 self.logger().debug(f"Order book message: {trade_message}")
                 message_queue.put_nowait(trade_message)
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         if raw_message is not None or "code" not in raw_message:
             event_type = raw_message["events"][0]["type"]
             if event_type == "update":
@@ -200,7 +202,7 @@ class CoinbaseAdvancedTradeAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
         return new_pair
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]):
+    def _channel_originating_message(self, event_message: dict[str, Any]):
         channel = ""
         if event_message and "channel" in event_message:
             if "events" in event_message:

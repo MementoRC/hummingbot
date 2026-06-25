@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import asyncio
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from enum import Enum
 import logging
 import time
-from typing import Deque, Dict, List, Optional, Tuple
+from typing import Deque, Dict
 
 import pandas as pd
 
@@ -115,7 +117,7 @@ class OrderBookPairMetrics:
     snapshot_processing_latency: LatencyStats = field(default_factory=LatencyStats)
     trade_processing_latency: LatencyStats = field(default_factory=LatencyStats)
 
-    def messages_per_minute(self, current_time: float) -> Dict[str, float]:
+    def messages_per_minute(self, current_time: float) -> dict[str, float]:
         """Calculate messages per minute rates."""
         elapsed_minutes = (current_time - self.tracking_start_time) / 60.0 if self.tracking_start_time > 0 else 0
         if elapsed_minutes <= 0:
@@ -174,7 +176,7 @@ class OrderBookTrackerMetrics:
     trade_processing_latency: LatencyStats = field(default_factory=LatencyStats)
 
     # Per-pair metrics
-    per_pair_metrics: Dict[str, OrderBookPairMetrics] = field(default_factory=dict)
+    per_pair_metrics: dict[str, OrderBookPairMetrics] = field(default_factory=dict)
 
     def get_or_create_pair_metrics(self, trading_pair: str) -> OrderBookPairMetrics:
         """Get or create metrics for a trading pair."""
@@ -189,7 +191,7 @@ class OrderBookTrackerMetrics:
         """Remove metrics for a trading pair."""
         self.per_pair_metrics.pop(trading_pair, None)
 
-    def messages_per_minute(self, current_time: float) -> Dict[str, float]:
+    def messages_per_minute(self, current_time: float) -> dict[str, float]:
         """Calculate global messages per minute rates."""
         elapsed_minutes = (current_time - self.tracker_start_time) / 60.0 if self.tracker_start_time > 0 else 0
         if elapsed_minutes <= 0:
@@ -231,7 +233,7 @@ class OrderBookTrackerMetrics:
 
 class OrderBookTracker:
     PAST_DIFF_WINDOW_SIZE: int = 32
-    _obt_logger: Optional[HummingbotLogger] = None
+    _obt_logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -239,30 +241,30 @@ class OrderBookTracker:
             cls._obt_logger = logging.getLogger(__name__)
         return cls._obt_logger
 
-    def __init__(self, data_source: OrderBookTrackerDataSource, trading_pairs: List[str], domain: Optional[str] = None):
-        self._domain: Optional[str] = domain
+    def __init__(self, data_source: OrderBookTrackerDataSource, trading_pairs: list[str], domain: str | None = None):
+        self._domain: str | None = domain
         self._data_source: OrderBookTrackerDataSource = data_source
-        self._trading_pairs: List[str] = trading_pairs
+        self._trading_pairs: list[str] = trading_pairs
         self._order_books_initialized: asyncio.Event = asyncio.Event()
-        self._tracking_tasks: Dict[str, asyncio.Task] = {}
-        self._order_books: Dict[str, OrderBook] = {}
-        self._tracking_message_queues: Dict[str, asyncio.Queue] = {}
-        self._past_diffs_windows: Dict[str, Deque] = defaultdict(lambda: deque(maxlen=self.PAST_DIFF_WINDOW_SIZE))
+        self._tracking_tasks: dict[str, asyncio.Task] = {}
+        self._order_books: dict[str, OrderBook] = {}
+        self._tracking_message_queues: dict[str, asyncio.Queue] = {}
+        self._past_diffs_windows: dict[str, Deque] = defaultdict(lambda: deque(maxlen=self.PAST_DIFF_WINDOW_SIZE))
         self._order_book_diff_stream: asyncio.Queue = asyncio.Queue()
         self._order_book_snapshot_stream: asyncio.Queue = asyncio.Queue()
         self._order_book_trade_stream: asyncio.Queue = asyncio.Queue()
         self._ev_loop: asyncio.BaseEventLoop = asyncio.get_event_loop()
-        self._saved_message_queues: Dict[str, Deque[OrderBookMessage]] = defaultdict(lambda: deque(maxlen=1000))
+        self._saved_message_queues: dict[str, Deque[OrderBookMessage]] = defaultdict(lambda: deque(maxlen=1000))
 
-        self._emit_trade_event_task: Optional[asyncio.Task] = None
-        self._init_order_books_task: Optional[asyncio.Task] = None
-        self._order_book_diff_listener_task: Optional[asyncio.Task] = None
-        self._order_book_trade_listener_task: Optional[asyncio.Task] = None
-        self._order_book_snapshot_listener_task: Optional[asyncio.Task] = None
-        self._order_book_diff_router_task: Optional[asyncio.Task] = None
-        self._order_book_snapshot_router_task: Optional[asyncio.Task] = None
-        self._update_last_trade_prices_task: Optional[asyncio.Task] = None
-        self._order_book_stream_listener_task: Optional[asyncio.Task] = None
+        self._emit_trade_event_task: asyncio.Task | None = None
+        self._init_order_books_task: asyncio.Task | None = None
+        self._order_book_diff_listener_task: asyncio.Task | None = None
+        self._order_book_trade_listener_task: asyncio.Task | None = None
+        self._order_book_snapshot_listener_task: asyncio.Task | None = None
+        self._order_book_diff_router_task: asyncio.Task | None = None
+        self._order_book_snapshot_router_task: asyncio.Task | None = None
+        self._update_last_trade_prices_task: asyncio.Task | None = None
+        self._order_book_stream_listener_task: asyncio.Task | None = None
 
         # Metrics tracking
         self._metrics: OrderBookTrackerMetrics = OrderBookTrackerMetrics()
@@ -277,7 +279,7 @@ class OrderBookTracker:
         return self._data_source
 
     @property
-    def order_books(self) -> Dict[str, OrderBook]:
+    def order_books(self) -> dict[str, OrderBook]:
         return self._order_books
 
     @property
@@ -285,7 +287,7 @@ class OrderBookTracker:
         return self._order_books_initialized.is_set()
 
     @property
-    def snapshot(self) -> Dict[str, Tuple[pd.DataFrame, pd.DataFrame]]:
+    def snapshot(self) -> dict[str, tuple[pd.DataFrame, pd.DataFrame]]:
         return {trading_pair: order_book.snapshot for trading_pair, order_book in self._order_books.items()}
 
     def start(self):
@@ -517,7 +519,7 @@ class OrderBookTracker:
         messages_rejected: int = 0
 
         # Cache pair_metrics references to avoid repeated dict lookups
-        pair_metrics_cache: Dict[str, OrderBookPairMetrics] = {}
+        pair_metrics_cache: dict[str, OrderBookPairMetrics] = {}
 
         while True:
             try:
@@ -587,7 +589,7 @@ class OrderBookTracker:
         await self._order_books_initialized.wait()
 
         # Cache pair_metrics references
-        pair_metrics_cache: Dict[str, OrderBookPairMetrics] = {}
+        pair_metrics_cache: dict[str, OrderBookPairMetrics] = {}
 
         while True:
             try:
@@ -651,7 +653,7 @@ class OrderBookTracker:
                         diff_messages_accepted = 0
                     last_message_timestamp = now
                 elif message.type is OrderBookMessageType.SNAPSHOT:
-                    past_diffs: List[OrderBookMessage] = list(past_diffs_window)
+                    past_diffs: list[OrderBookMessage] = list(past_diffs_window)
                     order_book.restore_from_snapshot_and_diffs(message, past_diffs)
             except asyncio.CancelledError:
                 raise
@@ -670,7 +672,7 @@ class OrderBookTracker:
         await self._order_books_initialized.wait()
 
         # Cache pair_metrics references
-        pair_metrics_cache: Dict[str, OrderBookPairMetrics] = {}
+        pair_metrics_cache: dict[str, OrderBookPairMetrics] = {}
 
         while True:
             try:

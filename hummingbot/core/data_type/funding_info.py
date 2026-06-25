@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 from dataclasses import asdict, dataclass
 from decimal import Decimal
-from typing import Optional
 
 
 class FundingInfo:
@@ -69,7 +70,7 @@ class FundingInfo:
 @dataclass
 class FundingInfoUpdate:
     trading_pair: str
-    index_price: Optional[Decimal] = None
-    mark_price: Optional[Decimal] = None
-    next_funding_utc_timestamp: Optional[int] = None
-    rate: Optional[Decimal] = None
+    index_price: Decimal | None = None
+    mark_price: Decimal | None = None
+    next_funding_utc_timestamp: int | None = None
+    rate: Decimal | None = None

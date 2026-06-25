@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import asyncio
 import copy
 from decimal import Decimal
 from enum import Enum
 import logging
 import math
-from typing import Any, Dict, NamedTuple, Optional, Tuple
+from typing import Any, NamedTuple
 
 from async_timeout import timeout
 
@@ -36,9 +38,9 @@ class OrderUpdate(NamedTuple):
     trading_pair: str
     update_timestamp: float  # seconds
     new_state: OrderState
-    client_order_id: Optional[str] = None
-    exchange_order_id: Optional[str] = None
-    misc_updates: Optional[Dict[str, Any]] = None
+    client_order_id: str | None = None
+    exchange_order_id: str | None = None
+    misc_updates: dict[str, Any] | None = None
 
 
 class TradeUpdate(NamedTuple):
@@ -58,7 +60,7 @@ class TradeUpdate(NamedTuple):
         return self.fee.fee_asset
 
     @classmethod
-    def from_json(cls, data: Dict[str, Any]):
+    def from_json(cls, data: dict[str, Any]):
         instance = TradeUpdate(
             trade_id=data["trade_id"],
             client_order_id=data["client_order_id"],
@@ -73,7 +75,7 @@ class TradeUpdate(NamedTuple):
 
         return instance
 
-    def to_json(self) -> Dict[str, Any]:
+    def to_json(self) -> dict[str, Any]:
         json_dict = self._asdict()
         json_dict.update(
             {
@@ -87,7 +89,7 @@ class TradeUpdate(NamedTuple):
 
 
 class InFlightOrder:
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
@@ -97,8 +99,8 @@ class InFlightOrder:
         trade_type: TradeType,
         amount: Decimal,
         creation_timestamp: float,
-        price: Optional[Decimal] = None,
-        exchange_order_id: Optional[str] = None,
+        price: Decimal | None = None,
+        exchange_order_id: str | None = None,
         initial_state: OrderState = OrderState.PENDING_CREATE,
         leverage: int = 1,
         position: PositionAction = PositionAction.NIL,
@@ -120,7 +122,7 @@ class InFlightOrder:
 
         self.last_update_timestamp: float = creation_timestamp
 
-        self.order_fills: Dict[str, TradeUpdate] = {}  # Dict[trade_id, TradeUpdate]
+        self.order_fills: dict[str, TradeUpdate] = {}  # Dict[trade_id, TradeUpdate]
 
         self.exchange_order_id_update_event = asyncio.Event()
         if self.exchange_order_id:
@@ -136,7 +138,7 @@ class InFlightOrder:
         return cls._logger
 
     @property
-    def attributes(self) -> Tuple[Any]:
+    def attributes(self) -> tuple[Any]:
         return copy.deepcopy(
             (
                 self.client_order_id,
@@ -208,7 +210,7 @@ class InFlightOrder:
         return self.current_state == OrderState.CANCELED
 
     @property
-    def average_executed_price(self) -> Optional[Decimal]:
+    def average_executed_price(self) -> Decimal | None:
         executed_value: Decimal = s_decimal_0
         total_base_amount: Decimal = s_decimal_0
         for order_fill in self.order_fills.values():
@@ -219,7 +221,7 @@ class InFlightOrder:
         return executed_value / total_base_amount
 
     @classmethod
-    def from_json(cls, data: Dict[str, Any]) -> "InFlightOrder":
+    def from_json(cls, data: dict[str, Any]) -> "InFlightOrder":
         """
         Initialize an InFlightOrder using a JSON object
         :param data: JSON data
@@ -250,7 +252,7 @@ class InFlightOrder:
 
         return order
 
-    def to_json(self) -> Dict[str, Any]:
+    def to_json(self) -> dict[str, Any]:
         """
         Returns this InFlightOrder as a JSON object.
         :return: JSON object

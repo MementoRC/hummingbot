@@ -2,7 +2,7 @@ import base64
 import hashlib
 import hmac
 import time
-from typing import Any, Dict
+from typing import Any
 
 from hummingbot.connector.exchange.btc_markets import btc_markets_web_utils as web_utils
 import hummingbot.connector.exchange.btc_markets.btc_markets_constants as CONSTANTS
@@ -57,7 +57,7 @@ class BtcMarketsAuth(AuthBase):
         """
         return {"referer": CONSTANTS.HBOT_BROKER_ID}
 
-    def get_signature(self, method: str, path_url: str, nonce: int, data: Dict[str, Any] = None):
+    def get_signature(self, method: str, path_url: str, nonce: int, data: dict[str, Any] = None):
         """
         Generates authentication signature and return it in a dictionary along with other inputs
         :return: a dictionary of request info including the request signature

@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import logging
 import time
-from typing import List, Optional
+from typing import List
 
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.data_feed.candles_feed.candles_base import CandlesBase
@@ -9,7 +11,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class KrakenSpotCandles(CandlesBase):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -97,9 +99,9 @@ class KrakenSpotCandles(CandlesBase):
 
     def _get_rest_candles_params(
         self,
-        start_time: Optional[int] = None,
-        end_time: Optional[int] = None,
-        limit: Optional[int] = CONSTANTS.MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        limit: int | None = CONSTANTS.MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST,
     ) -> dict:
         """
         For API documentation, please refer to:
@@ -112,7 +114,7 @@ class KrakenSpotCandles(CandlesBase):
             raise ValueError("Kraken REST API does not support fetching more than 720 candles ago.")
         return {"pair": self._ex_trading_pair, "interval": CONSTANTS.INTERVALS[self.interval], "since": start_time}
 
-    def _parse_rest_candles(self, data: dict, end_time: Optional[int] = None) -> List[List[float]]:
+    def _parse_rest_candles(self, data: dict, end_time: int | None = None) -> list[list[float]]:
         data: List = next(iter(data["result"].values()))
         new_hb_candles = []
         for i in data:
