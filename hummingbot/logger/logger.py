@@ -8,7 +8,7 @@ import os
 import sys
 import time
 import traceback
-from typing import Type
+from typing import Callable, ClassVar, Optional, Type
 
 import pandas as pd
 
@@ -33,6 +33,17 @@ else:  # pragma: no cover
 
 
 class HummingbotLogger(PythonLogger):
+    _notify_callback: ClassVar[Callable[[str], None] | None] = None
+    _network_callback: ClassVar[Callable[[ApplicationWarning], None] | None] = None
+
+    @classmethod
+    def register_notify_handler(cls, handler: Callable[[str], None]) -> None:
+        cls._notify_callback = handler
+
+    @classmethod
+    def register_network_handler(cls, handler: Callable[[ApplicationWarning], None]) -> None:
+        cls._network_callback = handler
+
     def __init__(self, name: str):
         super().__init__(name)
 
@@ -48,16 +59,10 @@ class HummingbotLogger(PythonLogger):
         from . import INFO
 
         self.log(INFO, msg)
-        if not HummingbotLogger.is_testing_mode():
-            from hummingbot.client.hummingbot_application import HummingbotApplication
+        if not HummingbotLogger.is_testing_mode() and HummingbotLogger._notify_callback is not None:
+            HummingbotLogger._notify_callback(f"({pd.Timestamp.fromtimestamp(int(time.time()))}) {msg}")
 
-            hummingbot_app: HummingbotApplication = HummingbotApplication.main_application()
-            hummingbot_app.notify(f"({pd.Timestamp.fromtimestamp(int(time.time()))}) {msg}")
-
-    def network(self, log_msg: str, app_warning_msg: str | None = None, *args, **kwargs):
-        if app_warning_msg is not None and not HummingbotLogger.is_testing_mode():
-            from hummingbot.client.hummingbot_application import HummingbotApplication
-
+    def network(self, log_msg: str, app_warning_msg: Optional[str] = None, *args, **kwargs):
         from . import NETWORK
 
         self.log(NETWORK, log_msg, *args, **kwargs)
@@ -66,8 +71,8 @@ class HummingbotLogger(PythonLogger):
                 time.time(), self.name, self.findCaller(), app_warning_msg
             )
             self.warning(app_warning.warning_msg)
-            hummingbot_app: HummingbotApplication = HummingbotApplication.main_application()
-            hummingbot_app.add_application_warning(app_warning)
+            if HummingbotLogger._network_callback is not None:
+                HummingbotLogger._network_callback(app_warning)
 
     #  --- Copied from logging module ---
     def findCaller(self, stack_info=False, stacklevel=1):
