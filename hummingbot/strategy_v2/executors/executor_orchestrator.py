@@ -4,7 +4,7 @@ import asyncio
 from collections import deque
 from decimal import Decimal
 import logging
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Dict, List, Optional
 import uuid
 
 from hummingbot.connector.markets_recorder import MarketsRecorder
@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 from hummingbot.strategy_v2.executors.arbitrage_executor.arbitrage_executor import ArbitrageExecutor
 from hummingbot.strategy_v2.executors.data_types import PositionSummary
 from hummingbot.strategy_v2.executors.dca_executor.dca_executor import DCAExecutor
+from hummingbot.strategy_v2.executors.executor_factory import ExecutorFactory
 from hummingbot.strategy_v2.executors.grid_executor.grid_executor import GridExecutor
 from hummingbot.strategy_v2.executors.lp_executor.lp_executor import LPExecutor
 from hummingbot.strategy_v2.executors.order_executor.order_executor import OrderExecutor
@@ -226,7 +227,7 @@ class ExecutorOrchestrator:
         strategy: "StrategyV2Base",
         executors_update_interval: float = 1.0,
         executors_max_retries: int = 10,
-        initial_positions_by_controller: dict | None = None,
+        initial_positions_by_controller: Optional[dict] = None,
     ):
         self.strategy = strategy
         self.executors_update_interval = executors_update_interval
@@ -494,16 +495,25 @@ class ExecutorOrchestrator:
         # compa
         executor_config.controller_id = controller_id
 
-        executor_class = self._executor_mapping.get(executor_config.type)
-        if executor_class is not None:
-            executor = executor_class(
+        try:
+            executor = ExecutorFactory.create(
                 strategy=self.strategy,
                 config=executor_config,
                 update_interval=self.executors_update_interval,
                 max_retries=self.executors_max_retries,
             )
-        else:
-            raise ValueError("Unsupported executor config type")
+        except ValueError:
+            # Fallback to legacy string-keyed mapping
+            executor_class = self._executor_mapping.get(executor_config.type)
+            if executor_class is not None:
+                executor = executor_class(
+                    strategy=self.strategy,
+                    config=executor_config,
+                    update_interval=self.executors_update_interval,
+                    max_retries=self.executors_max_retries,
+                )
+            else:
+                raise ValueError(f"No executor registered for config type: {type(executor_config).__name__}")
 
         executor.start()
         self.active_executors[controller_id].append(executor)
@@ -621,8 +631,8 @@ class ExecutorOrchestrator:
         return None
 
     def _find_existing_position(
-        self, positions: list[PositionHold], executor_info: ExecutorInfo, position_side: TradeType | None
-    ) -> PositionHold | None:
+        self, positions: List[PositionHold], executor_info: ExecutorInfo, position_side: Optional[TradeType]
+    ) -> Optional[PositionHold]:
         """
         Find an existing position that matches the executor's trading pair and side.
         """

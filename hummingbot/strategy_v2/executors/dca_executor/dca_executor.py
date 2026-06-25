@@ -4,7 +4,7 @@ import asyncio
 from decimal import Decimal
 import logging
 import math
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.common import OrderType, PositionAction, PriceType, TradeType
@@ -19,15 +19,13 @@ from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.dca_executor.data_types import DCAExecutorConfig, DCAMode
 from hummingbot.strategy_v2.executors.executor_base import ExecutorBase
-from hummingbot.strategy_v2.executors.mixins.order_tracking import OrderTrackingMixin
-from hummingbot.strategy_v2.executors.mixins.pnl_calculator import PNLCalculatorMixin
-from hummingbot.strategy_v2.executors.mixins.retry import RetryMixin
-from hummingbot.strategy_v2.executors.mixins.trailing_stop import TrailingStopMixin
+from hummingbot.strategy_v2.executors.executor_factory import ExecutorFactory
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 
 
-class DCAExecutor(PNLCalculatorMixin, TrailingStopMixin, OrderTrackingMixin, RetryMixin, ExecutorBase):
+@ExecutorFactory.register(DCAExecutorConfig)
+class DCAExecutor(ExecutorBase):
     _logger = None
 
     @classmethod
@@ -51,9 +49,6 @@ class DCAExecutor(PNLCalculatorMixin, TrailingStopMixin, OrderTrackingMixin, Ret
             update_interval=update_interval,
             max_retries=max_retries,
         )
-        self.init_retry(max_retries)
-        self.init_trailing_stop()
-        self.init_order_tracking()
         self.config: DCAExecutorConfig = config
 
         # validate amounts with exchange trading rules

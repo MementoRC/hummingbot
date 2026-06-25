@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from decimal import Decimal
 import logging
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.common import OrderType, PriceType, TradeType
@@ -20,11 +20,13 @@ from hummingbot.core.event.events import (
 from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.executor_base import ExecutorBase
+from hummingbot.strategy_v2.executors.executor_factory import ExecutorFactory
 from hummingbot.strategy_v2.executors.order_executor.data_types import ExecutionStrategy, OrderExecutorConfig
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 
 
+@ExecutorFactory.register(OrderExecutorConfig)
 class OrderExecutor(ExecutorBase):
     _logger = None
 

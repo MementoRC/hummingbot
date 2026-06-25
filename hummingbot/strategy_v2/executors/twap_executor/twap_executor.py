@@ -18,16 +18,14 @@ from hummingbot.core.event.events import (
 from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.executor_base import ExecutorBase
-from hummingbot.strategy_v2.executors.mixins.balance_validation import BalanceValidationMixin
-from hummingbot.strategy_v2.executors.mixins.order_tracking import OrderTrackingMixin
-from hummingbot.strategy_v2.executors.mixins.pnl_calculator import PNLCalculatorMixin
-from hummingbot.strategy_v2.executors.mixins.retry import RetryMixin
+from hummingbot.strategy_v2.executors.executor_factory import ExecutorFactory
 from hummingbot.strategy_v2.executors.twap_executor.data_types import TWAPExecutorConfig
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 
 
-class TWAPExecutor(PNLCalculatorMixin, OrderTrackingMixin, RetryMixin, BalanceValidationMixin, ExecutorBase):
+@ExecutorFactory.register(TWAPExecutorConfig)
+class TWAPExecutor(ExecutorBase):
     _logger = None
 
     @classmethod
@@ -46,8 +44,6 @@ class TWAPExecutor(PNLCalculatorMixin, OrderTrackingMixin, RetryMixin, BalanceVa
             update_interval=update_interval,
             max_retries=max_retries,
         )
-        self.init_retry(max_retries)
-        self.init_order_tracking()
         self.config = config
         trading_rules = self.get_trading_rules(config.connector_name, config.trading_pair)
         if self.config.order_amount_quote < trading_rules.min_order_size:

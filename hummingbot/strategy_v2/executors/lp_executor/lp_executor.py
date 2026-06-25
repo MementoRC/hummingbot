@@ -1,8 +1,6 @@
-from __future__ import annotations
-
 from decimal import Decimal
 import logging
-from typing import Dict, Union
+from typing import Dict, List, Optional, Union
 
 from hummingbot.connector.gateway.gateway import AMMPoolInfo, CLMMPoolInfo
 from hummingbot.connector.utils import split_hb_trading_pair
@@ -17,15 +15,9 @@ from hummingbot.core.rate_oracle.rate_oracle import RateOracle
 from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.executor_base import ExecutorBase
-from hummingbot.strategy_v2.executors.gateway_utils import (
-    parse_provider,
-    validate_and_normalize_connector,
-)
-from hummingbot.strategy_v2.executors.lp_executor.data_types import (
-    LPExecutorConfig,
-    LPExecutorState,
-    LPExecutorStates,
-)
+from hummingbot.strategy_v2.executors.executor_factory import ExecutorFactory
+from hummingbot.strategy_v2.executors.gateway_utils import parse_provider, validate_and_normalize_connector
+from hummingbot.strategy_v2.executors.lp_executor.data_types import LPExecutorConfig, LPExecutorState, LPExecutorStates
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 
@@ -33,6 +25,7 @@ from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 DEFAULT_NATIVE_CURRENCY = "SOL"
 
 
+@ExecutorFactory.register(LPExecutorConfig)
 class LPExecutor(ExecutorBase):
     """
     Executor for a single LP position lifecycle.
@@ -49,7 +42,7 @@ class LPExecutor(ExecutorBase):
     without the Clock/tick mechanism (like hummingbot-api).
     """
 
-    _logger: HummingbotLogger | None = None
+    _logger: Optional[HummingbotLogger] = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
