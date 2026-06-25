@@ -22,7 +22,7 @@ class ExecutorConfigBase(BaseModel):
         "arbitrage_executor",
         "twap_executor",
         "lp_executor",
-        "progressive_executor",
+        "position_on_exchange_executor",
     ]
     timestamp: Optional[float] = None
     controller_id: str = "main"
