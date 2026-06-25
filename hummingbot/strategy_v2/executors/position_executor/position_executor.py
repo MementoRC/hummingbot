@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from decimal import Decimal
 import logging
-from typing import Dict, Union
+from typing import Dict, List, Optional, Union
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.common import OrderType, PositionAction, PositionMode, PriceType, TradeType
@@ -20,12 +20,16 @@ from hummingbot.core.event.events import (
 from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.executor_base import ExecutorBase
+from hummingbot.strategy_v2.executors.mixins.activation_bounds import ActivationBoundsMixin
+from hummingbot.strategy_v2.executors.mixins.balance_validation import BalanceValidationMixin
+from hummingbot.strategy_v2.executors.mixins.retry import RetryMixin
+from hummingbot.strategy_v2.executors.mixins.trailing_stop import TrailingStopMixin
 from hummingbot.strategy_v2.executors.position_executor.data_types import PositionExecutorConfig
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 
 
-class PositionExecutor(ExecutorBase):
+class PositionExecutor(TrailingStopMixin, ActivationBoundsMixin, RetryMixin, BalanceValidationMixin, ExecutorBase):
     _logger = None
 
     @classmethod
@@ -63,6 +67,8 @@ class PositionExecutor(ExecutorBase):
             update_interval=update_interval,
             max_retries=max_retries,
         )
+        self.init_retry(max_retries)
+        self.init_trailing_stop()
         if not config.entry_price:
             open_order_price_type = PriceType.BestBid if config.side == TradeType.BUY else PriceType.BestAsk
             config.entry_price = self.get_price(
@@ -72,11 +78,10 @@ class PositionExecutor(ExecutorBase):
         self.trading_rules = self.get_trading_rules(self.config.connector_name, self.config.trading_pair)
 
         # Order tracking
-        self._open_order: TrackedOrder | None = None
-        self._close_order: TrackedOrder | None = None
-        self._take_profit_limit_order: TrackedOrder | None = None
-        self._failed_orders: list[TrackedOrder] = []
-        self._trailing_stop_trigger_pct: Decimal | None = None
+        self._open_order: Optional[TrackedOrder] = None
+        self._close_order: Optional[TrackedOrder] = None
+        self._take_profit_limit_order: Optional[TrackedOrder] = None
+        self._failed_orders: List[TrackedOrder] = []
 
         self._total_executed_amount_backup: Decimal = Decimal("0")
 

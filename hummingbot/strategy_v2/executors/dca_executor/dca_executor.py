@@ -4,7 +4,7 @@ import asyncio
 from decimal import Decimal
 import logging
 import math
-from typing import Dict, Union
+from typing import Dict, List, Union
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.common import OrderType, PositionAction, PriceType, TradeType
@@ -19,11 +19,15 @@ from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.dca_executor.data_types import DCAExecutorConfig, DCAMode
 from hummingbot.strategy_v2.executors.executor_base import ExecutorBase
+from hummingbot.strategy_v2.executors.mixins.order_tracking import OrderTrackingMixin
+from hummingbot.strategy_v2.executors.mixins.pnl_calculator import PNLCalculatorMixin
+from hummingbot.strategy_v2.executors.mixins.retry import RetryMixin
+from hummingbot.strategy_v2.executors.mixins.trailing_stop import TrailingStopMixin
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 
 
-class DCAExecutor(ExecutorBase):
+class DCAExecutor(PNLCalculatorMixin, TrailingStopMixin, OrderTrackingMixin, RetryMixin, ExecutorBase):
     _logger = None
 
     @classmethod
@@ -47,6 +51,9 @@ class DCAExecutor(ExecutorBase):
             update_interval=update_interval,
             max_retries=max_retries,
         )
+        self.init_retry(max_retries)
+        self.init_trailing_stop()
+        self.init_order_tracking()
         self.config: DCAExecutorConfig = config
 
         # validate amounts with exchange trading rules
@@ -66,10 +73,9 @@ class DCAExecutor(ExecutorBase):
             self.config.activation_bounds = [Decimal("0.0001"), Decimal("0.005")]  # 0.01% and 0.5%
 
         # executors tracking
-        self._open_orders: list[TrackedOrder] = []
-        self._close_orders: list[TrackedOrder] = []  # for now will be just one order but we can have multiple
-        self._failed_orders: list[TrackedOrder] = []
-        self._trailing_stop_trigger_pct: Decimal | None = None
+        self._open_orders: List[TrackedOrder] = []
+        self._close_orders: List[TrackedOrder] = []  # for now will be just one order but we can have multiple
+        self._failed_orders: List[TrackedOrder] = []
 
         # used to track the total amount filled that is updated by the event in case that the InFlightOrder is
         # not available
@@ -82,6 +88,9 @@ class DCAExecutor(ExecutorBase):
     @property
     def active_close_orders(self) -> list[TrackedOrder]:
         return self._close_orders
+
+    def _get_trackable_orders(self) -> List[TrackedOrder]:
+        return self._open_orders + self._close_orders
 
     @property
     def open_order_type(self) -> OrderType:
