@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 from collections import OrderedDict
-from typing import Awaitable, Dict, Mapping, Optional
+from typing import Awaitable, Dict, Mapping
 from unittest import TestCase
 from unittest.mock import MagicMock
 
@@ -101,6 +103,6 @@ class BybitPerpetualAuthTests(TestCase):
         self.assertEqual(api_key, self.api_key)
         self.assertEqual(signature, self.auth._generate_ws_signature(expires))
 
-    def _params_expected(self, request_params: Optional[Mapping[str, str]]) -> Dict:
+    def _params_expected(self, request_params: Mapping[str, str] | None) -> Dict:
         request_params = request_params if request_params else {}
         return OrderedDict(sorted(request_params.items(), key=lambda t: t[0]))

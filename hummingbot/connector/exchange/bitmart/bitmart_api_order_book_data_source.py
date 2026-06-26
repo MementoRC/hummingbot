@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 import json
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.exchange.bitmart import (
     bitmart_constants as CONSTANTS,
@@ -20,16 +22,16 @@ if TYPE_CHECKING:
 
 
 class BitmartAPIOrderBookDataSource(OrderBookTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
     _DYNAMIC_SUBSCRIBE_ID_START = 100
     _next_subscribe_id: int = _DYNAMIC_SUBSCRIBE_ID_START
 
-    def __init__(self, trading_pairs: List[str], connector: "BitmartExchange", api_factory: WebAssistantsFactory):
+    def __init__(self, trading_pairs: list[str], connector: "BitmartExchange", api_factory: WebAssistantsFactory):
         super().__init__(trading_pairs)
         self._connector: BitmartExchange = connector
         self._api_factory = api_factory
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def listen_for_order_book_diffs(self, ev_loop: asyncio.AbstractEventLoop, output: asyncio.Queue):
@@ -61,8 +63,8 @@ class BitmartAPIOrderBookDataSource(OrderBookTrackerDataSource):
                 self.logger().exception("Unexpected error when processing public order book updates from exchange")
 
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBookMessage:
-        snapshot_response: Dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
-        snapshot_data: Dict[str, Any] = snapshot_response["data"]
+        snapshot_response: dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
+        snapshot_data: dict[str, Any] = snapshot_response["data"]
         snapshot_timestamp: float = int(snapshot_data["ts"]) * 1e-3
         update_id: int = int(snapshot_data["ts"])
 
@@ -78,7 +80,7 @@ class BitmartAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
         return snapshot_msg
 
-    async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, Any]:
+    async def _request_order_book_snapshot(self, trading_pair: str) -> dict[str, Any]:
         """
         Retrieves a copy of the full order book from the exchange, for a particular trading pair.
 
@@ -101,7 +103,7 @@ class BitmartAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
         return data
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         trade_updates = raw_message["data"]
 
         for trade_data in trade_updates:
@@ -115,18 +117,18 @@ class BitmartAPIOrderBookDataSource(OrderBookTrackerDataSource):
                 "amount": trade_data["size"],
                 "price": trade_data["price"],
             }
-            trade_message: Optional[OrderBookMessage] = OrderBookMessage(
+            trade_message: OrderBookMessage | None = OrderBookMessage(
                 message_type=OrderBookMessageType.TRADE, content=message_content, timestamp=int(trade_data["s_t"])
             )
 
             message_queue.put_nowait(trade_message)
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         # Bitmart never sends diff messages. This method will never be called
         pass
 
-    async def _parse_order_book_snapshot_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
-        diff_updates: Dict[str, Any] = raw_message["data"]
+    async def _parse_order_book_snapshot_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
+        diff_updates: dict[str, Any] = raw_message["data"]
 
         for diff_data in diff_updates:
             timestamp: float = int(diff_data["ms_t"]) * 1e-3
@@ -178,7 +180,7 @@ class BitmartAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
     async def _process_websocket_messages(self, websocket_assistant: WSAssistant):
         async for ws_response in websocket_assistant.iter_messages():
-            data: Dict[str, Any] = ws_response.data
+            data: dict[str, Any] = ws_response.data
             decompressed_data = utils.decompress_ws_message(data)
             try:
                 if isinstance(decompressed_data, str):
@@ -199,7 +201,7 @@ class BitmartAPIOrderBookDataSource(OrderBookTrackerDataSource):
             if channel in [self._diff_messages_queue_key, self._trade_messages_queue_key]:
                 self._message_queue[channel].put_nowait(json_data)
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         channel = ""
         if "data" in event_message:
             event_channel = event_message["table"]

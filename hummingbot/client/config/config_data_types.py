@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from pydantic.json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMode, model_json_schema
@@ -16,7 +18,7 @@ class ClientConfigEnum(Enum):
 
 @dataclass()
 class ClientFieldData:
-    prompt: Optional[Callable[["BaseClientModel"], str]] = None
+    prompt: Callable[["BaseClientModel"], str] | None = None
     prompt_on_new: bool = False
     is_secure: bool = False
     is_connect_key: bool = False

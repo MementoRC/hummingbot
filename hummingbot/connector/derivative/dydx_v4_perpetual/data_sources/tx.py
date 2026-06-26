@@ -1,9 +1,11 @@
 """Transaction."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum
 import re
-from typing import Any, List, Optional, Union
+from typing import Any, Union
 
 from google.protobuf.any_pb2 import Any as ProtoAny
 from v4_proto.cosmos.base.v1beta1.coin_pb2 import Coin
@@ -14,7 +16,7 @@ from v4_proto.cosmos.tx.v1beta1.tx_pb2 import AuthInfo, Fee, ModeInfo, SignDoc, 
 from hummingbot.connector.derivative.dydx_v4_perpetual.data_sources.keypairs import PublicKey
 
 
-def parse_coins(value: str) -> List[Coin]:
+def parse_coins(value: str) -> list[Coin]:
     """Parse the coins.
 
     :param value: coins
@@ -59,7 +61,7 @@ def _is_iterable(value) -> bool:
         return False
 
 
-def _wrap_in_proto_any(values: List[Any]) -> List[ProtoAny]:
+def _wrap_in_proto_any(values: list[Any]) -> list[ProtoAny]:
     any_values = []
     for value in values:
         proto_any = ProtoAny()
@@ -116,9 +118,9 @@ class Transaction:
 
     def __init__(self):
         """Init the Transactions with transaction message, state, fee and body."""
-        self._msgs: List[Any] = []
+        self._msgs: list[Any] = []
         self._state: TxState = TxState.Draft
-        self._tx_body: Optional[TxBody] = None
+        self._tx_body: TxBody | None = None
         self._tx = None
         self._fee = None
 
@@ -139,7 +141,7 @@ class Transaction:
         return self._msgs
 
     @property
-    def fee(self) -> Optional[str]:
+    def fee(self) -> str | None:
         """Get the transaction fee.
 
         :return: transaction fee
@@ -171,10 +173,10 @@ class Transaction:
 
     def seal(
         self,
-        signing_cfgs: Union[SigningCfg, List[SigningCfg]],
+        signing_cfgs: Union[SigningCfg, list[SigningCfg]],
         fee: str,
         gas_limit: int,
-        memo: Optional[str] = None,
+        memo: str | None = None,
     ) -> "Transaction":
         """Seal the transaction.
 
@@ -186,7 +188,7 @@ class Transaction:
         """
         self._state = TxState.Sealed
 
-        input_signing_cfgs: List[SigningCfg] = (
+        input_signing_cfgs: list[SigningCfg] = (
             signing_cfgs if _is_iterable(signing_cfgs) else [signing_cfgs]  # type: ignore
         )
 

@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 import json
-from typing import Any, Dict, List, Mapping, Optional, Tuple
+from typing import Any, Mapping
 
 from bidict import bidict
 
@@ -47,9 +49,9 @@ class FoxbitExchange(ExchangePyBase):
         foxbit_api_key: str,
         foxbit_api_secret: str,
         foxbit_user_id: str,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
@@ -59,7 +61,7 @@ class FoxbitExchange(ExchangePyBase):
         self._domain = domain
         self._trading_required = trading_required
         self._trading_pairs = trading_pairs
-        self._trading_pair_instrument_id_map: Optional[Mapping[str, str]] = None
+        self._trading_pair_instrument_id_map: Mapping[str, str] | None = None
         self._mapping_initialization_instrument_id_lock = asyncio.Lock()
 
         super().__init__(balance_asset_limit, rate_limits_share_pct)
@@ -119,7 +121,7 @@ class FoxbitExchange(ExchangePyBase):
         return self._trading_required
 
     @property
-    def status_dict(self) -> Dict[str, bool]:
+    def status_dict(self) -> dict[str, bool]:
         return {
             "symbols_mapping_initialized": self.trading_pair_symbol_map_ready(),
             "instruments_mapping_initialized": self.trading_pair_instrument_id_map_ready(),
@@ -130,7 +132,7 @@ class FoxbitExchange(ExchangePyBase):
         }
 
     @staticmethod
-    def convert_from_exchange_instrument_id(exchange_instrument_id: str) -> Optional[str]:
+    def convert_from_exchange_instrument_id(exchange_instrument_id: str) -> str | None:
         return exchange_instrument_id
 
     @staticmethod
@@ -220,7 +222,7 @@ class FoxbitExchange(ExchangePyBase):
         order_side: TradeType,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         """
         Calculates the estimated fee an order would pay based on the connector configuration
@@ -296,7 +298,7 @@ class FoxbitExchange(ExchangePyBase):
         trading_pair: str,
         amount: Decimal,
         order_type: OrderType,
-        price: Optional[Decimal] = None,
+        price: Decimal | None = None,
     ):
         """
         Creates a an order in the exchange using the parameters to configure it
@@ -393,7 +395,7 @@ class FoxbitExchange(ExchangePyBase):
         trade_type: TradeType,
         order_type: OrderType,
         price: Decimal,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         order_result = None
         amount_str = "%.10f" % amount
         price_str = "%.10f" % price
@@ -445,7 +447,7 @@ class FoxbitExchange(ExchangePyBase):
         self.logger().info(f"Failed to cancel on _place_cancel order_id: {order_id} API response: {cancel_result}")
         return False
 
-    async def _format_trading_rules(self, exchange_info_dict: Dict[str, Any]) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: dict[str, Any]) -> list[TradingRule]:
         """
         Example:
         {
@@ -632,7 +634,7 @@ class FoxbitExchange(ExchangePyBase):
                 params = {"market_symbol": await self.exchange_symbol_associated_to_pair(trading_pair=trading_pair)}
                 if self._last_poll_timestamp > 0:
                     params["start_time"] = (
-                        datetime.utcnow() - timedelta(minutes=self.SHORT_POLL_INTERVAL)
+                        datetime.now(datetime.UTC) - timedelta(minutes=self.SHORT_POLL_INTERVAL)
                     ).isoformat()[:23] + "Z"
                 tasks.append(self._api_get(path_url=CONSTANTS.MY_TRADES_PATH_URL, params=params, is_auth_required=True))
 
@@ -776,7 +778,7 @@ class FoxbitExchange(ExchangePyBase):
         last_tick = self._last_poll_timestamp // self.UPDATE_ORDER_STATUS_MIN_INTERVAL
         current_tick = self.current_timestamp // self.UPDATE_ORDER_STATUS_MIN_INTERVAL
 
-        tracked_orders: List[InFlightOrder] = list(self.in_flight_orders.values())
+        tracked_orders: list[InFlightOrder] = list(self.in_flight_orders.values())
         if current_tick > last_tick and len(tracked_orders) > 0:
             tasks = [
                 self._api_get(
@@ -839,7 +841,7 @@ class FoxbitExchange(ExchangePyBase):
             del self._account_available_balances[asset_name]
             del self._account_balances[asset_name]
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         trade_updates = []
 
         if order.exchange_order_id is not None:
@@ -898,7 +900,7 @@ class FoxbitExchange(ExchangePyBase):
     def _is_order_not_found_during_cancelation_error(self, cancelation_exception: Exception) -> bool:
         return CONSTANTS.ORDER_NOT_EXIST_MESSAGE in str(cancelation_exception)
 
-    def _process_balance_message(self, account_info: Dict[str, Any]):
+    def _process_balance_message(self, account_info: dict[str, Any]):
         asset_name = account_info.get("ProductSymbol")
         hold_balance = foxbit_utils.decimal_val_or_none(account_info.get("Hold"), False)
         total_balance = foxbit_utils.decimal_val_or_none(account_info.get("Amount"), False)
@@ -966,13 +968,13 @@ class FoxbitExchange(ExchangePyBase):
         except Exception as ex:
             self.logger().exception(f"There was an error requesting exchange info. {ex}")
 
-    def _set_trading_pair_instrument_id_map(self, trading_pair_and_instrument_id_map: Optional[Mapping[str, str]]):
+    def _set_trading_pair_instrument_id_map(self, trading_pair_and_instrument_id_map: Mapping[str, str] | None):
         """
         Method added to allow the pure Python subclasses to set the value of the map
         """
         self._trading_pair_instrument_id_map = trading_pair_and_instrument_id_map
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         mapping = bidict()
         for symbol_data in filter(foxbit_utils.is_exchange_information_valid, exchange_info["data"]):
             mapping[symbol_data["symbol"]] = combine_to_hb_trading_pair(
@@ -980,7 +982,7 @@ class FoxbitExchange(ExchangePyBase):
             )
         self._set_trading_pair_symbol_map(mapping)
 
-    def _initialize_trading_pair_instrument_id_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_instrument_id_from_exchange_info(self, exchange_info: dict[str, Any]):
         mapping = bidict()
         for symbol_data in filter(foxbit_utils.is_exchange_information_valid, exchange_info):
             mapping[symbol_data["InstrumentId"]] = combine_to_hb_trading_pair(

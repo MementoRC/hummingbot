@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 from decimal import Decimal
-from typing import List, Optional, Tuple
 
 from hummingbot.connector.exchange.paper_trade import create_paper_trade_market
 from hummingbot.connector.exchange_base import ExchangeBase
@@ -12,7 +13,7 @@ from hummingbot.strategy.pure_market_making.pure_market_making_config_map import
 
 
 async def start(self):
-    def convert_decimal_string_to_list(string: Optional[str], divisor: Decimal = Decimal("1")) -> List[Decimal]:
+    def convert_decimal_string_to_list(string: str | None, divisor: Decimal = Decimal("1")) -> list[Decimal]:
         """convert order level spread string into a list of decimal divided by divisor"""
         if string is None:
             return []
@@ -77,8 +78,8 @@ async def start(self):
             both_list = buy_list + sell_list
             order_override = {f"split_level_{i}": order for i, order in enumerate(both_list)}
         trading_pair: str = raw_trading_pair
-        maker_assets: Tuple[str, str] = trading_pair.split("-")
-        market_names: List[Tuple[str, List[str]]] = [(exchange, [trading_pair])]
+        maker_assets: tuple[str, str] = trading_pair.split("-")
+        market_names: list[tuple[str, list[str]]] = [(exchange, [trading_pair])]
         await self.initialize_markets(market_names)
         maker_data = [self.connector_manager.connectors[exchange], trading_pair] + list(maker_assets)
         self.market_trading_pair_tuples = [MarketTradingPairTuple(*maker_data)]

@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import asyncio
 import base64
 import datetime
 import hashlib
 import hmac
 import re
-from typing import Awaitable, Optional
+from typing import Awaitable
 from unittest import TestCase
 from unittest.mock import MagicMock, patch
 
@@ -36,7 +38,7 @@ class OkxPerpetualAuthTests(TestCase):
 
     @staticmethod
     def _get_timestamp():
-        return datetime.datetime.utcnow().isoformat(timespec="milliseconds") + "Z"
+        return datetime.datetime.now(datetime.datetime.UTC).isoformat(timespec="milliseconds") + "Z"
 
     def _format_timestamp(self, timestamp: int) -> str:
         ts = datetime.datetime.fromtimestamp(timestamp, datetime.timezone.utc).isoformat(timespec="milliseconds")
@@ -49,7 +51,7 @@ class OkxPerpetualAuthTests(TestCase):
         )
         return signed_message.decode("utf-8")
 
-    def generate_signature_from_payload(self, timestamp: str, method: RESTMethod, url: str, body: Optional[str] = None):
+    def generate_signature_from_payload(self, timestamp: str, method: RESTMethod, url: str, body: str | None = None):
         str_body = ""
         if body is not None:
             str_body = str(body).replace("'", '"')
