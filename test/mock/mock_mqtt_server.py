@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict
+from typing import Any
 
 from commlib.serializer import JSONSerializer
 import ujson
@@ -62,7 +62,7 @@ class FakeMQTTTransport:
     def is_connected(self) -> bool:
         return self._connected
 
-    def publish(self, topic: str, payload: Dict[str, Any], qos: Any = "", retain: bool = False):
+    def publish(self, topic: str, payload: dict[str, Any], qos: Any = "", retain: bool = False):
         logging.info(f"\nFakeMQTT publish on\n> {topic}\n     {payload}\n")
         payload = ujson.loads(JSONSerializer.serialize(payload))
         if not self._received_msgs.get(topic):
