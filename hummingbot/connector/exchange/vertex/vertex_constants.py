@@ -92,7 +92,6 @@ SNAPSHOT_EVENT_TYPE = "market_liquidity"
 TRADE_EVENT_TYPE = "trade"
 DIFF_EVENT_TYPE = "book_depth"
 FILL_EVENT_TYPE = "fill"
-POSITION_CHANGE_EVENT_TYPE = "position_change"
 
 # Products
 # NOTE: Index 7+ is only on testnet
