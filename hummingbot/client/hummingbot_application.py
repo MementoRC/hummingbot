@@ -136,6 +136,10 @@ class HummingbotApplication(*commands):
     def markets(self) -> Dict[str, ExchangeBase]:
         return self.trading_core.markets
 
+    @markets.setter
+    def markets(self, value: Dict[str, ExchangeBase]):
+        self.trading_core.connector_manager.connectors = value
+
     @property
     def notifiers(self):
         return self.trading_core.notifiers
