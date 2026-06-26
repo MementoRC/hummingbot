@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from collections import defaultdict
 from decimal import Decimal
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 import hummingbot.connector.derivative.evedex_perpetual.evedex_perpetual_constants as CONSTANTS
 import hummingbot.connector.derivative.evedex_perpetual.evedex_perpetual_web_utils as web_utils
@@ -20,11 +22,11 @@ if TYPE_CHECKING:
 
 
 class EvedexPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "EvedexPerpetualDerivative",
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -33,19 +35,19 @@ class EvedexPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         self._connector = connector
         self._api_factory = api_factory
         self._domain = domain
-        self._trading_pairs: List[str] = trading_pairs
-        self._message_queue: Dict[str, asyncio.Queue] = defaultdict(asyncio.Queue)
+        self._trading_pairs: list[str] = trading_pairs
+        self._message_queue: dict[str, asyncio.Queue] = defaultdict(asyncio.Queue)
         self._trade_messages_queue_key = CONSTANTS.TRADE_STREAM_ID
         self._diff_messages_queue_key = CONSTANTS.DIFF_STREAM_ID
         self._funding_info_messages_queue_key = CONSTANTS.FUNDING_INFO_STREAM_ID
         self._snapshot_messages_queue_key = "order_book_snapshot"
         # Mapping from WebSocket symbol (e.g., XRPUSD) to trading pair (e.g., XRP-USD)
-        self._ws_symbol_to_trading_pair: Dict[str, str] = {}
+        self._ws_symbol_to_trading_pair: dict[str, str] = {}
         # Ping task for keeping Centrifugo connection alive
-        self._ping_task: Optional[asyncio.Task] = None
-        self._ws_assistant: Optional[WSAssistant] = None
+        self._ping_task: asyncio.Task | None = None
+        self._ws_assistant: WSAssistant | None = None
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def get_funding_info(self, trading_pair: str) -> FundingInfo:
@@ -59,7 +61,7 @@ class EvedexPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         )
         return funding_info
 
-    async def _request_instrument_info(self, trading_pair: str) -> Dict[str, Any]:
+    async def _request_instrument_info(self, trading_pair: str) -> dict[str, Any]:
         """
         Retrieves instrument information including funding rate and mark price
         """
@@ -72,7 +74,7 @@ class EvedexPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             return data[0]
         return data
 
-    async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, Any]:
+    async def _request_order_book_snapshot(self, trading_pair: str) -> dict[str, Any]:
         """
         Retrieves a copy of the full order book from the exchange, for a particular trading pair.
 
@@ -87,7 +89,7 @@ class EvedexPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         return data
 
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBookMessage:
-        snapshot_response: Dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
+        snapshot_response: dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
         snapshot_timestamp: float = time.time()
         snapshot_response.update({"trading_pair": trading_pair})
 
@@ -227,7 +229,7 @@ class EvedexPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             self.logger().exception("Unexpected error occurred subscribing to order book trading and delta streams...")
             raise
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         """Determine channel type from Centrifugo channel name.
 
         Centrifugo message format:
@@ -253,7 +255,7 @@ class EvedexPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             return channel
 
     async def _process_message_for_unknown_channel(
-        self, event_message: Dict[str, Any], websocket_assistant: WSAssistant
+        self, event_message: dict[str, Any], websocket_assistant: WSAssistant
     ):
         # Centrifugo sends ping commands and expects pong replies.
         if event_message == {}:
@@ -325,7 +327,7 @@ class EvedexPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             self.logger().exception(f"Unexpected error unsubscribing from {trading_pair} channels")
             return False
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         """Parse order book update from futures-perp:orderBook-{instrument}-0.1 channel.
 
         Centrifugo push format: {"push": {"channel": "...", "pub": {"data": {...}}}}
@@ -362,7 +364,7 @@ class EvedexPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             )
             message_queue.put_nowait(order_book_message)
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         """Parse trade message from futures-perp:recent-trade-{instrument} channel.
 
         Centrifugo push format: {"push": {"channel": "...", "pub": {"data": {...}}}}
@@ -399,7 +401,7 @@ class EvedexPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
                 )
                 message_queue.put_nowait(trade_message)
 
-    async def _parse_funding_info_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_funding_info_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         """
         Parse funding rate message from futures-perp:fundingRate channel.
 
@@ -434,7 +436,7 @@ class EvedexPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             )
             message_queue.put_nowait(funding_info_update)
 
-    async def _on_order_stream_interruption(self, websocket_assistant: Optional[WSAssistant] = None):
+    async def _on_order_stream_interruption(self, websocket_assistant: WSAssistant | None = None):
         """
         Called when the order book stream gets interrupted.
         Cleans up the ping task and connection state.

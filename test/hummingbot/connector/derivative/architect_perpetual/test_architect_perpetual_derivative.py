@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import json
 import re
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Union
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
@@ -168,7 +170,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         }
 
     @property
-    def all_symbols_including_invalid_pair_mock_response(self) -> Tuple[str, Any]:
+    def all_symbols_including_invalid_pair_mock_response(self) -> tuple[str, Any]:
         mock_response = self.all_symbols_request_mock_response
         return "INVALID-PAIR", mock_response
 
@@ -326,7 +328,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         self.setup_auth_token(mock_api=mock_api)
         url = web_utils.private_rest_url(path_url=CONSTANTS.CANCEL_ORDER_ENDPOINT, domain=self.domain)
@@ -340,7 +342,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         self.setup_auth_token(mock_api=mock_api)
         url = web_utils.private_rest_url(CONSTANTS.CANCEL_ORDER_ENDPOINT, domain=self.domain)
@@ -352,7 +354,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         self.setup_auth_token(mock_api=mock_api)
         url = web_utils.private_rest_url(CONSTANTS.CANCEL_ORDER_ENDPOINT, domain=self.domain)
@@ -365,7 +367,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         successful_order: InFlightOrder,
         erroneous_order: InFlightOrder,
         mock_api: aioresponses,
-    ) -> List[str]:
+    ) -> list[str]:
         return [
             self.configure_successful_cancelation_response(order=successful_order, mock_api=mock_api),
             self.configure_erroneous_cancelation_response(order=erroneous_order, mock_api=mock_api),
@@ -375,8 +377,8 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
         url = web_utils.private_rest_url(path_url=CONSTANTS.ORDER_STATUS_ENDPOINT, domain=self.domain)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
 
@@ -392,8 +394,8 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> Union[str, List[str]]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> Union[str, list[str]]:
         url = web_utils.private_rest_url(path_url=CONSTANTS.ORDER_STATUS_ENDPOINT, domain=self.domain)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
 
@@ -413,8 +415,8 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
         url = web_utils.private_rest_url(path_url=CONSTANTS.ORDER_STATUS_ENDPOINT, domain=self.domain)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
 
@@ -434,7 +436,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.private_rest_url(path_url=CONSTANTS.ORDER_STATUS_ENDPOINT, domain=self.domain)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
@@ -447,7 +449,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.private_rest_url(path_url=CONSTANTS.ORDER_STATUS_ENDPOINT, domain=self.domain)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
@@ -468,8 +470,8 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
         url = web_utils.private_rest_url(path_url=CONSTANTS.ORDER_STATUS_ENDPOINT, domain=self.domain)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
         mock_api.get(regex_url, body=json.dumps({"error": "no matching orders"}), callback=callback)
@@ -479,7 +481,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.private_rest_url(path_url=CONSTANTS.ORDER_FILLS_ENDPOINT, domain=self.domain)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
@@ -509,7 +511,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.private_rest_url(path_url=CONSTANTS.ORDER_FILLS_ENDPOINT, domain=self.domain)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
@@ -521,7 +523,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = None,
+        callback: Callable | None = None,
     ) -> str:
         url = web_utils.private_rest_url(path_url=CONSTANTS.ORDER_FILLS_ENDPOINT, domain=self.domain)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
@@ -550,8 +552,8 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
     def configure_trading_rules_response(
         self,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
         exchange_info_url = web_utils.public_rest_url(path_url=CONSTANTS.EXCHANGE_INFO_ENDPOINT, domain=self.domain)
         exchange_info_response = self.get_trading_rule_rest_msg()
         mock_api.get(exchange_info_url, body=json.dumps(exchange_info_response), callback=callback)
@@ -584,8 +586,8 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
     def configure_erroneous_trading_rules_response(
         self,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
         exchange_info_url = web_utils.public_rest_url(path_url=CONSTANTS.EXCHANGE_INFO_ENDPOINT, domain=self.domain)
         exchange_info_response = self.get_trading_rule_rest_msg()
         mock_api.get(exchange_info_url, body=json.dumps(exchange_info_response), callback=callback)
@@ -708,7 +710,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         return response
 
     @property
-    def expected_supported_position_modes(self) -> List[PositionMode]:
+    def expected_supported_position_modes(self) -> list[PositionMode]:
         return [PositionMode.ONEWAY]
 
     @property
@@ -778,7 +780,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         position_mode: PositionMode,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ):
         raise NotImplementedError
 
@@ -786,8 +788,8 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         position_mode: PositionMode,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> Tuple[str, str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> tuple[str, str]:
         """
         :return: A tuple of the URL and an error message if the exchange returns one on failure.
         """
@@ -797,7 +799,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         leverage: int,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ):
         additional_info = AdditionalInstrumentInfo(
             leverage=int(leverage + 1),
@@ -812,7 +814,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         leverage: int,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ):
         additional_info = AdditionalInstrumentInfo(
             leverage=int(leverage),
@@ -1726,7 +1728,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
 
         mock_api.get(url, body=json.dumps(response))
 
-        latest_prices: Dict[str, float] = await self.exchange.get_last_traded_prices(trading_pairs=[self.trading_pair])
+        latest_prices: dict[str, float] = await self.exchange.get_last_traded_prices(trading_pairs=[self.trading_pair])
 
         self.assertEqual(1, len(latest_prices))
         self.assertEqual(self.expected_latest_price, latest_prices[self.trading_pair])

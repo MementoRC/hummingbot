@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.exchange.okx import okx_constants as CONSTANTS, okx_web_utils as web_utils
 from hummingbot.core.data_type.common import TradeType
@@ -15,21 +17,21 @@ if TYPE_CHECKING:
 
 
 class OkxAPIOrderBookDataSource(OrderBookTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
     _DYNAMIC_SUBSCRIBE_ID_START = 100
     _next_subscribe_id: int = _DYNAMIC_SUBSCRIBE_ID_START
 
-    def __init__(self, trading_pairs: List[str], connector: "OkxExchange", api_factory: WebAssistantsFactory):
+    def __init__(self, trading_pairs: list[str], connector: "OkxExchange", api_factory: WebAssistantsFactory):
         super().__init__(trading_pairs)
         self._connector = connector
         self._api_factory = api_factory
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBookMessage:
-        snapshot_response: Dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
-        snapshot_data: Dict[str, Any] = snapshot_response["data"][0]
+        snapshot_response: dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
+        snapshot_data: dict[str, Any] = snapshot_response["data"][0]
         snapshot_timestamp: float = int(snapshot_data["ts"]) * 1e-3
         update_id: int = int(snapshot_timestamp)
 
@@ -45,7 +47,7 @@ class OkxAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
         return snapshot_msg
 
-    async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, Any]:
+    async def _request_order_book_snapshot(self, trading_pair: str) -> dict[str, Any]:
         """
         Retrieves a copy of the full order book from the exchange, for a particular trading pair.
 
@@ -68,7 +70,7 @@ class OkxAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
         return data
 
-    async def _parse_order_book_snapshot_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_snapshot_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(
             symbol=raw_message["arg"]["instId"]
         )
@@ -88,7 +90,7 @@ class OkxAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
         message_queue.put_nowait(snapshot_msg)
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         trade_updates = raw_message["data"]
 
         for trade_data in trade_updates:
@@ -102,7 +104,7 @@ class OkxAPIOrderBookDataSource(OrderBookTrackerDataSource):
                 "amount": trade_data["sz"],
                 "price": trade_data["px"],
             }
-            trade_message: Optional[OrderBookMessage] = OrderBookMessage(
+            trade_message: OrderBookMessage | None = OrderBookMessage(
                 message_type=OrderBookMessageType.TRADE,
                 content=message_content,
                 timestamp=(int(trade_data["ts"]) * 1e-3),
@@ -110,8 +112,8 @@ class OkxAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
             message_queue.put_nowait(trade_message)
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
-        diff_updates: Dict[str, Any] = raw_message["data"]
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
+        diff_updates: dict[str, Any] = raw_message["data"]
 
         for diff_data in diff_updates:
             timestamp: float = int(diff_data["ts"]) * 1e-3
@@ -171,7 +173,7 @@ class OkxAPIOrderBookDataSource(OrderBookTrackerDataSource):
             self.logger().exception("Unexpected error occurred subscribing to order book trading and delta streams...")
             raise
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         channel = ""
         if "data" in event_message:
             event_channel = event_message["arg"]["channel"]

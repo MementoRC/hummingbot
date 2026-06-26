@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from bidict import bidict
 
@@ -32,9 +34,9 @@ class MexcExchange(ExchangePyBase):
         self,
         mexc_api_key: str,
         mexc_api_secret: str,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
@@ -108,7 +110,7 @@ class MexcExchange(ExchangePyBase):
     def supported_order_types(self):
         return [OrderType.LIMIT, OrderType.LIMIT_MAKER, OrderType.MARKET]
 
-    async def get_all_pairs_prices(self) -> List[Dict[str, str]]:
+    async def get_all_pairs_prices(self) -> list[dict[str, str]]:
         pairs_prices = await self._api_get(
             path_url=CONSTANTS.TICKER_BOOK_PATH_URL, headers={"Content-Type": "application/json"}
         )
@@ -159,7 +161,7 @@ class MexcExchange(ExchangePyBase):
         order_side: TradeType,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         is_maker = order_type is OrderType.LIMIT_MAKER
         return DeductedFromReturnsTradeFee(percent=self.estimate_fee_pct(is_maker))
@@ -173,7 +175,7 @@ class MexcExchange(ExchangePyBase):
         order_type: OrderType,
         price: Decimal,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         order_result = None
         amount_str = f"{amount:f}"
         type_str = MexcExchange.mexc_order_type(order_type)
@@ -222,7 +224,7 @@ class MexcExchange(ExchangePyBase):
             return True
         return False
 
-    async def _format_trading_rules(self, exchange_info_dict: Dict[str, Any]) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: dict[str, Any]) -> list[TradingRule]:
         trading_pair_rules = exchange_info_dict.get("symbols", [])
         retval = []
         for rule in filter(mexc_utils.is_exchange_information_valid, trading_pair_rules):
@@ -273,13 +275,13 @@ class MexcExchange(ExchangePyBase):
                     self.logger().error(f"Unexpected message in user stream: {event_message}.", exc_info=True)
                     continue
                 if channel == CONSTANTS.USER_TRADES_ENDPOINT_NAME:
-                    results: Dict[str, Any] = event_message.get("privateDeals", {})
+                    results: dict[str, Any] = event_message.get("privateDeals", {})
                     self._process_trade_message(results)
                 elif channel == CONSTANTS.USER_ORDERS_ENDPOINT_NAME:
-                    results: Dict[str, Any] = event_message.get("privateOrders", {})
+                    results: dict[str, Any] = event_message.get("privateOrders", {})
                     self._process_order_message(results)
                 elif channel == CONSTANTS.USER_BALANCE_ENDPOINT_NAME:
-                    results: Dict[str, Any] = event_message.get("privateAccount", {})
+                    results: dict[str, Any] = event_message.get("privateAccount", {})
                     self._process_balance_message_ws(results)
 
             except asyncio.CancelledError:
@@ -295,7 +297,7 @@ class MexcExchange(ExchangePyBase):
             str(account["frozenAmount"])
         )
 
-    def _create_trade_update_with_order_fill_data(self, order_fill: Dict[str, Any], order: InFlightOrder):
+    def _create_trade_update_with_order_fill_data(self, order_fill: dict[str, Any], order: InFlightOrder):
 
         fee = TradeFeeBase.new_spot_fee(
             fee_schema=self.trade_fee_schema(),
@@ -316,7 +318,7 @@ class MexcExchange(ExchangePyBase):
         )
         return trade_update
 
-    def _process_trade_message(self, trade: Dict[str, Any], client_order_id: Optional[str] = None):
+    def _process_trade_message(self, trade: dict[str, Any], client_order_id: str | None = None):
         client_order_id = client_order_id or str(trade["clientOrderId"])
         tracked_order = self._order_tracker.all_fillable_orders.get(client_order_id)
         if tracked_order is None:
@@ -325,7 +327,7 @@ class MexcExchange(ExchangePyBase):
             trade_update = self._create_trade_update_with_order_fill_data(order_fill=trade, order=tracked_order)
             self._order_tracker.process_trade_update(trade_update)
 
-    def _create_order_update_with_order_status_data(self, order_status: Dict[str, Any], order: InFlightOrder):
+    def _create_order_update_with_order_status_data(self, order_status: dict[str, Any], order: InFlightOrder):
         client_order_id = str(order_status.get("clientId", ""))
         order_update = OrderUpdate(
             trading_pair=order.trading_pair,
@@ -336,7 +338,7 @@ class MexcExchange(ExchangePyBase):
         )
         return order_update
 
-    def _process_order_message(self, order: Dict[str, Any]):
+    def _process_order_message(self, order: dict[str, Any]):
         client_order_id = str(order.get("clientId", ""))
         tracked_order = self._order_tracker.all_updatable_orders.get(client_order_id)
         if not tracked_order:
@@ -444,7 +446,7 @@ class MexcExchange(ExchangePyBase):
                         )
                         self.logger().info(f"Recreating missing trade in TradeFill: {trade}")
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         trade_updates = []
 
         if order.exchange_order_id is not None:
@@ -524,7 +526,7 @@ class MexcExchange(ExchangePyBase):
             del self._account_available_balances[asset_name]
             del self._account_balances[asset_name]
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         mapping = bidict()
         for symbol_data in filter(mexc_utils.is_exchange_information_valid, exchange_info["symbols"]):
             mapping[symbol_data["symbol"]] = combine_to_hb_trading_pair(

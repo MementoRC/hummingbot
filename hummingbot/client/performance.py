@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 from collections import defaultdict
 from dataclasses import dataclass
 from decimal import Decimal
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from hummingbot.connector.utils import combine_to_hb_trading_pair, split_hb_trading_pair
 from hummingbot.core.data_type.common import PositionAction, TradeType
@@ -54,7 +56,7 @@ class PerformanceMetrics:
 
     def __init__(self):
         # fees is a dictionary of token and total fee amount paid in that token.
-        self.fees: Dict[str, Decimal] = defaultdict(lambda: s_decimal_0)
+        self.fees: dict[str, Decimal] = defaultdict(lambda: s_decimal_0)
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -64,14 +66,14 @@ class PerformanceMetrics:
 
     @classmethod
     async def create(
-        cls, trading_pair: str, trades: List[Any], current_balances: Dict[str, Decimal]
+        cls, trading_pair: str, trades: list[Any], current_balances: dict[str, Decimal]
     ) -> "PerformanceMetrics":
         performance = PerformanceMetrics()
         await performance._initialize_metrics(trading_pair, trades, current_balances)
         return performance
 
     @staticmethod
-    def position_order(open: list, close: list) -> Tuple[Any, Any]:
+    def position_order(open: list, close: list) -> tuple[Any, Any]:
         """
         Pair open position order with close position orders
         :param open: a list of orders that may have an open position order
@@ -114,7 +116,7 @@ class PerformanceMetrics:
         return aggregated_orders
 
     @staticmethod
-    def aggregate_position_order(buys: list, sells: list) -> Tuple[list, list]:
+    def aggregate_position_order(buys: list, sells: list) -> tuple[list, list]:
         """
         Aggregate the amount field for orders with multiple fills
         :param buys: a list of buy orders
@@ -127,7 +129,7 @@ class PerformanceMetrics:
         return aggregated_buys, aggregated_sells
 
     @staticmethod
-    def derivative_pnl(long: list, short: list) -> List[Decimal]:
+    def derivative_pnl(long: list, short: list) -> list[Decimal]:
         # It is assumed that the amount and leverage for both open and close orders are the same.
         """
         Calculates PnL for a close position
@@ -143,7 +145,7 @@ class PerformanceMetrics:
         return pnls
 
     @staticmethod
-    def smart_round(value: Decimal, precision: Optional[int] = None) -> Decimal:
+    def smart_round(value: Decimal, precision: int | None = None) -> Decimal:
         if value is None or value.is_nan():
             return value
         if precision is not None:
@@ -173,12 +175,12 @@ class PerformanceMetrics:
     def _is_trade_fill(self, trade):
         return isinstance(trade, TradeFill)
 
-    def _are_derivatives(self, trades: List[Any]) -> bool:
+    def _are_derivatives(self, trades: list[Any]) -> bool:
         return (
             trades and self._is_trade_fill(trades[0]) and PositionAction.NIL.value not in [t.position for t in trades]
         )
 
-    def _preprocess_trades_and_group_by_type(self, trades: List[Any]) -> Tuple[List[Any], List[Any]]:
+    def _preprocess_trades_and_group_by_type(self, trades: list[Any]) -> tuple[list[Any], list[Any]]:
         buys = []
         sells = []
         for trade in trades:
@@ -222,7 +224,7 @@ class PerformanceMetrics:
             impact = Decimal(str(trade.amount)) * Decimal(str(trade.price)) * fee_percent * Decimal("-1")
         return impact
 
-    async def _calculate_fees(self, quote: str, trades: List[Any]):
+    async def _calculate_fees(self, quote: str, trades: list[Any]):
         for trade in trades:
             fee_percent = None
             trade_price = None
@@ -284,7 +286,7 @@ class PerformanceMetrics:
 
             self.trade_pnl = Decimal(str(sum(self.derivative_pnl(long, short))))
 
-    async def _initialize_metrics(self, trading_pair: str, trades: List[Any], current_balances: Dict[str, Decimal]):
+    async def _initialize_metrics(self, trading_pair: str, trades: list[Any], current_balances: dict[str, Decimal]):
         """
         Calculates PnL, fees, Return % and etc...
         :param trading_pair: the trading market to get performance metrics

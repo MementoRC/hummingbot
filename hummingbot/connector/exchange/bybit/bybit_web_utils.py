@@ -1,4 +1,6 @@
-from typing import Any, Callable, Dict, Optional
+from __future__ import annotations
+
+from typing import Any, Callable
 
 import hummingbot.connector.exchange.bybit.bybit_constants as CONSTANTS
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
@@ -29,11 +31,11 @@ def rest_url(path_url: str, domain: str = CONSTANTS.DEFAULT_DOMAIN) -> str:
 
 
 def build_api_factory(
-    throttler: Optional[AsyncThrottler] = None,
-    time_synchronizer: Optional[TimeSynchronizer] = None,
+    throttler: AsyncThrottler | None = None,
+    time_synchronizer: TimeSynchronizer | None = None,
     domain: str = CONSTANTS.DEFAULT_DOMAIN,
-    time_provider: Optional[Callable] = None,
-    auth: Optional[AuthBase] = None,
+    time_provider: Callable | None = None,
+    auth: AuthBase | None = None,
 ) -> WebAssistantsFactory:
     time_synchronizer = time_synchronizer or TimeSynchronizer()
     time_provider = time_provider or (
@@ -64,18 +66,18 @@ def create_throttler() -> AsyncThrottler:
 
 async def api_request(
     path: str,
-    api_factory: Optional[WebAssistantsFactory] = None,
-    throttler: Optional[AsyncThrottler] = None,
-    time_synchronizer: Optional[TimeSynchronizer] = None,
+    api_factory: WebAssistantsFactory | None = None,
+    throttler: AsyncThrottler | None = None,
+    time_synchronizer: TimeSynchronizer | None = None,
     domain: str = CONSTANTS.DEFAULT_DOMAIN,
-    params: Optional[Dict[str, Any]] = None,
-    data: Optional[Dict[str, Any]] = None,
+    params: dict[str, Any] | None = None,
+    data: dict[str, Any] | None = None,
     method: RESTMethod = RESTMethod.GET,
     is_auth_required: bool = False,
     return_err: bool = False,
-    limit_id: Optional[str] = None,
-    timeout: Optional[float] = None,
-    headers: Dict[str, Any] = {},
+    limit_id: str | None = None,
+    timeout: float | None = None,
+    headers: dict[str, Any] = {},
 ):
     throttler = throttler or create_throttler()
     time_synchronizer = time_synchronizer or TimeSynchronizer()
@@ -122,7 +124,7 @@ async def api_request(
 
 
 async def get_current_server_time(
-    throttler: Optional[AsyncThrottler] = None,
+    throttler: AsyncThrottler | None = None,
     domain: str = CONSTANTS.DEFAULT_DOMAIN,
 ) -> float:
     throttler = throttler or create_throttler()

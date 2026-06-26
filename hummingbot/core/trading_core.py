@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 from enum import Enum
@@ -7,7 +9,7 @@ import logging
 from pathlib import Path
 import sys
 import time
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type, Union
+from typing import Any, Callable, Type, Union
 
 from sqlalchemy.orm import Query, Session
 
@@ -69,8 +71,8 @@ class TradingCore:
 
     def __init__(
         self,
-        client_config: Union[ClientConfigMap, ClientConfigAdapter, Dict[str, Any]],
-        scripts_path: Optional[Path] = None,
+        client_config: Union[ClientConfigMap, ClientConfigAdapter, dict[str, Any]],
+        scripts_path: Path | None = None,
     ):
         """
         Initialize the trading core.
@@ -92,42 +94,42 @@ class TradingCore:
 
         # Core components
         self.connector_manager = ConnectorManager(self.client_config_map)
-        self.clock: Optional[Clock] = None
+        self.clock: Clock | None = None
 
         # Strategy components (optional)
-        self.strategy: Optional[StrategyBase] = None
-        self.strategy_name: Optional[str] = None
-        self.strategy_config_map: Optional[BaseStrategyConfigMap] = None
-        self.strategy_task: Optional[asyncio.Task] = None
-        self._strategy_file_name: Optional[str] = None
+        self.strategy: StrategyBase | None = None
+        self.strategy_name: str | None = None
+        self.strategy_config_map: BaseStrategyConfigMap | None = None
+        self.strategy_task: asyncio.Task | None = None
+        self._strategy_file_name: str | None = None
 
         # Supporting components
-        self.notifiers: List[NotifierBase] = []
-        self.kill_switch: Optional[KillSwitch] = None
-        self.markets_recorder: Optional[MarketsRecorder] = None
-        self.trade_fill_db: Optional[SQLConnectionManager] = None
+        self.notifiers: list[NotifierBase] = []
+        self.kill_switch: KillSwitch | None = None
+        self.markets_recorder: MarketsRecorder | None = None
+        self.trade_fill_db: SQLConnectionManager | None = None
 
         # Metrics collectors mapping (connector_name -> MetricsCollector)
-        self._metrics_collectors: Dict[str, MetricsCollector] = {}
+        self._metrics_collectors: dict[str, MetricsCollector] = {}
 
         # Runtime state
         self.init_time: float = time.time()
-        self.start_time: Optional[float] = None
+        self.start_time: float | None = None
         self._is_running: bool = False
         self._strategy_running: bool = False
         self._trading_required: bool = True
 
         # Config storage for flexible config loading
-        self._config_source: Optional[str] = None
-        self._config_data: Optional[Dict[str, Any]] = None
+        self._config_source: str | None = None
+        self._config_data: dict[str, Any] | None = None
 
         # Backward compatibility properties
-        self.market_trading_pairs_map: Dict[str, List[str]] = {}
-        self.market_trading_pair_tuples: List[MarketTradingPairTuple] = []
+        self.market_trading_pairs_map: dict[str, list[str]] = {}
+        self.market_trading_pair_tuples: list[MarketTradingPairTuple] = []
         self._gateway_monitor = GatewayHttpClient.get_instance(self.client_config_map.hb_config.gateway)
         self._gateway_monitor.start_monitor()
 
-    def _create_config_adapter_from_dict(self, config_dict: Dict[str, Any]) -> ClientConfigAdapter:
+    def _create_config_adapter_from_dict(self, config_dict: dict[str, Any]) -> ClientConfigAdapter:
         """Create a ClientConfigAdapter from a dictionary."""
         client_config = ClientConfigMap()
 
@@ -144,22 +146,22 @@ class TradingCore:
         return self._gateway_monitor
 
     @property
-    def markets(self) -> Dict[str, ExchangeBase]:
+    def markets(self) -> dict[str, ExchangeBase]:
         """Get all markets/connectors (backward compatibility)."""
         return self.connector_manager.get_all_connectors()
 
     @property
-    def connectors(self) -> Dict[str, ExchangeBase]:
+    def connectors(self) -> dict[str, ExchangeBase]:
         """Get all connectors (backward compatibility)."""
         return self.connector_manager.connectors
 
     @property
-    def strategy_file_name(self) -> Optional[str]:
+    def strategy_file_name(self) -> str | None:
         """Get the strategy file name."""
         return self._strategy_file_name
 
     @strategy_file_name.setter
-    def strategy_file_name(self, value: Optional[str]):
+    def strategy_file_name(self, value: str | None):
         """Set the strategy file name."""
         self._strategy_file_name = value
 
@@ -227,9 +229,9 @@ class TradingCore:
     async def create_connector(
         self,
         connector_name: str,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         trading_required: bool = True,
-        api_keys: Optional[Dict[str, str]] = None,
+        api_keys: dict[str, str] | None = None,
     ) -> ExchangeBase:
         """
         Create a connector instance.
@@ -359,7 +361,7 @@ class TradingCore:
         self.markets_recorder.start()
         self.logger().info(f"Markets recorder initialized with database: {db_name}")
 
-    def load_v2_class(self, strategy_name: str) -> Tuple[Type, BaseClientModel]:
+    def load_v2_class(self, strategy_name: str) -> tuple[Type, BaseClientModel]:
         """
         Load V2 strategy class and its config.
 
@@ -413,7 +415,7 @@ class TradingCore:
 
         return strategy_class, config
 
-    def _load_strategy_config(self) -> Dict[str, Any]:
+    def _load_strategy_config(self) -> dict[str, Any]:
         """
         Load strategy configuration from various sources.
 
@@ -428,7 +430,7 @@ class TradingCore:
         else:
             return {}
 
-    def _load_v2_yaml_config(self, config_file_path: str) -> Dict[str, Any]:
+    def _load_v2_yaml_config(self, config_file_path: str) -> dict[str, Any]:
         """Load YAML configuration file for V2 strategies."""
         import yaml
 
@@ -451,8 +453,8 @@ class TradingCore:
     async def start_strategy(
         self,
         strategy_name: str,
-        strategy_config: Optional[Union[BaseStrategyConfigMap, Dict[str, Any], str]] = None,
-        strategy_file_name: Optional[str] = None,
+        strategy_config: Union[BaseStrategyConfigMap, dict[str, Any], str] | None = None,
+        strategy_file_name: str | None = None,
     ) -> bool:
         """
         Start a trading strategy.
@@ -648,7 +650,7 @@ class TradingCore:
             for base, quote in [trading_pair.split("-")]
         ]
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """Get current status of the trading engine."""
         return {
             "clock_running": self._is_running,
@@ -674,7 +676,7 @@ class TradingCore:
         for notifier in self.notifiers:
             notifier.add_message_to_queue(msg)
 
-    async def initialize_markets(self, market_names: List[Tuple[str, List[str]]]):
+    async def initialize_markets(self, market_names: list[tuple[str, list[str]]]):
         """
         Initialize markets - single method that works for all strategy types.
 
@@ -748,7 +750,7 @@ class TradingCore:
         start_time = self.init_time
 
         with self.trade_fill_db.get_new_session() as session:
-            trades: List[TradeFill] = self._get_trades_from_session(
+            trades: list[TradeFill] = self._get_trades_from_session(
                 int(start_time * 1e3), session=session, config_file_path=self.strategy_file_name
             )
             perf_metrics = await self.calculate_performance_metrics_by_connector_pair(trades)
@@ -756,13 +758,13 @@ class TradingCore:
             return sum(returns_pct) / len(returns_pct) if len(returns_pct) > 0 else s_decimal_0
 
     async def calculate_performance_metrics_by_connector_pair(
-        self, trades: List[TradeFill]
-    ) -> List[PerformanceMetrics]:
+        self, trades: list[TradeFill]
+    ) -> list[PerformanceMetrics]:
         """
         Calculates performance metrics by connector and trading pair using the provided trades and the PerformanceMetrics class.
         """
-        market_info: Set[Tuple[str, str]] = set((t.market, t.symbol) for t in trades)
-        performance_metrics: List[PerformanceMetrics] = []
+        market_info: set[tuple[str, str]] = set((t.market, t.symbol) for t in trades)
+        performance_metrics: list[PerformanceMetrics] = []
         for market, symbol in market_info:
             cur_trades = [t for t in trades if t.market == market and t.symbol == symbol]
             network_timeout = float(self.client_config_map.commands_timeout.other_commands_timeout)
@@ -779,17 +781,17 @@ class TradingCore:
 
     @staticmethod
     def _get_trades_from_session(
-        start_timestamp: int, session: Session, number_of_rows: Optional[int] = None, config_file_path: str = None
-    ) -> List[TradeFill]:
+        start_timestamp: int, session: Session, number_of_rows: int | None = None, config_file_path: str = None
+    ) -> list[TradeFill]:
 
         filters = [TradeFill.timestamp >= start_timestamp]
         if config_file_path is not None:
             filters.append(TradeFill.config_file_path.like(f"%{config_file_path}%"))
         query: Query = session.query(TradeFill).filter(*filters).order_by(TradeFill.timestamp.desc())
         if number_of_rows is None:
-            result: List[TradeFill] = query.all() or []
+            result: list[TradeFill] = query.all() or []
         else:
-            result: List[TradeFill] = query.limit(number_of_rows).all() or []
+            result: list[TradeFill] = query.limit(number_of_rows).all() or []
 
         result.reverse()
         return result

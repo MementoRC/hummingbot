@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import asyncio
 from copy import deepcopy
 from decimal import Decimal
 from itertools import chain, product
 import json
 import re
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable
 from unittest.mock import patch
 from urllib.parse import urlencode
 
@@ -99,8 +101,8 @@ class BybitPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDe
     def configure_all_symbols_response(
         self,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
 
         linear_url = self.all_symbols_url
         non_linear_url = linear_url.replace("linear", "inverse")
@@ -116,8 +118,8 @@ class BybitPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDe
     def configure_trading_rules_response(
         self,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
 
         linear_url = self.trading_rules_url
         non_linear_url = self.trading_rules_url.replace("linear", "inverse")
@@ -131,8 +133,8 @@ class BybitPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDe
     def configure_erroneous_trading_rules_response(
         self,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
 
         linear_url = self.trading_rules_url
         non_linear_url = self.trading_rules_url.replace("linear", "inverse")
@@ -229,7 +231,7 @@ class BybitPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDe
         return mock_response
 
     @property
-    def all_symbols_including_invalid_pair_mock_response(self) -> Tuple[str, Any]:
+    def all_symbols_including_invalid_pair_mock_response(self) -> tuple[str, Any]:
         mock_response = {
             "retCode": 0,
             "retMsg": "OK",
@@ -403,9 +405,9 @@ class BybitPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDe
 
     def _configure_balance_response(
         self,
-        response: Dict[str, Any],
+        response: dict[str, Any],
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         linear_url = self.balance_url
         (
@@ -420,8 +422,8 @@ class BybitPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDe
     def configure_trade_fills_response(
         self,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.USER_TRADE_RECORDS_PATH_URL, trading_pair=self.trading_pair
         )
@@ -440,8 +442,8 @@ class BybitPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDe
     def configure_erroneous_trade_fills_response(
         self,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.USER_TRADE_RECORDS_PATH_URL, trading_pair=self.trading_pair
         )
@@ -619,7 +621,7 @@ class BybitPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDe
         }
 
     @property
-    def expected_supported_position_modes(self) -> List[PositionMode]:
+    def expected_supported_position_modes(self) -> list[PositionMode]:
         raise NotImplementedError  # test is overwritten
 
     @property
@@ -753,7 +755,7 @@ class BybitPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDe
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         """
         :return: the URL configured for the cancelation
@@ -770,7 +772,7 @@ class BybitPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDe
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.CANCEL_ACTIVE_ORDER_PATH_URL, trading_pair=order.trading_pair
@@ -788,7 +790,7 @@ class BybitPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDe
         successful_order: InFlightOrder,
         erroneous_order: InFlightOrder,
         mock_api: aioresponses,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         :return: a list of all configured URLs for the cancelations
         """
@@ -805,7 +807,7 @@ class BybitPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDe
         mock_api: aioresponses,
         ret_code: int = 110001,
         ret_msg: str = "Order does not exist",
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         # Implement the expected not found response when enabling test_cancel_order_not_found_in_the_exchange
         mock_url = web_utils.get_rest_url_for_endpoint(
@@ -821,8 +823,8 @@ class BybitPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDe
         mock_api: aioresponses,
         ret_code: int = 110001,
         ret_msg: str = "Order does not exist",
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
         mock_url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.QUERY_ACTIVE_ORDER_PATH_URL, trading_pair=order.trading_pair
         )
@@ -839,7 +841,7 @@ class BybitPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDe
         return url
 
     def configure_completely_filled_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.QUERY_ACTIVE_ORDER_PATH_URL, trading_pair=order.trading_pair
@@ -853,7 +855,7 @@ class BybitPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDe
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.QUERY_ACTIVE_ORDER_PATH_URL, trading_pair=order.trading_pair
@@ -867,7 +869,7 @@ class BybitPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDe
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.QUERY_ACTIVE_ORDER_PATH_URL, trading_pair=order.trading_pair
@@ -881,7 +883,7 @@ class BybitPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDe
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.QUERY_ACTIVE_ORDER_PATH_URL, trading_pair=order.trading_pair
@@ -894,7 +896,7 @@ class BybitPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDe
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.QUERY_ACTIVE_ORDER_PATH_URL, trading_pair=order.trading_pair
@@ -908,7 +910,7 @@ class BybitPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDe
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.QUERY_ACTIVE_ORDER_PATH_URL, trading_pair=order.trading_pair
@@ -922,7 +924,7 @@ class BybitPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDe
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.USER_TRADE_RECORDS_PATH_URL, trading_pair=order.trading_pair
@@ -936,7 +938,7 @@ class BybitPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDe
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.QUERY_ACTIVE_ORDER_PATH_URL, trading_pair=order.trading_pair
@@ -949,7 +951,7 @@ class BybitPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDe
         self,
         position_mode: PositionMode,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ):
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.SET_POSITION_MODE_URL, trading_pair=self.trading_pair
@@ -963,7 +965,7 @@ class BybitPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDe
         self,
         position_mode: PositionMode,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ):
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.SET_POSITION_MODE_URL, trading_pair=self.trading_pair
@@ -987,8 +989,8 @@ class BybitPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDe
         self,
         leverage: PositionMode,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> Tuple[str, str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> tuple[str, str]:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.SET_LEVERAGE_PATH_URL, trading_pair=self.trading_pair
         )
@@ -1005,7 +1007,7 @@ class BybitPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDe
         self,
         leverage: int,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ):
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.SET_LEVERAGE_PATH_URL, trading_pair=self.trading_pair

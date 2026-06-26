@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.derivative.okx_perpetual import (
     okx_perpetual_constants as CONSTANTS,
@@ -26,7 +28,7 @@ class OkxPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
     def __init__(
         self,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "OkxPerpetualDerivative",
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -49,8 +51,8 @@ class OkxPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         await self._set_trading_rules()
         ex_trading_pair = await self._connector.exchange_symbol_associated_to_pair(trading_pair)
         ct_val = self._trading_rules[ex_trading_pair]
-        snapshot_response: Dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
-        snapshot_data: Dict[str, Any] = snapshot_response["data"][0]
+        snapshot_response: dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
+        snapshot_data: dict[str, Any] = snapshot_response["data"][0]
         snapshot_timestamp: float = int(snapshot_data["ts"])
         update_id: int = int(snapshot_timestamp)
 
@@ -66,7 +68,7 @@ class OkxPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
         return snapshot_msg
 
-    async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, Any]:
+    async def _request_order_book_snapshot(self, trading_pair: str) -> dict[str, Any]:
         params = {
             "instId": await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair),
             "sz": "400",
@@ -87,14 +89,14 @@ class OkxPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
         return data
 
-    async def _set_trading_rules(self) -> Dict[str, Any]:
+    async def _set_trading_rules(self) -> dict[str, Any]:
         if not bool(self._trading_rules):
             resp = await self._request_trading_rules_info()
             for rule in resp["data"]:
                 self._trading_rules[rule["instId"]] = float(rule["ctVal"])
         return self._trading_rules
 
-    async def _request_trading_rules_info(self) -> Dict[str, Any]:
+    async def _request_trading_rules_info(self) -> dict[str, Any]:
         params = {"instType": "SWAP"}
         rest_assistant = await self._api_factory.get_rest_assistant()
         endpoint = CONSTANTS.REST_GET_INSTRUMENTS[CONSTANTS.ENDPOINT]
@@ -108,7 +110,7 @@ class OkxPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         return data
 
     # 2 - Get Last Traded Prices REST
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices()
 
     # 3 - Get Funding Info REST
@@ -305,8 +307,8 @@ class OkxPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
                 self.logger().exception("Unexpected error when processing public index price updates from exchange")
 
     # 6 - Parsers
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
-        diff_updates: Dict[str, Any] = raw_message["data"]
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
+        diff_updates: dict[str, Any] = raw_message["data"]
         await self._set_trading_rules()
 
         for diff_data in diff_updates:
@@ -328,7 +330,7 @@ class OkxPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
             message_queue.put_nowait(diff_message)
 
-    async def _parse_order_book_snapshot_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_snapshot_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(
             symbol=raw_message["arg"]["instId"]
         )
@@ -348,7 +350,7 @@ class OkxPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
         message_queue.put_nowait(snapshot_msg)
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         trade_updates = raw_message["data"]
 
         for trade_data in trade_updates:
@@ -362,13 +364,13 @@ class OkxPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
                 "amount": trade_data["sz"],
                 "price": trade_data["px"],
             }
-            trade_message: Optional[OrderBookMessage] = OrderBookMessage(
+            trade_message: OrderBookMessage | None = OrderBookMessage(
                 message_type=OrderBookMessageType.TRADE, content=message_content, timestamp=(int(trade_data["ts"]))
             )
 
             message_queue.put_nowait(trade_message)
 
-    async def _parse_funding_info_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_funding_info_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         symbol = raw_message["arg"]["instId"]
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(symbol)
         funding_data = raw_message["data"][0]
@@ -383,7 +385,7 @@ class OkxPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         )
         message_queue.put_nowait(info_update)
 
-    async def _parse_index_price_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_index_price_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         symbol = raw_message["arg"]["instId"]
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(symbol)
         index_price_data = raw_message["data"][0]
@@ -397,7 +399,7 @@ class OkxPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         )
         message_queue.put_nowait(info_update)
 
-    async def _parse_mark_price_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_mark_price_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         symbol = raw_message["arg"]["instId"]
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(symbol)
         mark_price_data = raw_message["data"][0]
@@ -411,7 +413,7 @@ class OkxPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         )
         message_queue.put_nowait(info_update)
 
-    def _get_messages_queue_keys(self) -> List[str]:
+    def _get_messages_queue_keys(self) -> list[str]:
         return [
             self._snapshot_messages_queue_key,
             self._diff_messages_queue_key,
@@ -421,7 +423,7 @@ class OkxPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             self._index_price_queue_key,
         ]
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         channel = ""
         if "data" in event_message:
             event_channel = event_message["arg"]["channel"]
