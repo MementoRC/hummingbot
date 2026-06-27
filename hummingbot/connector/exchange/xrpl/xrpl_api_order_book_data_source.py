@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from dataclasses import dataclass, field
 from decimal import Decimal
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set
+from typing import TYPE_CHECKING, Any
 
 # XRPL imports
 from xrpl.asyncio.clients import AsyncWebsocketClient
@@ -36,8 +38,8 @@ class SubscriptionConnection:
 
     trading_pair: str
     url: str
-    client: Optional[AsyncWebsocketClient] = None
-    listener_task: Optional[asyncio.Task] = None
+    client: AsyncWebsocketClient | None = None
+    listener_task: asyncio.Task | None = None
     is_connected: bool = False
     reconnect_count: int = 0
     last_message_time: float = field(default_factory=time.time)
@@ -52,16 +54,16 @@ class SubscriptionConnection:
 
 
 class XRPLAPIOrderBookDataSource(OrderBookTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
-    last_parsed_trade_timestamp: Dict[str, int] = {}
-    last_parsed_order_book_timestamp: Dict[str, int] = {}
+    _logger: HummingbotLogger | None = None
+    last_parsed_trade_timestamp: dict[str, int] = {}
+    last_parsed_order_book_timestamp: dict[str, int] = {}
 
     def __init__(
         self,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "XrplExchange",
         api_factory: WebAssistantsFactory,
-        worker_manager: Optional[XRPLWorkerPoolManager] = None,
+        worker_manager: XRPLWorkerPoolManager | None = None,
     ):
         super().__init__(trading_pairs)
         self._connector = connector
@@ -74,7 +76,7 @@ class XRPLAPIOrderBookDataSource(OrderBookTrackerDataSource):
         self._snapshot_messages_queue_key = CONSTANTS.SNAPSHOT_EVENT_TYPE
 
         # Subscription connections (dedicated, NOT from shared pool)
-        self._subscription_connections: Dict[str, SubscriptionConnection] = {}
+        self._subscription_connections: dict[str, SubscriptionConnection] = {}
         self._subscription_lock = asyncio.Lock()
 
         # Node URL rotation for subscriptions (separate from pool's rotation)
@@ -89,10 +91,10 @@ class XRPLAPIOrderBookDataSource(OrderBookTrackerDataSource):
         """
         self._worker_manager = worker_manager
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
-    def _get_next_node_url(self, exclude_url: Optional[str] = None) -> Optional[str]:
+    def _get_next_node_url(self, exclude_url: str | None = None) -> str | None:
         """
         Get the next node URL for subscription, respecting bad node tracking.
         Uses round-robin selection, skipping bad nodes.
@@ -128,8 +130,8 @@ class XRPLAPIOrderBookDataSource(OrderBookTrackerDataSource):
     async def _create_subscription_connection(
         self,
         trading_pair: str,
-        exclude_url: Optional[str] = None,
-    ) -> Optional[AsyncWebsocketClient]:
+        exclude_url: str | None = None,
+    ) -> AsyncWebsocketClient | None:
         """
         Create a dedicated WebSocket connection for subscription.
 
@@ -143,7 +145,7 @@ class XRPLAPIOrderBookDataSource(OrderBookTrackerDataSource):
         Returns:
             Connected AsyncWebsocketClient or None if connection failed
         """
-        tried_urls: Set[str] = set()
+        tried_urls: set[str] = set()
         node_urls = self._connector._node_pool._node_urls
 
         while len(tried_urls) < len(node_urls):
@@ -182,7 +184,7 @@ class XRPLAPIOrderBookDataSource(OrderBookTrackerDataSource):
         )
         return None
 
-    async def _close_subscription_connection(self, client: Optional[AsyncWebsocketClient]):
+    async def _close_subscription_connection(self, client: AsyncWebsocketClient | None):
         """
         Safely close a subscription connection.
 
@@ -195,7 +197,7 @@ class XRPLAPIOrderBookDataSource(OrderBookTrackerDataSource):
             except Exception as e:
                 self.logger().debug(f"[SUBSCRIPTION] Error closing connection: {e}")
 
-    async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, Any]:
+    async def _request_order_book_snapshot(self, trading_pair: str) -> dict[str, Any]:
         """
         Retrieves a copy of the full order book from the exchange using the worker pool.
 
@@ -267,7 +269,7 @@ class XRPLAPIOrderBookDataSource(OrderBookTrackerDataSource):
                 await self._sleep(CONSTANTS.REQUEST_ORDERBOOK_INTERVAL)
 
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBookMessage:
-        snapshot: Dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
+        snapshot: dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
         snapshot_timestamp: float = time.time()
 
         snapshot_msg: OrderBookMessage = XRPLOrderBook.snapshot_message_from_exchange(
@@ -280,7 +282,7 @@ class XRPLAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
         return snapshot_msg
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         trading_pair = raw_message["trading_pair"]
         trade = raw_message["trade"]
 
@@ -297,7 +299,7 @@ class XRPLAPIOrderBookDataSource(OrderBookTrackerDataSource):
         trade_message = XRPLOrderBook.trade_message_from_exchange(msg)
         message_queue.put_nowait(trade_message)
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         pass
 
     async def _process_websocket_messages_for_pair(self, trading_pair: str):
@@ -320,11 +322,11 @@ class XRPLAPIOrderBookDataSource(OrderBookTrackerDataSource):
         subscribe = Subscribe(books=[subscribe_book_request])
 
         retry_count = 0
-        last_url: Optional[str] = None
+        last_url: str | None = None
 
         while retry_count < CONSTANTS.SUBSCRIPTION_MAX_RETRIES:
-            client: Optional[AsyncWebsocketClient] = None
-            health_check_task: Optional[asyncio.Task] = None
+            client: AsyncWebsocketClient | None = None
+            health_check_task: asyncio.Task | None = None
 
             try:
                 # Create dedicated connection (NOT from shared pool)

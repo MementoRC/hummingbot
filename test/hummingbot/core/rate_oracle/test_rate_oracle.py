@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 from copy import deepcopy
 from decimal import Decimal
-from typing import Dict, Optional
 from unittest.mock import MagicMock
 
 from hummingbot.client.config.client_config_map import ClientConfigMap
@@ -15,14 +16,14 @@ from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCa
 
 
 class DummyRateSource(RateSourceBase):
-    def __init__(self, price_dict: Dict[str, Decimal]):
+    def __init__(self, price_dict: dict[str, Decimal]):
         self._price_dict = price_dict
 
     @property
     def name(self):
         return "dummy_rate_source"
 
-    async def get_prices(self, quote_token: Optional[str] = None) -> Dict[str, Decimal]:
+    async def get_prices(self, quote_token: str | None = None) -> dict[str, Decimal]:
         return deepcopy(self._price_dict)
 
 
@@ -124,7 +125,7 @@ class RateOracleTest(IsolatedAsyncioWrapperTestCase):
         self.assertEqual(0, len(rate_oracle.prices))
 
     @staticmethod
-    def _make_connector(name: str, order_books: Dict[str, Decimal]) -> MagicMock:
+    def _make_connector(name: str, order_books: dict[str, Decimal]) -> MagicMock:
         connector = MagicMock()
         connector.name = name
         connector.order_books = {pair: MagicMock() for pair in order_books}

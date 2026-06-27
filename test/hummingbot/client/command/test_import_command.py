@@ -3,7 +3,6 @@ from datetime import date, datetime, time
 from decimal import Decimal
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Type
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from pydantic import Field
@@ -39,7 +38,7 @@ class ImportCommandTest(IsolatedAsyncioWrapperTestCase):
         raise asyncio.TimeoutError
 
     @staticmethod
-    def build_dummy_strategy_config_cls(strategy_name: str) -> Type[BaseClientModel]:
+    def build_dummy_strategy_config_cls(strategy_name: str) -> type[BaseClientModel]:
         class SomeEnum(ClientConfigEnum):
             ONE = "one"
 

@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import logging
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, List, NamedTuple
+from typing import TYPE_CHECKING, Any, AsyncGenerator, NamedTuple
 
 import hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_trade_constants as constants
 from hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_trade_web_utils import (
@@ -56,7 +58,7 @@ class CoinbaseAdvancedTradeAPIUserStreamDataSource(UserStreamTrackerDataSource):
     def __init__(
         self,
         auth,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "CoinbaseAdvancedTradeExchange",
         api_factory: WebAssistantsFactory,
         domain: str = "com",
@@ -73,7 +75,7 @@ class CoinbaseAdvancedTradeAPIUserStreamDataSource(UserStreamTrackerDataSource):
         super().__init__()
         self._domain: str = domain
         self._api_factory: WebAssistantsFactory = api_factory
-        self._trading_pairs: List[str] = trading_pairs
+        self._trading_pairs: list[str] = trading_pairs
         self._connector = connector
 
         self._ws_assistant: WSAssistant | None = None
@@ -145,7 +147,7 @@ class CoinbaseAdvancedTradeAPIUserStreamDataSource(UserStreamTrackerDataSource):
             "timestamp": 1675974199
         }
         """
-        symbols: List[str] = [
+        symbols: list[str] = [
             await self._connector.exchange_symbol_associated_to_pair(trading_pair=pair) for pair in self._trading_pairs
         ]
 
@@ -193,7 +195,7 @@ class CoinbaseAdvancedTradeAPIUserStreamDataSource(UserStreamTrackerDataSource):
         :param queue: The intermediary queue to put the messages into.
         """
         async for ws_response in websocket_assistant.iter_messages():  # type: ignore # PyCharm doesn't recognize iter_messages
-            data: Dict[str, Any] = ws_response.data
+            data: dict[str, Any] = ws_response.data
 
             if "type" in data and data["type"] == "error":
                 if "authentication failure" in data["message"]:
@@ -221,7 +223,7 @@ class CoinbaseAdvancedTradeAPIUserStreamDataSource(UserStreamTrackerDataSource):
             elif channel in {"heartbeats"}:
                 self._process_heartbeat_message(data)
 
-    def _process_sequence_number(self, data: Dict[str, Any]):
+    def _process_sequence_number(self, data: dict[str, Any]):
         """
         Processes the sequence number from the websocket message.
         :param data: The message received from the websocket connection.
@@ -234,21 +236,21 @@ class CoinbaseAdvancedTradeAPIUserStreamDataSource(UserStreamTrackerDataSource):
 
         self._sequence = data["sequence_num"] + 1
 
-    def _process_subscription_message(self, data: Dict[str, Any]):
+    def _process_subscription_message(self, data: dict[str, Any]):
         """
         Processes the subscription message from the websocket connection.
         :param data: The message received from the websocket connection.
         """
         pass  # self.logger().debug(f"Received subscription message: {data}")
 
-    def _process_heartbeat_message(self, data: Dict[str, Any]):
+    def _process_heartbeat_message(self, data: dict[str, Any]):
         """
         Processes the heartbeat message from the websocket connection.
         :param data: The message received from the websocket connection.
         """
         pass  # self.logger().debug(f"Received heartbeat message: {data}")
 
-    async def _decipher_message(self, event_message: Dict[str, Any]) -> AsyncGenerator[Dict[str, Any], None]:
+    async def _decipher_message(self, event_message: dict[str, Any]) -> AsyncGenerator[dict[str, Any], None]:
         """
         Streamline the messages for processing by the exchange.
         :param event_message: The message received from the exchange.

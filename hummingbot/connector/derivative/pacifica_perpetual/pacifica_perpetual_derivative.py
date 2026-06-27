@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import time
-from typing import Any, Dict, List, NamedTuple, Optional, Tuple
+from typing import Any, NamedTuple
 
 from bidict import bidict
 
@@ -57,10 +59,10 @@ class PacificaPerpetualDerivative(PerpetualDerivativePyBase):
         pacifica_perpetual_agent_wallet_private_key: str,
         pacifica_perpetual_user_wallet_public_key: str,
         pacifica_perpetual_api_config_key: str = "",
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
     ):
         self.agent_wallet_public_key = pacifica_perpetual_agent_wallet_public_key
@@ -72,11 +74,11 @@ class PacificaPerpetualDerivative(PerpetualDerivativePyBase):
         self._trading_required = trading_required
         self._trading_pairs = trading_pairs
 
-        self._prices: Dict[str, Optional[PacificaPerpetualPriceRecord]] = {
+        self._prices: dict[str, PacificaPerpetualPriceRecord | None] = {
             trading_pair: None for trading_pair in trading_pairs
         }
 
-        self._order_history_last_poll_timestamp: Dict[str, float] = {}
+        self._order_history_last_poll_timestamp: dict[str, float] = {}
 
         self._fee_tier = 0
 
@@ -110,16 +112,16 @@ class PacificaPerpetualDerivative(PerpetualDerivativePyBase):
     async def _api_request(
         self,
         path_url,
-        overwrite_url: Optional[str] = None,
+        overwrite_url: str | None = None,
         method: RESTMethod = RESTMethod.GET,
-        params: Optional[Dict[str, Any]] = None,
-        data: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
+        data: dict[str, Any] | None = None,
         is_auth_required: bool = False,
         return_err: bool = False,
-        limit_id: Optional[str] = None,
-        headers: Optional[Dict[str, Any]] = None,
+        limit_id: str | None = None,
+        headers: dict[str, Any] | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
 
         if self.api_config_key:
             pf_headers = {"PF-API-KEY": self.api_config_key}
@@ -227,7 +229,7 @@ class PacificaPerpetualDerivative(PerpetualDerivativePyBase):
         return CONSTANTS.EXCHANGE_INFO_PATH_URL
 
     @property
-    def trading_pairs(self) -> Optional[List[str]]:
+    def trading_pairs(self) -> list[str] | None:
         return self._trading_pairs
 
     @property
@@ -246,10 +248,10 @@ class PacificaPerpetualDerivative(PerpetualDerivativePyBase):
         # so query every 2 minutes should work
         return 120
 
-    def supported_order_types(self) -> List[OrderType]:
+    def supported_order_types(self) -> list[OrderType]:
         return [OrderType.LIMIT, OrderType.LIMIT_MAKER, OrderType.MARKET]
 
-    def supported_position_modes(self) -> List[PositionMode]:
+    def supported_position_modes(self) -> list[PositionMode]:
         return [PositionMode.ONEWAY]
 
     def get_buy_collateral_token(self, trading_pair: str) -> str:
@@ -299,7 +301,7 @@ class PacificaPerpetualDerivative(PerpetualDerivativePyBase):
             domain=self._domain,
         )
 
-    async def _format_trading_rules(self, exchange_info_dict: Dict[str, Any]) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: dict[str, Any]) -> list[TradingRule]:
         """
         https://docs.pacifica.fi/api-documentation/api/rest-api/markets/get-market-info
 
@@ -366,7 +368,7 @@ class PacificaPerpetualDerivative(PerpetualDerivativePyBase):
         price: Decimal,
         position_action: PositionAction = PositionAction.NIL,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         """
         https://docs.pacifica.fi/api-documentation/api/rest-api/orders/create-market-order
         https://docs.pacifica.fi/api-documentation/api/rest-api/orders/create-limit-order
@@ -608,7 +610,7 @@ class PacificaPerpetualDerivative(PerpetualDerivativePyBase):
             )
             self._perpetual_trading.set_position(position_key, position)
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         """
         Retrieves trade updates for a specific order using the account trade history endpoint.
         Uses the order's creation timestamp as the start time to filter the trade history.
@@ -899,7 +901,7 @@ class PacificaPerpetualDerivative(PerpetualDerivativePyBase):
 
         self.logger().info("Trading fees updated")
 
-    async def _fetch_last_fee_payment(self, trading_pair: str) -> Tuple[float, Decimal, Decimal]:
+    async def _fetch_last_fee_payment(self, trading_pair: str) -> tuple[float, Decimal, Decimal]:
         """
         https://docs.pacifica.fi/api-documentation/api/rest-api/account/get-funding-history
 
@@ -1009,7 +1011,7 @@ class PacificaPerpetualDerivative(PerpetualDerivativePyBase):
 
         return 0, Decimal("-1"), Decimal("-1")
 
-    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> Tuple[bool, str]:
+    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> tuple[bool, str]:
         symbol = await self.exchange_symbol_associated_to_pair(trading_pair)
 
         data = {
@@ -1017,7 +1019,7 @@ class PacificaPerpetualDerivative(PerpetualDerivativePyBase):
             "leverage": leverage,
             "type": "update_leverage",
         }
-        response: Dict[str, Any] = await self._api_post(
+        response: dict[str, Any] = await self._api_post(
             path_url=CONSTANTS.SET_LEVERAGE_PATH_URL,
             data=data,
             return_err=True,
@@ -1035,10 +1037,10 @@ class PacificaPerpetualDerivative(PerpetualDerivativePyBase):
 
         return success, msg
 
-    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> Tuple[bool, str]:
+    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> tuple[bool, str]:
         return True, ""
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         mapping = bidict()
         for symbol_data in exchange_info.get("data", []):
             exchange_symbol = symbol_data["symbol"]
@@ -1058,7 +1060,7 @@ class PacificaPerpetualDerivative(PerpetualDerivativePyBase):
         position_action: PositionAction,
         amount: Decimal,
         price: Decimal = Decimal("nan"),
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         is_maker = is_maker or False
         fee = build_trade_fee(
@@ -1095,7 +1097,7 @@ class PacificaPerpetualDerivative(PerpetualDerivativePyBase):
                 self.logger().error(f"Unexpected error in user stream listener loop: {e}", exc_info=True)
                 await self._sleep(5.0)
 
-    async def _process_account_order_updates_ws_event_message(self, event_message: Dict[str, Any]):
+    async def _process_account_order_updates_ws_event_message(self, event_message: dict[str, Any]):
         """
         https://docs.pacifica.fi/api-documentation/api/websocket/subscriptions/account-order-updates
         {
@@ -1141,7 +1143,7 @@ class PacificaPerpetualDerivative(PerpetualDerivativePyBase):
                 )
                 self._order_tracker.process_order_update(order_update)
 
-    async def _process_account_positions_ws_event_message(self, event_message: Dict[str, Any]):
+    async def _process_account_positions_ws_event_message(self, event_message: dict[str, Any]):
         """
         https://docs.pacifica.fi/api-documentation/api/websocket/subscriptions/account-positions
         {
@@ -1228,7 +1230,7 @@ class PacificaPerpetualDerivative(PerpetualDerivativePyBase):
             )
             self._perpetual_trading.set_position(position_key, position)
 
-    async def _process_account_info_ws_event_message(self, event_message: Dict[str, Any]):
+    async def _process_account_info_ws_event_message(self, event_message: dict[str, Any]):
         """
         https://docs.pacifica.fi/api-documentation/api/websocket/subscriptions/account-info
         {
@@ -1261,7 +1263,7 @@ class PacificaPerpetualDerivative(PerpetualDerivativePyBase):
         self._account_balances[asset] = Decimal(event_message["data"]["ae"])
         self._account_available_balances[asset] = Decimal(event_message["data"]["as"])
 
-    async def _process_account_trades_ws_event_message(self, event_message: Dict[str, Any]):
+    async def _process_account_trades_ws_event_message(self, event_message: dict[str, Any]):
         """
         https://docs.pacifica.fi/api-documentation/api/websocket/subscriptions/account-trades
         {
@@ -1347,7 +1349,7 @@ class PacificaPerpetualDerivative(PerpetualDerivativePyBase):
                 timestamp=timestamp, index_price=index_price, mark_price=mark_price
             )
 
-    def get_pacifica_price(self, trading_pair: str) -> Optional[PacificaPerpetualPriceRecord]:
+    def get_pacifica_price(self, trading_pair: str) -> PacificaPerpetualPriceRecord | None:
         """
         Get the price information for the given trading pair
 
@@ -1402,7 +1404,7 @@ class PacificaPerpetualDerivative(PerpetualDerivativePyBase):
         await self._update_balances()
         await super().start_network()
 
-    async def get_all_pairs_prices(self) -> List[Dict[str, Any]]:
+    async def get_all_pairs_prices(self) -> list[dict[str, Any]]:
         """
         Retrieves the prices (mark price) for all trading pairs.
         Required for Rate Oracle support.

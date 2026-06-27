@@ -1,5 +1,5 @@
 import os
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING
 
 import pandas as pd
 
@@ -71,7 +71,7 @@ class ExportCommand:
         self,  # type: HummingbotApplication
     ):
         with self.trading_core.trade_fill_db.get_new_session() as session:
-            trades: List[TradeFill] = self._get_trades_from_session(int(self.init_time * 1e3), session=session)
+            trades: list[TradeFill] = self._get_trades_from_session(int(self.init_time * 1e3), session=session)
             if len(trades) == 0:
                 self.notify("No past trades to export.")
                 return

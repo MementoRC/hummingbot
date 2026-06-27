@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from enum import Enum
-from typing import Dict, Optional
+from typing import Dict
 
 from hummingbot.connector.exchange.foxbit import foxbit_constants as CONSTANTS
 from hummingbot.core.data_type.common import TradeType
@@ -57,8 +59,8 @@ class FoxbitOrderBook(OrderBook):
     @classmethod
     def trade_message_from_exchange(
         cls,
-        msg: Dict[str, any],
-        metadata: Optional[Dict] = None,
+        msg: dict[str, any],
+        metadata: Dict | None = None,
     ):
         """
         Creates a trade message with the information from the trade event sent by the exchange
@@ -85,9 +87,9 @@ class FoxbitOrderBook(OrderBook):
     @classmethod
     def snapshot_message_from_exchange(
         cls,
-        msg: Dict[str, any],
+        msg: dict[str, any],
         timestamp: float,
-        metadata: Optional[Dict] = None,
+        metadata: Dict | None = None,
     ) -> OrderBookMessage:
         """
         Creates a snapshot message with the order book snapshot message
@@ -131,9 +133,9 @@ class FoxbitOrderBook(OrderBook):
     @classmethod
     def diff_message_from_exchange(
         cls,
-        msg: Dict[str, any],
-        timestamp: Optional[float] = None,
-        metadata: Optional[Dict] = None,
+        msg: dict[str, any],
+        timestamp: float | None = None,
+        metadata: Dict | None = None,
     ) -> OrderBookMessage:
         """
         Creates a diff message with the changes in the order book received from the exchange

@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from copy import deepcopy
-from typing import AsyncGenerator, Dict, List, Optional
+from typing import AsyncGenerator, Dict
 
 from hummingbot.core.web_assistant.auth import AuthBase
 from hummingbot.core.web_assistant.connections.data_types import WSRequest, WSResponse
@@ -19,9 +21,9 @@ class WSAssistant:
     def __init__(
         self,
         connection: WSConnection,
-        ws_pre_processors: Optional[List[WSPreProcessorBase]] = None,
-        ws_post_processors: Optional[List[WSPostProcessorBase]] = None,
-        auth: Optional[AuthBase] = None,
+        ws_pre_processors: list[WSPreProcessorBase] | None = None,
+        ws_post_processors: list[WSPostProcessorBase] | None = None,
+        auth: AuthBase | None = None,
     ):
         self._connection = connection
         self._ws_pre_processors = ws_pre_processors or []
@@ -37,9 +39,9 @@ class WSAssistant:
         ws_url: str,
         *,
         ping_timeout: float = 10,
-        message_timeout: Optional[float] = None,
-        ws_headers: Optional[Dict] = {},
-        max_msg_size: Optional[int] = None,
+        message_timeout: float | None = None,
+        ws_headers: Dict | None = {},
+        max_msg_size: int | None = None,
     ):
         max_msg_size = max_msg_size if max_msg_size else self._connection._MAX_MSG_SIZE
         await self._connection.connect(
@@ -66,7 +68,7 @@ class WSAssistant:
     async def ping(self):
         await self._connection.ping()
 
-    async def iter_messages(self) -> AsyncGenerator[Optional[WSResponse], None]:
+    async def iter_messages(self) -> AsyncGenerator[WSResponse | None, None]:
         """Will yield None and stop if `WSDelegate.disconnect()` is called while waiting for a response."""
         while self._connection.connected:
             response = await self._connection.receive()
@@ -74,7 +76,7 @@ class WSAssistant:
                 response = await self._post_process_response(response)
                 yield response
 
-    async def receive(self) -> Optional[WSResponse]:
+    async def receive(self) -> WSResponse | None:
         """This method will return `None` if `WSDelegate.disconnect()` is called while waiting for a response."""
         response = await self._connection.receive()
         if response is not None:
