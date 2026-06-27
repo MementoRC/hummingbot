@@ -93,7 +93,6 @@ class LighterPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
     async def _app_ping_loop(self, websocket_assistant: WSAssistant):
         while True:
             try:
-
                 await asyncio.sleep(CONSTANTS.PRIVATE_WS_PING_INTERVAL)
                 await websocket_assistant.send(WSJSONRequest(payload={"type": "ping"}))
             except asyncio.CancelledError:
