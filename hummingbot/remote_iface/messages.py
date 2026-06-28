@@ -1,4 +1,6 @@
-from typing import Any, Dict, List, Optional, Tuple
+from __future__ import annotations
+
+from typing import Any
 
 from commlib.msg import PubSubMessage, RPCMessage
 
@@ -9,21 +11,21 @@ class MQTT_STATUS_CODE:
 
 
 class NotifyMessage(PubSubMessage):
-    seq: Optional[int] = 0
-    timestamp: Optional[int] = -1
-    msg: Optional[str] = ""
+    seq: int | None = 0
+    timestamp: int | None = -1
+    msg: str | None = ""
 
 
 class StatusUpdateMessage(PubSubMessage):
-    timestamp: Optional[int] = -1
-    type: Optional[str] = ""
-    msg: Optional[str] = ""
+    timestamp: int | None = -1
+    type: str | None = ""
+    msg: str | None = ""
 
 
 class InternalEventMessage(PubSubMessage):
-    timestamp: Optional[int] = -1
-    type: Optional[str] = "ievent"
-    data: Optional[dict] = {}
+    timestamp: int | None = -1
+    type: str | None = "ievent"
+    data: dict | None = {}
 
 
 class LogMessage(PubSubMessage):
@@ -35,44 +37,44 @@ class LogMessage(PubSubMessage):
 
 
 class ExternalEventMessage(PubSubMessage):
-    timestamp: Optional[int] = -1
-    sequence: Optional[int] = 0
-    type: Optional[str] = "eevent"
-    data: Optional[Dict[str, Any]] = {}
+    timestamp: int | None = -1
+    sequence: int | None = 0
+    type: str | None = "eevent"
+    data: dict[str, Any] | None = {}
 
 
 class StartCommandMessage(RPCMessage):
     class Request(RPCMessage.Request):
-        log_level: Optional[str] = None
-        script: Optional[str] = None
-        conf: Optional[str] = None
-        is_quickstart: Optional[bool] = False
-        async_backend: Optional[bool] = True
+        log_level: str | None = None
+        script: str | None = None
+        conf: str | None = None
+        is_quickstart: bool | None = False
+        async_backend: bool | None = True
 
     class Response(RPCMessage.Response):
-        status: Optional[int] = MQTT_STATUS_CODE.SUCCESS
-        msg: Optional[str] = ""
+        status: int | None = MQTT_STATUS_CODE.SUCCESS
+        msg: str | None = ""
 
 
 class StopCommandMessage(RPCMessage):
     class Request(RPCMessage.Request):
-        skip_order_cancellation: Optional[bool] = False
-        async_backend: Optional[bool] = True
+        skip_order_cancellation: bool | None = False
+        async_backend: bool | None = True
 
     class Response(RPCMessage.Response):
-        status: Optional[int] = MQTT_STATUS_CODE.SUCCESS
-        msg: Optional[str] = ""
+        status: int | None = MQTT_STATUS_CODE.SUCCESS
+        msg: str | None = ""
 
 
 class ConfigCommandMessage(RPCMessage):
     class Request(RPCMessage.Request):
-        params: Optional[List[Tuple[str, Any]]] = []
+        params: list[tuple[str, Any]] | None = []
 
     class Response(RPCMessage.Response):
-        changes: Optional[List[Tuple[str, Any]]] = []
-        config: Optional[Dict[str, Any]] = {}
-        status: Optional[int] = MQTT_STATUS_CODE.SUCCESS
-        msg: Optional[str] = ""
+        changes: list[tuple[str, Any]] | None = []
+        config: dict[str, Any] | None = {}
+        status: int | None = MQTT_STATUS_CODE.SUCCESS
+        msg: str | None = ""
 
 
 class ImportCommandMessage(RPCMessage):
@@ -80,31 +82,31 @@ class ImportCommandMessage(RPCMessage):
         strategy: str
 
     class Response(RPCMessage.Response):
-        status: Optional[int] = MQTT_STATUS_CODE.SUCCESS
-        msg: Optional[str] = ""
+        status: int | None = MQTT_STATUS_CODE.SUCCESS
+        msg: str | None = ""
 
 
 class StatusCommandMessage(RPCMessage):
     class Request(RPCMessage.Request):
-        async_backend: Optional[bool] = True
+        async_backend: bool | None = True
 
     class Response(RPCMessage.Response):
-        status: Optional[int] = MQTT_STATUS_CODE.SUCCESS
-        msg: Optional[str] = ""
-        data: Optional[Any] = ""
+        status: int | None = MQTT_STATUS_CODE.SUCCESS
+        msg: str | None = ""
+        data: Any | None = ""
 
 
 class HistoryCommandMessage(RPCMessage):
     class Request(RPCMessage.Request):
-        days: Optional[float] = 0
-        verbose: Optional[bool] = False
-        precision: Optional[int] = None
-        async_backend: Optional[bool] = True
+        days: float | None = 0
+        verbose: bool | None = False
+        precision: int | None = None
+        async_backend: bool | None = True
 
     class Response(RPCMessage.Response):
-        status: Optional[int] = MQTT_STATUS_CODE.SUCCESS
-        msg: Optional[str] = ""
-        trades: Optional[List[Any]] = []
+        status: int | None = MQTT_STATUS_CODE.SUCCESS
+        msg: str | None = ""
+        trades: list[Any] | None = []
 
 
 class BalanceLimitCommandMessage(RPCMessage):
@@ -114,9 +116,9 @@ class BalanceLimitCommandMessage(RPCMessage):
         amount: float
 
     class Response(RPCMessage.Response):
-        status: Optional[int] = MQTT_STATUS_CODE.SUCCESS
-        msg: Optional[str] = ""
-        data: Optional[str] = ""
+        status: int | None = MQTT_STATUS_CODE.SUCCESS
+        msg: str | None = ""
+        data: str | None = ""
 
 
 class BalancePaperCommandMessage(RPCMessage):
@@ -125,6 +127,6 @@ class BalancePaperCommandMessage(RPCMessage):
         amount: float
 
     class Response(RPCMessage.Response):
-        status: Optional[int] = MQTT_STATUS_CODE.SUCCESS
-        msg: Optional[str] = ""
-        data: Optional[str] = ""
+        status: int | None = MQTT_STATUS_CODE.SUCCESS
+        msg: str | None = ""
+        data: str | None = ""

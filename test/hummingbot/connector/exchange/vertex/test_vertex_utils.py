@@ -1,10 +1,10 @@
-import random
 from decimal import Decimal
+import random
 from typing import Dict
 from unittest import TestCase
 
-import hummingbot.connector.exchange.vertex.vertex_constants as CONSTANTS
 from hummingbot.connector.exchange.vertex import vertex_utils
+import hummingbot.connector.exchange.vertex.vertex_constants as CONSTANTS
 
 
 class VertexUtilTestCases(TestCase):
