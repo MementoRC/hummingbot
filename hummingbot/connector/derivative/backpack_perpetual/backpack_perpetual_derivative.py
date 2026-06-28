@@ -72,8 +72,30 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
         self._leverage_initialized = False
         self._position_mode = None
         super().__init__(balance_asset_limit, rate_limits_share_pct)
-        # Backpack does not provide balance updates through websocket, use REST polling instead
+        # Backpack does not provide balance updates through websocket; use REST polling instead.
+        # in_flight_asset_balances() is overridden below so the local reservation between polls
+        # deducts only the margin (notional / leverage) from USDC, not the full quote notional.
         self.real_time_balance_update = False
+
+    def in_flight_asset_balances(self, in_flight_orders: dict[str, InFlightOrder]) -> dict[str, Decimal]:
+        """
+        Reserve each open order's initial margin (notional / leverage) against the USDC collateral
+        for both buys and sells. Backpack perpetual is cross-margin and USDC-settled, so an order
+        locks only its margin -- not the full notional, and never the base asset. This bridges the
+        gap between collateralQuery polls without the over-reservation of the spot base implementation
+        that caused false "Not enough budget" errors (#8168).
+        """
+        asset_balances: dict[str, Decimal] = {}
+        if in_flight_orders is None:
+            return asset_balances
+        leverage = self._leverage if self._leverage and self._leverage > 0 else Decimal("1")
+        for order in (o for o in in_flight_orders.values() if not (o.is_done or o.is_failure or o.is_cancelled)):
+            if order.price is None or not order.price.is_finite():
+                continue
+            outstanding_amount = order.amount - order.executed_amount_base
+            margin = outstanding_amount * order.price / leverage
+            asset_balances[order.quote_asset] = asset_balances.get(order.quote_asset, Decimal("0")) + margin
+        return asset_balances
 
     @staticmethod
     def backpack_order_type(order_type: OrderType) -> str:
