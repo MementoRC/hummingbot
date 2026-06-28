@@ -159,7 +159,7 @@ submodule-update = "git submodule update --remote sub-packages/candles-feed"
 compat-import = { cmd = "python ci/check_subpackage_compat.py import", depends-on = ["install-dev"] }
 compat-contract = { cmd = "python ci/check_subpackage_compat.py contract", depends-on = ["install-dev"] }
 compat-integration = { cmd = "pytest sub-packages/candles-feed/tests/unit/test_compatibility.py sub-packages/candles-feed/tests/unit/test_hummingbot_integration.py -v --timeout=30", depends-on = ["install-dev"] }
-compat-check = { cmd = "bash ../custom_git_setup/scripts/check_all_subpackages_compat.sh", description = "Run compat checks across all 14 sub-packages" }
+compat-check = { depends-on = ["compat-import", "compat-contract", "compat-integration"], description = "Run compat checks across all 14 sub-packages" }
 migrate-pytest = { cmd = "python $HOME/PycharmProjects/refactor-applications/refactor/rules/pytest_migration.py -d --apply --verbose test/", env = { PYTHONPATH = "$HOME/PycharmProjects/refactor-applications:$PYTHONPATH" } }
 migrate-pytest-dry = { cmd = "python $HOME/PycharmProjects/refactor-applications/refactor/rules/pytest_migration.py -d --verbose test/", env = { PYTHONPATH = "$HOME/PycharmProjects/refactor-applications:$PYTHONPATH" } }
 
