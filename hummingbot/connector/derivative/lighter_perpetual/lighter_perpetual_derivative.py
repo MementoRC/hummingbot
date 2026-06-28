@@ -2,8 +2,6 @@ import asyncio
 from decimal import Decimal
 from typing import Any, Dict, List, Optional, Tuple
 
-from lighter import SignerClient
-
 from hummingbot.connector.constants import s_decimal_NaN
 from hummingbot.connector.derivative.lighter_perpetual import (
     lighter_perpetual_constants as CONSTANTS,
@@ -650,6 +648,8 @@ class LighterPerpetualDerivative(PerpetualDerivativePyBase):
             raise ValueError(
                 "Lighter trading requires an L1 address or account index, plus API key index and API private key."
             )
+        from lighter import SignerClient
+
         client = None
         try:
             client = SignerClient(
