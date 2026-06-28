@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from hummingbot.client.config.config_helpers import ClientConfigAdapter, get_connector_class
 from hummingbot.client.config.security import Security
@@ -32,14 +34,14 @@ class ConnectorManager:
         self.client_config_map = client_config
 
         # Active connectors
-        self.connectors: Dict[str, ExchangeBase] = {}
+        self.connectors: dict[str, ExchangeBase] = {}
 
     def create_connector(
         self,
         connector_name: str,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         trading_required: bool = True,
-        api_keys: Optional[Dict[str, str]] = None,
+        api_keys: dict[str, str] | None = None,
     ) -> ExchangeBase:
         """
         Create and initialize a connector.
@@ -129,7 +131,7 @@ class ConnectorManager:
         self._logger.info(f"Removed connector: {connector_name}")
         return True
 
-    async def add_trading_pairs(self, connector_name: str, trading_pairs: List[str]) -> bool:
+    async def add_trading_pairs(self, connector_name: str, trading_pairs: list[str]) -> bool:
         """
         Add trading pairs to an existing connector.
 
@@ -160,11 +162,11 @@ class ConnectorManager:
     def is_gateway_market(connector_name: str) -> bool:
         return connector_name in AllConnectorSettings.get_gateway_amm_connector_names()
 
-    def get_connector(self, connector_name: str) -> Optional[ExchangeBase]:
+    def get_connector(self, connector_name: str) -> ExchangeBase | None:
         """Get a connector by name."""
         return self.connectors.get(connector_name)
 
-    def get_all_connectors(self) -> Dict[str, ExchangeBase]:
+    def get_all_connectors(self) -> dict[str, ExchangeBase]:
         """Get all active connectors."""
         return self.connectors.copy()
 
@@ -184,7 +186,7 @@ class ConnectorManager:
 
         return connector.get_balance(asset)
 
-    def get_all_balances(self, connector_name: str) -> Dict[str, float]:
+    def get_all_balances(self, connector_name: str) -> dict[str, float]:
         """Get all balances from a connector."""
         connector = self.get_connector(connector_name)
         if not connector:
@@ -205,7 +207,7 @@ class ConnectorManager:
         else:
             raise ValueError(f"Connector {connector_name} not found")
 
-    def get_status(self) -> Dict[str, Any]:
+    def get_status(self) -> dict[str, Any]:
         """Get status of all connectors."""
         status = {}
         for name, connector in self.connectors.items():

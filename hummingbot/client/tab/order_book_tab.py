@@ -1,5 +1,5 @@
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 
@@ -21,7 +21,7 @@ class OrderBookTab(TabBase):
         return "Display current order book"
 
     @classmethod
-    def get_command_arguments(cls) -> Dict[str, Dict[str, Any]]:
+    def get_command_arguments(cls) -> dict[str, dict[str, Any]]:
         return {
             "--lines": {"type": int, "default": 5, "dest": "lines", "help": "Number of lines to display"},
             "--exchange": {"type": str, "dest": "exchange", "help": "The exchange of the market"},

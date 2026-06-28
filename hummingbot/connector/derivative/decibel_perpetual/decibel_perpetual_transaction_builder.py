@@ -12,8 +12,9 @@ SDK Return Types:
   - Failure: Raises ValueError with "Transaction failed: <vm_status>"
 """
 
+from __future__ import annotations
+
 import time
-from typing import Optional, Tuple
 
 from decibel import MAINNET_CONFIG, TESTNET_CONFIG, BaseSDKOptions, DecibelWriteDex, PlaceOrderFailure, TimeInForce
 
@@ -27,7 +28,7 @@ class DecibelPerpetualTransactionBuilder:
     Builds and submits Aptos transactions for Decibel Perpetual operations using Decibel SDK.
     """
 
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
@@ -35,8 +36,8 @@ class DecibelPerpetualTransactionBuilder:
         package_address: str,
         fullnode_url: str,
         domain: str = "decibel_perpetual",
-        api_key: Optional[str] = None,
-        gas_station_api_key: Optional[str] = None,
+        api_key: str | None = None,
+        gas_station_api_key: str | None = None,
     ):
         """
         Initialize transaction builder.
@@ -54,7 +55,7 @@ class DecibelPerpetualTransactionBuilder:
         self._domain = domain
         self._api_key = api_key
         self._gas_station_api_key = gas_station_api_key
-        self._write_dex: Optional[DecibelWriteDex] = None
+        self._write_dex: DecibelWriteDex | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -108,8 +109,8 @@ class DecibelPerpetualTransactionBuilder:
         is_buy: bool,
         is_ioc: bool = False,
         is_post_only: bool = False,
-        client_order_id: Optional[str] = None,
-    ) -> Tuple[Optional[str], str, float]:
+        client_order_id: str | None = None,
+    ) -> tuple[str | None, str, float]:
         """
         Place order on Decibel via Decibel SDK.
 
@@ -212,7 +213,7 @@ class DecibelPerpetualTransactionBuilder:
         self,
         market_id: str,
         order_id: str,
-    ) -> Tuple[Optional[str], float]:
+    ) -> tuple[str | None, float]:
         """
         Cancel order on Decibel via Decibel SDK.
 
@@ -266,7 +267,7 @@ class DecibelPerpetualTransactionBuilder:
 
         # Extract transaction hash from Aptos result dict
         # The 'hash' field contains the transaction hash (not 'tx_hash' or 'transaction_hash')
-        tx_hash: Optional[str] = result.get("hash")
+        tx_hash: str | None = result.get("hash")
 
         self.logger().info(f"Submitted cancel transaction: tx_hash={tx_hash}")
 

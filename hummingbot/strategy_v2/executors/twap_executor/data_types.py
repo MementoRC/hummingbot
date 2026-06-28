@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from decimal import Decimal
 from enum import Enum
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import field_validator
 
@@ -25,8 +27,8 @@ class TWAPExecutorConfig(ExecutorConfigBase):
     mode: TWAPMode = TWAPMode.TAKER
 
     # MAKER mode specific parameters
-    limit_order_buffer: Optional[Decimal] = None
-    order_resubmission_time: Optional[int] = None
+    limit_order_buffer: Decimal | None = None
+    order_resubmission_time: int | None = None
 
     @field_validator("limit_order_buffer", mode="before")
     @classmethod

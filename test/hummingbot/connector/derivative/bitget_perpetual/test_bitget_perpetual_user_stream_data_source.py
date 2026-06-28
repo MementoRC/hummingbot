@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any
 from unittest.mock import AsyncMock, patch
 
 from bidict import bidict
@@ -33,8 +35,8 @@ class BitgetPerpetualUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
 
     def setUp(self) -> None:
         super().setUp()
-        self.log_records: List[Any] = []
-        self.listening_task: Optional[asyncio.Task] = None
+        self.log_records: list[Any] = []
+        self.listening_task: asyncio.Task | None = None
 
         auth = BitgetPerpetualAuth(
             api_key="test_api_key",
@@ -90,7 +92,7 @@ class BitgetPerpetualUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
         """
         return any(record.levelname == log_level and record.getMessage() == message for record in self.log_records)
 
-    def ws_login_event_mock_response(self) -> Dict[str, Any]:
+    def ws_login_event_mock_response(self) -> dict[str, Any]:
         """
         Create a mock WebSocket response for login events.
 
@@ -98,7 +100,7 @@ class BitgetPerpetualUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
         """
         return {"event": "login", "code": "0", "msg": ""}
 
-    def ws_error_event_mock_response(self) -> Dict[str, Any]:
+    def ws_error_event_mock_response(self) -> dict[str, Any]:
         """
         Create a mock WebSocket response for error events.
 
@@ -106,7 +108,7 @@ class BitgetPerpetualUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
         """
         return {"event": "error", "code": "30005", "msg": "Invalid request"}
 
-    def ws_subscribed_mock_response(self, channel: str) -> Dict[str, Any]:
+    def ws_subscribed_mock_response(self, channel: str) -> dict[str, Any]:
         """
         Create a mock WebSocket response for subscription events.
 
@@ -164,12 +166,12 @@ class BitgetPerpetualUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
             message=json.dumps(self.ws_subscribed_mock_response(CONSTANTS.WS_ACCOUNT_ENDPOINT)),
         )
 
-        self.listening_task = asyncio.get_event_loop().create_task(self.data_source.listen_for_user_stream(messages))
+        self.listening_task = asyncio.get_running_loop().create_task(self.data_source.listen_for_user_stream(messages))
         await self.mocking_assistant.run_until_all_aiohttp_messages_delivered(mock_ws.return_value)
 
         sent_messages = self.mocking_assistant.json_messages_sent_through_websocket(mock_ws.return_value)
-        authentication_request: Dict[str, Any] = sent_messages[0]
-        subscription_request: Dict[str, Any] = sent_messages[1]
+        authentication_request: dict[str, Any] = sent_messages[0]
+        subscription_request: dict[str, Any] = sent_messages[1]
         expected_payload = {
             "op": "subscribe",
             "args": [
@@ -197,14 +199,14 @@ class BitgetPerpetualUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
         :param mock_ws: Mocked WebSocket connection.
         """
         messages: asyncio.Queue = asyncio.Queue()
-        error_response: Dict[str, Any] = self.ws_error_event_mock_response()
+        error_response: dict[str, Any] = self.ws_error_event_mock_response()
         mock_ws.return_value = self.mocking_assistant.create_websocket_mock()
 
         self.mocking_assistant.add_websocket_aiohttp_message(
             websocket_mock=mock_ws.return_value, message=json.dumps(error_response)
         )
 
-        self.listening_task = asyncio.get_event_loop().create_task(self.data_source.listen_for_user_stream(messages))
+        self.listening_task = asyncio.get_running_loop().create_task(self.data_source.listen_for_user_stream(messages))
         await self.mocking_assistant.run_until_all_aiohttp_messages_delivered(mock_ws.return_value)
 
         self.assertTrue(

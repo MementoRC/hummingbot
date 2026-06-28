@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 from collections import defaultdict
 from dataclasses import dataclass, field
 from decimal import Decimal
 import typing
-from typing import Dict, List, Optional
+from typing import Dict
 
 from hummingbot.connector.utils import combine_to_hb_trading_pair, split_hb_trading_pair
 from hummingbot.core.data_type.common import OrderType, PositionAction, TradeType
@@ -34,11 +36,11 @@ class OrderCandidate:
     order_side: TradeType
     amount: Decimal
     price: Decimal
-    order_collateral: Optional[TokenAmount] = field(default=None, init=False)
-    percent_fee_collateral: Optional[TokenAmount] = field(default=None, init=False)
-    percent_fee_value: Optional[TokenAmount] = field(default=None, init=False)
-    fixed_fee_collaterals: List[TokenAmount] = field(default=list, init=False)
-    potential_returns: Optional[TokenAmount] = field(default=None, init=False)
+    order_collateral: TokenAmount | None = field(default=None, init=False)
+    percent_fee_collateral: TokenAmount | None = field(default=None, init=False)
+    percent_fee_value: TokenAmount | None = field(default=None, init=False)
+    fixed_fee_collaterals: list[TokenAmount] = field(default=list, init=False)
+    potential_returns: TokenAmount | None = field(default=None, init=False)
     resized: bool = field(default=False, init=False)
     from_total_balances: bool = False
 
@@ -80,7 +82,7 @@ class OrderCandidate:
         self._populate_percent_fee_value(exchange, fee)
         self._apply_fee_impact_on_potential_returns(exchange, fee)
 
-    def adjust_from_balances(self, available_balances: Dict[str, Decimal]):
+    def adjust_from_balances(self, available_balances: dict[str, Decimal]):
         if not self.is_zero_order:
             self._adjust_for_order_collateral(available_balances)
         if not self.is_zero_order:
@@ -94,7 +96,7 @@ class OrderCandidate:
             oc_amount = self._get_order_collateral_amount(exchange, oc_token)
             self.order_collateral = TokenAmount(oc_token, oc_amount)
 
-    def _get_order_collateral_token(self, exchange: "ExchangeBase") -> Optional[str]:
+    def _get_order_collateral_token(self, exchange: "ExchangeBase") -> str | None:
         trading_pair = self.trading_pair
         base, quote = split_hb_trading_pair(trading_pair)
         if self.order_side == TradeType.BUY:
@@ -142,7 +144,7 @@ class OrderCandidate:
             if impact is not None:
                 self.potential_returns.amount -= impact
 
-    def _get_returns_token(self, exchange: "ExchangeBase") -> Optional[str]:
+    def _get_returns_token(self, exchange: "ExchangeBase") -> str | None:
         trading_pair = self.trading_pair
         base, quote = split_hb_trading_pair(trading_pair)
         if self.order_side == TradeType.BUY:
@@ -174,14 +176,14 @@ class OrderCandidate:
 
         return price
 
-    def _adjust_for_order_collateral(self, available_balances: Dict[str, Decimal]):
+    def _adjust_for_order_collateral(self, available_balances: dict[str, Decimal]):
         if self.order_collateral is not None:
             token, amount = self.order_collateral
             if not amount.is_nan() and available_balances[token] < amount:
                 scaler = available_balances[token] / amount
                 self._scale_order(scaler)
 
-    def _adjust_for_percent_fee_collateral(self, available_balances: Dict[str, Decimal]):
+    def _adjust_for_percent_fee_collateral(self, available_balances: dict[str, Decimal]):
         if self.percent_fee_collateral is not None:
             token, amount = self.percent_fee_collateral
             if token == self.order_collateral.token:
@@ -190,7 +192,7 @@ class OrderCandidate:
                 scaler = available_balances[token] / amount
                 self._scale_order(scaler)
 
-    def _adjust_for_fixed_fee_collaterals(self, available_balances: Dict[str, Decimal]):
+    def _adjust_for_fixed_fee_collaterals(self, available_balances: dict[str, Decimal]):
         oc_token = self.order_collateral.token if self.order_collateral is not None else None
         pfc_token = self.percent_fee_collateral.token if self.percent_fee_collateral is not None else None
         oc_amount, pfc_amount = self._get_order_and_pf_collateral_amounts_for_ff_adjustment()
@@ -268,7 +270,7 @@ class PerpetualOrderCandidate(OrderCandidate):
     leverage: Decimal = Decimal("1")
     position_close: bool = False
 
-    def _get_order_collateral_token(self, exchange: "ExchangeBase") -> Optional[str]:
+    def _get_order_collateral_token(self, exchange: "ExchangeBase") -> str | None:
         if self.position_close:
             oc_token = None  # the contract is the collateral
         else:
@@ -299,7 +301,7 @@ class PerpetualOrderCandidate(OrderCandidate):
                 leverage = self.leverage
                 self.percent_fee_value.amount *= leverage
 
-    def _get_returns_token(self, exchange: "ExchangeBase") -> Optional[str]:
+    def _get_returns_token(self, exchange: "ExchangeBase") -> str | None:
         if self.position_close:
             r_token = self._get_collateral_token(exchange)
         else:

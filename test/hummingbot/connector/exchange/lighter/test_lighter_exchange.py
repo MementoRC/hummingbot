@@ -9,12 +9,14 @@ to drive a mocked signer client. Everything reachable over REST (which Lighter
 serves with authenticated GET requests) is left to the base class.
 """
 
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import json
 import re
 from types import SimpleNamespace
-from typing import Callable, List, Optional
+from typing import Callable
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses import aioresponses
@@ -185,7 +187,7 @@ class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         # Orders go through the signer client; not used by the overridden creation tests.
         return {"code": 200}
 
-    def _account_balance_response(self, assets: List[dict]) -> dict:
+    def _account_balance_response(self, assets: list[dict]) -> dict:
         return {"accounts": [{"index": self.account_index, "assets": assets}]}
 
     @property
@@ -363,33 +365,33 @@ class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return url
 
     def configure_completely_filled_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
-    ) -> List[str]:
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
+    ) -> list[str]:
         active = self._mock_active_orders(mock_api, [])
         inactive = self._mock_inactive_orders(mock_api, [self._order_data(order, "filled")], callback=callback)
         return [active, inactive]
 
     def configure_canceled_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
-    ) -> List[str]:
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
+    ) -> list[str]:
         active = self._mock_active_orders(mock_api, [])
         inactive = self._mock_inactive_orders(mock_api, [self._order_data(order, "canceled")], callback=callback)
         return [active, inactive]
 
     def configure_open_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         return self._mock_active_orders(mock_api, [self._order_data(order, "open")], callback=callback)
 
     def configure_partially_filled_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         return self._mock_active_orders(
             mock_api, [self._order_data(order, "open", filled_base_amount="0.5")], callback=callback
         )
 
     def configure_http_error_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = self.active_orders_url
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
@@ -397,8 +399,8 @@ class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return url
 
     def configure_order_not_found_error_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
-    ) -> List[str]:
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
+    ) -> list[str]:
         # The order is absent from both active and inactive lists. Advance the clock past the
         # post-creation grace window so the connector treats the absence as a hard "not found".
         self.exchange._set_current_timestamp(
@@ -426,7 +428,7 @@ class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         }
 
     def configure_full_fill_trade_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.public_rest_url(CONSTANTS.TRADES_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
@@ -434,7 +436,7 @@ class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return url
 
     def configure_partial_fill_trade_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.public_rest_url(CONSTANTS.TRADES_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
@@ -444,7 +446,7 @@ class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return url
 
     def configure_erroneous_http_fill_trade_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.public_rest_url(CONSTANTS.TRADES_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
@@ -455,27 +457,27 @@ class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
     # Cancelation configuration (find via REST GET, cancel via signer)
     # ----------------------------------------------------------------------------------
     def configure_successful_cancelation_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         self.exchange._signer_client.cancel_order = AsyncMock(return_value=(None, {"code": 200}, None))
         return self._mock_active_orders(mock_api, [self._order_data(order, "open")], callback=callback)
 
     def configure_erroneous_cancelation_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         self.exchange._signer_client.cancel_order = AsyncMock(return_value=(None, {"code": 200}, "boom"))
         return self._mock_active_orders(mock_api, [self._order_data(order, "open")], callback=callback)
 
     def configure_order_not_found_error_cancelation_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
-    ) -> List[str]:
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
+    ) -> list[str]:
         active = self._mock_active_orders(mock_api, [])
         inactive = self._mock_inactive_orders(mock_api, [], callback=callback)
         return [active, inactive]
 
     def configure_one_successful_one_erroneous_cancel_all_response(
         self, successful_order: InFlightOrder, erroneous_order: InFlightOrder, mock_api: aioresponses
-    ) -> List[str]:
+    ) -> list[str]:
         # Both orders are found through the same active-orders endpoint; the signer mock decides
         # which one fails based on its on-chain order index.
         active = self._mock_active_orders(

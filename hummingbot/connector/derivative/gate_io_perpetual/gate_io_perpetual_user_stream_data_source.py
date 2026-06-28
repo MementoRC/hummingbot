@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.derivative.gate_io_perpetual import gate_io_perpetual_constants as CONSTANTS
 from hummingbot.connector.derivative.gate_io_perpetual.gate_io_perpetual_auth import GateIoPerpetualAuth
@@ -14,13 +16,13 @@ if TYPE_CHECKING:
 
 
 class GateIoPerpetualAPIUserStreamDataSource(UserStreamTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
         auth: GateIoPerpetualAuth,
         user_id: str,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "GateIoPerpetualExchange",
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -29,7 +31,7 @@ class GateIoPerpetualAPIUserStreamDataSource(UserStreamTrackerDataSource):
         self._api_factory = api_factory
         self._auth: GateIoPerpetualAuth = auth
         self._user_id = user_id
-        self._trading_pairs: List[str] = trading_pairs
+        self._trading_pairs: list[str] = trading_pairs
         self._connector = connector
 
     async def _connected_websocket_assistant(self) -> WSAssistant:
@@ -82,7 +84,7 @@ class GateIoPerpetualAPIUserStreamDataSource(UserStreamTrackerDataSource):
             self.logger().exception("Unexpected error occurred subscribing to user streams...")
             raise
 
-    async def _process_event_message(self, event_message: Dict[str, Any], queue: asyncio.Queue):
+    async def _process_event_message(self, event_message: dict[str, Any], queue: asyncio.Queue):
         if event_message.get("error") is not None:
             err_msg = event_message.get("error", {}).get("message", event_message.get("error"))
             raise IOError({"label": "WSS_ERROR", "message": f"Error received via websocket - {err_msg}."})

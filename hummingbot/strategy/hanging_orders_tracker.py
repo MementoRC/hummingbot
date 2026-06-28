@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from decimal import Decimal
 import logging
-from typing import Dict, List, Optional, Set, Tuple, Union
+from typing import Union
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.limit_order import LimitOrder
@@ -20,7 +22,7 @@ sb_logger = None
 
 
 class CreatedPairOfOrders:
-    def __init__(self, buy_order: Optional[LimitOrder], sell_order: Optional[LimitOrder]):
+    def __init__(self, buy_order: LimitOrder | None, sell_order: LimitOrder | None):
         self.buy_order = buy_order
         self.sell_order = sell_order
         self.filled_buy = False
@@ -54,18 +56,18 @@ class HangingOrdersTracker:
         self,
         strategy: StrategyBase,
         hanging_orders_cancel_pct=None,
-        orders: Dict[str, HangingOrder] = None,
+        orders: dict[str, HangingOrder] = None,
         trading_pair: str = None,
     ):
         self.strategy: StrategyBase = strategy
         self._hanging_orders_cancel_pct: Decimal = hanging_orders_cancel_pct or Decimal("0.1")
         self.trading_pair: str = trading_pair or self.strategy.trading_pair
-        self.orders_being_renewed: Set[HangingOrder] = set()
-        self.orders_being_cancelled: Set[str] = set()
-        self.current_created_pairs_of_orders: List[CreatedPairOfOrders] = list()
-        self.original_orders: Set[LimitOrder] = orders or set()
-        self.strategy_current_hanging_orders: Set[HangingOrder] = set()
-        self.completed_hanging_orders: Set[HangingOrder] = set()
+        self.orders_being_renewed: set[HangingOrder] = set()
+        self.orders_being_cancelled: set[str] = set()
+        self.current_created_pairs_of_orders: list[CreatedPairOfOrders] = list()
+        self.original_orders: set[LimitOrder] = orders or set()
+        self.strategy_current_hanging_orders: set[HangingOrder] = set()
+        self.completed_hanging_orders: set[HangingOrder] = set()
 
         self._cancel_order_forwarder: SourceInfoEventForwarder = SourceInfoEventForwarder(self._did_cancel_order)
         self._complete_buy_order_forwarder: SourceInfoEventForwarder = SourceInfoEventForwarder(
@@ -74,7 +76,7 @@ class HangingOrdersTracker:
         self._complete_sell_order_forwarder: SourceInfoEventForwarder = SourceInfoEventForwarder(
             self._did_complete_sell_order
         )
-        self._event_pairs: List[Tuple[MarketEvent, SourceInfoEventForwarder]] = [
+        self._event_pairs: list[tuple[MarketEvent, SourceInfoEventForwarder]] = [
             (MarketEvent.OrderCancelled, self._cancel_order_forwarder),
             (MarketEvent.BuyOrderCompleted, self._complete_buy_order_forwarder),
             (MarketEvent.SellOrderCompleted, self._complete_sell_order_forwarder),
@@ -88,13 +90,13 @@ class HangingOrdersTracker:
     def hanging_orders_cancel_pct(self, value):
         self._hanging_orders_cancel_pct = value
 
-    def register_events(self, markets: List[ConnectorBase]):
+    def register_events(self, markets: list[ConnectorBase]):
         """Start listening to events from the given markets."""
         for market in markets:
             for event_pair in self._event_pairs:
                 market.add_listener(event_pair[0], event_pair[1])
 
-    def unregister_events(self, markets: List[ConnectorBase]):
+    def unregister_events(self, markets: list[ConnectorBase]):
         """Stop listening to events from the given market."""
         for market in markets:
             for event_pair in self._event_pairs:
@@ -250,7 +252,7 @@ class HangingOrdersTracker:
         )
 
     def renew_hanging_orders_past_max_order_age(self):
-        to_be_cancelled: Set[HangingOrder] = set()
+        to_be_cancelled: set[HangingOrder] = set()
         max_order_age = getattr(self.strategy, "max_order_age", None)
         if max_order_age:
             for order in self.strategy_current_hanging_orders:
@@ -276,13 +278,13 @@ class HangingOrdersTracker:
 
         self._cancel_multiple_orders_in_strategy([order.client_order_id for order in orders_to_be_removed])
 
-    def _get_equivalent_orders(self) -> Set[HangingOrder]:
+    def _get_equivalent_orders(self) -> set[HangingOrder]:
         if self.original_orders:
             return self._get_equivalent_orders_no_aggregation(self.original_orders)
         return set()
 
     @property
-    def equivalent_orders(self) -> Set[HangingOrder]:
+    def equivalent_orders(self) -> set[HangingOrder]:
         """Creates a list of `HangingOrder`s from the registered `LimitOrder`s."""
         return self._get_equivalent_orders()
 
@@ -333,7 +335,7 @@ class HangingOrdersTracker:
         executed_orders = self._execute_orders_in_strategy(orders_to_create)
         self.strategy_current_hanging_orders = self.strategy_current_hanging_orders.union(executed_orders)
 
-    def _execute_orders_in_strategy(self, candidate_orders: Set[HangingOrder]):
+    def _execute_orders_in_strategy(self, candidate_orders: set[HangingOrder]):
         new_hanging_orders = set()
         order_type = self.strategy.market_info.market.get_maker_order_type()
         for order in candidate_orders:
@@ -371,7 +373,7 @@ class HangingOrdersTracker:
                 new_hanging_orders.add(order)
         return new_hanging_orders
 
-    def _cancel_multiple_orders_in_strategy(self, order_ids: List[str]):
+    def _cancel_multiple_orders_in_strategy(self, order_ids: list[str]):
         for order_id in order_ids:
             if any(o.client_order_id == order_id for o in self.strategy.active_orders):
                 self.strategy.cancel_order(order_id)

@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 from decimal import Decimal
 import hashlib
 import random
 import time
-from typing import Literal, Optional
+from typing import Literal
 
 import base58
 from pydantic import BaseModel, field_validator, model_validator
@@ -23,12 +25,12 @@ class ExecutorConfigBase(BaseModel):
         "twap_executor",
         "lp_executor",
     ]
-    timestamp: Optional[float] = None
+    timestamp: float | None = None
     controller_id: str = "main"
 
     @field_validator("timestamp", mode="before")
     @classmethod
-    def validate_timestamp(cls, value: Optional[float]) -> float:
+    def validate_timestamp(cls, value: float | None) -> float:
         if value is None:
             # Use current time if timestamp is not provided
             return time.time()
