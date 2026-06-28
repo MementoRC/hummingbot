@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from decimal import Decimal
 import json
-from typing import Any, Dict, List
+from typing import Any
 
 from eth_account.messages import encode_defunct
 from web3 import Web3
@@ -58,7 +58,7 @@ class DerivePerpetualAuth(AuthBase):
 
         return request
 
-    def get_ws_auth_payload(self) -> List[Dict[str, Any]]:
+    def get_ws_auth_payload(self) -> list[dict[str, Any]]:
         payload = {}
         timestamp = str(self.utc_now_ms())
         signature = to_0x_hex(
@@ -74,7 +74,7 @@ class DerivePerpetualAuth(AuthBase):
         payload["signature"] = signature
         return payload
 
-    def add_auth_to_params_post(self, params: Dict[str, str], request):
+    def add_auth_to_params_post(self, params: dict[str, str], request):
         payload = {}
         data = params if params is not None else {}
 
@@ -126,7 +126,7 @@ class DerivePerpetualAuth(AuthBase):
 
         return action.to_json()
 
-    def header_for_authentication(self) -> Dict[str, str]:
+    def header_for_authentication(self) -> dict[str, str]:
         timestamp = str(self.utc_now_ms())
         signature = to_0x_hex(
             self._w3.eth.account.sign_message(encode_defunct(text=timestamp), private_key=self._api_secret).signature

@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 from json import JSONDecodeError
 import time
-from typing import Any, Dict, Mapping, Optional
+from typing import Any, Dict, Mapping
 
 import aiohttp
 from aiohttp import WebSocketError, WSCloseCode
@@ -14,9 +16,9 @@ class WSConnection:
 
     def __init__(self, aiohttp_client_session: aiohttp.ClientSession):
         self._client_session = aiohttp_client_session
-        self._connection: Optional[aiohttp.ClientWebSocketResponse] = None
+        self._connection: aiohttp.ClientWebSocketResponse | None = None
         self._connected = False
-        self._message_timeout: Optional[float] = None
+        self._message_timeout: float | None = None
         self._last_recv_time = 0
 
     @property
@@ -31,9 +33,9 @@ class WSConnection:
         self,
         ws_url: str,
         ping_timeout: float = 10,
-        message_timeout: Optional[float] = None,
-        ws_headers: Optional[Dict] = {},
-        max_msg_size: Optional[int] = None,
+        message_timeout: float | None = None,
+        ws_headers: Dict | None = {},
+        max_msg_size: int | None = None,
     ):
         self._ensure_not_connected()
         self._connection = await self._client_session.ws_connect(
@@ -59,7 +61,7 @@ class WSConnection:
     async def ping(self):
         await self._connection.ping()
 
-    async def receive(self) -> Optional[WSResponse]:
+    async def receive(self) -> WSResponse | None:
         self._ensure_connected()
         response = None
         while self._connected:
@@ -85,19 +87,19 @@ class WSConnection:
             raise asyncio.TimeoutError("Message receive timed out.")
         return msg
 
-    async def _process_message(self, msg: aiohttp.WSMessage) -> Optional[aiohttp.WSMessage]:
+    async def _process_message(self, msg: aiohttp.WSMessage) -> aiohttp.WSMessage | None:
         msg = await self._check_msg_types(msg)
         self._update_last_recv_time(msg)
         return msg
 
-    async def _check_msg_types(self, msg: aiohttp.WSMessage) -> Optional[aiohttp.WSMessage]:
+    async def _check_msg_types(self, msg: aiohttp.WSMessage) -> aiohttp.WSMessage | None:
         msg = await self._check_msg_too_big_type(msg)
         msg = await self._check_msg_closed_type(msg)
         msg = await self._check_msg_ping_type(msg)
         msg = await self._check_msg_pong_type(msg)
         return msg
 
-    async def _check_msg_too_big_type(self, msg: Optional[aiohttp.WSMessage]) -> Optional[aiohttp.WSMessage]:
+    async def _check_msg_too_big_type(self, msg: aiohttp.WSMessage | None) -> aiohttp.WSMessage | None:
         if msg is not None and msg.type in [aiohttp.WSMsgType.ERROR]:
             if isinstance(msg.data, WebSocketError) and msg.data.code == WSCloseCode.MESSAGE_TOO_BIG:
                 await self.disconnect()
@@ -107,7 +109,7 @@ class WSConnection:
                 raise ConnectionError(f"WS error: {msg.data}")
         return msg
 
-    async def _check_msg_closed_type(self, msg: Optional[aiohttp.WSMessage]) -> Optional[aiohttp.WSMessage]:
+    async def _check_msg_closed_type(self, msg: aiohttp.WSMessage | None) -> aiohttp.WSMessage | None:
         if msg is not None and msg.type in [aiohttp.WSMsgType.CLOSED, aiohttp.WSMsgType.CLOSE]:
             if self._connected:
                 close_code = self._connection.close_code
@@ -118,13 +120,13 @@ class WSConnection:
             msg = None
         return msg
 
-    async def _check_msg_ping_type(self, msg: Optional[aiohttp.WSMessage]) -> Optional[aiohttp.WSMessage]:
+    async def _check_msg_ping_type(self, msg: aiohttp.WSMessage | None) -> aiohttp.WSMessage | None:
         if msg is not None and msg.type == aiohttp.WSMsgType.PING:
             await self._connection.pong(msg.data)
             msg = None
         return msg
 
-    async def _check_msg_pong_type(self, msg: Optional[aiohttp.WSMessage]) -> Optional[aiohttp.WSMessage]:
+    async def _check_msg_pong_type(self, msg: aiohttp.WSMessage | None) -> aiohttp.WSMessage | None:
         if msg is not None and msg.type == aiohttp.WSMsgType.PONG:
             msg = None
         return msg

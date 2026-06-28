@@ -19,9 +19,11 @@
 
 """Interface for a Signer."""
 
+from __future__ import annotations
+
 import base64
 import hashlib
-from typing import Callable, Optional, Union
+from typing import Callable, Union
 
 from bip_utils import Bip39SeedGenerator, Bip44, Bip44Coins  # type: ignore
 import ecdsa
@@ -143,7 +145,7 @@ class PrivateKey(PublicKey):
         bip44_def_ctx = Bip44.FromSeed(seed_bytes, Bip44Coins.COSMOS).DeriveDefaultPath()
         return PrivateKey(bip44_def_ctx.PrivateKey().Raw().ToBytes())
 
-    def __init__(self, private_key: Optional[Union[bytes, str]] = None):
+    def __init__(self, private_key: Union[bytes, str] | None = None):
         """
         Initialize.
 

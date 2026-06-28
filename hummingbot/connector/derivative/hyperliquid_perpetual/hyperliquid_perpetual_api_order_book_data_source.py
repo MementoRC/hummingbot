@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from collections import defaultdict
 from decimal import Decimal
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional
+from typing import TYPE_CHECKING, Any, List, Mapping
 
 import hummingbot.connector.derivative.hyperliquid_perpetual.hyperliquid_perpetual_constants as CONSTANTS
 import hummingbot.connector.derivative.hyperliquid_perpetual.hyperliquid_perpetual_web_utils as web_utils
@@ -22,8 +24,8 @@ if TYPE_CHECKING:
 
 
 class HyperliquidPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
-    _bpobds_logger: Optional[HummingbotLogger] = None
-    _trading_pair_symbol_map: Dict[str, Mapping[str, str]] = {}
+    _bpobds_logger: HummingbotLogger | None = None
+    _trading_pair_symbol_map: dict[str, Mapping[str, str]] = {}
     _mapping_initialization_lock = asyncio.Lock()
 
     _DYNAMIC_SUBSCRIBE_ID_START = 100
@@ -31,7 +33,7 @@ class HyperliquidPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource
 
     def __init__(
         self,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "HyperliquidPerpetualDerivative",
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DOMAIN,
@@ -41,12 +43,12 @@ class HyperliquidPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource
         self._api_factory = api_factory
         self._domain = domain
         self._dex_markets = []
-        self._trading_pairs: List[str] = trading_pairs
-        self._message_queue: Dict[str, asyncio.Queue] = defaultdict(asyncio.Queue)
+        self._trading_pairs: list[str] = trading_pairs
+        self._message_queue: dict[str, asyncio.Queue] = defaultdict(asyncio.Queue)
         self._funding_info_messages_queue_key = "funding_info"
         self._snapshot_messages_queue_key = "order_book_snapshot"
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def get_funding_info(self, trading_pair: str) -> FundingInfo:
@@ -123,7 +125,7 @@ class HyperliquidPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource
                 self.logger().exception("Unexpected error when processing public funding info updates from exchange")
                 await self._sleep(5)
 
-    async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, Any]:
+    async def _request_order_book_snapshot(self, trading_pair: str) -> dict[str, Any]:
         ex_trading_pair = await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
         params = {"type": "l2Book", "coin": ex_trading_pair}
 
@@ -131,7 +133,7 @@ class HyperliquidPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource
         return data
 
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBookMessage:
-        snapshot_response: Dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
+        snapshot_response: dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
         snapshot_response.update({"trading_pair": trading_pair})
         snapshot_msg: OrderBookMessage = OrderBookMessage(
             OrderBookMessageType.SNAPSHOT,
@@ -203,7 +205,7 @@ class HyperliquidPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource
             self.logger().error("Unexpected error occurred subscribing to order book data streams.")
             raise
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         channel = ""
         if "result" not in event_message:
             stream_name = event_message.get("channel")
@@ -222,7 +224,7 @@ class HyperliquidPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource
             exchange_symbol = raw_message["data"]["coin"]
         return exchange_symbol
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         exchange_symbol = self.parse_symbol(raw_message)
         timestamp: float = raw_message["data"]["time"] * 1e-3
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(exchange_symbol)
@@ -239,7 +241,7 @@ class HyperliquidPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource
         )
         message_queue.put_nowait(order_book_message)
 
-    async def _parse_order_book_snapshot_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_snapshot_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         exchange_symbol = self.parse_symbol(raw_message)
         timestamp: float = raw_message["data"]["time"] * 1e-3
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(exchange_symbol)
@@ -256,7 +258,7 @@ class HyperliquidPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource
         )
         message_queue.put_nowait(order_book_message)
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         exchange_symbol = self.parse_symbol(raw_message)
         data = raw_message["data"]
         for trade_data in data:
@@ -277,9 +279,9 @@ class HyperliquidPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource
 
             message_queue.put_nowait(trade_message)
 
-    async def _parse_funding_info_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_funding_info_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         try:
-            data: Dict[str, Any] = raw_message["data"]
+            data: dict[str, Any] = raw_message["data"]
             # ticker_slim.ETH-PERP.1000
 
             symbol = data["coin"]

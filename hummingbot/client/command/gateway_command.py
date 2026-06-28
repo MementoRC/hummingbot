@@ -1,9 +1,11 @@
 #!/usr/bin/env python
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import logging
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 
@@ -36,7 +38,7 @@ def ensure_gateway_online(func):
 
 class GatewayCommand(GatewayChainApiManager):
     client_config_map: ClientConfigMap
-    _market: Dict[str, Any] = {}
+    _market: dict[str, Any] = {}
 
     def __init__(
         self,  # type: HummingbotApplication
@@ -73,11 +75,11 @@ Use 'gateway <command> --help' for more information about a command.""")
         safe_ensure_future(self._gateway_status(), loop=self.ev_loop)
 
     @ensure_gateway_online
-    def gateway_balance(self, chain: Optional[str] = None, tokens: Optional[str] = None):
+    def gateway_balance(self, chain: str | None = None, tokens: str | None = None):
         safe_ensure_future(self._get_balances(chain, tokens), loop=self.ev_loop)
 
     @ensure_gateway_online
-    def gateway_allowance(self, connector: Optional[str] = None):
+    def gateway_allowance(self, connector: str | None = None):
         """
         Command to check token allowances for Ethereum-based connectors
         Usage: gateway allowance [connector]
@@ -85,14 +87,14 @@ Use 'gateway <command> --help' for more information about a command.""")
         safe_ensure_future(self._get_allowances(connector), loop=self.ev_loop)
 
     @ensure_gateway_online
-    def gateway_approve(self, connector: Optional[str], tokens: Optional[str]):
+    def gateway_approve(self, connector: str | None, tokens: str | None):
         # Delegate to GatewayApproveCommand
         from hummingbot.client.command.gateway_approve_command import GatewayApproveCommand
 
         GatewayApproveCommand.gateway_approve(self, connector, tokens)
 
     @ensure_gateway_online
-    def gateway_connect(self, chain: Optional[str]):
+    def gateway_connect(self, chain: str | None):
         """
         View and add wallets for a chain.
         Usage: gateway connect <chain>
@@ -113,14 +115,14 @@ Use 'gateway <command> --help' for more information about a command.""")
         safe_ensure_future(self._gateway_ping(chain), loop=self.ev_loop)
 
     @ensure_gateway_online
-    def gateway_token(self, symbol_or_address: Optional[str], action: Optional[str]):
+    def gateway_token(self, symbol_or_address: str | None, action: str | None):
         # Delegate to GatewayTokenCommand
         from hummingbot.client.command.gateway_token_command import GatewayTokenCommand
 
         GatewayTokenCommand.gateway_token(self, symbol_or_address, action)
 
     @ensure_gateway_online
-    def gateway_pool(self, symbol_or_address: Optional[str], action: Optional[str]):
+    def gateway_pool(self, symbol_or_address: str | None, action: str | None):
         # Delegate to GatewayPoolCommand
         from hummingbot.client.command.gateway_pool_command import GatewayPoolCommand
 
@@ -131,7 +133,7 @@ Use 'gateway <command> --help' for more information about a command.""")
         safe_ensure_future(self._gateway_list(), loop=self.ev_loop)
 
     @ensure_gateway_online
-    def gateway_config(self, namespace: str = None, action: str = None, args: List[str] = None):
+    def gateway_config(self, namespace: str = None, action: str = None, args: list[str] = None):
         # Delegate to GatewayConfigCommand
         from hummingbot.client.command.gateway_config_command import GatewayConfigCommand
 
@@ -374,7 +376,7 @@ Use 'gateway <command> --help' for more information about a command.""")
         self,  # type: HummingbotApplication
         chain: str,
         network: str,
-    ) -> Tuple[Optional[str], Dict[str, str]]:
+    ) -> tuple[str | None, dict[str, str]]:
         self.app.clear_input()
         self.placeholder_mode = True
         wallet_private_key = await self.app.prompt(
@@ -384,11 +386,11 @@ Use 'gateway <command> --help' for more information about a command.""")
         if self.app.to_stop_config:
             return
 
-        response: Dict[str, Any] = await self._get_gateway_instance().add_wallet(chain, network, wallet_private_key)
+        response: dict[str, Any] = await self._get_gateway_instance().add_wallet(chain, network, wallet_private_key)
         wallet_address: str = response["address"]
         return wallet_address
 
-    async def _get_balances(self, chain_filter: Optional[str] = None, tokens_filter: Optional[str] = None):
+    async def _get_balances(self, chain_filter: str | None = None, tokens_filter: str | None = None):
         network_timeout = float(self.client_config_map.commands_timeout.other_commands_timeout)
         self.notify("Updating gateway balances, please wait...")
 
@@ -484,7 +486,7 @@ Use 'gateway <command> --help' for more information about a command.""")
                 self.notify(f"\nError getting balance for {chain}:{default_network}: Request timed out")
 
     @staticmethod
-    async def _update_balances(market) -> Optional[str]:
+    async def _update_balances(market) -> str | None:
         try:
             await market._update_balances()
         except Exception as e:
@@ -492,14 +494,14 @@ Use 'gateway <command> --help' for more information about a command.""")
             return str(e)
         return None
 
-    def all_balance(self, exchange) -> Dict[str, Decimal]:
+    def all_balance(self, exchange) -> dict[str, Decimal]:
         if exchange not in self._market:
             return {}
         return self._market[exchange].get_all_balances()
 
     async def update_exchange(
-        self, client_config_map: ClientConfigMap, reconnect: bool = False, exchanges: Optional[List[str]] = None
-    ) -> Dict[str, Optional[str]]:
+        self, client_config_map: ClientConfigMap, reconnect: bool = False, exchanges: list[str] | None = None
+    ) -> dict[str, str | None]:
         """
         Simple gateway balance update for compatibility.
         Returns empty dict (no errors) since gateway balances are fetched on-demand.
@@ -508,7 +510,7 @@ Use 'gateway <command> --help' for more information about a command.""")
         # No need to maintain cached balances like CEX connectors
         return {}
 
-    async def balance(self, exchange, client_config_map: ClientConfigMap, *symbols) -> Dict[str, Decimal]:
+    async def balance(self, exchange, client_config_map: ClientConfigMap, *symbols) -> dict[str, Decimal]:
         """
         Get balances for specified tokens from a gateway connector.
 
@@ -572,8 +574,8 @@ Use 'gateway <command> --help' for more information about a command.""")
     async def _gateway_list(
         self,  # type: HummingbotApplication
     ):
-        connector_list: List[Dict[str, Any]] = await self._get_gateway_instance().get_connectors()
-        connectors_tiers: List[Dict[str, Any]] = []
+        connector_list: list[dict[str, Any]] = await self._get_gateway_instance().get_connectors()
+        connectors_tiers: list[dict[str, Any]] = []
 
         for connector in connector_list["connectors"]:
             # Chain and networks are now directly in the connector config
@@ -585,7 +587,7 @@ Use 'gateway <command> --help' for more information about a command.""")
             networks_str = ", ".join(networks) if networks else "N/A"
 
             # Extract trading types and convert to string
-            trading_types: List[str] = connector.get("trading_types", [])
+            trading_types: list[str] = connector.get("trading_types", [])
             trading_types_str = ", ".join(trading_types) if trading_types else "N/A"
 
             # Create a new dictionary with the fields we want to display
@@ -616,7 +618,7 @@ Use 'gateway <command> --help' for more information about a command.""")
         gateway_instance = GatewayHttpClient.get_instance(self.client_config_map)
         return gateway_instance
 
-    async def _get_allowances(self, connector: Optional[str] = None):
+    async def _get_allowances(self, connector: str | None = None):
         """Get token allowances for Ethereum-based connectors"""
         gateway_instance = self._get_gateway_instance()
         self.notify("Checking token allowances, please wait...")

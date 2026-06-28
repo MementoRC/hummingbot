@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import hashlib
-from typing import Any, AsyncIterable, Dict, List, Literal, Optional, Set, Tuple
+from typing import Any, AsyncIterable, List, Literal
 
 from bidict import bidict
 
@@ -46,13 +48,13 @@ class HyperliquidExchange(ExchangePyBase):
 
     def __init__(
         self,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
         hyperliquid_secret_key: str = None,
         hyperliquid_address: str = None,
         use_vault: bool = False,
         hyperliquid_mode: Literal["arb_wallet", "api_wallet"] = "arb_wallet",
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         domain: str = CONSTANTS.DOMAIN,
     ):
@@ -65,8 +67,8 @@ class HyperliquidExchange(ExchangePyBase):
         self._domain = domain
         self._last_trade_history_timestamp = None
         self._last_trades_poll_timestamp = 1.0
-        self.coin_to_asset: Dict[str, int] = {}
-        self.name_to_coin: Dict[str, str] = {}
+        self.coin_to_asset: dict[str, int] = {}
+        self.name_to_coin: dict[str, str] = {}
         # Builder code (HGP-87). Fee starts at 0 and is resolved at startup (_initialize_builder_fee).
         self._builder_address: str = CONSTANTS.FOUNDATION_BUILDER_ADDRESS.lower()
         self._builder_fee_tenths_bps: int = 0
@@ -78,13 +80,13 @@ class HyperliquidExchange(ExchangePyBase):
         return self._domain
 
     @property
-    def authenticator(self) -> Optional[HyperliquidAuth]:
+    def authenticator(self) -> HyperliquidAuth | None:
         if self._trading_required:
             return HyperliquidAuth(self.hyperliquid_address, self.hyperliquid_secret_key, self._use_vault)
         return None
 
     @property
-    def rate_limits_rules(self) -> List[RateLimit]:
+    def rate_limits_rules(self) -> list[RateLimit]:
         return CONSTANTS.RATE_LIMITS
 
     @property
@@ -131,13 +133,13 @@ class HyperliquidExchange(ExchangePyBase):
         if self._trading_required:
             await self._initialize_builder_fee()
 
-    def supported_order_types(self) -> List[OrderType]:
+    def supported_order_types(self) -> list[OrderType]:
         """
         :return a list of OrderType supported by this connector
         """
         return [OrderType.LIMIT, OrderType.LIMIT_MAKER, OrderType.MARKET]
 
-    async def get_all_pairs_prices(self) -> List[Dict[str, str]]:
+    async def get_all_pairs_prices(self) -> list[dict[str, str]]:
         res = []
         exchange_info = await self._api_post(
             path_url=CONSTANTS.TICKER_PRICE_CHANGE_URL, data={"type": CONSTANTS.ASSET_CONTEXT_TYPE}
@@ -242,7 +244,7 @@ class HyperliquidExchange(ExchangePyBase):
         order_side: TradeType,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         is_maker = order_type is OrderType.LIMIT_MAKER
         return DeductedFromReturnsTradeFee(percent=self.estimate_fee_pct(is_maker))
@@ -367,7 +369,7 @@ class HyperliquidExchange(ExchangePyBase):
         order_type: OrderType,
         price: Decimal,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
 
         symbol = await self.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
         param_order_type = {"limit": {"tif": "Gtc"}}
@@ -419,7 +421,7 @@ class HyperliquidExchange(ExchangePyBase):
             return False
         return True
 
-    def _build_builder_field(self) -> Optional[Dict[str, Any]]:
+    def _build_builder_field(self) -> dict[str, Any] | None:
         """The ``{"b": <address>, "f": <tenths_of_bps>}`` order field, or None when omitted. Address
         is lowercased (the venue rejects mixed-case)."""
         if not self._should_inject_builder():
@@ -474,7 +476,7 @@ class HyperliquidExchange(ExchangePyBase):
             for trade_fill in all_fills_response:
                 self._process_trade_rs_event_message(order_fill=trade_fill, all_fillable_order=all_fillable_orders)
 
-    def _process_trade_rs_event_message(self, order_fill: Dict[str, Any], all_fillable_order):
+    def _process_trade_rs_event_message(self, order_fill: dict[str, Any], all_fillable_order):
         exchange_order_id = str(order_fill.get("oid"))
         fillable_order = all_fillable_order.get(exchange_order_id)
         if fillable_order is not None:
@@ -501,7 +503,7 @@ class HyperliquidExchange(ExchangePyBase):
 
             self._order_tracker.process_trade_update(trade_update)
 
-    async def _iter_user_event_queue(self) -> AsyncIterable[Dict[str, any]]:
+    async def _iter_user_event_queue(self) -> AsyncIterable[dict[str, any]]:
         while True:
             try:
                 yield await self._user_stream_tracker.user_stream.get()
@@ -550,7 +552,7 @@ class HyperliquidExchange(ExchangePyBase):
                 self.logger().error("Unexpected error in user stream listener loop.", exc_info=True)
                 await self._sleep(5.0)
 
-    async def _process_trade_message(self, trade: Dict[str, Any], client_order_id: Optional[str] = None):
+    async def _process_trade_message(self, trade: dict[str, Any], client_order_id: str | None = None):
         """
         Updates in-flight order and trigger order filled event for a trade message received. Triggers order completedim
         event if the total executed amount equals to the specified order amount.
@@ -582,7 +584,7 @@ class HyperliquidExchange(ExchangePyBase):
                 )
                 self._order_tracker.process_trade_update(trade_update)
 
-    def _process_order_message(self, order_msg: Dict[str, Any]):
+    def _process_order_message(self, order_msg: dict[str, Any]):
         """
         Updates in-flight order and triggers cancelation or failure event if needed.
 
@@ -605,7 +607,7 @@ class HyperliquidExchange(ExchangePyBase):
         )
         self._order_tracker.process_order_update(order_update=order_update)
 
-    async def _format_trading_rules(self, exchange_info_dict: List) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: List) -> list[TradingRule]:
         """
         Queries the necessary API endpoint and initialize the TradingRule object for each trading pair being traded.
 
@@ -713,7 +715,7 @@ class HyperliquidExchange(ExchangePyBase):
             mapping.pop(current_exchange_symbol)
 
     @staticmethod
-    def _is_valid_spot_entry(exchange_info: List, spot_info: Dict[str, Any]) -> bool:
+    def _is_valid_spot_entry(exchange_info: List, spot_info: dict[str, Any]) -> bool:
         tokens = exchange_info[0].get("tokens", [])
         pair_tokens = spot_info.get("tokens", [])
 
@@ -730,14 +732,14 @@ class HyperliquidExchange(ExchangePyBase):
 
         return True
 
-    async def _tradable_assets(self) -> Set[str]:
+    async def _tradable_assets(self) -> set[str]:
         """
         Returns the set of token names (upper-cased) that belong to a USDC trading pair currently
         present in the symbol map. These are the only tokens whose balance we can still price, so
         the balances endpoint response is filtered against this set to skip delisted tokens.
         """
         symbol_map = await self.trading_pair_symbol_map()
-        tradable_assets: Set[str] = set()
+        tradable_assets: set[str] = set()
         for trading_pair in symbol_map.values():
             base, quote = split_hb_trading_pair(trading_pair)
             if quote.upper() == CONSTANTS.CURRENCY:
@@ -889,7 +891,7 @@ class HyperliquidExchange(ExchangePyBase):
                         )
                         self.logger().info(f"Recreating missing trade in TradeFill: {trade}")
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         trade_updates = []
 
         if order.exchange_order_id is not None:

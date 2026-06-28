@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import Any, Dict
+from typing import Any
 import unittest
 
 from aioresponses import aioresponses
@@ -14,7 +14,7 @@ from hummingbot.connector.derivative.architect_perpetual import (
 
 class ArchitectPerpetualWebUtilsTest(unittest.TestCase):
     @staticmethod
-    def rest_time_mock_response() -> Dict[str, Any]:
+    def rest_time_mock_response() -> dict[str, Any]:
         return {"status": "OK", "timestamp": "2026-01-10T10:55:13.151818970Z"}
 
     def test_get_rest_url_for_endpoint(self) -> None:
@@ -25,7 +25,7 @@ class ArchitectPerpetualWebUtilsTest(unittest.TestCase):
     @aioresponses()
     def test_get_current_server_time(self, api_mock) -> None:
         url = web_utils.public_rest_url(path_url=CONSTANTS.SERVER_TIME_ENDPOINT, domain=CONSTANTS.SANDBOX_DOMAIN)
-        data: Dict[str, Any] = self.rest_time_mock_response()
+        data: dict[str, Any] = self.rest_time_mock_response()
 
         api_mock.get(url=url, status=200, body=json.dumps(data))
 

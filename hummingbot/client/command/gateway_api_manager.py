@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, Dict, Generator, Optional
+from typing import TYPE_CHECKING, Any, Generator
 
 from hummingbot.core.gateway.gateway_http_client import GatewayHttpClient
 
@@ -39,7 +41,7 @@ class GatewayChainApiManager:
             return True
         return False
 
-    async def _test_node_url(self, chain: str, network: str) -> Optional[str]:
+    async def _test_node_url(self, chain: str, network: str) -> str | None:
         """
         Get the node url from user input, then check that it is valid.
         """
@@ -84,13 +86,13 @@ class GatewayChainApiManager:
         Check if gateway node URL for a chain and network works
         """
         # XXX: This should be removed once nodeAPIKey is deprecated from Gateway service
-        chain_config: Dict[str, Any] = await GatewayHttpClient.get_instance().get_configuration(chain)
+        chain_config: dict[str, Any] = await GatewayHttpClient.get_instance().get_configuration(chain)
         if chain_config is not None:
-            networks: Optional[Dict[str, Any]] = chain_config.get("networks")
+            networks: dict[str, Any] | None = chain_config.get("networks")
             if networks is not None:
-                network_config: Optional[Dict[str, Any]] = networks.get(network)
+                network_config: dict[str, Any] | None = networks.get(network)
                 if network_config is not None:
-                    node_url: Optional[str] = network_config.get("nodeURL")
+                    node_url: str | None = network_config.get("nodeURL")
                     if not attempt_connection:
                         while True:
                             change_node: str = await self.app.prompt(
@@ -139,7 +141,7 @@ class GatewayChainApiManager:
         """
         await GatewayHttpClient.get_instance().update_config(f"{chain}-{network}", "nodeURL", node_url)
 
-    async def _get_native_currency_symbol(self, chain: str, network: str) -> Optional[str]:
+    async def _get_native_currency_symbol(self, chain: str, network: str) -> str | None:
         """
         Get the native currency symbol for a chain and network from gateway config
         """

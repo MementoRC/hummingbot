@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import sys
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Union
 
 import dateutil.parser as dp
 
@@ -32,7 +34,7 @@ class DydxV4PerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
     def __init__(
         self,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "DydxV4PerpetualDerivative",
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -46,12 +48,12 @@ class DydxV4PerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
     def _time(self):
         return time.time()
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def get_funding_info(self, trading_pair: str) -> FundingInfo:
         funding_info_response = await self._request_complete_funding_info(trading_pair)
-        market_info: Dict[str, Any] = funding_info_response["markets"][trading_pair]
+        market_info: dict[str, Any] = funding_info_response["markets"][trading_pair]
         funding_info = FundingInfo(
             trading_pair=trading_pair,
             index_price=Decimal(str(market_info["oraclePrice"])),
@@ -98,7 +100,7 @@ class DydxV4PerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             self.logger().exception("Unexpected error occurred subscribing to order book trading and delta streams...")
             raise
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         channel = ""
         if "channel" in event_message:
             event_channel = event_message["channel"]
@@ -116,10 +118,10 @@ class DydxV4PerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
     async def _make_order_book_message(
         self,
-        raw_message: Dict[str, Any],
+        raw_message: dict[str, Any],
         message_queue: asyncio.Queue,
-        bids: List[Tuple[float, float]],
-        asks: List[Tuple[float, float]],
+        bids: list[tuple[float, float]],
+        asks: list[tuple[float, float]],
         message_type: OrderBookMessageType,
     ):
         symbol = raw_message["id"]
@@ -141,7 +143,7 @@ class DydxV4PerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         )
         message_queue.put_nowait(message)
 
-    async def _parse_order_book_snapshot_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_snapshot_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         if raw_message["type"] in ["subscribed", "channel_data"]:
             bids, asks = self._get_bids_and_asks_from_snapshot(raw_message["contents"])
             await self._make_order_book_message(
@@ -152,7 +154,7 @@ class DydxV4PerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
                 message_type=OrderBookMessageType.SNAPSHOT,
             )
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         if raw_message["type"] in ["subscribed", "channel_data"]:
             bids, asks = self._get_bids_and_asks_from_diff(raw_message["contents"])
             await self._make_order_book_message(
@@ -163,7 +165,7 @@ class DydxV4PerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
                 message_type=OrderBookMessageType.DIFF,
             )
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         if raw_message["type"] == "channel_data":
             symbol = raw_message["id"]
             trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(symbol)
@@ -187,7 +189,7 @@ class DydxV4PerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
                 )
                 message_queue.put_nowait(trade_message)
 
-    async def _parse_funding_info_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_funding_info_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         if raw_message["type"] == "channel_data":
             print(raw_message)
             for trading_pair in raw_message["contents"]["markets"].keys():
@@ -205,7 +207,7 @@ class DydxV4PerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
                         message_queue.put_nowait(info_update)
 
-    async def _request_complete_funding_info(self, trading_pair: str) -> Dict[str, Any]:
+    async def _request_complete_funding_info(self, trading_pair: str) -> dict[str, Any]:
         ex_symbol = await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
 
         params = {"limit": 1, "ticker": ex_symbol}
@@ -242,7 +244,7 @@ class DydxV4PerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
         return snapshot_msg
 
-    async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, Any]:
+    async def _request_order_book_snapshot(self, trading_pair: str) -> dict[str, Any]:
         rest_assistant = await self._api_factory.get_rest_assistant()
         endpoint = CONSTANTS.PATH_SNAPSHOT
         ex_symbol = await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
@@ -257,8 +259,8 @@ class DydxV4PerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
     @staticmethod
     def _get_bids_and_asks_from_snapshot(
-        snapshot: Dict[str, List[Dict[str, Union[str, int, float]]]],
-    ) -> Tuple[List[Tuple[float, float]], List[Tuple[float, float]]]:
+        snapshot: dict[str, list[dict[str, Union[str, int, float]]]],
+    ) -> tuple[list[tuple[float, float]], list[tuple[float, float]]]:
 
         bids = [(Decimal(bid["price"]), Decimal(bid["size"])) for bid in snapshot["bids"]]
         asks = [(Decimal(ask["price"]), Decimal(ask["size"])) for ask in snapshot["asks"]]
@@ -267,8 +269,8 @@ class DydxV4PerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
     @staticmethod
     def _get_bids_and_asks_from_diff(
-        diff: Dict[str, List[Dict[str, Union[str, int, float]]]],
-    ) -> Tuple[List[Tuple[float, float]], List[Tuple[float, float]]]:
+        diff: dict[str, list[dict[str, Union[str, int, float]]]],
+    ) -> tuple[list[tuple[float, float]], list[tuple[float, float]]]:
 
         bids = [(Decimal(bid[0]), Decimal(bid[1])) for bid in diff.get("bids", [])]
         asks = [(Decimal(ask[0]), Decimal(ask[1])) for ask in diff.get("asks", [])]

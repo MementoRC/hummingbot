@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.derivative.lighter_perpetual import (
     lighter_perpetual_constants as CONSTANTS,
@@ -19,7 +21,7 @@ if TYPE_CHECKING:
 
 
 class LighterPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
@@ -100,7 +102,7 @@ class LighterPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
             except Exception:
                 pass
 
-    async def _process_event_message(self, event_message: Dict[str, Any], queue: asyncio.Queue):
+    async def _process_event_message(self, event_message: dict[str, Any], queue: asyncio.Queue):
         if event_message.get("error") is not None:
             raise IOError(f"Lighter private websocket error: {event_message['error']}")
 

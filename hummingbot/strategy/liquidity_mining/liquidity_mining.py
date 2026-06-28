@@ -2,7 +2,7 @@ import asyncio
 from decimal import Decimal
 import logging
 from statistics import mean
-from typing import Dict, List, Set, Union
+from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -44,7 +44,7 @@ class LiquidityMiningStrategy(StrategyPyBase):
         self,
         client_config_map: Union[ClientConfigAdapter, ClientConfigMap],
         exchange: ExchangeBase,
-        market_infos: Dict[str, MarketTradingPairTuple],
+        market_infos: dict[str, MarketTradingPairTuple],
         token: str,
         order_amount: Decimal,
         spread: Decimal,
@@ -378,7 +378,7 @@ class LiquidityMiningStrategy(StrategyPyBase):
             price = self._market_infos[trading_pair].get_mid_price()
         return self._order_amount / price
 
-    def apply_budget_constraint(self, proposals: List[Proposal]):
+    def apply_budget_constraint(self, proposals: list[Proposal]):
         balances = self._token_balances.copy()
         for proposal in proposals:
             if balances[proposal.base()] < proposal.sell.size:
@@ -402,7 +402,7 @@ class LiquidityMiningStrategy(StrategyPyBase):
             proposal.buy.size = self._exchange.quantize_order_amount(proposal.market, buy_size)
             balances[proposal.quote()] -= quote_size
 
-    def is_within_tolerance(self, cur_orders: List[LimitOrder], proposal: Proposal):
+    def is_within_tolerance(self, cur_orders: list[LimitOrder], proposal: Proposal):
         """
         False if there are no buys or sells or if the difference between the proposed price and current price is less
         than the tolerance. The tolerance value is strict max, cannot be equal.
@@ -423,7 +423,7 @@ class LiquidityMiningStrategy(StrategyPyBase):
             return False
         return True
 
-    def cancel_active_orders(self, proposals: List[Proposal]):
+    def cancel_active_orders(self, proposals: list[Proposal]):
         """
         Cancel any orders that have an order age greater than self._max_order_age or if orders are not within tolerance
         """
@@ -444,7 +444,7 @@ class LiquidityMiningStrategy(StrategyPyBase):
                     # To place new order on the next tick
                     self._refresh_times[order.trading_pair] = self.current_timestamp + 0.1
 
-    def execute_orders_proposal(self, proposals: List[Proposal]):
+    def execute_orders_proposal(self, proposals: list[Proposal]):
         """
         Execute a list of proposals if the current timestamp is less than its refresh timestamp.
         Update the refresh timestamp.
@@ -501,7 +501,7 @@ class LiquidityMiningStrategy(StrategyPyBase):
             return True
         return False
 
-    def all_base_tokens(self) -> Set[str]:
+    def all_base_tokens(self) -> set[str]:
         """
         Get the base token (left-hand side) from all markets in this strategy
         """
@@ -510,7 +510,7 @@ class LiquidityMiningStrategy(StrategyPyBase):
             tokens.add(market.split("-")[0])
         return tokens
 
-    def all_quote_tokens(self) -> Set[str]:
+    def all_quote_tokens(self) -> set[str]:
         """
         Get the quote token (right-hand side) from all markets in this strategy
         """
@@ -519,7 +519,7 @@ class LiquidityMiningStrategy(StrategyPyBase):
             tokens.add(market.split("-")[1])
         return tokens
 
-    def all_tokens(self) -> Set[str]:
+    def all_tokens(self) -> set[str]:
         """
         Return a list of all tokens involved in this strategy (base and quote)
         """
@@ -528,7 +528,7 @@ class LiquidityMiningStrategy(StrategyPyBase):
             tokens.update(market.split("-"))
         return tokens
 
-    def adjusted_available_balances(self) -> Dict[str, Decimal]:
+    def adjusted_available_balances(self) -> dict[str, Decimal]:
         """
         Calculates all available balances, account for amount attributed to orders and reserved balance.
         :return: a dictionary of token and its available balance
@@ -547,7 +547,7 @@ class LiquidityMiningStrategy(StrategyPyBase):
                 adjusted_bals[base] += order.quantity
         return adjusted_bals
 
-    def apply_inventory_skew(self, proposals: List[Proposal]):
+    def apply_inventory_skew(self, proposals: list[Proposal]):
         """
         Apply an inventory split between the quote and base asset
         """
