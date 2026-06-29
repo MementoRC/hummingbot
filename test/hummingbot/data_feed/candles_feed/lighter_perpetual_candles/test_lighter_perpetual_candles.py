@@ -33,6 +33,7 @@ class TestLighterPerpetualCandles(TestCandlesBase):
         super().setUp()
         self.data_feed = LighterPerpetualCandles(trading_pair=self.trading_pair, interval=self.interval)
         self.data_feed._market_id = 3  # pre-set to skip initialize_exchange_data API call
+        self.data_feed._exchange_data_initialized = True  # pre-set to skip initialize_exchange_data API call
         self.log_records = []
         self.data_feed.logger().setLevel(1)
         self.data_feed.logger().addHandler(self)
@@ -156,6 +157,7 @@ class TestLighterPerpetualCandles(TestCandlesBase):
     @aioresponses()
     async def test_initialize_exchange_data_sets_market_id(self, mock_api):
         self.data_feed._market_id = None
+        self.data_feed._exchange_data_initialized = False
         order_book_details_url = f"{CONSTANTS.MAINNET_BASE_URL}{CONSTANTS.ORDER_BOOK_DETAILS_PATH_URL}"
         mock_api.get(
             url=order_book_details_url,
@@ -180,6 +182,7 @@ class TestLighterPerpetualCandles(TestCandlesBase):
     @aioresponses()
     async def test_initialize_exchange_data_raises_if_market_not_found(self, mock_api):
         self.data_feed._market_id = None
+        self.data_feed._exchange_data_initialized = False
         order_book_details_url = f"{CONSTANTS.MAINNET_BASE_URL}{CONSTANTS.ORDER_BOOK_DETAILS_PATH_URL}"
         mock_api.get(
             url=order_book_details_url,
