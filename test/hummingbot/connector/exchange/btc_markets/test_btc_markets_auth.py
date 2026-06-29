@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from collections import OrderedDict
 import hashlib
 import hmac
-from typing import Any, Awaitable, Dict, Mapping, Optional
+from typing import Any, Awaitable, Dict, Mapping
 from unittest import TestCase
 from unittest.mock import MagicMock
 from urllib.parse import urlencode
@@ -31,7 +33,7 @@ class BtcMarketsAuthTest(TestCase):
         ret = asyncio.get_event_loop().run_until_complete(asyncio.wait_for(coroutine, timeout))
         return ret
 
-    def _get_request(self, params: Dict[str, Any]) -> RESTRequest:
+    def _get_request(self, params: dict[str, Any]) -> RESTRequest:
         return RESTRequest(
             method=RESTMethod.GET,
             url="https://test.url/api/endpoint",
@@ -91,12 +93,12 @@ class BtcMarketsAuthTest(TestCase):
         self.async_run_with_timeout(self.auth.ws_authenticate(request))
         self.assertEqual(payload, request.payload)
 
-    def _generate_signature(self, params: Dict[str, Any]) -> str:
+    def _generate_signature(self, params: dict[str, Any]) -> str:
         encoded_params_str = urlencode(params)
         digest = hmac.new(self.secret_key.encode("utf8"), encoded_params_str.encode("utf8"), hashlib.sha256).hexdigest()
         return digest
 
-    def _params_expected(self, request_params: Optional[Mapping[str, str]]) -> Dict:
+    def _params_expected(self, request_params: Mapping[str, str] | None) -> Dict:
         request_params = request_params if request_params else {}
         params = {
             "BM-AUTH-TIMESTAMP": 1000000,

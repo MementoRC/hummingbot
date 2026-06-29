@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from bidict import bidict
 from decibel import get_market_addr, get_perp_engine_global_address
@@ -55,10 +57,10 @@ class DecibelPerpetualDerivative(PerpetualDerivativePyBase):
         decibel_perpetual_main_wallet_public_key: str,
         decibel_perpetual_api_key: str,
         decibel_perpetual_gas_station_api_key: str,
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
         use_auth_for_public_endpoints: bool = True,  # Decibel requires auth on all endpoints; accepted so non-trading instantiation paths (e.g. TradingPairFetcher) can pass it through.
     ):
@@ -91,24 +93,24 @@ class DecibelPerpetualDerivative(PerpetualDerivativePyBase):
         self._trading_pairs = trading_pairs or []
 
         # Lazy-initialized auth
-        self._auth: Optional[DecibelPerpetualAuth] = None
+        self._auth: DecibelPerpetualAuth | None = None
 
         # Transaction builder (lazy-initialized)
-        self._transaction_builder: Optional[DecibelPerpetualTransactionBuilder] = None
+        self._transaction_builder: DecibelPerpetualTransactionBuilder | None = None
 
         # Package address (lazy-loaded from API)
-        self._package_address: Optional[str] = None
+        self._package_address: str | None = None
 
         # Trading pair mappings (exchange symbol <-> hummingbot trading pair)
-        self._trading_pair_symbol_map: Optional[bidict] = None
+        self._trading_pair_symbol_map: bidict | None = None
 
         # Reverse lookup: market_addr (hex) -> hummingbot trading pair.
         # Populated lazily. Needed because REST/WS position events return the market as
         # an on-chain address, not the market_name used in the symbol_map.
-        self._market_addr_to_trading_pair: Dict[str, str] = {}
+        self._market_addr_to_trading_pair: dict[str, str] = {}
 
         # Market info cache
-        self._market_info: Dict[str, Dict[str, Any]] = {}
+        self._market_info: dict[str, dict[str, Any]] = {}
 
         # Last poll timestamps
         self._last_poll_timestamp = 0
@@ -196,14 +198,14 @@ class DecibelPerpetualDerivative(PerpetualDerivativePyBase):
             )
         return self._transaction_builder
 
-    def supported_order_types(self) -> List[OrderType]:
+    def supported_order_types(self) -> list[OrderType]:
         """
         Decibel supports LIMIT, LIMIT_MAKER, and MARKET orders.
         Market orders are implemented as IOC orders with slippage.
         """
         return [OrderType.LIMIT, OrderType.LIMIT_MAKER, OrderType.MARKET]
 
-    def supported_position_modes(self) -> List[PositionMode]:
+    def supported_position_modes(self) -> list[PositionMode]:
         """
         Decibel only supports ONEWAY position mode (net positions).
         """
@@ -245,7 +247,7 @@ class DecibelPerpetualDerivative(PerpetualDerivativePyBase):
         """
         return await self._make_trading_rules_request()
 
-    def _create_trading_pair_symbol_map(self, exchange_info: Dict[str, Any]) -> bidict:
+    def _create_trading_pair_symbol_map(self, exchange_info: dict[str, Any]) -> bidict:
         """
         Create bidirectional mapping from exchange info.
 
@@ -343,7 +345,7 @@ class DecibelPerpetualDerivative(PerpetualDerivativePyBase):
         for trading_rule in trading_rules_list:
             self._trading_rules[trading_rule.trading_pair] = trading_rule
 
-    async def _format_trading_rules(self, exchange_info: Dict[str, Any]) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info: dict[str, Any]) -> list[TradingRule]:
         """
         Convert exchange market info to TradingRule objects.
 
@@ -428,7 +430,7 @@ class DecibelPerpetualDerivative(PerpetualDerivativePyBase):
         position_action: PositionAction,
         amount: Decimal,
         price: Decimal = s_decimal_0,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         """
         Calculate trading fee.
@@ -441,7 +443,7 @@ class DecibelPerpetualDerivative(PerpetualDerivativePyBase):
         is_maker = is_maker or (order_type is OrderType.LIMIT_MAKER)
         trading_pair = combine_to_hb_trading_pair(base=base_currency, quote=quote_currency)
 
-        fee_schema: Optional[TradeFeeSchema] = self._trading_fees.get(trading_pair)
+        fee_schema: TradeFeeSchema | None = self._trading_fees.get(trading_pair)
         if fee_schema is not None:
             percent = fee_schema.maker_percent_fee_decimal if is_maker else fee_schema.taker_percent_fee_decimal
             flat_fees = fee_schema.maker_fixed_fees if is_maker else fee_schema.taker_fixed_fees
@@ -545,7 +547,7 @@ class DecibelPerpetualDerivative(PerpetualDerivativePyBase):
             except Exception:
                 self.logger().exception(f"Error parsing position for {position_data.get('market')}")
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         """
         Fetch all trade updates for a specific order from trade history API.
 
@@ -702,7 +704,7 @@ class DecibelPerpetualDerivative(PerpetualDerivativePyBase):
         price: Decimal,
         position_action: PositionAction = PositionAction.OPEN,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         """
         Place order on Decibel exchange.
 
@@ -1065,7 +1067,7 @@ class DecibelPerpetualDerivative(PerpetualDerivativePyBase):
             except Exception:
                 self.logger().exception("Error processing user stream event")
 
-    async def _process_order_update_event(self, event: Dict[str, Any]):
+    async def _process_order_update_event(self, event: dict[str, Any]):
         """Process order update from WebSocket."""
         exchange_order_id = str(event.get("order_id", ""))
         tracked_order = self._order_tracker.all_updatable_orders_by_exchange_order_id.get(exchange_order_id)
@@ -1095,7 +1097,7 @@ class DecibelPerpetualDerivative(PerpetualDerivativePyBase):
         )
         self._order_tracker.process_order_update(order_update=order_update)
 
-    async def _process_trade_event(self, event: Dict[str, Any]):
+    async def _process_trade_event(self, event: dict[str, Any]):
         """Process trade event from WebSocket."""
         exchange_order_id = str(event.get("order_id", ""))
         tracked_order = self._order_tracker.all_fillable_orders_by_exchange_order_id.get(exchange_order_id)
@@ -1138,7 +1140,7 @@ class DecibelPerpetualDerivative(PerpetualDerivativePyBase):
         )
         self._order_tracker.process_trade_update(trade_update)
 
-    async def _process_position_update_event(self, event: Dict[str, Any]):
+    async def _process_position_update_event(self, event: dict[str, Any]):
         """Process position update from WebSocket."""
         try:
             raw_market = event.get("market", "")
@@ -1167,7 +1169,7 @@ class DecibelPerpetualDerivative(PerpetualDerivativePyBase):
         except Exception:
             self.logger().exception("Error processing position update")
 
-    async def _process_balance_update_event(self, event: Dict[str, Any]):
+    async def _process_balance_update_event(self, event: dict[str, Any]):
         """Process balance update from WebSocket."""
         try:
             # Decibel WebSocket returns account_overview object:
@@ -1214,7 +1216,7 @@ class DecibelPerpetualDerivative(PerpetualDerivativePyBase):
 
         return self._trading_pair_symbol_map.get(symbol, symbol)
 
-    async def _trading_pair_from_market_identifier(self, market_id: str) -> Optional[str]:
+    async def _trading_pair_from_market_identifier(self, market_id: str) -> str | None:
         """
         Resolve a Decibel ``market`` field (as returned by REST/WS payloads) to a
         Hummingbot trading pair.
@@ -1271,7 +1273,7 @@ class DecibelPerpetualDerivative(PerpetualDerivativePyBase):
         perp_engine_global = self.get_perp_engine_global_address()
         return get_market_addr(exchange_symbol, perp_engine_global)
 
-    async def get_last_traded_prices(self, trading_pairs: List[str]) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str]) -> dict[str, float]:
         """
         Get last traded prices for multiple trading pairs.
         """
@@ -1287,7 +1289,7 @@ class DecibelPerpetualDerivative(PerpetualDerivativePyBase):
     # ========== Required Properties ==========
 
     @property
-    def status_dict(self) -> Dict[str, bool]:
+    def status_dict(self) -> dict[str, bool]:
         """
         A dictionary of statuses of various exchange's components. Used to determine if the connector is ready
         """
@@ -1324,7 +1326,7 @@ class DecibelPerpetualDerivative(PerpetualDerivativePyBase):
         return CONSTANTS.GET_MARKETS_PATH_URL
 
     @property
-    def trading_pairs(self) -> Optional[List[str]]:
+    def trading_pairs(self) -> list[str] | None:
         """List of trading pairs."""
         return self._trading_pairs
 
@@ -1368,7 +1370,7 @@ class DecibelPerpetualDerivative(PerpetualDerivativePyBase):
             auth=self.authenticator,
         )
 
-    async def _fetch_last_fee_payment(self, trading_pair: str) -> Tuple[float, Decimal, Decimal]:
+    async def _fetch_last_fee_payment(self, trading_pair: str) -> tuple[float, Decimal, Decimal]:
         """
         Fetch last funding fee payment.
 
@@ -1404,7 +1406,7 @@ class DecibelPerpetualDerivative(PerpetualDerivativePyBase):
 
         return 0, Decimal("0"), Decimal("0")
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         """Initialize trading pair symbol map from exchange info."""
         self._trading_pair_symbol_map = self._create_trading_pair_symbol_map(exchange_info)
         self._set_trading_pair_symbol_map(self._trading_pair_symbol_map)
@@ -1451,7 +1453,7 @@ class DecibelPerpetualDerivative(PerpetualDerivativePyBase):
         error_str = str(request_exception).lower()
         return "timestamp" in error_str or "time" in error_str
 
-    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> Tuple[bool, str]:
+    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> tuple[bool, str]:
         """
         Set leverage for trading pair.
         Decibel handles leverage per trade or at account level.
@@ -1459,7 +1461,7 @@ class DecibelPerpetualDerivative(PerpetualDerivativePyBase):
         """
         return True, ""
 
-    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> Tuple[bool, str]:
+    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> tuple[bool, str]:
         """
         Set position mode for trading pair.
         Decibel only supports ONEWAY mode.
@@ -1510,7 +1512,7 @@ class DecibelPerpetualDerivative(PerpetualDerivativePyBase):
 
         self.logger().debug(f"Updated trading fees (fee_tier={fee_tier}): maker={maker_decimal}, taker={taker_decimal}")
 
-    async def get_all_pairs_prices(self) -> List[Dict[str, Any]]:
+    async def get_all_pairs_prices(self) -> list[dict[str, Any]]:
         """
         Retrieves the prices (mark price) for all trading pairs.
         Required for Rate Oracle support.

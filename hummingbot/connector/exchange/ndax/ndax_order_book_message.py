@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
+from __future__ import annotations
+
 from collections import namedtuple
-from typing import Dict, List, Optional
 
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 from hummingbot.core.data_type.order_book_row import OrderBookRow
@@ -24,8 +25,8 @@ class NdaxOrderBookMessage(OrderBookMessage):
     def __new__(
         cls,
         message_type: OrderBookMessageType,
-        content: Dict[str, any],
-        timestamp: Optional[float] = None,
+        content: dict[str, any],
+        timestamp: float | None = None,
         *args,
         **kwargs,
     ):
@@ -59,19 +60,19 @@ class NdaxOrderBookMessage(OrderBookMessage):
 
     @property
     def last_traded_price(self) -> float:
-        entries: List[NdaxOrderBookEntry] = [NdaxOrderBookEntry(*entry) for entry in self.content["data"]]
+        entries: list[NdaxOrderBookEntry] = [NdaxOrderBookEntry(*entry) for entry in self.content["data"]]
         return float(entries[-1].lastTradePrice)
 
     @property
-    def asks(self) -> List[OrderBookRow]:
-        entries: List[NdaxOrderBookEntry] = [NdaxOrderBookEntry(*entry) for entry in self.content["data"]]
+    def asks(self) -> list[OrderBookRow]:
+        entries: list[NdaxOrderBookEntry] = [NdaxOrderBookEntry(*entry) for entry in self.content["data"]]
         asks = [self._order_book_row_for_entry(entry) for entry in entries if entry.side == self._SELL_SIDE]
         asks.sort(key=lambda row: (row.price, row.update_id))
         return asks
 
     @property
-    def bids(self) -> List[OrderBookRow]:
-        entries: List[NdaxOrderBookEntry] = [NdaxOrderBookEntry(*entry) for entry in self.content["data"]]
+    def bids(self) -> list[OrderBookRow]:
+        entries: list[NdaxOrderBookEntry] = [NdaxOrderBookEntry(*entry) for entry in self.content["data"]]
         bids = [self._order_book_row_for_entry(entry) for entry in entries if entry.side == self._BUY_SIDE]
         bids.sort(key=lambda row: (row.price, row.update_id))
         return bids

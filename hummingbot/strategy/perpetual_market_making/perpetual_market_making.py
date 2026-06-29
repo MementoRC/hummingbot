@@ -2,7 +2,7 @@ from decimal import Decimal
 from itertools import chain
 import logging
 from math import ceil, floor
-from typing import Dict, List
+from typing import List
 
 import numpy as np
 import pandas as pd
@@ -79,7 +79,7 @@ class PerpetualMarketMakingStrategy(StrategyPyBase):
         status_report_interval: float = 900,
         minimum_spread: Decimal = Decimal(0),
         hb_app_notification: bool = False,
-        order_override: Dict[str, List[str]] = {},
+        order_override: dict[str, list[str]] = {},
     ):
 
         if price_ceiling != s_decimal_neg_one and price_ceiling < price_floor:
@@ -290,21 +290,21 @@ class PerpetualMarketMakingStrategy(StrategyPyBase):
         return mid_price
 
     @property
-    def active_orders(self) -> List[LimitOrder]:
+    def active_orders(self) -> list[LimitOrder]:
         if self._market_info not in self._sb_order_tracker.market_pair_to_active_orders:
             return []
         return self._sb_order_tracker.market_pair_to_active_orders[self._market_info]
 
     @property
-    def active_positions(self) -> Dict[str, Position]:
+    def active_positions(self) -> dict[str, Position]:
         return self._market_info.market.account_positions
 
     @property
-    def active_buys(self) -> List[LimitOrder]:
+    def active_buys(self) -> list[LimitOrder]:
         return [o for o in self.active_orders if o.is_buy]
 
     @property
-    def active_sells(self) -> List[LimitOrder]:
+    def active_sells(self) -> list[LimitOrder]:
         return [o for o in self.active_orders if not o.is_buy]
 
     @property
@@ -510,7 +510,7 @@ class PerpetualMarketMakingStrategy(StrategyPyBase):
         finally:
             self._last_timestamp = timestamp
 
-    def manage_positions(self, session_positions: List[Position]):
+    def manage_positions(self, session_positions: list[Position]):
         mode = self._position_mode
 
         proposals = self.profit_taking_proposal(mode, session_positions)
@@ -594,7 +594,7 @@ class PerpetualMarketMakingStrategy(StrategyPyBase):
         time_since_stop_loss = self.current_timestamp - stop_loss_creation_timestamp
         return time_since_stop_loss >= self._time_between_stop_loss_orders
 
-    def stop_loss_proposal(self, mode: PositionMode, active_positions: List[Position]) -> Proposal:
+    def stop_loss_proposal(self, mode: PositionMode, active_positions: list[Position]) -> Proposal:
         market: DerivativeBase = self._market_info.market
         top_ask = market.get_price(self.trading_pair, False)
         top_bid = market.get_price(self.trading_pair, True)
@@ -759,7 +759,7 @@ class PerpetualMarketMakingStrategy(StrategyPyBase):
         return order_candidates
 
     def apply_adjusted_order_candidates_to_proposal(
-        self, adjusted_candidates: List[PerpetualOrderCandidate], proposal: Proposal
+        self, adjusted_candidates: list[PerpetualOrderCandidate], proposal: Proposal
     ):
         for order in chain(proposal.buys, proposal.sells):
             adjusted_candidate = adjusted_candidates.pop(0)
@@ -903,7 +903,7 @@ class PerpetualMarketMakingStrategy(StrategyPyBase):
         self._position_mode_ready = False
         self.logger().warning("Cannot continue. Please resolve the issue in the account.")
 
-    def is_within_tolerance(self, current_prices: List[Decimal], proposal_prices: List[Decimal]) -> bool:
+    def is_within_tolerance(self, current_prices: list[Decimal], proposal_prices: list[Decimal]) -> bool:
         if len(current_prices) != len(proposal_prices):
             return False
         current_prices = sorted(current_prices)

@@ -8,7 +8,7 @@ Tests for:
 """
 
 from decimal import Decimal
-from typing import Any, Dict, List
+from typing import Any
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -40,7 +40,7 @@ def _make_event_message(
     taker_pays=None,
     tx_type: str = "OfferCreate",
     tx_result: str = "tesSUCCESS",
-    affected_nodes: List[Dict[str, Any]] = None,
+    affected_nodes: list[dict[str, Any]] = None,
     tx_hash: str = "86440061A351FF77F21A24ED045EE958F6256697F2628C3555AEBF29A887518C",  # noqa: mock
     tx_date: int = 772789130,
     extra_created_offer: dict = None,

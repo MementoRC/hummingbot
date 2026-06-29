@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import asyncio
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 from hummingbot.connector.derivative.kucoin_perpetual import (
     kucoin_perpetual_constants as CONSTANTS,
@@ -17,11 +19,11 @@ if TYPE_CHECKING:
 
 
 class KucoinPerpetualAPIUserStreamDataSource(UserStreamTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "KucoinPerpetualDerivative",
         auth: KucoinPerpetualAuth,
         api_factory: WebAssistantsFactory,
@@ -33,7 +35,7 @@ class KucoinPerpetualAPIUserStreamDataSource(UserStreamTrackerDataSource):
         self._trading_pairs = trading_pairs
         self._api_factory = api_factory
         self._auth = auth
-        self._ws_assistants: List[WSAssistant] = []
+        self._ws_assistants: list[WSAssistant] = []
         self._current_listen_key = None
         self._listen_for_user_stream_task = None
         self._last_listen_key_ping_ts = None
@@ -76,7 +78,7 @@ class KucoinPerpetualAPIUserStreamDataSource(UserStreamTrackerDataSource):
             raise
 
     async def _listen_for_user_stream_on_url(self, url: str, output: asyncio.Queue):
-        ws: Optional[WSAssistant] = None
+        ws: WSAssistant | None = None
         while True:
             try:
                 ws = await self._get_connected_websocket_assistant(url)
@@ -115,7 +117,7 @@ class KucoinPerpetualAPIUserStreamDataSource(UserStreamTrackerDataSource):
         )
         return ws
 
-    async def _subscribe_to_channels(self, ws: WSAssistant, url: str, trading_pairs: List[str]):
+    async def _subscribe_to_channels(self, ws: WSAssistant, url: str, trading_pairs: list[str]):
         try:
             symbols = [
                 await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair)

@@ -1,4 +1,6 @@
-from typing import Optional, TypeVar
+from __future__ import annotations
+
+from typing import TypeVar
 
 from pydantic import BaseModel
 
@@ -12,7 +14,7 @@ class ExecutorAction(BaseModel):
     Base class for bot actions.
     """
 
-    controller_id: Optional[str] = "main"
+    controller_id: str | None = "main"
 
 
 class CreateExecutorAction(ExecutorAction):
@@ -29,7 +31,7 @@ class StopExecutorAction(ExecutorAction):
     """
 
     executor_id: str
-    keep_position: Optional[bool] = False
+    keep_position: bool | None = False
 
 
 class StoreExecutorAction(ExecutorAction):
