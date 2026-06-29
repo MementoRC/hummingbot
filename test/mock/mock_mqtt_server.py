@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict
+from typing import Any
 
 from commlib.serializer import JSONSerializer
 import ujson
@@ -27,8 +27,8 @@ class FakeMQTTBroker:
     """
 
     def __init__(self):
-        self._subscriptions: Dict[str, Any] = {}
-        self._received_msgs: Dict[str, Any] = {}
+        self._subscriptions: dict[str, Any] = {}
+        self._received_msgs: dict[str, Any] = {}
 
     def create_transport(self, *args, **kwargs):
         """Return a new per-endpoint transport that shares the broker's shared state dicts."""
@@ -67,7 +67,7 @@ class FakeMQTTBroker:
 class FakeMQTTTransport:
     """Per-endpoint transport whose subscription and message dicts are shared with the broker."""
 
-    def __init__(self, subscriptions: Dict[str, Any], received_msgs: Dict[str, Any]):
+    def __init__(self, subscriptions: dict[str, Any], received_msgs: dict[str, Any]):
         self._subscriptions = subscriptions
         self._received_msgs = received_msgs
         self._connected = False
@@ -76,7 +76,7 @@ class FakeMQTTTransport:
     def is_connected(self) -> bool:
         return self._connected
 
-    def publish(self, topic: str, payload: Dict[str, Any], qos: Any = "", retain: bool = False):
+    def publish(self, topic: str, payload: dict[str, Any], qos: Any = "", retain: bool = False):
         logging.info(f"\nFakeMQTT publish on\n> {topic}\n     {payload}\n")
         payload = ujson.loads(JSONSerializer.serialize(payload))
         if not self._received_msgs.get(topic):
