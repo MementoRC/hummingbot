@@ -1,6 +1,6 @@
 import asyncio
-import time
 from decimal import Decimal
+import time
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from hummingbot.connector.derivative.lighter_perpetual import (
@@ -39,9 +39,7 @@ class LighterPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         self._domain = domain
         self._order_book_create_function = lambda: LighterOrderBook()
 
-    async def get_last_traded_prices(
-        self, trading_pairs: List[str], domain: Optional[str] = None
-    ) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def get_funding_info(self, trading_pair: str) -> FundingInfo:
@@ -53,7 +51,9 @@ class LighterPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
         funding_rate = self._funding_rate_from_response(response=response, market_id=market.market_id)
         mark_price = self._safe_decimal(market.raw_info.get("mark_price", market.raw_info.get("last_trade_price", "0")))
-        index_price = self._safe_decimal(market.raw_info.get("index_price", market.raw_info.get("last_trade_price", mark_price)))
+        index_price = self._safe_decimal(
+            market.raw_info.get("index_price", market.raw_info.get("last_trade_price", mark_price))
+        )
 
         return FundingInfo(
             trading_pair=trading_pair,
@@ -215,24 +215,18 @@ class LighterPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
     async def _parse_order_book_snapshot_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
         market_id = int(str(raw_message["channel"]).split(":")[1])
         trading_pair = self._connector.market_info_for_market_id(market_id).trading_pair
-        message_queue.put_nowait(
-            LighterOrderBook.snapshot_message_from_ws(raw_message, trading_pair=trading_pair)
-        )
+        message_queue.put_nowait(LighterOrderBook.snapshot_message_from_ws(raw_message, trading_pair=trading_pair))
 
     async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
         market_id = int(str(raw_message["channel"]).split(":")[1])
         trading_pair = self._connector.market_info_for_market_id(market_id).trading_pair
-        message_queue.put_nowait(
-            LighterOrderBook.diff_message_from_ws(raw_message, trading_pair=trading_pair)
-        )
+        message_queue.put_nowait(LighterOrderBook.diff_message_from_ws(raw_message, trading_pair=trading_pair))
 
     async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
         market_id = int(str(raw_message["channel"]).split(":")[1])
         trading_pair = self._connector.market_info_for_market_id(market_id).trading_pair
         for trade in raw_message.get("trades", []):
-            message_queue.put_nowait(
-                LighterOrderBook.trade_message_from_ws(trade, trading_pair=trading_pair)
-            )
+            message_queue.put_nowait(LighterOrderBook.trade_message_from_ws(trade, trading_pair=trading_pair))
 
     async def _parse_funding_info_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
         market_stats = raw_message.get("market_stats", raw_message)
