@@ -13,26 +13,39 @@ class FakeMQTTMessage(object):
 
 
 class FakeMQTTBroker:
+    """Fake MQTT broker that aggregates subscriptions across all per-endpoint transports.
+
+    commlib creates one MQTTTransport per endpoint (Publisher, RPCService, PSubscriber, etc.).
+    The test patches commlib.transports.mqtt.MQTTTransport so every constructor call goes
+    through create_transport().  Each call returns a *new* FakeMQTTTransport that shares the
+    broker's single _subscriptions and _received_msgs dicts.  This ensures:
+      - Each RPCService's transport starts with is_connected=False, so its run() launches the
+        run_forever() thread and calls _transport.subscribe(), registering the RPC command topic.
+      - All subscriptions and published messages land in one place regardless of which endpoint
+        transport they originate from, so publish_to_subscription() and received_msgs work
+        transparently across all endpoints.
+    """
+
     def __init__(self):
-        self._transport = None
+        self._subscriptions: Dict[str, Any] = {}
+        self._received_msgs: Dict[str, Any] = {}
 
     def create_transport(self, *args, **kwargs):
-        if not self._transport:
-            self._transport = FakeMQTTTransport(*args, **kwargs)
-        return self._transport
+        """Return a new per-endpoint transport that shares the broker's shared state dicts."""
+        return FakeMQTTTransport(self._subscriptions, self._received_msgs)
 
     def publish_to_subscription(self, topic, payload):
-        callback = self._transport._subscriptions[topic]
+        callback = self._subscriptions[topic]
         msg = FakeMQTTMessage(topic=topic, payload=payload)
         callback(client=None, userdata=None, msg=msg)
 
     @property
     def subscriptions(self):
-        return self._transport._subscriptions
+        return self._subscriptions
 
     @property
     def received_msgs(self):
-        return self._transport._received_msgs
+        return self._received_msgs
 
     def is_msg_received(self, topic, content=None, msg_key="msg"):
         msg_found = False
@@ -47,15 +60,16 @@ class FakeMQTTBroker:
         return msg_found
 
     def clear(self):
-        if self._transport is not None:
-            self._transport._received_msgs = {}
-            self._transport._subscriptions = {}
+        self._subscriptions.clear()
+        self._received_msgs.clear()
 
 
 class FakeMQTTTransport:
-    def __init__(self, *args, **kwargs):
-        self._subscriptions = {}
-        self._received_msgs = {}
+    """Per-endpoint transport whose subscription and message dicts are shared with the broker."""
+
+    def __init__(self, subscriptions: Dict[str, Any], received_msgs: Dict[str, Any]):
+        self._subscriptions = subscriptions
+        self._received_msgs = received_msgs
         self._connected = False
 
     @property
