@@ -166,6 +166,7 @@ class TestLighterSpotCandles(TestCandlesBase):
     @aioresponses()
     async def test_initialize_exchange_data_sets_market_id(self, mock_api):
         self.data_feed._market_id = None
+        self.data_feed._exchange_data_initialized = False
         order_book_details_url = f"{CONSTANTS.MAINNET_BASE_URL}{CONSTANTS.ORDER_BOOK_DETAILS_PATH_URL}"
         mock_api.get(
             url=order_book_details_url,
@@ -189,6 +190,7 @@ class TestLighterSpotCandles(TestCandlesBase):
     @aioresponses()
     async def test_initialize_exchange_data_case_insensitive(self, mock_api):
         self.data_feed._market_id = None
+        self.data_feed._exchange_data_initialized = False
         order_book_details_url = f"{CONSTANTS.MAINNET_BASE_URL}{CONSTANTS.ORDER_BOOK_DETAILS_PATH_URL}"
         mock_api.get(
             url=order_book_details_url,
@@ -212,6 +214,7 @@ class TestLighterSpotCandles(TestCandlesBase):
     @aioresponses()
     async def test_initialize_exchange_data_raises_if_market_not_found(self, mock_api):
         self.data_feed._market_id = None
+        self.data_feed._exchange_data_initialized = False
         order_book_details_url = f"{CONSTANTS.MAINNET_BASE_URL}{CONSTANTS.ORDER_BOOK_DETAILS_PATH_URL}"
         mock_api.get(
             url=order_book_details_url,
