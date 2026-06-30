@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from hummingbot.connector.exchange.mexc.mexc_post_processor import MexcPostProcessor
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
@@ -11,7 +13,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class MexcSpotCandles(CandlesBase):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -80,9 +82,9 @@ class MexcSpotCandles(CandlesBase):
 
     def _get_rest_candles_params(
         self,
-        start_time: Optional[int] = None,
-        end_time: Optional[int] = None,
-        limit: Optional[int] = CONSTANTS.MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        limit: int | None = CONSTANTS.MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST,
     ) -> dict:
         """
         For API documentation, please refer to:
@@ -103,7 +105,7 @@ class MexcSpotCandles(CandlesBase):
     def _get_rest_candles_headers(self):
         return {"Content-Type": "application/json"}
 
-    def _parse_rest_candles(self, data: dict, end_time: Optional[int] = None) -> List[List[float]]:
+    def _parse_rest_candles(self, data: dict, end_time: int | None = None) -> list[list[float]]:
         return [
             [self.ensure_timestamp_in_seconds(row[0]), row[1], row[2], row[3], row[4], row[5], row[7], 0.0, 0.0, 0.0]
             for row in data
@@ -120,7 +122,7 @@ class MexcSpotCandles(CandlesBase):
         return payload
 
     def _parse_websocket_message(self, data):
-        candles_row_dict: Dict[str, Any] = {}
+        candles_row_dict: dict[str, Any] = {}
         if data is not None and data.get("publicSpotKline") is not None:
             candle = data["publicSpotKline"]
             candles_row_dict["timestamp"] = self.ensure_timestamp_in_seconds(candle["windowStart"])

@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 from decimal import Decimal
-from typing import Dict, List, Optional
 import unittest.mock
 
 import pandas as pd
@@ -25,17 +26,17 @@ class LiquidityMiningTest(unittest.TestCase):
     end: pd.Timestamp = pd.Timestamp("2019-01-01 01:00:00", tz="UTC")
     start_timestamp: float = start.timestamp()
     end_timestamp: float = end.timestamp()
-    market_infos: Dict[str, MarketTradingPairTuple] = {}
+    market_infos: dict[str, MarketTradingPairTuple] = {}
 
     @staticmethod
     def create_market(
-        trading_pairs: List[str], mid_price, balances: Dict[str, int]
-    ) -> (MockPaperExchange, Dict[str, MarketTradingPairTuple]):
+        trading_pairs: list[str], mid_price, balances: dict[str, int]
+    ) -> (MockPaperExchange, dict[str, MarketTradingPairTuple]):
         """
         Create a BacktestMarket and marketinfo dictionary to be used by the liquidity mining strategy
         """
         market: MockPaperExchange = MockPaperExchange()
-        market_infos: Dict[str, MarketTradingPairTuple] = {}
+        market_infos: dict[str, MarketTradingPairTuple] = {}
 
         for trading_pair in trading_pairs:
             base_asset = trading_pair.split("-")[0]
@@ -58,13 +59,13 @@ class LiquidityMiningTest(unittest.TestCase):
 
     @staticmethod
     def create_empty_ob_market(
-        trading_pairs: List[str], mid_price, balances: Dict[str, int]
-    ) -> (MockPaperExchange, Dict[str, MarketTradingPairTuple]):
+        trading_pairs: list[str], mid_price, balances: dict[str, int]
+    ) -> (MockPaperExchange, dict[str, MarketTradingPairTuple]):
         """
         Create a BacktestMarket and marketinfo dictionary to be used by the liquidity mining strategy
         """
         market: MockPaperExchange = MockPaperExchange()
-        market_infos: Dict[str, MarketTradingPairTuple] = {}
+        market_infos: dict[str, MarketTradingPairTuple] = {}
 
         _ = mid_price
         for trading_pair in trading_pairs:
@@ -123,7 +124,7 @@ class LiquidityMiningTest(unittest.TestCase):
         quantity: Decimal,
         price: Decimal,
         trading_pair: str,
-        market: Optional[MockPaperExchange] = None,
+        market: MockPaperExchange | None = None,
     ):
         """
         simulate making a trade, broadcasts a trade event
@@ -137,7 +138,7 @@ class LiquidityMiningTest(unittest.TestCase):
         order_book.apply_trade(trade_event)
 
     @staticmethod
-    def has_limit_order_type(limit_orders: List[LimitOrder], trading_pair: str, is_buy: bool) -> bool:
+    def has_limit_order_type(limit_orders: list[LimitOrder], trading_pair: str, is_buy: bool) -> bool:
         for limit_order in limit_orders:
             if limit_order.trading_pair == trading_pair and limit_order.is_buy == is_buy:
                 return True

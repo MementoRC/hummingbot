@@ -1,4 +1,6 @@
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any
 import uuid
 
 from hummingbot.connector.exchange.binance import binance_constants as CONSTANTS
@@ -14,12 +16,12 @@ if TYPE_CHECKING:
 
 
 class BinanceAPIUserStreamDataSource(UserStreamTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
         auth: BinanceAuth,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "BinanceExchange",
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -64,7 +66,7 @@ class BinanceAPIUserStreamDataSource(UserStreamTrackerDataSource):
             self.logger().exception("Unexpected error subscribing to user data stream")
             raise
 
-    async def _process_event_message(self, event_message: Dict[str, Any], queue):
+    async def _process_event_message(self, event_message: dict[str, Any], queue):
         if not isinstance(event_message, dict) or len(event_message) == 0:
             return
         # Filter out WebSocket API response messages (subscribe confirmations, etc.)
@@ -78,5 +80,5 @@ class BinanceAPIUserStreamDataSource(UserStreamTrackerDataSource):
             raise ConnectionError("User data stream subscription terminated by server")
         queue.put_nowait(event_message)
 
-    async def _on_user_stream_interruption(self, websocket_assistant: Optional[WSAssistant]):
+    async def _on_user_stream_interruption(self, websocket_assistant: WSAssistant | None):
         websocket_assistant and await websocket_assistant.disconnect()

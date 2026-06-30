@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import ROUND_DOWN, Decimal
 import time
 from types import MethodType
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Union
 
 from bidict import bidict
 
@@ -34,9 +36,9 @@ class BingXExchange(ExchangePyBase):
         self,
         bingx_api_key: str,
         bingx_api_secret: str,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
@@ -160,7 +162,7 @@ class BingXExchange(ExchangePyBase):
         order_side: TradeType,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         is_maker = order_type is OrderType.LIMIT_MAKER
         trade_base_fee = build_trade_fee(
@@ -192,7 +194,7 @@ class BingXExchange(ExchangePyBase):
         order_type: OrderType,
         price: Decimal,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         amount_str = f"{amount:f}"
         type_str = self.bingx_order_type(order_type)
 
@@ -253,7 +255,7 @@ class BingXExchange(ExchangePyBase):
 
             return False
 
-    async def _format_trading_rules(self, exchange_info_dict: Dict[str, Any]) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: dict[str, Any]) -> list[TradingRule]:
         """
         Example:
         {
@@ -403,7 +405,7 @@ class BingXExchange(ExchangePyBase):
                 self.logger().error("Unexpected error in user stream listener loop.", exc_info=True)
                 await self._sleep(5.0)
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         trade_updates = []
 
         if order.exchange_order_id is not None:
@@ -494,7 +496,7 @@ class BingXExchange(ExchangePyBase):
             del self._account_available_balances[asset_name]
             del self._account_balances[asset_name]
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         mapping = bidict()
         for symbol_data in filter(bing_x_utils.is_exchange_information_valid, exchange_info["data"]["symbols"]):
             mapping[symbol_data["symbol"]] = symbol_data["symbol"]
@@ -511,14 +513,14 @@ class BingXExchange(ExchangePyBase):
         self,
         path_url,
         method: RESTMethod = RESTMethod.GET,
-        params: Optional[Dict[str, Any]] = None,
-        data: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
+        data: dict[str, Any] | None = None,
         is_auth_required: bool = False,
         return_err: bool = False,
-        limit_id: Optional[str] = None,
-        trading_pair: Optional[str] = None,
+        limit_id: str | None = None,
+        trading_pair: str | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         last_exception = None
         rest_assistant = await self._web_assistants_factory.get_rest_assistant()
         url = web_utils.rest_url(path_url, domain=self.domain)
@@ -568,14 +570,14 @@ async def execute_request_with_content_type_none(
     self,
     url: str,
     throttler_limit_id: str,
-    params: Optional[Dict[str, Any]] = None,
-    data: Optional[Dict[str, Any]] = None,
+    params: dict[str, Any] | None = None,
+    data: dict[str, Any] | None = None,
     method: RESTMethod = RESTMethod.GET,
     is_auth_required: bool = False,
     return_err: bool = False,
-    timeout: Optional[float] = None,
-    headers: Optional[Dict[str, Any]] = None,
-) -> Union[str, Dict[str, Any]]:
+    timeout: float | None = None,
+    headers: dict[str, Any] | None = None,
+) -> Union[str, dict[str, Any]]:
     response = await self.execute_request_and_get_response(
         url=url,
         throttler_limit_id=throttler_limit_id,

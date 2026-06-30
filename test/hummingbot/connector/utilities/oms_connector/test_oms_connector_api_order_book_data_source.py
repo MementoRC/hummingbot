@@ -1,7 +1,7 @@
 import asyncio
 import json
 import re
-from typing import Any, Dict
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses import aioresponses
@@ -105,7 +105,7 @@ class OMSConnectorAPIOrderBookDataSourceTest(IsolatedAsyncioWrapperTestCase):
         auth_resp = self.get_auth_success_response()
         self.auth.update_with_rest_response(auth_resp)
 
-    def get_auth_success_response(self) -> Dict[str, Any]:
+    def get_auth_success_response(self) -> dict[str, Any]:
         auth_resp = {
             "Authenticated": True,
             "SessionToken": "0e8bbcbc-6ada-482a-a9b4-5d9218ada3f9",

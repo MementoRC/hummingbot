@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Union
 
 import pandas as pd
 from prompt_toolkit.utils import is_windows
@@ -156,8 +158,8 @@ class ConfigCommand:
 
     def build_df_data_from_config_map(
         self,  # type: HummingbotApplication
-        config_map: Union[ClientConfigAdapter, Dict[str, ConfigVar]],
-    ) -> List[Tuple[str, Any]]:
+        config_map: Union[ClientConfigAdapter, dict[str, ConfigVar]],
+    ) -> list[tuple[str, Any]]:
         if isinstance(config_map, ClientConfigAdapter):
             data = self.build_model_df_data(config_map)
         else:  # legacy
@@ -168,8 +170,8 @@ class ConfigCommand:
 
     @staticmethod
     def build_model_df_data(
-        config_map: ClientConfigAdapter, to_print: Optional[List[str]] = None
-    ) -> List[Tuple[str, Any]]:
+        config_map: ClientConfigAdapter, to_print: list[str] | None = None
+    ) -> list[tuple[str, Any]]:
         model_data = []
         for traversal_item in config_map.traverse():
             if to_print is not None and traversal_item.attr not in to_print:
@@ -184,7 +186,7 @@ class ConfigCommand:
 
     def configurable_keys(
         self,  # type: HummingbotApplication
-    ) -> List[str]:
+    ) -> list[str]:
         """
         Returns a list of configurable keys - using config command, excluding exchanges api keys
         as they are set from connect command.

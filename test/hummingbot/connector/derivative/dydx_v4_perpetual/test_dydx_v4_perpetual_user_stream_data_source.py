@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import asyncio
-from typing import Optional
 from unittest.mock import AsyncMock, patch
 
 from hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_derivative import DydxV4PerpetualDerivative
@@ -24,7 +25,7 @@ class DydxV4PerpetualUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCas
         super().setUp()
 
         self.log_records = []
-        self.async_task: Optional[asyncio.Task] = None
+        self.async_task: asyncio.Task | None = None
 
         self.connector = DydxV4PerpetualDerivative(
             dydx_v4_perpetual_secret_phrase="mirror actor skill push coach wait confirm orchard "
