@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from asyncio import Task
 from decimal import Decimal
 import functools
-from typing import Dict, List, Optional, Union
+from typing import Union
 
 from hummingbot.connector.utils import combine_to_hb_trading_pair
 from hummingbot.core.rate_oracle.sources.rate_source_base import RateSourceBase
@@ -15,13 +17,13 @@ from hummingbot.data_feed.coin_gecko_data_feed.coin_gecko_constants import COOLO
 class CoinGeckoRateSource(RateSourceBase):
     def __init__(
         self,
-        extra_token_ids: List[str],
+        extra_token_ids: list[str],
         api_key: str = "",
         api_tier: CoinGeckoAPITier = CoinGeckoAPITier.PUBLIC,
     ):
         super().__init__()
-        self._coin_gecko_supported_vs_tokens: Optional[List[str]] = None
-        self._coin_gecko_data_feed: Optional[CoinGeckoDataFeed] = None  # delayed because of circular reference
+        self._coin_gecko_supported_vs_tokens: list[str] | None = None
+        self._coin_gecko_data_feed: CoinGeckoDataFeed | None = None  # delayed because of circular reference
         self._extra_token_ids = extra_token_ids
         self._api_key = api_key
         self._api_tier = api_tier
@@ -33,11 +35,11 @@ class CoinGeckoRateSource(RateSourceBase):
         return "coin_gecko"
 
     @property
-    def extra_token_ids(self) -> List[str]:
+    def extra_token_ids(self) -> list[str]:
         return self._extra_token_ids
 
     @extra_token_ids.setter
-    def extra_token_ids(self, new_ids: List[str]):
+    def extra_token_ids(self, new_ids: list[str]):
         self._extra_token_ids = new_ids
 
     @property
@@ -94,7 +96,7 @@ class CoinGeckoRateSource(RateSourceBase):
         return try_raise_event
 
     @async_ttl_cache(ttl=COOLOFF_AFTER_BAN, maxsize=1)
-    async def get_prices(self, quote_token: Optional[str] = None) -> Dict[str, Decimal]:
+    async def get_prices(self, quote_token: str | None = None) -> dict[str, Decimal]:
         """
         Fetches the first 2500 CoinGecko prices ordered by market cap to ~ 500K USD
 
@@ -121,7 +123,7 @@ class CoinGeckoRateSource(RateSourceBase):
         results.update(r)
 
         # Coin Gecko returns 250 assets max per page, 2500th is around 500K USD market cap (as of 2/2023)
-        tasks: List[Task] = []
+        tasks: list[Task] = []
         for page_no in range(1, 8):
             tasks.append(asyncio.create_task(self._get_coin_gecko_prices_by_page(vs_currency, page_no, None)))
 
@@ -149,7 +151,7 @@ class CoinGeckoRateSource(RateSourceBase):
 
     async def _get_coin_gecko_prices_by_page(
         self, vs_currency: str, page_no: int, category: Union[str, None]
-    ) -> Dict[str, Decimal]:
+    ) -> dict[str, Decimal]:
         """
         Fetches CoinGecko prices by page number.
 
@@ -171,7 +173,7 @@ class CoinGeckoRateSource(RateSourceBase):
                 results[pair] = Decimal(str(record["current_price"]))
         return results
 
-    async def _get_coin_gecko_extra_token_prices(self, vs_currency: str) -> Dict[str, Decimal]:
+    async def _get_coin_gecko_extra_token_prices(self, vs_currency: str) -> dict[str, Decimal]:
         """
         Fetches CoinGecko prices for the configured extra tokens.
 

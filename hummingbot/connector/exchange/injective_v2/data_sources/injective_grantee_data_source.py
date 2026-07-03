@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Mapping
 
 from google.protobuf import any_pb2
 from pyinjective import Transaction
@@ -33,7 +35,7 @@ if TYPE_CHECKING:
 
 
 class InjectiveGranteeDataSource(InjectiveDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
@@ -42,7 +44,7 @@ class InjectiveGranteeDataSource(InjectiveDataSource):
         granter_address: str,
         granter_subaccount_index: int,
         network: Network,
-        rate_limits: List[RateLimit],
+        rate_limits: list[RateLimit],
         fee_calculator_mode: "InjectiveFeeCalculatorMode",
     ):
         self._network = network
@@ -86,14 +88,14 @@ class InjectiveGranteeDataSource(InjectiveDataSource):
         self._is_timeout_height_initialized = False
         self._is_trading_account_initialized = False
         self._markets_initialization_lock = asyncio.Lock()
-        self._spot_market_info_map: Optional[Dict[str, InjectiveSpotMarket]] = None
-        self._derivative_market_info_map: Optional[Dict[str, InjectiveDerivativeMarket]] = None
-        self._spot_market_and_trading_pair_map: Optional[Mapping[str, str]] = None
-        self._derivative_market_and_trading_pair_map: Optional[Mapping[str, str]] = None
-        self._tokens_map: Optional[Dict[str, InjectiveToken]] = None
-        self._token_symbol_and_denom_map: Optional[Mapping[str, str]] = None
+        self._spot_market_info_map: dict[str, InjectiveSpotMarket] | None = None
+        self._derivative_market_info_map: dict[str, InjectiveDerivativeMarket] | None = None
+        self._spot_market_and_trading_pair_map: Mapping[str, str] | None = None
+        self._derivative_market_and_trading_pair_map: Mapping[str, str] | None = None
+        self._tokens_map: dict[str, InjectiveToken] | None = None
+        self._token_symbol_and_denom_map: Mapping[str, str] | None = None
 
-        self._events_listening_tasks: List[asyncio.Task] = []
+        self._events_listening_tasks: list[asyncio.Task] = []
 
     @property
     def publisher(self):
@@ -152,7 +154,7 @@ class InjectiveGranteeDataSource(InjectiveDataSource):
             self._composer = await self._client.composer()
         return self._composer
 
-    def events_listening_tasks(self) -> List[asyncio.Task]:
+    def events_listening_tasks(self) -> list[asyncio.Task]:
         return self._events_listening_tasks.copy()
 
     def add_listening_task(self, task: asyncio.Task):
@@ -269,7 +271,7 @@ class InjectiveGranteeDataSource(InjectiveDataSource):
         await self._client.fetch_account(address=self.trading_account_injective_address)
         self._is_trading_account_initialized = True
 
-    def supported_order_types(self) -> List[OrderType]:
+    def supported_order_types(self) -> list[OrderType]:
         return [OrderType.LIMIT, OrderType.LIMIT_MAKER, OrderType.MARKET]
 
     async def update_markets(self):
@@ -285,9 +287,9 @@ class InjectiveGranteeDataSource(InjectiveDataSource):
     async def order_updates_for_transaction(
         self,
         transaction_hash: str,
-        spot_orders: Optional[List[GatewayInFlightOrder]] = None,
-        perpetual_orders: Optional[List[GatewayPerpetualInFlightOrder]] = None,
-    ) -> List[OrderUpdate]:
+        spot_orders: list[GatewayInFlightOrder] | None = None,
+        perpetual_orders: list[GatewayPerpetualInFlightOrder] | None = None,
+    ) -> list[OrderUpdate]:
         spot_orders = spot_orders or []
         perpetual_orders = perpetual_orders or []
 
@@ -379,7 +381,7 @@ class InjectiveGranteeDataSource(InjectiveDataSource):
     def _uses_default_portfolio_subaccount(self) -> bool:
         return self._granter_subaccount_index == CONSTANTS.DEFAULT_SUBACCOUNT_INDEX
 
-    async def _updated_derivative_market_info_for_id(self, market_id: str) -> Dict[str, Any]:
+    async def _updated_derivative_market_info_for_id(self, market_id: str) -> dict[str, Any]:
         async with self.throttler.execute_task(limit_id=CONSTANTS.DERIVATIVE_MARKETS_LIMIT_ID):
             market_info = await self._query_executor.derivative_market(market_id=market_id)
 
@@ -387,9 +389,9 @@ class InjectiveGranteeDataSource(InjectiveDataSource):
 
     async def _order_creation_messages(
         self,
-        spot_orders_to_create: List[GatewayInFlightOrder],
-        derivative_orders_to_create: List[GatewayPerpetualInFlightOrder],
-    ) -> List[any_pb2.Any]:
+        spot_orders_to_create: list[GatewayInFlightOrder],
+        derivative_orders_to_create: list[GatewayPerpetualInFlightOrder],
+    ) -> list[any_pb2.Any]:
         composer = await self.composer()
         spot_market_order_definitions = []
         derivative_market_order_definitions = []
@@ -457,8 +459,8 @@ class InjectiveGranteeDataSource(InjectiveDataSource):
 
     async def _order_cancel_message(
         self,
-        spot_orders_to_cancel: List[injective_exchange_tx_pb.OrderData],
-        derivative_orders_to_cancel: List[injective_exchange_tx_pb.OrderData],
+        spot_orders_to_cancel: list[injective_exchange_tx_pb.OrderData],
+        derivative_orders_to_cancel: list[injective_exchange_tx_pb.OrderData],
     ) -> any_pb2.Any:
         composer = await self.composer()
 
@@ -471,7 +473,7 @@ class InjectiveGranteeDataSource(InjectiveDataSource):
         return delegated_message
 
     async def _all_subaccount_orders_cancel_message(
-        self, spot_markets_ids: List[str], derivative_markets_ids: List[str]
+        self, spot_markets_ids: list[str], derivative_markets_ids: list[str]
     ) -> any_pb2.Any:
         composer = await self.composer()
 
@@ -501,8 +503,8 @@ class InjectiveGranteeDataSource(InjectiveDataSource):
 
     async def _process_chain_stream_update(
         self,
-        chain_stream_update: Dict[str, Any],
-        derivative_markets: List[InjectiveDerivativeMarket],
+        chain_stream_update: dict[str, Any],
+        derivative_markets: list[InjectiveDerivativeMarket],
     ):
         self._last_received_message_timestamp = self._time()
         await super()._process_chain_stream_update(
@@ -510,7 +512,7 @@ class InjectiveGranteeDataSource(InjectiveDataSource):
             derivative_markets=derivative_markets,
         )
 
-    async def _process_transaction_update(self, transaction_event: Dict[str, Any]):
+    async def _process_transaction_update(self, transaction_event: dict[str, Any]):
         self._last_received_message_timestamp = self._time()
         await super()._process_transaction_update(transaction_event=transaction_event)
 

@@ -19,12 +19,14 @@ Error Handling:
 - If timeout expires: fail the task with error
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 import asyncio
 from dataclasses import dataclass, field
 import logging
 import time
-from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, TypeVar
+from typing import TYPE_CHECKING, Any, Generic, TypeVar
 import uuid
 
 from xrpl.asyncio.clients import AsyncWebsocketClient
@@ -62,12 +64,12 @@ class TransactionSubmitResult:
     """Result of a transaction submission."""
 
     success: bool
-    signed_tx: Optional[Transaction] = None
-    response: Optional[Response] = None
-    prelim_result: Optional[str] = None
-    exchange_order_id: Optional[str] = None
-    error: Optional[str] = None
-    tx_hash: Optional[str] = None
+    signed_tx: Transaction | None = None
+    response: Response | None = None
+    prelim_result: str | None = None
+    exchange_order_id: str | None = None
+    error: str | None = None
+    tx_hash: str | None = None
 
     @property
     def is_queued(self) -> bool:
@@ -85,9 +87,9 @@ class TransactionVerifyResult:
     """Result of a transaction verification."""
 
     verified: bool
-    response: Optional[Response] = None
-    final_result: Optional[str] = None
-    error: Optional[str] = None
+    response: Response | None = None
+    final_result: str | None = None
+    error: str | None = None
 
 
 @dataclass
@@ -95,8 +97,8 @@ class QueryResult:
     """Result of a query operation."""
 
     success: bool
-    response: Optional[Response] = None
-    error: Optional[str] = None
+    response: Response | None = None
+    error: str | None = None
 
 
 # ============================================
@@ -151,7 +153,7 @@ class PoolStats:
             return 0.0
         return self.total_latency_ms / total
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for logging/monitoring."""
         return {
             "pool_name": self.pool_name,
@@ -185,7 +187,7 @@ class XRPLWorkerPoolBase(ABC, Generic[T]):
     - _process_task(): Execute the actual work for a task
     """
 
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
@@ -212,7 +214,7 @@ class XRPLWorkerPoolBase(ABC, Generic[T]):
         self._task_queue: asyncio.Queue[WorkerTask] = asyncio.Queue(maxsize=max_queue_size)
 
         # Worker tasks
-        self._worker_tasks: List[asyncio.Task] = []
+        self._worker_tasks: list[asyncio.Task] = []
         self._running = False
         self._started = False  # Track if pool was ever started (for lazy init)
 
@@ -287,7 +289,7 @@ class XRPLWorkerPoolBase(ABC, Generic[T]):
         if not self._started:
             await self.start()
 
-    async def submit(self, request: Any, timeout: Optional[float] = None) -> T:
+    async def submit(self, request: Any, timeout: float | None = None) -> T:
         """
         Submit a task to the worker pool.
 
@@ -306,7 +308,7 @@ class XRPLWorkerPoolBase(ABC, Generic[T]):
         await self._ensure_started()
 
         task_id = str(uuid.uuid4())[:8]
-        future: asyncio.Future = asyncio.get_event_loop().create_future()
+        future: asyncio.Future = asyncio.get_running_loop().create_future()
         task = WorkerTask(
             task_id=task_id,
             request=request,

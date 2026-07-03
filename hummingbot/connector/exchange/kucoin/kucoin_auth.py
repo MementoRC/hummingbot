@@ -2,7 +2,7 @@ import base64
 from collections import OrderedDict
 import hashlib
 import hmac
-from typing import Any, Dict
+from typing import Any
 from urllib.parse import urlencode
 
 from hummingbot.connector.exchange.kucoin import kucoin_constants as CONSTANTS
@@ -19,7 +19,7 @@ class KucoinAuth(AuthBase):
         self.time_provider = time_provider
 
     @staticmethod
-    def keysort(dictionary: Dict[str, str]) -> Dict[str, str]:
+    def keysort(dictionary: dict[str, str]) -> dict[str, str]:
         return OrderedDict(sorted(dictionary.items(), key=lambda t: t[0]))
 
     async def rest_authenticate(self, request: RESTRequest) -> RESTRequest:
@@ -56,7 +56,7 @@ class KucoinAuth(AuthBase):
         }
         return third_party
 
-    def authentication_headers(self, request: RESTRequest) -> Dict[str, Any]:
+    def authentication_headers(self, request: RESTRequest) -> dict[str, Any]:
         timestamp = int(self.time_provider.time() * 1000)
         header = {"KC-API-KEY": self.api_key, "KC-API-TIMESTAMP": str(timestamp), "KC-API-KEY-VERSION": "2"}
 

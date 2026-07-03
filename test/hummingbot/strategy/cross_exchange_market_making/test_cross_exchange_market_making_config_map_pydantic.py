@@ -1,6 +1,5 @@
 from decimal import Decimal
 from pathlib import Path
-from typing import Dict
 import unittest
 from unittest.mock import patch
 
@@ -61,7 +60,7 @@ class CrossExchangeMarketMakingConfigMapPydanticTest(unittest.TestCase):
             AllConnectorSettings.paper_trade_connectors_names = self._original_paper_trade_exchanges
         super().tearDown()
 
-    def get_default_map(self) -> Dict[str, str]:
+    def get_default_map(self) -> dict[str, str]:
         config_settings = {
             "maker_market": self.maker_exchange,
             "taker_market": self.taker_exchange,

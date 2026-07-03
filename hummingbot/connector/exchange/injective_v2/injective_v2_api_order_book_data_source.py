@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import asyncio
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING
 
 from hummingbot.connector.exchange.injective_v2 import injective_constants as CONSTANTS
 from hummingbot.connector.exchange.injective_v2.data_sources.injective_data_source import InjectiveDataSource
@@ -15,7 +17,7 @@ if TYPE_CHECKING:
 class InjectiveV2APIOrderBookDataSource(OrderBookTrackerDataSource):
     def __init__(
         self,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "InjectiveV2Exchange",
         data_source: InjectiveDataSource,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -28,7 +30,7 @@ class InjectiveV2APIOrderBookDataSource(OrderBookTrackerDataSource):
         self._forwarders = []
         self._configure_event_forwarders()
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def listen_for_subscriptions(self):

@@ -2,7 +2,6 @@ import asyncio
 from decimal import Decimal
 from enum import Enum
 import logging
-from typing import Dict, List, Tuple
 
 import pandas as pd
 
@@ -124,11 +123,11 @@ class SpotPerpetualArbitrageStrategy(StrategyPyBase):
         self._order_amount = value
 
     @property
-    def market_info_to_active_orders(self) -> Dict[MarketTradingPairTuple, List[LimitOrder]]:
+    def market_info_to_active_orders(self) -> dict[MarketTradingPairTuple, list[LimitOrder]]:
         return self._sb_order_tracker.market_pair_to_active_orders
 
     @property
-    def perp_positions(self) -> List[Position]:
+    def perp_positions(self) -> list[Position]:
         return [
             s
             for s in self._perp_market_info.market.account_positions.values()
@@ -249,7 +248,7 @@ class SpotPerpetualArbitrageStrategy(StrategyPyBase):
             self._completed_closing_order_ids.clear()
             self._next_arbitrage_opening_ts = self.current_timestamp + self._next_arbitrage_opening_delay
 
-    async def create_base_proposals(self) -> List[ArbProposal]:
+    async def create_base_proposals(self) -> list[ArbProposal]:
         """
         Creates a list of 2 base proposals, no filter.
         :return: A list of 2 base proposals.
@@ -516,7 +515,7 @@ class SpotPerpetualArbitrageStrategy(StrategyPyBase):
 
         return "\n".join(lines)
 
-    def short_proposal_msg(self, arb_proposal: List[ArbProposal], indented: bool = True) -> List[str]:
+    def short_proposal_msg(self, arb_proposal: list[ArbProposal], indented: bool = True) -> list[str]:
         """
         Composes a short proposal message.
         :param arb_proposal: The arbitrage proposal
@@ -537,11 +536,11 @@ class SpotPerpetualArbitrageStrategy(StrategyPyBase):
         return lines
 
     @property
-    def tracked_market_orders(self) -> List[Tuple[ConnectorBase, MarketOrder]]:
+    def tracked_market_orders(self) -> list[tuple[ConnectorBase, MarketOrder]]:
         return self._sb_order_tracker.tracked_market_orders
 
     @property
-    def tracked_limit_orders(self) -> List[Tuple[ConnectorBase, LimitOrder]]:
+    def tracked_limit_orders(self) -> list[tuple[ConnectorBase, LimitOrder]]:
         return self._sb_order_tracker.tracked_limit_orders
 
     def start(self, clock: Clock, timestamp: float):
