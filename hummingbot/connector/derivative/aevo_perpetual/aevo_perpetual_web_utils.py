@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from decimal import ROUND_DOWN, Decimal
-from typing import Any, Dict, Optional
+from typing import Any
 
 import hummingbot.connector.derivative.aevo_perpetual.aevo_perpetual_constants as CONSTANTS
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
@@ -35,9 +37,7 @@ def wss_url(domain: str = CONSTANTS.DEFAULT_DOMAIN):
     return base_ws_url
 
 
-def build_api_factory(
-    throttler: Optional[AsyncThrottler] = None, auth: Optional[AuthBase] = None
-) -> WebAssistantsFactory:
+def build_api_factory(throttler: AsyncThrottler | None = None, auth: AuthBase | None = None) -> WebAssistantsFactory:
     throttler = throttler or create_throttler()
     api_factory = WebAssistantsFactory(
         throttler=throttler, rest_pre_processors=[AevoPerpetualRESTPreProcessor()], auth=auth
@@ -56,7 +56,7 @@ def create_throttler() -> AsyncThrottler:
     return AsyncThrottler(CONSTANTS.RATE_LIMITS)
 
 
-def is_exchange_information_valid(rule: Dict[str, Any]) -> bool:
+def is_exchange_information_valid(rule: dict[str, Any]) -> bool:
     return bool(rule.get("is_active", False))
 
 
@@ -66,7 +66,7 @@ def decimal_to_int(value: Decimal, decimals: int = 6) -> int:
 
 
 async def get_current_server_time(
-    throttler: Optional[AsyncThrottler] = None,
+    throttler: AsyncThrottler | None = None,
     domain: str = CONSTANTS.DEFAULT_DOMAIN,
 ) -> float:
     throttler = throttler or create_throttler()

@@ -1,4 +1,3 @@
-from typing import Set
 from unittest import TestCase
 
 from hummingbot.core.data_type.common import GroupedSetDict, LazyDict
@@ -32,7 +31,7 @@ class GroupedSetDictTests(TestCase):
         self.assertEqual(self.dict["key1"], {"value1", "value2", "value3"})
 
     def test_market_dict_type(self):
-        market_dict = GroupedSetDict[str, Set[str]]()
+        market_dict = GroupedSetDict[str, set[str]]()
         market_dict.add_or_update("exchange1", "BTC-USDT")
         self.assertEqual(market_dict["exchange1"], {"BTC-USDT"})
 

@@ -133,7 +133,7 @@ class BtcMarketsAPIOrderBookDataSourceTest(IsolatedAsyncioWrapperTestCase):
     async def test_get_new_order_book_successful(self, mock_get):
         self._setup_time_mock(mock_get)
 
-        mock_response: Dict[str, Any] = self._order_book_snapshot_example()
+        mock_response: dict[str, Any] = self._order_book_snapshot_example()
         url = web_utils.public_rest_url(path_url=CONSTANTS.MARKETS_URL)
         url = f"{url}/{self.ex_trading_pair}/orderbook"
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -399,7 +399,7 @@ class BtcMarketsAPIOrderBookDataSourceTest(IsolatedAsyncioWrapperTestCase):
     @aioresponses()
     @patch("hummingbot.core.data_type.order_book_tracker_data_source.OrderBookTrackerDataSource._sleep")
     async def test_listen_for_order_book_snapshots_cancelled_when_fetching_snapshot(self, mock_api, sleep_mock):
-        mock_response: Dict[Any] = {}
+        mock_response: dict[Any] = {}
         url = web_utils.public_rest_url(f"{CONSTANTS.MARKETS_URL}/{self.ex_trading_pair}/orderbook")
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
         mock_api.get(regex_url, body=json.dumps(mock_response))

@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from decimal import Decimal
 from enum import Enum
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, field_validator
 from pydantic_core.core_schema import ValidationInfo
@@ -28,11 +30,11 @@ class OrderExecutorConfig(ExecutorConfigBase):
     side: TradeType
     amount: Decimal
     position_action: PositionAction = PositionAction.OPEN
-    price: Optional[Decimal] = None  # Required for LIMIT and LIMIT_MAKER
-    chaser_config: Optional[LimitChaserConfig] = None  # Required for LIMIT_CHASER
+    price: Decimal | None = None  # Required for LIMIT and LIMIT_MAKER
+    chaser_config: LimitChaserConfig | None = None  # Required for LIMIT_CHASER
     execution_strategy: ExecutionStrategy
     leverage: int = 1
-    level_id: Optional[str] = None
+    level_id: str | None = None
 
     @field_validator("execution_strategy", mode="before")
     @classmethod

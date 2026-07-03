@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from bidict import bidict
 
@@ -45,11 +47,11 @@ class NdaxExchange(ExchangePyBase):
         ndax_api_key: str,
         ndax_secret_key: str,
         ndax_account_name: str,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
-        domain: Optional[str] = None,
+        domain: str | None = None,
     ):
         """
         :param ndax_uid: User ID of the account
@@ -132,7 +134,7 @@ class NdaxExchange(ExchangePyBase):
             )  # dummy request to trigger auth
         return self.authenticator.account_id
 
-    def supported_order_types(self) -> List[OrderType]:
+    def supported_order_types(self) -> list[OrderType]:
         """
         :return: a list of OrderType supported by this connector.
         Note that Market order type is no longer required and will not be used.
@@ -220,7 +222,7 @@ class NdaxExchange(ExchangePyBase):
         order_type: OrderType,
         price: Decimal,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         params = {
             "InstrumentId": await self.exchange_symbol_associated_to_pair(trading_pair),
             "OMSId": 1,
@@ -276,12 +278,12 @@ class NdaxExchange(ExchangePyBase):
 
         return response.get("result", False)
 
-    async def get_open_orders(self) -> List[OpenOrder]:
+    async def get_open_orders(self) -> list[OpenOrder]:
         query_params = {
             "OMSId": 1,
             "AccountId": await self.initialized_account_id(),
         }
-        open_orders: List[Dict[str, Any]] = await self._api_request(
+        open_orders: list[dict[str, Any]] = await self._api_request(
             path_url=CONSTANTS.GET_OPEN_ORDERS_PATH_URL, params=query_params, is_auth_required=True
         )
 
@@ -301,7 +303,7 @@ class NdaxExchange(ExchangePyBase):
             for order in open_orders
         ]
 
-    def _format_trading_rules(self, instrument_info: List[Dict[str, Any]]) -> Dict[str, TradingRule]:
+    def _format_trading_rules(self, instrument_info: list[dict[str, Any]]) -> dict[str, TradingRule]:
         """
         Converts JSON API response into a local dictionary of trading rules.
         :param instrument_info: The JSON API response.
@@ -324,7 +326,7 @@ class NdaxExchange(ExchangePyBase):
 
     async def _update_trading_rules(self):
         params = {"OMSId": 1}
-        instrument_info: List[Dict[str, Any]] = await self._api_request(path_url=CONSTANTS.MARKETS_URL, params=params)
+        instrument_info: list[dict[str, Any]] = await self._api_request(path_url=CONSTANTS.MARKETS_URL, params=params)
         self._trading_rules.clear()
         self._trading_rules = self._format_trading_rules(instrument_info)
 
@@ -336,7 +338,7 @@ class NdaxExchange(ExchangePyBase):
         remote_asset_names = set()
 
         params = {"OMSId": 1, "AccountId": await self.initialized_account_id()}
-        account_positions: List[Dict[str, Any]] = await self._api_request(
+        account_positions: list[dict[str, Any]] = await self._api_request(
             path_url=CONSTANTS.ACCOUNT_POSITION_PATH_URL, params=params, is_auth_required=True
         )
         for position in account_positions:
@@ -413,14 +415,14 @@ class NdaxExchange(ExchangePyBase):
                 self.logger().error("Unexpected error in user stream listener loop.", exc_info=True)
                 await asyncio.sleep(5.0)
 
-    def _process_account_position_event(self, account_position_event: Dict[str, Any]):
+    def _process_account_position_event(self, account_position_event: dict[str, Any]):
         token = account_position_event["ProductSymbol"]
         amount = Decimal(str(account_position_event["Amount"]))
         on_hold = Decimal(str(account_position_event["Hold"]))
         self._account_balances[token] = amount
         self._account_available_balances[token] = amount - on_hold
 
-    def _process_trade_event_message(self, order_msg: Dict[str, Any]):
+    def _process_trade_event_message(self, order_msg: dict[str, Any]):
         """
         Updates in-flight order and trigger order filled event for trade message received. Triggers order completed
         event if the total executed amount equals to the specified order amount.
@@ -457,7 +459,7 @@ class NdaxExchange(ExchangePyBase):
         exchange_info = await self._api_get(path_url=self.trading_pairs_request_path, params={"OMSId": 1})
         return exchange_info
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         trade_updates = []
         body_params = {
             "OMSId": 1,
@@ -467,7 +469,7 @@ class NdaxExchange(ExchangePyBase):
             "orderId": await order.get_exchange_order_id(),
         }
 
-        raw_responses: List[Dict[str, Any]] = await self._api_get(
+        raw_responses: list[dict[str, Any]] = await self._api_get(
             path_url=CONSTANTS.GET_TRADES_HISTORY_PATH_URL,
             params=body_params,
             is_auth_required=True,
@@ -528,13 +530,13 @@ class NdaxExchange(ExchangePyBase):
         order_side: TradeType,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         # https://apidoc.ndax.io/?_gl=1*frgalf*_gcl_au*MTc2Mjc1NzIxOC4xNzQ0MTQ3Mzcy*_ga*ODQyNjI5MDczLjE3NDQxNDczNzI.*_ga_KBXHH6Z610*MTc0NTU0OTg5OC4xOS4xLjE3NDU1NTAyNTguMC4wLjA.#getorderfee
         is_maker = order_type is OrderType.LIMIT_MAKER
         return DeductedFromReturnsTradeFee(percent=self.estimate_fee_pct(is_maker))
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         mapping = bidict()
         for symbol_data in filter(ndax_utils.is_exchange_information_valid, exchange_info):
             mapping[symbol_data["InstrumentId"]] = combine_to_hb_trading_pair(

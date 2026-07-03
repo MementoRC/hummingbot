@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 from decimal import Decimal
 from enum import Enum
 import importlib
 from os import DirEntry, scandir
 from os.path import exists, join
-from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Set, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, NamedTuple, Union, cast
 
 from pydantic import SecretStr
 
@@ -17,11 +19,11 @@ if TYPE_CHECKING:
 
 
 # Global variables
-required_exchanges: Set[str] = set()
-requried_connector_trading_pairs: Dict[str, List[str]] = {}
+required_exchanges: set[str] = set()
+requried_connector_trading_pairs: dict[str, list[str]] = {}
 # Set these two variables if a strategy uses oracle for rate conversion
 required_rate_oracle: bool = False
-rate_oracle_pairs: List[str] = []
+rate_oracle_pairs: list[str] = []
 
 # Global static values
 KEYFILE_PREFIX = "key_file_"
@@ -77,10 +79,10 @@ class ConnectorSetting(NamedTuple):
     centralised: bool
     use_ethereum_wallet: bool
     trade_fee_schema: TradeFeeSchema
-    config_keys: Optional["BaseConnectorConfigMap"]
+    config_keys: "BaseConnectorConfigMap" | None
     is_sub_domain: bool
-    parent_name: Optional[str]
-    domain_parameter: Optional[str]
+    parent_name: str | None
+    domain_parameter: str | None
     use_eth_gas_lookup: bool
     """
     This class has metadata data about Exchange connections. The name of the connection and the file path location of
@@ -147,19 +149,19 @@ class ConnectorSetting(NamedTuple):
 
     def conn_init_parameters(
         self,
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = False,
-        api_keys: Optional[Dict[str, Any]] = None,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        api_keys: dict[str, Any] | None = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
-        gateway_config: Optional["GatewayConfigMap"] = None,
-    ) -> Dict[str, Any]:
+        gateway_config: "GatewayConfigMap" | None = None,
+    ) -> dict[str, Any]:
         trading_pairs = trading_pairs or []
         api_keys = api_keys or {}
         if self.uses_gateway_generic_connector():  # init parameters for gateway connectors
             params = {}
             if self.config_keys is not None:
-                params: Dict[str, Any] = {k: v.value for k, v in self.config_keys.items()}
+                params: dict[str, Any] = {k: v.value for k, v in self.config_keys.items()}
 
             # Gateway connector format: connector/type (e.g., uniswap/amm)
             # Connector will handle chain, network, and wallet internally
@@ -168,7 +170,7 @@ class ConnectorSetting(NamedTuple):
         elif not self.is_sub_domain:
             params = api_keys
         else:
-            params: Dict[str, Any] = {k.replace(self.name, self.parent_name): v for k, v in api_keys.items()}
+            params: dict[str, Any] = {k.replace(self.name, self.parent_name): v for k, v in api_keys.items()}
             params["domain"] = self.domain_parameter
             params["rate_limits_share_pct"] = rate_limits_share_pct
 
@@ -185,7 +187,7 @@ class ConnectorSetting(NamedTuple):
 
         return params
 
-    def add_domain_parameter(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def add_domain_parameter(self, params: dict[str, Any]) -> dict[str, Any]:
         if not self.is_sub_domain:
             return params
         else:
@@ -199,7 +201,7 @@ class ConnectorSetting(NamedTuple):
             return self.name
 
     def non_trading_connector_instance_with_default_configuration(
-        self, trading_pairs: Optional[List[str]] = None
+        self, trading_pairs: list[str] | None = None
     ) -> "ConnectorBase":
         from hummingbot.client.config.config_helpers import ClientConfigAdapter
 
@@ -233,8 +235,8 @@ class ConnectorSetting(NamedTuple):
 
 
 class AllConnectorSettings:
-    paper_trade_connectors_names: List[str] = []
-    all_connector_settings: Dict[str, ConnectorSetting] = {}
+    paper_trade_connectors_names: list[str] = []
+    all_connector_settings: dict[str, ConnectorSetting] = {}
 
     @classmethod
     def create_connector_settings(cls):
@@ -244,7 +246,7 @@ class AllConnectorSettings:
         cls.all_connector_settings = {}  # reset
         connector_exceptions = ["mock_paper_exchange", "mock_pure_python_paper_exchange", "paper_trade"]
 
-        type_dirs: List[DirEntry] = [
+        type_dirs: list[DirEntry] = [
             cast(DirEntry, f)
             for f in scandir(f"{root_path() / 'hummingbot' / 'connector'}")
             if f.is_dir() and f.name not in CONNECTOR_SUBMODULES_THAT_ARE_NOT_CEX_TYPES
@@ -252,7 +254,7 @@ class AllConnectorSettings:
         for type_dir in type_dirs:
             if type_dir.name == "gateway":
                 continue
-            connector_dirs: List[DirEntry] = [
+            connector_dirs: list[DirEntry] = [
                 cast(DirEntry, f) for f in scandir(type_dir.path) if f.is_dir() and exists(join(f.path, "__init__.py"))
             ]
             for connector_dir in connector_dirs:
@@ -267,7 +269,7 @@ class AllConnectorSettings:
                     util_module = importlib.import_module(util_module_path)
                 except ModuleNotFoundError:
                     continue
-                trade_fee_settings: List[float] = getattr(util_module, "DEFAULT_FEES", None)
+                trade_fee_settings: list[float] = getattr(util_module, "DEFAULT_FEES", None)
                 trade_fee_schema: TradeFeeSchema = cls._validate_trade_fee_schema(
                     connector_dir.name, trade_fee_settings
                 )
@@ -311,10 +313,10 @@ class AllConnectorSettings:
         return cls.all_connector_settings
 
     @classmethod
-    def initialize_paper_trade_settings(cls, paper_trade_exchanges: List[str]):
+    def initialize_paper_trade_settings(cls, paper_trade_exchanges: list[str]):
         cls.paper_trade_connectors_names = paper_trade_exchanges
         for e in paper_trade_exchanges:
-            base_connector_settings: Optional[ConnectorSetting] = cls.all_connector_settings.get(e, None)
+            base_connector_settings: ConnectorSetting | None = cls.all_connector_settings.get(e, None)
             if base_connector_settings:
                 paper_trade_settings = ConnectorSetting(
                     name=f"{e}_paper_trade",
@@ -332,13 +334,13 @@ class AllConnectorSettings:
                 cls.all_connector_settings.update({f"{e}_paper_trade": paper_trade_settings})
 
     @classmethod
-    def get_connector_settings(cls) -> Dict[str, ConnectorSetting]:
+    def get_connector_settings(cls) -> dict[str, ConnectorSetting]:
         if len(cls.all_connector_settings) == 0:
             cls.all_connector_settings = cls.create_connector_settings()
         return cls.all_connector_settings
 
     @classmethod
-    def get_connector_config_keys(cls, connector: str) -> Optional["BaseConnectorConfigMap"]:
+    def get_connector_config_keys(cls, connector: str) -> "BaseConnectorConfigMap" | None:
         return cls.get_connector_settings()[connector].config_keys
 
     @classmethod
@@ -356,7 +358,7 @@ class AllConnectorSettings:
         cls.get_connector_settings()[new_config_keys.connector] = ConnectorSetting(**new_keys_settings_dict)
 
     @classmethod
-    def get_exchange_names(cls) -> Set[str]:
+    def get_exchange_names(cls) -> set[str]:
         return {
             cs.name
             for cs in cls.get_connector_settings().values()
@@ -364,7 +366,7 @@ class AllConnectorSettings:
         }.union(set(cls.paper_trade_connectors_names))
 
     @classmethod
-    def get_derivative_names(cls) -> Set[str]:
+    def get_derivative_names(cls) -> set[str]:
         return {
             cs.name
             for cs in cls.all_connector_settings.values()
@@ -372,34 +374,34 @@ class AllConnectorSettings:
         }
 
     @classmethod
-    def get_other_connector_names(cls) -> Set[str]:
+    def get_other_connector_names(cls) -> set[str]:
         return {cs.name for cs in cls.all_connector_settings.values() if cs.type is ConnectorType.Connector}
 
     @classmethod
-    def get_eth_wallet_connector_names(cls) -> Set[str]:
+    def get_eth_wallet_connector_names(cls) -> set[str]:
         return {cs.name for cs in cls.all_connector_settings.values() if cs.use_ethereum_wallet}
 
     @classmethod
-    def get_gateway_amm_connector_names(cls) -> Set[str]:
+    def get_gateway_amm_connector_names(cls) -> set[str]:
         # Gateway connectors are now stored in GATEWAY_DEXS
         return set(GATEWAY_DEXS)
 
     @classmethod
-    def get_gateway_ethereum_connector_names(cls) -> Set[str]:
+    def get_gateway_ethereum_connector_names(cls) -> set[str]:
         # Return Ethereum-based gateway connectors
         return set(GATEWAY_ETH_DEXS)
 
     @classmethod
-    def get_example_pairs(cls) -> Dict[str, str]:
+    def get_example_pairs(cls) -> dict[str, str]:
         return {name: cs.example_pair for name, cs in cls.get_connector_settings().items()}
 
     @classmethod
-    def get_example_assets(cls) -> Dict[str, str]:
+    def get_example_assets(cls) -> dict[str, str]:
         return {name: cs.example_pair.split("-")[0] for name, cs in cls.get_connector_settings().items()}
 
     @staticmethod
     def _validate_trade_fee_schema(
-        exchange_name: str, trade_fee_schema: Optional[Union[TradeFeeSchema, List[float]]]
+        exchange_name: str, trade_fee_schema: Union[TradeFeeSchema, list[float]] | None
     ) -> TradeFeeSchema:
         if not isinstance(trade_fee_schema, TradeFeeSchema):
             # backward compatibility
@@ -416,7 +418,7 @@ class AllConnectorSettings:
         return trade_fee_schema
 
 
-def gateway_connector_trading_pairs(connector: str) -> List[str]:
+def gateway_connector_trading_pairs(connector: str) -> list[str]:
     """
     Returns trading pair used by specified gateway connnector.
     """
@@ -431,8 +433,8 @@ MAXIMUM_OUTPUT_PANE_LINE_COUNT = 1000
 MAXIMUM_LOG_PANE_LINE_COUNT = 1000
 MAXIMUM_TRADE_FILLS_DISPLAY_OUTPUT = 100
 
-STRATEGIES: List[str] = get_strategy_list()
-GATEWAY_DEXS: List[str] = []
-GATEWAY_ETH_DEXS: List[str] = []
-GATEWAY_NAMESPACES: List[str] = []
-GATEWAY_CHAINS: List[str] = []
+STRATEGIES: list[str] = get_strategy_list()
+GATEWAY_DEXS: list[str] = []
+GATEWAY_ETH_DEXS: list[str] = []
+GATEWAY_NAMESPACES: list[str] = []
+GATEWAY_CHAINS: list[str] = []

@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 from abc import abstractmethod
 import asyncio
 from decimal import Decimal
 import json
-from typing import Callable, List, Optional, Tuple
+from typing import Callable
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
@@ -33,7 +35,7 @@ class AbstractPerpetualDerivativeTests:
     class PerpetualDerivativeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests):
         @property
         @abstractmethod
-        def expected_supported_position_modes(self) -> List[PositionMode]:
+        def expected_supported_position_modes(self) -> list[PositionMode]:
             raise NotImplementedError
 
         @property
@@ -114,7 +116,7 @@ class AbstractPerpetualDerivativeTests:
             self,
             position_mode: PositionMode,
             mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
+            callback: Callable | None = lambda *args, **kwargs: None,
         ):
             raise NotImplementedError
 
@@ -123,8 +125,8 @@ class AbstractPerpetualDerivativeTests:
             self,
             position_mode: PositionMode,
             mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
-        ) -> Tuple[str, str]:
+            callback: Callable | None = lambda *args, **kwargs: None,
+        ) -> tuple[str, str]:
             """
             :return: A tuple of the URL and an error message if the exchange returns one on failure.
             """
@@ -135,8 +137,8 @@ class AbstractPerpetualDerivativeTests:
             self,
             leverage: int,
             mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
-        ) -> Tuple[str, str]:
+            callback: Callable | None = lambda *args, **kwargs: None,
+        ) -> tuple[str, str]:
             """
             :return: A tuple of the URL and an error message if the exchange returns one on failure.
             """
@@ -147,7 +149,7 @@ class AbstractPerpetualDerivativeTests:
             self,
             leverage: int,
             mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
+            callback: Callable | None = lambda *args, **kwargs: None,
         ):
             raise NotImplementedError
 

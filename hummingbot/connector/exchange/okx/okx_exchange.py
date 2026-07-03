@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from bidict import bidict
 
@@ -30,9 +32,9 @@ class OkxExchange(ExchangePyBase):
         okx_api_key: str,
         okx_secret_key: str,
         okx_passphrase: str,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         okx_registration_sub_domain: str = "www",
     ):
@@ -145,7 +147,7 @@ class OkxExchange(ExchangePyBase):
         order_side: TradeType,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
 
         is_maker = is_maker or (order_type is OrderType.LIMIT_MAKER)
@@ -172,7 +174,7 @@ class OkxExchange(ExchangePyBase):
         except Exception:
             self.logger().exception("There was an error requesting exchange info.")
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         mapping = bidict()
         for symbol_data in filter(okx_utils.is_exchange_information_valid, exchange_info["data"]):
             mapping[symbol_data["instId"]] = combine_to_hb_trading_pair(
@@ -189,7 +191,7 @@ class OkxExchange(ExchangePyBase):
         order_type: OrderType,
         price: Decimal,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
 
         data = {
             "clOrdId": order_id,
@@ -240,7 +242,7 @@ class OkxExchange(ExchangePyBase):
 
         return final_result
 
-    async def get_last_traded_prices(self, trading_pairs: List[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str] = None) -> dict[str, float]:
         params = {"instType": "SPOT"}
 
         if trading_pairs and len(trading_pairs) == 1:
@@ -278,7 +280,7 @@ class OkxExchange(ExchangePyBase):
         for balance in balances:
             self._update_balance_from_details(balance_details=balance)
 
-    def _update_balance_from_details(self, balance_details: Dict[str, Any]):
+    def _update_balance_from_details(self, balance_details: dict[str, Any]):
         equity_text = balance_details["eq"]
         available_equity_text = balance_details["availEq"]
 
@@ -304,7 +306,7 @@ class OkxExchange(ExchangePyBase):
             self._trading_rules[trading_rule.trading_pair] = trading_rule
         self._initialize_trading_pair_symbols_from_exchange_info(exchange_info=exchange_info)
 
-    async def _format_trading_rules(self, raw_trading_pair_info: List[Dict[str, Any]]) -> List[TradingRule]:
+    async def _format_trading_rules(self, raw_trading_pair_info: list[dict[str, Any]]) -> list[TradingRule]:
         trading_rules = []
 
         for info in raw_trading_pair_info.get("data", []):
@@ -328,7 +330,7 @@ class OkxExchange(ExchangePyBase):
         """
         pass
 
-    async def _request_order_update(self, order: InFlightOrder) -> Dict[str, Any]:
+    async def _request_order_update(self, order: InFlightOrder) -> dict[str, Any]:
         return await self._api_request(
             method=RESTMethod.GET,
             path_url=CONSTANTS.OKX_ORDER_DETAILS_PATH,
@@ -339,7 +341,7 @@ class OkxExchange(ExchangePyBase):
             is_auth_required=True,
         )
 
-    async def _request_order_fills(self, order: InFlightOrder) -> Dict[str, Any]:
+    async def _request_order_fills(self, order: InFlightOrder) -> dict[str, Any]:
         return await self._api_request(
             method=RESTMethod.GET,
             path_url=CONSTANTS.OKX_TRADE_FILLS_PATH,
@@ -351,7 +353,7 @@ class OkxExchange(ExchangePyBase):
             is_auth_required=True,
         )
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         trade_updates = []
 
         if order.exchange_order_id is not None:

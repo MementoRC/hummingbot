@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import asyncio
 import re
-from typing import Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses import aioresponses
@@ -36,7 +37,7 @@ class DydxV4PerpetualAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestC
         super().setUp()
 
         self.log_records = []
-        self.async_task: Optional[asyncio.Task] = None
+        self.async_task: asyncio.Task | None = None
 
         self.connector = DydxV4PerpetualDerivative(
             dydx_v4_perpetual_secret_phrase="mirror actor skill push coach wait confirm orchard "
