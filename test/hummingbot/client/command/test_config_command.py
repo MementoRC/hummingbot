@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 from pydantic import Field
 
+from hummingbot.client.config.client_config_map import GateIoRateSourceMode
 from hummingbot.client.config.config_data_types import BaseClientModel
 from hummingbot.client.config.config_helpers import ClientConfigAdapter, read_system_configs_from_yml
 from hummingbot.client.config.config_var import ConfigVar
@@ -36,6 +37,8 @@ class ConfigCommandTest(IsolatedAsyncioWrapperTestCase):
         strategy_name = "some-strategy"
         self.app.trading_core.strategy_name = strategy_name
         self.app.client_config_map.commands_timeout.other_commands_timeout = Decimal("30.0")
+        # Force rate_oracle_source to default so test doesn't depend on local conf_client.yml
+        self.app.client_config_map.rate_oracle_source = GateIoRateSourceMode()
 
         strategy_config_map_mock = {
             "five": ConfigVar(key="five", prompt=""),
