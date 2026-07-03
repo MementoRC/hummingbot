@@ -1,7 +1,7 @@
 import asyncio
+from decimal import Decimal
 import json
 import re
-from decimal import Decimal
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from unittest.mock import AsyncMock, patch
 
@@ -20,7 +20,6 @@ from hummingbot.core.event.events import MarketOrderFailureEvent
 
 
 class BitrueExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests):
-
     @property
     def all_symbols_url(self):
         return web_utils.public_rest_url(path_url=CONSTANTS.EXCHANGE_INFO_PATH_URL, domain=self.exchange._domain)
@@ -966,7 +965,7 @@ class BitrueExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests)
         return {
             "symbol": self.trading_pair,
             "orderId": int(order.exchange_order_id),
-            "clientOrderId": order.client_order_id
+            "clientOrderId": order.client_order_id,
         }
 
     def _order_status_request_completely_filled_mock_response(self, order: InFlightOrder) -> Any:
