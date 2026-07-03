@@ -1208,7 +1208,8 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
         self.exchange._markets_by_exchange_symbol = {}
         self.exchange._update_trading_rules = AsyncMock()
         self.exchange._api_get = AsyncMock(
-            return_value={"sub_accounts": [{"index": self.ACCOUNT_INDEX, "l1_address": self.exchange._l1_address}]})
+            return_value={"sub_accounts": [{"index": self.ACCOUNT_INDEX, "l1_address": self.exchange._l1_address}]}
+        )
         self.exchange._create_signer_client = MagicMock(return_value="signer")
         self.exchange._create_web_assistants_factory = MagicMock(return_value="factory")
         self.exchange._create_user_stream_tracker = MagicMock(return_value="tracker")
