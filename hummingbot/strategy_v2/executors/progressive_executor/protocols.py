@@ -14,8 +14,8 @@ from hummingbot.core.event.events import (
 )
 from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
-from hummingbot.strategy_v2.executors.executor_protocols import ExecutorProtocol
 from hummingbot.strategy_v2.executors.progressive_executor.data_types import ProgressiveExecutorConfig
+from hummingbot.strategy_v2.executors.protocols import ExecutorProtocol
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 from hummingbot.strategy_v2.utils.trailing_stop_manager import TrailingStopManager
 
