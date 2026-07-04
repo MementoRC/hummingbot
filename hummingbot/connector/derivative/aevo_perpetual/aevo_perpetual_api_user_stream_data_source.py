@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.derivative.aevo_perpetual import (
     aevo_perpetual_constants as CONSTANTS,
@@ -20,12 +22,12 @@ if TYPE_CHECKING:
 class AevoPerpetualAPIUserStreamDataSource(UserStreamTrackerDataSource):
     LISTEN_KEY_KEEP_ALIVE_INTERVAL = 1800
     WS_HEARTBEAT_TIME_INTERVAL = 30.0
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
         auth: AevoPerpetualAuth,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "AevoPerpetualDerivative",
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -34,9 +36,9 @@ class AevoPerpetualAPIUserStreamDataSource(UserStreamTrackerDataSource):
         self._domain = domain
         self._api_factory = api_factory
         self._auth = auth
-        self._ws_assistants: List[WSAssistant] = []
+        self._ws_assistants: list[WSAssistant] = []
         self._connector = connector
-        self._trading_pairs: List[str] = trading_pairs
+        self._trading_pairs: list[str] = trading_pairs
 
     @property
     def last_recv_time(self) -> float:
@@ -87,7 +89,7 @@ class AevoPerpetualAPIUserStreamDataSource(UserStreamTrackerDataSource):
             self.logger().exception("Unexpected error occurred subscribing to user streams...")
             raise
 
-    async def _process_event_message(self, event_message: Dict[str, Any], queue: asyncio.Queue):
+    async def _process_event_message(self, event_message: dict[str, Any], queue: asyncio.Queue):
         if event_message.get("error") is not None:
             err_msg = event_message.get("error", {}).get("message", event_message.get("error"))
             raise IOError(

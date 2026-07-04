@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 from functools import lru_cache
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, Union
 
 from hummingbot.client.settings import AllConnectorSettings
 from hummingbot.connector.connector_base import ConnectorBase
@@ -35,7 +37,7 @@ class ExecutorBase(RunnableBase):
     def __init__(
         self,
         strategy: StrategyV2Base,
-        connectors: List[str],
+        connectors: list[str],
         config: ExecutorConfigBase,
         update_interval: float = 0.5,
         max_retries: int = 10,
@@ -50,8 +52,8 @@ class ExecutorBase(RunnableBase):
         """
         super().__init__(update_interval)
         self.config = config
-        self.close_type: Optional[CloseType] = None
-        self.close_timestamp: Optional[float] = None
+        self.close_type: CloseType | None = None
+        self.close_timestamp: float | None = None
         self._strategy: StrategyV2Base = strategy
         self._max_retries = max_retries
         self._current_retries = 0
@@ -72,7 +74,7 @@ class ExecutorBase(RunnableBase):
         self._failed_order_forwarder = SourceInfoEventForwarder(self.process_order_failed_event)
 
         # Pairs of market events and their corresponding event forwarders
-        self._event_pairs: List[Tuple[MarketEvent, SourceInfoEventForwarder]] = [
+        self._event_pairs: list[tuple[MarketEvent, SourceInfoEventForwarder]] = [
             (MarketEvent.OrderCancelled, self._cancel_order_forwarder),
             (MarketEvent.BuyOrderCreated, self._create_buy_order_forwarder),
             (MarketEvent.SellOrderCreated, self._create_sell_order_forwarder),
@@ -297,7 +299,7 @@ class ExecutorBase(RunnableBase):
             for event_pair in self._event_pairs:
                 connector.remove_listener(event_pair[0], event_pair[1])
 
-    def adjust_order_candidates(self, exchange: str, order_candidates: List[OrderCandidate]) -> List[OrderCandidate]:
+    def adjust_order_candidates(self, exchange: str, order_candidates: list[OrderCandidate]) -> list[OrderCandidate]:
         """
         Adjusts the order candidates based on the budget checker of the specified exchange.
         """

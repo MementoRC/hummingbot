@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import binascii
 from collections import deque
@@ -6,7 +8,7 @@ from decimal import Decimal
 import logging
 from random import randrange
 import time
-from typing import Dict, Final, List, Optional, cast
+from typing import Final, cast
 from urllib.parse import urlparse
 
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
@@ -44,7 +46,7 @@ DEFAULT_FEES = TradeFeeSchema(
 _REQ_ID_MAX: Final[int] = 1_000_000
 
 
-def get_order_book_changes(metadata: TransactionMetadata) -> List[AccountOfferChanges]:
+def get_order_book_changes(metadata: TransactionMetadata) -> list[AccountOfferChanges]:
     """
     Parse all order book changes from a transaction's metadata.
 
@@ -58,7 +60,7 @@ def get_order_book_changes(metadata: TransactionMetadata) -> List[AccountOfferCh
     return compute_order_book_changes(metadata)
 
 
-def _get_offer_change(node: NormalizedNode) -> Optional[AccountOfferChange]:
+def _get_offer_change(node: NormalizedNode) -> AccountOfferChange | None:
     status = _get_offer_status(node)
     taker_gets = _get_change_amount(node, "TakerGets")
     taker_pays = _get_change_amount(node, "TakerPays")
@@ -89,7 +91,7 @@ def _get_offer_change(node: NormalizedNode) -> Optional[AccountOfferChange]:
 
 def compute_order_book_changes(
     metadata: TransactionMetadata,
-) -> List[AccountOfferChanges]:
+) -> list[AccountOfferChanges]:
     """
     Compute the offer changes from offer objects affected by the transaction.
 
@@ -121,7 +123,7 @@ def convert_string_to_hex(s, padding: bool = True):
     return s
 
 
-def get_token_from_changes(token_changes: List[Balance], token: str) -> Optional[Balance]:
+def get_token_from_changes(token_changes: list[Balance], token: str) -> Balance | None:
     for token_change in token_changes:
         if token_change["currency"] == token:
             return token_change
@@ -133,12 +135,12 @@ class XRPLMarket(BaseModel):
     quote: str
     base_issuer: str
     quote_issuer: str
-    trading_pair_symbol: Optional[str] = None
+    trading_pair_symbol: str | None = None
 
     def __repr__(self):
         return str(self.model_dump())
 
-    def get_token_symbol(self, code: str, issuer: str) -> Optional[str]:
+    def get_token_symbol(self, code: str, issuer: str) -> str | None:
         if self.trading_pair_symbol is None:
             return None
 
@@ -199,7 +201,7 @@ async def get_network_id_and_build_version(client: Client) -> None:
 
 
 async def autofill(
-    transaction: Transaction, client: Client, signers_count: Optional[int] = None, try_count: int = 0
+    transaction: Transaction, client: Client, signers_count: int | None = None, try_count: int = 0
 ) -> Transaction:
     """
     Autofills fields in a transaction. This will set `sequence`, `fee`, and
@@ -342,21 +344,21 @@ class PoolInfo(BaseModel):
     base_token_amount: Decimal
     quote_token_amount: Decimal
     lp_token_amount: Decimal
-    pool_type: Optional[str] = None
+    pool_type: str | None = None
 
 
 class GetPoolInfoRequest(BaseModel):
-    network: Optional[str] = None
+    network: str | None = None
     pool_address: str
 
 
 class AddLiquidityRequest(BaseModel):
-    network: Optional[str] = None
+    network: str | None = None
     wallet_address: str
     pool_address: str
     base_token_amount: Decimal
     quote_token_amount: Decimal
-    slippage_pct: Optional[Decimal] = None
+    slippage_pct: Decimal | None = None
 
 
 class AddLiquidityResponse(BaseModel):
@@ -367,11 +369,11 @@ class AddLiquidityResponse(BaseModel):
 
 
 class QuoteLiquidityRequest(BaseModel):
-    network: Optional[str] = None
+    network: str | None = None
     pool_address: str
     base_token_amount: Decimal
     quote_token_amount: Decimal
-    slippage_pct: Optional[Decimal] = None
+    slippage_pct: Decimal | None = None
 
 
 class QuoteLiquidityResponse(BaseModel):
@@ -383,7 +385,7 @@ class QuoteLiquidityResponse(BaseModel):
 
 
 class RemoveLiquidityRequest(BaseModel):
-    network: Optional[str] = None
+    network: str | None = None
     wallet_address: str
     pool_address: str
     percentage_to_remove: Decimal
@@ -418,7 +420,7 @@ class XRPLConfigMap(BaseConnectorConfigMap):
         },
     )
 
-    custom_markets: Dict[str, XRPLMarket] = Field(
+    custom_markets: dict[str, XRPLMarket] = Field(
         default={
             "SOLO-XRP": XRPLMarket(
                 base="SOLO",
@@ -530,7 +532,7 @@ class XRPLConnection:
     """
 
     url: str
-    client: Optional[AsyncWebsocketClient] = None
+    client: AsyncWebsocketClient | None = None
     is_healthy: bool = True
     is_reconnecting: bool = False
     last_used: float = field(default_factory=time.time)
@@ -742,7 +744,7 @@ class XRPLNodePool:
         self._init_time = time.time()
 
         # Connection pool state
-        self._connections: Dict[str, XRPLConnection] = {}
+        self._connections: dict[str, XRPLConnection] = {}
         self._healthy_connections: deque = deque()
         self._connection_lock = asyncio.Lock()
 
@@ -753,8 +755,8 @@ class XRPLNodePool:
 
         # State management
         self._running = False
-        self._health_check_task: Optional[asyncio.Task] = None
-        self._proactive_ping_task: Optional[asyncio.Task] = None
+        self._health_check_task: asyncio.Task | None = None
+        self._proactive_ping_task: asyncio.Task | None = None
 
         # Initialize rate limiter
         self._rate_limiter = RateLimiter(
@@ -766,7 +768,7 @@ class XRPLNodePool:
 
         # Legacy compatibility
         self._cooldown = cooldown
-        self._bad_nodes: Dict[str, float] = {}
+        self._bad_nodes: dict[str, float] = {}
 
         self.logger().debug(
             f"Initialized XRPLNodePool with {len(node_urls)} nodes, "

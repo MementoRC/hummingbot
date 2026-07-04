@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from hummingbot.connector.constants import s_decimal_NaN
 from hummingbot.connector.exchange.lighter import lighter_constants as CONSTANTS, lighter_web_utils as web_utils
@@ -44,14 +46,14 @@ class LighterExchange(ExchangePyBase):
 
     def __init__(
         self,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
         lighter_l1_address: str = None,
         lighter_account_index: int = None,
         lighter_api_key_index: int = None,
         lighter_api_private_key: str = None,
         lighter_account_limit: str = "Standard",
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         domain: str = CONSTANTS.DOMAIN,
     ):
@@ -82,13 +84,13 @@ class LighterExchange(ExchangePyBase):
         return self._domain
 
     @property
-    def authenticator(self) -> Optional[LighterAuth]:
+    def authenticator(self) -> LighterAuth | None:
         if self._trading_required and self._signer_client is not None:
             return LighterAuth(self._signer_client, api_key_index=self._api_key_index)
         return None
 
     @property
-    def rate_limits_rules(self) -> List[RateLimit]:
+    def rate_limits_rules(self) -> list[RateLimit]:
         return CONSTANTS.generate_account_limit(self._api_account_limit)
 
     @property
@@ -116,7 +118,7 @@ class LighterExchange(ExchangePyBase):
         return CONSTANTS.PING_PATH_URL
 
     @property
-    def trading_pairs(self) -> List[str]:
+    def trading_pairs(self) -> list[str]:
         return self._trading_pairs
 
     @property
@@ -135,7 +137,7 @@ class LighterExchange(ExchangePyBase):
             await self._ensure_account_ready()
         await super().start_network()
 
-    def supported_order_types(self) -> List[OrderType]:
+    def supported_order_types(self) -> list[OrderType]:
         return [OrderType.LIMIT, OrderType.LIMIT_MAKER, OrderType.MARKET]
 
     def buy(
@@ -182,7 +184,7 @@ class LighterExchange(ExchangePyBase):
         )
         return order_id
 
-    async def get_all_pairs_prices(self) -> List[Dict[str, str]]:
+    async def get_all_pairs_prices(self) -> list[dict[str, str]]:
         exchange_info = await self._api_get(
             path_url=CONSTANTS.EXCHANGE_INFO_PATH_URL,
             params={"filter": "all"},
@@ -248,7 +250,7 @@ class LighterExchange(ExchangePyBase):
         order_type: OrderType,
         price: Decimal,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         await self._ensure_account_ready()
         market = self.market_info_for_trading_pair(trading_pair)
         price = self._effective_order_price(
@@ -316,7 +318,7 @@ class LighterExchange(ExchangePyBase):
         order_side: TradeType,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         return build_trade_fee(
             exchange=self.name,
@@ -358,7 +360,7 @@ class LighterExchange(ExchangePyBase):
                 if trade_update is not None:
                     self._order_tracker.process_trade_update(trade_update)
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         return []
 
     async def _request_order_status(self, tracked_order: InFlightOrder) -> OrderUpdate:
@@ -436,7 +438,7 @@ class LighterExchange(ExchangePyBase):
                 self.logger().error("Unexpected error in Lighter user stream listener.", exc_info=True)
                 await self._sleep(5.0)
 
-    def _parse_spot_markets(self, exchange_info: Dict[str, Any], log_errors: bool) -> List[Any]:
+    def _parse_spot_markets(self, exchange_info: dict[str, Any], log_errors: bool) -> list[Any]:
         markets = []
         for raw_market in exchange_info.get("spot_order_book_details", []):
             if not web_utils.is_exchange_information_valid(raw_market):
@@ -451,11 +453,11 @@ class LighterExchange(ExchangePyBase):
         self._markets_by_exchange_symbol = markets_by_exchange_symbol(markets)
         return markets
 
-    async def _format_trading_rules(self, exchange_info_dict: Dict[str, Any]) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: dict[str, Any]) -> list[TradingRule]:
         markets = self._parse_spot_markets(exchange_info_dict, log_errors=True)
         return [market.trading_rule() for market in markets]
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         markets = self._parse_spot_markets(exchange_info, log_errors=False)
         self._set_trading_pair_symbol_map(trading_pair_symbol_map(markets))
 
@@ -513,7 +515,7 @@ class LighterExchange(ExchangePyBase):
             api_private_keys={self._api_key_index: self._api_private_key},
         )
 
-    async def _find_order(self, tracked_order: InFlightOrder, include_inactive: bool) -> Optional[Dict[str, Any]]:
+    async def _find_order(self, tracked_order: InFlightOrder, include_inactive: bool) -> dict[str, Any] | None:
         await self._ensure_account_ready()
         market = self.market_info_for_trading_pair(tracked_order.trading_pair)
         active_orders = await self._api_get(
@@ -539,14 +541,14 @@ class LighterExchange(ExchangePyBase):
         )
         return self._match_order(tracked_order=tracked_order, orders=inactive_orders.get("orders", []))
 
-    def _account_lookup_params(self) -> Dict[str, Any]:
+    def _account_lookup_params(self) -> dict[str, Any]:
         if self._account_index is not None:
             return {"by": CONSTANTS.ACCOUNT_LOOKUP_BY_INDEX, "value": self._account_index, "active_only": "true"}
         if self._l1_address is not None:
             return {"by": CONSTANTS.ACCOUNT_LOOKUP_BY_L1_ADDRESS, "value": self._l1_address, "active_only": "true"}
         raise ValueError("Lighter requires an L1 address or account index to look up account balances.")
 
-    def _set_account_index_from_account(self, account: Dict[str, Any]):
+    def _set_account_index_from_account(self, account: dict[str, Any]):
         if self._account_index is None:
             self._account_index = account_index_from_account(account)
 
@@ -569,7 +571,7 @@ class LighterExchange(ExchangePyBase):
             self._user_stream_tracker = self._create_user_stream_tracker()
 
     @staticmethod
-    def _match_order(tracked_order: InFlightOrder, orders: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    def _match_order(tracked_order: InFlightOrder, orders: list[dict[str, Any]]) -> dict[str, Any] | None:
         for order in orders:
             if str(order.get("client_order_id", "")) == tracked_order.client_order_id:
                 return order
@@ -623,7 +625,7 @@ class LighterExchange(ExchangePyBase):
                 if trade_update is not None:
                     self._order_tracker.process_trade_update(trade_update)
 
-    def _process_balance_events(self, assets: Dict[str, Dict[str, Any]]):
+    def _process_balance_events(self, assets: dict[str, dict[str, Any]]):
         if not isinstance(assets, dict):
             return
         self._account_balances.clear()
@@ -635,7 +637,7 @@ class LighterExchange(ExchangePyBase):
             self._account_balances[asset_name] = total_balance
             self._account_available_balances[asset_name] = total_balance - locked_balance
 
-    def _trade_update_from_trade(self, trade: Dict[str, Any]) -> Optional[TradeUpdate]:
+    def _trade_update_from_trade(self, trade: dict[str, Any]) -> TradeUpdate | None:
         details = own_trade_details(trade, account_index=self._account_index)
         if details is None:
             return None
@@ -673,7 +675,7 @@ class LighterExchange(ExchangePyBase):
         return Decimal(str(value if value is not None else "0"))
 
     @staticmethod
-    def _extract_tx_code(tx_response: Any) -> Optional[int]:
+    def _extract_tx_code(tx_response: Any) -> int | None:
         if tx_response is None:
             return None
         if isinstance(tx_response, dict):

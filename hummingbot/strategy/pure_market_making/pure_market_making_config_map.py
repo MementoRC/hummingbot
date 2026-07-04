@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import decimal
 from decimal import Decimal
-from typing import Optional
 
 from hummingbot.client.config.config_validators import (
     validate_bool,
@@ -24,7 +25,7 @@ def maker_trading_pair_prompt():
 
 
 # strategy specific validators
-def validate_exchange_trading_pair(value: str) -> Optional[str]:
+def validate_exchange_trading_pair(value: str) -> str | None:
     exchange = pure_market_making_config_map.get("exchange").value
     return validate_market_trading_pair(exchange, value)
 
@@ -35,7 +36,7 @@ def order_amount_prompt() -> str:
     return f"What is the amount of {base_asset} per order? >>> "
 
 
-def validate_price_source(value: str) -> Optional[str]:
+def validate_price_source(value: str) -> str | None:
     if value not in {"current_market", "external_market", "custom_api"}:
         return "Invalid price source type."
 
@@ -56,7 +57,7 @@ def price_source_market_prompt() -> str:
     return f"Enter the token trading pair on {external_market} >>> "
 
 
-def validate_price_source_exchange(value: str) -> Optional[str]:
+def validate_price_source_exchange(value: str) -> str | None:
     if value == pure_market_making_config_map.get("exchange").value:
         return "Price source exchange cannot be the same as maker exchange."
     return validate_connector(value)
@@ -67,12 +68,12 @@ def on_validated_price_source_exchange(value: str):
         pure_market_making_config_map["price_source_market"].value = None
 
 
-def validate_price_source_market(value: str) -> Optional[str]:
+def validate_price_source_market(value: str) -> str | None:
     market = pure_market_making_config_map.get("price_source_exchange").value
     return validate_market_trading_pair(market, value)
 
 
-def validate_price_floor_ceiling(value: str) -> Optional[str]:
+def validate_price_floor_ceiling(value: str) -> str | None:
     try:
         decimal_value = Decimal(value)
     except Exception:
@@ -81,7 +82,7 @@ def validate_price_floor_ceiling(value: str) -> Optional[str]:
         return "Value must be more than 0 or -1 to disable this feature."
 
 
-def validate_price_type(value: str) -> Optional[str]:
+def validate_price_type(value: str) -> str | None:
     error = None
     price_source = pure_market_making_config_map.get("price_source").value
     if price_source != "custom_api":
@@ -109,7 +110,7 @@ def exchange_on_validated(value: str):
     required_exchanges.add(value)
 
 
-def validate_decimal_list(value: str) -> Optional[str]:
+def validate_decimal_list(value: str) -> str | None:
     decimal_list = list(value.split(","))
     for number in decimal_list:
         try:

@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import asyncio
 from dataclasses import dataclass
-from typing import Optional, Type
 
 from prompt_toolkit.widgets import Button
 
@@ -16,10 +17,10 @@ class CommandTab:
     """
 
     name: str  # Command name of the tab
-    button: Optional[Button]  # Tab toggle button
-    close_button: Optional[Button]  # Tab close button
-    output_field: Optional[CustomTextArea]  # Output pane where tab messages display
-    tab_class: Type[TabBase]  # The tab class (Subclass of TabBase)
+    button: Button | None  # Tab toggle button
+    close_button: Button | None  # Tab close button
+    output_field: CustomTextArea | None  # Output pane where tab messages display
+    tab_class: type[TabBase]  # The tab class (Subclass of TabBase)
     is_selected: bool = False  # If the tab is currently selected by a user
     tab_index: int = 0  # The index position of the tab in relation of all other displayed tabs
-    task: Optional[asyncio.Task] = None  # The currently running task, None if there isn't one
+    task: asyncio.Task | None = None  # The currently running task, None if there isn't one
