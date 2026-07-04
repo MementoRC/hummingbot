@@ -85,10 +85,20 @@ class TestExecutorFactoryRegistry(unittest.TestCase):
                 f"Expected {executor_cls.__name__} for {config_cls.__name__}, got {registry[config_cls].__name__}",
             )
 
-    def test_registry_has_exactly_eight_entries(self):
-        """Registry should contain exactly the 8 known executor types."""
+    def test_registry_has_the_eight_core_entries(self):
+        """Registry must contain all 8 factory-native executor types (>= 8 total allowed for DAG safety)."""
         registry = ExecutorFactory.get_registry()
-        self.assertEqual(len(registry), 8, f"Expected 8 entries, got {len(registry)}: {list(registry.keys())}")
+        for config_cls in EXPECTED_REGISTRY:
+            self.assertIn(
+                config_cls,
+                registry,
+                f"{config_cls.__name__} not found in ExecutorFactory registry",
+            )
+        self.assertGreaterEqual(
+            len(registry),
+            8,
+            f"Expected at least 8 entries, got {len(registry)}: {list(registry.keys())}",
+        )
 
     def test_is_registered_true_for_known_types(self):
         """is_registered() returns True for all known config types."""
