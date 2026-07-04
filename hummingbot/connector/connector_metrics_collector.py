@@ -5,7 +5,7 @@ import json
 import logging
 from os.path import dirname, join, realpath
 import platform
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING
 
 from hummingbot.connector.utils import combine_to_hb_trading_pair, split_hb_trading_pair
 from hummingbot.core.event.event_forwarder import EventForwarder
@@ -77,7 +77,7 @@ class TradeVolumeMetricCollector(MetricsCollector):
 
         self._fill_event_forwarder = EventForwarder(self._register_fill_event)
 
-        self._event_pairs: List[Tuple[MarketEvent, EventForwarder]] = [
+        self._event_pairs: list[tuple[MarketEvent, EventForwarder]] = [
             (MarketEvent.OrderFilled, self._fill_event_forwarder),
         ]
 
@@ -114,7 +114,7 @@ class TradeVolumeMetricCollector(MetricsCollector):
         self._collected_events = []
         self._last_executed_collection_process = safe_ensure_future(self.collect_metrics(events=events_to_process))
 
-    async def collect_metrics(self, events: List[OrderFilledEvent]):
+    async def collect_metrics(self, events: list[OrderFilledEvent]):
         try:
             total_volume = Decimal("0")
 

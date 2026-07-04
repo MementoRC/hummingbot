@@ -1,7 +1,9 @@
 #!/usr/bin/env python
+from __future__ import annotations
+
 import asyncio
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Union
 
 from hummingbot.client.command.command_utils import GatewayCommandUtils
 from hummingbot.client.command.lp_command_utils import LPCommandUtils
@@ -17,7 +19,7 @@ if TYPE_CHECKING:
 class GatewayLPCommand:
     """Handles gateway liquidity provision commands"""
 
-    def gateway_lp(self, dex_type: Optional[str], action: Optional[str], trading_pair: Optional[str] = None):
+    def gateway_lp(self, dex_type: str | None, action: str | None, trading_pair: str | None = None):
         """
         Main entry point for LP commands.
         Routes to appropriate sub-command handler.
@@ -85,15 +87,15 @@ class GatewayLPCommand:
 
     def _calculate_removal_amounts(
         self, position: Union[AMMPositionInfo, CLMMPositionInfo], percentage: float
-    ) -> Tuple[float, float]:
+    ) -> tuple[float, float]:
         """Calculate token amounts to receive when removing liquidity"""
         return LPCommandUtils.calculate_removal_amounts(position, percentage)
 
-    def _display_positions_with_fees(self, positions: List[CLMMPositionInfo]):
+    def _display_positions_with_fees(self, positions: list[CLMMPositionInfo]):
         """Display positions that have uncollected fees"""
         LPCommandUtils.display_positions_with_fees(self, positions)
 
-    def _calculate_total_fees(self, positions: List[CLMMPositionInfo]) -> Dict[str, float]:
+    def _calculate_total_fees(self, positions: list[CLMMPositionInfo]) -> dict[str, float]:
         """Calculate total fees across positions grouped by token"""
         return LPCommandUtils.calculate_total_fees(positions)
 
@@ -206,7 +208,7 @@ class GatewayLPCommand:
 
     async def _monitor_fee_collection_tx(
         self, connector: Gateway, tx_hash: str, timeout: float = 60.0
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Monitor a fee collection transaction"""
         start_time = time.time()
 
@@ -232,7 +234,7 @@ class GatewayLPCommand:
     async def _position_info(
         self,  # type: HummingbotApplication
         dex_type: str,
-        trading_pair: Optional[str] = None,
+        trading_pair: str | None = None,
     ):
         """
         Display detailed information about user's liquidity positions.
@@ -360,7 +362,7 @@ class GatewayLPCommand:
     async def _add_liquidity(
         self,  # type: HummingbotApplication
         dex_type: str,
-        trading_pair: Optional[str] = None,
+        trading_pair: str | None = None,
     ):
         """
         Interactive flow for adding liquidity to a pool.
@@ -754,7 +756,7 @@ class GatewayLPCommand:
     async def _remove_liquidity(
         self,  # type: HummingbotApplication
         dex_type: str,
-        trading_pair: Optional[str] = None,
+        trading_pair: str | None = None,
     ):
         """
         Interactive flow for removing liquidity from positions.
@@ -1023,7 +1025,7 @@ class GatewayLPCommand:
     async def _collect_fees(
         self,  # type: HummingbotApplication
         dex_type: str,
-        trading_pair: Optional[str] = None,
+        trading_pair: str | None = None,
     ):
         """
         Interactive flow for collecting accumulated fees from positions.

@@ -1,9 +1,11 @@
 """Unit tests for Evedex Perpetual API Order Book Data Source."""
 
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import time
-from typing import Dict, List, Optional
+from typing import Dict
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -37,7 +39,7 @@ class TestEvedexPerpetualAPIOrderBookDataSource(unittest.IsolatedAsyncioTestCase
 
     def setUp(self):
         super().setUp()
-        self.listening_task: Optional[asyncio.Task] = None
+        self.listening_task: asyncio.Task | None = None
 
         self.connector = MagicMock()
         self.connector._domain = CONSTANTS.DEFAULT_DOMAIN
@@ -82,7 +84,7 @@ class TestEvedexPerpetualAPIOrderBookDataSource(unittest.IsolatedAsyncioTestCase
             "t": int(time.time() * 1000),
         }
 
-    def _instrument_info_response(self) -> List[Dict]:
+    def _instrument_info_response(self) -> list[Dict]:
         """Mock response for GET /api/market/instrument with metrics."""
         return [
             {

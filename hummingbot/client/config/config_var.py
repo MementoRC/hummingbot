@@ -4,13 +4,15 @@ of the bot. The client provides a screen prompt to the user, then the user provi
 by ConfigVar.
 """
 
+from __future__ import annotations
+
 import inspect
-from typing import Callable, Optional, Union
+from typing import Callable, Union
 
 # function types passed into ConfigVar
-RequiredIf = Callable[[str], Optional[bool]]
-Validator = Callable[[str], Optional[str]]
-Prompt = Union[Callable[[str], Optional[str]], Optional[str]]
+RequiredIf = Callable[[str], bool | None]
+Validator = Callable[[str], str | None]
+Prompt = Union[Callable[[str], str | None], str | None]
 OnValidated = Callable
 
 
@@ -61,7 +63,7 @@ class ConfigVar:
         assert callable(self._required_if)
         return self._required_if()
 
-    async def validate(self, value: str) -> Optional[str]:
+    async def validate(self, value: str) -> str | None:
         """
         Validate user input against the function self._validator, if it is valid, then call self._on_validated,
         if it is invalid, then return the error message.

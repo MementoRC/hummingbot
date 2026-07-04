@@ -205,7 +205,7 @@ class PaperTradeConfigMap(BaseClientModel):
             GateIOConfigMap.model_config["title"],
         ],
     )
-    paper_trade_account_balance: Dict[str, float] = Field(
+    paper_trade_account_balance: dict[str, float] = Field(
         default={
             "BTC": 1,
             "USDT": 100000,
@@ -225,7 +225,7 @@ class PaperTradeConfigMap(BaseClientModel):
 
     @field_validator("paper_trade_account_balance", mode="before")
     @classmethod
-    def validate_paper_trade_account_balance(cls, v: Union[str, Dict[str, float]]):
+    def validate_paper_trade_account_balance(cls, v: Union[str, dict[str, float]]):
         if isinstance(v, str):
             v = json.loads(v)
         return v
@@ -500,7 +500,7 @@ class CubeRateSourceMode(ExchangeRateSourceModeBase):
 
 class CoinGeckoRateSourceMode(RateSourceModeBase):
     name: str = Field(default="coin_gecko")
-    extra_tokens: List[str] = Field(
+    extra_tokens: list[str] = Field(
         default=[],
         json_schema_extra={
             "prompt": lambda cm: (
@@ -536,7 +536,7 @@ class CoinGeckoRateSourceMode(RateSourceModeBase):
         return self._build_rate_source_cls(extra_tokens=self.extra_tokens, api_key=self.api_key, api_tier=self.api_tier)
 
     @field_validator("extra_tokens", mode="before")
-    def validate_extra_tokens(cls, value: Union[str, List[str]]):
+    def validate_extra_tokens(cls, value: Union[str, list[str]]):
         extra_tokens = value.split(",") if isinstance(value, str) else value
         return extra_tokens
 
@@ -555,7 +555,7 @@ class CoinGeckoRateSourceMode(RateSourceModeBase):
         return self
 
     @classmethod
-    def _build_rate_source_cls(cls, extra_tokens: List[str], api_key: str, api_tier: str) -> RateSourceBase:
+    def _build_rate_source_cls(cls, extra_tokens: list[str], api_key: str, api_tier: str) -> RateSourceBase:
         from hummingbot.data_feed.coin_gecko_data_feed.coin_gecko_constants import CoinGeckoAPITier
 
         try:
@@ -574,7 +574,7 @@ class CoinGeckoRateSourceMode(RateSourceModeBase):
 
 class CoinCapRateSourceMode(RateSourceModeBase):
     name: str = Field(default="coin_cap")
-    assets_map: Dict[str, str] = Field(
+    assets_map: dict[str, str] = Field(
         default=",".join(
             [
                 ":".join(pair)
@@ -622,7 +622,7 @@ class CoinCapRateSourceMode(RateSourceModeBase):
 
     @field_validator("assets_map", mode="before")
     @classmethod
-    def validate_extra_tokens(cls, value: Union[str, Dict[str, str]]):
+    def validate_extra_tokens(cls, value: Union[str, dict[str, str]]):
         if isinstance(value, str):
             value = {key: val for key, val in [v.split(":") for v in value.split(",")]}
         return value
@@ -835,7 +835,7 @@ class ClientConfigMap(BaseClientModel):
         ),
         json_schema_extra={"prompt": lambda cm: f"Select the desired db mode ({'/'.join(list(DB_MODES.keys()))})"},
     )
-    balance_asset_limit: Dict[str, Dict[str, Decimal]] = Field(
+    balance_asset_limit: dict[str, dict[str, Decimal]] = Field(
         default={exchange: {} for exchange in AllConnectorSettings.get_exchange_names()},
         description=(
             "Balance Limit Configurations"

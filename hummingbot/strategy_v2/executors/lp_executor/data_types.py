@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from decimal import Decimal
 from enum import Enum
-from typing import Dict, Literal, Optional
+from typing import Dict, Literal
 
 from pydantic import BaseModel, ConfigDict
 
@@ -57,7 +59,7 @@ class LPExecutorConfig(ExecutorConfigBase):
     # Examples: "jupiter/router", "orca/router"
     # Used for close-out swaps when keep_position=False to return to original quote asset.
     # If None, uses the network's default swap provider.
-    swap_provider: Optional[str] = None
+    swap_provider: str | None = None
 
     # Pool identification (required)
     pool_address: str
@@ -80,11 +82,11 @@ class LPExecutorConfig(ExecutorConfigBase):
     # Works like grid executor - closes when price goes beyond the limit
     # upper_limit_price: close when price >= this value (None = no upper limit)
     # lower_limit_price: close when price <= this value (None = no lower limit)
-    upper_limit_price: Optional[Decimal] = None
-    lower_limit_price: Optional[Decimal] = None
+    upper_limit_price: Decimal | None = None
+    lower_limit_price: Decimal | None = None
 
     # Connector-specific params
-    extra_params: Optional[Dict] = None  # e.g., {"strategyType": 0} for Meteora
+    extra_params: Dict | None = None  # e.g., {"strategyType": 0} for Meteora
 
     # Position tracking behavior
     keep_position: bool = True  # If True, store net token change as spot position when closed
@@ -95,7 +97,7 @@ class LPExecutorConfig(ExecutorConfigBase):
 class LPExecutorState(BaseModel):
     """Tracks a single LP position state within executor."""
 
-    position_address: Optional[str] = None
+    position_address: str | None = None
     lower_price: Decimal = Decimal("0")
     upper_price: Decimal = Decimal("0")
     base_amount: Decimal = Decimal("0")
@@ -117,29 +119,29 @@ class LPExecutorState(BaseModel):
     tx_fee: Decimal = Decimal("0")  # Transaction fee paid (both ADD and REMOVE)
 
     # Transaction hashes for tracking
-    open_tx_hash: Optional[str] = None  # Transaction hash for ADD
-    close_tx_hash: Optional[str] = None  # Transaction hash for REMOVE
+    open_tx_hash: str | None = None  # Transaction hash for ADD
+    close_tx_hash: str | None = None  # Transaction hash for REMOVE
 
     # Order tracking
-    active_open_order: Optional[TrackedOrder] = None
-    active_close_order: Optional[TrackedOrder] = None
-    active_swap_order: Optional[TrackedOrder] = None  # Close-out swap order
+    active_open_order: TrackedOrder | None = None
+    active_close_order: TrackedOrder | None = None
+    active_swap_order: TrackedOrder | None = None  # Close-out swap order
 
     # State
     state: LPExecutorStates = LPExecutorStates.NOT_ACTIVE
 
     # Timestamp when position went out of range (for calculating duration)
-    _out_of_range_since: Optional[float] = None
+    _out_of_range_since: float | None = None
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    def get_out_of_range_seconds(self, current_time: float) -> Optional[int]:
+    def get_out_of_range_seconds(self, current_time: float) -> int | None:
         """Returns seconds the position has been out of range, or None if in range."""
         if self._out_of_range_since is None:
             return None
         return int(current_time - self._out_of_range_since)
 
-    def update_state(self, current_price: Optional[Decimal] = None, current_time: Optional[float] = None):
+    def update_state(self, current_price: Decimal | None = None, current_time: float | None = None):
         """
         Update state based on position_address and price.
         Called each control_task cycle.

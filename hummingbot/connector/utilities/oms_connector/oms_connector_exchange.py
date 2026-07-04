@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 from abc import abstractmethod
 import asyncio
 from collections import defaultdict
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Union
 
 from bidict import bidict
 
@@ -46,23 +48,23 @@ class OMSExchange(ExchangePyBase):
         api_key: str,
         secret_key: str,
         user_id: int,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
-        url_creator: Optional[OMSConnectorURLCreatorBase] = None,
+        url_creator: OMSConnectorURLCreatorBase | None = None,
     ):
         self._api_key = api_key
         self._secret_key = secret_key
         self._user_id = user_id
-        self._auth: Optional[OMSConnectorAuth] = None
+        self._auth: OMSConnectorAuth | None = None
         self._url_creator = url_creator
         self._nonce_creator = NonceCreator.for_seconds()
         self._trading_pairs = trading_pairs
         self._trading_required = trading_required
         self._web_assistants_factory: OMSConnectorWebAssistantsFactory
-        self._token_id_map: Dict[int, str] = {}
-        self._order_not_found_on_cancel_record: Dict[str, int] = defaultdict(lambda: 0)
+        self._token_id_map: dict[int, str] = {}
+        self._order_not_found_on_cancel_record: dict[str, int] = defaultdict(lambda: 0)
         super().__init__(balance_asset_limit, rate_limits_share_pct)
 
     @property
@@ -77,7 +79,7 @@ class OMSExchange(ExchangePyBase):
         return self._auth
 
     @property
-    def rate_limits_rules(self) -> List[RateLimit]:
+    def rate_limits_rules(self) -> list[RateLimit]:
         return CONSTANTS.RATE_LIMITS
 
     @property
@@ -101,7 +103,7 @@ class OMSExchange(ExchangePyBase):
         return CONSTANTS.REST_PING_ENDPOINT
 
     @property
-    def trading_pairs(self) -> List[str]:
+    def trading_pairs(self) -> list[str]:
         return self._trading_pairs
 
     @property
@@ -245,7 +247,7 @@ class OMSExchange(ExchangePyBase):
         order_side: TradeType,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         is_maker = False
         fee = build_trade_fee(
@@ -268,7 +270,7 @@ class OMSExchange(ExchangePyBase):
         trade_type: TradeType,
         order_type: OrderType,
         price: Decimal,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         instrument_id = await self.exchange_symbol_associated_to_pair(trading_pair)
         data = {
             CONSTANTS.INSTRUMENT_ID_FIELD: int(instrument_id),
@@ -336,7 +338,7 @@ class OMSExchange(ExchangePyBase):
             self._trading_rules[trading_rule.trading_pair] = trading_rule
         self._initialize_trading_pair_symbols_from_exchange_info(exchange_info=exchange_info)
 
-    async def _format_trading_rules(self, raw_trading_pair_info: List[Dict[str, Any]]):
+    async def _format_trading_rules(self, raw_trading_pair_info: list[dict[str, Any]]):
         trading_rules = []
 
         for info in raw_trading_pair_info:
@@ -376,7 +378,7 @@ class OMSExchange(ExchangePyBase):
             CONSTANTS.OMS_ID_FIELD: self.oms_id,
             CONSTANTS.ACCOUNT_ID_FIELD: self._auth.account_id,
         }
-        account_positions: List[Dict[str, Any]] = await self._api_request(
+        account_positions: list[dict[str, Any]] = await self._api_request(
             path_url=CONSTANTS.REST_ACC_POSITIONS_ENDPOINT,
             params=params,
             is_auth_required=True,
@@ -391,7 +393,7 @@ class OMSExchange(ExchangePyBase):
             del self._account_available_balances[asset_name]
             del self._account_balances[asset_name]
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         trade_updates = []
 
         if order.exchange_order_id is not None:
@@ -433,9 +435,9 @@ class OMSExchange(ExchangePyBase):
         return order_update
 
     async def _validate_status_responses(
-        self, status_responses: List[Dict[str, Any]], associated_orders: List[InFlightOrder]
-    ) -> List[Dict[str, Any]]:
-        validated_responses: List[Dict[str, Any]] = []
+        self, status_responses: list[dict[str, Any]], associated_orders: list[InFlightOrder]
+    ) -> list[dict[str, Any]]:
+        validated_responses: list[dict[str, Any]] = []
         for resp, order in zip(status_responses, associated_orders):
             if resp.get(CONSTANTS.ERROR_CODE_FIELD):
                 self.logger().error(f"Error fetching order status. Response: {resp}")
@@ -444,14 +446,14 @@ class OMSExchange(ExchangePyBase):
                 validated_responses.append(resp)
         return validated_responses
 
-    def _process_account_position_event(self, account_position_event: Dict[str, Any]):
+    def _process_account_position_event(self, account_position_event: dict[str, Any]):
         token = account_position_event[CONSTANTS.PRODUCT_SYMBOL_FIELD]
         amount = Decimal(str(account_position_event[CONSTANTS.AMOUNT_FIELD]))
         on_hold = Decimal(str(account_position_event[CONSTANTS.AMOUNT_ON_HOLD_FIELD]))
         self._account_balances[token] = amount
         self._account_available_balances[token] = amount - on_hold
 
-    def _create_order_update(self, order_msg: Dict[str, Any], order: InFlightOrder):
+    def _create_order_update(self, order_msg: dict[str, Any], order: InFlightOrder):
         status_from_update = order_msg[CONSTANTS.ORDER_STATE_FIELD]
         if status_from_update == CONSTANTS.ACTIVE_ORDER_STATE:
             filled_amount = order_msg[CONSTANTS.QUANTITY_EXECUTED_FIELD]
@@ -470,7 +472,7 @@ class OMSExchange(ExchangePyBase):
         )
         return order_update
 
-    def _create_trade_update(self, trade_event: Dict[str, Any], order: InFlightOrder):
+    def _create_trade_update(self, trade_event: dict[str, Any], order: InFlightOrder):
         order_action = trade_event[CONSTANTS.SIDE_FIELD]
         trade_type = CONSTANTS.ORDER_SIDE_MAP[order_action]
         token_asset_id = trade_event[CONSTANTS.FEE_PRODUCT_ID_FIELD]
@@ -506,12 +508,12 @@ class OMSExchange(ExchangePyBase):
         self,
         path_url,
         method: RESTMethod = RESTMethod.GET,
-        params: Optional[Dict[str, Any]] = None,
-        data: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
+        data: dict[str, Any] | None = None,
         is_auth_required: bool = False,
         return_err: bool = False,
-        limit_id: Optional[str] = None,
-    ) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+        limit_id: str | None = None,
+    ) -> Union[dict[str, Any], list[dict[str, Any]]]:
         rest_assistant = await self._web_assistants_factory.get_rest_assistant()
         url = self._url_creator.get_rest_url(path_url)
         return await rest_assistant.execute_request(
@@ -544,7 +546,7 @@ class OMSExchange(ExchangePyBase):
         except Exception:
             self.logger().exception("There was an error requesting exchange info.")
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: List[Dict[str, Any]]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: list[dict[str, Any]]):
         mapping = bidict()
         for symbol_data in filter(is_exchange_information_valid, exchange_info):
             instrument_id = str(symbol_data[CONSTANTS.INSTRUMENT_ID_FIELD])
