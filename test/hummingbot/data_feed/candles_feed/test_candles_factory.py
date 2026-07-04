@@ -1,11 +1,11 @@
 import importlib
 import os
-import unittest
 from types import SimpleNamespace
+import unittest
 
-import hummingbot.data_feed.candles_feed as candles_feed_pkg
 from hummingbot.connector.exchange.binance import binance_constants
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
+import hummingbot.data_feed.candles_feed as candles_feed_pkg
 from hummingbot.data_feed.candles_feed.binance_perpetual_candles import BinancePerpetualCandles
 from hummingbot.data_feed.candles_feed.binance_spot_candles import (
     BinanceSpotCandles,
@@ -17,38 +17,24 @@ from hummingbot.data_feed.candles_feed.data_types import CandlesConfig
 
 class TestCandlesFactory(unittest.TestCase):
     def test_get_binance_candles_spot(self):
-        candles = CandlesFactory.get_candle(CandlesConfig(
-            connector="binance",
-            trading_pair="BTC-USDT",
-            interval="1m"
-        ))
+        candles = CandlesFactory.get_candle(CandlesConfig(connector="binance", trading_pair="BTC-USDT", interval="1m"))
         self.assertIsInstance(candles, BinanceSpotCandles)
         candles.stop()
 
     def test_get_binance_candles_perpetuals(self):
-        candles = CandlesFactory.get_candle(CandlesConfig(
-            connector="binance_perpetual",
-            trading_pair="BTC-USDT",
-            interval="1m"
-        ))
+        candles = CandlesFactory.get_candle(
+            CandlesConfig(connector="binance_perpetual", trading_pair="BTC-USDT", interval="1m")
+        )
         self.assertIsInstance(candles, BinancePerpetualCandles)
         candles.stop()
 
     def test_get_non_existing_candles(self):
         with self.assertRaises(Exception):
-            CandlesFactory.get_candle(CandlesConfig(
-                connector="hbot",
-                trading_pair="BTC-USDT",
-                interval="1m"
-            ))
+            CandlesFactory.get_candle(CandlesConfig(connector="hbot", trading_pair="BTC-USDT", interval="1m"))
 
     def test_get_candle_without_connector_creates_own_throttler(self):
         # Standalone behaviour: no connector passed -> the feed builds its own AsyncThrottler.
-        candles = CandlesFactory.get_candle(CandlesConfig(
-            connector="binance",
-            trading_pair="BTC-USDT",
-            interval="1m"
-        ))
+        candles = CandlesFactory.get_candle(CandlesConfig(connector="binance", trading_pair="BTC-USDT", interval="1m"))
         self.assertIsInstance(candles._api_factory._throttler, AsyncThrottler)
         candles.stop()
 

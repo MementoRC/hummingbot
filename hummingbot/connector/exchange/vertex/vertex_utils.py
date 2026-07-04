@@ -1,12 +1,12 @@
-import numbers
 from decimal import Decimal
+import numbers
 from random import randint
 from typing import Any, Dict, Optional
 
 from pydantic import ConfigDict, Field, SecretStr
 
-import hummingbot.connector.exchange.vertex.vertex_constants as CONSTANTS
 from hummingbot.client.config.config_data_types import BaseConnectorConfigMap
+import hummingbot.connector.exchange.vertex.vertex_constants as CONSTANTS
 from hummingbot.core.data_type.trade_fee import TradeFeeSchema
 
 CENTRALIZED = True
@@ -153,7 +153,7 @@ class VertexConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     vertex_arbitrum_address: str = Field(
         default=...,
@@ -162,7 +162,7 @@ class VertexConfigMap(BaseConnectorConfigMap):
             "is_secure": False,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     model_config = ConfigDict(title="vertex")
 
@@ -179,7 +179,7 @@ class VertexTestnetConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     vertex_testnet_arbitrum_address: str = Field(
         default=...,
@@ -188,7 +188,7 @@ class VertexTestnetConfigMap(BaseConnectorConfigMap):
             "is_secure": False,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     model_config = ConfigDict(title="vertex_testnet")
 

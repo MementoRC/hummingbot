@@ -1,7 +1,7 @@
 import asyncio
+from decimal import Decimal
 import logging
 import typing
-from decimal import Decimal
 from typing import Dict, Optional
 
 import hummingbot.client.settings  # noqa
@@ -65,6 +65,7 @@ class RateOracle(NetworkBase):
     It achieves this by query URL on a given source for prices and store them, either in cache or as an object member.
     The find_rate is then used on these prices to find a rate on a given pair.
     """
+
     _logger: Optional[HummingbotLogger] = None
     _shared_instance: "RateOracle" = None
 
@@ -136,8 +137,7 @@ class RateOracle(NetworkBase):
         except asyncio.CancelledError:
             raise
         except Exception:
-            self.logger().error("Unexpected error while waiting for data feed to get ready.",
-                                exc_info=True)
+            self.logger().error("Unexpected error while waiting for data feed to get ready.", exc_info=True)
 
     @property
     def name(self) -> str:
@@ -278,6 +278,9 @@ class RateOracle(NetworkBase):
             except asyncio.CancelledError:
                 raise
             except Exception:
-                self.logger().network(f"Error fetching new prices from {self.source.name}.", exc_info=True,
-                                      app_warning_msg=f"Couldn't fetch newest prices from {self.source.name}.")
+                self.logger().network(
+                    f"Error fetching new prices from {self.source.name}.",
+                    exc_info=True,
+                    app_warning_msg=f"Couldn't fetch newest prices from {self.source.name}.",
+                )
             await asyncio.sleep(1)
