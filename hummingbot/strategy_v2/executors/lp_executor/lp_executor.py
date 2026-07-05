@@ -17,6 +17,7 @@ from hummingbot.core.rate_oracle.rate_oracle import RateOracle
 from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.executor_base import ExecutorBase
+from hummingbot.strategy_v2.executors.executor_factory import ExecutorFactory
 from hummingbot.strategy_v2.executors.gateway_utils import (
     parse_provider,
     validate_and_normalize_connector,
@@ -33,6 +34,7 @@ from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 DEFAULT_NATIVE_CURRENCY = "SOL"
 
 
+@ExecutorFactory.register(LPExecutorConfig)
 class LPExecutor(ExecutorBase):
     """
     Executor for a single LP position lifecycle.
