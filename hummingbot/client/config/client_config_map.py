@@ -26,6 +26,7 @@ from hummingbot.connector.exchange.kraken.kraken_utils import KrakenConfigMap
 from hummingbot.connector.exchange.kucoin.kucoin_utils import KuCoinConfigMap
 from hummingbot.core.rate_oracle.rate_oracle import RATE_ORACLE_SOURCES, RateOracle
 from hummingbot.core.rate_oracle.sources.rate_source_base import RateSourceBase
+import hummingbot.core.rate_oracle.utils as rate_oracle_utils
 from hummingbot.core.utils.kill_switch import ActiveKillSwitch, KillSwitch, PassThroughKillSwitch
 
 if TYPE_CHECKING:
@@ -359,6 +360,16 @@ class GlobalTokenConfigMap(BaseClientModel):
         default="$",
         json_schema_extra={"prompt": lambda cm: "What is your default display token symbol? (e.g. $,€)"},
     )
+    usd_equivalent_tokens: List[str] = Field(
+        default_factory=lambda: list(rate_oracle_utils.USD_EQUIVALENT_TOKENS),
+        description="Token symbols treated as equivalent to USDT when looking up conversion rates "
+        "(e.g. a USD balance is priced using USDT markets).",
+        json_schema_extra={
+            "prompt": lambda cm: (
+                "List of comma-delimited token symbols to treat as equivalent to USDT for rate conversions (e.g. USD)"
+            ),
+        },
+    )
     model_config = ConfigDict(title="global_token")
 
     @field_validator("global_token_name")
@@ -366,10 +377,17 @@ class GlobalTokenConfigMap(BaseClientModel):
     def validate_global_token_name(cls, v: str) -> str:
         return v.upper()
 
+    @field_validator("usd_equivalent_tokens", mode="before")
+    @classmethod
+    def validate_usd_equivalent_tokens(cls, value: Union[str, List[str]]) -> List[str]:
+        tokens = value.split(",") if isinstance(value, str) else value
+        return [token.strip().upper() for token in tokens if token.strip()]
+
     # === post-validations ===
 
     @model_validator(mode="after")
     def post_validations(self):
+        rate_oracle_utils.USD_EQUIVALENT_TOKENS = self.usd_equivalent_tokens
         RateOracle.get_instance().quote_token = self.global_token_name
         return self
 
