@@ -5,11 +5,11 @@ which requires the trailing_indicators directory on sys.path. We use importlib.u
 the source file directly, injecting a stub `base_trailing_indicator` into sys.modules first.
 """
 
+from abc import ABC, abstractmethod
 import importlib.util
+from pathlib import Path
 import sys
 import types
-from abc import ABC, abstractmethod
-from pathlib import Path
 
 import numpy as np
 import pytest
