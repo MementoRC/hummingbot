@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+from __future__ import annotations
+
 import asyncio
 from collections import deque
 from dataclasses import asdict, is_dataclass
@@ -9,7 +11,7 @@ import functools
 import logging
 import threading
 import time
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Callable
 
 from hummingbot import get_logging_conf
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
@@ -286,13 +288,13 @@ class MQTTMarketEventForwarder:
         self._hb_app = hb_app
         self._node = node
         self._ev_loop: asyncio.AbstractEventLoop = self._hb_app.ev_loop
-        self._markets: List[ConnectorBase] = list(self._hb_app.markets.values())
+        self._markets: list[ConnectorBase] = list(self._hb_app.markets.values())
 
         topic_prefix = TopicSpecs.PREFIX.format(namespace=self._node.namespace, instance_id=self._hb_app.instance_id)
         self._topic = f"{topic_prefix}{TopicSpecs.INTERNAL_EVENTS}"
 
         self._mqtt_fowarder: SourceInfoEventForwarder = SourceInfoEventForwarder(self._send_mqtt_event)
-        self._market_event_pairs: List[Tuple[int, EventListener]] = [
+        self._market_event_pairs: list[tuple[int, EventListener]] = [
             (events.MarketEvent.BuyOrderCreated, self._mqtt_fowarder),
             (events.MarketEvent.BuyOrderCompleted, self._mqtt_fowarder),
             (events.MarketEvent.SellOrderCreated, self._mqtt_fowarder),
@@ -439,7 +441,7 @@ class MQTTStatusUpdates:
 
 class MQTTGateway(Node):
     NODE_NAME: str = "hbot.$instance_id"
-    _instance: Optional["MQTTGateway"] = None
+    _instance: "MQTTGateway" | None = None
     _INTERVAL_HEALTH_CHECK = 1.0
     _INTERVAL_RESTART_SHORT = 5.0
     _INTERVAL_RESTART_LONG = 10.0
@@ -758,7 +760,7 @@ class MQTTExternalEvents:
         self._node.create_psubscriber(
             topic=self._topic, msg_type=ExternalEventMessage, on_message=self._on_event_arrived
         )
-        self._listeners: Dict[str, List[Callable[[ExternalEventMessage, str], None]]] = {"*": []}
+        self._listeners: dict[str, list[Callable[[ExternalEventMessage, str], None]]] = {"*": []}
 
     def _event_uri_to_name(self, topic: str) -> str:
         return topic.split("event/")[1].replace("/", ".")
@@ -800,7 +802,7 @@ class MQTTExternalEvents:
 
 class ETopicListener:
     def __init__(
-        self, topic: str, on_message: Callable[[Dict[str, Any], str], None], use_bot_prefix: Optional[bool] = True
+        self, topic: str, on_message: Callable[[dict[str, Any], str], None], use_bot_prefix: bool | None = True
     ):
         self._node = MQTTGateway.main()
         if self._node is None:
@@ -823,7 +825,7 @@ class ETopicListener:
 
 class EEventQueueFactory:
     @classmethod
-    def create(cls, event_name: str, queue_size: Optional[int] = 1000) -> deque:
+    def create(cls, event_name: str, queue_size: int | None = 1000) -> deque:
         gw = MQTTGateway.main()
         queue = deque(maxlen=queue_size)
         if gw is None:
@@ -833,7 +835,7 @@ class EEventQueueFactory:
         return queue
 
     @classmethod
-    def _on_event(cls, queue: deque, msg: Dict[str, Any], name):
+    def _on_event(cls, queue: deque, msg: dict[str, Any], name):
         queue.append((name, msg))
 
 
@@ -842,7 +844,7 @@ class EEventListenerFactory:
     def create(
         cls,
         event_name: str,
-        callback: Callable[[Dict[str, Any], str], None],
+        callback: Callable[[dict[str, Any], str], None],
     ) -> None:
         gw = MQTTGateway.main()
         if gw is None:
@@ -853,7 +855,7 @@ class EEventListenerFactory:
     def remove(
         cls,
         event_name: str,
-        callback: Callable[[Dict[str, Any], str], None],
+        callback: Callable[[dict[str, Any], str], None],
     ) -> None:
         gw = MQTTGateway.main()
         if gw is None:
@@ -864,7 +866,7 @@ class EEventListenerFactory:
 class ETopicListenerFactory:
     @classmethod
     def create(
-        cls, topic: str, callback: Callable[[Dict[str, Any], str], None], use_bot_prefix: Optional[bool] = True
+        cls, topic: str, callback: Callable[[dict[str, Any], str], None], use_bot_prefix: bool | None = True
     ) -> ETopicListener:
         listener = ETopicListener(topic=topic, on_message=callback, use_bot_prefix=use_bot_prefix)
         return listener
@@ -877,27 +879,27 @@ class ETopicListenerFactory:
 
 class ETopicQueueFactory:
     @classmethod
-    def create(cls, topic: str, queue_size: Optional[int] = 1000, use_bot_prefix: Optional[bool] = True) -> deque:
+    def create(cls, topic: str, queue_size: int | None = 1000, use_bot_prefix: bool | None = True) -> deque:
         queue = deque(maxlen=queue_size)
         on_msg = functools.partial(cls._on_message, queue)
         _ = ETopicListener(topic=topic, on_message=on_msg, use_bot_prefix=use_bot_prefix)
         return queue
 
     @classmethod
-    def _on_message(cls, queue: deque, msg: Dict[str, Any], topic: str):
+    def _on_message(cls, queue: deque, msg: dict[str, Any], topic: str):
         queue.append((topic, msg))
 
 
 class ExternalEventFactory:
     @classmethod
-    def create_queue(cls, event_name: str, queue_size: Optional[int] = 1000) -> deque:
+    def create_queue(cls, event_name: str, queue_size: int | None = 1000) -> deque:
         return EEventQueueFactory.create(event_name, queue_size)
 
     @classmethod
     def create_async(
         cls,
         event_name: str,
-        callback: Callable[[Dict[str, Any], str], None],
+        callback: Callable[[dict[str, Any], str], None],
     ) -> None:
         return EEventListenerFactory.create(event_name, callback)
 
@@ -905,19 +907,19 @@ class ExternalEventFactory:
     def remove_listener(
         cls,
         event_name: str,
-        callback: Callable[[Dict[str, Any], str], None],
+        callback: Callable[[dict[str, Any], str], None],
     ) -> None:
         EEventListenerFactory.remove(event_name, callback)
 
 
 class ExternalTopicFactory:
     @classmethod
-    def create_queue(cls, topic: str, queue_size: Optional[int] = 1000, use_bot_prefix: Optional[bool] = True) -> deque:
+    def create_queue(cls, topic: str, queue_size: int | None = 1000, use_bot_prefix: bool | None = True) -> deque:
         return ETopicQueueFactory.create(topic, queue_size, use_bot_prefix)
 
     @classmethod
     def create_async(
-        cls, topic: str, callback: Callable[[Dict[str, Any], str], None], use_bot_prefix: Optional[bool] = True
+        cls, topic: str, callback: Callable[[dict[str, Any], str], None], use_bot_prefix: bool | None = True
     ) -> ETopicListener:
         return ETopicListenerFactory.create(topic, callback, use_bot_prefix)
 
@@ -927,7 +929,7 @@ class ExternalTopicFactory:
 
 
 class ETopicPublisher:
-    def __init__(self, topic: str, use_bot_prefix: Optional[bool] = False):
+    def __init__(self, topic: str, use_bot_prefix: bool | None = False):
         self._node = MQTTGateway.main()
         if self._node is None:
             raise Exception("MQTT Gateway not yet initialized")
@@ -942,18 +944,18 @@ class ETopicPublisher:
         if self._node.state == NodeState.RUNNING:
             self._pub.run()
 
-    def send(self, msg: Dict[str, Any]):
+    def send(self, msg: dict[str, Any]):
         if threading.current_thread() != threading.main_thread():  # pragma: no cover
             asyncio.get_event_loop().call_soon_threadsafe(self.send, msg)
             return
         self._pub.publish(msg, self._topic)
 
-    def __call__(self, msg: Dict[str, Any]):
+    def __call__(self, msg: dict[str, Any]):
         self.send(msg)
 
 
 class EMTopicPublisher:
-    def __init__(self, use_bot_prefix: Optional[bool] = False):
+    def __init__(self, use_bot_prefix: bool | None = False):
         self._use_bot_prefix = use_bot_prefix
         self._node = MQTTGateway.main()
         if self._node is None:
@@ -966,7 +968,7 @@ class EMTopicPublisher:
         if self._node.state == NodeState.RUNNING:
             self._pub.run()
 
-    def send(self, topic: str, msg: Dict[str, Any]):
+    def send(self, topic: str, msg: dict[str, Any]):
         if threading.current_thread() != threading.main_thread():  # pragma: no cover
             asyncio.get_event_loop().call_soon_threadsafe(self.send, msg)
             return
@@ -980,5 +982,5 @@ class EMTopicPublisher:
             _topic = topic
         return _topic
 
-    def __call__(self, topic: str, msg: Dict[str, Any]):
+    def __call__(self, topic: str, msg: dict[str, Any]):
         self.send(topic, msg)
