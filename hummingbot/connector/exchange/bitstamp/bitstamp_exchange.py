@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 from datetime import datetime
 from decimal import Decimal
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable
 
 from bidict import bidict
 
@@ -36,12 +38,12 @@ class BitstampExchange(ExchangePyBase):
         self,
         bitstamp_api_key: str,
         bitstamp_api_secret: str,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
-        time_provider: Optional[Callable] = None,
+        time_provider: Callable | None = None,
     ):
         self.api_key = bitstamp_api_key
         self.secret_key = bitstamp_api_secret
@@ -114,11 +116,11 @@ class BitstampExchange(ExchangePyBase):
     def supported_order_types(self):
         return [OrderType.LIMIT, OrderType.LIMIT_MAKER, OrderType.MARKET]
 
-    async def get_all_pairs_prices(self) -> List[Dict[str, str]]:
+    async def get_all_pairs_prices(self) -> list[dict[str, str]]:
         pairs_prices = await self._api_get(path_url=CONSTANTS.CURRENCIES_URL)
         return pairs_prices
 
-    def convert_from_exchange_trading_pair(self, exchange_trading_pair: str) -> Optional[str]:
+    def convert_from_exchange_trading_pair(self, exchange_trading_pair: str) -> str | None:
         try:
             base_asset, quote_asset = exchange_trading_pair.split("/")
         except Exception as e:
@@ -175,7 +177,7 @@ class BitstampExchange(ExchangePyBase):
         order_side: TradeType,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
 
         is_maker = is_maker or (order_type is OrderType.LIMIT_MAKER)
@@ -209,7 +211,7 @@ class BitstampExchange(ExchangePyBase):
         order_type: OrderType,
         price: Decimal,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         api_params = {"amount": f"{amount:f}", "client_order_id": order_id}
 
         side_str = CONSTANTS.SIDE_BUY if trade_type is TradeType.BUY else CONSTANTS.SIDE_SELL
@@ -247,7 +249,7 @@ class BitstampExchange(ExchangePyBase):
 
         return str(cancel_response.get("id", "")) == exchange_order_id
 
-    async def _format_trading_rules(self, exchange_info: List[Dict[str, Any]]) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info: list[dict[str, Any]]) -> list[TradingRule]:
         retval = []
         for info in filter(bitstamp_utils.is_exchange_information_valid, exchange_info):
             try:
@@ -268,7 +270,7 @@ class BitstampExchange(ExchangePyBase):
         """
         Update fees information from the exchange
         """
-        trading_fees: List[Dict[str, Any]] = await self._api_post(
+        trading_fees: list[dict[str, Any]] = await self._api_post(
             path_url=CONSTANTS.TRADING_FEES_URL, is_auth_required=True
         )
 
@@ -309,7 +311,7 @@ class BitstampExchange(ExchangePyBase):
                 self.logger().error("Unexpected error in user stream listener loop.", exc_info=True)
                 await self._sleep(5.0)
 
-    def _process_user_stream_trade_event(self, event: str, event_message: Dict[str, Any]):
+    def _process_user_stream_trade_event(self, event: str, event_message: dict[str, Any]):
         try:
             event_data = event_message.get("data", {})
 
@@ -395,7 +397,7 @@ class BitstampExchange(ExchangePyBase):
         except Exception as e:
             raise ValueError(f"Error parsing the user stream trade event {event_message}: {e}")
 
-    def _process_user_stream_order_event(self, event: str, event_message: Dict[str, Any]):
+    def _process_user_stream_order_event(self, event: str, event_message: dict[str, Any]):
         try:
             event_data = event_message.get("data", {})
             client_order_id = str(event_data.get("client_order_id"))
@@ -422,7 +424,7 @@ class BitstampExchange(ExchangePyBase):
         except Exception as e:
             raise ValueError(f"Error parsing the user stream order event {event_message}: {e}")
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         all_fills_response = await self._api_post(
             path_url=CONSTANTS.ORDER_STATUS_URL,
             data={
@@ -497,7 +499,7 @@ class BitstampExchange(ExchangePyBase):
             del self._account_available_balances[asset_name]
             del self._account_balances[asset_name]
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: List[Dict[str, Any]]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: list[dict[str, Any]]):
         mapping = bidict()
         for info in filter(bitstamp_utils.is_exchange_information_valid, exchange_info):
             try:

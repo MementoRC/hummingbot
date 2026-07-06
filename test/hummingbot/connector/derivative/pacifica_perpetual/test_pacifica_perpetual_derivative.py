@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import json
 import re
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable
 
 from aioresponses.core import aioresponses
 from bidict import bidict
@@ -75,7 +77,7 @@ class PacificaPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         self.exchange._order_tracker.logger().setLevel(1)
         self.exchange._order_tracker.logger().addHandler(self)
         self.mocking_assistant = NetworkMockingAssistant(self.local_event_loop)
-        self.test_task: Optional[asyncio.Task] = None
+        self.test_task: asyncio.Task | None = None
         self.resume_test_event = asyncio.Event()
         self.exchange._set_trading_pair_symbol_map(bidict({self.symbol: self.trading_pair}))
         self._initialize_event_loggers()
@@ -130,7 +132,7 @@ class PacificaPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         tick_size: float = 0.01,
         min_order_size: float = 10.0,
         max_order_size: float = 1000000.0,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         mocked_exchange_info = {
             "data": [
                 {

@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from decimal import Decimal
 import math
-from typing import Dict, List, Optional
+from typing import Dict
 
 import pandas as pd
 from pydantic import Field
@@ -15,11 +17,11 @@ from hummingbot.strategy_v2.utils.distributions import Distributions
 class GridExecutorSimulation(ExecutorSimulation):
     """ExecutorSimulation subclass that carries grid-specific fill events and level data."""
 
-    fill_events: List[Dict] = Field(default_factory=list)
-    grid_level_prices: List[float] = Field(default_factory=list)
-    grid_tp_prices: List[float] = Field(default_factory=list)
+    fill_events: list[Dict] = Field(default_factory=list)
+    grid_level_prices: list[float] = Field(default_factory=list)
+    grid_tp_prices: list[float] = Field(default_factory=list)
     grid_side: str = "BUY"
-    grid_limit_price: Optional[float] = None
+    grid_limit_price: float | None = None
 
     def get_custom_info(self, last_entry: pd.Series) -> dict:
         base = super().get_custom_info(last_entry)
@@ -33,7 +35,7 @@ class GridExecutorSimulation(ExecutorSimulation):
 
 class GridExecutorSimulator(ExecutorSimulatorBase):
     @staticmethod
-    def _generate_grid_levels(config: GridExecutorConfig, mid_price: Decimal, trading_rules=None) -> List[GridLevel]:
+    def _generate_grid_levels(config: GridExecutorConfig, mid_price: Decimal, trading_rules=None) -> list[GridLevel]:
         """Generate grid levels mirroring the real GridExecutor._generate_grid_levels logic.
 
         When trading_rules is provided, uses exchange-specific min_notional_size,

@@ -1,4 +1,6 @@
-from typing import Dict, Optional
+from __future__ import annotations
+
+from typing import Dict
 
 from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.data_type.order_book import OrderBook
@@ -8,7 +10,7 @@ from hummingbot.core.data_type.order_book_message import OrderBookMessage, Order
 class KrakenOrderBook(OrderBook):
     @classmethod
     def snapshot_message_from_exchange(
-        cls, msg: Dict[str, any], timestamp: float, metadata: Optional[Dict] = None
+        cls, msg: dict[str, any], timestamp: float, metadata: Dict | None = None
     ) -> OrderBookMessage:
         if metadata:
             msg.update(metadata)
@@ -25,7 +27,7 @@ class KrakenOrderBook(OrderBook):
 
     @classmethod
     def diff_message_from_exchange(
-        cls, msg: Dict[str, any], timestamp: Optional[float] = None, metadata: Optional[Dict] = None
+        cls, msg: dict[str, any], timestamp: float | None = None, metadata: Dict | None = None
     ) -> OrderBookMessage:
         if metadata:
             msg.update(metadata)
@@ -42,7 +44,7 @@ class KrakenOrderBook(OrderBook):
 
     @classmethod
     def snapshot_ws_message_from_exchange(
-        cls, msg: Dict[str, any], timestamp: Optional[float] = None, metadata: Optional[Dict] = None
+        cls, msg: dict[str, any], timestamp: float | None = None, metadata: Dict | None = None
     ) -> OrderBookMessage:
         if metadata:
             msg.update(metadata)
@@ -58,7 +60,7 @@ class KrakenOrderBook(OrderBook):
         )
 
     @classmethod
-    def trade_message_from_exchange(cls, msg: Dict[str, any], metadata: Optional[Dict] = None):
+    def trade_message_from_exchange(cls, msg: dict[str, any], metadata: Dict | None = None):
         if metadata:
             msg.update(metadata)
         ts = float(msg["trade"][2])

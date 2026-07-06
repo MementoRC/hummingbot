@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, List
 
 from bidict import bidict
 import pandas as pd
@@ -53,9 +55,9 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
         self,
         backpack_api_key: str,
         backpack_api_secret: str,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
@@ -240,7 +242,7 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
         amount: Decimal,
         position_action: PositionAction = PositionAction.NIL,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         is_maker = order_type in [OrderType.LIMIT, OrderType.LIMIT_MAKER]
         return AddedToCostTradeFee(percent=self.estimate_fee_pct(is_maker))
@@ -261,7 +263,7 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
         price: Decimal,
         position_action: PositionAction = PositionAction.NIL,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         amount_str = f"{amount:f}"
         order_type_enum = self.backpack_order_type(order_type)
         side_str = CONSTANTS.SIDE_BUY if trade_type is TradeType.BUY else CONSTANTS.SIDE_SELL
@@ -331,7 +333,7 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
             return True
         return False
 
-    async def _format_trading_rules(self, exchange_info_dict: List[Dict[str, Any]]) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: list[dict[str, Any]]) -> list[TradingRule]:
         """
         Signature type modified from dict to list due to the new exchange info format.
         """
@@ -385,7 +387,7 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
         data = event_message.get("data")
         return bool(stream and data)
 
-    async def _parse_and_process_position_message(self, event_message: Dict[str, Any]):
+    async def _parse_and_process_position_message(self, event_message: dict[str, Any]):
         data = event_message.get("data")
         hb_trading_pair = self.trading_pair_associated_to_exchange_symbol(data.get("s"))
         quantity = Decimal(data.get("q", "0"))
@@ -403,7 +405,7 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
         else:
             await self._update_positions()
 
-    def _parse_and_process_order_message(self, event_message: Dict[str, Any]):
+    def _parse_and_process_order_message(self, event_message: dict[str, Any]):
         data = event_message.get("data")
         event_type = data.get("e")
         exchange_order_id = str(data.get("i"))
@@ -478,7 +480,7 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
         )
         self._order_tracker.process_order_update(order_update=order_update)
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         trade_updates = []
 
         if order.exchange_order_id is not None:
@@ -569,7 +571,7 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
         self._account_balances[quote] = Decimal(account_info["netEquity"])
         self._account_available_balances[quote] = Decimal(account_info["netEquityAvailable"])
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: List[Dict[str, Any]]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: list[dict[str, Any]]):
         mapping = bidict()
         for symbol_data in exchange_info:
             if utils.is_exchange_information_valid(symbol_data):
@@ -652,7 +654,7 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
         except Exception as e:
             self.logger().error(f"Error fetching positions: {e}", exc_info=True)
 
-    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> Tuple[bool, str]:
+    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> tuple[bool, str]:
         """
         Backpack only supports the ONEWAY position mode. This method validates the requested mode and reports
         success/failure back to the base ``_execute_set_position_mode`` flow, which is responsible for updating
@@ -672,7 +674,7 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
         self.logger().debug(f"Backpack switching position mode to {mode} for {trading_pair} succeeded.")
         return True, ""
 
-    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> Tuple[bool, str]:
+    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> tuple[bool, str]:
         if not leverage:
             return False, f"There is no leverage available for {trading_pair}."
 
@@ -709,7 +711,7 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
             self.logger().error(error_msg, exc_info=True)
             return False, error_msg
 
-    async def _fetch_last_fee_payment(self, trading_pair: str) -> Tuple[float, Decimal, Decimal]:
+    async def _fetch_last_fee_payment(self, trading_pair: str) -> tuple[float, Decimal, Decimal]:
         params = {
             "instruction": "fundingHistoryQueryAll",
             "symbol": self.exchange_symbol_associated_to_pair(trading_pair=trading_pair),

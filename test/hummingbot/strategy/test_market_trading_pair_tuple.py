@@ -1,7 +1,6 @@
 from decimal import Decimal
 import math
 import time
-from typing import List
 import unittest
 
 import pandas as pd
@@ -135,14 +134,14 @@ class MarketTradingPairTupleUnitTest(unittest.TestCase):
         update_id = int(time.time())
 
         if is_bid:
-            new_bids: List[OrderBookRow] = [
+            new_bids: list[OrderBookRow] = [
                 OrderBookRow(row.price, 0, row.update_id + 1)
                 for i, row in enumerate(market_info.order_book.bid_entries())
                 if i < n
             ]
             new_asks = []
         else:
-            new_asks: List[OrderBookRow] = [
+            new_asks: list[OrderBookRow] = [
                 OrderBookRow(row.price, 0, row.update_id + 1)
                 for i, row in enumerate(market_info.order_book.ask_entries())
                 if i < n
@@ -298,14 +297,14 @@ class MarketTradingPairTupleUnitTest(unittest.TestCase):
     def test_vwap_for_volume(self):
         # Check VWAP on BUY sell
         order_volume = 15
-        filled_orders: List[OrderBookRow] = self.market.get_order_book(self.trading_pair).simulate_buy(order_volume)
+        filled_orders: list[OrderBookRow] = self.market.get_order_book(self.trading_pair).simulate_buy(order_volume)
         expected_vwap: Decimal = sum([Decimal(o.price) * Decimal(o.amount) for o in filled_orders]) / order_volume
 
         self.assertAlmostEqual(expected_vwap, self.market_info.get_vwap_for_volume(True, order_volume).result_price, 3)
 
         # Check VWAP on SELL side
         order_volume = 15
-        filled_orders: List[OrderBookRow] = self.market.get_order_book(self.trading_pair).simulate_sell(order_volume)
+        filled_orders: list[OrderBookRow] = self.market.get_order_book(self.trading_pair).simulate_sell(order_volume)
         expected_vwap: Decimal = sum([Decimal(o.price) * Decimal(o.amount) for o in filled_orders]) / order_volume
 
         self.assertAlmostEqual(expected_vwap, self.market_info.get_vwap_for_volume(False, order_volume).result_price, 3)
@@ -313,7 +312,7 @@ class MarketTradingPairTupleUnitTest(unittest.TestCase):
     def test_get_price_for_volume(self):
         # Check price on BUY sell
         order_volume = 15
-        filled_orders: List[OrderBookRow] = self.market.get_order_book(self.trading_pair).simulate_buy(order_volume)
+        filled_orders: list[OrderBookRow] = self.market.get_order_book(self.trading_pair).simulate_buy(order_volume)
         expected_buy_price: Decimal = max([Decimal(o.price) for o in filled_orders])
 
         self.assertAlmostEqual(
@@ -322,7 +321,7 @@ class MarketTradingPairTupleUnitTest(unittest.TestCase):
 
         # Check price on SELL side
         order_volume = 15
-        filled_orders: List[OrderBookRow] = self.market.get_order_book(self.trading_pair).simulate_sell(order_volume)
+        filled_orders: list[OrderBookRow] = self.market.get_order_book(self.trading_pair).simulate_sell(order_volume)
         expected_sell_price: Decimal = min([Decimal(o.price) for o in filled_orders])
 
         self.assertAlmostEqual(
@@ -332,13 +331,13 @@ class MarketTradingPairTupleUnitTest(unittest.TestCase):
     def test_order_book_bid_entries(self):
         # Check all entries.
         order_book: OrderBook = self.market.get_order_book(self.trading_pair)
-        bid_entries: List[OrderBookRow] = order_book.bid_entries()
+        bid_entries: list[OrderBookRow] = order_book.bid_entries()
 
         self.assertTrue(set(bid_entries).intersection(set(self.market_info.order_book_bid_entries())))
 
     def test_order_book_ask_entries(self):
         # Check all entries.
         order_book: OrderBook = self.market.get_order_book(self.trading_pair)
-        ask_entries: List[OrderBookRow] = order_book.ask_entries()
+        ask_entries: list[OrderBookRow] = order_book.ask_entries()
 
         self.assertTrue(set(ask_entries).intersection(set(self.market_info.order_book_ask_entries())))

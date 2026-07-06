@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import logging
-from typing import Optional
 
 import aiohttp
 
@@ -12,7 +13,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class CustomAPIDataFeed(NetworkBase):
-    cadf_logger: Optional[HummingbotLogger] = None
+    cadf_logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -23,13 +24,13 @@ class CustomAPIDataFeed(NetworkBase):
     def __init__(self, api_url, update_interval: float = 5.0):
         super().__init__()
         self._ready_event = asyncio.Event()
-        self._shared_client: Optional[aiohttp.ClientSession] = None
+        self._shared_client: aiohttp.ClientSession | None = None
         self._api_url = api_url
         self._check_network_interval = 30.0
         self._ev_loop = asyncio.get_event_loop()
         self._price: Decimal = Decimal("0")
         self._update_interval: float = update_interval
-        self._fetch_price_task: Optional[asyncio.Task] = None
+        self._fetch_price_task: asyncio.Task | None = None
 
     @property
     def name(self):

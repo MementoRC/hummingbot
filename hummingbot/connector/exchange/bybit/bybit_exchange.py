@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict
 
 from bidict import bidict
 import pandas as pd
@@ -33,9 +35,9 @@ class BybitExchange(ExchangePyBase):
         self,
         bybit_api_key: str,
         bybit_api_secret: str,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
@@ -165,7 +167,7 @@ class BybitExchange(ExchangePyBase):
         order_side: TradeType,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         is_maker = order_type is OrderType.LIMIT_MAKER
         trading_pair = combine_to_hb_trading_pair(base=base_currency, quote=quote_currency)
@@ -215,7 +217,7 @@ class BybitExchange(ExchangePyBase):
         order_type: OrderType,
         price: Decimal,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         type_str = self.bybit_order_type(order_type)
 
         side_str = CONSTANTS.SIDE_BUY if trade_type is TradeType.BUY else CONSTANTS.SIDE_SELL
@@ -266,7 +268,7 @@ class BybitExchange(ExchangePyBase):
             return True
         return False
 
-    async def _format_trading_rules(self, exchange_info_dict: Dict[str, Any]) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: dict[str, Any]) -> list[TradingRule]:
         trading_pair_rules = exchange_info_dict.get("result", []).get("list", [])
         retval = []
         for rule in trading_pair_rules:
@@ -303,7 +305,7 @@ class BybitExchange(ExchangePyBase):
                 # Skip pairs that are not trade enabled ie. they are not present in the trading pair map
                 continue
 
-    def _process_trade_event_message(self, trade_msg: Dict[str, Any]):
+    def _process_trade_event_message(self, trade_msg: dict[str, Any]):
         """
         Updates in-flight order and trigger order filled event for trade message received. Triggers order completed
         event if the total executed amount equals to the specified order amount.
@@ -384,7 +386,7 @@ class BybitExchange(ExchangePyBase):
                 self.logger().error("Unexpected error in user stream listener loop.", exc_info=True)
                 await self._sleep(5.0)
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         trade_updates = []
         if order.exchange_order_id is not None:
             try:
@@ -400,7 +402,7 @@ class BybitExchange(ExchangePyBase):
                     raise
         return trade_updates
 
-    async def _request_order_fills(self, order: InFlightOrder) -> Dict[str, Any]:
+    async def _request_order_fills(self, order: InFlightOrder) -> dict[str, Any]:
         exchange_symbol = await self.exchange_symbol_associated_to_pair(trading_pair=order.trading_pair)
         exchange_order_id = str(order.exchange_order_id)
         client_order_id = str(order.client_order_id)
@@ -536,7 +538,7 @@ class BybitExchange(ExchangePyBase):
             self._account_available_balances[name] = free_balance
             self._account_balances[name] = Decimal(balance)
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         mapping = bidict()
         for symbol_data in exchange_info["result"]["list"]:
             mapping[symbol_data["symbol"]] = combine_to_hb_trading_pair(
@@ -561,14 +563,14 @@ class BybitExchange(ExchangePyBase):
         self,
         path_url,
         method: RESTMethod = RESTMethod.GET,
-        params: Optional[Dict[str, Any]] = None,
-        data: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
+        data: dict[str, Any] | None = None,
         is_auth_required: bool = False,
         return_err: bool = False,
-        limit_id: Optional[str] = None,
-        headers: Optional[Dict[str, Any]] = None,
+        limit_id: str | None = None,
+        headers: dict[str, Any] | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         last_exception = None
         rest_assistant = await self._web_assistants_factory.get_rest_assistant()
         url = web_utils.rest_url(path_url, domain=self.domain)
