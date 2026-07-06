@@ -130,6 +130,9 @@ bandit = "*"
 pip-audit = "*"
 types-setuptools = "*"
 
+[tool.pixi.feature.dev.pypi-dependencies]
+import-linter = ">=2.0"
+
 [tool.pixi.environments]
 default = { features = ["dev"], solve-group = "default" }
 ci = { features = ["ci", "dev"], solve-group = "default" }
@@ -143,6 +146,7 @@ test = { cmd = "pytest test", depends-on = ["build"] }
 test-unit = { cmd = "pytest test/hummingbot", depends-on = ["build"] }
 test-fast = "pytest --timeout=30 --tb=short -q"
 lint = "ruff check hummingbot test controllers scripts"
+lint-boundaries = "lint-imports"
 lint-cython = "cython-lint hummingbot"
 format = { cmd = "ruff format hummingbot test controllers scripts" }
 format-check = "ruff format --check hummingbot test controllers scripts"
