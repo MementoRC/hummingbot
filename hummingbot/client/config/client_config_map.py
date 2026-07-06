@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Literal, Union
 from pydantic import ConfigDict, Field, SecretStr, field_validator, model_validator
 from tabulate import tabulate_formats
 
-import hummingbot.core.rate_oracle.utils as rate_oracle_utils
 from hummingbot.client.config.config_data_types import BaseClientModel, ClientConfigEnum
 from hummingbot.client.config.config_methods import using_exchange as using_exchange_pointer
 from hummingbot.client.config.config_validators import validate_bool, validate_float
@@ -27,6 +26,7 @@ from hummingbot.connector.exchange.kraken.kraken_utils import KrakenConfigMap
 from hummingbot.connector.exchange.kucoin.kucoin_utils import KuCoinConfigMap
 from hummingbot.core.rate_oracle.rate_oracle import RATE_ORACLE_SOURCES, RateOracle
 from hummingbot.core.rate_oracle.sources.rate_source_base import RateSourceBase
+import hummingbot.core.rate_oracle.utils as rate_oracle_utils
 from hummingbot.core.utils.kill_switch import ActiveKillSwitch, KillSwitch, PassThroughKillSwitch
 
 if TYPE_CHECKING:
@@ -363,11 +363,10 @@ class GlobalTokenConfigMap(BaseClientModel):
     usd_equivalent_tokens: List[str] = Field(
         default_factory=lambda: list(rate_oracle_utils.USD_EQUIVALENT_TOKENS),
         description="Token symbols treated as equivalent to USDT when looking up conversion rates "
-                    "(e.g. a USD balance is priced using USDT markets).",
+        "(e.g. a USD balance is priced using USDT markets).",
         json_schema_extra={
             "prompt": lambda cm: (
-                "List of comma-delimited token symbols to treat as equivalent to USDT for rate"
-                " conversions (e.g. USD)"
+                "List of comma-delimited token symbols to treat as equivalent to USDT for rate conversions (e.g. USD)"
             ),
         },
     )
