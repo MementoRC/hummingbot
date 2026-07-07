@@ -1276,7 +1276,9 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         self.exchange._data_source._query_executor._send_transaction_responses = mock_queue
 
         order_id = self.place_buy_order()
-        await asyncio.wait_for(request_sent_event.wait(), timeout=1)
+        # timeout=10 (was 1) to match the identical request_sent_event wait elsewhere in this file
+        # and avoid a TimeoutError flake under full-suite CPU contention.
+        await asyncio.wait_for(request_sent_event.wait(), timeout=10)
 
         for i in range(3):
             if order_id in self.exchange.in_flight_orders:
