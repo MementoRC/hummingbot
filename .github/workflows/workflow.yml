@@ -4,7 +4,7 @@ on:
   push:
     branches: [master, development, 'refactor/unit_tests**', 'epic/**', 'ci-base', 'bleeding-edge', '_for_bleed/**', '_for_bleed_manual/**', '_for_ci/**']
   pull_request:
-    branches: [master, development, 'refactor/unit_tests**', 'epic/**', ci-base]
+    branches: [master, development, 'refactor/unit_tests**', 'epic/**', ci-base, modular]
     types: [ready_for_review, opened, synchronize, reopened]
 
 concurrency:
