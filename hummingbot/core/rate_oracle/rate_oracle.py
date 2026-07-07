@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import logging
 import typing
-from typing import Dict, Optional
 
 import hummingbot.client.settings  # noqa
 from hummingbot.connector.utils import combine_to_hb_trading_pair, split_hb_trading_pair
@@ -66,7 +67,7 @@ class RateOracle(NetworkBase):
     The find_rate is then used on these prices to find a rate on a given pair.
     """
 
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
     _shared_instance: "RateOracle" = None
 
     @classmethod
@@ -81,14 +82,14 @@ class RateOracle(NetworkBase):
             cls._logger = logging.getLogger(__name__)
         return cls._logger
 
-    def __init__(self, source: Optional[RateSourceBase] = None, quote_token: Optional[str] = None):
+    def __init__(self, source: RateSourceBase | None = None, quote_token: str | None = None):
         super().__init__()
         self._source: RateSourceBase = source if source is not None else GateIoRateSource()
-        self._prices: Dict[str, Decimal] = {}
-        self._fetch_price_task: Optional[asyncio.Task] = None
+        self._prices: dict[str, Decimal] = {}
+        self._fetch_price_task: asyncio.Task | None = None
         self._ready_event = asyncio.Event()
         self._quote_token = quote_token if quote_token is not None else "USD"
-        self._connectors: Dict[str, "ConnectorBase"] = {}
+        self._connectors: dict[str, "ConnectorBase"] = {}
 
     def register_connector(self, connector: "ConnectorBase") -> None:
         """
@@ -103,7 +104,7 @@ class RateOracle(NetworkBase):
         """
         self._connectors.pop(connector_name, None)
 
-    def _get_rate_from_connectors(self, pair: str) -> Optional[Decimal]:
+    def _get_rate_from_connectors(self, pair: str) -> Decimal | None:
         """
         Iterates over registered connectors (sorted by name for determinism) and returns
         the first positive mid price found for the requested pair, trying the reverse pair
@@ -162,7 +163,7 @@ class RateOracle(NetworkBase):
             self._prices = {}
 
     @property
-    def prices(self) -> Dict[str, Decimal]:
+    def prices(self) -> dict[str, Decimal]:
         """
         Actual prices retrieved from URL
         """
@@ -211,7 +212,7 @@ class RateOracle(NetworkBase):
         pair = combine_to_hb_trading_pair(base=base_token, quote=self._quote_token)
         return find_rate(prices, pair)
 
-    def get_pair_rate(self, pair: str) -> Optional[Decimal]:
+    def get_pair_rate(self, pair: str) -> Decimal | None:
         """
         Finds a conversion rate for a given trading pair. The lookup tries, in order:
           1. the configured rate source cache (direct pair)

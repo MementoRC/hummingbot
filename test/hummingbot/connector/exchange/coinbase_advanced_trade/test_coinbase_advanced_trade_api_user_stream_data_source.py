@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import decimal
 from decimal import Decimal
@@ -294,7 +296,7 @@ class TestMessageToCumulativeUpdate(IsolatedAsyncioWrapperTestCase):
             cb_user_data_stream._decipher_message = functools.partial(
                 CoinbaseAdvancedTradeAPIUserStreamDataSource._decipher_message, cb_user_data_stream
             )
-            event_message: Dict[str, Any] = {
+            event_message: dict[str, Any] = {
                 "channel": "user",
                 "timestamp": "2023-02-09T20:33:57.609931463Z",
                 "sequence_num": 0,
@@ -343,7 +345,7 @@ class TestMessageToCumulativeUpdate(IsolatedAsyncioWrapperTestCase):
                 CoinbaseAdvancedTradeAPIUserStreamDataSource._decipher_message, cb_user_data_stream
             )
 
-            event_message: Dict[str, Any] = {
+            event_message: dict[str, Any] = {
                 "channel": "user",
                 "timestamp": "2023-02-09T20:33:57.609931463Z",
                 "sequence_num": 0,

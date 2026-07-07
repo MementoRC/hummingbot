@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 from decimal import Decimal, InvalidOperation
-from typing import Optional
 
 from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.event.events import OrderFilledEvent
@@ -18,7 +19,7 @@ class InventoryCostPriceDelegate:
     def ready(self) -> bool:
         return True
 
-    def get_price(self) -> Optional[Decimal]:
+    def get_price(self) -> Decimal | None:
         with self.sql_manager.get_new_session() as session:
             with session.begin():
                 record = InventoryCost.get_record(session, self.base_asset, self.quote_asset)

@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 from collections import OrderedDict
 import hashlib
 import hmac
 import time
-from typing import Any, Dict, Optional
+from typing import Any
 from urllib.parse import urlencode
 
 import hummingbot.connector.exchange.bing_x.bing_x_constants as CONSTANTS
@@ -16,7 +18,7 @@ class BingXAuth(AuthBase):
         self.secret_key = secret_key
 
     @staticmethod
-    def keysort(dictionary: Dict[str, str]) -> Dict[str, str]:
+    def keysort(dictionary: dict[str, str]) -> dict[str, str]:
         return OrderedDict(sorted(dictionary.items(), key=lambda t: t[0]))
 
     async def rest_authenticate(self, request: RESTRequest) -> RESTRequest:
@@ -47,7 +49,7 @@ class BingXAuth(AuthBase):
         headers = {"referer": CONSTANTS.HBOT_BROKER_ID}
         return headers
 
-    def add_auth_to_params(self, params: Optional[Dict[str, Any]]):
+    def add_auth_to_params(self, params: dict[str, Any] | None):
         timestamp = str(int(time.time() * 1000))
         request_params = params or {}
         request_params["timestamp"] = timestamp
@@ -57,7 +59,7 @@ class BingXAuth(AuthBase):
         request_params["signature"] = signature
         return request_params
 
-    def _generate_signature(self, params: Dict[str, Any]) -> str:
+    def _generate_signature(self, params: dict[str, Any]) -> str:
         encoded_params_str = urlencode(params)
         digest = hmac.new(self.secret_key.encode("utf8"), encoded_params_str.encode("utf8"), hashlib.sha256).hexdigest()
         return digest
@@ -76,5 +78,5 @@ class BingXAuth(AuthBase):
     def _time(self):
         return time.time()
 
-    def header_for_authentication(self) -> Dict[str, str]:
+    def header_for_authentication(self) -> dict[str, str]:
         return {"X-BX-APIKEY": self.api_key, "X-SOURCE-KEY": CONSTANTS.SOURCE_KEY}

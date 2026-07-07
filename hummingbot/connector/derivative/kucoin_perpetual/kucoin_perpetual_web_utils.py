@@ -1,4 +1,6 @@
-from typing import Any, Callable, Dict, List, Optional
+from __future__ import annotations
+
+from typing import Any, Callable
 
 from hummingbot.connector.derivative.kucoin_perpetual import kucoin_perpetual_constants as CONSTANTS
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
@@ -19,10 +21,10 @@ class HeadersContentRESTPreProcessor(RESTPreProcessorBase):
 
 
 def build_api_factory(
-    throttler: Optional[AsyncThrottler] = None,
-    time_synchronizer: Optional[TimeSynchronizer] = None,
-    time_provider: Optional[Callable] = None,
-    auth: Optional[AuthBase] = None,
+    throttler: AsyncThrottler | None = None,
+    time_synchronizer: TimeSynchronizer | None = None,
+    time_provider: Callable | None = None,
+    auth: AuthBase | None = None,
 ) -> WebAssistantsFactory:
     throttler = throttler or create_throttler()
     time_synchronizer = time_synchronizer or TimeSynchronizer()
@@ -38,13 +40,13 @@ def build_api_factory(
     return api_factory
 
 
-def create_throttler(trading_pairs: List[str] = None) -> AsyncThrottler:
+def create_throttler(trading_pairs: list[str] = None) -> AsyncThrottler:
     throttler = AsyncThrottler(CONSTANTS.RATE_LIMITS)
     return throttler
 
 
 async def get_current_server_time(
-    throttler: Optional[AsyncThrottler] = None, domain: str = CONSTANTS.DEFAULT_DOMAIN
+    throttler: AsyncThrottler | None = None, domain: str = CONSTANTS.DEFAULT_DOMAIN
 ) -> float:
     throttler = throttler or create_throttler()
     api_factory = build_api_factory_without_time_synchronizer_pre_processor(throttler=throttler)
@@ -66,7 +68,7 @@ async def get_current_server_time(
     return server_time
 
 
-def endpoint_from_message(message: Dict[str, Any]) -> Optional[str]:
+def endpoint_from_message(message: dict[str, Any]) -> str | None:
     endpoint = None
     if "request" in message:
         message = message["request"]
@@ -80,7 +82,7 @@ def endpoint_from_message(message: Dict[str, Any]) -> Optional[str]:
     return endpoint
 
 
-def payload_from_message(message: Dict[str, Any]) -> Dict[str, Any]:
+def payload_from_message(message: dict[str, Any]) -> dict[str, Any]:
     payload = message
     if "data" in message:
         payload = message["data"]
@@ -102,20 +104,20 @@ def get_pair_specific_limit_id(base_limit_id: str, trading_pair: str) -> str:
     return limit_id
 
 
-def get_rest_api_limit_id_for_endpoint(endpoint: Dict[str, str]) -> str:
+def get_rest_api_limit_id_for_endpoint(endpoint: dict[str, str]) -> str:
     return endpoint
 
 
-def _wss_url(endpoint: Dict[str, str], connector_variant_label: Optional[str]) -> str:
+def _wss_url(endpoint: dict[str, str], connector_variant_label: str | None) -> str:
     variant = connector_variant_label if connector_variant_label else CONSTANTS.DEFAULT_DOMAIN
     return endpoint.get(variant)
 
 
-def wss_public_url(connector_variant_label: Optional[str]) -> str:
+def wss_public_url(connector_variant_label: str | None) -> str:
     return _wss_url(CONSTANTS.WSS_PUBLIC_URLS, connector_variant_label)
 
 
-def wss_private_url(connector_variant_label: Optional[str]) -> str:
+def wss_private_url(connector_variant_label: str | None) -> str:
     return _wss_url(CONSTANTS.WSS_PRIVATE_URLS, connector_variant_label)
 
 
@@ -125,17 +127,17 @@ def next_message_id() -> str:
 
 async def api_request(
     path: str,
-    api_factory: Optional[WebAssistantsFactory] = None,
-    throttler: Optional[AsyncThrottler] = None,
+    api_factory: WebAssistantsFactory | None = None,
+    throttler: AsyncThrottler | None = None,
     domain: str = CONSTANTS.DEFAULT_DOMAIN,
-    params: Optional[Dict[str, Any]] = None,
-    data: Optional[Dict[str, Any]] = None,
+    params: dict[str, Any] | None = None,
+    data: dict[str, Any] | None = None,
     method: RESTMethod = RESTMethod.GET,
     is_auth_required: bool = False,
     return_err: bool = False,
     api_version: str = "v1",
-    limit_id: Optional[str] = None,
-    timeout: Optional[float] = None,
+    limit_id: str | None = None,
+    timeout: float | None = None,
 ):
 
     throttler = throttler or create_throttler()

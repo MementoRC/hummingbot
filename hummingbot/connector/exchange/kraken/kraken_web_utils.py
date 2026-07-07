@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import time
-from typing import Optional
 
 import hummingbot.connector.exchange.kraken.kraken_constants as CONSTANTS
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
@@ -21,8 +22,8 @@ def rest_url(path_url: str, domain: str = "kraken"):
 
 
 def build_api_factory(
-    throttler: Optional[AsyncThrottler] = None,
-    auth: Optional[AuthBase] = None,
+    throttler: AsyncThrottler | None = None,
+    auth: AuthBase | None = None,
 ) -> WebAssistantsFactory:
     throttler = throttler
     api_factory = WebAssistantsFactory(throttler=throttler, auth=auth)

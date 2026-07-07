@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 import logging
-from typing import Any, Dict, Optional, Set
+from typing import Any
 
 from bidict import bidict
 
@@ -14,7 +16,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class BinancePerpetualLiquidations(LiquidationsBase):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -22,7 +24,7 @@ class BinancePerpetualLiquidations(LiquidationsBase):
             cls._logger = logging.getLogger(__name__)
         return cls._logger
 
-    def __init__(self, trading_pairs: Set[str], max_retention_seconds: int):
+    def __init__(self, trading_pairs: set[str], max_retention_seconds: int):
         super().__init__(trading_pairs=trading_pairs, max_retention_seconds=max_retention_seconds)
 
     @property
@@ -146,7 +148,7 @@ class BinancePerpetualLiquidations(LiquidationsBase):
         }
         """
         async for ws_response in websocket_assistant.iter_messages():
-            data: Dict[str, Any] = ws_response.data
+            data: dict[str, Any] = ws_response.data
             if "data" in data:
                 data = data["data"]
             if data.get("e") == "forceOrder":

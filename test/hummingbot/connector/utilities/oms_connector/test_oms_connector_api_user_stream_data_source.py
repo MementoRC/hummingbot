@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 import hashlib
 import hmac
 import json
-from typing import Any, Dict, Optional
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aiohttp import WSMessage, WSMsgType
@@ -55,7 +57,7 @@ class OMSConnectorUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
         await super().asyncSetUp()
         time_mock.return_value = self.time_mock
         self.log_records = []
-        self.listening_task: Optional[asyncio.Task] = None
+        self.listening_task: asyncio.Task | None = None
         self.mocking_assistant = NetworkMockingAssistant(self.local_event_loop)
 
         self.auth = OMSConnectorAuth(api_key=self.api_key, secret_key=self.secret, user_id=self.user_id)
@@ -86,7 +88,7 @@ class OMSConnectorUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
         auth_resp = self.get_auth_success_response()
         self.auth.update_with_rest_response(auth_resp)
 
-    def get_auth_success_response(self) -> Dict[str, Any]:
+    def get_auth_success_response(self) -> dict[str, Any]:
         auth_resp = {
             "Authenticated": True,
             "SessionToken": "0e8bbcbc-6ada-482a-a9b4-5d9218ada3f9",

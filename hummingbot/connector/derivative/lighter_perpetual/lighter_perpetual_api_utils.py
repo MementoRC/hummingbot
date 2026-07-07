@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from typing import Any, Iterable
 
 from bidict import bidict
 
@@ -28,7 +30,7 @@ class LighterMarketInfo:
     price_decimals: int
     maker_fee: Decimal
     taker_fee: Decimal
-    raw_info: Dict[str, Any]
+    raw_info: dict[str, Any]
 
     @property
     def min_base_increment(self) -> Decimal:
@@ -38,7 +40,7 @@ class LighterMarketInfo:
     def min_price_increment(self) -> Decimal:
         return Decimal(f"1e-{self.price_decimals}")
 
-    def trading_rule(self, collateral_token: Optional[str] = None) -> TradingRule:
+    def trading_rule(self, collateral_token: str | None = None) -> TradingRule:
         kwargs = {}
         if collateral_token is not None:
             kwargs.update(
@@ -55,7 +57,7 @@ class LighterMarketInfo:
         )
 
 
-def perpetual_markets_from_exchange_info(exchange_info: Dict[str, Any]) -> List[LighterMarketInfo]:
+def perpetual_markets_from_exchange_info(exchange_info: dict[str, Any]) -> list[LighterMarketInfo]:
     markets = []
     for raw_market in exchange_info.get("order_book_details", []):
         if not web_utils.is_exchange_information_valid(raw_market):
@@ -82,15 +84,15 @@ def perpetual_markets_from_exchange_info(exchange_info: Dict[str, Any]) -> List[
     return markets
 
 
-def markets_by_id(markets: Iterable[LighterMarketInfo]) -> Dict[int, LighterMarketInfo]:
+def markets_by_id(markets: Iterable[LighterMarketInfo]) -> dict[int, LighterMarketInfo]:
     return {market.market_id: market for market in markets}
 
 
-def markets_by_trading_pair(markets: Iterable[LighterMarketInfo]) -> Dict[str, LighterMarketInfo]:
+def markets_by_trading_pair(markets: Iterable[LighterMarketInfo]) -> dict[str, LighterMarketInfo]:
     return {market.trading_pair: market for market in markets}
 
 
-def markets_by_exchange_symbol(markets: Iterable[LighterMarketInfo]) -> Dict[str, LighterMarketInfo]:
+def markets_by_exchange_symbol(markets: Iterable[LighterMarketInfo]) -> dict[str, LighterMarketInfo]:
     return {market.exchange_symbol: market for market in markets}
 
 
@@ -130,7 +132,7 @@ def next_funding_timestamp_seconds(last_funding_timestamp_ms: int) -> int:
     return int(last_funding_timestamp_ms / 1e3) + CONSTANTS.FUNDING_INTERVAL_SECONDS
 
 
-def order_state_from_order_data(order_data: Dict[str, Any]) -> OrderState:
+def order_state_from_order_data(order_data: dict[str, Any]) -> OrderState:
     status = str(order_data["status"])
     if status in CONSTANTS.OPEN_ORDER_STATES:
         filled_amount = Decimal(str(order_data.get("filled_base_amount", "0")))
@@ -139,13 +141,13 @@ def order_state_from_order_data(order_data: Dict[str, Any]) -> OrderState:
     return CONSTANTS.ORDER_STATE[status]
 
 
-def account_index_from_account(account: Dict[str, Any]) -> int:
+def account_index_from_account(account: dict[str, Any]) -> int:
     return int(account.get("account_index", account.get("accountIndex", account.get("index"))))
 
 
 def extract_account_snapshot(
-    account_response: Dict[str, Any], account_index: Optional[int] = None, l1_address: Optional[str] = None
-) -> Dict[str, Any]:
+    account_response: dict[str, Any], account_index: int | None = None, l1_address: str | None = None
+) -> dict[str, Any]:
     accounts = account_response.get("accounts", account_response.get("sub_accounts", []))
     for account in accounts:
         if account_index is not None and account_index_from_account(account) == account_index:
@@ -161,7 +163,7 @@ def extract_account_snapshot(
     raise IOError(f"Account {account_index or l1_address} was not found in Lighter account response.")
 
 
-def own_trade_details(trade: Dict[str, Any], account_index: int) -> Optional[Tuple[TradeType, str, str, bool]]:
+def own_trade_details(trade: dict[str, Any], account_index: int) -> tuple[TradeType, str, str, bool] | None:
     ask_account_id = int(trade.get("ask_account_id", -1))
     bid_account_id = int(trade.get("bid_account_id", -1))
     if ask_account_id == account_index:

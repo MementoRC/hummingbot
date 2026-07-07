@@ -5,7 +5,6 @@ from os import listdir
 from os.path import exists, isfile, join
 import re
 import sys
-from typing import List
 
 from prompt_toolkit.completion import CompleteEvent, Completer, WordCompleter
 from prompt_toolkit.document import Document
@@ -167,7 +166,7 @@ class HummingbotCompleter(Completer):
         return self.hummingbot_application.parser
 
     def get_subcommand_completer(self, first_word: str) -> Completer:
-        subcommands: List[str] = self.parser.subcommands_from(first_word)
+        subcommands: list[str] = self.parser.subcommands_from(first_word)
         return WordCompleter(subcommands, ignore_case=True)
 
     @property

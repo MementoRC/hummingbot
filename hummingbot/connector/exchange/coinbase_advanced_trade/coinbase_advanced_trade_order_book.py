@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import logging
-from typing import Dict, Optional
+from typing import Dict
 
 from hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_trade_constants import (
     WS_ORDER_SUBSCRIPTION_CHANNELS,
@@ -19,7 +21,7 @@ class CoinbaseAdvancedTradeOrderBook(OrderBook):
     """
 
     # Mapping of WS channels to their respective sequence numbers
-    _sequence_nums: Dict[str, int] = {channel: 0 for channel in WS_ORDER_SUBSCRIPTION_CHANNELS.inv.keys()}
+    _sequence_nums: dict[str, int] = {channel: 0 for channel in WS_ORDER_SUBSCRIPTION_CHANNELS.inv.keys()}
 
     _logger: HummingbotLogger | logging.Logger | None = None
 
@@ -32,7 +34,7 @@ class CoinbaseAdvancedTradeOrderBook(OrderBook):
 
     @classmethod
     def snapshot_message_from_exchange(
-        cls, msg: Dict[str, any], timestamp: float, metadata: Optional[Dict] = None
+        cls, msg: dict[str, any], timestamp: float, metadata: Dict | None = None
     ) -> OrderBookMessage:
         """
         Creates a snapshot message with the order book snapshot message
@@ -56,7 +58,7 @@ class CoinbaseAdvancedTradeOrderBook(OrderBook):
 
     @classmethod
     def diff_message_from_exchange(
-        cls, msg: Dict[str, any], timestamp: Optional[float] = None, metadata: Optional[Dict] = None
+        cls, msg: dict[str, any], timestamp: float | None = None, metadata: Dict | None = None
     ) -> OrderBookMessage:
         """
         Process messages from the order book or trade channel
@@ -117,7 +119,7 @@ class CoinbaseAdvancedTradeOrderBook(OrderBook):
         return OrderBookMessage(OrderBookMessageType.DIFF, obm_content, timestamp=obm_content["update_id"])
 
     @classmethod
-    def trade_message_from_exchange(cls, msg: Dict[str, any], metadata: Optional[Dict] = None):
+    def trade_message_from_exchange(cls, msg: dict[str, any], metadata: Dict | None = None):
         """
         Process messages from the market trades channel
         https://docs.cdp.coinbase.com/advanced-trade/docs/ws-channels#market-trades-channel

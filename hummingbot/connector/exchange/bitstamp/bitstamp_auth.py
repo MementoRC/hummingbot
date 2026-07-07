@@ -1,6 +1,5 @@
 import hashlib
 import hmac
-from typing import Dict
 from urllib.parse import urlencode, urlparse
 import uuid
 
@@ -48,7 +47,7 @@ class BitstampAuth(AuthBase):
 
     def _generate_headers_for_authentication(
         self, method: RESTMethod, request_url: str, content_type: str, payload
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         nonce = str(uuid.uuid4())
         timestamp_str = str(int(self.time_provider.time() * 1e3))
 
