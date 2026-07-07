@@ -3,10 +3,8 @@ import threading
 import time
 from typing import TYPE_CHECKING
 
-from remote_iface.hb_compat import create_gateway
-from remote_iface.protocols.config import BrokerConfig, GatewayConfig
-
 from hummingbot.core.utils.async_utils import safe_ensure_future
+from hummingbot.remote_iface.mqtt import MQTTGateway
 
 if TYPE_CHECKING:
     from hummingbot.client.hummingbot_application import HummingbotApplication  # noqa: F401
@@ -54,24 +52,7 @@ class MQTTCommand:
                 try:
                     start_t = time.time()
                     self.logger().info("Connecting MQTT Bridge...")
-                    cm = self.client_config_map.mqtt_bridge
-                    broker_cfg = BrokerConfig(
-                        host=cm.mqtt_host,
-                        port=cm.mqtt_port,
-                        username=cm.mqtt_username,
-                        password=cm.mqtt_password,
-                        ssl=cm.mqtt_ssl,
-                    )
-                    gateway_cfg = GatewayConfig(
-                        namespace=cm.mqtt_namespace,
-                        broker=broker_cfg,
-                        enable_commands=cm.mqtt_commands,
-                        enable_notifier=cm.mqtt_notifier,
-                        enable_events=cm.mqtt_events,
-                        enable_external_events=cm.mqtt_external_events,
-                        enable_log_handler=cm.mqtt_logger,
-                    )
-                    self._mqtt = create_gateway(self, config=gateway_cfg, broker_config=broker_cfg)
+                    self._mqtt = MQTTGateway(self)
                     self._mqtt.start()
                     while True:
                         if time.time() - start_t > timeout:
