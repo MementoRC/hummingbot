@@ -2,7 +2,7 @@ import asyncio
 from decimal import Decimal
 import json
 import re
-from typing import Dict, List, Union
+from typing import Union
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses import aioresponses
@@ -43,7 +43,7 @@ class ArchitectPerpetualAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTe
         super().setUp()
         self.log_records = []
         self.listening_task = None
-        self.async_tasks: List[asyncio.Task] = []
+        self.async_tasks: list[asyncio.Task] = []
 
         self.time_synchronizer = TimeSynchronizer()
         self.time_synchronizer.add_time_offset_ms_sample(0)
@@ -176,7 +176,7 @@ class ArchitectPerpetualAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTe
         }
         return response
 
-    def funding_info_rest_data(self) -> Dict[str, List[Dict[str, Union[str, int]]]]:
+    def funding_info_rest_data(self) -> dict[str, list[dict[str, Union[str, int]]]]:
         resp = {
             "funding_rates": [
                 {

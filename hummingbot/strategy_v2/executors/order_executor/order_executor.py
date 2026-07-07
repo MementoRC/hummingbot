@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import logging
-from typing import Dict, Optional, Union
+from typing import Dict, Union
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.common import OrderType, PriceType, TradeType
@@ -53,7 +55,7 @@ class OrderExecutor(ExecutorBase):
         self.config: OrderExecutorConfig = config
 
         # Order tracking
-        self._order: Optional[TrackedOrder] = None
+        self._order: TrackedOrder | None = None
         self._failed_orders: list[TrackedOrder] = []
         self._canceled_orders: list[TrackedOrder] = []
         self._partial_filled_orders: list[TrackedOrder] = []

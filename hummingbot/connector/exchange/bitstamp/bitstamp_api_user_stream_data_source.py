@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.exchange.bitstamp import bitstamp_constants as CONSTANTS, bitstamp_web_utils as web_utils
 from hummingbot.connector.exchange.bitstamp.bitstamp_auth import BitstampAuth
@@ -22,12 +24,12 @@ class BitstampAPIUserStreamDataSource(UserStreamTrackerDataSource):
         CONSTANTS.USER_SELF_TRADE,
     }
 
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
         auth: BitstampAuth,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "BitstampExchange",
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -101,7 +103,7 @@ class BitstampAPIUserStreamDataSource(UserStreamTrackerDataSource):
             self.logger().exception("Unexpected error occurred subscribing to order book trading...")
             raise
 
-    async def _process_event_message(self, event_message: Dict[str, Any], queue: asyncio.Queue):
+    async def _process_event_message(self, event_message: dict[str, Any], queue: asyncio.Queue):
         if len(event_message) > 0:
             event = event_message.get("event", "")
             channel = event_message.get("channel", "")

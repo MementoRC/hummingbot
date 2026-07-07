@@ -2,10 +2,12 @@
 Tools for running asynchronous functions multiple times.
 """
 
+from __future__ import annotations
+
 import asyncio
 import functools
 import logging
-from typing import Any, Dict, List, Optional, Type
+from typing import Any
 
 
 class AllTriesFailedException(EnvironmentError):
@@ -14,9 +16,9 @@ class AllTriesFailedException(EnvironmentError):
 
 def async_retry(
     retry_count: int = 2,
-    exception_types: List[Type[Exception]] = [Exception],
+    exception_types: list[type[Exception]] = [Exception],
     logger: logging.Logger = logging.getLogger("retry"),
-    stats: Dict[str, int] = None,
+    stats: dict[str, int] = None,
     raise_exp: bool = True,
     retry_interval: float = 0.5,
 ):
@@ -34,10 +36,10 @@ def async_retry(
     def decorator(fn):
         @functools.wraps(fn)
         async def retry(*args, _stats=stats, **kwargs):
-            last_exception: Optional[Exception] = None
+            last_exception: Exception | None = None
             for count in range(1, retry_count + 1):
                 try:
-                    additional_params: Dict[str, Any] = {}
+                    additional_params: dict[str, Any] = {}
                     fn_kwargs = {**additional_params, **kwargs}
                     return await fn(*args, **fn_kwargs)
 

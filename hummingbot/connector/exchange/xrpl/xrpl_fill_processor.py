@@ -10,10 +10,12 @@ transaction TakerGets/TakerPays).
 # =============================================================================
 # Imports
 # =============================================================================
+from __future__ import annotations
+
 from dataclasses import dataclass
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from xrpl.utils import drops_to_xrp, ripple_time_to_posix
 
@@ -25,7 +27,7 @@ from hummingbot.logger import HummingbotLogger
 # =============================================================================
 # Module Logger
 # =============================================================================
-_logger: Optional[HummingbotLogger] = None
+_logger: HummingbotLogger | None = None
 
 
 def logger() -> HummingbotLogger:
@@ -67,8 +69,8 @@ class FillSource(Enum):
 class FillExtractionResult:
     """Result of attempting to extract fill amounts."""
 
-    base_amount: Optional[Decimal]
-    quote_amount: Optional[Decimal]
+    base_amount: Decimal | None
+    quote_amount: Decimal | None
     source: FillSource
 
     @property
@@ -82,7 +84,7 @@ class FillExtractionResult:
 # =============================================================================
 
 
-def extract_transaction_data(data: Dict[str, Any]) -> Tuple[Optional[Dict[str, Any]], Dict[str, Any]]:
+def extract_transaction_data(data: dict[str, Any]) -> tuple[dict[str, Any] | None, dict[str, Any]]:
     """
     Extract transaction and metadata from various XRPL data formats.
 
@@ -113,10 +115,10 @@ def extract_transaction_data(data: Dict[str, Any]) -> Tuple[Optional[Dict[str, A
 
 
 def extract_fill_from_balance_changes(
-    balance_changes: List[Dict[str, Any]],
+    balance_changes: list[dict[str, Any]],
     base_currency: str,
     quote_currency: str,
-    tx_fee_xrp: Optional[Decimal] = None,
+    tx_fee_xrp: Decimal | None = None,
 ) -> FillExtractionResult:
     """
     Extract fill amounts from balance changes.
@@ -166,10 +168,10 @@ def extract_fill_from_balance_changes(
 
 
 def find_offer_change_for_order(
-    offer_changes: List[Dict[str, Any]],
+    offer_changes: list[dict[str, Any]],
     order_sequence: int,
     include_created: bool = False,
-) -> Optional[Dict[str, Any]]:
+) -> dict[str, Any] | None:
     """
     Find the offer change that matches an order's sequence number.
 
@@ -211,7 +213,7 @@ def find_offer_change_for_order(
 
 
 def extract_fill_from_offer_change(
-    offer_change: Dict[str, Any],
+    offer_change: dict[str, Any],
     base_currency: str,
     quote_currency: str,
 ) -> FillExtractionResult:
@@ -257,7 +259,7 @@ def extract_fill_from_offer_change(
 
 
 def extract_fill_from_transaction(
-    tx: Dict[str, Any],
+    tx: dict[str, Any],
     base_currency: str,
     quote_currency: str,
     trade_type: TradeType,
@@ -345,7 +347,7 @@ def create_trade_update(
     tx_date: int,
     fill_result: FillExtractionResult,
     fee: TradeFeeBase,
-    offer_sequence: Optional[int] = None,
+    offer_sequence: int | None = None,
 ) -> TradeUpdate:
     """
     Create a TradeUpdate from extracted fill data.
@@ -402,11 +404,11 @@ def create_trade_update(
 
 
 def extract_fill_amounts_from_balance_changes(
-    balance_changes: List[Dict[str, Any]],
+    balance_changes: list[dict[str, Any]],
     base_currency: str,
     quote_currency: str,
-    tx_fee_xrp: Optional[Decimal] = None,
-) -> Tuple[Optional[Decimal], Optional[Decimal]]:
+    tx_fee_xrp: Decimal | None = None,
+) -> tuple[Decimal | None, Decimal | None]:
     """
     Legacy wrapper that returns tuple instead of FillExtractionResult.
 
@@ -424,10 +426,10 @@ def extract_fill_amounts_from_balance_changes(
 
 
 def extract_fill_amounts_from_offer_change(
-    offer_change: Dict[str, Any],
+    offer_change: dict[str, Any],
     base_currency: str,
     quote_currency: str,
-) -> Tuple[Optional[Decimal], Optional[Decimal]]:
+) -> tuple[Decimal | None, Decimal | None]:
     """
     Legacy wrapper that returns tuple instead of FillExtractionResult.
 
@@ -444,11 +446,11 @@ def extract_fill_amounts_from_offer_change(
 
 
 def extract_fill_amounts_from_transaction(
-    tx: Dict[str, Any],
+    tx: dict[str, Any],
     base_currency: str,
     quote_currency: str,
     trade_type: TradeType,
-) -> Tuple[Optional[Decimal], Optional[Decimal]]:
+) -> tuple[Decimal | None, Decimal | None]:
     """
     Legacy wrapper that returns tuple instead of FillExtractionResult.
 

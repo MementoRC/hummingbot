@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import json
-from typing import Optional
 from unittest.mock import patch
 
 import aiohttp
@@ -67,7 +68,7 @@ class RESTAssistantTest(IsolatedAsyncioWrapperTestCase):
     async def test_rest_assistant_authenticates(self, mocked_call):
         url = "https://www.test.com/url"
         resp = {"one": 1}
-        call_request: Optional[RESTRequest] = None
+        call_request: RESTRequest | None = None
         auth_header = {"authenticated": True}
 
         async def register_request_and_return(request: RESTRequest):

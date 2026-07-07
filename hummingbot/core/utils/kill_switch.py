@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 import asyncio
 from decimal import Decimal
 import logging
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.logger import HummingbotLogger
@@ -20,7 +22,7 @@ class KillSwitch(ABC):
 
 
 class ActiveKillSwitch(KillSwitch):
-    ks_logger: Optional[HummingbotLogger] = None
+    ks_logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -34,8 +36,8 @@ class ActiveKillSwitch(KillSwitch):
         self._kill_switch_rate: Decimal = kill_switch_rate / Decimal(100)
         self._started = False
         self._update_interval = 10.0
-        self._check_profitability_task: Optional[asyncio.Task] = None
-        self._profitability: Optional[Decimal] = None
+        self._check_profitability_task: asyncio.Task | None = None
+        self._profitability: Decimal | None = None
 
     async def check_profitability_loop(self):
         while True:
