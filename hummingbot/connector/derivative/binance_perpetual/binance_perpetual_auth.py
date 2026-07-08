@@ -2,7 +2,7 @@ from collections import OrderedDict
 import hashlib
 import hmac
 import json
-from typing import Any, Dict
+from typing import Any
 from urllib.parse import urlencode
 
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
@@ -38,7 +38,7 @@ class BinancePerpetualAuth(AuthBase):
     async def ws_authenticate(self, request: WSRequest) -> WSRequest:
         return request  # pass-through
 
-    def add_auth_to_params(self, params: Dict[str, Any]):
+    def add_auth_to_params(self, params: dict[str, Any]):
         timestamp = int(self._time_provider.time() * 1e3)
 
         request_params = OrderedDict(params or {})
@@ -49,5 +49,5 @@ class BinancePerpetualAuth(AuthBase):
 
         return request_params
 
-    def header_for_authentication(self) -> Dict[str, str]:
+    def header_for_authentication(self) -> dict[str, str]:
         return {"X-MBX-APIKEY": self._api_key}

@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.exchange.ndax import ndax_constants as CONSTANTS, ndax_web_utils as web_utils
 from hummingbot.connector.exchange.ndax.ndax_order_book import NdaxOrderBook
@@ -24,22 +26,22 @@ class NdaxAPIOrderBookDataSource(OrderBookTrackerDataSource):
         self,
         connector: "NdaxExchange",
         api_factory: WebAssistantsFactory,
-        trading_pairs: Optional[List[str]] = None,
-        domain: Optional[str] = None,
+        trading_pairs: list[str] | None = None,
+        domain: str | None = None,
     ):
         super().__init__(trading_pairs)
         self._connector = connector
         self._api_factory = api_factory
         self._throttler = api_factory.throttler
-        self._domain: Optional[str] = domain
+        self._domain: str | None = domain
         self._snapshot_messages_queue_key = CONSTANTS.WS_ORDER_BOOK_CHANNEL
         self._diff_messages_queue_key = CONSTANTS.WS_ORDER_BOOK_L2_UPDATE_EVENT
         self._trade_messages_queue_key = CONSTANTS.ORDER_TRADE_EVENT_ENDPOINT_NAME
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
-    async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, any]:
+    async def _request_order_book_snapshot(self, trading_pair: str) -> dict[str, any]:
         """Retrieves entire orderbook snapshot of the specified trading pair via the REST API.
 
         Args:
@@ -78,7 +80,7 @@ class NdaxAPIOrderBookDataSource(OrderBookTrackerDataSource):
         """
         Periodically polls for orderbook snapshots using the REST API.
         """
-        snapshot: Dict[str:Any] = await self._request_order_book_snapshot(trading_pair)
+        snapshot: dict[str:Any] = await self._request_order_book_snapshot(trading_pair)
         snapshot_message: OrderBookMessage = NdaxOrderBook.snapshot_message_from_exchange(
             msg={"data": snapshot}, timestamp=time.time(), metadata={"trading_pair": trading_pair}
         )
@@ -109,7 +111,7 @@ class NdaxAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
     async def _process_websocket_messages(self, websocket_assistant: WSAssistant):
         async for ws_response in websocket_assistant.websocket.iter_messages():
-            data: Dict[str, Any] = ws_response.data
+            data: dict[str, Any] = ws_response.data
             if data is not None:  # data will be None when the websocket is disconnected
                 channel: str = self._channel_originating_message(event_message=data)
                 valid_channels = self._get_messages_queue_keys()
@@ -120,9 +122,9 @@ class NdaxAPIOrderBookDataSource(OrderBookTrackerDataSource):
                         event_message=data, websocket_assistant=websocket_assistant
                     )
 
-    async def _parse_order_book_snapshot_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_snapshot_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         payload = NdaxWebSocketAdaptor.payload_from_message(raw_message)
-        msg_data: List[NdaxOrderBookEntry] = [NdaxOrderBookEntry(*entry) for entry in payload]
+        msg_data: list[NdaxOrderBookEntry] = [NdaxOrderBookEntry(*entry) for entry in payload]
         msg_timestamp: int = int(time.time() * 1e3)
         msg_product_code: int = msg_data[0].productPairCode
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(symbol=msg_product_code)
@@ -131,9 +133,9 @@ class NdaxAPIOrderBookDataSource(OrderBookTrackerDataSource):
         )
         message_queue.put_nowait(order_book_message)
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         payload = NdaxWebSocketAdaptor.payload_from_message(raw_message)
-        msg_data: List[NdaxOrderBookEntry] = [NdaxOrderBookEntry(*entry) for entry in payload]
+        msg_data: list[NdaxOrderBookEntry] = [NdaxOrderBookEntry(*entry) for entry in payload]
         msg_timestamp: int = int(time.time() * 1e3)
         msg_product_code: int = msg_data[0].productPairCode
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(symbol=msg_product_code)
@@ -142,10 +144,10 @@ class NdaxAPIOrderBookDataSource(OrderBookTrackerDataSource):
         )
         message_queue.put_nowait(order_book_message)
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         pass
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         msg_event: str = NdaxWebSocketAdaptor.endpoint_from_message(event_message)
         if msg_event == CONSTANTS.WS_ORDER_BOOK_CHANNEL:
             return self._snapshot_messages_queue_key

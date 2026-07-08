@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import logging
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.data_feed.candles_feed.bybit_perpetual_candles import constants as CONSTANTS
@@ -9,7 +11,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class BybitPerpetualCandles(CandlesBase):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -81,9 +83,9 @@ class BybitPerpetualCandles(CandlesBase):
 
     def _get_rest_candles_params(
         self,
-        start_time: Optional[int] = None,
-        end_time: Optional[int] = None,
-        limit: Optional[int] = CONSTANTS.MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        limit: int | None = CONSTANTS.MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST,
     ) -> dict:
         """
         For API documentation, please refer to:
@@ -103,7 +105,7 @@ class BybitPerpetualCandles(CandlesBase):
             params["endTime"] = end_time * 1000
         return params
 
-    def _parse_rest_candles(self, data: dict, end_time: Optional[int] = None) -> List[List[float]]:
+    def _parse_rest_candles(self, data: dict, end_time: int | None = None) -> list[list[float]]:
         if data is not None and data.get("result") is not None:
             candles = data["result"].get("list")
             if candles is not None:
@@ -134,7 +136,7 @@ class BybitPerpetualCandles(CandlesBase):
         return payload
 
     def _parse_websocket_message(self, data):
-        candles_row_dict: Dict[str, Any] = {}
+        candles_row_dict: dict[str, Any] = {}
         if data is not None and data.get("data") is not None:
             candle = data["data"][0]
             candles_row_dict["timestamp"] = self.ensure_timestamp_in_seconds(candle["start"])
