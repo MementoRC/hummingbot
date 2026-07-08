@@ -1,10 +1,10 @@
 import time
 from typing import Any, Tuple
 
-import sha3
 from coincurve import PrivateKey
 from eip712_structs import make_domain
 from eth_utils import big_endian_to_int
+import sha3
 
 import hummingbot.connector.exchange.vertex.vertex_constants as CONSTANTS
 from hummingbot.connector.utils import to_0x_hex
