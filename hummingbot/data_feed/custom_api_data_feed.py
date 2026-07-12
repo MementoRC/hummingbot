@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import asyncio
-import logging
 from decimal import Decimal
-from typing import Optional
+import logging
 
 import aiohttp
 
@@ -12,7 +13,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class CustomAPIDataFeed(NetworkBase):
-    cadf_logger: Optional[HummingbotLogger] = None
+    cadf_logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -23,13 +24,13 @@ class CustomAPIDataFeed(NetworkBase):
     def __init__(self, api_url, update_interval: float = 5.0):
         super().__init__()
         self._ready_event = asyncio.Event()
-        self._shared_client: Optional[aiohttp.ClientSession] = None
+        self._shared_client: aiohttp.ClientSession | None = None
         self._api_url = api_url
         self._check_network_interval = 30.0
         self._ev_loop = asyncio.get_event_loop()
         self._price: Decimal = Decimal("0")
         self._update_interval: float = update_interval
-        self._fetch_price_task: Optional[asyncio.Task] = None
+        self._fetch_price_task: asyncio.Task | None = None
 
     @property
     def name(self):
@@ -62,9 +63,11 @@ class CustomAPIDataFeed(NetworkBase):
             except asyncio.CancelledError:
                 raise
             except Exception:
-                self.logger().network(f"Error fetching a new price from {self._api_url}.", exc_info=True,
-                                      app_warning_msg="Couldn't fetch newest price from CustomAPI. "
-                                                      "Check network connection.")
+                self.logger().network(
+                    f"Error fetching a new price from {self._api_url}.",
+                    exc_info=True,
+                    app_warning_msg="Couldn't fetch newest price from CustomAPI. Check network connection.",
+                )
 
             await asyncio.sleep(self._update_interval)
 

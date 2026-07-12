@@ -1,6 +1,6 @@
-import time
 from decimal import Decimal
-from typing import Any, Dict
+import time
+from typing import Any
 
 from pydantic import ConfigDict, Field, SecretStr
 
@@ -17,7 +17,7 @@ CENTRALIZED = True
 EXAMPLE_PAIR = "BTC-USDT"
 
 
-def is_pair_information_valid(pair_info: Dict[str, Any]) -> bool:
+def is_pair_information_valid(pair_info: dict[str, Any]) -> bool:
     """
     Verifies if a trading pair is enabled to operate with based on its market information
 
@@ -41,7 +41,7 @@ class AscendExConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     ascend_ex_secret_key: SecretStr = Field(
         default=...,
@@ -50,7 +50,7 @@ class AscendExConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     ascend_ex_group_id: SecretStr = Field(
         default=...,
@@ -59,7 +59,7 @@ class AscendExConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     model_config = ConfigDict(title="ascend_ex")
 

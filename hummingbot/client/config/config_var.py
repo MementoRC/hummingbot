@@ -4,32 +4,36 @@ of the bot. The client provides a screen prompt to the user, then the user provi
 by ConfigVar.
 """
 
+from __future__ import annotations
+
 import inspect
-from typing import Callable, Optional, Union
+from typing import Callable, Union
 
 # function types passed into ConfigVar
-RequiredIf = Callable[[str], Optional[bool]]
-Validator = Callable[[str], Optional[str]]
-Prompt = Union[Callable[[str], Optional[str]], Optional[str]]
+RequiredIf = Callable[[str], bool | None]
+Validator = Callable[[str], str | None]
+Prompt = Union[Callable[[str], str | None], str | None]
 OnValidated = Callable
 
 
 class ConfigVar:
-    def __init__(self,
-                 key: str,
-                 prompt: Prompt,
-                 is_secure: bool = False,
-                 default: any = None,
-                 type_str: str = "str",
-                 # Whether this config will be prompted during the setup process
-                 required_if: RequiredIf = lambda: True,
-                 validator: Validator = lambda *args: None,
-                 on_validated: OnValidated = lambda *args: None,
-                 # Whether to prompt a user for value when new strategy config file is created
-                 prompt_on_new: bool = False,
-                 # Whether this is a config var used in connect command
-                 is_connect_key: bool = False,
-                 printable_key: str = None):
+    def __init__(
+        self,
+        key: str,
+        prompt: Prompt,
+        is_secure: bool = False,
+        default: any = None,
+        type_str: str = "str",
+        # Whether this config will be prompted during the setup process
+        required_if: RequiredIf = lambda: True,
+        validator: Validator = lambda *args: None,
+        on_validated: OnValidated = lambda *args: None,
+        # Whether to prompt a user for value when new strategy config file is created
+        prompt_on_new: bool = False,
+        # Whether this is a config var used in connect command
+        is_connect_key: bool = False,
+        printable_key: str = None,
+    ):
         self.prompt = prompt
         self.key = key
         self.value = None
@@ -59,7 +63,7 @@ class ConfigVar:
         assert callable(self._required_if)
         return self._required_if()
 
-    async def validate(self, value: str) -> Optional[str]:
+    async def validate(self, value: str) -> str | None:
         """
         Validate user input against the function self._validator, if it is valid, then call self._on_validated,
         if it is invalid, then return the error message.

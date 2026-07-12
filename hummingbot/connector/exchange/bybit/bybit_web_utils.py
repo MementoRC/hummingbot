@@ -1,4 +1,6 @@
-from typing import Any, Callable, Dict, Optional
+from __future__ import annotations
+
+from typing import Any, Callable
 
 import hummingbot.connector.exchange.bybit.bybit_constants as CONSTANTS
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
@@ -29,23 +31,27 @@ def rest_url(path_url: str, domain: str = CONSTANTS.DEFAULT_DOMAIN) -> str:
 
 
 def build_api_factory(
-        throttler: Optional[AsyncThrottler] = None,
-        time_synchronizer: Optional[TimeSynchronizer] = None,
-        domain: str = CONSTANTS.DEFAULT_DOMAIN,
-        time_provider: Optional[Callable] = None,
-        auth: Optional[AuthBase] = None, ) -> WebAssistantsFactory:
+    throttler: AsyncThrottler | None = None,
+    time_synchronizer: TimeSynchronizer | None = None,
+    domain: str = CONSTANTS.DEFAULT_DOMAIN,
+    time_provider: Callable | None = None,
+    auth: AuthBase | None = None,
+) -> WebAssistantsFactory:
     time_synchronizer = time_synchronizer or TimeSynchronizer()
-    time_provider = time_provider or (lambda: get_current_server_time(
-        throttler=throttler,
-        domain=domain,
-    ))
+    time_provider = time_provider or (
+        lambda: get_current_server_time(
+            throttler=throttler,
+            domain=domain,
+        )
+    )
     throttler = throttler or create_throttler()
     api_factory = WebAssistantsFactory(
         throttler=throttler,
         auth=auth,
         rest_pre_processors=[
             TimeSynchronizerRESTPreProcessor(synchronizer=time_synchronizer, time_provider=time_provider),
-        ])
+        ],
+    )
     return api_factory
 
 
@@ -58,19 +64,21 @@ def create_throttler() -> AsyncThrottler:
     return AsyncThrottler(CONSTANTS.RATE_LIMITS)
 
 
-async def api_request(path: str,
-                      api_factory: Optional[WebAssistantsFactory] = None,
-                      throttler: Optional[AsyncThrottler] = None,
-                      time_synchronizer: Optional[TimeSynchronizer] = None,
-                      domain: str = CONSTANTS.DEFAULT_DOMAIN,
-                      params: Optional[Dict[str, Any]] = None,
-                      data: Optional[Dict[str, Any]] = None,
-                      method: RESTMethod = RESTMethod.GET,
-                      is_auth_required: bool = False,
-                      return_err: bool = False,
-                      limit_id: Optional[str] = None,
-                      timeout: Optional[float] = None,
-                      headers: Dict[str, Any] = {}):
+async def api_request(
+    path: str,
+    api_factory: WebAssistantsFactory | None = None,
+    throttler: AsyncThrottler | None = None,
+    time_synchronizer: TimeSynchronizer | None = None,
+    domain: str = CONSTANTS.DEFAULT_DOMAIN,
+    params: dict[str, Any] | None = None,
+    data: dict[str, Any] | None = None,
+    method: RESTMethod = RESTMethod.GET,
+    is_auth_required: bool = False,
+    return_err: bool = False,
+    limit_id: str | None = None,
+    timeout: float | None = None,
+    headers: dict[str, Any] = {},
+):
     throttler = throttler or create_throttler()
     time_synchronizer = time_synchronizer or TimeSynchronizer()
 
@@ -92,7 +100,7 @@ async def api_request(path: str,
         data=data,
         headers=headers,
         is_auth_required=is_auth_required,
-        throttler_limit_id=limit_id if limit_id else path
+        throttler_limit_id=limit_id if limit_id else path,
     )
 
     async with throttler.execute_task(limit_id=limit_id if limit_id else path):
@@ -106,16 +114,18 @@ async def api_request(path: str,
                 if error_response is not None and "ret_code" in error_response and "ret_msg" in error_response:
                     raise IOError(f"The request to Bybit failed. Error: {error_response}. Request: {request}")
                 else:
-                    raise IOError(f"Error executing request {method.name} {path}. "
-                                  f"HTTP status is {response.status}. "
-                                  f"Error: {error_response}")
+                    raise IOError(
+                        f"Error executing request {method.name} {path}. "
+                        f"HTTP status is {response.status}. "
+                        f"Error: {error_response}"
+                    )
 
         return await response.json()
 
 
 async def get_current_server_time(
-        throttler: Optional[AsyncThrottler] = None,
-        domain: str = CONSTANTS.DEFAULT_DOMAIN,
+    throttler: AsyncThrottler | None = None,
+    domain: str = CONSTANTS.DEFAULT_DOMAIN,
 ) -> float:
     throttler = throttler or create_throttler()
     api_factory = build_api_factory_without_time_synchronizer_pre_processor(throttler=throttler)
@@ -124,7 +134,8 @@ async def get_current_server_time(
         api_factory=api_factory,
         throttler=throttler,
         domain=domain,
-        method=RESTMethod.GET)
+        method=RESTMethod.GET,
+    )
     # response["result"] = {"timeSeconds": 0, "timeNano": 0}
     # Better use nanoseconds and divide by 10^9 for higher resolution
     server_time = float(response["result"]["timeNano"]) / 10**9

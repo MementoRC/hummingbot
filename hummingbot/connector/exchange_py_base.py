@@ -1,10 +1,12 @@
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
 import asyncio
 import copy
+from decimal import Decimal
 import logging
 import math
-from abc import ABC, abstractmethod
-from decimal import Decimal
-from typing import Any, AsyncIterable, Callable, Dict, List, Optional, Tuple
+from typing import Any, AsyncIterable, Callable
 
 from async_timeout import timeout
 
@@ -44,9 +46,11 @@ class ExchangePyBase(ExchangeBase, ABC):
     TRADING_FEES_INTERVAL = TWELVE_HOURS
     TICK_INTERVAL_LIMIT = 60.0
 
-    def __init__(self,
-                 balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
-                 rate_limits_share_pct: Decimal = Decimal("100")):
+    def __init__(
+        self,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
+        rate_limits_share_pct: Decimal = Decimal("100"),
+    ):
         super().__init__(balance_asset_limit)
 
         self._last_poll_timestamp = 0
@@ -54,17 +58,17 @@ class ExchangePyBase(ExchangeBase, ABC):
         self._trading_rules = {}
         self._trading_fees = {}
 
-        self._status_polling_task: Optional[asyncio.Task] = None
-        self._user_stream_tracker_task: Optional[asyncio.Task] = None
-        self._user_stream_event_listener_task: Optional[asyncio.Task] = None
-        self._trading_rules_polling_task: Optional[asyncio.Task] = None
-        self._trading_fees_polling_task: Optional[asyncio.Task] = None
-        self._lost_orders_update_task: Optional[asyncio.Task] = None
+        self._status_polling_task: asyncio.Task | None = None
+        self._user_stream_tracker_task: asyncio.Task | None = None
+        self._user_stream_event_listener_task: asyncio.Task | None = None
+        self._trading_rules_polling_task: asyncio.Task | None = None
+        self._trading_fees_polling_task: asyncio.Task | None = None
+        self._lost_orders_update_task: asyncio.Task | None = None
 
         self._time_synchronizer = TimeSynchronizer()
         self._throttler = AsyncThrottler(
-            rate_limits=self.rate_limits_rules,
-            limits_share_percentage=rate_limits_share_pct)
+            rate_limits=self.rate_limits_rules, limits_share_percentage=rate_limits_share_pct
+        )
         self._poll_notifier = asyncio.Event()
 
         # init Auth and Api factory
@@ -73,10 +77,9 @@ class ExchangePyBase(ExchangeBase, ABC):
 
         # init OrderBook Data Source and Tracker
         self._orderbook_ds: OrderBookTrackerDataSource = self._create_order_book_data_source()
-        self._set_order_book_tracker(OrderBookTracker(
-            data_source=self._orderbook_ds,
-            trading_pairs=self.trading_pairs,
-            domain=self.domain))
+        self._set_order_book_tracker(
+            OrderBookTracker(data_source=self._orderbook_ds, trading_pairs=self.trading_pairs, domain=self.domain)
+        )
 
         # init UserStream Data Source and Tracker
         self._user_stream_tracker = self._create_user_stream_tracker()
@@ -101,7 +104,7 @@ class ExchangePyBase(ExchangeBase, ABC):
 
     @property
     @abstractmethod
-    def rate_limits_rules(self) -> List[RateLimit]:
+    def rate_limits_rules(self) -> list[RateLimit]:
         raise NotImplementedError
 
     @property
@@ -136,7 +139,7 @@ class ExchangePyBase(ExchangeBase, ABC):
 
     @property
     @abstractmethod
-    def trading_pairs(self) -> List[str]:
+    def trading_pairs(self) -> list[str]:
         raise NotImplementedError
 
     @property
@@ -150,11 +153,11 @@ class ExchangePyBase(ExchangeBase, ABC):
         raise NotImplementedError
 
     @property
-    def order_books(self) -> Dict[str, OrderBook]:
+    def order_books(self) -> dict[str, OrderBook]:
         return self.order_book_tracker.order_books
 
     @property
-    def in_flight_orders(self) -> Dict[str, InFlightOrder]:
+    def in_flight_orders(self) -> dict[str, InFlightOrder]:
         return self._order_tracker.active_orders
 
     @property
@@ -166,15 +169,15 @@ class ExchangePyBase(ExchangeBase, ABC):
         return self._throttler
 
     @property
-    def trading_rules(self) -> Dict[str, TradingRule]:
+    def trading_rules(self) -> dict[str, TradingRule]:
         return self._trading_rules
 
     @property
-    def limit_orders(self) -> List[LimitOrder]:
+    def limit_orders(self) -> list[LimitOrder]:
         return [in_flight_order.to_limit_order() for in_flight_order in self.in_flight_orders.values()]
 
     @property
-    def status_dict(self) -> Dict[str, bool]:
+    def status_dict(self) -> dict[str, bool]:
         return {
             "symbols_mapping_initialized": self.trading_pair_symbol_map_ready(),
             "order_books_initialized": self.order_book_tracker.ready,
@@ -196,14 +199,14 @@ class ExchangePyBase(ExchangeBase, ABC):
         return self.name.capitalize()
 
     @property
-    def tracking_states(self) -> Dict[str, any]:
+    def tracking_states(self) -> dict[str, any]:
         """
         Returns a dictionary associating current active orders client id to their JSON representation
         """
         return {key: value.to_json() for key, value in self._order_tracker.all_updatable_orders.items()}
 
     @abstractmethod
-    def supported_order_types(self) -> List[OrderType]:
+    def supported_order_types(self) -> list[OrderType]:
         raise NotImplementedError
 
     @abstractmethod
@@ -266,12 +269,9 @@ class ExchangePyBase(ExchangeBase, ABC):
 
     # === Orders placing ===
 
-    def buy(self,
-            trading_pair: str,
-            amount: Decimal,
-            order_type=OrderType.LIMIT,
-            price: Decimal = s_decimal_NaN,
-            **kwargs) -> str:
+    def buy(
+        self, trading_pair: str, amount: Decimal, order_type=OrderType.LIMIT, price: Decimal = s_decimal_NaN, **kwargs
+    ) -> str:
         """
         Creates a promise to create a buy order using the parameters
 
@@ -286,24 +286,29 @@ class ExchangePyBase(ExchangeBase, ABC):
             is_buy=True,
             trading_pair=trading_pair,
             hbot_order_id_prefix=self.client_order_id_prefix,
-            max_id_len=self.client_order_id_max_length
+            max_id_len=self.client_order_id_max_length,
         )
-        safe_ensure_future(self._create_order(
-            trade_type=TradeType.BUY,
-            order_id=order_id,
-            trading_pair=trading_pair,
-            amount=amount,
-            order_type=order_type,
-            price=price,
-            **kwargs))
+        safe_ensure_future(
+            self._create_order(
+                trade_type=TradeType.BUY,
+                order_id=order_id,
+                trading_pair=trading_pair,
+                amount=amount,
+                order_type=order_type,
+                price=price,
+                **kwargs,
+            )
+        )
         return order_id
 
-    def sell(self,
-             trading_pair: str,
-             amount: Decimal,
-             order_type: OrderType = OrderType.LIMIT,
-             price: Decimal = s_decimal_NaN,
-             **kwargs) -> str:
+    def sell(
+        self,
+        trading_pair: str,
+        amount: Decimal,
+        order_type: OrderType = OrderType.LIMIT,
+        price: Decimal = s_decimal_NaN,
+        **kwargs,
+    ) -> str:
         """
         Creates a promise to create a sell order using the parameters.
         :param trading_pair: the token pair to operate with
@@ -316,26 +321,31 @@ class ExchangePyBase(ExchangeBase, ABC):
             is_buy=False,
             trading_pair=trading_pair,
             hbot_order_id_prefix=self.client_order_id_prefix,
-            max_id_len=self.client_order_id_max_length
+            max_id_len=self.client_order_id_max_length,
         )
-        safe_ensure_future(self._create_order(
-            trade_type=TradeType.SELL,
-            order_id=order_id,
-            trading_pair=trading_pair,
-            amount=amount,
-            order_type=order_type,
-            price=price,
-            **kwargs))
+        safe_ensure_future(
+            self._create_order(
+                trade_type=TradeType.SELL,
+                order_id=order_id,
+                trading_pair=trading_pair,
+                amount=amount,
+                order_type=order_type,
+                price=price,
+                **kwargs,
+            )
+        )
         return order_id
 
-    def get_fee(self,
-                base_currency: str,
-                quote_currency: str,
-                order_type: OrderType,
-                order_side: TradeType,
-                amount: Decimal,
-                price: Decimal = s_decimal_NaN,
-                is_maker: Optional[bool] = None) -> AddedToCostTradeFee:
+    def get_fee(
+        self,
+        base_currency: str,
+        quote_currency: str,
+        order_type: OrderType,
+        order_side: TradeType,
+        amount: Decimal,
+        price: Decimal = s_decimal_NaN,
+        is_maker: bool | None = None,
+    ) -> AddedToCostTradeFee:
         """
         Calculates the fee to pay based on the fee information provided by the exchange for
         the account and the token pair. If exchange info is not available it calculates the estimated
@@ -365,7 +375,7 @@ class ExchangePyBase(ExchangeBase, ABC):
         safe_ensure_future(self._execute_cancel(trading_pair, client_order_id))
         return client_order_id
 
-    async def cancel_all(self, timeout_seconds: float) -> List[CancellationResult]:
+    async def cancel_all(self, timeout_seconds: float) -> list[CancellationResult]:
         """
         Cancels all currently active orders. The cancellations are performed in parallel tasks.
 
@@ -392,19 +402,21 @@ class ExchangePyBase(ExchangeBase, ABC):
             self.logger().network(
                 "Unexpected error cancelling orders.",
                 exc_info=True,
-                app_warning_msg="Failed to cancel order. Check API key and network connection."
+                app_warning_msg="Failed to cancel order. Check API key and network connection.",
             )
         failed_cancellations = [CancellationResult(oid, False) for oid in order_id_set]
         return successful_cancellations + failed_cancellations
 
-    async def _create_order(self,
-                            trade_type: TradeType,
-                            order_id: str,
-                            trading_pair: str,
-                            amount: Decimal,
-                            order_type: OrderType,
-                            price: Optional[Decimal] = None,
-                            **kwargs):
+    async def _create_order(
+        self,
+        trade_type: TradeType,
+        order_id: str,
+        trading_pair: str,
+        amount: Decimal,
+        order_type: OrderType,
+        price: Decimal | None = None,
+        **kwargs,
+    ):
         """
         Creates an order in the exchange using the parameters to configure it
 
@@ -441,25 +453,38 @@ class ExchangePyBase(ExchangeBase, ABC):
         if order_type not in self.supported_order_types():
             self.logger().error(f"{order_type} is not in the list of supported order types")
             self._update_order_after_failure(
-                order_id=order_id, trading_pair=trading_pair,
-                exception=ValueError(f"{order_type} is not in the list of supported order types"))
+                order_id=order_id,
+                trading_pair=trading_pair,
+                exception=ValueError(f"{order_type} is not in the list of supported order types"),
+            )
             return
 
         elif quantized_amount < trading_rule.min_order_size:
             self._update_order_after_failure(
-                order_id=order_id, trading_pair=trading_pair,
-                exception=ValueError(f"Order amount {amount} is lower than minimum order size {trading_rule.min_order_size} "
-                                     f"for the pair {trading_pair}. The order will not be created."))
+                order_id=order_id,
+                trading_pair=trading_pair,
+                exception=ValueError(
+                    f"Order amount {amount} is lower than minimum order size {trading_rule.min_order_size} "
+                    f"for the pair {trading_pair}. The order will not be created."
+                ),
+            )
             return
 
         elif notional_size < trading_rule.min_notional_size:
             self._update_order_after_failure(
-                order_id=order_id, trading_pair=trading_pair,
-                exception=ValueError(f"Order notional {notional_size} is lower than minimum notional size {trading_rule.min_notional_size}"
-                                     f" for the pair {trading_pair}. The order will not be created."))
+                order_id=order_id,
+                trading_pair=trading_pair,
+                exception=ValueError(
+                    f"Order notional {notional_size} is lower than minimum notional size {trading_rule.min_notional_size}"
+                    f" for the pair {trading_pair}. The order will not be created."
+                ),
+            )
             return
         try:
-            await self._place_order_and_process_update(order=order, **kwargs,)
+            await self._place_order_and_process_update(
+                order=order,
+                **kwargs,
+            )
 
         except asyncio.CancelledError:
             raise
@@ -504,7 +529,7 @@ class ExchangePyBase(ExchangeBase, ABC):
         amount: Decimal,
         trade_type: TradeType,
         order_type: OrderType,
-        price: Optional[Decimal],
+        price: Decimal | None,
         exception: Exception,
         **kwargs,
     ):
@@ -512,26 +537,26 @@ class ExchangePyBase(ExchangeBase, ABC):
             f"Error submitting {trade_type.name.lower()} {order_type.name.upper()} order to {self.name_cap} for "
             f"{amount} {trading_pair} {price}.",
             exc_info=True,
-            app_warning_msg=f"Failed to submit {trade_type.name.upper()} order to {self.name_cap}. Check API key and network connection."
+            app_warning_msg=f"Failed to submit {trade_type.name.upper()} order to {self.name_cap}. Check API key and network connection.",
         )
         self._update_order_after_failure(order_id=order_id, trading_pair=trading_pair, exception=exception)
 
-    def _update_order_after_failure(self, order_id: str, trading_pair: str, exception: Optional[Exception] = None):
+    def _update_order_after_failure(self, order_id: str, trading_pair: str, exception: Exception | None = None):
         misc_updates = {}
         if exception:
-            misc_updates['error_message'] = str(exception)
-            misc_updates['error_type'] = exception.__class__.__name__
+            misc_updates["error_message"] = str(exception)
+            misc_updates["error_type"] = exception.__class__.__name__
 
         order_update: OrderUpdate = OrderUpdate(
             client_order_id=order_id,
             trading_pair=trading_pair,
             update_timestamp=self.current_timestamp,
             new_state=OrderState.FAILED,
-            misc_updates=misc_updates
+            misc_updates=misc_updates,
         )
         self._order_tracker.process_order_update(order_update)
 
-    async def _execute_order_cancel(self, order: InFlightOrder) -> Optional[str]:
+    async def _execute_order_cancel(self, order: InFlightOrder) -> str | None:
         try:
             cancelled = await self._execute_order_cancel_and_process_update(order=order)
             if cancelled:
@@ -563,9 +588,9 @@ class ExchangePyBase(ExchangeBase, ABC):
                 client_order_id=order.client_order_id,
                 trading_pair=order.trading_pair,
                 update_timestamp=update_timestamp,
-                new_state=(OrderState.CANCELED
-                           if self.is_cancel_request_in_exchange_synchronous
-                           else OrderState.PENDING_CANCEL),
+                new_state=(
+                    OrderState.CANCELED if self.is_cancel_request_in_exchange_synchronous else OrderState.PENDING_CANCEL
+                ),
             )
             self._order_tracker.process_order_update(order_update)
         return cancelled
@@ -586,7 +611,7 @@ class ExchangePyBase(ExchangeBase, ABC):
 
     # === Order Tracking ===
 
-    def restore_tracking_states(self, saved_states: Dict[str, Any]):
+    def restore_tracking_states(self, saved_states: dict[str, Any]):
         """
         Restore in-flight orders from saved tracking states, this is st the connector can pick up on where it left off
         when it disconnects.
@@ -595,15 +620,17 @@ class ExchangePyBase(ExchangeBase, ABC):
         """
         self._order_tracker.restore_tracking_states(tracking_states=saved_states)
 
-    def start_tracking_order(self,
-                             order_id: str,
-                             exchange_order_id: Optional[str],
-                             trading_pair: str,
-                             trade_type: TradeType,
-                             price: Decimal,
-                             amount: Decimal,
-                             order_type: OrderType,
-                             **kwargs):
+    def start_tracking_order(
+        self,
+        order_id: str,
+        exchange_order_id: str | None,
+        trading_pair: str,
+        trade_type: TradeType,
+        price: Decimal,
+        amount: Decimal,
+        order_type: OrderType,
+        **kwargs,
+    ):
         """
         Starts tracking an order by adding it to the order tracker.
 
@@ -624,7 +651,7 @@ class ExchangePyBase(ExchangeBase, ABC):
                 trade_type=trade_type,
                 amount=amount,
                 price=price,
-                creation_timestamp=self.current_timestamp
+                creation_timestamp=self.current_timestamp,
             )
         )
 
@@ -646,26 +673,29 @@ class ExchangePyBase(ExchangeBase, ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def _place_order(self,
-                           order_id: str,
-                           trading_pair: str,
-                           amount: Decimal,
-                           trade_type: TradeType,
-                           order_type: OrderType,
-                           price: Decimal,
-                           **kwargs,
-                           ) -> Tuple[str, float]:
+    async def _place_order(
+        self,
+        order_id: str,
+        trading_pair: str,
+        amount: Decimal,
+        trade_type: TradeType,
+        order_type: OrderType,
+        price: Decimal,
+        **kwargs,
+    ) -> tuple[str, float]:
         raise NotImplementedError
 
     @abstractmethod
-    def _get_fee(self,
-                 base_currency: str,
-                 quote_currency: str,
-                 order_type: OrderType,
-                 order_side: TradeType,
-                 amount: Decimal,
-                 price: Decimal = s_decimal_NaN,
-                 is_maker: Optional[bool] = None) -> AddedToCostTradeFee:
+    def _get_fee(
+        self,
+        base_currency: str,
+        quote_currency: str,
+        order_type: OrderType,
+        order_side: TradeType,
+        amount: Decimal,
+        price: Decimal = s_decimal_NaN,
+        is_maker: bool | None = None,
+    ) -> AddedToCostTradeFee:
         raise NotImplementedError
 
     # === Network-API-related code ===
@@ -777,9 +807,10 @@ class ExchangePyBase(ExchangeBase, ABC):
                 raise
             except Exception:
                 self.logger().network(
-                    "Unexpected error while fetching trading rules.", exc_info=True,
-                    app_warning_msg=f"Could not fetch new trading rules from {self.name_cap}"
-                                    " Check network connection.")
+                    "Unexpected error while fetching trading rules.",
+                    exc_info=True,
+                    app_warning_msg=f"Could not fetch new trading rules from {self.name_cap} Check network connection.",
+                )
                 await self._sleep(0.5)
 
     async def _trading_fees_polling_loop(self):
@@ -797,9 +828,10 @@ class ExchangePyBase(ExchangeBase, ABC):
                 raise
             except Exception:
                 self.logger().network(
-                    "Unexpected error while fetching trading fees.", exc_info=True,
-                    app_warning_msg=f"Could not fetch new trading fees from {self.name_cap}."
-                                    " Check network connection.")
+                    "Unexpected error while fetching trading fees.",
+                    exc_info=True,
+                    app_warning_msg=f"Could not fetch new trading fees from {self.name_cap}. Check network connection.",
+                )
                 await self._sleep(0.5)
 
     async def _status_polling_loop(self):
@@ -830,7 +862,8 @@ class ExchangePyBase(ExchangeBase, ABC):
                     "Unexpected error while fetching account updates.",
                     exc_info=True,
                     app_warning_msg=f"Could not fetch account updates from {self.name_cap}. "
-                                    "Check API key and network connection.")
+                    "Check API key and network connection.",
+                )
                 await self._sleep(0.5)
 
     async def _update_time_synchronizer(self, pass_on_non_cancelled_error: bool = False):
@@ -866,7 +899,7 @@ class ExchangePyBase(ExchangeBase, ABC):
                 self.logger().exception("Unexpected error while updating the time synchronizer")
                 await self._sleep(0.5)
 
-    async def _iter_user_event_queue(self) -> AsyncIterable[Dict[str, any]]:
+    async def _iter_user_event_queue(self) -> AsyncIterable[dict[str, any]]:
         """
         Called by _user_stream_event_listener.
         """
@@ -923,18 +956,18 @@ class ExchangePyBase(ExchangeBase, ABC):
         return url
 
     async def _api_request(
-            self,
-            path_url,
-            overwrite_url: Optional[str] = None,
-            method: RESTMethod = RESTMethod.GET,
-            params: Optional[Dict[str, Any]] = None,
-            data: Optional[Dict[str, Any]] = None,
-            is_auth_required: bool = False,
-            return_err: bool = False,
-            limit_id: Optional[str] = None,
-            headers: Optional[Dict[str, Any]] = None,
-            **kwargs,
-    ) -> Dict[str, Any]:
+        self,
+        path_url,
+        overwrite_url: str | None = None,
+        method: RESTMethod = RESTMethod.GET,
+        params: dict[str, Any] | None = None,
+        data: dict[str, Any] | None = None,
+        is_auth_required: bool = False,
+        return_err: bool = False,
+        limit_id: str | None = None,
+        headers: dict[str, Any] | None = None,
+        **kwargs,
+    ) -> dict[str, Any]:
 
         last_exception = None
         rest_assistant = await self._web_assistants_factory.get_rest_assistant()
@@ -989,7 +1022,7 @@ class ExchangePyBase(ExchangeBase, ABC):
                 exc_info=request_error,
             )
 
-    async def _update_orders_fills(self, orders: List[InFlightOrder]):
+    async def _update_orders_fills(self, orders: list[InFlightOrder]):
         for order in orders:
             try:
                 trade_updates = await self._all_trade_updates_for_order(order=order)
@@ -1018,18 +1051,22 @@ class ExchangePyBase(ExchangeBase, ABC):
             self.logger().warning(
                 f"Error fetching status update for the active order {order.client_order_id}: {request_error}.",
             )
-            self.logger().debug(f"Order {order.client_order_id} not found counter: {self._order_tracker._order_not_found_records.get(order.client_order_id, 0)}")
+            self.logger().debug(
+                f"Order {order.client_order_id} not found counter: {self._order_tracker._order_not_found_records.get(order.client_order_id, 0)}"
+            )
             await self._order_tracker.process_order_not_found(order.client_order_id)
 
     async def _handle_update_error_for_lost_order(self, order: InFlightOrder, error: Exception):
         is_not_found = self._is_order_not_found_during_status_update_error(status_update_exception=error)
-        self.logger().debug(f"Order update error for lost order {order.client_order_id}\n{order}\nIs order not found: {is_not_found} ({error})")
+        self.logger().debug(
+            f"Order update error for lost order {order.client_order_id}\n{order}\nIs order not found: {is_not_found} ({error})"
+        )
         if is_not_found:
             self._update_order_after_failure(order.client_order_id, order.trading_pair, exception=error)
         else:
             self.logger().warning(f"Error fetching status update for the lost order {order.client_order_id}: {error}.")
 
-    async def _update_orders_with_error_handler(self, orders: List[InFlightOrder], error_handler: Callable):
+    async def _update_orders_with_error_handler(self, orders: list[InFlightOrder], error_handler: Callable):
         for order in orders:
             try:
                 order_update = await self._request_order_status(tracked_order=order)
@@ -1074,7 +1111,7 @@ class ExchangePyBase(ExchangeBase, ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def _format_trading_rules(self, exchange_info_dict: Dict[str, Any]) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: dict[str, Any]) -> list[TradingRule]:
         raise NotImplementedError
 
     @abstractmethod
@@ -1082,7 +1119,7 @@ class ExchangePyBase(ExchangeBase, ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         raise NotImplementedError
 
     @abstractmethod
@@ -1102,7 +1139,7 @@ class ExchangePyBase(ExchangeBase, ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         raise NotImplementedError
 
     def _create_order_tracker(self) -> ClientOrderTracker:

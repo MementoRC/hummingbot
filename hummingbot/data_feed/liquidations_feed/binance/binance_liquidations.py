@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 import logging
-from typing import Any, Dict, Optional, Set
+from typing import Any
 
 from bidict import bidict
 
@@ -14,7 +16,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class BinancePerpetualLiquidations(LiquidationsBase):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -22,7 +24,7 @@ class BinancePerpetualLiquidations(LiquidationsBase):
             cls._logger = logging.getLogger(__name__)
         return cls._logger
 
-    def __init__(self, trading_pairs: Set[str], max_retention_seconds: int):
+    def __init__(self, trading_pairs: set[str], max_retention_seconds: int):
         super().__init__(trading_pairs=trading_pairs, max_retention_seconds=max_retention_seconds)
 
     @property
@@ -47,8 +49,9 @@ class BinancePerpetualLiquidations(LiquidationsBase):
 
     async def check_network(self) -> NetworkStatus:
         rest_assistant = await self._api_factory.get_rest_assistant()
-        await rest_assistant.execute_request(url=self.health_check_url,
-                                             throttler_limit_id=CONSTANTS.HEALTH_CHECK_ENDPOINT)
+        await rest_assistant.execute_request(
+            url=self.health_check_url, throttler_limit_id=CONSTANTS.HEALTH_CHECK_ENDPOINT
+        )
         return NetworkStatus.CONNECTED
 
     def get_exchange_trading_pair(self, trading_pair):
@@ -71,11 +74,7 @@ class BinancePerpetualLiquidations(LiquidationsBase):
                     ex_trading_pair = self.get_exchange_trading_pair(trading_pair)
                     force_order_streams.append(f"{ex_trading_pair.lower()}@forceOrder")
 
-            payload = {
-                "method": "SUBSCRIBE",
-                "params": force_order_streams,
-                "id": 1
-            }
+            payload = {"method": "SUBSCRIBE", "params": force_order_streams, "id": 1}
             subscribe_liquidations_request: WSJSONRequest = WSJSONRequest(payload=payload)
             await ws.send(subscribe_liquidations_request)
 
@@ -83,10 +82,7 @@ class BinancePerpetualLiquidations(LiquidationsBase):
         except asyncio.CancelledError:
             raise
         except Exception:
-            self.logger().error(
-                "Unexpected error occurred subscribing to public liquidations...",
-                exc_info=True
-            )
+            self.logger().error("Unexpected error occurred subscribing to public liquidations...", exc_info=True)
             raise
 
     async def _fetch_and_map_trading_pairs(self):
@@ -126,7 +122,8 @@ class BinancePerpetualLiquidations(LiquidationsBase):
             mapping[new_exchange_symbol] = trading_pair
         else:
             self.logger().warning(
-                f"Could not resolve the exchange symbols {new_exchange_symbol} and {current_exchange_symbol}")
+                f"Could not resolve the exchange symbols {new_exchange_symbol} and {current_exchange_symbol}"
+            )
             mapping.pop(current_exchange_symbol)
 
     async def _process_websocket_messages(self, websocket_assistant: WSAssistant):
@@ -151,7 +148,7 @@ class BinancePerpetualLiquidations(LiquidationsBase):
         }
         """
         async for ws_response in websocket_assistant.iter_messages():
-            data: Dict[str, Any] = ws_response.data
+            data: dict[str, Any] = ws_response.data
             if "data" in data:
                 data = data["data"]
             if data.get("e") == "forceOrder":
@@ -166,9 +163,12 @@ class BinancePerpetualLiquidations(LiquidationsBase):
                 if trading_pair not in self._liquidations:
                     self._liquidations[trading_pair] = []
 
-                self._liquidations[trading_pair].append(Liquidation(
-                    timestamp=timestamp,
-                    trading_pair=trading_pair,
-                    quantity=quantity,
-                    price=price,
-                    side=liquidation_side))
+                self._liquidations[trading_pair].append(
+                    Liquidation(
+                        timestamp=timestamp,
+                        trading_pair=trading_pair,
+                        quantity=quantity,
+                        price=price,
+                        side=liquidation_side,
+                    )
+                )

@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import asyncio
 import logging
-from typing import Dict, Optional
 
 import aiohttp
 
@@ -10,7 +11,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class DataFeedBase(NetworkBase):
-    dfb_logger: Optional[HummingbotLogger] = None
+    dfb_logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -21,14 +22,14 @@ class DataFeedBase(NetworkBase):
     def __init__(self):
         super().__init__()
         self._ready_event = asyncio.Event()
-        self._shared_client: Optional[aiohttp.ClientSession] = None
+        self._shared_client: aiohttp.ClientSession | None = None
 
     @property
     def name(self):
         raise NotImplementedError
 
     @property
-    def price_dict(self) -> Dict[str, float]:
+    def price_dict(self) -> dict[str, float]:
         raise NotImplementedError
 
     @property
@@ -54,8 +55,7 @@ class DataFeedBase(NetworkBase):
         except asyncio.CancelledError:
             raise
         except Exception:
-            self.logger().error("Unexpected error while waiting for data feed to get ready.",
-                                exc_info=True)
+            self.logger().error("Unexpected error while waiting for data feed to get ready.", exc_info=True)
 
     async def start_network(self):
         raise NotImplementedError
