@@ -111,3 +111,6 @@ coverage.xml
 # Rust extension build artifacts (hummingbot/rust/)
 /hummingbot/rust/target/
 /hummingbot/rust/Cargo.lock
+
+# Sub-package stray logs
+/sub-packages/logs/
