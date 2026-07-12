@@ -132,7 +132,7 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
             await self._initialize_position_mode()
 
     def supported_order_types(self) -> list[OrderType]:
-        return [OrderType.LIMIT, OrderType.MARKET]
+        return [OrderType.LIMIT, OrderType.LIMIT_MAKER, OrderType.MARKET]
 
     def supported_position_modes(self) -> list[PositionMode]:
         return [PositionMode.ONEWAY, PositionMode.HEDGE]
