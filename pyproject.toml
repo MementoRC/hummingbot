@@ -66,6 +66,7 @@ setuptools = ">=80.8.0"
 wheel = ">=0.37.0"
 # Core runtime
 aiohttp = ">=3.8.5"
+aiomqtt = ">=2.0.0"
 aioprocessing = ">=2.0.1"
 aioresponses = ">=0.7.4"
 aiounittest = ">=1.4.2"
@@ -75,7 +76,6 @@ base58 = ">=2.1.1"
 bidict = ">=0.22.1"
 bip-utils = "*"
 cachetools = ">=5.3.1"
-commlib-py = ">=0.11,<0.13"
 cryptography = ">=41.0.2"
 eth-account = ">=0.13.0"
 injective-py = ">=1.12"
@@ -130,6 +130,9 @@ bandit = "*"
 pip-audit = "*"
 types-setuptools = "*"
 
+[tool.pixi.feature.dev.pypi-dependencies]
+import-linter = ">=2.0"
+
 [tool.pixi.environments]
 default = { features = ["dev"], solve-group = "default" }
 ci = { features = ["ci", "dev"], solve-group = "default" }
@@ -143,6 +146,7 @@ test = { cmd = "pytest test", depends-on = ["build"] }
 test-unit = { cmd = "pytest test/hummingbot", depends-on = ["build"] }
 test-fast = "pytest --timeout=30 --tb=short -q"
 lint = "ruff check hummingbot test controllers scripts"
+lint-boundaries = "lint-imports"
 lint-cython = "cython-lint hummingbot"
 format = { cmd = "ruff format hummingbot test controllers scripts" }
 format-check = "ruff format --check hummingbot test controllers scripts"
@@ -164,6 +168,7 @@ include = ["hummingbot/**/*.py", "test/**/*.py"]
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
 ignore = ["E251", "E501", "E702"]
+external = ["mock"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["hummingbot"]

@@ -1,18 +1,11 @@
 from __future__ import annotations
 
 import asyncio
-import functools
-import sys
-import unittest
 from asyncio import Task
 from collections.abc import Set
+import functools
 from typing import Any, Awaitable, Callable, Coroutine, TypeVar
-
-# When pytest with asyncio_mode=auto drives the test suite, it already provides
-# proper event-loop isolation.  The manual save/restore/assert dance in the
-# wrapper classes was needed for the bare-unittest runner; under pytest it
-# actively fights the framework and causes spurious failures.
-_PYTEST_RUNNER = "pytest" in sys.modules
+import unittest
 
 T = TypeVar("T")
 
@@ -63,22 +56,29 @@ class IsolatedAsyncioWrapperTestCase(unittest.IsolatedAsyncioTestCase):
     """
     Custom test case class that wraps `unittest.IsolatedAsyncioTestCase`.
 
-    Saves and restores the "main" event loop around each test so that one
-    test's loop destruction cannot cascade into subsequent tests.
+    This class provides additional functionality to set up and tear down the asyncio event loop for each test case.
+    It ensures that each test case runs in an isolated asyncio event loop, preventing interference between test cases.
 
-    Under pytest with ``asyncio_mode = auto``, the loop save/restore is
-    still needed (other tests may kill the loop), but the identity
-    assertions are relaxed since pytest-asyncio may reuse the same loop
-    object.
+    Example usage:
+    ```python
+    class MyTestCase(IsolatedAsyncioWrapperTestCase):
+        async def test_my_async_function(self):
+            # Test your async function here
+            ...
+    ```
     """
 
     main_event_loop = None
 
     @classmethod
     def setUpClass(cls) -> None:
+        # Save the current event loop
         try:
+            # This will trigger a RuntimeError if no event loop is running or no event loop is set.
+            # Meaning, set_event_loop(None) has been called.
             cls.main_event_loop = asyncio.get_event_loop()
         except RuntimeError:
+            # If no event loop exists, create one
             cls.main_event_loop = asyncio.new_event_loop()
             asyncio.set_event_loop(cls.main_event_loop)
         assert cls.main_event_loop is not None
@@ -86,24 +86,22 @@ class IsolatedAsyncioWrapperTestCase(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self) -> None:
         self.local_event_loop = asyncio.get_event_loop()
-        # Under pytest-asyncio the local and main loop may be the same object;
-        # only assert they differ when running under the bare-unittest runner.
-        if not _PYTEST_RUNNER:
-            assert self.local_event_loop is not self.main_event_loop
+        assert self.local_event_loop is not self.main_event_loop
         super().setUp()
 
     def tearDown(self) -> None:
         super().tearDown()
         if self.main_event_loop is not None and not self.main_event_loop.is_closed():
             asyncio.set_event_loop(self.main_event_loop)
-            if not _PYTEST_RUNNER:
-                assert asyncio.get_event_loop() is self.main_event_loop
+            assert asyncio.get_event_loop() is self.main_event_loop
         else:
             asyncio.set_event_loop(asyncio.new_event_loop())
 
     @classmethod
     def tearDownClass(cls) -> None:
         super().tearDownClass()
+        # Ok, asyncio.IsolatedAsyncioTestCase kills the main event loop no matter it's initial state.
+        # We need to restore it here, otherwise any tests after this one will fail if it relies on the main event loop.
         if cls.main_event_loop is not None and not cls.main_event_loop.is_closed():
             asyncio.set_event_loop(cls.main_event_loop)
         else:

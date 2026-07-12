@@ -1,8 +1,7 @@
 import asyncio
-import logging
 from dataclasses import dataclass
 from decimal import Decimal
-from typing import Dict, List
+import logging
 
 import aiohttp
 
@@ -31,7 +30,7 @@ def logger():
     return logging.getLogger(__name__)
 
 
-async def get_campaign_summary(exchange: str, trading_pairs: List[str] = []) -> Dict[str, CampaignSummary]:
+async def get_campaign_summary(exchange: str, trading_pairs: list[str] = []) -> dict[str, CampaignSummary]:
     results = {}
     try:
         campaigns = await get_active_campaigns(exchange, trading_pairs)
@@ -40,9 +39,10 @@ async def get_campaign_summary(exchange: str, trading_pairs: List[str] = []) -> 
         for snapshot in snapshots:
             if isinstance(snapshot, Exception):
                 raise snapshot
-            if 'status' in snapshot and snapshot.get('status') != "success":
+            if "status" in snapshot and snapshot.get("status") != "success":
                 logger().warning(
-                    f"Snapshot info for {trading_pairs} is not available, please verify that this is a valid campaign pair for this exchange")
+                    f"Snapshot info for {trading_pairs} is not available, please verify that this is a valid campaign pair for this exchange"
+                )
                 continue
             if "market_snapshot" in snapshot:
                 snapshot = snapshot.get("market_snapshot")
@@ -68,15 +68,14 @@ async def get_market_snapshots(market_id: int):
         resp_json = await resp.json()
 
     if not resp_json or "status" not in resp_json or resp_json.get("status") == "error":
-        logger().warning("Could not get market snapshots from Hummingbot API"
-                         f" (returned response '{resp_json}').")
+        logger().warning(f"Could not get market snapshots from Hummingbot API (returned response '{resp_json}').")
         return None
     return resp_json
 
 
 async def get_market_last_snapshot(market_id: int):
     data = await get_market_snapshots(market_id)
-    data = sorted(list(set([d.get("timestamp") for d in data.get('data')])))
+    data = sorted(list(set([d.get("timestamp") for d in data.get("data")])))
 
     await asyncio.sleep(0.5)
 
@@ -87,7 +86,7 @@ async def get_market_last_snapshot(market_id: int):
     return resp_json
 
 
-async def get_active_campaigns(exchange: str, trading_pairs: List[str] = []) -> Dict[int, CampaignSummary]:
+async def get_active_campaigns(exchange: str, trading_pairs: list[str] = []) -> dict[int, CampaignSummary]:
     campaigns = {}
     async with aiohttp.ClientSession() as client:
         campaigns_url = f"{PARROT_MINER_BASE_URL}campaigns"
@@ -95,8 +94,7 @@ async def get_active_campaigns(exchange: str, trading_pairs: List[str] = []) -> 
         resp_json = await resp.json()
 
     if not resp_json or "status" not in resp_json or resp_json.get("status") == "error":
-        logger().warning("Could not get active campaigns from Hummingbot API"
-                         f" (returned response '{resp_json}').")
+        logger().warning(f"Could not get active campaigns from Hummingbot API (returned response '{resp_json}').")
     else:
         for campaign_retval in resp_json["campaigns"]:
             for market in campaign_retval["markets"]:
@@ -116,15 +114,14 @@ async def get_active_campaigns(exchange: str, trading_pairs: List[str] = []) -> 
     return campaigns
 
 
-async def get_active_markets(campaigns: Dict[int, CampaignSummary]) -> Dict[int, CampaignSummary]:
+async def get_active_markets(campaigns: dict[int, CampaignSummary]) -> dict[int, CampaignSummary]:
     async with aiohttp.ClientSession() as client:
         markets_url = f"{PARROT_MINER_BASE_URL}markets"
         resp = await client.get(markets_url)
         resp_json = await resp.json()
 
     if not resp_json or "status" not in resp_json or resp_json.get("status") == "error":
-        logger().warning("Could not get active markets from Hummingbot API"
-                         f" (returned response '{resp_json}').")
+        logger().warning(f"Could not get active markets from Hummingbot API (returned response '{resp_json}').")
     else:
         for markets_retval in resp_json["markets"]:
             market_id = int(markets_retval["market_id"])
@@ -132,7 +129,8 @@ async def get_active_markets(campaigns: Dict[int, CampaignSummary]) -> Dict[int,
                 campaigns[market_id].active_bots = markets_retval["bots"]
                 for bounty_period in markets_retval["active_bounty_periods"]:
                     campaigns[market_id].reward_per_wk = Decimal(str(bounty_period["budget"]["bid"])) + Decimal(
-                        str(bounty_period["budget"]["ask"]))
+                        str(bounty_period["budget"]["ask"])
+                    )
                     campaigns[market_id].spread_max = Decimal(str(bounty_period["spread_max"])) / Decimal("100")
                     campaigns[market_id].payout_asset = bounty_period["payout_asset"]
 

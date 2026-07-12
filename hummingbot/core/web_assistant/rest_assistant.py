@@ -1,7 +1,9 @@
-import json
+from __future__ import annotations
+
 from asyncio import wait_for
 from copy import deepcopy
-from typing import Any, Dict, List, Optional, Union
+import json
+from typing import Any, Union
 
 from hummingbot.core.api_throttler.async_throttler_base import AsyncThrottlerBase
 from hummingbot.core.web_assistant.auth import AuthBase
@@ -23,9 +25,9 @@ class RESTAssistant:
         self,
         connection: RESTConnection,
         throttler: AsyncThrottlerBase,
-        rest_pre_processors: Optional[List[RESTPreProcessorBase]] = None,
-        rest_post_processors: Optional[List[RESTPostProcessorBase]] = None,
-        auth: Optional[AuthBase] = None,
+        rest_pre_processors: list[RESTPreProcessorBase] | None = None,
+        rest_post_processors: list[RESTPostProcessorBase] | None = None,
+        auth: AuthBase | None = None,
     ):
         self._connection = connection
         self._rest_pre_processors = rest_pre_processors or []
@@ -37,14 +39,14 @@ class RESTAssistant:
         self,
         url: str,
         throttler_limit_id: str,
-        params: Optional[Dict[str, Any]] = None,
-        data: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
+        data: dict[str, Any] | None = None,
         method: RESTMethod = RESTMethod.GET,
         is_auth_required: bool = False,
         return_err: bool = False,
-        timeout: Optional[float] = None,
-        headers: Optional[Dict[str, Any]] = None,
-    ) -> Union[str, Dict[str, Any]]:
+        timeout: float | None = None,
+        headers: dict[str, Any] | None = None,
+    ) -> Union[str, dict[str, Any]]:
         response = await self.execute_request_and_get_response(
             url=url,
             throttler_limit_id=throttler_limit_id,
@@ -60,22 +62,23 @@ class RESTAssistant:
         return response_json
 
     async def execute_request_and_get_response(
-            self,
-            url: str,
-            throttler_limit_id: str,
-            params: Optional[Dict[str, Any]] = None,
-            data: Optional[Dict[str, Any]] = None,
-            method: RESTMethod = RESTMethod.GET,
-            is_auth_required: bool = False,
-            return_err: bool = False,
-            timeout: Optional[float] = None,
-            headers: Optional[Dict[str, Any]] = None,
+        self,
+        url: str,
+        throttler_limit_id: str,
+        params: dict[str, Any] | None = None,
+        data: dict[str, Any] | None = None,
+        method: RESTMethod = RESTMethod.GET,
+        is_auth_required: bool = False,
+        return_err: bool = False,
+        timeout: float | None = None,
+        headers: dict[str, Any] | None = None,
     ) -> RESTResponse:
 
         headers = headers or {}
 
         local_headers = {
-            "Content-Type": ("application/json" if method != RESTMethod.GET else "application/x-www-form-urlencoded")}
+            "Content-Type": ("application/json" if method != RESTMethod.GET else "application/x-www-form-urlencoded")
+        }
 
         local_headers.update(headers)
 
@@ -88,7 +91,7 @@ class RESTAssistant:
             data=data,
             headers=local_headers,
             is_auth_required=is_auth_required,
-            throttler_limit_id=throttler_limit_id
+            throttler_limit_id=throttler_limit_id,
         )
 
         async with self._throttler.execute_task(limit_id=throttler_limit_id):
@@ -98,11 +101,13 @@ class RESTAssistant:
                 if not return_err:
                     error_response = await response.text()
                     error_text = "N/A" if "<html" in error_response else error_response
-                    raise IOError(f"Error executing request {method.name} {url}. HTTP status is {response.status}. "
-                                  f"Error: {error_text}")
+                    raise IOError(
+                        f"Error executing request {method.name} {url}. HTTP status is {response.status}. "
+                        f"Error: {error_text}"
+                    )
             return response
 
-    async def call(self, request: RESTRequest, timeout: Optional[float] = None) -> RESTResponse:
+    async def call(self, request: RESTRequest, timeout: float | None = None) -> RESTResponse:
         request = deepcopy(request)
         request = await self._pre_process_request(request)
         request = await self._authenticate(request)

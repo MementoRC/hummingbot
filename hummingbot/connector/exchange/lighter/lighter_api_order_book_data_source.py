@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.exchange.lighter import lighter_constants as CONSTANTS, lighter_web_utils as web_utils
 from hummingbot.connector.exchange.lighter.lighter_order_book import LighterOrderBook
@@ -15,11 +17,11 @@ if TYPE_CHECKING:
 
 
 class LighterAPIOrderBookDataSource(OrderBookTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "LighterExchange",
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DOMAIN,
@@ -30,12 +32,10 @@ class LighterAPIOrderBookDataSource(OrderBookTrackerDataSource):
         self._domain = domain
         self._order_book_create_function = lambda: LighterOrderBook()
 
-    async def get_last_traded_prices(
-        self, trading_pairs: List[str], domain: Optional[str] = None
-    ) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
-    async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, Any]:
+    async def _request_order_book_snapshot(self, trading_pair: str) -> dict[str, Any]:
         market = self._connector.market_info_for_trading_pair(trading_pair)
         return await self._connector._api_get(
             path_url=CONSTANTS.SNAPSHOT_PATH_URL,
@@ -146,7 +146,7 @@ class LighterAPIOrderBookDataSource(OrderBookTrackerDataSource):
             self.logger().exception(f"Error unsubscribing from {trading_pair}")
             return False
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         channel = str(event_message.get("channel", ""))
         message_type = str(event_message.get("type", ""))
         if channel.startswith(f"{CONSTANTS.ORDER_BOOK_CHANNEL}:"):
@@ -157,30 +157,24 @@ class LighterAPIOrderBookDataSource(OrderBookTrackerDataSource):
             return self._trade_messages_queue_key
         return ""
 
-    async def _parse_order_book_snapshot_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_snapshot_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         market_id = int(str(raw_message["channel"]).split(":")[1])
         trading_pair = self._connector.market_info_for_market_id(market_id).trading_pair
-        message_queue.put_nowait(
-            LighterOrderBook.snapshot_message_from_ws(raw_message, trading_pair=trading_pair)
-        )
+        message_queue.put_nowait(LighterOrderBook.snapshot_message_from_ws(raw_message, trading_pair=trading_pair))
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         market_id = int(str(raw_message["channel"]).split(":")[1])
         trading_pair = self._connector.market_info_for_market_id(market_id).trading_pair
-        message_queue.put_nowait(
-            LighterOrderBook.diff_message_from_ws(raw_message, trading_pair=trading_pair)
-        )
+        message_queue.put_nowait(LighterOrderBook.diff_message_from_ws(raw_message, trading_pair=trading_pair))
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         market_id = int(str(raw_message["channel"]).split(":")[1])
         trading_pair = self._connector.market_info_for_market_id(market_id).trading_pair
         for trade in raw_message.get("trades", []):
-            message_queue.put_nowait(
-                LighterOrderBook.trade_message_from_ws(trade, trading_pair=trading_pair)
-            )
+            message_queue.put_nowait(LighterOrderBook.trade_message_from_ws(trade, trading_pair=trading_pair))
 
     async def _process_message_for_unknown_channel(
-        self, event_message: Dict[str, Any], websocket_assistant: WSAssistant
+        self, event_message: dict[str, Any], websocket_assistant: WSAssistant
     ):
         if event_message.get("type") == "connected":
             return

@@ -1,11 +1,12 @@
+from __future__ import annotations
+
 import asyncio
-import time
 from dataclasses import dataclass, fields
 from enum import Enum
-from typing import Optional, Set
+import time
 
-import pandas as pd
 from bidict import bidict
+import pandas as pd
 from pandas import DataFrame
 
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
@@ -21,7 +22,7 @@ class LiquidationSide(Enum):
     LONG = "LONG"  # Long position got liquidated (=> price went short)
 
     def __str__(self):
-        return '%s' % self.value
+        return "%s" % self.value
 
 
 @dataclass
@@ -29,6 +30,7 @@ class Liquidation:
     """
     Represents the information of a single liquidation
     """
+
     timestamp: int
     trading_pair: str
     quantity: float
@@ -43,15 +45,15 @@ class LiquidationsBase(NetworkBase):
     The class uses the WS Assistants for all the IO operations,
     """
 
-    def __init__(self, trading_pairs: Set[str], max_retention_seconds: int):
+    def __init__(self, trading_pairs: set[str], max_retention_seconds: int):
         super().__init__()
         async_throttler = AsyncThrottler(rate_limits=self.rate_limits)
         self._api_factory = WebAssistantsFactory(throttler=async_throttler)
         self._max_retention_seconds = max_retention_seconds
         self._trading_pairs = trading_pairs
         self._liquidations = {}
-        self._listen_liquidations_task: Optional[asyncio.Task] = None
-        self._cleanup_task: Optional[asyncio.Task] = None
+        self._listen_liquidations_task: asyncio.Task | None = None
+        self._cleanup_task: asyncio.Task | None = None
         self._subscribed_to_channels = False
         self._trading_pairs_map = bidict()
 
@@ -63,8 +65,11 @@ class LiquidationsBase(NetworkBase):
         await self._fetch_and_map_trading_pairs()
         self._listen_liquidations_task = safe_ensure_future(self.listen_for_subscriptions())
         self._cleanup_task = safe_ensure_future(self._cleanup_old_liquidations_loop())
-        self.logger().info("Liquidations feed ({}) started, keeping the last {}s of data".format(self.name,
-                                                                                                 self._max_retention_seconds))
+        self.logger().info(
+            "Liquidations feed ({}) started, keeping the last {}s of data".format(
+                self.name, self._max_retention_seconds
+            )
+        )
         self._subscribed_to_channels = True
 
     async def stop_network(self):
@@ -120,8 +125,9 @@ class LiquidationsBase(NetworkBase):
             if self._liquidations:
                 for trading_pair, liquidations in list(self._liquidations.items()):
                     self._liquidations[trading_pair] = [
-                        liq for liq in liquidations if
-                        current_time_ms - liq.timestamp < self._max_retention_seconds * 1000
+                        liq
+                        for liq in liquidations
+                        if current_time_ms - liq.timestamp < self._max_retention_seconds * 1000
                     ]
         except Exception:
             self.logger().exception(
@@ -166,7 +172,7 @@ class LiquidationsBase(NetworkBase):
         Connects to the liquidations (=forceOrder) websocket endpoint and listens to the messages sent by the
         exchange.
         """
-        ws: Optional[WSAssistant] = None
+        ws: WSAssistant | None = None
         while True:
             try:
                 ws: WSAssistant = await self._connected_websocket_assistant()
@@ -186,8 +192,7 @@ class LiquidationsBase(NetworkBase):
 
     async def _connected_websocket_assistant(self) -> WSAssistant:
         ws: WSAssistant = await self._api_factory.get_ws_assistant()
-        await ws.connect(ws_url=self.wss_url,
-                         ping_timeout=30)
+        await ws.connect(ws_url=self.wss_url, ping_timeout=30)
         return ws
 
     async def _subscribe_channels(self, ws: WSAssistant):
@@ -214,5 +219,5 @@ class LiquidationsBase(NetworkBase):
         """
         await asyncio.sleep(delay)
 
-    async def _on_order_stream_interruption(self, websocket_assistant: Optional[WSAssistant] = None):
+    async def _on_order_stream_interruption(self, websocket_assistant: WSAssistant | None = None):
         websocket_assistant and await websocket_assistant.disconnect()

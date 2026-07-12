@@ -1,9 +1,11 @@
-import json
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
+import json
 from json import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Mapping
 
 import aiohttp
 import ujson
@@ -30,13 +32,13 @@ class RESTMethod(Enum):
 @dataclass
 class RESTRequest:
     method: RESTMethod
-    url: Optional[str] = None
-    endpoint_url: Optional[str] = None
-    params: Optional[Mapping[str, str]] = None
+    url: str | None = None
+    endpoint_url: str | None = None
+    params: Mapping[str, str] | None = None
     data: Any = None
-    headers: Optional[Mapping[str, str]] = None
+    headers: Mapping[str, str] | None = None
     is_auth_required: bool = False
-    throttler_limit_id: Optional[str] = None
+    throttler_limit_id: str | None = None
 
 
 @dataclass
@@ -47,7 +49,7 @@ class EndpointRESTRequest(RESTRequest, ABC):
     `"endpoint"` and `"/endpoint"`. It also provides the necessary checks to ensure a valid URL can be constructed.
     """
 
-    endpoint: Optional[str] = None
+    endpoint: str | None = None
 
     def __post_init__(self):
         self._ensure_url()
@@ -56,8 +58,7 @@ class EndpointRESTRequest(RESTRequest, ABC):
 
     @property
     @abstractmethod
-    def base_url(self) -> str:
-        ...
+    def base_url(self) -> str: ...
 
     def _ensure_url(self):
         if self.url is None and self.endpoint is None:
@@ -78,7 +79,9 @@ class EndpointRESTRequest(RESTRequest, ABC):
             if self.data is not None:
                 self.data = ujson.dumps(self.data)
         elif self.data is not None:
-            raise ValueError("The `data` field should be used only for POST, PUT, or PATCH requests. Use `params` instead.")
+            raise ValueError(
+                "The `data` field should be used only for POST, PUT, or PATCH requests. Use `params` instead."
+            )
 
 
 @dataclass(init=False)
@@ -86,7 +89,7 @@ class RESTResponse:
     url: str
     method: RESTMethod
     status: int
-    headers: Optional[Mapping[str, str]]
+    headers: Mapping[str, str] | None
 
     def __init__(self, aiohttp_response: aiohttp.ClientResponse):
         self._aiohttp_response = aiohttp_response
@@ -107,7 +110,7 @@ class RESTResponse:
         return status_
 
     @property
-    def headers(self) -> Optional[Mapping[str, str]]:
+    def headers(self) -> Mapping[str, str] | None:
         headers_ = self._aiohttp_response.headers
         return headers_
 
@@ -118,7 +121,7 @@ class RESTResponse:
             # https://docs.aiohttp.org/en/stable/client_reference.html#aiohttp.ClientResponse.json
             byte_string = await self._aiohttp_response.read()
             if isinstance(byte_string, bytes):
-                decoded_string = byte_string.decode('utf-8')
+                decoded_string = byte_string.decode("utf-8")
                 try:
                     json_ = json.loads(decoded_string)
                 except JSONDecodeError:
@@ -143,7 +146,7 @@ class WSRequest(ABC):
 @dataclass
 class WSJSONRequest(WSRequest):
     payload: Mapping[str, Any]
-    throttler_limit_id: Optional[str] = None
+    throttler_limit_id: str | None = None
     is_auth_required: bool = False
 
     async def send_with_connection(self, connection: "WSConnection"):
@@ -153,7 +156,7 @@ class WSJSONRequest(WSRequest):
 @dataclass
 class WSPlainTextRequest(WSRequest):
     payload: str
-    throttler_limit_id: Optional[str] = None
+    throttler_limit_id: str | None = None
     is_auth_required: bool = False
 
     async def send_with_connection(self, connection: "WSConnection"):
@@ -163,7 +166,7 @@ class WSPlainTextRequest(WSRequest):
 @dataclass
 class WSBinaryRequest(WSRequest):
     payload: bytes
-    throttler_limit_id: Optional[str] = None
+    throttler_limit_id: str | None = None
     is_auth_required: bool = False
 
     async def send_with_connection(self, connection: "WSConnection"):

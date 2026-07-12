@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Any, Dict
+from typing import Any
 
 from pydantic import ConfigDict, Field, SecretStr
 
@@ -14,7 +14,7 @@ DEFAULT_FEES = TradeFeeSchema(
 )
 
 
-def is_exchange_information_valid(exchange_info: Dict[str, Any]) -> bool:
+def is_exchange_information_valid(exchange_info: dict[str, Any]) -> bool:
     """
     Verifies if a trading pair is enabled to operate with based on its exchange information
     :param exchange_info: the exchange information for a trading pair
@@ -32,7 +32,7 @@ class BybitConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     bybit_api_secret: SecretStr = Field(
         default=...,
@@ -41,7 +41,7 @@ class BybitConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     model_config = ConfigDict(title="bybit")
 
@@ -63,7 +63,7 @@ class BybitTestnetConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     bybit_testnet_api_secret: SecretStr = Field(
         default=...,
@@ -72,7 +72,7 @@ class BybitTestnetConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     model_config = ConfigDict(title="bybit_testnet")
 
