@@ -101,6 +101,8 @@ coverage.xml
 .claude/
 .cursor/
 .agents/
+.serena/
+.mcp.json
 
 
 # GRVT
