@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Any, Dict
+from typing import Any
 
 from pydantic import ConfigDict, Field, SecretStr
 
@@ -16,7 +16,7 @@ DEFAULT_FEES = TradeFeeSchema(
 )
 
 
-def is_pair_information_valid(pair_info: Dict[str, Any]) -> bool:
+def is_pair_information_valid(pair_info: dict[str, Any]) -> bool:
     """
     Verifies if a trading pair is enabled to operate with based on its market information
 
@@ -36,7 +36,7 @@ class KuCoinConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     kucoin_secret_key: SecretStr = Field(
         default=...,
@@ -45,7 +45,7 @@ class KuCoinConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     kucoin_passphrase: SecretStr = Field(
         default=...,
@@ -54,7 +54,7 @@ class KuCoinConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     model_config = ConfigDict(title="kucoin")
 
@@ -76,7 +76,7 @@ class KuCoinHFTConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     kucoin_hft_secret_key: SecretStr = Field(
         default=...,
@@ -85,7 +85,7 @@ class KuCoinHFTConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     kucoin_hft_passphrase: SecretStr = Field(
         default=...,
@@ -94,7 +94,7 @@ class KuCoinHFTConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     model_config = ConfigDict(title="kucoin_hft")
 

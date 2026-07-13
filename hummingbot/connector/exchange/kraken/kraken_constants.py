@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Dict, Tuple
 
 from hummingbot.core.api_throttler.data_types import LinkedLimitWeightPair, RateLimit
 from hummingbot.core.data_type.in_flight_order import OrderState
@@ -15,6 +14,7 @@ class KrakenAPITier(Enum):
     """
     Kraken's Private Endpoint Rate Limit Tiers, based on the Account Verification level.
     """
+
     STARTER = "STARTER"
     INTERMEDIATE = "INTERMEDIATE"
     PRO = "PRO"
@@ -31,7 +31,7 @@ INTERMEDIATE_MATCHING_ENGINE_LIMIT = 125 + 140
 PRO_PRIVATE_ENDPOINT_LIMIT = 20 + 60
 PRO_MATCHING_ENGINE_LIMIT = 180 + 225
 
-KRAKEN_TIER_LIMITS: Dict[KrakenAPITier, Tuple[int, int]] = {
+KRAKEN_TIER_LIMITS: dict[KrakenAPITier, tuple[int, int]] = {
     KrakenAPITier.STARTER: (STARTER_PRIVATE_ENDPOINT_LIMIT, STARTER_MATCHING_ENGINE_LIMIT),
     KrakenAPITier.INTERMEDIATE: (INTERMEDIATE_PRIVATE_ENDPOINT_LIMIT, INTERMEDIATE_MATCHING_ENGINE_LIMIT),
     KrakenAPITier.PRO: (PRO_PRIVATE_ENDPOINT_LIMIT, PRO_MATCHING_ENGINE_LIMIT),
@@ -118,7 +118,5 @@ PUBLIC_API_LIMITS = [
         linked_limits=[LinkedLimitWeightPair(PUBLIC_ENDPOINT_LIMIT_ID)],
     ),
     # WebSocket Connection Limit
-    RateLimit(limit_id=WS_CONNECTION_LIMIT_ID,
-              limit=150,
-              time_interval=60 * 10),
+    RateLimit(limit_id=WS_CONNECTION_LIMIT_ID, limit=150, time_interval=60 * 10),
 ]

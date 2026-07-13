@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import asyncio
-from typing import List, Optional
 
 from hummingbot.connector.derivative.okx_perpetual import (
     okx_perpetual_constants as CONSTANTS,
@@ -14,7 +15,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class OkxPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
@@ -26,7 +27,7 @@ class OkxPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
         self._domain = domain
         self._api_factory = api_factory
         self._auth = auth
-        self._ws_assistants: List[WSAssistant] = []
+        self._ws_assistants: list[WSAssistant] = []
 
     @property
     def last_recv_time(self) -> float:
@@ -52,9 +53,7 @@ class OkxPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
         try:
             tasks = []
             tasks.append(
-                self._listen_for_user_stream_on_url(
-                    url=web_utils.wss_linear_private_url(self._domain), output=output
-                )
+                self._listen_for_user_stream_on_url(url=web_utils.wss_linear_private_url(self._domain), output=output)
             )
             tasks_future = asyncio.gather(*tasks)
             await tasks_future
@@ -64,7 +63,7 @@ class OkxPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
             raise
 
     async def _listen_for_user_stream_on_url(self, url: str, output: asyncio.Queue):
-        ws: Optional[WSAssistant] = None
+        ws: WSAssistant | None = None
         while True:
             try:
                 ws = await self._get_connected_websocket_assistant(url)
@@ -93,7 +92,7 @@ class OkxPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
         """
         Authenticates user to websocket
         """
-        auth_args: List[str] = self._auth.get_ws_auth_args()
+        auth_args: list[str] = self._auth.get_ws_auth_args()
         payload = {"op": "login", "args": auth_args}
         login_request: WSJSONRequest = WSJSONRequest(payload=payload)
         await ws.send(login_request)
@@ -108,23 +107,13 @@ class OkxPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
         try:
             positions_payload = {
                 "op": "subscribe",
-                "args": [
-                    {
-                        "channel": f"{CONSTANTS.WS_POSITIONS_CHANNEL}",
-                        "instType": "SWAP"
-                    }
-                ],
+                "args": [{"channel": f"{CONSTANTS.WS_POSITIONS_CHANNEL}", "instType": "SWAP"}],
             }
             subscribe_positions_request = WSJSONRequest(positions_payload)
 
             orders_payload = {
                 "op": "subscribe",
-                "args": [
-                    {
-                        "channel": f"{CONSTANTS.WS_ORDERS_CHANNEL}",
-                        "instType": "SWAP"
-                    }
-                ],
+                "args": [{"channel": f"{CONSTANTS.WS_ORDERS_CHANNEL}", "instType": "SWAP"}],
             }
             subscribe_orders_request = WSJSONRequest(orders_payload)
 
@@ -142,9 +131,7 @@ class OkxPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
             await ws.send(subscribe_orders_request)
             await ws.send(subscribe_wallet_request)
 
-            self.logger().info(
-                f"Subscribed to private account and orders channels {url}..."
-            )
+            self.logger().info(f"Subscribed to private account and orders channels {url}...")
         except asyncio.CancelledError:
             raise
         except Exception:
@@ -156,9 +143,7 @@ class OkxPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
     async def _process_websocket_messages(self, websocket_assistant: WSAssistant, queue: asyncio.Queue):
         while True:
             try:
-                await super()._process_websocket_messages(
-                    websocket_assistant=websocket_assistant,
-                    queue=queue)
+                await super()._process_websocket_messages(websocket_assistant=websocket_assistant, queue=queue)
             except asyncio.TimeoutError:
                 ping_request = WSJSONRequest(payload={"ping"})
                 await websocket_assistant.send(ping_request)

@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 from decimal import Decimal
-from typing import Optional
 
 from sqlalchemy import Column, Integer, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import Session
@@ -9,9 +10,7 @@ from hummingbot.model import HummingbotBase
 
 class InventoryCost(HummingbotBase):
     __tablename__ = "InventoryCost"
-    __table_args__ = (
-        UniqueConstraint("base_asset", "quote_asset"),
-    )
+    __table_args__ = (UniqueConstraint("base_asset", "quote_asset"),)
 
     id = Column(Integer, primary_key=True, nullable=False)
     base_asset = Column(String(45), nullable=False)
@@ -20,14 +19,8 @@ class InventoryCost(HummingbotBase):
     quote_volume = Column(Numeric(48, 18), nullable=False)
 
     @classmethod
-    def get_record(
-        cls, sql_session: Session, base_asset: str, quote_asset: str
-    ) -> Optional["InventoryCost"]:
-        return (
-            sql_session.query(cls)
-            .filter(cls.base_asset == base_asset, cls.quote_asset == quote_asset)
-            .first()
-        )
+    def get_record(cls, sql_session: Session, base_asset: str, quote_asset: str) -> "InventoryCost" | None:
+        return sql_session.query(cls).filter(cls.base_asset == base_asset, cls.quote_asset == quote_asset).first()
 
     @classmethod
     def add_volume(
@@ -50,9 +43,9 @@ class InventoryCost(HummingbotBase):
                 "quote_volume": cls.quote_volume + quote_volume,
             }
 
-        rows_updated: int = sql_session.query(cls).filter(
-            cls.base_asset == base_asset, cls.quote_asset == quote_asset
-        ).update(update)
+        rows_updated: int = (
+            sql_session.query(cls).filter(cls.base_asset == base_asset, cls.quote_asset == quote_asset).update(update)
+        )
 
         if not rows_updated:
             record = InventoryCost(

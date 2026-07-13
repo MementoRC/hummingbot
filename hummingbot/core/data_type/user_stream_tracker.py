@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import asyncio
 import logging
-from typing import Optional
 
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.utils.async_utils import safe_ensure_future, safe_gather
@@ -8,7 +9,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class UserStreamTracker:
-    _ust_logger: Optional[HummingbotLogger] = None
+    _ust_logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -19,7 +20,7 @@ class UserStreamTracker:
     def __init__(self, data_source: UserStreamTrackerDataSource):
         self._user_stream: asyncio.Queue = asyncio.Queue()
         self._data_source = data_source
-        self._user_stream_tracking_task: Optional[asyncio.Task] = None
+        self._user_stream_tracking_task: asyncio.Task | None = None
 
     @property
     def data_source(self) -> UserStreamTrackerDataSource:
@@ -37,9 +38,7 @@ class UserStreamTracker:
         # Stop any existing task
         await self.stop()
 
-        self._user_stream_tracking_task = safe_ensure_future(
-            self.data_source.listen_for_user_stream(self._user_stream)
-        )
+        self._user_stream_tracking_task = safe_ensure_future(self.data_source.listen_for_user_stream(self._user_stream))
         await safe_gather(self._user_stream_tracking_task)
 
     async def stop(self):

@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 from pydantic import ConfigDict, Field, SecretStr
 
@@ -18,7 +18,7 @@ CENTRALIZED = True
 EXAMPLE_PAIR = "BTC-USD"
 
 
-def is_exchange_information_valid(exchange_info: Dict[str, Any]) -> bool:
+def is_exchange_information_valid(exchange_info: dict[str, Any]) -> bool:
     """
     Verifies if a trading pair is enabled to operate with based on its exchange information
 
@@ -28,12 +28,16 @@ def is_exchange_information_valid(exchange_info: Dict[str, Any]) -> bool:
     """
     contract_type = exchange_info.get("contractType")
     status = exchange_info.get("status")
-    valid = (status is not None and contract_type is not None
-             and status in ["Trading", "Settling"] and contract_type in ["LinearPerpetual", "InversePerpetual"])
+    valid = (
+        status is not None
+        and contract_type is not None
+        and status in ["Trading", "Settling"]
+        and contract_type in ["LinearPerpetual", "InversePerpetual"]
+    )
     return valid
 
 
-def get_linear_non_linear_split(trading_pairs: List[str]) -> Tuple[List[str], List[str]]:
+def get_linear_non_linear_split(trading_pairs: list[str]) -> tuple[list[str], list[str]]:
     linear_trading_pairs = []
     non_linear_trading_pairs = []
     for trading_pair in trading_pairs:
@@ -70,7 +74,7 @@ class BybitPerpetualConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     bybit_perpetual_secret_key: SecretStr = Field(
         default=...,
@@ -106,7 +110,7 @@ class BybitPerpetualTestnetConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     bybit_perpetual_testnet_secret_key: SecretStr = Field(
         default=...,
@@ -115,11 +119,9 @@ class BybitPerpetualTestnetConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     model_config = ConfigDict(title="bybit_perpetual_testnet")
 
 
-OTHER_DOMAINS_KEYS = {
-    "bybit_perpetual_testnet": BybitPerpetualTestnetConfigMap.model_construct()
-}
+OTHER_DOMAINS_KEYS = {"bybit_perpetual_testnet": BybitPerpetualTestnetConfigMap.model_construct()}

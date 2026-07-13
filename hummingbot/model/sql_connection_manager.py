@@ -1,7 +1,9 @@
-import logging
+from __future__ import annotations
+
 from enum import Enum
+import logging
 from os.path import join
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import MetaData, create_engine, inspect
 from sqlalchemy.engine.base import Engine
@@ -23,8 +25,8 @@ class SQLConnectionType(Enum):
 
 
 class SQLConnectionManager(TransactionBase):
-    _scm_logger: Optional[HummingbotLogger] = None
-    _scm_trade_fills_instance: Optional["SQLConnectionManager"] = None
+    _scm_logger: HummingbotLogger | None = None
+    _scm_trade_fills_instance: "SQLConnectionManager" | None = None
 
     LOCAL_DB_VERSION_KEY = "local_db_version"
     LOCAL_DB_VERSION_VALUE = "20230516"
@@ -41,7 +43,7 @@ class SQLConnectionManager(TransactionBase):
 
     @classmethod
     def get_trade_fills_instance(
-        cls, client_config_map: "ClientConfigAdapter", db_name: Optional[str] = None
+        cls, client_config_map: "ClientConfigAdapter", db_name: str | None = None
     ) -> "SQLConnectionManager":
         if cls._scm_trade_fills_instance is None:
             cls._scm_trade_fills_instance = SQLConnectionManager(
@@ -54,7 +56,7 @@ class SQLConnectionManager(TransactionBase):
         return cls._scm_trade_fills_instance
 
     @classmethod
-    def create_db_path(cls, db_path: Optional[str] = None, db_name: Optional[str] = None) -> str:
+    def create_db_path(cls, db_path: str | None = None, db_name: str | None = None) -> str:
         if db_path is not None:
             return db_path
         if db_name is not None:
@@ -62,12 +64,14 @@ class SQLConnectionManager(TransactionBase):
         else:
             return join(data_path(), "hummingbot_trades.sqlite")
 
-    def __init__(self,
-                 client_config_map: "ClientConfigAdapter",
-                 connection_type: SQLConnectionType,
-                 db_path: Optional[str] = None,
-                 db_name: Optional[str] = None,
-                 called_from_migrator = False):
+    def __init__(
+        self,
+        client_config_map: "ClientConfigAdapter",
+        connection_type: SQLConnectionType,
+        db_path: str | None = None,
+        db_name: str | None = None,
+        called_from_migrator=False,
+    ):
         db_path = self.create_db_path(db_path, db_name)
         self.db_path = db_path
 
@@ -81,8 +85,7 @@ class SQLConnectionManager(TransactionBase):
             with self._engine.begin() as conn:
                 inspector = inspect(conn)
 
-                for tname, fkcs in reversed(
-                        inspector.get_sorted_table_and_fkc_names()):
+                for tname, fkcs in reversed(inspector.get_sorted_table_and_fkc_names()):
                     if fkcs:
                         if not self._engine.dialect.supports_alter:
                             continue
@@ -104,19 +107,20 @@ class SQLConnectionManager(TransactionBase):
         return self._session_cls()
 
     def get_local_db_version(self, session: Session):
-        query: Query = (session.query(LocalMetadata)
-                        .filter(LocalMetadata.key == self.LOCAL_DB_VERSION_KEY))
-        result: Optional[LocalMetadata] = query.one_or_none()
+        query: Query = session.query(LocalMetadata).filter(LocalMetadata.key == self.LOCAL_DB_VERSION_KEY)
+        result: LocalMetadata | None = query.one_or_none()
         return result
 
     def check_and_migrate_db(self, client_config_map: "ClientConfigAdapter"):
         from hummingbot.model.db_migration.migrator import Migrator
+
         with self.get_new_session() as session:
             with session.begin():
                 local_db_version = self.get_local_db_version(session=session)
                 if local_db_version is None:
-                    version_info: LocalMetadata = LocalMetadata(key=self.LOCAL_DB_VERSION_KEY,
-                                                                value=self.LOCAL_DB_VERSION_VALUE)
+                    version_info: LocalMetadata = LocalMetadata(
+                        key=self.LOCAL_DB_VERSION_KEY, value=self.LOCAL_DB_VERSION_VALUE
+                    )
                     session.add(version_info)
                     session.commit()
                 else:

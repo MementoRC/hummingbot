@@ -1,4 +1,6 @@
-from typing import Any, Callable, Dict, Optional
+from __future__ import annotations
+
+from typing import Any, Callable
 
 import hummingbot.connector.derivative.binance_perpetual.binance_perpetual_constants as CONSTANTS
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
@@ -11,7 +13,6 @@ from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFa
 
 
 class BinancePerpetualRESTPreProcessor(RESTPreProcessorBase):
-
     async def pre_process(self, request: RESTRequest) -> RESTRequest:
         if request.headers is None:
             request.headers = {}
@@ -37,31 +38,33 @@ def wss_url(endpoint: str, domain: str = "binance_perpetual"):
 
 
 def build_api_factory(
-        throttler: Optional[AsyncThrottler] = None,
-        time_synchronizer: Optional[TimeSynchronizer] = None,
-        domain: str = CONSTANTS.DOMAIN,
-        time_provider: Optional[Callable] = None,
-        auth: Optional[AuthBase] = None) -> WebAssistantsFactory:
+    throttler: AsyncThrottler | None = None,
+    time_synchronizer: TimeSynchronizer | None = None,
+    domain: str = CONSTANTS.DOMAIN,
+    time_provider: Callable | None = None,
+    auth: AuthBase | None = None,
+) -> WebAssistantsFactory:
     throttler = throttler or create_throttler()
     time_synchronizer = time_synchronizer or TimeSynchronizer()
-    time_provider = time_provider or (lambda: get_current_server_time(
-        throttler=throttler,
-        domain=domain,
-    ))
+    time_provider = time_provider or (
+        lambda: get_current_server_time(
+            throttler=throttler,
+            domain=domain,
+        )
+    )
     api_factory = WebAssistantsFactory(
         throttler=throttler,
         auth=auth,
         rest_pre_processors=[
             TimeSynchronizerRESTPreProcessor(synchronizer=time_synchronizer, time_provider=time_provider),
             BinancePerpetualRESTPreProcessor(),
-        ])
+        ],
+    )
     return api_factory
 
 
 def build_api_factory_without_time_synchronizer_pre_processor(throttler: AsyncThrottler) -> WebAssistantsFactory:
-    api_factory = WebAssistantsFactory(
-        throttler=throttler,
-        rest_pre_processors=[BinancePerpetualRESTPreProcessor()])
+    api_factory = WebAssistantsFactory(throttler=throttler, rest_pre_processors=[BinancePerpetualRESTPreProcessor()])
     return api_factory
 
 
@@ -70,8 +73,8 @@ def create_throttler() -> AsyncThrottler:
 
 
 async def get_current_server_time(
-        throttler: Optional[AsyncThrottler] = None,
-        domain: str = CONSTANTS.DOMAIN,
+    throttler: AsyncThrottler | None = None,
+    domain: str = CONSTANTS.DOMAIN,
 ) -> float:
     throttler = throttler or create_throttler()
     api_factory = build_api_factory_without_time_synchronizer_pre_processor(throttler=throttler)
@@ -85,7 +88,7 @@ async def get_current_server_time(
     return server_time
 
 
-def is_exchange_information_valid(rule: Dict[str, Any]) -> bool:
+def is_exchange_information_valid(rule: dict[str, Any]) -> bool:
     """
     Verifies if a trading pair is enabled to operate with based on its exchange information
 

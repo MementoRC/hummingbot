@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.data_feed.candles_feed.candles_base import CandlesBase
@@ -8,7 +10,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class PacificaPerpetualCandles(CandlesBase):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -58,8 +60,7 @@ class PacificaPerpetualCandles(CandlesBase):
     async def check_network(self) -> NetworkStatus:
         rest_assistant = await self._api_factory.get_rest_assistant()
         await rest_assistant.execute_request(
-            url=self.health_check_url,
-            throttler_limit_id=CONSTANTS.HEALTH_CHECK_ENDPOINT
+            url=self.health_check_url, throttler_limit_id=CONSTANTS.HEALTH_CHECK_ENDPOINT
         )
         return NetworkStatus.CONNECTED
 
@@ -81,9 +82,9 @@ class PacificaPerpetualCandles(CandlesBase):
 
     def _get_rest_candles_params(
         self,
-        start_time: Optional[int] = None,
-        end_time: Optional[int] = None,
-        limit: Optional[int] = CONSTANTS.MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST
+        start_time: int | None = None,
+        end_time: int | None = None,
+        limit: int | None = CONSTANTS.MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST,
     ) -> dict:
         """
         Build REST API parameters for fetching candles.
@@ -125,7 +126,7 @@ class PacificaPerpetualCandles(CandlesBase):
 
         return params
 
-    def _parse_rest_candles(self, data: dict, end_time: Optional[int] = None) -> List[List[float]]:
+    def _parse_rest_candles(self, data: dict, end_time: int | None = None) -> list[list[float]]:
         """
         Parse REST API response into standard candle format.
 
@@ -151,14 +152,24 @@ class PacificaPerpetualCandles(CandlesBase):
             taker_buy_base_volume = 0
             taker_buy_quote_volume = 0
 
-            new_hb_candles.append([
-                timestamp, open_price, high, low, close, volume,
-                quote_asset_volume, n_trades, taker_buy_base_volume, taker_buy_quote_volume
-            ])
+            new_hb_candles.append(
+                [
+                    timestamp,
+                    open_price,
+                    high,
+                    low,
+                    close,
+                    volume,
+                    quote_asset_volume,
+                    n_trades,
+                    taker_buy_base_volume,
+                    taker_buy_quote_volume,
+                ]
+            )
 
         return new_hb_candles
 
-    def ws_subscription_payload(self) -> Dict[str, Any]:
+    def ws_subscription_payload(self) -> dict[str, Any]:
         """
         Build WebSocket subscription message.
 
@@ -179,11 +190,11 @@ class PacificaPerpetualCandles(CandlesBase):
             "params": {
                 "source": CONSTANTS.WS_CANDLES_CHANNEL,
                 "symbol": self._ex_trading_pair,
-                "interval": CONSTANTS.INTERVALS[self.interval]
-            }
+                "interval": CONSTANTS.INTERVALS[self.interval],
+            },
         }
 
-    def _parse_websocket_message(self, data: dict) -> Optional[Dict[str, Any]]:
+    def _parse_websocket_message(self, data: dict) -> dict[str, Any] | None:
         """
         Parse WebSocket candle update message.
 
