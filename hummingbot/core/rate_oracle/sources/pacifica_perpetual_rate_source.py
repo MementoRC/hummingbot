@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from decimal import Decimal
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING
 
 from hummingbot.connector.utils import split_hb_trading_pair
 from hummingbot.core.rate_oracle.sources.rate_source_base import RateSourceBase
@@ -14,14 +16,14 @@ if TYPE_CHECKING:
 class PacificaPerpetualRateSource(RateSourceBase):
     def __init__(self):
         super().__init__()
-        self._exchange: Optional[PacificaPerpetualDerivative] = None
+        self._exchange: PacificaPerpetualDerivative | None = None
 
     @property
     def name(self) -> str:
         return "pacifica_perpetual"
 
     @async_ttl_cache(ttl=30, maxsize=1)
-    async def get_prices(self, quote_token: Optional[str] = None) -> Dict[str, Decimal]:
+    async def get_prices(self, quote_token: str | None = None) -> dict[str, Decimal]:
         if quote_token is not None and quote_token != "USDC":
             raise ValueError("Pacifica Perpetual only supports USDC as quote token.")
 
@@ -48,7 +50,7 @@ class PacificaPerpetualRateSource(RateSourceBase):
             self._exchange = self._build_pacifica_connector_without_private_keys()
 
     @staticmethod
-    def _build_pacifica_connector_without_private_keys() -> 'PacificaPerpetualDerivative':
+    def _build_pacifica_connector_without_private_keys() -> "PacificaPerpetualDerivative":
         from hummingbot.connector.derivative.pacifica_perpetual.pacifica_perpetual_derivative import (
             PacificaPerpetualDerivative,
         )

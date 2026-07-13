@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import time
-from typing import Any, Dict, Optional
+from typing import Any
 
 import hummingbot.connector.derivative.gate_io_perpetual.gate_io_perpetual_constants as CONSTANTS
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
@@ -25,13 +27,9 @@ def private_rest_url(endpoint: str, domain: str = CONSTANTS.DEFAULT_DOMAIN) -> s
     return public_rest_url(endpoint, domain)
 
 
-def build_api_factory(
-        throttler: Optional[AsyncThrottler] = None,
-        auth: Optional[AuthBase] = None) -> WebAssistantsFactory:
+def build_api_factory(throttler: AsyncThrottler | None = None, auth: AuthBase | None = None) -> WebAssistantsFactory:
     throttler = throttler or create_throttler()
-    api_factory = WebAssistantsFactory(
-        throttler=throttler,
-        auth=auth)
+    api_factory = WebAssistantsFactory(throttler=throttler, auth=auth)
     return api_factory
 
 
@@ -40,13 +38,13 @@ def create_throttler() -> AsyncThrottler:
 
 
 async def get_current_server_time(
-        throttler: Optional[AsyncThrottler] = None,
-        domain: str = CONSTANTS.DEFAULT_DOMAIN,
+    throttler: AsyncThrottler | None = None,
+    domain: str = CONSTANTS.DEFAULT_DOMAIN,
 ) -> float:
     return time.time()
 
 
-def is_exchange_information_valid(exchange_info: Dict[str, Any]) -> bool:
+def is_exchange_information_valid(exchange_info: dict[str, Any]) -> bool:
     """
     Verifies if a trading pair is enabled to operate with based on its exchange information
     :param exchange_info: the exchange information for a trading pair

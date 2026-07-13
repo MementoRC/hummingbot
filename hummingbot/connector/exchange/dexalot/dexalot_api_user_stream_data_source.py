@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import asyncio
-from typing import Any, Dict, Optional
+from typing import Any
 
 from hummingbot.connector.exchange.dexalot import dexalot_constants as CONSTANTS, dexalot_web_utils as web_utils
 from hummingbot.connector.exchange.dexalot.dexalot_auth import DexalotAuth
@@ -11,12 +13,9 @@ from hummingbot.logger import HummingbotLogger
 
 
 class DexalotAPIUserStreamDataSource(UserStreamTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
-    def __init__(self,
-                 auth: DexalotAuth,
-                 api_factory: WebAssistantsFactory,
-                 domain: str = CONSTANTS.DEFAULT_DOMAIN):
+    def __init__(self, auth: DexalotAuth, api_factory: WebAssistantsFactory, domain: str = CONSTANTS.DEFAULT_DOMAIN):
         super().__init__()
         self._auth: DexalotAuth = auth
         self._domain = domain
@@ -35,7 +34,6 @@ class DexalotAPIUserStreamDataSource(UserStreamTrackerDataSource):
         :param websocket_assistant: the websocket assistant used to connect to the exchange
         """
         try:
-
             user_payload = {"type": "tradereventsubscribe"}
             subscribe_order_change_request: WSJSONRequest = WSJSONRequest(payload=user_payload, is_auth_required=True)
             await websocket_assistant.send(subscribe_order_change_request)
@@ -46,7 +44,7 @@ class DexalotAPIUserStreamDataSource(UserStreamTrackerDataSource):
             self.logger().exception("Unexpected error occurred subscribing to user streams...")
             raise
 
-    async def _process_event_message(self, event_message: Dict[str, Any], queue: asyncio.Queue):
+    async def _process_event_message(self, event_message: dict[str, Any], queue: asyncio.Queue):
         if event_message.get("type") in [
             CONSTANTS.USER_TRADES_ENDPOINT_NAME,
             CONSTANTS.USER_ORDERS_ENDPOINT_NAME,

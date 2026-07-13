@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 import asyncio
-import logging
 from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import List, Optional
+import logging
 
 from hummingbot.core.data_type.trade_fee import TokenAmount, TradeFeeBase
 from hummingbot.core.event.events import OrderType, TradeType
@@ -14,7 +15,7 @@ from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple
 
 s_decimal_nan = Decimal("NaN")
 s_decimal_0 = Decimal("0")
-arbprop_logger: Optional[HummingbotLogger] = None
+arbprop_logger: HummingbotLogger | None = None
 
 
 @dataclass
@@ -22,19 +23,22 @@ class ArbProposalSide:
     """
     An arbitrage proposal side which contains info needed for order submission.
     """
+
     market_info: MarketTradingPairTuple
     is_buy: bool
     quote_price: Decimal
     order_price: Decimal
     amount: Decimal
-    extra_flat_fees: List[TokenAmount]
+    extra_flat_fees: list[TokenAmount]
     completed_event: asyncio.Event = field(default_factory=asyncio.Event)
     failed_event: asyncio.Event = field(default_factory=asyncio.Event)
 
     def __repr__(self):
         side = "buy" if self.is_buy else "sell"
-        return f"Connector: {self.market_info.market.display_name}  Side: {side}  Quote Price: {self.quote_price}  " \
-               f"Order Price: {self.order_price}  Amount: {self.amount}  Extra Fees: {self.extra_flat_fees}"
+        return (
+            f"Connector: {self.market_info.market.display_name}  Side: {side}  Quote Price: {self.quote_price}  "
+            f"Order Price: {self.order_price}  Amount: {self.amount}  Extra Fees: {self.extra_flat_fees}"
+        )
 
     @property
     def is_completed(self) -> bool:
@@ -75,7 +79,7 @@ class ArbProposal:
 
     def profit_pct(
         self,
-        rate_source: Optional[RateOracle] = None,
+        rate_source: RateOracle | None = None,
         account_for_fee: bool = False,
     ) -> Decimal:
         """
@@ -108,7 +112,7 @@ class ArbProposal:
                     order_side=TradeType.BUY,
                     amount=buy_side.amount,
                     price=buy_side.order_price,
-                    extra_flat_fees=buy_side.extra_flat_fees
+                    extra_flat_fees=buy_side.extra_flat_fees,
                 )
                 sell_trade_fee: TradeFeeBase = build_trade_fee(
                     exchange=sell_side.market_info.market.name,
@@ -119,21 +123,21 @@ class ArbProposal:
                     order_side=TradeType.SELL,
                     amount=sell_side.amount,
                     price=sell_side.order_price,
-                    extra_flat_fees=sell_side.extra_flat_fees
+                    extra_flat_fees=sell_side.extra_flat_fees,
                 )
                 buy_fee_amount: Decimal = buy_trade_fee.fee_amount_in_token(
                     trading_pair=buy_side.market_info.trading_pair,
                     price=buy_side.quote_price,
                     order_amount=buy_side.amount,
                     token=buy_side.market_info.quote_asset,
-                    rate_source=rate_source
+                    rate_source=rate_source,
                 )
                 sell_fee_amount: Decimal = sell_trade_fee.fee_amount_in_token(
                     trading_pair=sell_side.market_info.trading_pair,
                     price=sell_side.quote_price,
                     order_amount=sell_side.amount,
                     token=sell_side.market_info.quote_asset,
-                    rate_source=rate_source
+                    rate_source=rate_source,
                 )
 
             buy_spent_net: Decimal = (buy_side.amount * buy_side.quote_price) + buy_fee_amount
@@ -148,9 +152,11 @@ class ArbProposal:
                 else s_decimal_0
             )
         else:
-            self.logger().warning("The arbitrage proposal profitability could not be calculated due to a missing rate"
-                                  f" ({base_conversion_pair}={sell_base_to_buy_base_rate},"
-                                  f" {quote_conversion_pair}={sell_quote_to_buy_quote_rate})")
+            self.logger().warning(
+                "The arbitrage proposal profitability could not be calculated due to a missing rate"
+                f" ({base_conversion_pair}={sell_base_to_buy_base_rate},"
+                f" {quote_conversion_pair}={sell_quote_to_buy_quote_rate})"
+            )
         return result
 
     def __repr__(self):
@@ -158,12 +164,22 @@ class ArbProposal:
 
     def copy(self):
         return ArbProposal(
-            ArbProposalSide(self.first_side.market_info, self.first_side.is_buy,
-                            self.first_side.quote_price, self.first_side.order_price,
-                            self.first_side.amount, self.first_side.extra_flat_fees),
-            ArbProposalSide(self.second_side.market_info, self.second_side.is_buy,
-                            self.second_side.quote_price, self.second_side.order_price,
-                            self.second_side.amount, self.second_side.extra_flat_fees)
+            ArbProposalSide(
+                self.first_side.market_info,
+                self.first_side.is_buy,
+                self.first_side.quote_price,
+                self.first_side.order_price,
+                self.first_side.amount,
+                self.first_side.extra_flat_fees,
+            ),
+            ArbProposalSide(
+                self.second_side.market_info,
+                self.second_side.is_buy,
+                self.second_side.quote_price,
+                self.second_side.order_price,
+                self.second_side.amount,
+                self.second_side.extra_flat_fees,
+            ),
         )
 
     async def wait(self):

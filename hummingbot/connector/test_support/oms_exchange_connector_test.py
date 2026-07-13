@@ -1,10 +1,12 @@
+from __future__ import annotations
+
+from abc import ABC, abstractmethod
+from decimal import Decimal
 import hashlib
 import hmac
 import json
 import re
-from abc import ABC, abstractmethod
-from decimal import Decimal
-from typing import Any, Callable, Dict, List, Optional, Pattern, Tuple, Union
+from typing import Any, Callable, Dict, Pattern, Union
 
 from aioresponses.core import RequestCall, aioresponses
 
@@ -89,17 +91,17 @@ class OMSExchangeTests:
             return url
 
         @property
-        def all_symbols_request_mock_response(self) -> List[Dict[str, Any]]:
+        def all_symbols_request_mock_response(self) -> list[dict[str, Any]]:
             return self.get_products_resp()
 
         @property
-        def all_symbols_including_invalid_pair_mock_response(self) -> Tuple[str, List[Dict[str, Any]]]:
+        def all_symbols_including_invalid_pair_mock_response(self) -> tuple[str, list[dict[str, Any]]]:
             resp = self.get_products_resp()
             resp[0]["IsDisable"] = True
             return self.trading_pair, resp
 
         @property
-        def latest_prices_request_mock_response(self) -> Dict[str, Union[int, float]]:
+        def latest_prices_request_mock_response(self) -> dict[str, Union[int, float]]:
             return {
                 "AskOrderCt": 0,
                 "AskQty": 1,
@@ -130,11 +132,11 @@ class OMSExchangeTests:
             }
 
         @property
-        def network_status_request_successful_mock_response(self) -> Dict[str, str]:
+        def network_status_request_successful_mock_response(self) -> dict[str, str]:
             return {"msg": "PONG"}
 
         @property
-        def trading_rules_request_mock_response(self) -> List[Dict[str, Any]]:
+        def trading_rules_request_mock_response(self) -> list[dict[str, Any]]:
             return self.get_products_resp()
 
         @property
@@ -143,7 +145,7 @@ class OMSExchangeTests:
             resp[0].pop("MinimumQuantity")
             return resp
 
-        def get_auth_success_response(self) -> Dict[str, Any]:
+        def get_auth_success_response(self) -> dict[str, Any]:
             auth_resp = {
                 "Authenticated": True,
                 "SessionToken": "0e8bbcbc-6ada-482a-a9b4-5d9218ada3f9",
@@ -166,7 +168,7 @@ class OMSExchangeTests:
             return auth_resp
 
         @staticmethod
-        def get_auth_failure_response() -> Dict[str, Any]:
+        def get_auth_failure_response() -> dict[str, Any]:
             auth_resp = {
                 "Authenticated": False,
                 "EnforceEnable2FA": False,
@@ -188,7 +190,7 @@ class OMSExchangeTests:
             }
             return auth_resp
 
-        def get_products_resp(self) -> List[Dict[str, Any]]:
+        def get_products_resp(self) -> list[dict[str, Any]]:
             return [
                 {
                     "AllowOnlyMarketMakerCounterParty": False,
@@ -235,7 +237,7 @@ class OMSExchangeTests:
             ]
 
         @property
-        def order_creation_request_successful_mock_response(self) -> Dict[str, Union[str, int]]:
+        def order_creation_request_successful_mock_response(self) -> dict[str, Union[str, int]]:
             return {
                 "status": "Accepted",
                 "errormsg": "",
@@ -243,17 +245,17 @@ class OMSExchangeTests:
             }
 
         @property
-        def balance_request_mock_response_for_base_and_quote(self) -> List[Dict[str, Union[str, int]]]:
+        def balance_request_mock_response_for_base_and_quote(self) -> list[dict[str, Union[str, int]]]:
             return [
                 self.get_mock_balance_base(),
                 self.get_mock_balance_quote(),
             ]
 
         @property
-        def balance_request_mock_response_only_base(self) -> List[Dict[str, Union[str, int]]]:
+        def balance_request_mock_response_only_base(self) -> list[dict[str, Union[str, int]]]:
             return [self.get_mock_balance_base()]
 
-        def get_mock_balance_base(self) -> Dict[str, Union[str, int]]:
+        def get_mock_balance_base(self) -> dict[str, Union[str, int]]:
             return {
                 "AccountId": self.account_id,
                 "Amount": 15,
@@ -280,10 +282,10 @@ class OMSExchangeTests:
                 "TotalYearDepositNotional": 0,
                 "TotalYearDeposits": 0,
                 "TotalYearWithdrawNotional": 0,
-                "TotalYearWithdraws": 0
+                "TotalYearWithdraws": 0,
             }
 
-        def get_mock_balance_quote(self) -> Dict[str, Union[str, int]]:
+        def get_mock_balance_quote(self) -> dict[str, Union[str, int]]:
             return {
                 "AccountId": self.account_id,
                 "Amount": 2000,
@@ -314,7 +316,7 @@ class OMSExchangeTests:
             }
 
         @property
-        def balance_event_websocket_update(self) -> Dict[str, Union[str, int, float]]:
+        def balance_event_websocket_update(self) -> dict[str, Union[str, int, float]]:
             return {
                 "i": 10,
                 "m": 3,
@@ -327,7 +329,7 @@ class OMSExchangeTests:
             return 0.390718
 
         @property
-        def expected_supported_order_types(self) -> List[OrderType]:
+        def expected_supported_order_types(self) -> list[OrderType]:
             return [OrderType.LIMIT]
 
         @property
@@ -360,8 +362,7 @@ class OMSExchangeTests:
         @property
         def expected_fill_fee(self) -> TradeFeeBase:
             return AddedToCostTradeFee(
-                percent_token=self.quote_asset,
-                flat_fees=[TokenAmount(token=self.quote_asset, amount=Decimal("0.075"))]
+                percent_token=self.quote_asset, flat_fees=[TokenAmount(token=self.quote_asset, amount=Decimal("0.075"))]
             )
 
         @property
@@ -424,7 +425,7 @@ class OMSExchangeTests:
             self,
             order: InFlightOrder,
             mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
+            callback: Callable | None = lambda *args, **kwargs: None,
         ) -> str:
             url = self.url_creator.get_rest_url(path_url=CONSTANTS.REST_ORDER_CANCELATION_ENDPOINT)
             regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -436,7 +437,7 @@ class OMSExchangeTests:
             self,
             order: InFlightOrder,
             mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
+            callback: Callable | None = lambda *args, **kwargs: None,
         ) -> str:
             url = self.url_creator.get_rest_url(path_url=CONSTANTS.REST_ORDER_CANCELATION_ENDPOINT)
             regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -449,7 +450,7 @@ class OMSExchangeTests:
             successful_order: InFlightOrder,
             erroneous_order: InFlightOrder,
             mock_api: aioresponses,
-        ) -> List[str]:
+        ) -> list[str]:
             """
             :return: a list of all configured URLs for the cancelations
             """
@@ -461,16 +462,20 @@ class OMSExchangeTests:
             return all_urls
 
         def configure_order_not_found_error_cancelation_response(
-                self, order: InFlightOrder, mock_api: aioresponses,
-                callback: Optional[Callable] = lambda *args, **kwargs: None
+            self,
+            order: InFlightOrder,
+            mock_api: aioresponses,
+            callback: Callable | None = lambda *args, **kwargs: None,
         ) -> str:
             # Implement the expected not found response when enabling test_cancel_order_not_found_in_the_exchange
             raise NotImplementedError
 
         def configure_order_not_found_error_order_status_response(
-                self, order: InFlightOrder, mock_api: aioresponses,
-                callback: Optional[Callable] = lambda *args, **kwargs: None
-        ) -> List[str]:
+            self,
+            order: InFlightOrder,
+            mock_api: aioresponses,
+            callback: Callable | None = lambda *args, **kwargs: None,
+        ) -> list[str]:
             # Implement the expected not found response when enabling
             # test_lost_order_removed_if_not_found_during_order_status_update
             raise NotImplementedError
@@ -479,7 +484,7 @@ class OMSExchangeTests:
             self,
             order: InFlightOrder,
             mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
+            callback: Callable | None = lambda *args, **kwargs: None,
         ) -> str:
             url = self.url_creator.get_rest_url(path_url=CONSTANTS.REST_ORDER_STATUS_ENDPOINT)
             regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -491,7 +496,7 @@ class OMSExchangeTests:
             self,
             order: InFlightOrder,
             mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
+            callback: Callable | None = lambda *args, **kwargs: None,
         ) -> str:
             url = self.url_creator.get_rest_url(path_url=CONSTANTS.REST_ORDER_STATUS_ENDPOINT)
             regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -503,7 +508,7 @@ class OMSExchangeTests:
             self,
             order: InFlightOrder,
             mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
+            callback: Callable | None = lambda *args, **kwargs: None,
         ) -> str:
             url = self.url_creator.get_rest_url(path_url=CONSTANTS.REST_ORDER_STATUS_ENDPOINT)
             regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -515,7 +520,7 @@ class OMSExchangeTests:
             self,
             order: InFlightOrder,
             mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
+            callback: Callable | None = lambda *args, **kwargs: None,
         ) -> str:
             url = self.url_creator.get_rest_url(path_url=CONSTANTS.REST_ORDER_STATUS_ENDPOINT)
             regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -527,7 +532,7 @@ class OMSExchangeTests:
             self,
             order: InFlightOrder,
             mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
+            callback: Callable | None = lambda *args, **kwargs: None,
         ) -> str:
             url = self.url_creator.get_rest_url(path_url=CONSTANTS.REST_ORDER_STATUS_ENDPOINT)
             regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -539,7 +544,7 @@ class OMSExchangeTests:
             self,
             order: InFlightOrder,
             mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
+            callback: Callable | None = lambda *args, **kwargs: None,
         ) -> str:
             url = self.url_creator.get_rest_url(path_url=CONSTANTS.REST_TRADE_HISTORY_ENDPOINT)
             regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -548,10 +553,10 @@ class OMSExchangeTests:
             return url
 
         def configure_full_fill_trade_response(
-                self,
-                order: InFlightOrder,
-                mock_api: aioresponses,
-                callback: Optional[Callable] = lambda *args, **kwargs: None,
+            self,
+            order: InFlightOrder,
+            mock_api: aioresponses,
+            callback: Callable | None = lambda *args, **kwargs: None,
         ) -> str:
             url = self.url_creator.get_rest_url(path_url=CONSTANTS.REST_TRADE_HISTORY_ENDPOINT)
             regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -560,10 +565,10 @@ class OMSExchangeTests:
             return url
 
         def configure_erroneous_http_fill_trade_response(
-                self,
-                order: InFlightOrder,
-                mock_api: aioresponses,
-                callback: Optional[Callable] = lambda *args, **kwargs: None,
+            self,
+            order: InFlightOrder,
+            mock_api: aioresponses,
+            callback: Callable | None = lambda *args, **kwargs: None,
         ) -> str:
             url = self.url_creator.get_rest_url(path_url=CONSTANTS.REST_TRADE_HISTORY_ENDPOINT)
             regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))

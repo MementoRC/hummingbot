@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.exchange.ascend_ex import ascend_ex_constants as CONSTANTS
 from hummingbot.connector.exchange.ascend_ex.ascend_ex_auth import AscendExAuth
@@ -14,13 +16,12 @@ if TYPE_CHECKING:
 
 
 class AscendExAPIUserStreamDataSource(UserStreamTrackerDataSource):
-
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
         auth: AscendExAuth,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "AscendExExchange",
         api_factory: WebAssistantsFactory,
     ):
@@ -69,7 +70,7 @@ class AscendExAPIUserStreamDataSource(UserStreamTrackerDataSource):
                 )
 
     async def _process_event_message(
-        self, event_message: Dict[str, Any], queue: asyncio.Queue, websocket_assistant: WSAssistant
+        self, event_message: dict[str, Any], queue: asyncio.Queue, websocket_assistant: WSAssistant
     ):
         if len(event_message) > 0:
             message_type = event_message.get("m")
