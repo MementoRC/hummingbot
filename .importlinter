@@ -188,3 +188,19 @@ source_modules =
     strategy_framework.testing
 forbidden_modules =
     hummingbot
+
+# ---------------------------------------------------------------------------
+# ADR 0001 — sub-package dependency layering
+# ---------------------------------------------------------------------------
+# Layers contract deferred pending ADR refinement (incomplete hb_compat
+# L2->L3 migration + intra-L2 deps). See spec-adr0001-layers-refinement.md.
+
+[importlinter:contract:adr-0001-l0-leaf-independence]
+name = ADR 0001 L0 leaf independence
+type = independence
+modules =
+    data_type_primitives
+    event_bus
+    logger
+    async_utils
+    connector_utils
