@@ -192,8 +192,20 @@ forbidden_modules =
 # ---------------------------------------------------------------------------
 # ADR 0001 — sub-package dependency layering
 # ---------------------------------------------------------------------------
-# Layers contract deferred pending ADR refinement (incomplete hb_compat
-# L2->L3 migration + intra-L2 deps). See spec-adr0001-layers-refinement.md.
+# Findings A & B resolved 2026-07-14 (see adr-0001-sub-package-dependency-layering.md
+# section 1a and spec-adr0001-layers-refinement.md). strategy_framework.primitives is
+# a zero-dep value-type subpackage classified L0; it is listed directly as an L0
+# member while the parent strategy_framework package is intentionally omitted
+# (import-linter cannot split a parent and its own submodule across layers). The
+# L2->L3 (hummingbot) boundary is NOT enforced here — it stays with the per-package
+# `forbidden` contracts above (hb_compat carve-outs).
+
+[importlinter:contract:adr-0001-layers]
+name = ADR 0001 sub-package layering (downward-only)
+type = layers
+layers =
+    candles_feed | liquidations_feed | rate_oracle | market_data | market_connector | market_simulator | web_assistant | remote_iface
+    strategy_framework.primitives | data_type_primitives | event_bus | logger | async_utils | connector_utils
 
 [importlinter:contract:adr-0001-l0-leaf-independence]
 name = ADR 0001 L0 leaf independence
@@ -204,3 +216,4 @@ modules =
     logger
     async_utils
     connector_utils
+    strategy_framework.primitives
