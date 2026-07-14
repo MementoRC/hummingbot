@@ -13,11 +13,13 @@ This pipeline is shared across all wallet-specific transaction pools to ensure
 global serialization of transaction submissions.
 """
 
+from __future__ import annotations
+
 import asyncio
 import logging
 import time
+from typing import Any, Awaitable
 import uuid
-from typing import Any, Awaitable, Optional, Tuple
 
 from hummingbot.connector.exchange.xrpl import xrpl_constants as CONSTANTS
 from hummingbot.connector.exchange.xrpl.xrpl_utils import XRPLSystemBusyError
@@ -36,7 +38,8 @@ class XRPLTransactionPipeline:
     This prevents race conditions where multiple concurrent autofills
     could get the same sequence number.
     """
-    _logger: Optional[HummingbotLogger] = None
+
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
@@ -54,10 +57,10 @@ class XRPLTransactionPipeline:
         self._delay_seconds = submission_delay_ms / 1000.0
 
         # FIFO queue: (coroutine, future, submission_id)
-        self._submission_queue: asyncio.Queue[Tuple[Awaitable, asyncio.Future, str]] = asyncio.Queue(
+        self._submission_queue: asyncio.Queue[tuple[Awaitable, asyncio.Future, str]] = asyncio.Queue(
             maxsize=max_queue_size
         )
-        self._pipeline_task: Optional[asyncio.Task] = None
+        self._pipeline_task: asyncio.Task | None = None
         self._running = False
         self._started = False  # For lazy initialization
 
@@ -104,9 +107,7 @@ class XRPLTransactionPipeline:
         self._started = True
         self._pipeline_task = asyncio.create_task(self._pipeline_loop())
 
-        self.logger().debug(
-            f"[PIPELINE] Started with {self._delay_seconds * 1000:.0f}ms delay between submissions"
-        )
+        self.logger().debug(f"[PIPELINE] Started with {self._delay_seconds * 1000:.0f}ms delay between submissions")
 
     async def stop(self):
         """Stop the pipeline and cancel pending submissions."""
@@ -118,12 +119,19 @@ class XRPLTransactionPipeline:
 
         # Cancel pipeline task
         if self._pipeline_task is not None:
-            self._pipeline_task.cancel()
+            task = self._pipeline_task
+            # Clear the reference before awaiting to prevent double-await on retry/reuse.
+            self._pipeline_task = None
+            task.cancel()
             try:
-                await self._pipeline_task
+                await task
             except asyncio.CancelledError:
                 pass
-            self._pipeline_task = None
+            except RuntimeError as e:
+                # Python 3.12 raises "cannot reuse already awaited coroutine" when the
+                # pipeline task has already completed before we await it here.
+                if "already awaited" not in str(e):
+                    raise
 
         # Cancel pending submissions
         cancelled_count = 0
@@ -137,9 +145,7 @@ class XRPLTransactionPipeline:
             except asyncio.QueueEmpty:
                 break
 
-        self.logger().debug(
-            f"[PIPELINE] Stopped, cancelled {cancelled_count} pending submissions"
-        )
+        self.logger().debug(f"[PIPELINE] Stopped, cancelled {cancelled_count} pending submissions")
 
     async def _ensure_started(self):
         """Ensure the pipeline is started (lazy initialization)."""
@@ -149,7 +155,7 @@ class XRPLTransactionPipeline:
     async def submit(
         self,
         coro: Awaitable,
-        submission_id: Optional[str] = None,
+        submission_id: str | None = None,
     ) -> Any:
         """
         Submit a coroutine to the serialized pipeline.
@@ -179,7 +185,7 @@ class XRPLTransactionPipeline:
             submission_id = str(uuid.uuid4())[:8]
 
         # Create future for the result
-        future: asyncio.Future = asyncio.get_event_loop().create_future()
+        future: asyncio.Future = asyncio.get_running_loop().create_future()
 
         # Add to FIFO queue
         try:
@@ -191,8 +197,7 @@ class XRPLTransactionPipeline:
             )
         except asyncio.QueueFull:
             self.logger().error(
-                f"[PIPELINE] Queue full! Rejecting submission {submission_id} "
-                f"(max={self._max_queue_size})"
+                f"[PIPELINE] Queue full! Rejecting submission {submission_id} (max={self._max_queue_size})"
             )
             raise XRPLSystemBusyError("Pipeline queue is full, try again later")
 
@@ -213,10 +218,7 @@ class XRPLTransactionPipeline:
             try:
                 # Get next submission with timeout
                 try:
-                    coro, future, submission_id = await asyncio.wait_for(
-                        self._submission_queue.get(),
-                        timeout=1.0
-                    )
+                    coro, future, submission_id = await asyncio.wait_for(self._submission_queue.get(), timeout=1.0)
                 except asyncio.TimeoutError:
                     continue
 
@@ -242,9 +244,7 @@ class XRPLTransactionPipeline:
                     if not future.done():
                         future.set_result(result)
 
-                    self.logger().debug(
-                        f"[PIPELINE] Submission {submission_id} completed in {elapsed_ms:.1f}ms"
-                    )
+                    self.logger().debug(f"[PIPELINE] Submission {submission_id} completed in {elapsed_ms:.1f}ms")
 
                 except Exception as e:
                     elapsed_ms = (time.time() - start_time) * 1000
@@ -254,14 +254,10 @@ class XRPLTransactionPipeline:
                     if not future.done():
                         future.set_exception(e)
 
-                    self.logger().error(
-                        f"[PIPELINE] Submission {submission_id} failed after {elapsed_ms:.1f}ms: {e}"
-                    )
+                    self.logger().error(f"[PIPELINE] Submission {submission_id} failed after {elapsed_ms:.1f}ms: {e}")
 
                 # Delay before allowing next submission
-                self.logger().debug(
-                    f"[PIPELINE] Waiting {self._delay_seconds * 1000:.0f}ms before next submission"
-                )
+                self.logger().debug(f"[PIPELINE] Waiting {self._delay_seconds * 1000:.0f}ms before next submission")
                 await asyncio.sleep(self._delay_seconds)
 
             except asyncio.CancelledError:
@@ -269,6 +265,4 @@ class XRPLTransactionPipeline:
             except Exception as e:
                 self.logger().error(f"[PIPELINE] Unexpected error: {e}")
 
-        self.logger().debug(
-            f"[PIPELINE] Loop stopped (processed {self._submissions_processed} submissions)"
-        )
+        self.logger().debug(f"[PIPELINE] Loop stopped (processed {self._submissions_processed} submissions)")

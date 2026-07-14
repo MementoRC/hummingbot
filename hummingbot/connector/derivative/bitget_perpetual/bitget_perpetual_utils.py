@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Any, Dict
+from typing import Any
 
 from pydantic import ConfigDict, Field, SecretStr
 
@@ -16,7 +16,7 @@ DEFAULT_FEES = TradeFeeSchema(
 )
 
 
-def is_exchange_information_valid(exchange_info: Dict[str, Any]) -> bool:
+def is_exchange_information_valid(exchange_info: dict[str, Any]) -> bool:
     """
     Verifies if a trading pair is enabled to operate with based on its exchange information
 
@@ -37,8 +37,8 @@ class BitgetPerpetualConfigMap(BaseConnectorConfigMap):
             "prompt": "Enter your Bitget Perpetual API key",
             "is_secure": True,
             "is_connect_key": True,
-            "prompt_on_new": True
-        }
+            "prompt_on_new": True,
+        },
     )
     bitget_perpetual_secret_key: SecretStr = Field(
         default=...,
@@ -46,8 +46,8 @@ class BitgetPerpetualConfigMap(BaseConnectorConfigMap):
             "prompt": "Enter your Bitget Perpetual secret key",
             "is_secure": True,
             "is_connect_key": True,
-            "prompt_on_new": True
-        }
+            "prompt_on_new": True,
+        },
     )
     bitget_perpetual_passphrase: SecretStr = Field(
         default=...,
@@ -55,8 +55,8 @@ class BitgetPerpetualConfigMap(BaseConnectorConfigMap):
             "prompt": "Enter your Bitget Perpetual passphrase",
             "is_secure": True,
             "is_connect_key": True,
-            "prompt_on_new": True
-        }
+            "prompt_on_new": True,
+        },
     )
     model_config = ConfigDict(title="bitget_perpetual")
 

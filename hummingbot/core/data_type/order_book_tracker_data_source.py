@@ -1,9 +1,11 @@
+from __future__ import annotations
+
+from abc import ABCMeta, abstractmethod
 import asyncio
+from collections import defaultdict
 import logging
 import time
-from abc import ABCMeta, abstractmethod
-from collections import defaultdict
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable
 
 from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_message import OrderBookMessage
@@ -14,17 +16,17 @@ from hummingbot.logger import HummingbotLogger
 class OrderBookTrackerDataSource(metaclass=ABCMeta):
     FULL_ORDER_BOOK_RESET_DELTA_SECONDS = 60 * 60
 
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
-    def __init__(self, trading_pairs: List[str]):
+    def __init__(self, trading_pairs: list[str]):
         self._trade_messages_queue_key = "trade"
         self._diff_messages_queue_key = "order_book_diff"
         self._snapshot_messages_queue_key = "order_book_snapshot"
 
-        self._trading_pairs: List[str] = trading_pairs
+        self._trading_pairs: list[str] = trading_pairs
         self._order_book_create_function = lambda: OrderBook()
-        self._message_queue: Dict[str, asyncio.Queue] = defaultdict(asyncio.Queue)
-        self._ws_assistant: Optional[WSAssistant] = None
+        self._message_queue: dict[str, asyncio.Queue] = defaultdict(asyncio.Queue)
+        self._ws_assistant: WSAssistant | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -41,7 +43,7 @@ class OrderBookTrackerDataSource(metaclass=ABCMeta):
         self._order_book_create_function = func
 
     @abstractmethod
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         """
         Return a dictionary the trading_pair as key and the current price as value for each trading pair passed as
         parameter.
@@ -73,7 +75,7 @@ class OrderBookTrackerDataSource(metaclass=ABCMeta):
         Connects to the trade events and order diffs websocket endpoints and listens to the messages sent by the
         exchange. Each message is stored in its own queue.
         """
-        ws: Optional[WSAssistant] = None
+        ws: WSAssistant | None = None
         while True:
             try:
                 ws: WSAssistant = await self._connected_websocket_assistant()
@@ -126,8 +128,9 @@ class OrderBookTrackerDataSource(metaclass=ABCMeta):
         while True:
             try:
                 try:
-                    snapshot_event = await asyncio.wait_for(message_queue.get(),
-                                                            timeout=self.FULL_ORDER_BOOK_RESET_DELTA_SECONDS)
+                    snapshot_event = await asyncio.wait_for(
+                        message_queue.get(), timeout=self.FULL_ORDER_BOOK_RESET_DELTA_SECONDS
+                    )
                     await self._parse_order_book_snapshot_message(raw_message=snapshot_event, message_queue=output)
                 except asyncio.TimeoutError:
                     await self._request_order_book_snapshots(output=output)
@@ -164,7 +167,7 @@ class OrderBookTrackerDataSource(metaclass=ABCMeta):
                 self.logger().exception(f"Unexpected error fetching order book snapshot for {trading_pair}.")
                 raise
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         """
         Create an instance of OrderBookMessage of type OrderBookMessageType.TRADE
 
@@ -173,7 +176,7 @@ class OrderBookTrackerDataSource(metaclass=ABCMeta):
         """
         raise NotImplementedError
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         """
         Create an instance of OrderBookMessage of type OrderBookMessageType.DIFF
 
@@ -182,7 +185,7 @@ class OrderBookTrackerDataSource(metaclass=ABCMeta):
         """
         raise NotImplementedError
 
-    async def _parse_order_book_snapshot_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_snapshot_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         """
         Create an instance of OrderBookMessage of type OrderBookMessageType.SNAPSHOT
 
@@ -210,7 +213,7 @@ class OrderBookTrackerDataSource(metaclass=ABCMeta):
         """
         raise NotImplementedError
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         """
         Identifies the channel for a particular event message. Used to find the correct queue to add the message in
 
@@ -221,7 +224,7 @@ class OrderBookTrackerDataSource(metaclass=ABCMeta):
         raise NotImplementedError
 
     async def _process_message_for_unknown_channel(
-        self, event_message: Dict[str, Any], websocket_assistant: WSAssistant
+        self, event_message: dict[str, Any], websocket_assistant: WSAssistant
     ):
         """
         Processes a message coming from a not identified channel.
@@ -234,7 +237,7 @@ class OrderBookTrackerDataSource(metaclass=ABCMeta):
 
     async def _process_websocket_messages(self, websocket_assistant: WSAssistant):
         async for ws_response in websocket_assistant.iter_messages():
-            data: Dict[str, Any] = ws_response.data
+            data: dict[str, Any] = ws_response.data
             if data is not None:  # data will be None when the websocket is disconnected
                 channel: str = self._channel_originating_message(event_message=data)
                 valid_channels = self._get_messages_queue_keys()
@@ -245,10 +248,10 @@ class OrderBookTrackerDataSource(metaclass=ABCMeta):
                         event_message=data, websocket_assistant=websocket_assistant
                     )
 
-    def _get_messages_queue_keys(self) -> List[str]:
+    def _get_messages_queue_keys(self) -> list[str]:
         return [self._snapshot_messages_queue_key, self._diff_messages_queue_key, self._trade_messages_queue_key]
 
-    async def _on_order_stream_interruption(self, websocket_assistant: Optional[WSAssistant] = None):
+    async def _on_order_stream_interruption(self, websocket_assistant: WSAssistant | None = None):
         websocket_assistant and await websocket_assistant.disconnect()
 
     async def _sleep(self, delay):

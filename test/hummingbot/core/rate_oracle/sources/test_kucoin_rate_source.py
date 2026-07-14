@@ -1,12 +1,12 @@
-import json
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
+import json
 
 from aioresponses import aioresponses
 
 from hummingbot.connector.exchange.kucoin import kucoin_constants as CONSTANTS
 from hummingbot.connector.utils import combine_to_hb_trading_pair
 from hummingbot.core.rate_oracle.sources.kucoin_rate_source import KucoinRateSource
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class KucoinRateSourceTest(IsolatedAsyncioWrapperTestCase):
@@ -53,7 +53,7 @@ class KucoinRateSourceTest(IsolatedAsyncioWrapperTestCase):
                         "symbolName": self.ignored_trading_pair,
                         "buy": str(expected_rate - Decimal("0.1")),
                         "sell": str(expected_rate + Decimal("0.1")),
-                    }
+                    },
                 ],
             },
         }

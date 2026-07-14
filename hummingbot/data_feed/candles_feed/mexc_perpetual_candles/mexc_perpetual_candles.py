@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.data_feed.candles_feed.candles_base import CandlesBase
@@ -8,7 +10,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class MexcPerpetualCandles(CandlesBase):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -57,8 +59,9 @@ class MexcPerpetualCandles(CandlesBase):
 
     async def check_network(self) -> NetworkStatus:
         rest_assistant = await self._api_factory.get_rest_assistant()
-        await rest_assistant.execute_request(url=self.health_check_url,
-                                             throttler_limit_id=CONSTANTS.HEALTH_CHECK_ENDPOINT)
+        await rest_assistant.execute_request(
+            url=self.health_check_url, throttler_limit_id=CONSTANTS.HEALTH_CHECK_ENDPOINT
+        )
         return NetworkStatus.CONNECTED
 
     def get_exchange_trading_pair(self, trading_pair):
@@ -72,10 +75,12 @@ class MexcPerpetualCandles(CandlesBase):
     def _is_first_candle_not_included_in_rest_request(self):
         return False
 
-    def _get_rest_candles_params(self,
-                                 start_time: Optional[int] = None,
-                                 end_time: Optional[int] = None,
-                                 limit: Optional[int] = CONSTANTS.MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST) -> dict:
+    def _get_rest_candles_params(
+        self,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        limit: int | None = CONSTANTS.MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST,
+    ) -> dict:
         """
         For API documentation, please refer to:
         https://mexcdevelop.github.io/apidocs/spot_v3_en/#kline-candlestick-data
@@ -91,12 +96,24 @@ class MexcPerpetualCandles(CandlesBase):
             params["endTime"] = end_time * 1000
         return params
 
-    def _parse_rest_candles(self, data: dict, end_time: Optional[int] = None) -> List[List[float]]:
+    def _parse_rest_candles(self, data: dict, end_time: int | None = None) -> list[list[float]]:
         content = data.get("data")
         if content is not None:
-            ohlc = list(zip(content["time"], content["open"], content["high"], content["low"], content["close"],
-                            content["vol"], content["amount"]))
-            return [[self.ensure_timestamp_in_seconds(c[0]), c[1], c[2], c[3], c[4], c[5], c[6], 0., 0., 0.] for c in ohlc]
+            ohlc = list(
+                zip(
+                    content["time"],
+                    content["open"],
+                    content["high"],
+                    content["low"],
+                    content["close"],
+                    content["vol"],
+                    content["amount"],
+                )
+            )
+            return [
+                [self.ensure_timestamp_in_seconds(c[0]), c[1], c[2], c[3], c[4], c[5], c[6], 0.0, 0.0, 0.0]
+                for c in ohlc
+            ]
 
     def ws_subscription_payload(self):
         return {
@@ -104,11 +121,11 @@ class MexcPerpetualCandles(CandlesBase):
             "param": {
                 "symbol": self._ex_trading_pair,
                 "interval": CONSTANTS.INTERVALS[self.interval],
-            }
+            },
         }
 
     def _parse_websocket_message(self, data):
-        candles_row_dict: Dict[str, Any] = {}
+        candles_row_dict: dict[str, Any] = {}
         if data is not None and data.get("data") is not None and data.get("channel", "") == "push.kline":
             candle = data["data"]
             candles_row_dict["timestamp"] = self.ensure_timestamp_in_seconds(candle["t"])
@@ -118,7 +135,7 @@ class MexcPerpetualCandles(CandlesBase):
             candles_row_dict["close"] = candle["c"]
             candles_row_dict["volume"] = candle["q"]
             candles_row_dict["quote_asset_volume"] = candle["a"]
-            candles_row_dict["n_trades"] = 0.
-            candles_row_dict["taker_buy_base_volume"] = 0.
-            candles_row_dict["taker_buy_quote_volume"] = 0.
+            candles_row_dict["n_trades"] = 0.0
+            candles_row_dict["taker_buy_base_volume"] = 0.0
+            candles_row_dict["taker_buy_quote_volume"] = 0.0
             return candles_row_dict

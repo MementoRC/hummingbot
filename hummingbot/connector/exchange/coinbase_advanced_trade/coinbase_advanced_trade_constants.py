@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Tuple
 
 from bidict import bidict
 
@@ -52,7 +51,9 @@ PAIR_TICKER_24HR_EP = "/brokerage/market/products/{product_id}/ticker"
 PAIR_TICKER_24HR_RATE_LIMIT_ID = "ProductTicker24Hr"
 
 # Private API endpoints
-PRIVATE_PRODUCTS_EP = "/brokerage/products"  # https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_getproducts
+PRIVATE_PRODUCTS_EP = (
+    "/brokerage/products"  # https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_getproducts
+)
 PRIVATE_PAIR_TICKER_24HR_EP = "/brokerage/products/{product_id}/ticker"
 PRIVATE_PAIR_TICKER_24HR_RATE_LIMIT_ID = "PrivatePairTicker24Hr"
 ORDER_EP = "/brokerage/orders"
@@ -103,7 +104,7 @@ class WebsocketAction(Enum):
 
 # https://docs.cdp.coinbase.com/advanced-trade/docs/ws-channels
 # TODO: this is not exclusively ORDER SUBSCRIPTION, please review the naming
-WS_ORDER_SUBSCRIPTION_KEYS: Tuple[str, ...] = ("level2", "market_trades")
+WS_ORDER_SUBSCRIPTION_KEYS: tuple[str, ...] = ("level2", "market_trades")
 WS_ORDER_SUBSCRIPTION_CHANNELS: bidict[str, str] = bidict({"l2_data": "order_book_diff", "market_trades": "trade"})
 WS_MAX_MSG_SIZE = 8 * 1024 * 1024
 
@@ -111,7 +112,7 @@ WS_USER_SUBSCRIPTION_KEYS: str = "user"
 # WS_USER_SUBSCRIPTION_KEYS: Tuple[str, ...] = ("user",)
 WS_USER_SUBSCRIPTION_CHANNELS: bidict[str, str] = bidict({k: k for k in WS_USER_SUBSCRIPTION_KEYS})
 
-WS_OTHERS_SUBSCRIPTION_KEYS: Tuple[str, ...] = ("ticker", "ticker_batch", "status", "candles")
+WS_OTHERS_SUBSCRIPTION_KEYS: tuple[str, ...] = ("ticker", "ticker_batch", "status", "candles")
 WS_OTHERS_SUBSCRIPTION_CHANNELS: bidict[str, str] = bidict({k: k for k in WS_OTHERS_SUBSCRIPTION_KEYS})
 
 # CoinbaseAdvancedTrade params
@@ -158,11 +159,15 @@ _key = {
     "time": ONE_SECOND,
 }
 PRIVATE_REST_RATE_LIMITS = [
-    RateLimit(limit_id=endpoint,
-              limit=_key["limit"],
-              weight=DEFAULT_WEIGHT,
-              time_interval=_key["time"],
-              linked_limits=[LinkedLimitWeightPair(_key["weight"], 1)]) for endpoint in _key["list"]]
+    RateLimit(
+        limit_id=endpoint,
+        limit=_key["limit"],
+        weight=DEFAULT_WEIGHT,
+        time_interval=_key["time"],
+        linked_limits=[LinkedLimitWeightPair(_key["weight"], 1)],
+    )
+    for endpoint in _key["list"]
+]
 
 _key = {
     "limit": MAX_PUBLIC_REST_REQUESTS_S,
@@ -171,11 +176,15 @@ _key = {
     "time": ONE_SECOND,
 }
 PUBLIC_REST_RATE_LIMITS = [
-    RateLimit(limit_id=endpoint,
-              limit=_key["limit"],
-              weight=DEFAULT_WEIGHT,
-              time_interval=_key["time"],
-              linked_limits=[LinkedLimitWeightPair(_key["weight"], 1)]) for endpoint in _key["list"]]
+    RateLimit(
+        limit_id=endpoint,
+        limit=_key["limit"],
+        weight=DEFAULT_WEIGHT,
+        time_interval=_key["time"],
+        linked_limits=[LinkedLimitWeightPair(_key["weight"], 1)],
+    )
+    for endpoint in _key["list"]
+]
 
 _key = {
     "limit": MAX_SIGNIN_REQUESTS_H,
@@ -184,11 +193,15 @@ _key = {
     "time": ONE_HOUR,
 }
 SIGNIN_RATE_LIMITS = [
-    RateLimit(limit_id=endpoint,
-              limit=_key["limit"],
-              weight=DEFAULT_WEIGHT,
-              time_interval=_key["time"],
-              linked_limits=[LinkedLimitWeightPair(_key["weight"], 1)]) for endpoint in _key["list"]]
+    RateLimit(
+        limit_id=endpoint,
+        limit=_key["limit"],
+        weight=DEFAULT_WEIGHT,
+        time_interval=_key["time"],
+        linked_limits=[LinkedLimitWeightPair(_key["weight"], 1)],
+    )
+    for endpoint in _key["list"]
+]
 
 RATE_LIMITS = [
     RateLimit(limit_id=PRIVATE_REST_REQUESTS, limit=MAX_PRIVATE_REST_REQUESTS_S, time_interval=ONE_SECOND),
@@ -209,7 +222,7 @@ def get_products_endpoint(use_auth_for_public_endpoints: bool) -> str:
         return ALL_PAIRS_EP
 
 
-def get_ticker_endpoint(use_auth_for_public_endpoints: bool) -> Tuple[str, str]:
+def get_ticker_endpoint(use_auth_for_public_endpoints: bool) -> tuple[str, str]:
     if use_auth_for_public_endpoints:
         return (PRIVATE_PAIR_TICKER_24HR_EP, PRIVATE_PAIR_TICKER_24HR_RATE_LIMIT_ID)
     else:

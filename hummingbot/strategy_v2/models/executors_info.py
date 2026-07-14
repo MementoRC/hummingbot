@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from decimal import Decimal
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -15,7 +17,16 @@ from hummingbot.strategy_v2.executors.xemm_executor.data_types import XEMMExecut
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType
 
-AnyExecutorConfig = Union[PositionExecutorConfig, DCAExecutorConfig, GridExecutorConfig, XEMMExecutorConfig, ArbitrageExecutorConfig, OrderExecutorConfig, TWAPExecutorConfig, LPExecutorConfig]
+AnyExecutorConfig = Union[
+    PositionExecutorConfig,
+    DCAExecutorConfig,
+    GridExecutorConfig,
+    XEMMExecutorConfig,
+    ArbitrageExecutorConfig,
+    OrderExecutorConfig,
+    TWAPExecutorConfig,
+    LPExecutorConfig,
+]
 
 
 class ExecutorInfo(BaseModel):
@@ -31,9 +42,9 @@ class ExecutorInfo(BaseModel):
     is_active: bool
     is_trading: bool
     custom_info: Dict
-    close_timestamp: Optional[float] = None
-    close_type: Optional[CloseType] = None
-    controller_id: Optional[str] = None
+    close_timestamp: float | None = None
+    close_type: CloseType | None = None
+    controller_id: str | None = None
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @property
@@ -41,15 +52,15 @@ class ExecutorInfo(BaseModel):
         return self.status == RunnableStatus.TERMINATED
 
     @property
-    def side(self) -> Optional[TradeType]:
+    def side(self) -> TradeType | None:
         return self.custom_info.get("side", None)
 
     @property
-    def trading_pair(self) -> Optional[str]:
+    def trading_pair(self) -> str | None:
         return self.config.trading_pair
 
     @property
-    def connector_name(self) -> Optional[str]:
+    def connector_name(self) -> str | None:
         return self.config.connector_name
 
     def to_dict(self):
@@ -67,4 +78,4 @@ class PerformanceReport(BaseModel):
     global_pnl_pct: Decimal = Decimal("0")
     volume_traded: Decimal = Decimal("0")
     positions_summary: List = []
-    close_type_counts: Dict[CloseType, int] = {}
+    close_type_counts: dict[CloseType, int] = {}

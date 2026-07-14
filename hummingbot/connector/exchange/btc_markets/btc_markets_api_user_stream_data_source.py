@@ -1,8 +1,10 @@
-import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from __future__ import annotations
 
-import hummingbot.connector.exchange.btc_markets.btc_markets_constants as CONSTANTS
+import asyncio
+from typing import TYPE_CHECKING, Any
+
 from hummingbot.connector.exchange.btc_markets.btc_markets_auth import BtcMarketsAuth
+import hummingbot.connector.exchange.btc_markets.btc_markets_constants as CONSTANTS
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest
 from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
@@ -14,15 +16,14 @@ if TYPE_CHECKING:
 
 
 class BtcMarketsAPIUserStreamDataSource(UserStreamTrackerDataSource):
-
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
         auth: BtcMarketsAuth,
-        trading_pairs: List[str],
-        connector: 'BtcMarketsExchange',
-        api_factory: WebAssistantsFactory
+        trading_pairs: list[str],
+        connector: "BtcMarketsExchange",
+        api_factory: WebAssistantsFactory,
     ):
         super().__init__()
         self._auth: BtcMarketsAuth = auth
@@ -42,8 +43,8 @@ class BtcMarketsAPIUserStreamDataSource(UserStreamTrackerDataSource):
             self._ws_assistant = await self._api_factory.get_ws_assistant()
 
         await self._ws_assistant.connect(
-            ws_url=CONSTANTS.WSS_PRIVATE_URL[self._domain],
-            ping_timeout=CONSTANTS.WS_PING_TIMEOUT)
+            ws_url=CONSTANTS.WSS_PRIVATE_URL[self._domain], ping_timeout=CONSTANTS.WS_PING_TIMEOUT
+        )
 
         return self._ws_assistant
 
@@ -60,12 +61,16 @@ class BtcMarketsAPIUserStreamDataSource(UserStreamTrackerDataSource):
                 marketIds.append(symbol)
 
             payload = self._auth.generate_ws_authentication_message()
-            payload["channels"] = [CONSTANTS.ORDER_CHANGE_EVENT_TYPE, CONSTANTS.FUND_CHANGE_EVENT_TYPE, CONSTANTS.HEARTBEAT]
+            payload["channels"] = [
+                CONSTANTS.ORDER_CHANGE_EVENT_TYPE,
+                CONSTANTS.FUND_CHANGE_EVENT_TYPE,
+                CONSTANTS.HEARTBEAT,
+            ]
             payload["marketIds"] = marketIds
 
             subscribe_request: WSJSONRequest = WSJSONRequest(payload)
 
-            async with self._api_factory.throttler.execute_task(limit_id = CONSTANTS.WS_SUBSCRIPTION_LIMIT_ID):
+            async with self._api_factory.throttler.execute_task(limit_id=CONSTANTS.WS_SUBSCRIPTION_LIMIT_ID):
                 await websocket_assistant.send(subscribe_request)
 
             self.logger().info("Subscribed to private account and orders channels...")
@@ -78,7 +83,7 @@ class BtcMarketsAPIUserStreamDataSource(UserStreamTrackerDataSource):
 
     async def _process_websocket_messages(self, websocket_assistant: WSAssistant, queue: asyncio.Queue):
         async for ws_response in websocket_assistant.iter_messages():
-            data: Dict[str, Any] = ws_response.data
+            data: dict[str, Any] = ws_response.data
 
             messageType = data.get("messageType")
             if messageType == "error":

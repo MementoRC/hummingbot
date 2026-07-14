@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 import time
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from hummingbot.connector.derivative.decibel_perpetual import (
     decibel_perpetual_constants as CONSTANTS,
@@ -32,7 +34,8 @@ class DecibelPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
 
     All subscriptions are subaccount-based since Decibel uses subaccounts for trading.
     """
-    _logger: Optional[HummingbotLogger] = None
+
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
@@ -46,8 +49,8 @@ class DecibelPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
         self._api_factory = api_factory
         self._auth = auth
         self._domain = domain
-        self._ping_task: Optional[asyncio.Task] = None
-        self._subaccount_address: Optional[str] = None
+        self._ping_task: asyncio.Task | None = None
+        self._subaccount_address: str | None = None
 
     async def _get_account_address(self) -> str:
         """
@@ -70,13 +73,13 @@ class DecibelPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
 
         # Add authentication headers for WebSocket connection
         headers = {}
-        if hasattr(self._connector, 'api_key') and self._connector.api_key:
+        if hasattr(self._connector, "api_key") and self._connector.api_key:
             headers["Authorization"] = f"Bearer {self._connector.api_key}"
 
         await ws.connect(
             ws_url=ws_url,
             ping_timeout=None,  # Disable aiohttp heartbeat
-            ws_headers=headers
+            ws_headers=headers,
         )
         self._ping_task = safe_ensure_future(self._ping_loop(ws))
         return ws
@@ -99,26 +102,23 @@ class DecibelPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
             # Subscribe to account overview (balance, margin, etc.)
             account_overview_payload = {
                 "method": "subscribe",
-                "topic": f"{CONSTANTS.WS_ACCOUNT_OVERVIEW_CHANNEL}:{account_addr}"
+                "topic": f"{CONSTANTS.WS_ACCOUNT_OVERVIEW_CHANNEL}:{account_addr}",
             }
 
             # Subscribe to user positions
             user_positions_payload = {
                 "method": "subscribe",
-                "topic": f"{CONSTANTS.WS_USER_POSITIONS_CHANNEL}:{account_addr}"
+                "topic": f"{CONSTANTS.WS_USER_POSITIONS_CHANNEL}:{account_addr}",
             }
 
             # Subscribe to open orders
             open_orders_payload = {
                 "method": "subscribe",
-                "topic": f"{CONSTANTS.WS_USER_OPEN_ORDERS_CHANNEL}:{account_addr}"
+                "topic": f"{CONSTANTS.WS_USER_OPEN_ORDERS_CHANNEL}:{account_addr}",
             }
 
             # Subscribe to user trades
-            user_trades_payload = {
-                "method": "subscribe",
-                "topic": f"{CONSTANTS.WS_USER_TRADES_CHANNEL}:{account_addr}"
-            }
+            user_trades_payload = {"method": "subscribe", "topic": f"{CONSTANTS.WS_USER_TRADES_CHANNEL}:{account_addr}"}
 
             await websocket_assistant.send(WSJSONRequest(account_overview_payload))
             await websocket_assistant.send(WSJSONRequest(user_positions_payload))
@@ -132,7 +132,7 @@ class DecibelPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
             self.logger().exception("Unexpected error occurred subscribing to private user streams")
             raise
 
-    async def _on_user_stream_interruption(self, websocket_assistant: Optional[WSAssistant]):
+    async def _on_user_stream_interruption(self, websocket_assistant: WSAssistant | None):
         """
         Handle WebSocket interruption/disconnection.
         """
