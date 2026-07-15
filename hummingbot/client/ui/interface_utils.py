@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
-from typing import Any, List, Optional, Set, Tuple
+from typing import Any
 
 import pandas as pd
 import psutil
@@ -46,17 +48,19 @@ async def start_process_monitor(process_monitor):
     while True:
         with hb_process.oneshot():
             threads = hb_process.num_threads()
-            process_monitor.log("CPU: {:>5}%, ".format(hb_process.cpu_percent()) +
-                                "Mem: {:>10} ({}), ".format(
-                                    format_bytes(hb_process.memory_info().vms / threads),
-                                    format_bytes(hb_process.memory_info().rss)) +
-                                "Threads: {:>3}, ".format(threads)
-                                )
+            process_monitor.log(
+                "CPU: {:>5}%, ".format(hb_process.cpu_percent())
+                + "Mem: {:>10} ({}), ".format(
+                    format_bytes(hb_process.memory_info().vms / threads), format_bytes(hb_process.memory_info().rss)
+                )
+                + "Threads: {:>3}, ".format(threads)
+            )
         await _sleep(1)
 
 
 async def start_trade_monitor(trade_monitor):
     from hummingbot.client.hummingbot_application import HummingbotApplication
+
     hb = HummingbotApplication.main_application()
     trade_monitor.log("Trades: 0, Total P&L: 0.00, Return %: 0.00%")
 
@@ -65,14 +69,13 @@ async def start_trade_monitor(trade_monitor):
             if hb.trading_core._strategy_running and hb.trading_core.strategy is not None:
                 if all(market.ready for market in hb.trading_core.markets.values()):
                     with hb.trading_core.trade_fill_db.get_new_session() as session:
-                        trades: List[TradeFill] = hb._get_trades_from_session(
-                            int(hb.init_time * 1e3),
-                            session=session,
-                            config_file_path=hb.strategy_file_name)
+                        trades: list[TradeFill] = hb._get_trades_from_session(
+                            int(hb.init_time * 1e3), session=session, config_file_path=hb.strategy_file_name
+                        )
                         if len(trades) > 0:
                             return_pcts = []
                             pnls = []
-                            market_info: Set[Tuple[str, str]] = set((t.market, t.symbol) for t in trades)
+                            market_info: set[tuple[str, str]] = set((t.market, t.symbol) for t in trades)
                             for market, symbol in market_info:
                                 cur_trades = [t for t in trades if t.market == market and t.symbol == symbol]
                                 cur_balances = await hb.trading_core.get_current_balances(market)
@@ -85,8 +88,9 @@ async def start_trade_monitor(trade_monitor):
                                 total_pnls = f"{PerformanceMetrics.smart_round(sum(pnls))} {list(quote_assets)[0]}"
                             else:
                                 total_pnls = "N/A"
-                            trade_monitor.log(f"Trades: {len(trades)}, Total P&L: {total_pnls}, "
-                                              f"Return %: {avg_return:.2%}")
+                            trade_monitor.log(
+                                f"Trades: {len(trades)}, Total P&L: {total_pnls}, Return %: {avg_return:.2%}"
+                            )
             await _sleep(2.0)  # sleeping for longer to manage resources
         except asyncio.CancelledError:
             raise
@@ -96,7 +100,7 @@ async def start_trade_monitor(trade_monitor):
 
 
 def format_df_for_printout(
-    df: pd.DataFrame, table_format: ClientConfigEnum, max_col_width: Optional[int] = None, index: bool = False
+    df: pd.DataFrame, table_format: ClientConfigEnum, max_col_width: int | None = None, index: bool = False
 ) -> str:
     if max_col_width is not None:  # in anticipation of the next release of tabulate which will include maxcolwidth
         max_col_width = max(max_col_width, 4)
@@ -104,10 +108,10 @@ def format_df_for_printout(
         def _truncate(value: Any) -> str:
             """Ensure all cells are strings before enforcing width limits."""
             value_str = "" if value is None else str(value)
-            return value_str if len(value_str) < max_col_width else f"{value_str[:max_col_width - 3]}..."
+            return value_str if len(value_str) < max_col_width else f"{value_str[: max_col_width - 3]}..."
 
         df = df.apply(lambda s: s.apply(_truncate))
-        df.columns = [c if len(c) < max_col_width else f"{c[:max_col_width - 3]}..." for c in df.columns]
+        df.columns = [c if len(c) < max_col_width else f"{c[: max_col_width - 3]}..." for c in df.columns]
 
     original_preserve_whitespace = tabulate.PRESERVE_WHITESPACE
     original_wide_chars_mode = tabulate.WIDE_CHARS_MODE

@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from bidict import bidict
 
@@ -43,9 +45,9 @@ class AscendExExchange(ExchangePyBase):
         ascend_ex_api_key: str,
         ascend_ex_secret_key: str,
         ascend_ex_group_id: str,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
     ):
         """
@@ -115,7 +117,7 @@ class AscendExExchange(ExchangePyBase):
     def supported_order_types(self):
         return [OrderType.LIMIT, OrderType.LIMIT_MAKER, OrderType.MARKET]
 
-    async def get_all_pairs_prices(self) -> Dict[str, Any]:
+    async def get_all_pairs_prices(self) -> dict[str, Any]:
         """
         This method executes a request to the exchange to get the current price for all trades.
         It returns the response of the exchange (expected to be used by the AscendEx RateSource for the RateOracle)
@@ -182,7 +184,7 @@ class AscendExExchange(ExchangePyBase):
         order_side: TradeType,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> AddedToCostTradeFee:
 
         is_maker = is_maker or (order_type is OrderType.LIMIT_MAKER)
@@ -204,7 +206,7 @@ class AscendExExchange(ExchangePyBase):
             )
         return fee
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         mapping = bidict()
         for symbol_data in filter(utils.is_pair_information_valid, exchange_info.get("data", [])):
             if len(symbol_data["symbol"].split("/")) == 2:
@@ -221,7 +223,7 @@ class AscendExExchange(ExchangePyBase):
         order_type: OrderType,
         price: Decimal,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         side = trade_type.name.lower()
         timestamp = utils.get_ms_timestamp()
         data = {
@@ -249,8 +251,8 @@ class AscendExExchange(ExchangePyBase):
         if exchange_order.get("code") == 0:
             return (
                 str(exchange_order["data"]["info"]["orderId"]),
-                int(exchange_order["data"]["info"].get("timestamp") or exchange_order["data"]["info"]
-                    ["lastExecTime"]) * 1e-3,
+                int(exchange_order["data"]["info"].get("timestamp") or exchange_order["data"]["info"]["lastExecTime"])
+                * 1e-3,
             )
         else:
             raise IOError(str(exchange_order))
@@ -290,7 +292,7 @@ class AscendExExchange(ExchangePyBase):
                 # Refer to https://ascendex.github.io/ascendex-pro-api/#channel-order-and-balance
                 if acct_type == CONSTANTS.ACCOUNT_TYPE and event_subject == CONSTANTS.ORDER_CHANGE_EVENT_TYPE:
                     order_event_type = execution_data["st"]
-                    order_id: Optional[str] = execution_data.get("orderId")
+                    order_id: str | None = execution_data.get("orderId")
                     event_timestamp = execution_data["t"] * 1e-3
                     updated_status = CONSTANTS.ORDER_STATE[order_event_type]
 
@@ -397,7 +399,7 @@ class AscendExExchange(ExchangePyBase):
             self.logger().error(f"There was an error during the balance request to AscendEx ({response})")
             raise IOError(f"Error requesting balances from AscendEx ({response})")
 
-    async def _format_trading_rules(self, raw_trading_pair_info: Dict[str, Any]) -> List[TradingRule]:
+    async def _format_trading_rules(self, raw_trading_pair_info: dict[str, Any]) -> list[TradingRule]:
         trading_rules = []
 
         for info in filter(utils.is_pair_information_valid, raw_trading_pair_info.get("data", [])):
@@ -432,12 +434,12 @@ class AscendExExchange(ExchangePyBase):
             except Exception:
                 pass
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         # AscendEx does not have an endpoint to retrieve trades for a particular order
         # Thus it overrides the _update_orders_fills method
         pass
 
-    def _trade_update_from_fill_data(self, fill_data: Dict[str, Any], order: InFlightOrder) -> TradeUpdate:
+    def _trade_update_from_fill_data(self, fill_data: dict[str, Any], order: InFlightOrder) -> TradeUpdate:
         trade_id = str(fill_data["sn"])
         timestamp = fill_data["transactTime"] * 1e3
         asset_amount_detail = {}
@@ -474,8 +476,8 @@ class AscendExExchange(ExchangePyBase):
         return trade_update
 
     async def _all_trade_updates_for_orders(
-        self, orders: List[InFlightOrder], sequence_number: int
-    ) -> Tuple[List[TradeUpdate], int]:
+        self, orders: list[InFlightOrder], sequence_number: int
+    ) -> tuple[list[TradeUpdate], int]:
         # This endpoint determines the URL in an adhoc way because it is very different compare to the other endpoints
         url = await self._api_request_url(path_url="")
         balance_hist_url = url.replace("/v1/", f"/{CONSTANTS.BALANCE_HISTORY_PATH_URL}")
@@ -520,7 +522,7 @@ class AscendExExchange(ExchangePyBase):
 
         return trade_updates, max_sequence_number
 
-    async def _update_orders_fills(self, orders: List[InFlightOrder]):
+    async def _update_orders_fills(self, orders: list[InFlightOrder]):
         if orders:
             # Since we are keeping the last order fill sequence number referenced to improve the query performance
             # it is necessary to evaluate updates for all possible fillable orders every time (to avoid loosing updates)

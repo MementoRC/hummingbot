@@ -1,8 +1,10 @@
+from __future__ import annotations
+
+from decimal import Decimal
 import hashlib
 import random
 import time
-from decimal import Decimal
-from typing import Literal, Optional
+from typing import Literal
 
 import base58
 from pydantic import BaseModel, field_validator, model_validator
@@ -13,14 +15,22 @@ from hummingbot.core.data_type.common import TradeType
 
 class ExecutorConfigBase(BaseModel):
     id: str = None  # Make ID optional
-    type: Literal["position_executor", "dca_executor", "grid_executor", "order_executor",
-                  "xemm_executor", "arbitrage_executor", "twap_executor", "lp_executor"]
-    timestamp: Optional[float] = None
+    type: Literal[
+        "position_executor",
+        "dca_executor",
+        "grid_executor",
+        "order_executor",
+        "xemm_executor",
+        "arbitrage_executor",
+        "twap_executor",
+        "lp_executor",
+    ]
+    timestamp: float | None = None
     controller_id: str = "main"
 
     @field_validator("timestamp", mode="before")
     @classmethod
-    def validate_timestamp(cls, value: Optional[float]) -> float:
+    def validate_timestamp(cls, value: float | None) -> float:
         if value is None:
             # Use current time if timestamp is not provided
             return time.time()
@@ -42,9 +52,7 @@ class ConnectorPair(BaseModel):
     trading_pair: str
 
     def is_amm_connector(self) -> bool:
-        return self.connector_name in sorted(
-            AllConnectorSettings.get_gateway_amm_connector_names()
-        )
+        return self.connector_name in sorted(AllConnectorSettings.get_gateway_amm_connector_names())
 
     class Config:
         frozen = True  # This makes the model immutable and thus hashable

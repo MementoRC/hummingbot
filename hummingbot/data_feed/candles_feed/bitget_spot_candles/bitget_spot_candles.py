@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 import logging
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.core.web_assistant.connections.data_types import WSPlainTextRequest
@@ -12,7 +14,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class BitgetSpotCandles(CandlesBase):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -23,7 +25,7 @@ class BitgetSpotCandles(CandlesBase):
     def __init__(self, trading_pair: str, interval: str = "1m", max_records: int = 150):
         super().__init__(trading_pair, interval, max_records)
 
-        self._ping_task: Optional[asyncio.Task] = None
+        self._ping_task: asyncio.Task | None = None
 
     @property
     def name(self):
@@ -72,8 +74,7 @@ class BitgetSpotCandles(CandlesBase):
     async def check_network(self) -> NetworkStatus:
         rest_assistant = await self._api_factory.get_rest_assistant()
         await rest_assistant.execute_request(
-            url=self.health_check_url,
-            throttler_limit_id=CONSTANTS.HEALTH_CHECK_ENDPOINT
+            url=self.health_check_url, throttler_limit_id=CONSTANTS.HEALTH_CHECK_ENDPOINT
         )
 
         return NetworkStatus.CONNECTED
@@ -83,16 +84,12 @@ class BitgetSpotCandles(CandlesBase):
 
     def _get_rest_candles_params(
         self,
-        start_time: Optional[int] = None,
-        end_time: Optional[int] = None,
-        limit: Optional[int] = CONSTANTS.MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST
+        start_time: int | None = None,
+        end_time: int | None = None,
+        limit: int | None = CONSTANTS.MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST,
     ) -> dict:
 
-        params = {
-            "symbol": self._ex_trading_pair,
-            "granularity": CONSTANTS.INTERVALS[self.interval],
-            "limit": limit
-        }
+        params = {"symbol": self._ex_trading_pair, "granularity": CONSTANTS.INTERVALS[self.interval], "limit": limit}
 
         if start_time is not None and end_time is not None:
             now = int(time.time())
@@ -108,7 +105,7 @@ class BitgetSpotCandles(CandlesBase):
                         f"the earliest allowed start time is {earliest_allowed} "
                         f"({max_days} days before now), but requested {start_time}."
                     )
-                    raise ValueError('Invalid start time for current interval. See logs for more details.')
+                    raise ValueError("Invalid start time for current interval. See logs for more details.")
 
         if start_time is not None:
             params["startTime"] = start_time * 1000
@@ -117,7 +114,7 @@ class BitgetSpotCandles(CandlesBase):
 
         return params
 
-    def _parse_rest_candles(self, data: dict, end_time: Optional[int] = None) -> List[List[float]]:
+    def _parse_rest_candles(self, data: dict, end_time: int | None = None) -> list[list[float]]:
         """
         Rest response example:
         {
@@ -144,9 +141,15 @@ class BitgetSpotCandles(CandlesBase):
             return [
                 [
                     self.ensure_timestamp_in_seconds(int(row[0])),
-                    float(row[1]), float(row[2]), float(row[3]),
-                    float(row[4]), float(row[5]), float(row[7]),
-                    0., 0., 0.
+                    float(row[1]),
+                    float(row[2]),
+                    float(row[3]),
+                    float(row[4]),
+                    float(row[5]),
+                    float(row[7]),
+                    0.0,
+                    0.0,
+                    0.0,
                 ]
                 for row in candles
             ]
@@ -158,18 +161,12 @@ class BitgetSpotCandles(CandlesBase):
         channel = f"{CONSTANTS.WS_CANDLES_ENDPOINT}{interval}"
         payload = {
             "op": "subscribe",
-            "args": [
-                {
-                    "instType": "SPOT",
-                    "channel": channel,
-                    "instId": self._ex_trading_pair
-                }
-            ]
+            "args": [{"instType": "SPOT", "channel": channel, "instId": self._ex_trading_pair}],
         }
 
         return payload
 
-    def _parse_websocket_message(self, data: dict) -> Optional[Dict[str, Any]]:
+    def _parse_websocket_message(self, data: dict) -> dict[str, Any] | None:
         """
         WS response example:
         {
@@ -197,7 +194,7 @@ class BitgetSpotCandles(CandlesBase):
         if data == "pong":
             return
 
-        candles_row_dict: Dict[str, Any] = {}
+        candles_row_dict: dict[str, Any] = {}
 
         if data and data.get("data") and data["action"] == "update":
             candle = data["data"][0]
@@ -208,9 +205,9 @@ class BitgetSpotCandles(CandlesBase):
             candles_row_dict["close"] = float(candle[4])
             candles_row_dict["volume"] = float(candle[5])
             candles_row_dict["quote_asset_volume"] = float(candle[6])
-            candles_row_dict["n_trades"] = 0.
-            candles_row_dict["taker_buy_base_volume"] = 0.
-            candles_row_dict["taker_buy_quote_volume"] = 0.
+            candles_row_dict["n_trades"] = 0.0
+            candles_row_dict["taker_buy_base_volume"] = 0.0
+            candles_row_dict["taker_buy_quote_volume"] = 0.0
 
             return candles_row_dict
 
@@ -240,7 +237,7 @@ class BitgetSpotCandles(CandlesBase):
         Connects to the candlestick websocket endpoint and listens to the messages sent by the
         exchange.
         """
-        ws: Optional[WSAssistant] = None
+        ws: WSAssistant | None = None
         while True:
             try:
                 ws: WSAssistant = await self._connected_websocket_assistant()

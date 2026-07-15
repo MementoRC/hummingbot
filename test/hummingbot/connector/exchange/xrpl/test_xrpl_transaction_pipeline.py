@@ -3,6 +3,7 @@ Unit tests for XRPL Transaction Pipeline.
 
 Tests the serialized transaction submission pipeline for XRPL.
 """
+
 import asyncio
 import unittest
 from unittest.mock import AsyncMock
@@ -108,8 +109,8 @@ class TestXRPLTransactionPipelineLifecycle(unittest.IsolatedAsyncioTestCase):
         await pipeline.start()
 
         # Add some submissions to the queue directly
-        future1 = asyncio.get_event_loop().create_future()
-        future2 = asyncio.get_event_loop().create_future()
+        future1 = asyncio.get_running_loop().create_future()
+        future2 = asyncio.get_running_loop().create_future()
         await pipeline._submission_queue.put((AsyncMock()(), future1, "sub1"))
         await pipeline._submission_queue.put((AsyncMock()(), future2, "sub2"))
 
@@ -191,7 +192,7 @@ class TestXRPLTransactionPipelineSubmit(unittest.IsolatedAsyncioTestCase):
         await blocker_started.wait()
 
         # Fill the queue (size=1, so this fills it)
-        future = asyncio.get_event_loop().create_future()
+        future = asyncio.get_running_loop().create_future()
 
         async def filler_coro():
             return "filler"
@@ -236,10 +237,7 @@ class TestXRPLTransactionPipelineSerialization(unittest.IsolatedAsyncioTestCase)
             return value
 
         # Submit multiple coroutines
-        tasks = [
-            asyncio.create_task(pipeline.submit(make_coroutine(i), submission_id=f"sub-{i}"))
-            for i in range(5)
-        ]
+        tasks = [asyncio.create_task(pipeline.submit(make_coroutine(i), submission_id=f"sub-{i}")) for i in range(5)]
 
         await asyncio.gather(*tasks)
 
@@ -281,7 +279,7 @@ class TestXRPLTransactionPipelineSkipCancelled(unittest.IsolatedAsyncioTestCase)
         await pipeline.start()
 
         # Create a future and cancel it
-        cancelled_future = asyncio.get_event_loop().create_future()
+        cancelled_future = asyncio.get_running_loop().create_future()
         cancelled_future.cancel()
 
         # Put the cancelled submission in the queue

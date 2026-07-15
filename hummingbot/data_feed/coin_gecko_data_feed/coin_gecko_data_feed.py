@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 from hummingbot.core.utils.async_utils import safe_ensure_future
@@ -17,7 +19,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class CoinGeckoDataFeed(DataFeedBase):
-    cgdf_logger: Optional[HummingbotLogger] = None
+    cgdf_logger: HummingbotLogger | None = None
     _cgdf_shared_instance: "CoinGeckoDataFeed" = None
 
     @classmethod
@@ -40,12 +42,12 @@ class CoinGeckoDataFeed(DataFeedBase):
     ):
         super().__init__()
         self._ev_loop = asyncio.get_event_loop()
-        self._price_dict: Dict[str, float] = {}
+        self._price_dict: dict[str, float] = {}
         self._update_interval = update_interval
         self._api_key = api_key
         self._api_tier = api_tier
 
-        self.fetch_data_loop_task: Optional[asyncio.Task] = None
+        self.fetch_data_loop_task: asyncio.Task | None = None
 
         async_throttler = AsyncThrottler(rate_limits=self._api_tier.value.rate_limits)
         self._api_factory = WebAssistantsFactory(throttler=async_throttler)
@@ -55,7 +57,7 @@ class CoinGeckoDataFeed(DataFeedBase):
         return "coin_gecko_api"
 
     @property
-    def price_dict(self) -> Dict[str, float]:
+    def price_dict(self) -> dict[str, float]:
         return self._price_dict.copy()
 
     @property
@@ -76,14 +78,14 @@ class CoinGeckoDataFeed(DataFeedBase):
     def get_price(self, asset: str) -> float:
         return self._price_dict.get(asset.upper())
 
-    async def get_supported_vs_tokens(self) -> List[str]:
+    async def get_supported_vs_tokens(self) -> list[str]:
         base_url = self._api_tier.value.base_url
         supported_vs_tokens_url = f"{base_url}{SUPPORTED_VS_TOKENS_REST_ENDPOINT}"
         return await self._execute_request(url=supported_vs_tokens_url)
 
     async def get_prices_by_page(
-        self, vs_currency: str, page_no: int, category: Optional[str] = None
-    ) -> List[Dict[str, Any]]:
+        self, vs_currency: str, page_no: int, category: str | None = None
+    ) -> list[dict[str, Any]]:
         """Fetches prices specified by 250-length page. Only 50 when category is specified"""
         base_url = self._api_tier.value.base_url
         price_url: str = f"{base_url}{PRICES_REST_ENDPOINT}"
@@ -99,7 +101,7 @@ class CoinGeckoDataFeed(DataFeedBase):
 
         return await self._execute_request(url=price_url, params=params)
 
-    async def get_prices_by_token_id(self, vs_currency: str, token_ids: List[str]) -> List[Dict[str, Any]]:
+    async def get_prices_by_token_id(self, vs_currency: str, token_ids: list[str]) -> list[dict[str, Any]]:
         base_url = self._api_tier.value.base_url
         price_url: str = f"{base_url}{PRICES_REST_ENDPOINT}"
         token_ids_str = ",".join(map(str.lower, token_ids))
@@ -110,7 +112,7 @@ class CoinGeckoDataFeed(DataFeedBase):
 
         return await self._execute_request(url=price_url, params=params)
 
-    async def _execute_request(self, url: str, params: Optional[Dict] = None) -> Any:
+    async def _execute_request(self, url: str, params: Dict | None = None) -> Any:
         """Helper method to execute requests with proper authentication based on tier"""
         rest_assistant = await self._api_factory.get_rest_assistant()
         headers = {}
@@ -122,10 +124,7 @@ class CoinGeckoDataFeed(DataFeedBase):
                 headers[header_key] = self._api_key
 
         return await rest_assistant.execute_request(
-            url=url,
-            throttler_limit_id=REST_CALL_RATE_LIMIT_ID,
-            params=params,
-            headers=headers if headers else None
+            url=url, throttler_limit_id=REST_CALL_RATE_LIMIT_ID, params=params, headers=headers if headers else None
         )
 
     async def _fetch_data_loop(self):
@@ -135,9 +134,11 @@ class CoinGeckoDataFeed(DataFeedBase):
             except asyncio.CancelledError:
                 raise
             except Exception:
-                self.logger().network(f"Error getting data from {self.name}", exc_info=True,
-                                      app_warning_msg="Couldn't fetch newest prices from Coin Gecko. "
-                                                      "Check network connection.")
+                self.logger().network(
+                    f"Error getting data from {self.name}",
+                    exc_info=True,
+                    app_warning_msg="Couldn't fetch newest prices from Coin Gecko. Check network connection.",
+                )
 
             await self._async_sleep(self._update_interval)
 
@@ -146,12 +147,12 @@ class CoinGeckoDataFeed(DataFeedBase):
         self._ready_event.set()
 
     async def _update_asset_prices(self):
-        price_dict: Dict[str, float] = {}
+        price_dict: dict[str, float] = {}
 
         for i in range(1, 5):
             try:
                 results = await self.get_prices_by_page(vs_currency="usd", page_no=i)
-                if 'error' in results:
+                if "error" in results:
                     raise Exception(f"{results['error']}")
                 for result in results:
                     symbol = result["symbol"].upper()

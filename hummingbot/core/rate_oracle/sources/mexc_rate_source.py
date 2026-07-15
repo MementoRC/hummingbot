@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from decimal import Decimal
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING
 
 from hummingbot.connector.utils import split_hb_trading_pair
 from hummingbot.core.rate_oracle.sources.rate_source_base import RateSourceBase
@@ -13,14 +15,14 @@ if TYPE_CHECKING:
 class MexcRateSource(RateSourceBase):
     def __init__(self):
         super().__init__()
-        self._mexc_exchange: Optional[MexcExchange] = None  # delayed because of circular reference
+        self._mexc_exchange: MexcExchange | None = None  # delayed because of circular reference
 
     @property
     def name(self) -> str:
         return "mexc"
 
     @async_ttl_cache(ttl=30, maxsize=1)
-    async def get_prices(self, quote_token: Optional[str] = None) -> Dict[str, Decimal]:
+    async def get_prices(self, quote_token: str | None = None) -> dict[str, Decimal]:
         self._ensure_exchanges()
         results = {}
         tasks = [
@@ -43,7 +45,7 @@ class MexcRateSource(RateSourceBase):
             self._mexc_exchange = self._build_mexc_connector_without_private_keys()
 
     @staticmethod
-    async def _get_mexc_prices(exchange: 'MexcExchange', quote_token: str = None) -> Dict[str, Decimal]:
+    async def _get_mexc_prices(exchange: "MexcExchange", quote_token: str = None) -> dict[str, Decimal]:
         """
         Fetches MEXC prices
 
@@ -70,7 +72,7 @@ class MexcRateSource(RateSourceBase):
         return results
 
     @staticmethod
-    def _build_mexc_connector_without_private_keys() -> 'MexcExchange':
+    def _build_mexc_connector_without_private_keys() -> "MexcExchange":
         from hummingbot.connector.exchange.mexc.mexc_exchange import MexcExchange
 
         return MexcExchange(

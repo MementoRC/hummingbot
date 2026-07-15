@@ -1,8 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 import json
 import re
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from typing import Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses import aioresponses
@@ -15,6 +15,7 @@ from hummingbot.connector.exchange.ascend_ex.ascend_ex_auth import AscendExAuth
 from hummingbot.connector.exchange.ascend_ex.ascend_ex_exchange import AscendExExchange
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class AscendExUserStreamTrackerTests(IsolatedAsyncioWrapperTestCase):
@@ -35,7 +36,7 @@ class AscendExUserStreamTrackerTests(IsolatedAsyncioWrapperTestCase):
     async def asyncSetUp(self) -> None:
         await super().asyncSetUp()
         self.log_records = []
-        self.listening_task: Optional[asyncio.Task] = None
+        self.listening_task: asyncio.Task | None = None
         self.mocking_assistant = NetworkMockingAssistant()
 
         self.throttler = AsyncThrottler(rate_limits=CONSTANTS.RATE_LIMITS)
@@ -98,7 +99,9 @@ class AscendExUserStreamTrackerTests(IsolatedAsyncioWrapperTestCase):
 
         output_queue = asyncio.Queue()
 
-        self.listening_task = self.local_event_loop.create_task(self.data_source.listen_for_user_stream(output=output_queue))
+        self.listening_task = self.local_event_loop.create_task(
+            self.data_source.listen_for_user_stream(output=output_queue)
+        )
 
         await self.mocking_assistant.run_until_all_aiohttp_messages_delivered(ws_connect_mock.return_value)
 
@@ -202,9 +205,8 @@ class AscendExUserStreamTrackerTests(IsolatedAsyncioWrapperTestCase):
             pass
 
         self.assertTrue(
-            self._is_logged(
-                "ERROR",
-                "Unexpected error while listening to user stream. Retrying after 5 seconds..."))
+            self._is_logged("ERROR", "Unexpected error while listening to user stream. Retrying after 5 seconds...")
+        )
 
     @aioresponses()
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
@@ -230,6 +232,5 @@ class AscendExUserStreamTrackerTests(IsolatedAsyncioWrapperTestCase):
             pass
 
         self.assertTrue(
-            self._is_logged(
-                "ERROR",
-                "Unexpected error while listening to user stream. Retrying after 5 seconds..."))
+            self._is_logged("ERROR", "Unexpected error while listening to user stream. Retrying after 5 seconds...")
+        )

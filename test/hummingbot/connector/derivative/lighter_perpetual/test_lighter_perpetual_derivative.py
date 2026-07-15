@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
+from decimal import Decimal
 import json
 import re
-from decimal import Decimal
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Any, Callable
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses import aioresponses
@@ -37,7 +39,6 @@ class MockSignerClient:
 
 
 class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDerivativeTests):
-
     ACCOUNT_INDEX = 724450
 
     @classmethod
@@ -314,9 +315,7 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
                 {
                     "index": self.ACCOUNT_INDEX,
                     "available_balance": "2000",
-                    "assets": [
-                        {"symbol": "USDC", "margin_balance": "2000", "locked_balance": "0"}
-                    ],
+                    "assets": [{"symbol": "USDC", "margin_balance": "2000", "locked_balance": "0"}],
                     "positions": [],
                 }
             ]
@@ -331,9 +330,7 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
         return {
             "channel": f"{CONSTANTS.ACCOUNT_ALL_ASSETS_CHANNEL}:{self.ACCOUNT_INDEX}",
             "available_balance": "2000",
-            "assets": {
-                "usdc": {"symbol": "USDC", "margin_balance": "2000", "locked_balance": "0"}
-            },
+            "assets": {"usdc": {"symbol": "USDC", "margin_balance": "2000", "locked_balance": "0"}},
         }
 
     @property
@@ -516,7 +513,7 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         self._mock_active(mock_api, self._active_order_payload(order))
 
@@ -531,7 +528,7 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         self._mock_active(mock_api, self._active_order_payload(order))
 
@@ -546,7 +543,7 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         self._mock_active(mock_api, {"orders": []})
         self._mock_inactive(mock_api, {"orders": []}, callback=callback)
@@ -557,7 +554,7 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
         successful_order: InFlightOrder,
         erroneous_order: InFlightOrder,
         mock_api: aioresponses,
-    ) -> List[str]:
+    ) -> list[str]:
         both_active = {
             "orders": [
                 {
@@ -597,8 +594,8 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
         self._mock_active(mock_api, {"orders": []})
         self._mock_inactive(mock_api, self._inactive_order_payload(order, "filled"), callback=callback)
         return [self._active_orders_url(), self._inactive_orders_url()]
@@ -607,8 +604,8 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
         self._mock_active(mock_api, {"orders": []})
         self._mock_inactive(
             mock_api,
@@ -621,8 +618,8 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
         self._mock_active(mock_api, self._active_order_payload(order), callback=callback)
         return [self._active_orders_url()]
 
@@ -630,7 +627,7 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         self._mock_active(mock_api, {"orders": []}, callback=callback)
         self._mock_inactive(mock_api, {"orders": []})
@@ -640,7 +637,7 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         partial_amt = str(self.expected_partial_fill_amount)
         self._mock_active(
@@ -666,8 +663,8 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
         self._mock_active(mock_api, {"orders": []}, callback=callback)
         self._mock_inactive(mock_api, {"orders": []})
         return [self._active_orders_url(), self._inactive_orders_url()]
@@ -676,7 +673,7 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = None,
+        callback: Callable | None = None,
     ) -> str:
         return ""  # lighter trade fills arrive via WS, not HTTP status update
 
@@ -684,7 +681,7 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = None,
+        callback: Callable | None = None,
     ) -> str:
         return ""
 
@@ -692,7 +689,7 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = None,
+        callback: Callable | None = None,
     ) -> str:
         return ""  # lighter trade fills arrive via WS, not HTTP status update
 
@@ -700,7 +697,7 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
         self,
         position_mode: PositionMode,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ):
         callback()  # lighter only supports ONEWAY, fires immediately
 
@@ -708,8 +705,8 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
         self,
         position_mode: PositionMode,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> Tuple[str, str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> tuple[str, str]:
         callback()  # lighter only supports ONEWAY, HEDGE always fails immediately
         return "", "Lighter only supports ONEWAY position mode."
 
@@ -717,8 +714,8 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
         self,
         leverage: int,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> Tuple[str, str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> tuple[str, str]:
         error_msg = f"Error setting leverage {leverage}"
 
         async def _fail(**kwargs):
@@ -732,7 +729,7 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
         self,
         leverage: int,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ):
         async def _success(**kwargs):
             callback()
@@ -746,7 +743,7 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
         self,
         response: Any,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ):
         balance_url = web_utils.rest_url(CONSTANTS.ACCOUNT_PATH_URL, self.domain)
         mock_api.get(
@@ -1048,9 +1045,7 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
             amount=Decimal("1"),
         )
         order: InFlightOrder = self.exchange.in_flight_orders[self.client_order_id_prefix + "1"]
-        self.exchange._set_current_timestamp(
-            1640780000 + CONSTANTS.ORDER_NOT_FOUND_GRACE_PERIOD + 1
-        )
+        self.exchange._set_current_timestamp(1640780000 + CONSTANTS.ORDER_NOT_FOUND_GRACE_PERIOD + 1)
 
         self.configure_http_error_order_status_response(order=order, mock_api=mock_api)
         await self.exchange._update_order_status()
@@ -1079,9 +1074,7 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
         await self.exchange._update_order_status()
 
         self.assertTrue(order.is_open)
-        self.assertNotIn(
-            order.client_order_id, self.exchange._order_tracker._order_not_found_records
-        )
+        self.assertNotIn(order.client_order_id, self.exchange._order_tracker._order_not_found_records)
 
     @aioresponses()
     async def test_update_order_status_failed_order_includes_failure_metadata(self, mock_api):
@@ -1200,9 +1193,7 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
 
     async def test_lighter_fetch_last_fee_payment_with_entry(self):
         self.exchange._api_get = AsyncMock(
-            return_value={
-                "position_fundings": [{"change": "1.5", "rate": "0.0002", "timestamp": "1000000"}]
-            }
+            return_value={"position_fundings": [{"change": "1.5", "rate": "0.0002", "timestamp": "1000000"}]}
         )
         ts, rate, amount = await self.exchange._fetch_last_fee_payment(self.trading_pair)
         self.assertEqual(1000.0, ts)  # 1_000_000 ms * 1e-3 = 1000 s
@@ -1217,7 +1208,8 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
         self.exchange._markets_by_exchange_symbol = {}
         self.exchange._update_trading_rules = AsyncMock()
         self.exchange._api_get = AsyncMock(
-            return_value={"sub_accounts": [{"index": self.ACCOUNT_INDEX, "l1_address": self.exchange._l1_address}]})
+            return_value={"sub_accounts": [{"index": self.ACCOUNT_INDEX, "l1_address": self.exchange._l1_address}]}
+        )
         self.exchange._create_signer_client = MagicMock(return_value="signer")
         self.exchange._create_web_assistants_factory = MagicMock(return_value="factory")
         self.exchange._create_user_stream_tracker = MagicMock(return_value="tracker")
@@ -1245,9 +1237,7 @@ class LighterPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpetual
                     {
                         "index": self.ACCOUNT_INDEX,
                         "available_balance": "80",
-                        "assets": [
-                            {"symbol": "USDC", "margin_balance": "100", "locked_balance": "20"}
-                        ],
+                        "assets": [{"symbol": "USDC", "margin_balance": "100", "locked_balance": "20"}],
                         "positions": [],
                     }
                 ]

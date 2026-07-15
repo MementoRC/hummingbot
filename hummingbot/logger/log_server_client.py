@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 import logging
-from typing import Any, Dict, Optional
+from typing import Any
 
 import aiohttp
 
@@ -12,7 +14,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class LogServerClient(NetworkBase):
-    lsc_logger: Optional[HummingbotLogger] = None
+    lsc_logger: HummingbotLogger | None = None
     _lsc_shared_instance: "LogServerClient" = None
 
     @classmethod
@@ -30,7 +32,7 @@ class LogServerClient(NetworkBase):
     def __init__(self, log_server_url: str = "https://api.coinalpha.com/reporting-proxy-v2/"):
         super().__init__()
         self.queue: asyncio.Queue = asyncio.Queue()
-        self.consume_queue_task: Optional[asyncio.Task] = None
+        self.consume_queue_task: asyncio.Task | None = None
         self.log_server_url: str = log_server_url
 
     def request(self, req):
@@ -39,11 +41,10 @@ class LogServerClient(NetworkBase):
         self.queue.put_nowait(req)
 
     @async_retry(retry_count=3, exception_types=[asyncio.TimeoutError, EnvironmentError], raise_exp=True)
-    async def send_log(self, session: aiohttp.ClientSession, request_dict: Dict[str, Any]):
+    async def send_log(self, session: aiohttp.ClientSession, request_dict: dict[str, Any]):
         async with session.request(request_dict["method"], request_dict["url"], **request_dict["request_obj"]) as resp:
             resp_text = await resp.text()
-            self.logger().debug(f"Sent logs: {resp.status} {resp.url} {resp_text} ",
-                                extra={"do_not_send": True})
+            self.logger().debug(f"Sent logs: {resp.status} {resp.url} {resp_text} ", extra={"do_not_send": True})
             if resp.status != 200 and resp.status not in {404, 405, 400}:
                 raise EnvironmentError("Failed sending logs to log server.")
 
@@ -64,16 +65,18 @@ class LogServerClient(NetworkBase):
 
     async def request_loop(self):
         while True:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             try:
-                async with aiohttp.ClientSession(loop=loop,
-                                                 connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
+                async with aiohttp.ClientSession(
+                    loop=loop, connector=aiohttp.TCPConnector(verify_ssl=False)
+                ) as session:
                     await self.consume_queue(session)
             except asyncio.CancelledError:
                 raise
             except Exception:
-                self.logger().network("Unexpected error running logging task.",
-                                      exc_info=True, extra={"do_not_send": True})
+                self.logger().network(
+                    "Unexpected error running logging task.", exc_info=True, extra={"do_not_send": True}
+                )
                 await asyncio.sleep(5.0)
 
     async def start_network(self):
@@ -86,9 +89,8 @@ class LogServerClient(NetworkBase):
 
     async def check_network(self) -> NetworkStatus:
         try:
-            loop = asyncio.get_event_loop()
-            async with aiohttp.ClientSession(loop=loop,
-                                             connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
+            loop = asyncio.get_running_loop()
+            async with aiohttp.ClientSession(loop=loop, connector=aiohttp.TCPConnector(verify_ssl=False)) as session:
                 async with session.get(self.log_server_url) as resp:
                     if resp.status != 200:
                         raise Exception("Log proxy server is down.")

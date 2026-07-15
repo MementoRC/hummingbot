@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import asyncio
-import logging
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any, AsyncGenerator, Dict, List, NamedTuple
+import logging
+from typing import TYPE_CHECKING, Any, AsyncGenerator, NamedTuple
 
 import hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_trade_constants as constants
 from hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_trade_web_utils import (
@@ -42,6 +44,7 @@ class CoinbaseAdvancedTradeAPIUserStreamDataSource(UserStreamTrackerDataSource):
     """
     UserStreamTrackerDataSource implementation for Coinbase Advanced Trade API.
     """
+
     _sequence: int = 0
     _logger: HummingbotLogger | logging.Logger | None = None
 
@@ -52,12 +55,14 @@ class CoinbaseAdvancedTradeAPIUserStreamDataSource(UserStreamTrackerDataSource):
             cls._logger = logging.getLogger(name)
         return cls._logger
 
-    def __init__(self,
-                 auth,
-                 trading_pairs: List[str],
-                 connector: 'CoinbaseAdvancedTradeExchange',
-                 api_factory: WebAssistantsFactory,
-                 domain: str = "com"):
+    def __init__(
+        self,
+        auth,
+        trading_pairs: list[str],
+        connector: "CoinbaseAdvancedTradeExchange",
+        api_factory: WebAssistantsFactory,
+        domain: str = "com",
+    ):
         """
         Initialize the CoinbaseAdvancedTradeAPIUserStreamDataSource.
 
@@ -70,7 +75,7 @@ class CoinbaseAdvancedTradeAPIUserStreamDataSource(UserStreamTrackerDataSource):
         super().__init__()
         self._domain: str = domain
         self._api_factory: WebAssistantsFactory = api_factory
-        self._trading_pairs: List[str] = trading_pairs
+        self._trading_pairs: list[str] = trading_pairs
         self._connector = connector
 
         self._ws_assistant: WSAssistant | None = None
@@ -96,8 +101,7 @@ class CoinbaseAdvancedTradeAPIUserStreamDataSource(UserStreamTrackerDataSource):
         self._ws_assistant = await self._api_factory.get_ws_assistant()
 
         await self._ws_assistant.connect(
-            ws_url=constants.USER_WSS_URL.format(domain=self._domain),
-            ping_timeout=constants.WS_HEARTBEAT_TIME_INTERVAL
+            ws_url=constants.USER_WSS_URL.format(domain=self._domain), ping_timeout=constants.WS_HEARTBEAT_TIME_INTERVAL
         )
         return self._ws_assistant
 
@@ -116,9 +120,7 @@ class CoinbaseAdvancedTradeAPIUserStreamDataSource(UserStreamTrackerDataSource):
         await self._subscribe_or_unsubscribe(websocket_assistant, constants.WebsocketAction.UNSUBSCRIBE)
 
     async def _subscribe_or_unsubscribe(
-            self,
-            websocket_assistant: WSAssistant,
-            action: constants.WebsocketAction
+        self, websocket_assistant: WSAssistant, action: constants.WebsocketAction
     ) -> None:
         """
         Applies the WebsocketAction in argument to the list of channels/pairs through the provided websocket connection.
@@ -145,7 +147,7 @@ class CoinbaseAdvancedTradeAPIUserStreamDataSource(UserStreamTrackerDataSource):
             "timestamp": 1675974199
         }
         """
-        symbols: List[str] = [
+        symbols: list[str] = [
             await self._connector.exchange_symbol_associated_to_pair(trading_pair=pair) for pair in self._trading_pairs
         ]
 
@@ -160,13 +162,14 @@ class CoinbaseAdvancedTradeAPIUserStreamDataSource(UserStreamTrackerDataSource):
                 # Change subscription to the channel and pair
                 await websocket_assistant.send(WSJSONRequest(payload=payload, is_auth_required=True))
             self.logger().info(
-                f"{action.value.capitalize()}-ing to {constants.WS_USER_SUBSCRIPTION_KEYS} for {self._trading_pairs} ...")
+                f"{action.value.capitalize()}-ing to {constants.WS_USER_SUBSCRIPTION_KEYS} for {self._trading_pairs} ..."
+            )
         except (asyncio.CancelledError, Exception) as e:
             self.logger().exception(
                 f"Unexpected error occurred {action.value.capitalize()}-ing "
                 f"to {constants.WS_USER_SUBSCRIPTION_KEYS} for {self._trading_pairs}...\n"
                 f"Exception: {e}",
-                exc_info=True
+                exc_info=True,
             )
             raise
 
@@ -192,9 +195,9 @@ class CoinbaseAdvancedTradeAPIUserStreamDataSource(UserStreamTrackerDataSource):
         :param queue: The intermediary queue to put the messages into.
         """
         async for ws_response in websocket_assistant.iter_messages():  # type: ignore # PyCharm doesn't recognize iter_messages
-            data: Dict[str, Any] = ws_response.data
+            data: dict[str, Any] = ws_response.data
 
-            if 'type' in data and data["type"] == "error":
+            if "type" in data and data["type"] == "error":
                 if "authentication failure" in data["message"]:
                     self.logger().error(f"authentication error: {data}")
                     await self._subscribe_channels(self._ws_assistant)
@@ -207,7 +210,7 @@ class CoinbaseAdvancedTradeAPIUserStreamDataSource(UserStreamTrackerDataSource):
             self._process_sequence_number(data)
 
             channel: str = data["channel"]
-            if channel == 'user':
+            if channel == "user":
                 async for order in self._decipher_message(event_message=data):
                     try:
                         # queue.put_nowait(order)
@@ -215,12 +218,12 @@ class CoinbaseAdvancedTradeAPIUserStreamDataSource(UserStreamTrackerDataSource):
                     except asyncio.QueueFull:
                         self.logger().exception("Timeout while waiting to put message into raw queue. Message dropped.")
                         raise
-            elif channel == 'subscriptions':
+            elif channel == "subscriptions":
                 self._process_subscription_message(data)
             elif channel in {"heartbeats"}:
                 self._process_heartbeat_message(data)
 
-    def _process_sequence_number(self, data: Dict[str, Any]):
+    def _process_sequence_number(self, data: dict[str, Any]):
         """
         Processes the sequence number from the websocket message.
         :param data: The message received from the websocket connection.
@@ -233,21 +236,21 @@ class CoinbaseAdvancedTradeAPIUserStreamDataSource(UserStreamTrackerDataSource):
 
         self._sequence = data["sequence_num"] + 1
 
-    def _process_subscription_message(self, data: Dict[str, Any]):
+    def _process_subscription_message(self, data: dict[str, Any]):
         """
         Processes the subscription message from the websocket connection.
         :param data: The message received from the websocket connection.
         """
         pass  # self.logger().debug(f"Received subscription message: {data}")
 
-    def _process_heartbeat_message(self, data: Dict[str, Any]):
+    def _process_heartbeat_message(self, data: dict[str, Any]):
         """
         Processes the heartbeat message from the websocket connection.
         :param data: The message received from the websocket connection.
         """
         pass  # self.logger().debug(f"Received heartbeat message: {data}")
 
-    async def _decipher_message(self, event_message: Dict[str, Any]) -> AsyncGenerator[Dict[str, Any], None]:
+    async def _decipher_message(self, event_message: dict[str, Any]) -> AsyncGenerator[dict[str, Any], None]:
         """
         Streamline the messages for processing by the exchange.
         :param event_message: The message received from the exchange.
@@ -290,7 +293,7 @@ class CoinbaseAdvancedTradeAPIUserStreamDataSource(UserStreamTrackerDataSource):
         for event in event_message.get("events"):
             for order in event["orders"]:
                 try:
-                    if order["client_order_id"] != '':
+                    if order["client_order_id"] != "":
                         order_type: OrderType | None = None
                         if order["order_type"] == "Limit":
                             order_type = OrderType.LIMIT
