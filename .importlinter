@@ -214,3 +214,23 @@ modules =
     async_utils
     connector_utils
     strategy_framework.primitives
+
+# ADR-0001 Group D: strategy_framework (L2) may depend downward on L0 leaves
+# (event_bus, data_type_primitives, logger, async_utils, connector_utils) but must
+# NOT import L2 sibling packages. Motivated by the strategy_framework.hb_compat ->
+# event_bus edge landed via hb-strategy-framework PR #34.
+
+[importlinter:contract:adr-0001-strategy-framework-downward-only]
+name = adr-0001-strategy-framework-downward-only
+type = forbidden
+source_modules =
+    strategy_framework
+forbidden_modules =
+    candles_feed
+    liquidations_feed
+    rate_oracle
+    market_data
+    market_connector
+    market_simulator
+    web_assistant
+    remote_iface
