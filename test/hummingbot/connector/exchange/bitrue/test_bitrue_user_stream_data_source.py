@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 import json
 import re
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from typing import Any, Dict, Optional
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses import aioresponses
@@ -15,6 +16,7 @@ from hummingbot.connector.exchange.bitrue.bitrue_user_stream_data_source import 
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class BitrueUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
@@ -34,7 +36,7 @@ class BitrueUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
 
     async def asyncSetUp(self) -> None:
         self.log_records = []
-        self.listening_task: Optional[asyncio.Task] = None
+        self.listening_task: asyncio.Task | None = None
         self.mocking_assistant = NetworkMockingAssistant(self.local_event_loop)
 
         self.throttler = AsyncThrottler(rate_limits=CONSTANTS.RATE_LIMITS)
@@ -89,7 +91,7 @@ class BitrueUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         self.resume_test_event.set()
         return value
 
-    def _error_response(self) -> Dict[str, Any]:
+    def _error_response(self) -> dict[str, Any]:
         resp = {"code": "ERROR CODE", "msg": "ERROR MESSAGE"}
 
         return resp
@@ -136,9 +138,7 @@ class BitrueUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         result: bool = await self.data_source._ping_listen_key()
 
         self.assertTrue(
-            self._is_logged(
-                "WARNING", f"Failed to refresh the listen key {self.listen_key}: " f"{self._error_response()}"
-            )
+            self._is_logged("WARNING", f"Failed to refresh the listen key {self.listen_key}: {self._error_response()}")
         )
         self.assertFalse(result)
 
@@ -268,8 +268,8 @@ class BitrueUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
 
         msg_queue: asyncio.Queue = asyncio.Queue()
         mock_ws.return_value = self.mocking_assistant.create_websocket_mock()
-        mock_ws.return_value.receive.side_effect = (
-            lambda *args, **kwargs: self._create_exception_and_unlock_test_with_event(Exception("TEST ERROR"))
+        mock_ws.return_value.receive.side_effect = lambda *args, **kwargs: (
+            self._create_exception_and_unlock_test_with_event(Exception("TEST ERROR"))
         )
         mock_ws.close.return_value = None
 
@@ -291,6 +291,7 @@ class BitrueUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
     async def test_ensure_listen_key_task_running_with_running_task(self, mock_safe_ensure_future):
         # Test when task is already running - should return early (line 52)
         from unittest.mock import MagicMock
+
         mock_task = MagicMock()
         mock_task.done.return_value = False
         self.data_source._manage_listen_key_task = mock_task

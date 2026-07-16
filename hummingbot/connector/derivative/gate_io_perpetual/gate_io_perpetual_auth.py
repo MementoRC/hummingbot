@@ -2,7 +2,7 @@ import hashlib
 import hmac
 import json
 import time
-from typing import Any, Dict
+from typing import Any
 from urllib.parse import urlparse
 
 import six
@@ -34,13 +34,13 @@ class GateIoPerpetualAuth(AuthBase):
         request.payload["auth"] = self._get_auth_headers_ws(payload=request.payload)
         return request
 
-    def _get_auth_headers_ws(self, payload: Dict[str, Any] = None) -> Dict[str, Any]:
+    def _get_auth_headers_ws(self, payload: dict[str, Any] = None) -> dict[str, Any]:
         """
         Generates authn for Gate.io websockets
 
         :return: a dictionary with headers
         """
-        sig = self._sign_payload_ws(payload['channel'], payload['event'], payload['time'])
+        sig = self._sign_payload_ws(payload["channel"], payload["event"], payload["time"])
         headers = {
             "method": "api_key",
             "KEY": f"{self.api_key}",
@@ -48,7 +48,7 @@ class GateIoPerpetualAuth(AuthBase):
         }
         return headers
 
-    def _get_auth_headers(self, request: RESTRequest) -> Dict[str, Any]:
+    def _get_auth_headers(self, request: RESTRequest) -> dict[str, Any]:
         """
         Generates authentication headers for Gate.io REST API
 
@@ -78,7 +78,7 @@ class GateIoPerpetualAuth(AuthBase):
         if body is not None:
             if not isinstance(r.data, six.string_types):
                 body = json.dumps(r.data)
-            m.update(body.encode('utf-8'))
+            m.update(body.encode("utf-8"))
         body_hash = m.hexdigest()
 
         if r.params:
@@ -87,14 +87,11 @@ class GateIoPerpetualAuth(AuthBase):
                 qs.append(f"{k}={v}")
             query_string = "&".join(qs)
 
-        s = f'{r.method}\n{path}\n{query_string}\n{body_hash}\n{ts}'
+        s = f"{r.method}\n{path}\n{query_string}\n{body_hash}\n{ts}"
         return self._sign(s), ts
 
     def _sign(self, payload) -> str:
-        return hmac.new(
-            self.secret_key.encode('utf-8'),
-            payload.encode('utf-8'),
-            hashlib.sha512).hexdigest()
+        return hmac.new(self.secret_key.encode("utf-8"), payload.encode("utf-8"), hashlib.sha512).hexdigest()
 
     @staticmethod
     def _get_timestamp():

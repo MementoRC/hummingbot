@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 from decimal import Decimal
-from typing import Optional
 
 from hummingbot.connector.derivative.perpetual_budget_checker import PerpetualBudgetChecker
 from hummingbot.connector.perpetual_trading import PerpetualTrading
@@ -12,13 +13,11 @@ from hummingbot.core.utils.estimate_fee import build_perpetual_trade_fee
 class MockPerpConnector(MockPaperExchange, PerpetualTrading):
     def __init__(
         self,
-        trade_fee_schema: Optional[TradeFeeSchema] = None,
-        buy_collateral_token: Optional[str] = None,
-        sell_collateral_token: Optional[str] = None,
+        trade_fee_schema: TradeFeeSchema | None = None,
+        buy_collateral_token: str | None = None,
+        sell_collateral_token: str | None = None,
     ):
-        MockPaperExchange.__init__(
-            self,
-            trade_fee_schema=trade_fee_schema)
+        MockPaperExchange.__init__(self, trade_fee_schema=trade_fee_schema)
         PerpetualTrading.__init__(self, [self.trading_pair])
         self._budget_checker = PerpetualBudgetChecker(exchange=self)
         self._funding_payment_span = [0, 10]
@@ -52,15 +51,17 @@ class MockPerpConnector(MockPaperExchange, PerpetualTrading):
         )
         return token
 
-    def get_fee(self,
-                base_currency: str,
-                quote_currency: str,
-                order_type: OrderType,
-                order_side: TradeType,
-                amount: Decimal,
-                price: Decimal = Decimal("0"),
-                is_maker: Optional[bool] = None,
-                position_action: PositionAction = PositionAction.OPEN) -> AddedToCostTradeFee:
+    def get_fee(
+        self,
+        base_currency: str,
+        quote_currency: str,
+        order_type: OrderType,
+        order_side: TradeType,
+        amount: Decimal,
+        price: Decimal = Decimal("0"),
+        is_maker: bool | None = None,
+        position_action: PositionAction = PositionAction.OPEN,
+    ) -> AddedToCostTradeFee:
         return build_perpetual_trade_fee(
             exchange=self.name,
             is_maker=is_maker,

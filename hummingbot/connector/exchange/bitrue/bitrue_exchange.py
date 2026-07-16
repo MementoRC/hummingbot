@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 from copy import deepcopy
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from bidict import bidict
 from cachetools import TTLCache
@@ -40,9 +42,9 @@ class BitrueExchange(ExchangePyBase):
         self,
         bitrue_api_key: str,
         bitrue_api_secret: str,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         domain: str = DEFAULT_DOMAIN,
     ):
@@ -52,10 +54,10 @@ class BitrueExchange(ExchangePyBase):
         self._trading_pairs = trading_pairs
         self._domain = domain
         self._last_trades_poll_bitrue_timestamp = 1.0
-        self._rate_limits_polling_task: Optional[asyncio.Task] = None
-        self._ws_trades_event_ids_by_token: Dict[str, TTLCache] = dict()
+        self._rate_limits_polling_task: asyncio.Task | None = None
+        self._ws_trades_event_ids_by_token: dict[str, TTLCache] = dict()
 
-        self._max_trade_id_by_symbol: Dict[str, int] = dict()
+        self._max_trade_id_by_symbol: dict[str, int] = dict()
         super().__init__(balance_asset_limit, rate_limits_share_pct)
 
     @property
@@ -122,7 +124,7 @@ class BitrueExchange(ExchangePyBase):
     def supported_order_types(self):
         return [OrderType.LIMIT, OrderType.MARKET]
 
-    async def _get_all_pairs_prices(self) -> Dict[str, Any]:
+    async def _get_all_pairs_prices(self) -> dict[str, Any]:
         results = {}
         pairs_prices = await self._api_get(path_url=CONSTANTS.TICKER_PRICE_CHANGE_PATH_URL)
         for pair_price_data in pairs_prices:
@@ -139,7 +141,7 @@ class BitrueExchange(ExchangePyBase):
         )
         return is_time_synchronizer_related
 
-    def _is_request_result_an_error_related_to_time_synchronizer(self, request_result: Dict[str, Any]) -> bool:
+    def _is_request_result_an_error_related_to_time_synchronizer(self, request_result: dict[str, Any]) -> bool:
         # The exchange returns a response failure and not a valid response
         return False
 
@@ -189,7 +191,7 @@ class BitrueExchange(ExchangePyBase):
         order_side: TradeType,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         is_maker = True if is_maker is None else is_maker
         return DeductedFromReturnsTradeFee(percent=self.estimate_fee_pct(is_maker))
@@ -203,7 +205,7 @@ class BitrueExchange(ExchangePyBase):
         order_type: OrderType,
         price: Decimal,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         amount_str = f"{amount:f}"
         price_str = f"{price:f}"
         type_str = BitrueExchange.bitrue_order_type(order_type)
@@ -246,7 +248,7 @@ class BitrueExchange(ExchangePyBase):
         )
         return str(result.get("orderId")) == ex_oid
 
-    async def _format_trading_rules(self, exchange_info_dict: Dict[str, Any]) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: dict[str, Any]) -> list[TradingRule]:
         """
         Example:
         {
@@ -397,12 +399,12 @@ class BitrueExchange(ExchangePyBase):
                 self.logger().error("Unexpected error in user stream listener loop.", exc_info=True)
                 await self._sleep(5.0)
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         # We have overridden `_update_orders_fills` to utilize batch trade updates to reduce API limit consumption.
         # See implementation in `_request_batch_order_fills(...)` function.
         pass
 
-    async def _update_orders_fills(self, orders: List[InFlightOrder]):
+    async def _update_orders_fills(self, orders: list[InFlightOrder]):
         if orders:
             # Since we are keeping the last trade id referenced to improve the query performance
             # it is necessary to evaluate updates for all possible fillable orders every time (to avoid loosing updates)
@@ -418,7 +420,7 @@ class BitrueExchange(ExchangePyBase):
                 order_ids = [order.client_order_id for order in candidate_orders]
                 self.logger().warning(f"Failed to fetch trade updates for orders {order_ids}. Error: {request_error}")
 
-    async def _all_trade_updates_for_orders(self, orders: List[InFlightOrder]) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_orders(self, orders: list[InFlightOrder]) -> list[TradeUpdate]:
         # This endpoint is the only one on v2 for some reason
         url = CONSTANTS.REST_URL + CONSTANTS.MY_TRADES_PATH_URL
         symbols = {await self.exchange_symbol_associated_to_pair(trading_pair=o.trading_pair) for o in orders}
@@ -506,7 +508,7 @@ class BitrueExchange(ExchangePyBase):
             del self._account_available_balances[asset_name]
             del self._account_balances[asset_name]
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         mapping = bidict()
         for symbol_data in filter(bitrue_utils.is_exchange_information_valid, exchange_info["symbols"]):
             mapping[symbol_data["symbol"]] = combine_to_hb_trading_pair(
@@ -533,8 +535,7 @@ class BitrueExchange(ExchangePyBase):
                 self.logger().network(
                     "Unexpected error while fetching rate limits.",
                     exc_info=True,
-                    app_warning_msg=f"Could not fetch new rate limits from {self.name_cap}"
-                    " Check network connection.",
+                    app_warning_msg=f"Could not fetch new rate limits from {self.name_cap} Check network connection.",
                 )
                 await self._sleep(0.5)
 
@@ -542,7 +543,7 @@ class BitrueExchange(ExchangePyBase):
         exchange_info = await self._api_get(path_url=self.trading_rules_request_path)
         self._initialize_rate_limits_from_exchange_info(exchange_info=exchange_info)
 
-    def _initialize_rate_limits_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_rate_limits_from_exchange_info(self, exchange_info: dict[str, Any]):
         # Update rate limits
         rate_limits_copy = deepcopy(self._throttler._rate_limits)
         for rate_limit in exchange_info["rateLimits"]:
@@ -584,7 +585,7 @@ class BitrueExchange(ExchangePyBase):
         resp_json = await self._api_get(path_url=CONSTANTS.TICKER_PRICE_CHANGE_PATH_URL, params=params)
         return float(resp_json[0]["lastPrice"])
 
-    async def _get_all_market_symbol_orders(self, trading_pair: str) -> List[InFlightOrder]:
+    async def _get_all_market_symbol_orders(self, trading_pair: str) -> list[InFlightOrder]:
         in_flight_orders = []
         try:
             response = await self._api_get(
@@ -618,15 +619,15 @@ class BitrueExchange(ExchangePyBase):
     async def _api_request(
         self,
         path_url,
-        overwrite_url: Optional[str] = None,
+        overwrite_url: str | None = None,
         method: RESTMethod = RESTMethod.GET,
-        params: Optional[Dict[str, Any]] = None,
-        data: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
+        data: dict[str, Any] | None = None,
         is_auth_required: bool = False,
         return_err: bool = False,
-        limit_id: Optional[str] = None,
+        limit_id: str | None = None,
         **kwargs,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
 
         last_exception = None
         rest_assistant = await self._web_assistants_factory.get_rest_assistant()

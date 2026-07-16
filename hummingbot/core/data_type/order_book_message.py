@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 from collections import namedtuple
 from enum import Enum
 from functools import total_ordering
-from typing import Dict, List, Optional
 
 from hummingbot.core.data_type.order_book_row import OrderBookRow
 
@@ -15,14 +16,14 @@ class OrderBookMessageType(Enum):
 @total_ordering
 class OrderBookMessage(namedtuple("_OrderBookMessage", "type, content, timestamp")):
     type: OrderBookMessageType
-    content: Dict[str, any]
+    content: dict[str, any]
     timestamp: float
 
     def __new__(
         cls,
         message_type: OrderBookMessageType,
-        content: Dict[str, any],
-        timestamp: Optional[float] = None,
+        content: dict[str, any],
+        timestamp: float | None = None,
         *args,
         **kwargs,
     ):
@@ -53,13 +54,13 @@ class OrderBookMessage(namedtuple("_OrderBookMessage", "type, content, timestamp
         return self.content["trading_pair"]
 
     @property
-    def asks(self) -> List[OrderBookRow]:
+    def asks(self) -> list[OrderBookRow]:
         return [
             OrderBookRow(float(price), float(amount), self.update_id) for price, amount, *trash in self.content["asks"]
         ]
 
     @property
-    def bids(self) -> List[OrderBookRow]:
+    def bids(self) -> list[OrderBookRow]:
         return [
             OrderBookRow(float(price), float(amount), self.update_id) for price, amount, *trash in self.content["bids"]
         ]
@@ -73,12 +74,8 @@ class OrderBookMessage(namedtuple("_OrderBookMessage", "type, content, timestamp
         return self.type == OrderBookMessageType.TRADE
 
     def __eq__(self, other: "OrderBookMessage") -> bool:
-        eq = (
-            (self.type == other.type)
-            and (
-                (self.has_update_id and (self.update_id == other.update_id))
-                or (self.trade_id == other.trade_id)
-            )
+        eq = (self.type == other.type) and (
+            (self.has_update_id and (self.update_id == other.update_id)) or (self.trade_id == other.trade_id)
         )
         return eq
 

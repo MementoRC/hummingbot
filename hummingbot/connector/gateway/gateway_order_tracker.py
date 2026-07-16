@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from collections import OrderedDict
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Dict
 
 from hummingbot.connector.client_order_tracker import ClientOrderTracker
 from hummingbot.connector.gateway.gateway_in_flight_order import GatewayInFlightOrder
@@ -9,7 +11,6 @@ if TYPE_CHECKING:
 
 
 class GatewayOrderTracker(ClientOrderTracker):
-
     def __init__(self, connector: "ConnectorBase", lost_order_count_limit: int = 3) -> None:
         """
         Provides utilities for connectors to update in-flight orders and also handle order errors.
@@ -22,10 +23,10 @@ class GatewayOrderTracker(ClientOrderTracker):
         """
         super().__init__(connector=connector, lost_order_count_limit=lost_order_count_limit)
         # For some DEXes it is important to process orders in the same order they were created
-        self._lost_orders: Dict[str, GatewayInFlightOrder] = OrderedDict()
+        self._lost_orders: dict[str, GatewayInFlightOrder] = OrderedDict()
 
     @property
-    def all_fillable_orders_by_hash(self) -> Dict[str, GatewayInFlightOrder]:
+    def all_fillable_orders_by_hash(self) -> dict[str, GatewayInFlightOrder]:
         """
         :return: A dictionary of hashes (both creation and cancelation) to in-flight order.
         """
@@ -38,7 +39,7 @@ class GatewayOrderTracker(ClientOrderTracker):
                 orders_by_hashes[order.cancel_tx_hash] = order
         return orders_by_hashes
 
-    def get_fillable_order_by_hash(self, transaction_hash: str) -> Optional[GatewayInFlightOrder]:
+    def get_fillable_order_by_hash(self, transaction_hash: str) -> GatewayInFlightOrder | None:
         order = self.all_fillable_orders_by_hash.get(transaction_hash)
         return order
 
