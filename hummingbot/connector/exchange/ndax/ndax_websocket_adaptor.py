@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any
 
 import ujson
 
@@ -18,7 +20,6 @@ class NdaxMessageType(Enum):
 
 
 class NdaxWebSocketAdaptor:
-
     _message_type_field_name = "m"
     _message_number_field_name = "i"
     _endpoint_field_name = "n"
@@ -50,15 +51,15 @@ class NdaxWebSocketAdaptor:
         return cls.endpoint_from_message(message=message)
 
     @classmethod
-    def endpoint_from_message(cls, message: Dict[str, Any]) -> str:
+    def endpoint_from_message(cls, message: dict[str, Any]) -> str:
         return message.get(cls._endpoint_field_name)
 
     @classmethod
-    def payload_from_raw_message(cls, raw_message: str) -> Dict[str, Any]:
+    def payload_from_raw_message(cls, raw_message: str) -> dict[str, Any]:
         return cls.payload_from_message(message=raw_message)
 
     @classmethod
-    def payload_from_message(cls, message: Dict[str, Any]) -> Dict[str, Any]:
+    def payload_from_message(cls, message: dict[str, Any]) -> dict[str, Any]:
         payload = ujson.loads(message.get(cls._payload_field_name))
         return payload
 
@@ -72,7 +73,7 @@ class NdaxWebSocketAdaptor:
             next_number = self._messages_counter
         return next_number
 
-    async def send_request(self, endpoint_name: str, payload: Dict[str, Any], limit_id: Optional[str] = None):
+    async def send_request(self, endpoint_name: str, payload: dict[str, Any], limit_id: str | None = None):
         message_number = await self.next_message_number()
         message = {
             self._message_type_field_name: NdaxMessageType.REQUEST_TYPE.value,
@@ -90,7 +91,7 @@ class NdaxWebSocketAdaptor:
             data = ws_response.data
             await self._process_event_message(event_message=data, queue=queue)
 
-    async def _process_event_message(self, event_message: Dict[str, Any], queue: asyncio.Queue):
+    async def _process_event_message(self, event_message: dict[str, Any], queue: asyncio.Queue):
         if len(event_message) > 0:
             queue.put_nowait(event_message)
 

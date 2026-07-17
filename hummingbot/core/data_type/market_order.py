@@ -1,4 +1,4 @@
-from typing import List, NamedTuple
+from typing import NamedTuple
 
 import pandas as pd
 
@@ -16,17 +16,20 @@ class MarketOrder(NamedTuple):
     position: PositionAction = PositionAction.NIL
 
     @classmethod
-    def to_pandas(cls, market_orders: List["MarketOrder"]) -> pd.DataFrame:
+    def to_pandas(cls, market_orders: list["MarketOrder"]) -> pd.DataFrame:
         columns = ["order_id", "trading_pair", "is_buy", "base_asset", "quote_asset", "quantity", "timestamp"]
-        data = [[
-            market_order.order_id,
-            market_order.trading_pair,
-            market_order.is_buy,
-            market_order.base_asset,
-            market_order.quote_asset,
-            market_order.amount,
-            pd.Timestamp(market_order.timestamp, unit='s', tz='UTC').strftime('%Y-%m-%d %H:%M:%S')
-        ] for market_order in market_orders]
+        data = [
+            [
+                market_order.order_id,
+                market_order.trading_pair,
+                market_order.is_buy,
+                market_order.base_asset,
+                market_order.quote_asset,
+                market_order.amount,
+                pd.Timestamp(market_order.timestamp, unit="s", tz="UTC").strftime("%Y-%m-%d %H:%M:%S"),
+            ]
+            for market_order in market_orders
+        ]
         return pd.DataFrame(data=data, columns=columns)
 
     @property

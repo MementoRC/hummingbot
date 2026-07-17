@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Any, Dict
+from typing import Any
 
 from pydantic import ConfigDict, Field, SecretStr, field_validator
 
@@ -19,7 +19,7 @@ DEFAULT_FEES = TradeFeeSchema(
 )
 
 
-def is_exchange_information_valid(exchange_info: Dict[str, Any]) -> bool:
+def is_exchange_information_valid(exchange_info: dict[str, Any]) -> bool:
     """
     Verifies if a trading pair is enabled to operate with based on its exchange information
     :param exchange_info: the exchange information for a trading pair
@@ -68,7 +68,7 @@ class CubeConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     cube_api_secret: SecretStr = Field(
         default=...,
@@ -77,7 +77,7 @@ class CubeConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     cube_subaccount_id: SecretStr = Field(
         default=...,
@@ -86,7 +86,7 @@ class CubeConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     domain: str = Field(
         default="live",
@@ -102,7 +102,7 @@ class CubeConfigMap(BaseConnectorConfigMap):
     @field_validator("cube_api_key", mode="before")
     @classmethod
     def validate_cube_api_key(cls, v: str):
-        pattern = r'^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$'
+        pattern = r"^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$"
         error_message = "Invalid API key. API key should be a UUID string."
         ret = validate_with_regex(v, pattern, error_message)
         if ret is not None:
@@ -112,7 +112,7 @@ class CubeConfigMap(BaseConnectorConfigMap):
     @field_validator("cube_api_secret", mode="before")
     @classmethod
     def validate_cube_api_secret(cls, v: str):
-        pattern = r'^[a-zA-Z0-9]{64}$'
+        pattern = r"^[a-zA-Z0-9]{64}$"
         error_message = "Invalid secret key. Secret key should be a 64-character alphanumeric string."
         ret = validate_with_regex(v, pattern, error_message)
         if ret is not None:

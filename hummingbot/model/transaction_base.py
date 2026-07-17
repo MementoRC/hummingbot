@@ -1,7 +1,9 @@
-import logging
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import Generator, Optional
+import logging
+from typing import Generator
 
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -16,7 +18,7 @@ class TransactionBase(ABC):
 
     @contextmanager
     def begin(self) -> Generator[Session, None, None]:
-        sql_session: Optional[Session] = None
+        sql_session: Session | None = None
         try:
             sql_session = self.get_new_session()
             yield sql_session

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
-from typing import TYPE_CHECKING, Dict, List, Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Dict
 
 import pandas as pd
 
@@ -17,6 +19,7 @@ def ensure_gateway_online(func):
             self.logger().error("Gateway is offline")
             return
         return func(self, *args, **kwargs)
+
     return wrapper
 
 
@@ -24,7 +27,7 @@ class GatewayPoolCommand:
     """Commands for managing gateway pools."""
 
     @ensure_gateway_online
-    def gateway_pool(self, symbol_or_address: Optional[str], action: Optional[str]):
+    def gateway_pool(self, symbol_or_address: str | None, action: str | None):
         """
         View or update pool information.
         Usage:
@@ -46,26 +49,21 @@ class GatewayPoolCommand:
             return
 
         if action == "update":
-            safe_ensure_future(
-                self._update_pool_interactive(symbol_or_address),
-                loop=self.ev_loop
-            )
+            safe_ensure_future(self._update_pool_interactive(symbol_or_address), loop=self.ev_loop)
         else:
-            safe_ensure_future(
-                self._view_pool(symbol_or_address),
-                loop=self.ev_loop
-            )
+            safe_ensure_future(self._view_pool(symbol_or_address), loop=self.ev_loop)
 
     async def _view_pool(
         self,  # type: HummingbotApplication
-        symbol_or_address: str
+        symbol_or_address: str,
     ):
         """View pool information across all chains."""
         try:
             # Get all available chains from the Chain enum
             from hummingbot.connector.gateway.common_types import Chain
+
             chains_to_check = [chain.chain for chain in Chain]
-            found_pools: List[Dict] = []
+            found_pools: list[Dict] = []
 
             self.notify(f"\nSearching for '{symbol_or_address}' across all chains' default networks...")
 
@@ -79,9 +77,7 @@ class GatewayPoolCommand:
 
                 # Get all pools for this chain/network
                 response = await self._get_gateway_instance().list_pools(
-                    chain=chain,
-                    network=default_network,
-                    fail_silently=True
+                    chain=chain, network=default_network, fail_silently=True
                 )
 
                 if "error" not in response and isinstance(response, list):
@@ -96,12 +92,12 @@ class GatewayPoolCommand:
 
                         # Check if search term matches any field
                         matches = (
-                            search_lower in address or
-                            search_lower in base_token_address or
-                            search_lower in quote_token_address or
-                            search_lower in base_symbol or
-                            search_lower in quote_symbol or
-                            search_lower in trading_pair
+                            search_lower in address
+                            or search_lower in base_token_address
+                            or search_lower in quote_token_address
+                            or search_lower in base_symbol
+                            or search_lower in quote_symbol
+                            or search_lower in trading_pair
                         )
                         if matches:
                             pool_info = {
@@ -111,7 +107,7 @@ class GatewayPoolCommand:
                                 "type": pool.get("type", "N/A"),
                                 "pair": f"{pool.get('baseSymbol', '?')}-{pool.get('quoteSymbol', '?')}",
                                 "address": pool.get("address", "N/A"),
-                                "feePct": pool.get("feePct", "N/A")
+                                "feePct": pool.get("feePct", "N/A"),
                             }
                             found_pools.append(pool_info)
 
@@ -126,15 +122,13 @@ class GatewayPoolCommand:
 
     async def _update_pool_interactive(
         self,  # type: HummingbotApplication
-        symbol_or_address: str
+        symbol_or_address: str,
     ):
         """Interactive flow to update or add a pool."""
         try:
             with begin_placeholder_mode(self):
                 # Ask for chain
-                chain = await self.app.prompt(
-                    prompt="Enter chain (e.g., ethereum, solana): "
-                )
+                chain = await self.app.prompt(prompt="Enter chain (e.g., ethereum, solana): ")
 
                 if self.app.to_stop_config or not chain:
                     self.notify("Pool update cancelled")
@@ -159,9 +153,7 @@ class GatewayPoolCommand:
                     # Symbol or trading pair provided, search for existing pools first
                     search_lower = symbol_or_address.lower()
                     response = await self._get_gateway_instance().list_pools(
-                        chain=chain,
-                        network=default_network,
-                        fail_silently=True
+                        chain=chain, network=default_network, fail_silently=True
                     )
 
                     existing_pools = []
@@ -171,9 +163,9 @@ class GatewayPoolCommand:
                             quote_symbol = pool.get("quoteSymbol", "").lower()
                             trading_pair = f"{base_symbol}-{quote_symbol}"
                             matches = (
-                                search_lower in base_symbol or
-                                search_lower in quote_symbol or
-                                search_lower in trading_pair
+                                search_lower in base_symbol
+                                or search_lower in quote_symbol
+                                or search_lower in trading_pair
                             )
                             if matches:
                                 existing_pools.append(pool)
@@ -181,15 +173,20 @@ class GatewayPoolCommand:
                     if existing_pools:
                         # Pool exists, show current info
                         self.notify("\nExisting pool(s) found:")
-                        self._display_pools_table([{
-                            "chain": chain,
-                            "network": default_network,
-                            "connector": p.get("connector", "N/A"),
-                            "type": p.get("type", "N/A"),
-                            "pair": f"{p.get('baseSymbol', '?')}-{p.get('quoteSymbol', '?')}",
-                            "address": p.get("address", "N/A"),
-                            "feePct": p.get("feePct", "N/A")
-                        } for p in existing_pools])
+                        self._display_pools_table(
+                            [
+                                {
+                                    "chain": chain,
+                                    "network": default_network,
+                                    "connector": p.get("connector", "N/A"),
+                                    "type": p.get("type", "N/A"),
+                                    "pair": f"{p.get('baseSymbol', '?')}-{p.get('quoteSymbol', '?')}",
+                                    "address": p.get("address", "N/A"),
+                                    "feePct": p.get("feePct", "N/A"),
+                                }
+                                for p in existing_pools
+                            ]
+                        )
 
                         # Ask if they want to add another
                         add_response = await self.app.prompt(
@@ -201,9 +198,7 @@ class GatewayPoolCommand:
                             return
 
                     # Ask for pool address
-                    pool_address = await self.app.prompt(
-                        prompt="Enter pool contract address: "
-                    )
+                    pool_address = await self.app.prompt(prompt="Enter pool contract address: ")
                     if self.app.to_stop_config or not pool_address:
                         self.notify("Pool update cancelled")
                         return
@@ -212,10 +207,7 @@ class GatewayPoolCommand:
                 self.notify(f"\nSaving pool {pool_address} on {chain_network}...")
                 self.notify("Fetching pool information from GeckoTerminal...")
 
-                result = await self._get_gateway_instance().save_pool(
-                    chain_network=chain_network,
-                    address=pool_address
-                )
+                result = await self._get_gateway_instance().save_pool(chain_network=chain_network, address=pool_address)
 
                 if "error" in result:
                     self.notify(f"Error: {result['error']}")
@@ -260,7 +252,7 @@ class GatewayPoolCommand:
             return True
         return False
 
-    def _display_pools_table(self, pools: List[Dict]):
+    def _display_pools_table(self, pools: list[Dict]):
         """Display pools in a table format."""
         self.notify("\nFound pools:")
 
@@ -276,12 +268,7 @@ class GatewayPoolCommand:
         lines = ["    " + line for line in df.to_string(index=False).split("\n")]
         self.notify("\n".join(lines))
 
-    def _display_single_pool(
-        self,
-        pool_info: dict,
-        chain: str,
-        network: str
-    ):
+    def _display_single_pool(self, pool_info: dict, chain: str, network: str):
         """Display a single pool's information."""
         self.notify(f"\nChain: {chain}")
         self.notify(f"Network: {network}")

@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import asyncio
-import logging
 from decimal import Decimal
-from typing import Dict, Optional, Set
+import logging
 
 import pandas as pd
 
@@ -13,7 +14,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class WalletTrackerDataFeed(NetworkBase):
-    dex_logger: Optional[HummingbotLogger] = None
+    dex_logger: HummingbotLogger | None = None
     _gateway_client = None
 
     @property
@@ -26,8 +27,8 @@ class WalletTrackerDataFeed(NetworkBase):
         self,
         chain: str,
         network: str,
-        wallets: Set[str],
-        tokens: Set[str],
+        wallets: set[str],
+        tokens: set[str],
         update_interval: float = 1.0,
     ) -> None:
         super().__init__()
@@ -35,9 +36,9 @@ class WalletTrackerDataFeed(NetworkBase):
         self._chain = chain
         self._network = network
         self._tokens = tokens
-        self._wallet_balances: Dict[str, Dict[str, float]] = {wallet: {} for wallet in wallets}
+        self._wallet_balances: dict[str, dict[str, float]] = {wallet: {} for wallet in wallets}
         self._update_interval = update_interval
-        self.fetch_data_loop_task: Optional[asyncio.Task] = None
+        self.fetch_data_loop_task: asyncio.Task | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -58,11 +59,11 @@ class WalletTrackerDataFeed(NetworkBase):
         return self._network
 
     @property
-    def tokens(self) -> Set[str]:
+    def tokens(self) -> set[str]:
         return self._tokens
 
     @property
-    def wallet_balances(self) -> Dict[str, Dict[str, float]]:
+    def wallet_balances(self) -> dict[str, dict[str, float]]:
         return self._wallet_balances
 
     @property
@@ -95,26 +96,19 @@ class WalletTrackerDataFeed(NetworkBase):
                 raise
             except Exception as e:
                 self.logger().error(
-                    f"Error getting data from {self.name}"
-                    f"Check network connection. Error: {e}",
+                    f"Error getting data from {self.name}Check network connection. Error: {e}",
                 )
             await self._async_sleep(self._update_interval)
 
     async def _fetch_data(self) -> None:
         wallet_balances_tasks = [
-            asyncio.create_task(self._update_balances_by_wallet(wallet))
-            for wallet in self._wallet_balances.keys()
+            asyncio.create_task(self._update_balances_by_wallet(wallet)) for wallet in self._wallet_balances.keys()
         ]
         await asyncio.gather(*wallet_balances_tasks)
 
     async def _update_balances_by_wallet(self, wallet: str) -> None:
-        data = await self.gateway_client.get_balances(
-            self.chain,
-            self.network,
-            wallet,
-            list(self._tokens)
-        )
-        self._wallet_balances[wallet] = {token: Decimal(balance) for token, balance in data['balances'].items()}
+        data = await self.gateway_client.get_balances(self.chain, self.network, wallet, list(self._tokens))
+        self._wallet_balances[wallet] = {token: Decimal(balance) for token, balance in data["balances"].items()}
 
     @staticmethod
     async def _async_sleep(delay: float) -> None:

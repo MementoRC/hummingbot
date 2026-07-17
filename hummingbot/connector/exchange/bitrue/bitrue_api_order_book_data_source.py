@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict
 
 from hummingbot.connector.exchange.bitrue import bitrue_constants as CONSTANTS, bitrue_web_utils as web_utils
 from hummingbot.connector.exchange.bitrue.bitrue_order_book import BitrueOrderBook
@@ -21,13 +23,13 @@ class BitrueAPIOrderBookDataSource(OrderBookTrackerDataSource):
     DIFF_STREAM_ID = 2
     ONE_HOUR = 60 * 60
 
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
     _DYNAMIC_SUBSCRIBE_ID_START = 100
     _next_subscribe_id: int = _DYNAMIC_SUBSCRIBE_ID_START
 
     def __init__(
         self,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "BitrueExchange",
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -40,7 +42,7 @@ class BitrueAPIOrderBookDataSource(OrderBookTrackerDataSource):
         self._last_connection_check_message_sent = -1
         self._diff_messages_queue_key = CONSTANTS.ORDERBOOK_CHANNEL_SUFFIX
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def get_ticker(self, trading_pair: str) -> OrderBookMessage:
@@ -54,7 +56,7 @@ class BitrueAPIOrderBookDataSource(OrderBookTrackerDataSource):
         )
         return ticker_msg
 
-    async def _get_ticker_data(self, trading_pair: str) -> Dict[str, Any]:
+    async def _get_ticker_data(self, trading_pair: str) -> dict[str, Any]:
         symbol = await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
         params = {"symbol": symbol}
         rest_assistant = await self._api_factory.get_rest_assistant()
@@ -66,7 +68,7 @@ class BitrueAPIOrderBookDataSource(OrderBookTrackerDataSource):
         )
         return ticker_result
 
-    async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, Any]:
+    async def _request_order_book_snapshot(self, trading_pair: str) -> dict[str, Any]:
         """
         Retrieves a copy of the full order book from the exchange, for a particular trading pair.
 
@@ -122,14 +124,14 @@ class BitrueAPIOrderBookDataSource(OrderBookTrackerDataSource):
         return ws
 
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBookMessage:
-        snapshot: Dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
+        snapshot: dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
         snapshot_timestamp: float = self._time()
         snapshot_msg: OrderBookMessage = BitrueOrderBook.snapshot_message_from_exchange(
             snapshot, snapshot_timestamp, metadata={"trading_pair": trading_pair}
         )
         return snapshot_msg
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         symbol = (
             raw_message["channel"]
             .replace(CONSTANTS.ORDERBOOK_CHANNEL_PREFIX, "")
@@ -143,7 +145,7 @@ class BitrueAPIOrderBookDataSource(OrderBookTrackerDataSource):
         message_queue.put_nowait(snapshot_msg)
         # self._last_order_book_message_latency = self._time() - timestamp
 
-    def snapshot_message_from_exchange(self, msg: Dict[str, Any], metadata: Optional[Dict] = None) -> OrderBookMessage:
+    def snapshot_message_from_exchange(self, msg: dict[str, Any], metadata: Dict | None = None) -> OrderBookMessage:
         """
         Creates a snapshot message with the order book snapshot message
         :param msg: the response from the exchange when requesting the order book snapshot
@@ -163,7 +165,7 @@ class BitrueAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
         return OrderBookMessage(OrderBookMessageType.SNAPSHOT, content, timestamp=msg_ts)
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         channel = event_message.get("channel", "")
         retval = ""
         if channel.endswith(self._diff_messages_queue_key) and "tick" in event_message:
@@ -171,7 +173,7 @@ class BitrueAPIOrderBookDataSource(OrderBookTrackerDataSource):
         return retval
 
     async def _process_message_for_unknown_channel(
-        self, event_message: Dict[str, Any], websocket_assistant: WSAssistant
+        self, event_message: dict[str, Any], websocket_assistant: WSAssistant
     ):
         await super()._process_message_for_unknown_channel(
             event_message=event_message, websocket_assistant=websocket_assistant
@@ -184,7 +186,7 @@ class BitrueAPIOrderBookDataSource(OrderBookTrackerDataSource):
     async def _send_connection_check_message(self, websocket_assistant: WSAssistant):
         self._connection_check_response_event.set()
 
-    def _is_message_response_to_connection_check(self, event_message: Dict[str, Any]) -> bool:
+    def _is_message_response_to_connection_check(self, event_message: dict[str, Any]) -> bool:
         return False
 
     @classmethod
@@ -208,8 +210,7 @@ class BitrueAPIOrderBookDataSource(OrderBookTrackerDataSource):
             symbol = await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
             params = {
                 "cb_id": symbol.lower(),
-                "channel": f"{CONSTANTS.ORDERBOOK_CHANNEL_PREFIX}"
-                f"{symbol.lower()}{CONSTANTS.ORDERBOOK_CHANNEL_SUFFIX}",
+                "channel": f"{CONSTANTS.ORDERBOOK_CHANNEL_PREFIX}{symbol.lower()}{CONSTANTS.ORDERBOOK_CHANNEL_SUFFIX}",
             }
             payload = {"event": "sub", "params": params}
             subscribe_orderbook_request: WSJSONRequest = WSJSONRequest(payload=payload)
@@ -221,10 +222,7 @@ class BitrueAPIOrderBookDataSource(OrderBookTrackerDataSource):
         except asyncio.CancelledError:
             raise
         except Exception:
-            self.logger().error(
-                f"Unexpected error occurred subscribing to {trading_pair}...",
-                exc_info=True
-            )
+            self.logger().error(f"Unexpected error occurred subscribing to {trading_pair}...", exc_info=True)
             return False
 
     async def unsubscribe_from_trading_pair(self, trading_pair: str) -> bool:
@@ -242,8 +240,7 @@ class BitrueAPIOrderBookDataSource(OrderBookTrackerDataSource):
             symbol = await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
             params = {
                 "cb_id": symbol.lower(),
-                "channel": f"{CONSTANTS.ORDERBOOK_CHANNEL_PREFIX}"
-                f"{symbol.lower()}{CONSTANTS.ORDERBOOK_CHANNEL_SUFFIX}",
+                "channel": f"{CONSTANTS.ORDERBOOK_CHANNEL_PREFIX}{symbol.lower()}{CONSTANTS.ORDERBOOK_CHANNEL_SUFFIX}",
             }
             payload = {"event": "unsub", "params": params}
             unsubscribe_orderbook_request: WSJSONRequest = WSJSONRequest(payload=payload)
@@ -255,8 +252,5 @@ class BitrueAPIOrderBookDataSource(OrderBookTrackerDataSource):
         except asyncio.CancelledError:
             raise
         except Exception:
-            self.logger().error(
-                f"Unexpected error occurred unsubscribing from {trading_pair}...",
-                exc_info=True
-            )
+            self.logger().error(f"Unexpected error occurred unsubscribing from {trading_pair}...", exc_info=True)
             return False

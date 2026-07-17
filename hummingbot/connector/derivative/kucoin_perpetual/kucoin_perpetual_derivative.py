@@ -1,12 +1,12 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, Union
 
-import pandas as pd
 from bidict import ValueDuplicationError, bidict
+import pandas as pd
 
-import hummingbot.connector.derivative.kucoin_perpetual.kucoin_perpetual_constants as CONSTANTS
-import hummingbot.connector.derivative.kucoin_perpetual.kucoin_perpetual_utils as kucoin_utils
 from hummingbot.connector.derivative.kucoin_perpetual import kucoin_perpetual_web_utils as web_utils
 from hummingbot.connector.derivative.kucoin_perpetual.kucoin_perpetual_api_order_book_data_source import (
     KucoinPerpetualAPIOrderBookDataSource,
@@ -15,6 +15,8 @@ from hummingbot.connector.derivative.kucoin_perpetual.kucoin_perpetual_api_user_
     KucoinPerpetualAPIUserStreamDataSource,
 )
 from hummingbot.connector.derivative.kucoin_perpetual.kucoin_perpetual_auth import KucoinPerpetualAuth
+import hummingbot.connector.derivative.kucoin_perpetual.kucoin_perpetual_constants as CONSTANTS
+import hummingbot.connector.derivative.kucoin_perpetual.kucoin_perpetual_utils as kucoin_utils
 from hummingbot.connector.derivative.position import Position
 from hummingbot.connector.perpetual_derivative_py_base import PerpetualDerivativePyBase
 from hummingbot.connector.trading_rule import TradingRule
@@ -39,15 +41,15 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
     web_utils = web_utils
 
     def __init__(
-            self,
-            balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
-            rate_limits_share_pct: Decimal = Decimal("100"),
-            kucoin_perpetual_api_key: str = None,
-            kucoin_perpetual_secret_key: str = None,
-            kucoin_perpetual_passphrase: str = None,
-            trading_pairs: Optional[List[str]] = None,
-            trading_required: bool = True,
-            domain: str = CONSTANTS.DEFAULT_DOMAIN,
+        self,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
+        rate_limits_share_pct: Decimal = Decimal("100"),
+        kucoin_perpetual_api_key: str = None,
+        kucoin_perpetual_secret_key: str = None,
+        kucoin_perpetual_passphrase: str = None,
+        trading_pairs: list[str] | None = None,
+        trading_required: bool = True,
+        domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
 
         self.kucoin_perpetual_api_key = kucoin_perpetual_api_key
@@ -59,7 +61,7 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
         self._last_trade_history_timestamp = None
         # Per-trading-pair margin mode (ISOLATED/CROSS) as configured by the user on KuCoin, cached
         # at leverage setup so orders can send a matching "marginMode".
-        self._margin_modes: Dict[str, str] = {}
+        self._margin_modes: dict[str, str] = {}
 
         super().__init__(balance_asset_limit, rate_limits_share_pct)
 
@@ -69,13 +71,15 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
 
     @property
     def authenticator(self) -> KucoinPerpetualAuth:
-        return KucoinPerpetualAuth(self.kucoin_perpetual_api_key,
-                                   self.kucoin_perpetual_passphrase,
-                                   self.kucoin_perpetual_secret_key,
-                                   time_provider=self._time_synchronizer)
+        return KucoinPerpetualAuth(
+            self.kucoin_perpetual_api_key,
+            self.kucoin_perpetual_passphrase,
+            self.kucoin_perpetual_secret_key,
+            time_provider=self._time_synchronizer,
+        )
 
     @property
-    def rate_limits_rules(self) -> List[RateLimit]:
+    def rate_limits_rules(self) -> list[RateLimit]:
         return CONSTANTS.RATE_LIMITS
 
     @property
@@ -118,7 +122,7 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
     def funding_fee_poll_interval(self) -> int:
         return 120
 
-    def supported_order_types(self) -> List[OrderType]:
+    def supported_order_types(self) -> list[OrderType]:
         """
         :return a list of OrderType supported by this connector
         """
@@ -164,7 +168,7 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
             limit_id=CONSTANTS.CANCEL_ORDER_PATH_URL,
             data={
                 "order_id": tracked_order.exchange_order_id,
-            }
+            },
         )
         response_code = cancel_result["code"]
 
@@ -175,16 +179,16 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
         return True
 
     async def _place_order(
-            self,
-            order_id: str,
-            trading_pair: str,
-            amount: Decimal,
-            trade_type: TradeType,
-            order_type: OrderType,
-            price: Decimal,
-            position_action: PositionAction = PositionAction.NIL,
-            **kwargs,
-    ) -> Tuple[str, float]:
+        self,
+        order_id: str,
+        trading_pair: str,
+        amount: Decimal,
+        trade_type: TradeType,
+        order_type: OrderType,
+        price: Decimal,
+        position_action: PositionAction = PositionAction.NIL,
+        **kwargs,
+    ) -> tuple[str, float]:
         data = {
             "side": "buy" if trade_type is TradeType.BUY else "sell",
             "symbol": await self.exchange_symbol_associated_to_pair(trading_pair),
@@ -217,19 +221,21 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
         )
 
         if resp["code"] != CONSTANTS.RET_CODE_OK:
-            formatted_ret_code = self._format_ret_code_for_print(resp['code'])
+            formatted_ret_code = self._format_ret_code_for_print(resp["code"])
             raise IOError(f"Error submitting order {order_id}: {formatted_ret_code} - {resp['msg']}")
         return str(resp["data"]["orderId"]), self.current_timestamp
 
-    def _get_fee(self,
-                 base_currency: str,
-                 quote_currency: str,
-                 order_type: OrderType,
-                 order_side: TradeType,
-                 position_action: PositionAction,
-                 amount: Decimal,
-                 price: Decimal = s_decimal_NaN,
-                 is_maker: Optional[bool] = None) -> TradeFeeBase:
+    def _get_fee(
+        self,
+        base_currency: str,
+        quote_currency: str,
+        order_type: OrderType,
+        order_side: TradeType,
+        position_action: PositionAction,
+        amount: Decimal,
+        price: Decimal = s_decimal_NaN,
+        is_maker: bool | None = None,
+    ) -> TradeFeeBase:
         is_maker = is_maker or (order_type is OrderType.LIMIT_MAKER)
         trading_pair = combine_to_hb_trading_pair(base=base_currency, quote=quote_currency)
         if trading_pair in self._trading_fees:
@@ -289,45 +295,49 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
         """
         Calls REST API to get trade history (order fills)
         """
-        trade_updates: List[TradeUpdate] = []
+        trade_updates: list[TradeUpdate] = []
         orders = list(self._order_tracker.all_fillable_orders.values())
         if len(orders) > 0:
             exchange_to_client = {o.exchange_order_id: o for o in orders}
             trade_history_tasks = []
             for trading_pair in self._trading_pairs:
                 trade_history_tasks.append(
-                    asyncio.create_task(self._api_get(
-                        path_url=CONSTANTS.GET_RECENT_FILLS_INFO_PATH_URL,
-                        is_auth_required=True,
-                        trading_pair=trading_pair,
-                    ))
+                    asyncio.create_task(
+                        self._api_get(
+                            path_url=CONSTANTS.GET_RECENT_FILLS_INFO_PATH_URL,
+                            is_auth_required=True,
+                            trading_pair=trading_pair,
+                        )
+                    )
                 )
 
-            raw_responses: List[Dict[str, Any]] = await safe_gather(*trade_history_tasks, return_exceptions=True)
+            raw_responses: list[dict[str, Any]] = await safe_gather(*trade_history_tasks, return_exceptions=True)
 
             # Initial parsing of responses. Joining all the responses
-            parsed_history_resps: List[Dict[str, Any]] = []
+            parsed_history_resps: list[dict[str, Any]] = []
             for trading_pair, resp in zip(self._trading_pairs, raw_responses):
                 if not isinstance(resp, Exception):
                     trade_entries = resp["data"]
                     if trade_entries:
                         if "totalNum" in trade_entries:
                             number_entries = int(trade_entries["totalNum"])
-                            if (number_entries > 0):
+                            if number_entries > 0:
                                 if "items" in trade_entries:
                                     trade_entries = trade_entries["items"]
                                     self._last_trade_history_timestamp = float(
-                                        trade_entries[0]["tradeTime"] * 1e-9)  # Time passed in nanoseconds
+                                        trade_entries[0]["tradeTime"] * 1e-9
+                                    )  # Time passed in nanoseconds
                                 else:
                                     self._last_trade_history_timestamp = float(
-                                        trade_entries[0]["tradeTime"] * 1e-9)  # Time passed in nanoseconds
+                                        trade_entries[0]["tradeTime"] * 1e-9
+                                    )  # Time passed in nanoseconds
                                 parsed_history_resps.extend(trade_entries)
                         else:
                             parsed_history_resps.extend(trade_entries)
                 else:
                     self.logger().network(
                         f"Error fetching status update for {trading_pair}: {resp}.",
-                        app_warning_msg=f"Failed to fetch status update for {trading_pair}."
+                        app_warning_msg=f"Failed to fetch status update for {trading_pair}.",
                     )
 
             # Trade updates must be handled before any order status updates.
@@ -336,10 +346,16 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
                     tracked_order = exchange_to_client[str(trade["orderId"])]
                     position_side = trade["side"]
 
-                    position_action = (PositionAction.OPEN
-                                       if (tracked_order.trade_type is TradeType.BUY and position_side == "buy"
-                                           or tracked_order.trade_type is TradeType.SELL and position_side == "sell")
-                                       else PositionAction.CLOSE)
+                    position_action = (
+                        PositionAction.OPEN
+                        if (
+                            tracked_order.trade_type is TradeType.BUY
+                            and position_side == "buy"
+                            or tracked_order.trade_type is TradeType.SELL
+                            and position_side == "sell"
+                        )
+                        else PositionAction.CLOSE
+                    )
 
                     fee_amount = Decimal(trade["fee"])
                     fee_asset = trade["feeCurrency"]
@@ -352,7 +368,8 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
                         flat_fees=flat_fees,
                     )
                     contract_value = Decimal(
-                        self.get_value_of_contracts(tracked_order.trading_pair, int(trade.get("size", "0"))))
+                        self.get_value_of_contracts(tracked_order.trading_pair, int(trade.get("size", "0")))
+                    )
 
                     trade_update = TradeUpdate(
                         trade_id=str(trade["tradeId"]),
@@ -374,21 +391,22 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
         Calls REST API to get order status
         """
 
-        active_orders: List[InFlightOrder] = list(self.in_flight_orders.values())
+        active_orders: list[InFlightOrder] = list(self.in_flight_orders.values())
 
         tasks = []
         for active_order in active_orders:
             tasks.append(asyncio.create_task(self._request_order_status_data(tracked_order=active_order)))
 
-        raw_responses: List[Dict[str, Any]] = await safe_gather(*tasks, return_exceptions=True)
+        raw_responses: list[dict[str, Any]] = await safe_gather(*tasks, return_exceptions=True)
 
         # Initial parsing of responses. Removes Exceptions.
-        parsed_status_responses: List[Dict[str, Any]] = []
+        parsed_status_responses: list[dict[str, Any]] = []
         for resp, active_order in zip(raw_responses, active_orders):
             if not isinstance(resp, Exception) and "data" in resp:
                 parsed_status_responses.append(resp["data"])
             elif not isinstance(resp, Exception) and self._is_order_not_found_during_status_update_error(
-                    IOError(str(resp))):
+                IOError(str(resp))
+            ):
                 # KuCoin returns "orderNotExist" once an order is no longer active (filled and
                 # purged, or already canceled). Reconcile it as not-found, but quietly — it is an
                 # expected lifecycle response, not a fetch failure worth a network warning.
@@ -396,7 +414,7 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
             else:
                 self.logger().network(
                     f"Error fetching status update for the order {active_order.client_order_id}: {resp}.",
-                    app_warning_msg=f"Failed to fetch status update for the order {active_order.client_order_id}."
+                    app_warning_msg=f"Failed to fetch status update for the order {active_order.client_order_id}.",
                 )
                 await self._order_tracker.process_order_not_found(active_order.client_order_id)
 
@@ -407,14 +425,14 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
         """
         Calls REST API to update total and available balances
         """
-        wallet_balance: Dict[str, Dict[str, Any]] = await self._api_get(
+        wallet_balance: dict[str, dict[str, Any]] = await self._api_get(
             path_url=CONSTANTS.GET_WALLET_BALANCE_PATH_URL.format(currency="USDT"),
             is_auth_required=True,
             limit_id=CONSTANTS.GET_WALLET_BALANCE_PATH_URL,
         )
 
         if wallet_balance["code"] != CONSTANTS.RET_CODE_OK:
-            formatted_ret_code = self._format_ret_code_for_print(wallet_balance['code'])
+            formatted_ret_code = self._format_ret_code_for_print(wallet_balance["code"])
             raise IOError(f"{formatted_ret_code} - {wallet_balance['msg']}")
 
         self._account_available_balances.clear()
@@ -431,7 +449,7 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
                 self._account_balances[currency] = Decimal(str(wallet_balance["data"]["marginBalance"]))
                 self._account_available_balances[currency] = Decimal(str(wallet_balance["data"]["availableBalance"]))
 
-    def _position_leverage(self, trading_pair: str, position_data: Dict[str, Any]) -> Decimal:
+    def _position_leverage(self, trading_pair: str, position_data: dict[str, Any]) -> Decimal:
         # KuCoin omits "realLeverage" on CROSS-margin positions (it is only present on ISOLATED
         # positions); CROSS positions report "leverage" instead. Confirmed by toggling one symbol
         # between modes: ISOLATED -> {realLeverage, leverage}; CROSS -> {leverage} only. Read
@@ -449,14 +467,14 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
         Retrieves all positions using the REST API.
         """
 
-        raw_responses: List[Dict[str, Any]] = await self._api_get(
+        raw_responses: list[dict[str, Any]] = await self._api_get(
             path_url=CONSTANTS.GET_POSITIONS_PATH_URL,
             is_auth_required=True,
             limit_id=CONSTANTS.GET_POSITIONS_PATH_URL,
         )
 
         # Initial parsing of responses. Joining all the responses
-        parsed_resps: List[Dict[str, Any]] = []
+        parsed_resps: list[dict[str, Any]] = []
         if len(raw_responses["data"]) > 0:
             for resp, trading_pair in zip(raw_responses["data"], self._trading_pairs):
                 if not isinstance(resp, Exception):
@@ -490,7 +508,7 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
             else:
                 self._perpetual_trading.remove_position(pos_key)
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         # not used
         trade_updates = []
 
@@ -510,7 +528,7 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
 
         return trade_updates
 
-    async def _request_order_fills(self, order: InFlightOrder) -> Dict[str, Any]:
+    async def _request_order_fills(self, order: InFlightOrder) -> dict[str, Any]:
         url = CONSTANTS.GET_FILL_INFO_PATH_URL.format(orderid=order.exchange_order_id)
         res = await self._api_get(
             path_url=url,
@@ -526,8 +544,9 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
             if order_status_data.get("code") != CONSTANTS.RET_CODE_OK or "data" not in order_status_data:
                 # e.g. a 200 response carrying {"code": "100001", "msg": "...orderNotExist"}; raise so
                 # _is_order_not_found_during_status_update_error can recognize it (lost-order path).
-                raise IOError(f"{self._format_ret_code_for_print(order_status_data.get('code'))} "
-                              f"- {order_status_data.get('msg')}")
+                raise IOError(
+                    f"{self._format_ret_code_for_print(order_status_data.get('code'))} - {order_status_data.get('msg')}"
+                )
             order_msg = order_status_data["data"]
             client_order_id = str(order_msg["clientOid"])
 
@@ -565,7 +584,8 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
     async def _request_order_status_data(self, tracked_order: InFlightOrder) -> Dict:
         resp = await self._api_get(
             path_url=CONSTANTS.QUERY_ORDER_BY_EXCHANGE_ORDER_ID_PATH_URL.format(
-                orderid=tracked_order.exchange_order_id),
+                orderid=tracked_order.exchange_order_id
+            ),
             is_auth_required=True,
             limit_id=CONSTANTS.QUERY_ORDER_BY_EXCHANGE_ORDER_ID_PATH_URL,
         )
@@ -585,7 +605,7 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
                     await self._process_account_position_event(payload)
                 elif endpoint == CONSTANTS.WS_SUBSCRIPTION_ORDERS_ENDPOINT_NAME:
                     order_event_type = payload["type"]
-                    client_order_id: Optional[str] = payload.get("clientOid")
+                    client_order_id: str | None = payload.get("clientOid")
                     updatable_order = self._order_tracker.all_updatable_orders.get(client_order_id)
                     event_timestamp = payload["ts"] * 1e-9
                     if order_event_type == "match":
@@ -627,7 +647,7 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
                 self.logger().exception("Unexpected error in user stream listener loop.")
                 await self._sleep(5.0)
 
-    async def _process_account_position_event(self, position_msg: Dict[str, Any]):
+    async def _process_account_position_event(self, position_msg: dict[str, Any]):
         """
         Updates position
         :param position_msg: The position event message payload
@@ -661,7 +681,7 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
             if existing_position is not None:
                 existing_position.update_position(unrealized_pnl=Decimal(str(position_msg["unrealisedPnl"])))
 
-    def _process_trade_event_message(self, trade_msg: Dict[str, Any]):
+    def _process_trade_event_message(self, trade_msg: dict[str, Any]):
         """
         Updates in-flight order and trigger order filled event for trade message received. Triggers order completed
         event if the total executed amount equals to the specified order amount.
@@ -678,10 +698,16 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
         order_id = trade_msg["orderId"]
 
         position_side = trade_msg["side"]
-        position_action = (PositionAction.OPEN
-                           if (tracked_order.trade_type is TradeType.BUY and position_side == "buy"
-                               or tracked_order.trade_type is TradeType.SELL and position_side == "sell")
-                           else PositionAction.CLOSE)
+        position_action = (
+            PositionAction.OPEN
+            if (
+                tracked_order.trade_type is TradeType.BUY
+                and position_side == "buy"
+                or tracked_order.trade_type is TradeType.SELL
+                and position_side == "sell"
+            )
+            else PositionAction.CLOSE
+        )
         execute_amount_diff = Decimal(trade_msg["matchSize"])
         execute_price = Decimal(trade_msg["matchPrice"])
         fee = self.get_fee(
@@ -692,20 +718,17 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
             position_action,
             execute_amount_diff,
             execute_price,
-            is_maker=trade_msg.get("liquidity") == "maker"
+            is_maker=trade_msg.get("liquidity") == "maker",
         )
         exec_price = Decimal(trade_msg["matchPrice"])
-        exec_time = (
-            trade_msg["ts"] * 1e-9
-            if "ts" in trade_msg
-            else pd.Timestamp(trade_msg["ts"]).timestamp()
-        )
+        exec_time = trade_msg["ts"] * 1e-9 if "ts" in trade_msg else pd.Timestamp(trade_msg["ts"]).timestamp()
         if int(trade_msg["matchSize"]) == 0:
             contract_value = 0
             exec_price = 0
         else:
             contract_value = Decimal(
-                self.get_value_of_contracts(tracked_order.trading_pair, int(trade_msg["matchSize"])))
+                self.get_value_of_contracts(tracked_order.trading_pair, int(trade_msg["matchSize"]))
+            )
         trade_update: TradeUpdate = TradeUpdate(
             trade_id=trade_id,
             client_order_id=tracked_order.client_order_id,
@@ -720,7 +743,7 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
 
         return trade_update
 
-    def _process_order_event_message(self, order_msg: Dict[str, Any]):
+    def _process_order_event_message(self, order_msg: dict[str, Any]):
         """
         Updates in-flight order and triggers cancellation or failure event if needed.
         :param order_msg: The order event message payload
@@ -749,7 +772,7 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
             )
             self._order_tracker.process_order_update(new_order_update)
 
-    def _process_wallet_event_message(self, wallet_msg: Dict[str, Any]):
+    def _process_wallet_event_message(self, wallet_msg: dict[str, Any]):
         """
         Updates account balances.
         :param wallet_msg: The account balance update message payload
@@ -770,7 +793,7 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
         await self._update_trading_rules()
         await super().start_network()
 
-    async def _format_trading_rules(self, instrument_info_dict: Dict[str, Any]) -> List[TradingRule]:
+    async def _format_trading_rules(self, instrument_info_dict: dict[str, Any]) -> list[TradingRule]:
         """
         Converts JSON API response into a local dictionary of trading rules.
         :param instrument_info_dict: The JSON API response.
@@ -783,7 +806,7 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
                 exchange_symbol = instrument["symbol"]
                 if exchange_symbol in symbol_map:
                     multiplier = Decimal(str(instrument["multiplier"]))
-                    trading_pair = combine_to_hb_trading_pair(instrument['baseCurrency'], instrument['quoteCurrency'])
+                    trading_pair = combine_to_hb_trading_pair(instrument["baseCurrency"], instrument["quoteCurrency"])
                     collateral_token = instrument["quoteCurrency"]
                     trading_rules[trading_pair] = TradingRule(
                         trading_pair=trading_pair,
@@ -798,12 +821,10 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
                 self.logger().exception(f"Error parsing the trading pair rule: {instrument}. Skipping...")
         return list(trading_rules.values())
 
-    async def _market_data_for_all_product_types(self) -> List[Dict[str, Any]]:
+    async def _market_data_for_all_product_types(self) -> list[dict[str, Any]]:
         all_exchange_info = []
 
-        exchange_info = await self._api_get(
-            path_url=self.trading_pairs_request_path
-        )
+        exchange_info = await self._api_get(path_url=self.trading_pairs_request_path)
         all_exchange_info.extend(exchange_info["data"])
 
         return all_exchange_info
@@ -815,14 +836,15 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
         except Exception:
             self.logger().exception("There was an error requesting exchange info.")
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         mapping = bidict()
         if "data" in exchange_info:
             exchange_info = exchange_info["data"]
         for symbol_data in filter(kucoin_utils.is_exchange_information_valid, exchange_info):
             try:
-                mapping[symbol_data["symbol"]] = combine_to_hb_trading_pair(base=symbol_data["baseCurrency"],
-                                                                            quote=symbol_data["quoteCurrency"])
+                mapping[symbol_data["symbol"]] = combine_to_hb_trading_pair(
+                    base=symbol_data["baseCurrency"], quote=symbol_data["quoteCurrency"]
+                )
             except ValueDuplicationError:
                 # We can safely ignore this, KuCoin API returns a duplicate entry for XBT-USDT
                 pass
@@ -844,7 +866,8 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
             mapping[new_exchange_symbol] = trading_pair
         else:
             self.logger().error(
-                f"Could not resolve the exchange symbols {new_exchange_symbol} and {current_exchange_symbol}")
+                f"Could not resolve the exchange symbols {new_exchange_symbol} and {current_exchange_symbol}"
+            )
             mapping.pop(current_exchange_symbol)
 
     async def _get_last_traded_price(self, trading_pair: str) -> float:
@@ -866,7 +889,7 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
                 price = float(resp_json["data"]["price"])
         return price
 
-    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> Tuple[bool, str]:
+    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> tuple[bool, str]:
         msg = ""
         success = True
 
@@ -879,18 +902,18 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
 
         return success, msg
 
-    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> Tuple[bool, str]:
+    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> tuple[bool, str]:
         exchange_symbol = await self.exchange_symbol_associated_to_pair(trading_pair)
-        resp: Dict[str, Any] = await self._api_get(
+        resp: dict[str, Any] = await self._api_get(
             path_url=CONSTANTS.GET_RISK_LIMIT_LEVEL_PATH_URL.format(symbol=exchange_symbol),
             is_auth_required=True,
             trading_pair=trading_pair,
             limit_id=CONSTANTS.GET_RISK_LIMIT_LEVEL_PATH_URL,
         )
         if resp["code"] != CONSTANTS.RET_CODE_OK:
-            formatted_ret_code = self._format_ret_code_for_print(resp['code'])
+            formatted_ret_code = self._format_ret_code_for_print(resp["code"])
             return False, f"{formatted_ret_code} - Some problem"
-        max_leverage = resp['data'][0]['maxLeverage']
+        max_leverage = resp["data"][0]["maxLeverage"]
         if leverage > max_leverage:
             self.logger().error(f"Max leverage for {trading_pair} is {max_leverage}.")
             return False, f"Max leverage for {trading_pair} is {max_leverage}."
@@ -923,10 +946,10 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
         except Exception as exception:
             self.logger().warning(f"Could not fetch margin mode for {trading_pair}: {exception}")
 
-    async def _fetch_last_fee_payment(self, trading_pair: str) -> Tuple[int, Decimal, Decimal]:
+    async def _fetch_last_fee_payment(self, trading_pair: str) -> tuple[int, Decimal, Decimal]:
         exchange_symbol = await self.exchange_symbol_associated_to_pair(trading_pair)
 
-        raw_response: Dict[str, Any] = await self._api_get(
+        raw_response: dict[str, Any] = await self._api_get(
             path_url=CONSTANTS.GET_FUNDING_HISTORY_PATH_URL.format(symbol=exchange_symbol),
             limit_id=CONSTANTS.GET_FUNDING_HISTORY_PATH_URL,
             is_auth_required=True,
@@ -941,9 +964,9 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
             timestamp, funding_rate, payment = 0, Decimal("-1"), Decimal("-1")
         else:
             if "dataList" in raw_response:
-                data: Dict[str, Any] = raw_response["dataList"][0]
+                data: dict[str, Any] = raw_response["dataList"][0]
             else:
-                data: Dict[str, Any] = raw_response["data"]["dataList"][0]
+                data: dict[str, Any] = raw_response["data"]["dataList"][0]
             funding_rate: Decimal = Decimal(str(data["fundingRate"]))
             position_size: Decimal = Decimal(str(data["positionQty"]))
             payment: Decimal = funding_rate * position_size
@@ -953,27 +976,28 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
                 timestamp: int = self.current_timestamp
         return timestamp, funding_rate, payment
 
-    async def _api_request(self,
-                           path_url,
-                           method: RESTMethod = RESTMethod.GET,
-                           params: Optional[Dict[str, Any]] = None,
-                           data: Optional[Dict[str, Any]] = None,
-                           is_auth_required: bool = False,
-                           return_err: bool = False,
-                           limit_id: Optional[str] = None,
-                           trading_pair: Optional[str] = None,
-                           currency: Optional[str] = None,
-                           exchange_order_id: Optional[str] = None,
-                           client_order_id: Optional[str] = None,
-                           **kwargs) -> Dict[str, Any]:
+    async def _api_request(
+        self,
+        path_url,
+        method: RESTMethod = RESTMethod.GET,
+        params: dict[str, Any] | None = None,
+        data: dict[str, Any] | None = None,
+        is_auth_required: bool = False,
+        return_err: bool = False,
+        limit_id: str | None = None,
+        trading_pair: str | None = None,
+        currency: str | None = None,
+        exchange_order_id: str | None = None,
+        client_order_id: str | None = None,
+        **kwargs,
+    ) -> dict[str, Any]:
 
         rest_assistant = await self._web_assistants_factory.get_rest_assistant()
         if limit_id is None:
             limit_id = web_utils.get_rest_api_limit_id_for_endpoint(
                 endpoint=path_url,
             )
-        url = web_utils.get_rest_url_for_endpoint(endpoint=path_url,
-                                                  domain=self._domain)
+        url = web_utils.get_rest_url_for_endpoint(endpoint=path_url, domain=self._domain)
 
         resp = await rest_assistant.execute_request(
             url=url,
@@ -998,8 +1022,7 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
         # canceled). Both mean the order is no longer active, so the cancelation is treated as
         # "order not found" (a benign race) instead of a hard error with a noisy traceback.
         error = str(cancelation_exception)
-        return (CONSTANTS.RET_CODE_ORDER_NOT_EXISTS in error
-                or CONSTANTS.RET_CODE_ORDER_CANNOT_BE_CANCELED in error)
+        return CONSTANTS.RET_CODE_ORDER_NOT_EXISTS in error or CONSTANTS.RET_CODE_ORDER_CANNOT_BE_CANCELED in error
 
     @staticmethod
     def _format_ret_code_for_print(ret_code: Union[str, int]) -> str:

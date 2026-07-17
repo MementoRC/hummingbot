@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.derivative.grvt_perpetual import (
     grvt_perpetual_constants as CONSTANTS,
@@ -20,11 +22,11 @@ if TYPE_CHECKING:
 
 
 class GrvtPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "GrvtPerpetualDerivative",
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -35,7 +37,7 @@ class GrvtPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         self._domain = domain
         self._ws_request_id = 0
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def get_funding_info(self, trading_pair: str) -> FundingInfo:
@@ -53,7 +55,7 @@ class GrvtPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             rate=Decimal(str(result["funding_rate_8h_curr"])),
         )
 
-    async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, Any]:
+    async def _request_order_book_snapshot(self, trading_pair: str) -> dict[str, Any]:
         exchange_symbol = await self._connector.exchange_symbol_associated_to_pair(trading_pair)
         response = await self._connector._api_post(
             path_url=CONSTANTS.ORDER_BOOK_PATH_URL,
@@ -82,7 +84,11 @@ class GrvtPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             for trading_pair in self._trading_pairs:
                 await self.subscribe_to_trading_pair(trading_pair)
                 exchange_symbol = await self._connector.exchange_symbol_associated_to_pair(trading_pair)
-                await ws.send(self._subscription_request(stream=CONSTANTS.PUBLIC_WS_CHANNEL_TICKER, selector=f"{exchange_symbol}@1000"))
+                await ws.send(
+                    self._subscription_request(
+                        stream=CONSTANTS.PUBLIC_WS_CHANNEL_TICKER, selector=f"{exchange_symbol}@1000"
+                    )
+                )
             self.logger().info("Subscribed to GRVT public order book, trades, and ticker channels...")
         except asyncio.CancelledError:
             raise
@@ -90,7 +96,7 @@ class GrvtPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             self.logger().error("Unexpected error occurred subscribing to GRVT order book streams.", exc_info=True)
             raise
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         stream = event_message.get("stream", "")
         if stream == CONSTANTS.PUBLIC_WS_CHANNEL_BOOK_DIFF:
             return self._diff_messages_queue_key
@@ -100,28 +106,28 @@ class GrvtPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             return self._funding_info_messages_queue_key
         return ""
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         feed = raw_message["feed"]
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(feed["instrument"])
         message_queue.put_nowait(
             GrvtPerpetualOrderBook.diff_message_from_exchange(raw_message, metadata={"trading_pair": trading_pair})
         )
 
-    async def _parse_order_book_snapshot_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_snapshot_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         feed = raw_message["feed"]
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(feed["instrument"])
         message_queue.put_nowait(
             GrvtPerpetualOrderBook.snapshot_message_from_ws(raw_message, metadata={"trading_pair": trading_pair})
         )
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         feed = raw_message["feed"]
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(feed["instrument"])
         message_queue.put_nowait(
             GrvtPerpetualOrderBook.trade_message_from_exchange(raw_message, metadata={"trading_pair": trading_pair})
         )
 
-    async def _parse_funding_info_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_funding_info_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         feed = raw_message["feed"]
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(feed["instrument"])
         message_queue.put_nowait(
@@ -184,5 +190,5 @@ class GrvtPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         return True
 
     @staticmethod
-    def _next_funding_time(feed: Dict[str, Any]) -> int:
+    def _next_funding_time(feed: dict[str, Any]) -> int:
         return int(int(feed["next_funding_time"]) * 1e-9)

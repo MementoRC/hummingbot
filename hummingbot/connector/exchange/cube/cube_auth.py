@@ -3,7 +3,6 @@ import hashlib
 import hmac
 import struct
 import time
-from typing import Dict, Tuple
 
 from hummingbot.connector.exchange.cube.cube_ws_protobufs import trade_pb2
 from hummingbot.core.web_assistant.auth import AuthBase
@@ -37,16 +36,12 @@ class CubeAuth(AuthBase):
 
         return request  # pass-through
 
-    def header_for_authentication(self) -> Dict[str, str]:
+    def header_for_authentication(self) -> dict[str, str]:
         # Generate signature
         signature, timestamp = self._generate_signature()
 
         # Headers for the API request
-        headers = {
-            'x-api-key': self.api_key,
-            'x-api-signature': signature,
-            'x-api-timestamp': str(timestamp)
-        }
+        headers = {"x-api-key": self.api_key, "x-api-signature": signature, "x-api-timestamp": str(timestamp)}
 
         return headers
 
@@ -81,7 +76,7 @@ class CubeAuth(AuthBase):
         # Compare the generated signatures with the provided signature
         return signature == generated_signature and signature != generated_signature_diff_timestamp
 
-    def _generate_signature(self, timestamp: int = None) -> Tuple[str, int]:
+    def _generate_signature(self, timestamp: int = None) -> tuple[str, int]:
         # Get timestamp
         if timestamp is None:
             input_timestamp = int(time.time())
@@ -89,10 +84,10 @@ class CubeAuth(AuthBase):
             input_timestamp = timestamp
 
         # Convert the timestamp to an 8-byte little-endian array
-        timestamp_bytes = struct.pack('<Q', input_timestamp)
+        timestamp_bytes = struct.pack("<Q", input_timestamp)
 
         # The fixed byte string
-        fixed_string = b'cube.xyz'
+        fixed_string = b"cube.xyz"
 
         # Concatenate the fixed string with the timestamp
         payload = fixed_string + timestamp_bytes

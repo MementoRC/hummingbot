@@ -1,11 +1,11 @@
 import base64
+from collections import OrderedDict
+from decimal import Decimal
 import hashlib
 import hmac
 import json
 import time
-from collections import OrderedDict
-from decimal import Decimal
-from typing import Any, Dict, List
+from typing import Any
 from urllib.parse import urlencode
 
 from hummingbot.connector.derivative.kucoin_perpetual import kucoin_perpetual_constants as CONSTANTS
@@ -26,7 +26,7 @@ class KucoinPerpetualAuth(AuthBase):
         self._time_provider: TimeSynchronizer = time_provider
 
     @staticmethod
-    def keysort(dictionary: Dict[str, str]) -> Dict[str, str]:
+    def keysort(dictionary: dict[str, str]) -> dict[str, str]:
         return OrderedDict(sorted(dictionary.items(), key=lambda t: t[0]))
 
     async def rest_authenticate(self, request: RESTRequest) -> RESTRequest:
@@ -64,7 +64,7 @@ class KucoinPerpetualAuth(AuthBase):
         """
         return request  # pass-through
 
-    def get_ws_auth_payload(self) -> List[str]:
+    def get_ws_auth_payload(self) -> list[str]:
         """
         Generates a dictionary with all required information for the authentication process
         :return: a dictionary of authentication info including the request signature
@@ -78,7 +78,7 @@ class KucoinPerpetualAuth(AuthBase):
 
         return auth_info
 
-    def _extend_params_with_authentication_info(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def _extend_params_with_authentication_info(self, params: dict[str, Any]) -> dict[str, Any]:
         params["timestamp"] = self._get_timestamp()
         params["api_key"] = self._api_key
         key_value_elements = []
@@ -87,39 +87,35 @@ class KucoinPerpetualAuth(AuthBase):
             converted_value = converted_value if type(value) is str else json.dumps(converted_value)
             key_value_elements.append(str(key) + "=" + converted_value)
         raw_signature = "&".join(key_value_elements)
-        signature = hmac.new(self._secret_key.encode("utf-8"), raw_signature.encode("utf-8"), hashlib.sha256).hexdigest()
+        signature = hmac.new(
+            self._secret_key.encode("utf-8"), raw_signature.encode("utf-8"), hashlib.sha256
+        ).hexdigest()
         params["sign"] = signature
         return params
 
     def partner_header(self, timestamp: str):
         partner_payload = timestamp + CONSTANTS.HB_PARTNER_ID + self._api_key
         partner_signature = base64.b64encode(
-            hmac.new(
-                CONSTANTS.HB_PARTNER_KEY.encode("utf-8"),
-                partner_payload.encode("utf-8"),
-                hashlib.sha256).digest())
+            hmac.new(CONSTANTS.HB_PARTNER_KEY.encode("utf-8"), partner_payload.encode("utf-8"), hashlib.sha256).digest()
+        )
         third_party = {
             "KC-API-PARTNER": CONSTANTS.HB_PARTNER_ID,
-            "KC-API-PARTNER-SIGN": str(partner_signature, "utf-8")
+            "KC-API-PARTNER-SIGN": str(partner_signature, "utf-8"),
         }
         return third_party
 
-    def authentication_headers(self, request: RESTRequest) -> Dict[str, Any]:
+    def authentication_headers(self, request: RESTRequest) -> dict[str, Any]:
         # Sign with the server-synchronized time (in milliseconds), like the spot connector. Signing
         # with the local clock caused intermittent 400002 "Invalid KC-API-TIMESTAMP" errors whenever
         # the machine clock drifted from KuCoin's server time.
         timestamp = int(self._time_provider.time() * 1e3)
 
-        header = {
-            "KC-API-KEY": self._api_key,
-            "KC-API-TIMESTAMP": str(timestamp),
-            "KC-API-KEY-VERSION": "2"
-        }
+        header = {"KC-API-KEY": self._api_key, "KC-API-TIMESTAMP": str(timestamp), "KC-API-KEY-VERSION": "2"}
 
         path_url = f"/api{request.url.split('/api')[-1]}"
         if request.params:
             sorted_params = self.keysort(request.params)
-            query_string_components = urlencode(sorted_params, safe=',')
+            query_string_components = urlencode(sorted_params, safe=",")
             path_url = f"{path_url}?{query_string_components}"
 
         if request.data is not None:
@@ -129,15 +125,11 @@ class KucoinPerpetualAuth(AuthBase):
         payload = str(timestamp) + request.method.value.upper() + path_url + body
 
         signature = base64.b64encode(
-            hmac.new(
-                self._secret_key.encode("utf-8"),
-                payload.encode("utf-8"),
-                hashlib.sha256).digest())
+            hmac.new(self._secret_key.encode("utf-8"), payload.encode("utf-8"), hashlib.sha256).digest()
+        )
         passphrase = base64.b64encode(
-            hmac.new(
-                self._secret_key.encode('utf-8'),
-                self._passphrase.encode('utf-8'),
-                hashlib.sha256).digest())
+            hmac.new(self._secret_key.encode("utf-8"), self._passphrase.encode("utf-8"), hashlib.sha256).digest()
+        )
         header["KC-API-SIGN"] = str(signature, "utf-8")
         header["KC-API-PASSPHRASE"] = str(passphrase, "utf-8")
         partner_headers = self.partner_header(str(timestamp))

@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 from decimal import Decimal
-from typing import List, Optional
 
 import pandas as pd
 from pydantic import Field, field_validator
@@ -21,71 +22,86 @@ class DirectionalTradingControllerConfigBase(ControllerConfigBase):
     """
     This class represents the configuration required to run a Directional Strategy.
     """
+
     controller_type: str = "directional_trading"
     connector_name: str = Field(
         default="binance_perpetual",
-        json_schema_extra={
-            "prompt": "Enter the connector name (e.g., binance_perpetual): ",
-            "prompt_on_new": True}
+        json_schema_extra={"prompt": "Enter the connector name (e.g., binance_perpetual): ", "prompt_on_new": True},
     )
     trading_pair: str = Field(
         default="WLD-USDT",
-        json_schema_extra={
-            "prompt": "Enter the trading pair to trade on (e.g., WLD-USDT): ",
-            "prompt_on_new": True}
+        json_schema_extra={"prompt": "Enter the trading pair to trade on (e.g., WLD-USDT): ", "prompt_on_new": True},
     )
     max_executors_per_side: int = Field(
         default=2,
         json_schema_extra={
             "prompt": "Enter the maximum number of executors per side (e.g., 2): ",
-            "prompt_on_new": True, "is_updatable": True}
+            "prompt_on_new": True,
+            "is_updatable": True,
+        },
     )
     cooldown_time: int = Field(
-        default=60 * 5, gt=0,
+        default=60 * 5,
+        gt=0,
         json_schema_extra={
             "prompt": "Enter the cooldown time in seconds after executing a signal (e.g., 300 for 5 minutes): ",
-            "prompt_on_new": True, "is_updatable": True},
+            "prompt_on_new": True,
+            "is_updatable": True,
+        },
     )
     leverage: int = Field(
         default=20,
         json_schema_extra={
             "prompt": "Enter the leverage to use for trading (e.g., 20 for 20x leverage). Set it to 1 for spot trading: ",
-            "prompt_on_new": True}
+            "prompt_on_new": True,
+        },
     )
     position_mode: PositionMode = Field(
-        default="HEDGE",
-        json_schema_extra={"prompt": "Enter the position mode (HEDGE/ONEWAY): "}
+        default="HEDGE", json_schema_extra={"prompt": "Enter the position mode (HEDGE/ONEWAY): "}
     )
     # Triple Barrier Configuration
-    stop_loss: Optional[Decimal] = Field(
-        default=Decimal("0.03"), gt=0,
+    stop_loss: Decimal | None = Field(
+        default=Decimal("0.03"),
+        gt=0,
         json_schema_extra={
             "prompt": "Enter the stop loss (as a decimal, e.g., 0.03 for 3%): ",
-            "prompt_on_new": True, "is_updatable": True}
+            "prompt_on_new": True,
+            "is_updatable": True,
+        },
     )
-    take_profit: Optional[Decimal] = Field(
-        default=Decimal("0.02"), gt=0,
+    take_profit: Decimal | None = Field(
+        default=Decimal("0.02"),
+        gt=0,
         json_schema_extra={
             "prompt": "Enter the take profit (as a decimal, e.g., 0.02 for 2%): ",
-            "prompt_on_new": True, "is_updatable": True}
+            "prompt_on_new": True,
+            "is_updatable": True,
+        },
     )
-    time_limit: Optional[int] = Field(
-        default=60 * 45, gt=0,
+    time_limit: int | None = Field(
+        default=60 * 45,
+        gt=0,
         json_schema_extra={
             "prompt": "Enter the time limit in seconds (e.g., 2700 for 45 minutes): ",
-            "prompt_on_new": True, "is_updatable": True}
+            "prompt_on_new": True,
+            "is_updatable": True,
+        },
     )
     take_profit_order_type: OrderType = Field(
         default=OrderType.LIMIT,
         json_schema_extra={
             "prompt": "Enter the order type for take profit (LIMIT/MARKET): ",
-            "prompt_on_new": True, "is_updatable": True}
+            "prompt_on_new": True,
+            "is_updatable": True,
+        },
     )
-    trailing_stop: Optional[TrailingStop] = Field(
+    trailing_stop: TrailingStop | None = Field(
         default=None,
         json_schema_extra={
             "prompt": "Enter the trailing stop as activation_price,trailing_delta (e.g., 0.015,0.003): ",
-            "prompt_on_new": True, "is_updatable": True},
+            "prompt_on_new": True,
+            "is_updatable": True,
+        },
     )
 
     @field_validator("trailing_stop", mode="before")
@@ -107,7 +123,7 @@ class DirectionalTradingControllerConfigBase(ControllerConfigBase):
             return Decimal(v)
         return v
 
-    @field_validator('take_profit_order_type', mode="before")
+    @field_validator("take_profit_order_type", mode="before")
     @classmethod
     def validate_order_type(cls, v) -> OrderType:
         if v is None:
@@ -116,7 +132,7 @@ class DirectionalTradingControllerConfigBase(ControllerConfigBase):
             v = v.replace("OrderType.", "")
         return parse_enum_value(OrderType, v, "take_profit_order_type")
 
-    @field_validator('position_mode', mode="before")
+    @field_validator("position_mode", mode="before")
     @classmethod
     def validate_position_mode(cls, v: str) -> PositionMode:
         return parse_enum_value(PositionMode, v, "position_mode")
@@ -131,7 +147,7 @@ class DirectionalTradingControllerConfigBase(ControllerConfigBase):
             open_order_type=OrderType.MARKET,  # Defaulting to MARKET as is a Taker Controller
             take_profit_order_type=self.take_profit_order_type,
             stop_loss_order_type=OrderType.MARKET,  # Defaulting to MARKET as per requirement
-            time_limit_order_type=OrderType.MARKET  # Defaulting to MARKET as per requirement
+            time_limit_order_type=OrderType.MARKET,  # Defaulting to MARKET as per requirement
         )
 
     def update_markets(self, markets: MarketDict) -> MarketDict:
@@ -146,10 +162,11 @@ class DirectionalTradingControllerBase(ControllerBase):
     def __init__(self, config: DirectionalTradingControllerConfigBase, *args, **kwargs):
         super().__init__(config, *args, **kwargs)
         self.config = config
-        self.market_data_provider.initialize_rate_sources([ConnectorPair(
-            connector_name=config.connector_name, trading_pair=config.trading_pair)])
+        self.market_data_provider.initialize_rate_sources(
+            [ConnectorPair(connector_name=config.connector_name, trading_pair=config.trading_pair)]
+        )
 
-    def determine_executor_actions(self) -> List[ExecutorAction]:
+    def determine_executor_actions(self) -> list[ExecutorAction]:
         """
         Determine actions based on the provided executor handler report.
         """
@@ -164,21 +181,24 @@ class DirectionalTradingControllerBase(ControllerBase):
         """
         self.processed_data = {"signal": 0, "features": pd.DataFrame()}
 
-    def create_actions_proposal(self) -> List[ExecutorAction]:
+    def create_actions_proposal(self) -> list[ExecutorAction]:
         """
         Create actions based on the provided executor handler report.
         """
         create_actions = []
         signal = self.processed_data["signal"]
         if signal != 0 and self.can_create_executor(signal):
-            price = self.market_data_provider.get_price_by_type(self.config.connector_name, self.config.trading_pair,
-                                                                PriceType.MidPrice)
+            price = self.market_data_provider.get_price_by_type(
+                self.config.connector_name, self.config.trading_pair, PriceType.MidPrice
+            )
             # Default implementation distribute the total amount equally among the executors
             amount = self.config.total_amount_quote / price / Decimal(self.config.max_executors_per_side)
             trade_type = TradeType.BUY if signal > 0 else TradeType.SELL
-            create_actions.append(CreateExecutorAction(
-                controller_id=self.config.id,
-                executor_config=self.get_executor_config(trade_type, price, amount)))
+            create_actions.append(
+                CreateExecutorAction(
+                    controller_id=self.config.id, executor_config=self.get_executor_config(trade_type, price, amount)
+                )
+            )
 
         return create_actions
 
@@ -188,13 +208,14 @@ class DirectionalTradingControllerBase(ControllerBase):
         """
         active_executors_by_signal_side = self.filter_executors(
             executors=self.executors_info,
-            filter_func=lambda x: x.is_active and (x.side == TradeType.BUY if signal > 0 else TradeType.SELL))
+            filter_func=lambda x: x.is_active and (x.side == TradeType.BUY if signal > 0 else TradeType.SELL),
+        )
         max_timestamp = max([executor.timestamp for executor in active_executors_by_signal_side], default=0)
         active_executors_condition = len(active_executors_by_signal_side) < self.config.max_executors_per_side
         cooldown_condition = self.market_data_provider.time() - max_timestamp > self.config.cooldown_time
         return active_executors_condition and cooldown_condition
 
-    def stop_actions_proposal(self) -> List[ExecutorAction]:
+    def stop_actions_proposal(self) -> list[ExecutorAction]:
         """
         Stop actions based on the provided executor handler report.
         """
@@ -217,8 +238,13 @@ class DirectionalTradingControllerBase(ControllerBase):
             leverage=self.config.leverage,
         )
 
-    def to_format_status(self) -> List[str]:
+    def to_format_status(self) -> list[str]:
         df = self.processed_data.get("features", pd.DataFrame())
         if df.empty:
             return []
-        return [format_df_for_printout(df.tail(5), table_format="psql",)]
+        return [
+            format_df_for_printout(
+                df.tail(5),
+                table_format="psql",
+            )
+        ]

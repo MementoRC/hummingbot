@@ -15,8 +15,10 @@ Pool Types:
 Re-exports:
 - Result dataclasses: QueryResult, TransactionSubmitResult, TransactionVerifyResult
 """
+
+from __future__ import annotations
+
 import logging
-from typing import Dict, Optional
 
 from xrpl.wallet import Wallet
 
@@ -42,9 +44,10 @@ class RequestPriority:
     Note: Deprecated. Kept for API compatibility only.
     The new pool-based architecture handles prioritization differently.
     """
-    LOW = 1       # Balance updates, order book queries
-    MEDIUM = 2    # Order status, transaction verification
-    HIGH = 3      # Order submission, cancellation
+
+    LOW = 1  # Balance updates, order book queries
+    MEDIUM = 2  # Order status, transaction verification
+    HIGH = 3  # Order submission, cancellation
     CRITICAL = 4  # Emergency operations
 
 
@@ -78,7 +81,8 @@ class XRPLWorkerPoolManager:
         verify_result = await verify_pool.submit_verification(signed_tx, prelim_result)
         submit_result = await tx_pool.submit_transaction(transaction)
     """
-    _logger: Optional[HummingbotLogger] = None
+
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
@@ -99,13 +103,13 @@ class XRPLWorkerPoolManager:
         self._running = False
 
         # Transaction pipeline (singleton, shared by all tx pools)
-        self._pipeline: Optional[XRPLTransactionPipeline] = None
+        self._pipeline: XRPLTransactionPipeline | None = None
 
         # Worker pools (lazy initialization)
-        self._query_pool: Optional[XRPLQueryWorkerPool] = None
-        self._verification_pool: Optional[XRPLVerificationWorkerPool] = None
+        self._query_pool: XRPLQueryWorkerPool | None = None
+        self._verification_pool: XRPLVerificationWorkerPool | None = None
         # Per-wallet transaction pools
-        self._transaction_pools: Dict[str, XRPLTransactionWorkerPool] = {}
+        self._transaction_pools: dict[str, XRPLTransactionWorkerPool] = {}
 
         # Pool sizes
         self._query_pool_size = query_pool_size
@@ -154,9 +158,7 @@ class XRPLWorkerPoolManager:
                 node_pool=self._node_pool,
                 num_workers=self._query_pool_size,
             )
-            self.logger().debug(
-                f"Created query pool with {self._query_pool_size} workers"
-            )
+            self.logger().debug(f"Created query pool with {self._query_pool_size} workers")
         return self._query_pool
 
     def get_verification_pool(self) -> XRPLVerificationWorkerPool:
@@ -174,15 +176,13 @@ class XRPLWorkerPoolManager:
                 node_pool=self._node_pool,
                 num_workers=self._verification_pool_size,
             )
-            self.logger().debug(
-                f"Created verification pool with {self._verification_pool_size} workers"
-            )
+            self.logger().debug(f"Created verification pool with {self._verification_pool_size} workers")
         return self._verification_pool
 
     def get_transaction_pool(
         self,
         wallet: Wallet,
-        pool_id: Optional[str] = None,
+        pool_id: str | None = None,
     ) -> XRPLTransactionWorkerPool:
         """
         Get or create a transaction worker pool for a specific wallet.
@@ -208,8 +208,7 @@ class XRPLWorkerPoolManager:
                 num_workers=self._transaction_pool_size,
             )
             self.logger().debug(
-                f"Created transaction pool for {pool_id[:8]}... "
-                f"with {self._transaction_pool_size} workers"
+                f"Created transaction pool for {pool_id[:8]}... with {self._transaction_pool_size} workers"
             )
         return self._transaction_pools[pool_id]
 
@@ -273,7 +272,7 @@ class XRPLWorkerPoolManager:
     # Statistics and Monitoring
     # ============================================
 
-    def get_stats(self) -> Dict[str, any]:
+    def get_stats(self) -> dict[str, any]:
         """
         Get aggregated statistics from all pools and pipeline.
 

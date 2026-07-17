@@ -1,11 +1,13 @@
+from __future__ import annotations
+
 import asyncio
-import json
-import logging
-import re
 
 # from copy import deepcopy
 from decimal import Decimal
-from typing import Any, Callable, List, Optional
+import json
+import logging
+import re
+from typing import Any, Callable
 from unittest import TestCase
 from unittest.mock import AsyncMock, patch
 
@@ -13,8 +15,8 @@ from aioresponses import aioresponses
 from aioresponses.core import RequestCall
 
 import hummingbot.connector.exchange.hyperliquid.hyperliquid_constants as CONSTANTS
-import hummingbot.connector.exchange.hyperliquid.hyperliquid_web_utils as web_utils
 from hummingbot.connector.exchange.hyperliquid.hyperliquid_exchange import HyperliquidExchange
+import hummingbot.connector.exchange.hyperliquid.hyperliquid_web_utils as web_utils
 from hummingbot.connector.test_support.exchange_connector_test import AbstractExchangeConnectorTests
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.connector.utils import combine_to_hb_trading_pair
@@ -55,9 +57,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
 
     @property
     def latest_prices_url(self):
-        url = web_utils.public_rest_url(
-            CONSTANTS.TICKER_PRICE_CHANGE_URL
-        )
+        url = web_utils.public_rest_url(CONSTANTS.TICKER_PRICE_CHANGE_URL)
         url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
         return url
 
@@ -75,9 +75,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
 
     @property
     def order_creation_url(self):
-        url = web_utils.public_rest_url(
-            CONSTANTS.CREATE_ORDER_URL
-        )
+        url = web_utils.public_rest_url(CONSTANTS.CREATE_ORDER_URL)
         url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
         return url
 
@@ -103,7 +101,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
                         "tokenId": "0x6d1e7cde53ba9467b783cb7c530ce054",
                         "isCanonical": True,
                         "evmContract": None,
-                        "fullName": None
+                        "fullName": None,
                     },
                     {
                         "name": "COINALPHA",
@@ -113,7 +111,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
                         "tokenId": "0xc1fb593aeffbeb02f85e0308e9956a90",
                         "isCanonical": True,
                         "evmContract": None,
-                        "fullName": None
+                        "fullName": None,
                     },
                     {
                         "name": "PURR",
@@ -123,42 +121,32 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
                         "tokenId": "0xc1fb593aeffbeb02f85e0308e9956a90",
                         "isCanonical": True,
                         "evmContract": None,
-                        "fullName": None
-                    }
+                        "fullName": None,
+                    },
                 ],
                 "universe": [
-                    {
-                        "name": "COINALPHA/USDC",
-                        "tokens": [1, 0],
-                        "index": 0,
-                        "isCanonical": True
-                    },
-                    {
-                        "name": "@1",
-                        "tokens": [2, 0],
-                        "index": 1,
-                        "isCanonical": True
-                    },
-                ]
+                    {"name": "COINALPHA/USDC", "tokens": [1, 0], "index": 0, "isCanonical": True},
+                    {"name": "@1", "tokens": [2, 0], "index": 1, "isCanonical": True},
+                ],
             },
             [
                 {
-                    'prevDayPx': '0.22916',
-                    'dayNtlVlm': '4265022.87833',
-                    'markPx': '0.22923',
-                    'midPx': '0.229235',
-                    'circulatingSupply': '598274922.83822',
-                    'coin': 'COINALPHA/USDC'
+                    "prevDayPx": "0.22916",
+                    "dayNtlVlm": "4265022.87833",
+                    "markPx": "0.22923",
+                    "midPx": "0.229235",
+                    "circulatingSupply": "598274922.83822",
+                    "coin": "COINALPHA/USDC",
                 },
                 {
-                    'prevDayPx': '25.236',
-                    'dayNtlVlm': '315299.16652',
-                    'markPx': '25.011',
-                    'midPx': '24.9835',
-                    'circulatingSupply': '997372.88712882',
-                    'coin': '@1'
-                }
-            ]
+                    "prevDayPx": "25.236",
+                    "dayNtlVlm": "315299.16652",
+                    "markPx": "25.011",
+                    "midPx": "24.9835",
+                    "circulatingSupply": "997372.88712882",
+                    "coin": "@1",
+                },
+            ],
         ]
         return mock_response
 
@@ -175,7 +163,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
                         "tokenId": "0x6d1e7cde53ba9467b783cb7c530ce054",
                         "isCanonical": True,
                         "evmContract": None,
-                        "fullName": None
+                        "fullName": None,
                     },
                     {
                         "name": "COINALPHA",
@@ -185,7 +173,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
                         "tokenId": "0xc1fb593aeffbeb02f85e0308e9956a90",
                         "isCanonical": True,
                         "evmContract": None,
-                        "fullName": None
+                        "fullName": None,
                     },
                     {
                         "name": "PURR",
@@ -195,42 +183,32 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
                         "tokenId": "0xc1fb593aeffbeb02f85e0308e9956a90",
                         "isCanonical": True,
                         "evmContract": None,
-                        "fullName": None
-                    }
+                        "fullName": None,
+                    },
                 ],
                 "universe": [
-                    {
-                        "name": "COINALPHA/USDC",
-                        "tokens": [1, 0],
-                        "index": 0,
-                        "isCanonical": True
-                    },
-                    {
-                        "name": "@1",
-                        "tokens": [2, 0],
-                        "index": 1,
-                        "isCanonical": True
-                    }
-                ]
+                    {"name": "COINALPHA/USDC", "tokens": [1, 0], "index": 0, "isCanonical": True},
+                    {"name": "@1", "tokens": [2, 0], "index": 1, "isCanonical": True},
+                ],
             },
             [
                 {
-                    'prevDayPx': '25.236',
-                    'dayNtlVlm': '315299.16652',
-                    'markPx': self.expected_latest_price,
-                    'midPx': '24.9835',
-                    'circulatingSupply': '997372.88712882',
-                    'coin': 'COINALPHA/USDC'
+                    "prevDayPx": "25.236",
+                    "dayNtlVlm": "315299.16652",
+                    "markPx": self.expected_latest_price,
+                    "midPx": "24.9835",
+                    "circulatingSupply": "997372.88712882",
+                    "coin": "COINALPHA/USDC",
                 },
                 {
-                    'prevDayPx': '25.236',
-                    'dayNtlVlm': '315299.16652',
-                    'markPx': '25.011',
-                    'midPx': '24.9835',
-                    'circulatingSupply': '997372.88712882',
-                    'coin': '@1'
-                }
-            ]
+                    "prevDayPx": "25.236",
+                    "dayNtlVlm": "315299.16652",
+                    "markPx": "25.011",
+                    "midPx": "24.9835",
+                    "circulatingSupply": "997372.88712882",
+                    "coin": "@1",
+                },
+            ],
         ]
 
         return mock_response
@@ -248,7 +226,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
                         "tokenId": "0x6d1e7cde53ba9467b783cb7c530ce054",
                         "isCanonical": True,
                         "evmContract": None,
-                        "fullName": None
+                        "fullName": None,
                     },
                     {
                         "name": self.base_asset,
@@ -258,17 +236,10 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
                         "tokenId": "0xc1fb593aeffbeb02f85e0308e9956a90",
                         "isCanonical": True,
                         "evmContract": None,
-                        "fullName": None
-                    }
+                        "fullName": None,
+                    },
                 ],
-                "universe": [
-                    {
-                        "name": "COINALPHA/USDC",
-                        "tokens": [1, 0],
-                        "index": 0,
-                        "isCanonical": True
-                    }
-                ]
+                "universe": [{"name": "COINALPHA/USDC", "tokens": [1, 0], "index": 0, "isCanonical": True}],
             },
             [
                 {
@@ -276,20 +247,16 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
                     "markPx": "0.14",
                     "midPx": "0.209265",
                     "prevDayPx": "0.20432",
-                    'circulatingSupply': '997372.88712882',
-                    'coin': 'COINALPHA/USDC"'
+                    "circulatingSupply": "997372.88712882",
+                    "coin": 'COINALPHA/USDC"',
                 }
-            ]
+            ],
         ]
         return "INVALID-PAIR", mock_response
 
     @property
     def network_status_request_successful_mock_response(self):
-        mock_response = {
-            "code": 0,
-            "message": "",
-            "data": 1587884283175
-        }
+        mock_response = {"code": 0, "message": "", "data": 1587884283175}
         return mock_response
 
     @property
@@ -308,7 +275,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
                         "tokenId": "0x6d1e7cde53ba9467b783cb7c530ce054",
                         "isCanonical": True,
                         "evmContract": None,
-                        "fullName": None
+                        "fullName": None,
                     },
                     {
                         "name": self.base_asset,
@@ -317,52 +284,40 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
                         "tokenId": "0xc1fb593aeffbeb02f85e0308e9956a90",
                         "isCanonical": True,
                         "evmContract": None,
-                        "fullName": None
-                    }
+                        "fullName": None,
+                    },
                 ],
                 "universe": [
-                    {
-                        "name": f"{self.base_asset}/{self.quote_asset}",
-                        "tokens": [1, 0],
-                        "index": 0,
-                        "isCanonical": True
-                    }
-                ]
+                    {"name": f"{self.base_asset}/{self.quote_asset}", "tokens": [1, 0], "index": 0, "isCanonical": True}
+                ],
             },
-            [
-                {
-                    "dayNtlVlm": "8906.0",
-                    "markPx": "0.14",
-                    "prevDayPx": "0.20432"
-                }
-            ]
+            [{"dayNtlVlm": "8906.0", "markPx": "0.14", "prevDayPx": "0.20432"}],
         ]
         return mock_response
 
     @property
     def order_creation_request_successful_mock_response(self):
-        mock_response = {'status': 'ok', 'response': {'type': 'order', 'data': {
-            'statuses': [{'resting': {'oid': self.expected_exchange_order_id}}]}}}
+        mock_response = {
+            "status": "ok",
+            "response": {
+                "type": "order",
+                "data": {"statuses": [{"resting": {"oid": self.expected_exchange_order_id}}]},
+            },
+        }
         return mock_response
 
     @property
     def balance_request_mock_response_for_base_and_quote(self):
         mock_response = {
             "balances": [
-                {
-                    "coin": self.base_asset,
-                    "token": 0,
-                    "hold": "0.0",
-                    "total": "2000",
-                    "entryNtl": "0.0"
-                },
+                {"coin": self.base_asset, "token": 0, "hold": "0.0", "total": "2000", "entryNtl": "0.0"},
                 {
                     "coin": self.quote_asset,
                     "token": 1,
                     "hold": "0",
                     "total": "2000",
                     "entryNtl": "1234.56",
-                }
+                },
             ]
         }
 
@@ -386,13 +341,15 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         # A delisted token keeps being reported by the balances endpoint but is no longer part of any
         # trading pair in the symbol map, so it can no longer be priced and must be ignored.
         response = self.balance_request_mock_response_for_base_and_quote
-        response["balances"].append({
-            "coin": "DELISTED",
-            "token": 2,
-            "hold": "0.0",
-            "total": "500",
-            "entryNtl": "0.0",
-        })
+        response["balances"].append(
+            {
+                "coin": "DELISTED",
+                "token": 2,
+                "hold": "0.0",
+                "total": "500",
+                "entryNtl": "0.0",
+            }
+        )
         self._configure_balance_response(response=response, mock_api=mock_api)
 
         self.async_run_with_timeout(self.exchange._update_balances())
@@ -418,16 +375,18 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
 
     @property
     def expected_trading_rule(self):
-        coin_info = self.trading_rules_request_mock_response[0]['tokens'][1]
+        coin_info = self.trading_rules_request_mock_response[0]["tokens"][1]
         price_info = self.trading_rules_request_mock_response[1][0]
 
         step_size = Decimal(str(10 ** -coin_info.get("szDecimals")))
-        price_size = Decimal(str(10 ** -len(price_info.get("markPx").split('.')[1])))
+        price_size = Decimal(str(10 ** -len(price_info.get("markPx").split(".")[1])))
 
-        return TradingRule(self.trading_pair,
-                           min_base_amount_increment=step_size,
-                           min_price_increment=price_size,
-                           min_order_size=step_size)
+        return TradingRule(
+            self.trading_pair,
+            min_base_amount_increment=step_size,
+            min_price_increment=price_size,
+            min_order_size=step_size,
+        )
 
     @property
     def expected_logged_error_for_erroneous_trading_rule(self):
@@ -489,8 +448,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
 
     def validate_order_creation_request(self, order: InFlightOrder, request_call: RequestCall):
         request_data = json.loads(request_call.kwargs["data"])
-        self.assertEqual(True if order.trade_type is TradeType.BUY else False,
-                         request_data["action"]["orders"][0]["b"])
+        self.assertEqual(True if order.trade_type is TradeType.BUY else False, request_data["action"]["orders"][0]["b"])
         self.assertEqual(order.amount, abs(Decimal(str(request_data["action"]["orders"][0]["s"]))))
         self.assertEqual(order.client_order_id, request_data["action"]["orders"][0]["c"])
 
@@ -507,41 +465,37 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         self.assertEqual(self.api_address, request_params["user"])
 
     def configure_successful_cancelation_response(
-            self,
-            order: InFlightOrder,
-            mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
+        self,
+        order: InFlightOrder,
+        mock_api: aioresponses,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         """
         :return: the URL configured for the cancelation
         """
-        url = web_utils.public_rest_url(
-            CONSTANTS.CANCEL_ORDER_URL
-        )
+        url = web_utils.public_rest_url(CONSTANTS.CANCEL_ORDER_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
         response = self._order_cancelation_request_successful_mock_response(order=order)
         mock_api.post(regex_url, body=json.dumps(response), callback=callback)
         return url
 
     def configure_erroneous_cancelation_response(
-            self,
-            order: InFlightOrder,
-            mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
+        self,
+        order: InFlightOrder,
+        mock_api: aioresponses,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
-        url = web_utils.public_rest_url(
-            CONSTANTS.CANCEL_ORDER_URL
-        )
+        url = web_utils.public_rest_url(CONSTANTS.CANCEL_ORDER_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
         mock_api.post(regex_url, status=400, callback=callback)
         return url
 
     def configure_one_successful_one_erroneous_cancel_all_response(
-            self,
-            successful_order: InFlightOrder,
-            erroneous_order: InFlightOrder,
-            mock_api: aioresponses,
-    ) -> List[str]:
+        self,
+        successful_order: InFlightOrder,
+        erroneous_order: InFlightOrder,
+        mock_api: aioresponses,
+    ) -> list[str]:
         """
         :return: a list of all configured URLs for the cancelations
         """
@@ -553,19 +507,15 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         return all_urls
 
     def configure_order_not_found_error_cancelation_response(
-            self, order: InFlightOrder, mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         # Implement the expected not found response when enabling test_cancel_order_not_found_in_the_exchange
         raise NotImplementedError
 
     def configure_order_not_found_error_order_status_response(
-            self, order: InFlightOrder, mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ):
-        url_order_status = web_utils.public_rest_url(
-            CONSTANTS.ORDER_URL
-        )
+        url_order_status = web_utils.public_rest_url(CONSTANTS.ORDER_URL)
 
         regex_url = re.compile(f"^{url_order_status}".replace(".", r"\.").replace("?", r"\?") + ".*")
 
@@ -574,15 +524,10 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         return url_order_status
 
     def configure_completely_filled_order_status_response(
-            self,
-            order: InFlightOrder,
-            mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ):
 
-        url_order_status = web_utils.public_rest_url(
-            CONSTANTS.ORDER_URL
-        )
+        url_order_status = web_utils.public_rest_url(CONSTANTS.ORDER_URL)
 
         regex_url = re.compile(f"^{url_order_status}".replace(".", r"\.").replace("?", r"\?") + ".*")
 
@@ -591,15 +536,13 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         return url_order_status
 
     def configure_canceled_order_status_response(
-            self,
-            order: InFlightOrder,
-            mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
+        self,
+        order: InFlightOrder,
+        mock_api: aioresponses,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ):
 
-        url_order_status = web_utils.public_rest_url(
-            CONSTANTS.ORDER_URL
-        )
+        url_order_status = web_utils.public_rest_url(CONSTANTS.ORDER_URL)
 
         regex_url = re.compile(f"^{url_order_status}".replace(".", r"\.").replace("?", r"\?") + ".*")
 
@@ -609,14 +552,12 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         return url_order_status
 
     def configure_open_order_status_response(
-            self,
-            order: InFlightOrder,
-            mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
+        self,
+        order: InFlightOrder,
+        mock_api: aioresponses,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
-        url = web_utils.public_rest_url(
-            CONSTANTS.ORDER_URL
-        )
+        url = web_utils.public_rest_url(CONSTANTS.ORDER_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
 
         response = self._order_status_request_open_mock_response(order=order)
@@ -624,28 +565,24 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         return url
 
     def configure_http_error_order_status_response(
-            self,
-            order: InFlightOrder,
-            mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
+        self,
+        order: InFlightOrder,
+        mock_api: aioresponses,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
-        url = web_utils.public_rest_url(
-            CONSTANTS.ORDER_URL
-        )
+        url = web_utils.public_rest_url(CONSTANTS.ORDER_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
 
         mock_api.post(regex_url, status=404, callback=callback)
         return url
 
     def configure_partially_filled_order_status_response(
-            self,
-            order: InFlightOrder,
-            mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
+        self,
+        order: InFlightOrder,
+        mock_api: aioresponses,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
-        url = web_utils.public_rest_url(
-            CONSTANTS.ORDER_URL
-        )
+        url = web_utils.public_rest_url(CONSTANTS.ORDER_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
 
         response = self._order_status_request_partially_filled_mock_response(order=order)
@@ -653,14 +590,12 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         return url
 
     def configure_partial_fill_trade_response(
-            self,
-            order: InFlightOrder,
-            mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
+        self,
+        order: InFlightOrder,
+        mock_api: aioresponses,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
-        url = web_utils.public_rest_url(
-            CONSTANTS.ORDER_URL
-        )
+        url = web_utils.public_rest_url(CONSTANTS.ORDER_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
 
         response = self._order_fills_request_partial_fill_mock_response(order=order)
@@ -668,10 +603,10 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         return url
 
     def configure_full_fill_trade_response(
-            self,
-            order: InFlightOrder,
-            mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
+        self,
+        order: InFlightOrder,
+        mock_api: aioresponses,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.public_rest_url(
             CONSTANTS.ACCOUNT_TRADE_LIST_URL,
@@ -683,14 +618,12 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         return url
 
     def configure_erroneous_http_fill_trade_response(
-            self,
-            order: InFlightOrder,
-            mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
+        self,
+        order: InFlightOrder,
+        mock_api: aioresponses,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
-        url = web_utils.public_rest_url(
-            CONSTANTS.ACCOUNT_TRADE_LIST_URL
-        )
+        url = web_utils.public_rest_url(CONSTANTS.ACCOUNT_TRADE_LIST_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
 
         mock_api.post(regex_url, status=400, callback=callback)
@@ -708,7 +641,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
                         "tokenId": "0x6d1e7cde53ba9467b783cb7c530ce054",
                         "isCanonical": True,
                         "evmContract": None,
-                        "fullName": None
+                        "fullName": None,
                     },
                     {
                         "name": self.base_asset,
@@ -718,7 +651,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
                         "tokenId": "0xc1fb593aeffbeb02f85e0308e9956a90",
                         "isCanonical": True,
                         "evmContract": None,
-                        "fullName": None
+                        "fullName": None,
                     },
                     {
                         "name": "PURR",
@@ -728,80 +661,123 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
                         "tokenId": "0xc1fb593aeffbeb02f85e0308e9956a90",
                         "isCanonical": True,
                         "evmContract": None,
-                        "fullName": None
-                    }
+                        "fullName": None,
+                    },
                 ],
                 "universe": [
-                    {
-                        "name": "COINALPHA/USDC",
-                        "tokens": [1, 0],
-                        "index": 0,
-                        "isCanonical": True
-                    },
-                    {
-                        "name": "@1",
-                        "tokens": [2, 0],
-                        "index": 1,
-                        "isCanonical": True
-                    }
-                ]
+                    {"name": "COINALPHA/USDC", "tokens": [1, 0], "index": 0, "isCanonical": True},
+                    {"name": "@1", "tokens": [2, 0], "index": 1, "isCanonical": True},
+                ],
             },
             [
                 {
-                    'prevDayPx': '0.22916',
-                    'dayNtlVlm': '4265022.87833',
-                    'markPx': '0.22923',
-                    'midPx': '0.229235',
-                    'circulatingSupply': '598274922.83822',
-                    'coin': 'COINALPHA/USDC'
+                    "prevDayPx": "0.22916",
+                    "dayNtlVlm": "4265022.87833",
+                    "markPx": "0.22923",
+                    "midPx": "0.229235",
+                    "circulatingSupply": "598274922.83822",
+                    "coin": "COINALPHA/USDC",
                 },
                 {
-                    'prevDayPx': '25.236',
-                    'dayNtlVlm': '315299.16652',
-                    'markPx': '25.011',
-                    'midPx': '24.9835',
-                    'circulatingSupply': '997372.88712882',
-                    'coin': '@1'
-                }
-            ]
+                    "prevDayPx": "25.236",
+                    "dayNtlVlm": "315299.16652",
+                    "markPx": "25.011",
+                    "midPx": "24.9835",
+                    "circulatingSupply": "997372.88712882",
+                    "coin": "@1",
+                },
+            ],
         ]
 
     def order_event_for_new_order_websocket_update(self, order: InFlightOrder):
-        return {'channel': 'orderUpdates', 'data': [{'order': {'coin': 'COINALPHA', 'side': 'B', 'limitPx': order.price,
-                                                               'sz': float(order.amount),
-                                                               'oid': order.exchange_order_id or "1640b725-75e9-407d-bea9-aae4fc666d33",
-                                                               'timestamp': 1700818402905, 'origSz': '0.01',
-                                                               'cloid': order.client_order_id or ""},
-                                                     'status': 'open', 'statusTimestamp': 1700818867334}]}
+        return {
+            "channel": "orderUpdates",
+            "data": [
+                {
+                    "order": {
+                        "coin": "COINALPHA",
+                        "side": "B",
+                        "limitPx": order.price,
+                        "sz": float(order.amount),
+                        "oid": order.exchange_order_id or "1640b725-75e9-407d-bea9-aae4fc666d33",
+                        "timestamp": 1700818402905,
+                        "origSz": "0.01",
+                        "cloid": order.client_order_id or "",
+                    },
+                    "status": "open",
+                    "statusTimestamp": 1700818867334,
+                }
+            ],
+        }
 
     def order_event_for_canceled_order_websocket_update(self, order: InFlightOrder):
-        return {'channel': 'orderUpdates', 'data': [{'order': {'coin': 'COINALPHA', 'side': 'B', 'limitPx': order.price,
-                                                               'sz': float(order.amount),
-                                                               'oid': order.exchange_order_id or "1640b725-75e9-407d-bea9-aae4fc666d33",
-                                                               'timestamp': 1700818402905, 'origSz': '0.01',
-                                                               'cloid': order.client_order_id or ""},
-                                                     'status': 'canceled', 'statusTimestamp': 1700818867334}]}
+        return {
+            "channel": "orderUpdates",
+            "data": [
+                {
+                    "order": {
+                        "coin": "COINALPHA",
+                        "side": "B",
+                        "limitPx": order.price,
+                        "sz": float(order.amount),
+                        "oid": order.exchange_order_id or "1640b725-75e9-407d-bea9-aae4fc666d33",
+                        "timestamp": 1700818402905,
+                        "origSz": "0.01",
+                        "cloid": order.client_order_id or "",
+                    },
+                    "status": "canceled",
+                    "statusTimestamp": 1700818867334,
+                }
+            ],
+        }
 
     def order_event_for_full_fill_websocket_update(self, order: InFlightOrder):
         self._simulate_trading_rules_initialized()
-        return {'channel': 'orderUpdates', 'data': [{'order': {'coin': 'COINALPHA', 'side': 'B', 'limitPx': order.price,
-                                                               'sz': float(order.amount),
-                                                               'oid': order.exchange_order_id or "1640b725-75e9-407d-bea9-aae4fc666d33",
-                                                               'timestamp': 1700818402905, 'origSz': '0.01',
-                                                               'cloid': order.client_order_id or ""},
-                                                     'status': 'filled', 'statusTimestamp': 1700818867334}]}
+        return {
+            "channel": "orderUpdates",
+            "data": [
+                {
+                    "order": {
+                        "coin": "COINALPHA",
+                        "side": "B",
+                        "limitPx": order.price,
+                        "sz": float(order.amount),
+                        "oid": order.exchange_order_id or "1640b725-75e9-407d-bea9-aae4fc666d33",
+                        "timestamp": 1700818402905,
+                        "origSz": "0.01",
+                        "cloid": order.client_order_id or "",
+                    },
+                    "status": "filled",
+                    "statusTimestamp": 1700818867334,
+                }
+            ],
+        }
 
     def trade_event_for_full_fill_websocket_update(self, order: InFlightOrder):
         self._simulate_trading_rules_initialized()
-        return {'channel': 'userFills', 'data': {'fills': [
-            {'coin': 'COINALPHA/USDC', 'px': order.price, 'sz': float(order.amount), 'side': 'B', 'time': 1700819083138,
-             'closedPnl': '0.0',
-             'hash': '0x6065d86346c0ee0f5d9504081647930115005f95c201c3a6fb5ba2440507f2cf',  # noqa: mock
-             'tid': '0x6065d86346c0ee0f5d9504081647930115005f95c201c3a6fb5ba2440507f2cf',  # noqa: mock
-             'oid': order.exchange_order_id or "EOID1",
-             'cloid': order.client_order_id or "",
-             'crossed': True, 'fee': str(self.expected_fill_fee.flat_fees[0].amount),
-             'feeToken': str(self.expected_fill_fee.flat_fees[0].token), 'liquidationMarkPx': None}]}}
+        return {
+            "channel": "userFills",
+            "data": {
+                "fills": [
+                    {
+                        "coin": "COINALPHA/USDC",
+                        "px": order.price,
+                        "sz": float(order.amount),
+                        "side": "B",
+                        "time": 1700819083138,
+                        "closedPnl": "0.0",
+                        "hash": "0x6065d86346c0ee0f5d9504081647930115005f95c201c3a6fb5ba2440507f2cf",  # noqa: mock
+                        "tid": "0x6065d86346c0ee0f5d9504081647930115005f95c201c3a6fb5ba2440507f2cf",  # noqa: mock
+                        "oid": order.exchange_order_id or "EOID1",
+                        "cloid": order.client_order_id or "",
+                        "crossed": True,
+                        "fee": str(self.expected_fill_fee.flat_fees[0].amount),
+                        "feeToken": str(self.expected_fill_fee.flat_fees[0].token),
+                        "liquidationMarkPx": None,
+                    }
+                ]
+            },
+        }
 
     def test_user_stream_update_for_new_order(self):
         self.exchange._set_current_timestamp(1640780000)
@@ -863,23 +839,21 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
 
         for _ in range(self.exchange._order_tracker._lost_order_count_limit + 1):
             self.async_run_with_timeout(
-                self.exchange._order_tracker.process_order_not_found(client_order_id=order.client_order_id))
+                self.exchange._order_tracker.process_order_not_found(client_order_id=order.client_order_id)
+            )
 
         self.assertNotIn(order.client_order_id, self.exchange.in_flight_orders)
 
         url = self.configure_erroneous_cancelation_response(
-            order=order,
-            mock_api=mock_api,
-            callback=lambda *args, **kwargs: request_sent_event.set())
+            order=order, mock_api=mock_api, callback=lambda *args, **kwargs: request_sent_event.set()
+        )
 
         self.async_run_with_timeout(self.exchange._cancel_lost_orders())
         self.async_run_with_timeout(request_sent_event.wait())
 
         cancel_request = self._all_executed_requests(mock_api, url)[0]
         # self.validate_auth_credentials_present(cancel_request)
-        self.validate_order_cancelation_request(
-            order=order,
-            request_call=cancel_request)
+        self.validate_order_cancelation_request(order=order, request_call=cancel_request)
 
         self.assertIn(order.client_order_id, self.exchange._order_tracker.lost_orders)
         self.assertEqual(0, len(self.order_cancelled_logger.event_log))
@@ -911,9 +885,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         self.exchange._user_stream_tracker._user_stream = mock_queue
 
         if self.is_order_fill_http_update_executed_during_websocket_order_event_processing:
-            self.configure_full_fill_trade_response(
-                order=order,
-                mock_api=mock_api)
+            self.configure_full_fill_trade_response(order=order, mock_api=mock_api)
 
         try:
             self.async_run_with_timeout(self.exchange._user_stream_event_listener())
@@ -946,12 +918,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         self.assertTrue(order.is_filled)
         self.assertTrue(order.is_done)
 
-        self.assertTrue(
-            self.is_logged(
-                "INFO",
-                f"BUY order {order.client_order_id} completely filled."
-            )
-        )
+        self.assertTrue(self.is_logged("INFO", f"BUY order {order.client_order_id} completely filled."))
 
     @aioresponses()
     def test_user_stream_update_for_trade_message(self, mock_api):
@@ -1046,27 +1013,53 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         self.assertEqual(0, len(self.buy_order_completed_logger.event_log))
         self.assertNotIn(order.client_order_id, self.exchange._order_tracker.all_fillable_orders)
 
-        self.assertFalse(
-            self.is_logged("INFO", f"BUY order {order.client_order_id} completely filled.")
-        )
+        self.assertFalse(self.is_logged("INFO", f"BUY order {order.client_order_id} completely filled."))
 
     def _order_cancelation_request_successful_mock_response(self, order: InFlightOrder) -> Any:
-        return {'status': 'ok', 'response': {'type': 'cancel', 'data': {'statuses': ['success']}}}
+        return {"status": "ok", "response": {"type": "cancel", "data": {"statuses": ["success"]}}}
 
     def _order_fills_request_canceled_mock_response(self, order: InFlightOrder) -> Any:
-        return [{'closedPnl': '0.0', 'coin': self.base_asset, 'crossed': False,
-                 'hash': 'xxxxxxxx-xxxx-xxxx-8b66-c3d2fcd352f6', 'oid': order.exchange_order_id,
-                 'cloid': order.client_order_id, 'px': '10000', 'side': 'B',
-                 'sz': '1', 'time': 1681222254710, 'fee': '0.1'}]
+        return [
+            {
+                "closedPnl": "0.0",
+                "coin": self.base_asset,
+                "crossed": False,
+                "hash": "xxxxxxxx-xxxx-xxxx-8b66-c3d2fcd352f6",
+                "oid": order.exchange_order_id,
+                "cloid": order.client_order_id,
+                "px": "10000",
+                "side": "B",
+                "sz": "1",
+                "time": 1681222254710,
+                "fee": "0.1",
+            }
+        ]
 
     def _order_status_request_completely_filled_mock_response(self, order: InFlightOrder) -> Any:
-        return {'order': {
-            'order': {'children': [], 'cloid': order.client_order_id, 'coin': self.base_asset,
-                      'isTrigger': False, 'limitPx': str(order.price),
-                      'oid': int(order.exchange_order_id),
-                      'orderType': 'Limit', 'origSz': float(order.amount), 'reduceOnly': False, 'side': 'B',
-                      'sz': str(order.amount), 'tif': 'Gtc', 'timestamp': 1700814942565, 'triggerCondition': 'N/A',
-                      'triggerPx': '0.0'}, 'status': 'filled', 'statusTimestamp': 1700818403290}, 'status': 'filled'}
+        return {
+            "order": {
+                "order": {
+                    "children": [],
+                    "cloid": order.client_order_id,
+                    "coin": self.base_asset,
+                    "isTrigger": False,
+                    "limitPx": str(order.price),
+                    "oid": int(order.exchange_order_id),
+                    "orderType": "Limit",
+                    "origSz": float(order.amount),
+                    "reduceOnly": False,
+                    "side": "B",
+                    "sz": str(order.amount),
+                    "tif": "Gtc",
+                    "timestamp": 1700814942565,
+                    "triggerCondition": "N/A",
+                    "triggerPx": "0.0",
+                },
+                "status": "filled",
+                "statusTimestamp": 1700818403290,
+            },
+            "status": "filled",
+        }
 
     def _order_status_request_canceled_mock_response(self, order: InFlightOrder) -> Any:
         resp = self._order_status_request_completely_filled_mock_response(order)
@@ -1137,10 +1130,10 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         self.assertEqual(self.expected_latest_price, latest_prices[self.trading_pair])
 
     def configure_trading_rules_response(
-            self,
-            mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        self,
+        mock_api: aioresponses,
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
 
         url = self.trading_rules_url
         response = self.trading_rules_request_mock_response
@@ -1168,14 +1161,14 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
 
         for _ in range(self.exchange._order_tracker._lost_order_count_limit + 1):
             self.async_run_with_timeout(
-                self.exchange._order_tracker.process_order_not_found(client_order_id=order.client_order_id))
+                self.exchange._order_tracker.process_order_not_found(client_order_id=order.client_order_id)
+            )
 
         self.assertNotIn(order.client_order_id, self.exchange.in_flight_orders)
 
         url = self.configure_successful_cancelation_response(
-            order=order,
-            mock_api=mock_api,
-            callback=lambda *args, **kwargs: request_sent_event.set())
+            order=order, mock_api=mock_api, callback=lambda *args, **kwargs: request_sent_event.set()
+        )
 
         self.async_run_with_timeout(self.exchange._cancel_lost_orders())
         self.async_run_with_timeout(request_sent_event.wait())
@@ -1183,9 +1176,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         if url:
             cancel_request = self._all_executed_requests(mock_api, url)[0]
             # self.validate_auth_credentials_present(cancel_request)
-            self.validate_order_cancelation_request(
-                order=order,
-                request_call=cancel_request)
+            self.validate_order_cancelation_request(order=order, request_call=cancel_request)
 
         if self.exchange.is_cancel_request_in_exchange_synchronous:
             self.assertNotIn(order.client_order_id, self.exchange._order_tracker.lost_orders)
@@ -1216,9 +1207,8 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         order: InFlightOrder = self.exchange.in_flight_orders[self.client_order_id_prefix + "1"]
 
         url = self.configure_successful_cancelation_response(
-            order=order,
-            mock_api=mock_api,
-            callback=lambda *args, **kwargs: request_sent_event.set())
+            order=order, mock_api=mock_api, callback=lambda *args, **kwargs: request_sent_event.set()
+        )
 
         self.exchange.cancel(trading_pair=order.trading_pair, client_order_id=order.client_order_id)
         self.async_run_with_timeout(request_sent_event.wait())
@@ -1226,9 +1216,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         if url != "":
             cancel_request = self._all_executed_requests(mock_api, url)[0]
             self.validate_auth_credentials_present(cancel_request)
-            self.validate_order_cancelation_request(
-                order=order,
-                request_call=cancel_request)
+            self.validate_order_cancelation_request(order=order, request_call=cancel_request)
 
         if self.exchange.is_cancel_request_in_exchange_synchronous:
             self.assertNotIn(order.client_order_id, self.exchange.in_flight_orders)
@@ -1237,12 +1225,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
             self.assertEqual(self.exchange.current_timestamp, cancel_event.timestamp)
             self.assertEqual(order.client_order_id, cancel_event.order_id)
 
-            self.assertTrue(
-                self.is_logged(
-                    "INFO",
-                    f"Successfully canceled order {order.client_order_id}."
-                )
-            )
+            self.assertTrue(self.is_logged("INFO", f"Successfully canceled order {order.client_order_id}."))
         else:
             self.assertIn(order.client_order_id, self.exchange.in_flight_orders)
             self.assertTrue(order.is_pending_cancel_confirmation)
@@ -1267,9 +1250,8 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         order = self.exchange.in_flight_orders[self.client_order_id_prefix + "1"]
 
         url = self.configure_erroneous_cancelation_response(
-            order=order,
-            mock_api=mock_api,
-            callback=lambda *args, **kwargs: request_sent_event.set())
+            order=order, mock_api=mock_api, callback=lambda *args, **kwargs: request_sent_event.set()
+        )
 
         self.exchange.cancel(trading_pair=self.trading_pair, client_order_id=self.client_order_id_prefix + "1")
         self.async_run_with_timeout(request_sent_event.wait())
@@ -1277,16 +1259,11 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         if url != "":
             cancel_request = self._all_executed_requests(mock_api, url)[0]
             self.validate_auth_credentials_present(cancel_request)
-            self.validate_order_cancelation_request(
-                order=order,
-                request_call=cancel_request)
+            self.validate_order_cancelation_request(order=order, request_call=cancel_request)
 
         self.assertEqual(0, len(self.order_cancelled_logger.event_log))
         self.assertTrue(
-            any(
-                log.msg.startswith(f"Failed to cancel order {order.client_order_id}")
-                for log in self.log_records
-            )
+            any(log.msg.startswith(f"Failed to cancel order {order.client_order_id}") for log in self.log_records)
         )
 
     @aioresponses()
@@ -1321,9 +1298,8 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         order2 = self.exchange.in_flight_orders["12"]
 
         urls = self.configure_one_successful_one_erroneous_cancel_all_response(
-            successful_order=order1,
-            erroneous_order=order2,
-            mock_api=mock_api)
+            successful_order=order1, erroneous_order=order2, mock_api=mock_api
+        )
 
         cancellation_results = self.async_run_with_timeout(self.exchange.cancel_all(10))
 
@@ -1341,24 +1317,16 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
             self.assertEqual(self.exchange.current_timestamp, cancel_event.timestamp)
             self.assertEqual(order1.client_order_id, cancel_event.order_id)
 
-            self.assertTrue(
-                self.is_logged(
-                    "INFO",
-                    f"Successfully canceled order {order1.client_order_id}."
-                )
-            )
+            self.assertTrue(self.is_logged("INFO", f"Successfully canceled order {order1.client_order_id}."))
 
     def _configure_balance_response(
-            self,
-            response,
-            mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None) -> str:
+        self, response, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
+    ) -> str:
 
         url = self.balance_url
         mock_api.post(
-            re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?")),
-            body=json.dumps(response),
-            callback=callback)
+            re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?")), body=json.dumps(response), callback=callback
+        )
         return url
 
     @aioresponses()
@@ -1377,13 +1345,11 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         )
         order = self.exchange.in_flight_orders[self.client_order_id_prefix + "1"]
 
-        urls = self.configure_canceled_order_status_response(
-            order=order,
-            mock_api=mock_api)
+        urls = self.configure_canceled_order_status_response(order=order, mock_api=mock_api)
 
         self.async_run_with_timeout(self.exchange._update_order_status())
 
-        for url in (urls if isinstance(urls, list) else [urls]):
+        for url in urls if isinstance(urls, list) else [urls]:
             order_status_request = self._all_executed_requests(mock_api, url)[0]
             self.validate_auth_credentials_present(order_status_request)
             self.validate_order_status_request(order=order, request_call=order_status_request)
@@ -1393,15 +1359,13 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         self.assertEqual(order.client_order_id, cancel_event.order_id)
         self.assertEqual(order.exchange_order_id, cancel_event.exchange_order_id)
         self.assertNotIn(order.client_order_id, self.exchange.in_flight_orders)
-        self.assertTrue(
-            self.is_logged("INFO", f"Successfully canceled order {order.client_order_id}.")
-        )
+        self.assertTrue(self.is_logged("INFO", f"Successfully canceled order {order.client_order_id}."))
 
     def configure_erroneous_trading_rules_response(
-            self,
-            mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        self,
+        mock_api: aioresponses,
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
 
         url = self.trading_rules_url
         response = self.trading_rules_request_erroneous_mock_response
@@ -1418,7 +1382,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         url = self.all_symbols_url
         mock_api.post(url, exception=Exception)
 
-        result: List[str] = self.async_run_with_timeout(self.exchange.all_trading_pairs())
+        result: list[str] = self.async_run_with_timeout(self.exchange.all_trading_pairs())
 
         self.assertEqual(0, len(result))
 
@@ -1436,10 +1400,10 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         self.assertIn(self.trading_pair, all_trading_pairs)
 
     def configure_all_symbols_response(
-            self,
-            mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        self,
+        mock_api: aioresponses,
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
 
         url = self.all_symbols_url
         response = self.all_symbols_request_mock_response
@@ -1476,10 +1440,12 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
     def test_update_trading_rules(self, mock_api):
         mocked_response = self.get_trading_rule_rest_msg()
         self.exchange._initialize_trading_pair_symbols_from_exchange_info(mocked_response)
-        self.exchange.coin_to_asset = {asset_info["name"]: asset for (asset, asset_info) in
-                                       enumerate(mocked_response[0]["universe"])}
-        self.exchange.name_to_coin = {asset_info["name"]: asset_info["name"] for asset_info in
-                                      mocked_response[0]["universe"]}
+        self.exchange.coin_to_asset = {
+            asset_info["name"]: asset for (asset, asset_info) in enumerate(mocked_response[0]["universe"])
+        }
+        self.exchange.name_to_coin = {
+            asset_info["name"]: asset_info["name"] for asset_info in mocked_response[0]["universe"]
+        }
 
         self.exchange._set_current_timestamp(1000)
 
@@ -1496,19 +1462,21 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         trading_rule_with_default_values = TradingRule(trading_pair=self.trading_pair)
 
         # The following element can't be left with the default value because that breaks quantization in Cython
-        self.assertNotEqual(trading_rule_with_default_values.min_base_amount_increment,
-                            trading_rule.min_base_amount_increment)
-        self.assertNotEqual(trading_rule_with_default_values.min_price_increment,
-                            trading_rule.min_price_increment)
+        self.assertNotEqual(
+            trading_rule_with_default_values.min_base_amount_increment, trading_rule.min_base_amount_increment
+        )
+        self.assertNotEqual(trading_rule_with_default_values.min_price_increment, trading_rule.min_price_increment)
 
     @aioresponses()
     def test_update_trading_rules_ignores_rule_with_error(self, mock_api):
         mocked_response = self.get_trading_rule_rest_msg()
         self.exchange._initialize_trading_pair_symbols_from_exchange_info(mocked_response)
-        self.exchange.coin_to_asset = {asset_info["name"]: asset for (asset, asset_info) in
-                                       enumerate(mocked_response[0]["universe"])}
-        self.exchange.name_to_coin = {asset_info["name"]: asset_info["name"] for asset_info in
-                                      mocked_response[0]["universe"]}
+        self.exchange.coin_to_asset = {
+            asset_info["name"]: asset for (asset, asset_info) in enumerate(mocked_response[0]["universe"])
+        }
+        self.exchange.name_to_coin = {
+            asset_info["name"]: asset_info["name"] for asset_info in mocked_response[0]["universe"]
+        }
 
         self.exchange._set_current_timestamp(1000)
 
@@ -1517,17 +1485,17 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         self.async_run_with_timeout(coroutine=self.exchange._update_trading_rules())
 
         self.assertEqual(0, len(self.exchange._trading_rules))
-        self.assertTrue(
-            self.is_logged("ERROR", self.expected_logged_error_for_erroneous_trading_rule)
-        )
+        self.assertTrue(self.is_logged("ERROR", self.expected_logged_error_for_erroneous_trading_rule))
 
     def _simulate_trading_rules_initialized(self):
         mocked_response = self.get_trading_rule_rest_msg()
         self.exchange._initialize_trading_pair_symbols_from_exchange_info(mocked_response)
-        self.exchange.coin_to_asset = {asset_info["name"]: asset for (asset, asset_info) in
-                                       enumerate(mocked_response[0]["universe"])}
-        self.exchange.name_to_coin = {asset_info["name"]: asset_info["name"] for asset_info in
-                                      mocked_response[0]["universe"]}
+        self.exchange.coin_to_asset = {
+            asset_info["name"]: asset for (asset, asset_info) in enumerate(mocked_response[0]["universe"])
+        }
+        self.exchange.name_to_coin = {
+            asset_info["name"]: asset_info["name"] for asset_info in mocked_response[0]["universe"]
+        }
         self.exchange._trading_rules = {
             self.trading_pair: TradingRule(
                 trading_pair=self.trading_pair,
@@ -1543,9 +1511,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         request_sent_event = asyncio.Event()
         self.exchange._set_current_timestamp(1640780000)
         url = self.order_creation_url
-        mock_api.post(url,
-                      status=400,
-                      callback=lambda *args, **kwargs: request_sent_event.set())
+        mock_api.post(url, status=400, callback=lambda *args, **kwargs: request_sent_event.set())
 
         order_id = self.place_buy_order()
         self.async_run_with_timeout(request_sent_event.wait())
@@ -1560,11 +1526,9 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
             trade_type=TradeType.BUY,
             amount=Decimal("100"),
             creation_timestamp=self.exchange.current_timestamp,
-            price=Decimal("10000")
+            price=Decimal("10000"),
         )
-        self.validate_order_creation_request(
-            order=order_to_validate_request,
-            request_call=order_request)
+        self.validate_order_creation_request(order=order_to_validate_request, request_call=order_request)
 
         self.assertEqual(0, len(self.buy_order_created_logger.event_log))
         failure_event: MarketOrderFailureEvent = self.order_failure_logger.event_log[0]
@@ -1574,7 +1538,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
 
         self.is_logged(
             "NETWORK",
-            f"Error submitting buy LIMIT order to {self.exchange.name_cap} for 100.000000 {self.trading_pair} 10000.0000."
+            f"Error submitting buy LIMIT order to {self.exchange.name_cap} for 100.000000 {self.trading_pair} 10000.0000.",
         )
 
     @aioresponses()
@@ -1587,9 +1551,9 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
 
         creation_response = self.order_creation_request_successful_mock_response
 
-        mock_api.post(url,
-                      body=json.dumps(creation_response),
-                      callback=lambda *args, **kwargs: request_sent_event.set())
+        mock_api.post(
+            url, body=json.dumps(creation_response), callback=lambda *args, **kwargs: request_sent_event.set()
+        )
 
         order_id = self.place_buy_order()
         self.async_run_with_timeout(request_sent_event.wait())
@@ -1597,26 +1561,22 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         order_request = self._all_executed_requests(mock_api, url)[0]
         self.validate_auth_credentials_present(order_request)
         self.assertIn(order_id, self.exchange.in_flight_orders)
-        self.validate_order_creation_request(
-            order=self.exchange.in_flight_orders[order_id],
-            request_call=order_request)
+        self.validate_order_creation_request(order=self.exchange.in_flight_orders[order_id], request_call=order_request)
 
         create_event: BuyOrderCreatedEvent = self.buy_order_created_logger.event_log[0]
-        self.assertEqual(self.exchange.current_timestamp,
-                         create_event.timestamp)
+        self.assertEqual(self.exchange.current_timestamp, create_event.timestamp)
         self.assertEqual(self.trading_pair, create_event.trading_pair)
         self.assertEqual(OrderType.LIMIT, create_event.type)
         self.assertEqual(Decimal("100.000000"), create_event.amount)
         self.assertEqual(Decimal("10000.0000"), create_event.price)
         self.assertEqual(order_id, create_event.order_id)
-        self.assertEqual(str(self.expected_exchange_order_id),
-                         create_event.exchange_order_id)
+        self.assertEqual(str(self.expected_exchange_order_id), create_event.exchange_order_id)
 
         self.assertTrue(
             self.is_logged(
                 "INFO",
                 f"Created {OrderType.LIMIT.name} {TradeType.BUY.name} order {order_id} for "
-                f"{Decimal('100.000000')} {self.trading_pair} at {Decimal('10000')}."
+                f"{Decimal('100.000000')} {self.trading_pair} at {Decimal('10000')}.",
             )
         )
 
@@ -1629,18 +1589,16 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         url = self.order_creation_url
         creation_response = self.order_creation_request_successful_mock_response
 
-        mock_api.post(url,
-                      body=json.dumps(creation_response),
-                      callback=lambda *args, **kwargs: request_sent_event.set())
+        mock_api.post(
+            url, body=json.dumps(creation_response), callback=lambda *args, **kwargs: request_sent_event.set()
+        )
         order_id = self.place_sell_order()
         self.async_run_with_timeout(request_sent_event.wait())
 
         order_request = self._all_executed_requests(mock_api, url)[0]
         self.validate_auth_credentials_present(order_request)
         self.assertIn(order_id, self.exchange.in_flight_orders)
-        self.validate_order_creation_request(
-            order=self.exchange.in_flight_orders[order_id],
-            request_call=order_request)
+        self.validate_order_creation_request(order=self.exchange.in_flight_orders[order_id], request_call=order_request)
 
         create_event: SellOrderCreatedEvent = self.sell_order_created_logger.event_log[0]
         self.assertEqual(self.exchange.current_timestamp, create_event.timestamp)
@@ -1655,7 +1613,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
             self.is_logged(
                 "INFO",
                 f"Created {OrderType.LIMIT.name} {TradeType.SELL.name} order {order_id} for "
-                f"{Decimal('100.000000')} {self.trading_pair} at {Decimal('10000')}."
+                f"{Decimal('100.000000')} {self.trading_pair} at {Decimal('10000')}.",
             )
         )
 
@@ -1668,9 +1626,9 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         url = self.order_creation_url
         creation_response = self.order_creation_request_successful_mock_response
 
-        mock_api.post(url,
-                      body=json.dumps(creation_response),
-                      callback=lambda *args, **kwargs: request_sent_event.set())
+        mock_api.post(
+            url, body=json.dumps(creation_response), callback=lambda *args, **kwargs: request_sent_event.set()
+        )
 
         # Create a market buy order - this will trigger lines 286-287
         order_id = self.place_buy_order(order_type=OrderType.MARKET)
@@ -1683,9 +1641,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         order = self.exchange.in_flight_orders[order_id]
         self.assertEqual(OrderType.MARKET, order.order_type)
 
-        self.validate_order_creation_request(
-            order=order,
-            request_call=order_request)
+        self.validate_order_creation_request(order=order, request_call=order_request)
 
         create_event: BuyOrderCreatedEvent = self.buy_order_created_logger.event_log[0]
         self.assertEqual(self.exchange.current_timestamp, create_event.timestamp)
@@ -1702,9 +1658,9 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         url = self.order_creation_url
         creation_response = self.order_creation_request_successful_mock_response
 
-        mock_api.post(url,
-                      body=json.dumps(creation_response),
-                      callback=lambda *args, **kwargs: request_sent_event.set())
+        mock_api.post(
+            url, body=json.dumps(creation_response), callback=lambda *args, **kwargs: request_sent_event.set()
+        )
 
         # Create a market sell order - this will trigger lines 323-324
         order_id = self.place_sell_order(order_type=OrderType.MARKET)
@@ -1717,9 +1673,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         order = self.exchange.in_flight_orders[order_id]
         self.assertEqual(OrderType.MARKET, order.order_type)
 
-        self.validate_order_creation_request(
-            order=order,
-            request_call=order_request)
+        self.validate_order_creation_request(order=order, request_call=order_request)
 
         create_event: SellOrderCreatedEvent = self.sell_order_created_logger.event_log[0]
         self.assertEqual(self.exchange.current_timestamp, create_event.timestamp)
@@ -1730,8 +1684,9 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
     @aioresponses()
     def test_update_order_fills_from_trades_triggers_filled_event(self, mock_api):
         self.exchange._set_current_timestamp(1640780000)
-        self.exchange._last_poll_timestamp = (self.exchange.current_timestamp -
-                                              self.exchange.UPDATE_ORDER_STATUS_MIN_INTERVAL - 1)
+        self.exchange._last_poll_timestamp = (
+            self.exchange.current_timestamp - self.exchange.UPDATE_ORDER_STATUS_MIN_INTERVAL - 1
+        )
 
         self.exchange._set_current_timestamp(1640780000)
 
@@ -1754,7 +1709,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
             "coin": self.base_asset,
             "crossed": False,
             "dir": "Open Long",
-            'hash': '0x6065d86346c0ee0f5d9504081647930115005f95c201c3a6fb5ba2440507f2cf',  # noqa: mock
+            "hash": "0x6065d86346c0ee0f5d9504081647930115005f95c201c3a6fb5ba2440507f2cf",  # noqa: mock
             "oid": int(order.exchange_order_id),
             "px": "9999",
             "side": "B",
@@ -1763,7 +1718,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
             "fee": "10.10000000",
             "feeToken": self.quote_asset,
             "builderFee": "0.01",
-            "tid": 30000
+            "tid": 30000,
         }
 
         trade_fill_non_tracked_order = {
@@ -1771,7 +1726,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
             "coin": self.base_asset,
             "crossed": False,
             "dir": "Open Long",
-            'hash': '0x6065d86346c0ee0f5d9504081647930115005f95c201c3a6fb5ba2440507f2cf',  # noqa: mock
+            "hash": "0x6065d86346c0ee0f5d9504081647930115005f95c201c3a6fb5ba2440507f2cf",  # noqa: mock
             "oid": 99999,
             "px": "9999",
             "side": "B",
@@ -1780,14 +1735,13 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
             "fee": "10.10000000",
             "feeToken": self.quote_asset,
             "builderFee": "0.01",
-            "tid": 30000
+            "tid": 30000,
         }
 
         mock_response = [trade_fill, trade_fill_non_tracked_order]
         mock_api.get(regex_url, body=json.dumps(mock_response))
 
-        self.exchange.add_exchange_order_ids_from_market_recorder(
-            {str(trade_fill_non_tracked_order["oid"]): "OID99"})
+        self.exchange.add_exchange_order_ids_from_market_recorder({str(trade_fill_non_tracked_order["oid"]): "OID99"})
 
         self.async_run_with_timeout(self.exchange._update_order_fills_from_trades())
 
@@ -1805,8 +1759,9 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         self.assertEqual(Decimal(trade_fill["px"]), fill_event.price)
         self.assertEqual(Decimal(trade_fill["sz"]), fill_event.amount)
         self.assertEqual(0.0, fill_event.trade_fee.percent)
-        self.assertEqual([TokenAmount(trade_fill["feeToken"], Decimal(trade_fill["fee"]))],
-                         fill_event.trade_fee.flat_fees)
+        self.assertEqual(
+            [TokenAmount(trade_fill["feeToken"], Decimal(trade_fill["fee"]))], fill_event.trade_fee.flat_fees
+        )
 
         fill_event: OrderFilledEvent = self.order_filled_logger.event_log[1]
         self.assertEqual(float(trade_fill_non_tracked_order["time"]) * 1e-3, fill_event.timestamp)
@@ -1817,15 +1772,13 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         self.assertEqual(Decimal(trade_fill_non_tracked_order["px"]), fill_event.price)
         self.assertEqual(Decimal(trade_fill_non_tracked_order["sz"]), fill_event.amount)
         self.assertEqual(0.0, fill_event.trade_fee.percent)
-        self.assertEqual([
-            TokenAmount(
-                trade_fill_non_tracked_order["feeToken"],
-                Decimal(trade_fill_non_tracked_order["fee"]))],
-            fill_event.trade_fee.flat_fees)
-        self.assertTrue(self.is_logged(
-            "INFO",
-            f"Recreating missing trade in TradeFill: {trade_fill_non_tracked_order}"
-        ))
+        self.assertEqual(
+            [TokenAmount(trade_fill_non_tracked_order["feeToken"], Decimal(trade_fill_non_tracked_order["fee"]))],
+            fill_event.trade_fee.flat_fees,
+        )
+        self.assertTrue(
+            self.is_logged("INFO", f"Recreating missing trade in TradeFill: {trade_fill_non_tracked_order}")
+        )
 
     @aioresponses()
     def test_update_order_fills_request_parameters(self, mock_api):
@@ -1846,8 +1799,9 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         self.assertNotIn("startTime", request_params)
 
         self.exchange._set_current_timestamp(1640780000)
-        self.exchange._last_poll_timestamp = (self.exchange.current_timestamp -
-                                              self.exchange.UPDATE_ORDER_STATUS_MIN_INTERVAL - 1)
+        self.exchange._last_poll_timestamp = (
+            self.exchange.current_timestamp - self.exchange.UPDATE_ORDER_STATUS_MIN_INTERVAL - 1
+        )
         self.exchange._last_trades_poll_timestamp = 10
         self.async_run_with_timeout(self.exchange._update_order_fills_from_trades())
 
@@ -1859,8 +1813,9 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
     @aioresponses()
     def test_update_order_fills_from_trades_with_repeated_fill_triggers_only_one_event(self, mock_api):
         self.exchange._set_current_timestamp(1640780000)
-        self.exchange._last_poll_timestamp = (self.exchange.current_timestamp -
-                                              self.exchange.UPDATE_ORDER_STATUS_MIN_INTERVAL - 1)
+        self.exchange._last_poll_timestamp = (
+            self.exchange.current_timestamp - self.exchange.UPDATE_ORDER_STATUS_MIN_INTERVAL - 1
+        )
 
         url = web_utils.private_rest_url(CONSTANTS.MY_TRADES_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -1870,7 +1825,7 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
             "coin": self.base_asset,
             "crossed": False,
             "dir": "Open Long",
-            'hash': '0x6065d86346c0ee0f5d9504081647930115005f95c201c3a6fb5ba2440507f2cf',  # noqa: mock
+            "hash": "0x6065d86346c0ee0f5d9504081647930115005f95c201c3a6fb5ba2440507f2cf",  # noqa: mock
             "oid": 99999,
             "px": "9999",
             "side": "B",
@@ -1879,14 +1834,13 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
             "fee": "10.10000000",
             "feeToken": self.quote_asset,
             "builderFee": "0.01",
-            "tid": 30000
+            "tid": 30000,
         }
 
         mock_response = [trade_fill_non_tracked_order, trade_fill_non_tracked_order]
         mock_api.get(regex_url, body=json.dumps(mock_response))
 
-        self.exchange.add_exchange_order_ids_from_market_recorder(
-            {str(trade_fill_non_tracked_order["oid"]): "OID99"})
+        self.exchange.add_exchange_order_ids_from_market_recorder({str(trade_fill_non_tracked_order["oid"]): "OID99"})
 
         self.async_run_with_timeout(self.exchange._update_order_fills_from_trades())
 
@@ -1905,14 +1859,13 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         self.assertEqual(Decimal(trade_fill_non_tracked_order["px"]), fill_event.price)
         self.assertEqual(Decimal(trade_fill_non_tracked_order["sz"]), fill_event.amount)
         self.assertEqual(0.0, fill_event.trade_fee.percent)
-        self.assertEqual([
-            TokenAmount(trade_fill_non_tracked_order["feeToken"],
-                        Decimal(trade_fill_non_tracked_order["fee"]))],
-            fill_event.trade_fee.flat_fees)
-        self.assertTrue(self.is_logged(
-            "INFO",
-            f"Recreating missing trade in TradeFill: {trade_fill_non_tracked_order}"
-        ))
+        self.assertEqual(
+            [TokenAmount(trade_fill_non_tracked_order["feeToken"], Decimal(trade_fill_non_tracked_order["fee"]))],
+            fill_event.trade_fee.flat_fees,
+        )
+        self.assertTrue(
+            self.is_logged("INFO", f"Recreating missing trade in TradeFill: {trade_fill_non_tracked_order}")
+        )
 
     @aioresponses()
     async def test_create_order_fails_when_trading_rule_error_and_raises_failure_event(self, mock_api):
@@ -1921,13 +1874,9 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         self.exchange._set_current_timestamp(1640780000)
 
         url = self.order_creation_url
-        mock_api.post(url,
-                      status=400,
-                      callback=lambda *args, **kwargs: request_sent_event.set())
+        mock_api.post(url, status=400, callback=lambda *args, **kwargs: request_sent_event.set())
 
-        order_id_for_invalid_order = self.place_buy_order(
-            amount=Decimal("0.0001"), price=Decimal("0.0001")
-        )
+        order_id_for_invalid_order = self.place_buy_order(amount=Decimal("0.0001"), price=Decimal("0.0001"))
         # The second order is used only to have the event triggered and avoid using timeouts for tests
         order_id = self.place_buy_order()
         await asyncio.wait_for(request_sent_event.wait(), timeout=3)
@@ -1945,17 +1894,14 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         self.assertTrue(
             self.is_logged(
                 "NETWORK",
-                f"Error submitting buy LIMIT order to {self.exchange.name_cap} for 100.000000 {self.trading_pair} 10000."
+                f"Error submitting buy LIMIT order to {self.exchange.name_cap} for 100.000000 {self.trading_pair} 10000.",
             )
         )
         error_message = (
             f"Order amount 0.0001 is lower than minimum order size 0.01 for the pair {self.trading_pair}. "
             "The order will not be created."
         )
-        misc_updates = {
-            "error_message": error_message,
-            "error_type": "ValueError"
-        }
+        misc_updates = {"error_message": error_message, "error_type": "ValueError"}
 
         expected_log = (
             f"Order {order_id_for_invalid_order} has failed. Order Update: "
@@ -2004,8 +1950,10 @@ class HyperliquidBuilderCodeTests(TestCase):
             self.assertFalse(connector._should_inject_builder())
 
     def test_builder_field_omitted_on_vault_and_testnet(self):
-        for connector in (self._build_connector(use_vault=True),
-                          self._build_connector(domain=CONSTANTS.TESTNET_DOMAIN)):
+        for connector in (
+            self._build_connector(use_vault=True),
+            self._build_connector(domain=CONSTANTS.TESTNET_DOMAIN),
+        ):
             connector._builder_address = self.builder_address
             self.assertFalse(connector._should_inject_builder())
             self.assertIsNone(connector._build_builder_field())
@@ -2015,17 +1963,26 @@ class HyperliquidBuilderCodeTests(TestCase):
         # The "builder" key must be entirely absent from the signed order action on vault and testnet
         # orders (not present-but-null) — and present on mainnet. Drives the real _place_order path.
         api_post_mock.return_value = {"status": "ok", "response": {"data": {"statuses": [{"resting": {"oid": 7}}]}}}
-        for connector, expect_builder in ((self._build_connector(), True),
-                                          (self._build_connector(use_vault=True), False),
-                                          (self._build_connector(domain=CONSTANTS.TESTNET_DOMAIN), False)):
+        for connector, expect_builder in (
+            (self._build_connector(), True),
+            (self._build_connector(use_vault=True), False),
+            (self._build_connector(domain=CONSTANTS.TESTNET_DOMAIN), False),
+        ):
             connector._builder_fee_tenths_bps = 10  # as if the user approved 1 bps
             connector.coin_to_asset = {"HFUN": 0}
-            with patch.object(connector, "exchange_symbol_associated_to_pair",
-                              new_callable=AsyncMock, return_value="HFUN"):
-                self.async_run_with_timeout(connector._place_order(
-                    order_id="0xabc", trading_pair="HFUN-USDC", amount=Decimal("1"),
-                    trade_type=TradeType.BUY, order_type=OrderType.LIMIT, price=Decimal("100"),
-                ))
+            with patch.object(
+                connector, "exchange_symbol_associated_to_pair", new_callable=AsyncMock, return_value="HFUN"
+            ):
+                self.async_run_with_timeout(
+                    connector._place_order(
+                        order_id="0xabc",
+                        trading_pair="HFUN-USDC",
+                        amount=Decimal("1"),
+                        trade_type=TradeType.BUY,
+                        order_type=OrderType.LIMIT,
+                        price=Decimal("100"),
+                    )
+                )
             sent = api_post_mock.call_args.kwargs["data"]
             self.assertEqual(expect_builder, "builder" in sent)
             if expect_builder:
@@ -2081,8 +2038,10 @@ class HyperliquidBuilderCodeTests(TestCase):
     @patch.object(HyperliquidExchange, "_api_post", new_callable=AsyncMock)
     def test_initialize_builder_fee_skipped_on_testnet_and_vault(self, api_post_mock):
         api_post_mock.return_value = 10
-        for connector in (self._build_connector(use_vault=True),
-                          self._build_connector(domain=CONSTANTS.TESTNET_DOMAIN)):
+        for connector in (
+            self._build_connector(use_vault=True),
+            self._build_connector(domain=CONSTANTS.TESTNET_DOMAIN),
+        ):
             self.async_run_with_timeout(connector._initialize_builder_fee())
             self.assertEqual(0, connector._builder_fee_tenths_bps)
             api_post_mock.assert_not_called()
