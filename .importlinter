@@ -63,20 +63,17 @@ source_modules =
 forbidden_modules =
     hummingbot
 
-# TODO(boundary-debt): market_data.live_market_data imports hummingbot.core.data_type.common.
-# This file likely belongs in market_data/hb_compat/ — move in a follow-up PR.
 [importlinter:contract:market-data-no-hummingbot]
-name = market_data must not import hummingbot
+name = market_data source modules must not import hummingbot
 type = forbidden
 source_modules =
-    market_data
+    market_data.live_market_data
 forbidden_modules =
     hummingbot
-# Stale ignore_imports lines warn instead of error — robust against path drift
-# from in-flight migrations. Stale entries appear in logs but don't block gate.
-unmatched_ignore_imports_alerting = warn
-ignore_imports =
-    market_data.live_market_data -> hummingbot.core.data_type.common
+# live_market_data reaches hummingbot only indirectly, via market_data/hb_compat/common.py
+# (the boundary-exempt shim). allow_indirect_imports permits that hop while still catching
+# any DIRECT hummingbot import in live_market_data. (ADR 0001 Group A1)
+allow_indirect_imports = true
 
 [importlinter:contract:web-assistant-boundary]
 name = web_assistant must not import hummingbot
@@ -90,13 +87,6 @@ forbidden_modules =
 # Carve-out sub-packages (only hb_compat/ may import hummingbot)
 # ---------------------------------------------------------------------------
 
-# TODO(boundary-debt): candles_feed.core.hummingbot_network_client_adapter
-# imports hummingbot.core.* inside a try/except ImportError fallback. Current
-# import-linter (2.x) doesn't traverse try-blocks so these aren't detected
-# at runtime — the ignore_imports lines below are defensive: they suppress
-# warnings if a future import-linter version starts detecting them, and they
-# document the known coupling. Real fix is to move the adapter into
-# candles_feed/hb_compat/ in a follow-up PR.
 [importlinter:contract:candles-feed-hb-isolation]
 name = candles-feed non-hb_compat modules must not import hummingbot
 type = forbidden
@@ -109,14 +99,10 @@ source_modules =
     candles_feed.utils
 forbidden_modules =
     hummingbot
-# Stale ignore_imports lines warn instead of error — robust against path drift
-# from in-flight migrations. Stale entries appear in logs but don't block gate.
-unmatched_ignore_imports_alerting = warn
-ignore_imports =
-    candles_feed.core.hummingbot_network_client_adapter -> hummingbot.core.api_throttler.async_throttler_base
-    candles_feed.core.hummingbot_network_client_adapter -> hummingbot.core.web_assistant.rest_assistant
-    candles_feed.core.hummingbot_network_client_adapter -> hummingbot.core.web_assistant.web_assistants_factory
-    candles_feed.core.hummingbot_network_client_adapter -> hummingbot.core.web_assistant.ws_assistant
+# hummingbot_network_client_adapter now lives in candles_feed/hb_compat/ (boundary-exempt);
+# core/integration reach it (and thus hummingbot) only indirectly. allow_indirect permits that
+# hop while still catching any DIRECT hummingbot import in the non-hb_compat modules. (ADR 0001 A2)
+allow_indirect_imports = true
 
 [importlinter:contract:liquidations-feed-boundary]
 name = liquidations_feed source modules must not import hummingbot
@@ -141,6 +127,17 @@ source_modules =
     market_connector.ws_models
 forbidden_modules =
     hummingbot
+
+[importlinter:contract:market-connector-live-market-access]
+name = market_connector.live_market_access must not directly import hummingbot
+type = forbidden
+source_modules =
+    market_connector.live_market_access
+forbidden_modules =
+    hummingbot
+# live_market_access reaches hummingbot only indirectly via market_connector/hb_compat/common.py.
+# allow_indirect permits that hop while catching any DIRECT hummingbot import. (ADR 0001 Group A3)
+allow_indirect_imports = true
 
 [importlinter:contract:market-simulator-boundary]
 name = market_simulator source modules must not import hummingbot
@@ -188,3 +185,52 @@ source_modules =
     strategy_framework.testing
 forbidden_modules =
     hummingbot
+
+# ---------------------------------------------------------------------------
+# ADR 0001 — sub-package dependency layering
+# ---------------------------------------------------------------------------
+# Findings A & B resolved 2026-07-14 (see adr-0001-sub-package-dependency-layering.md
+# section 1a and spec-adr0001-layers-refinement.md). strategy_framework.primitives is
+# a zero-dep value-type subpackage classified L0; it is listed directly as an L0
+# member while the parent strategy_framework package is intentionally omitted
+# (import-linter cannot split a parent and its own submodule across layers). The
+# L2->L3 (hummingbot) boundary is NOT enforced here — it stays with the per-package
+# `forbidden` contracts above (hb_compat carve-outs).
+
+[importlinter:contract:adr-0001-layers]
+name = ADR 0001 sub-package layering (downward-only)
+type = layers
+layers =
+    candles_feed | liquidations_feed | rate_oracle | market_data | market_connector | market_simulator | web_assistant | remote_iface
+    strategy_framework.primitives | data_type_primitives | event_bus | logger | async_utils | connector_utils
+
+[importlinter:contract:adr-0001-l0-leaf-independence]
+name = ADR 0001 L0 leaf independence
+type = independence
+modules =
+    data_type_primitives
+    event_bus
+    logger
+    async_utils
+    connector_utils
+    strategy_framework.primitives
+
+# ADR-0001 Group D: strategy_framework (L2) may depend downward on L0 leaves
+# (event_bus, data_type_primitives, logger, async_utils, connector_utils) but must
+# NOT import L2 sibling packages. Motivated by the strategy_framework.hb_compat ->
+# event_bus edge landed via hb-strategy-framework PR #34.
+
+[importlinter:contract:adr-0001-strategy-framework-downward-only]
+name = adr-0001-strategy-framework-downward-only
+type = forbidden
+source_modules =
+    strategy_framework
+forbidden_modules =
+    candles_feed
+    liquidations_feed
+    rate_oracle
+    market_data
+    market_connector
+    market_simulator
+    web_assistant
+    remote_iface
