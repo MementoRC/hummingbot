@@ -5,9 +5,9 @@ import asyncio
 import grp
 import logging
 import os
+from pathlib import Path
 import pwd
 import subprocess
-from pathlib import Path
 from typing import Coroutine, List
 
 import path_util  # noqa: F401
@@ -37,34 +37,41 @@ from hummingbot.core.utils.async_utils import safe_gather
 class CmdlineParser(argparse.ArgumentParser):
     def __init__(self):
         super().__init__()
-        self.add_argument("--config-file-name", "-f",
-                          type=str,
-                          required=False,
-                          help="Specify a file in `conf/` to load as the strategy config file.")
-        self.add_argument("--v2",
-                          type=str,
-                          required=False,
-                          dest="v2_conf",
-                          help="V2 strategy config file name (from conf/scripts/).")
-        self.add_argument("--config-password", "-p",
-                          type=str,
-                          required=False,
-                          help="Specify the password to unlock your encrypted files.")
-        self.add_argument("--auto-set-permissions",
-                          type=str,
-                          required=False,
-                          help="Try to automatically set config / logs / data dir permissions, "
-                               "useful for Docker containers.")
-        self.add_argument("--headless",
-                          type=bool,
-                          nargs='?',
-                          const=True,
-                          default=None,
-                          help="Run in headless mode without CLI interface.")
+        self.add_argument(
+            "--config-file-name",
+            "-f",
+            type=str,
+            required=False,
+            help="Specify a file in `conf/` to load as the strategy config file.",
+        )
+        self.add_argument(
+            "--v2", type=str, required=False, dest="v2_conf", help="V2 strategy config file name (from conf/scripts/)."
+        )
+        self.add_argument(
+            "--config-password",
+            "-p",
+            type=str,
+            required=False,
+            help="Specify the password to unlock your encrypted files.",
+        )
+        self.add_argument(
+            "--auto-set-permissions",
+            type=str,
+            required=False,
+            help="Try to automatically set config / logs / data dir permissions, useful for Docker containers.",
+        )
+        self.add_argument(
+            "--headless",
+            type=bool,
+            nargs="?",
+            const=True,
+            default=None,
+            help="Run in headless mode without CLI interface.",
+        )
 
 
 def autofix_permissions(user_group_spec: str):
-    uid, gid = [sub_str for sub_str in user_group_spec.split(':')]
+    uid, gid = [sub_str for sub_str in user_group_spec.split(":")]
 
     uid = int(uid) if uid.isnumeric() else pwd.getpwnam(uid).pw_uid
     gid = int(gid) if gid.isnumeric() else grp.getgrnam(gid).gr_gid
@@ -74,10 +81,9 @@ def autofix_permissions(user_group_spec: str):
 
     gateway_path: str = Path.home().joinpath(".hummingbot-gateway").as_posix()
     subprocess.run(
-        f"cd '{project_home}' && "
-        f"sudo chown -R {user_group_spec} conf/ data/ logs/ scripts/ {gateway_path}",
+        f"cd '{project_home}' && sudo chown -R {user_group_spec} conf/ data/ logs/ scripts/ {gateway_path}",
         capture_output=True,
-        shell=True
+        shell=True,
     )
     os.setgid(gid)
     os.setuid(uid)
@@ -136,11 +142,15 @@ async def wait_for_gateway_ready(hb):
     except asyncio.TimeoutError:
         logging.getLogger().error(
             f"TimeoutError waiting for gateway service to go online... Please ensure Gateway is configured correctly."
-            f"Unable to start strategy {hb.trading_core.strategy_name}. ")
+            f"Unable to start strategy {hb.trading_core.strategy_name}. "
+        )
         raise
 
 
-async def load_and_start_strategy(hb: HummingbotApplication, args: argparse.Namespace,):
+async def load_and_start_strategy(
+    hb: HummingbotApplication,
+    args: argparse.Namespace,
+):
     """Load and start strategy based on file type and mode."""
     import yaml
 
@@ -164,11 +174,7 @@ async def load_and_start_strategy(hb: HummingbotApplication, args: argparse.Name
 
         if args.headless:
             logging.getLogger().info(f"Starting V2 script strategy: {strategy_name}")
-            success = await hb.trading_core.start_strategy(
-                strategy_name,
-                args.v2_conf,
-                args.v2_conf
-            )
+            success = await hb.trading_core.start_strategy(strategy_name, args.v2_conf, args.v2_conf)
             if not success:
                 logging.getLogger().error("Failed to start strategy")
                 return False
@@ -181,11 +187,11 @@ async def load_and_start_strategy(hb: HummingbotApplication, args: argparse.Name
         hb.strategy_file_name = args.config_file_name.split(".")[0]  # Remove .yml extension
 
         try:
-            strategy_config = await load_strategy_config_map_from_file(
-                STRATEGIES_CONF_DIR_PATH / args.config_file_name
-            )
+            strategy_config = await load_strategy_config_map_from_file(STRATEGIES_CONF_DIR_PATH / args.config_file_name)
         except FileNotFoundError:
-            logging.getLogger().error(f"Strategy config file not found: {STRATEGIES_CONF_DIR_PATH / args.config_file_name}")
+            logging.getLogger().error(
+                f"Strategy config file not found: {STRATEGIES_CONF_DIR_PATH / args.config_file_name}"
+            )
             return False
         except Exception as e:
             logging.getLogger().error(f"Error loading strategy config file: {e}")
@@ -200,11 +206,7 @@ async def load_and_start_strategy(hb: HummingbotApplication, args: argparse.Name
 
         if args.headless:
             logging.getLogger().info(f"Starting regular strategy: {strategy_name}")
-            success = await hb.trading_core.start_strategy(
-                strategy_name,
-                strategy_config,
-                args.config_file_name
-            )
+            success = await hb.trading_core.start_strategy(strategy_name, strategy_config, args.config_file_name)
             if not success:
                 logging.getLogger().error("Failed to start strategy")
                 return False
@@ -224,18 +226,19 @@ async def run_application(hb: HummingbotApplication, args: argparse.Namespace, c
     if args.headless:
         # Re-initialize logging with proper strategy file name for headless mode
         from hummingbot import init_logging
+
         log_file_name = hb.strategy_file_name.split(".")[0] if hb.strategy_file_name else "hummingbot"
-        init_logging("hummingbot_logs.yml", hb.client_config_map,
-                     override_log_level=hb.client_config_map.log_level,
-                     strategy_file_path=log_file_name)
+        init_logging(
+            "hummingbot_logs.yml",
+            hb.client_config_map,
+            override_log_level=hb.client_config_map.log_level,
+            strategy_file_path=log_file_name,
+        )
         await hb.run()
     else:
         # Set up UI mode with start listener
         start_listener: UIStartListener = UIStartListener(
-            hb,
-            is_script=args.v2_conf is not None,
-            script_config=getattr(hb, 'script_config', None),
-            is_quickstart=True
+            hb, is_script=args.v2_conf is not None, script_config=getattr(hb, "script_config", None), is_quickstart=True
         )
         hb.app.add_listener(HummingbotUIEvent.Start, start_listener)
 
