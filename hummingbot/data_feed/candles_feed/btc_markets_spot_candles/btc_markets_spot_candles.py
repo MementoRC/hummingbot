@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 from datetime import datetime, timezone
 import logging
-from typing import List, Optional
 
 from dateutil.parser import parse as dateparse
 
@@ -21,7 +22,7 @@ class BtcMarketsSpotCandles(CandlesBase):
     and fills gaps with heartbeat candles to maintain equidistant intervals.
     """
 
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -36,7 +37,7 @@ class BtcMarketsSpotCandles(CandlesBase):
         self._historical_fill_in_progress = False
 
         # Task management for polling
-        self._polling_task: Optional[asyncio.Task] = None
+        self._polling_task: asyncio.Task | None = None
         self._shutdown_event = asyncio.Event()
         self._is_running = False
 
@@ -148,7 +149,7 @@ class BtcMarketsSpotCandles(CandlesBase):
         return False
 
     def _get_rest_candles_params(
-        self, start_time: Optional[int] = None, end_time: Optional[int] = None, limit: Optional[int] = None
+        self, start_time: int | None = None, end_time: int | None = None, limit: int | None = None
     ) -> dict:
         """
         Generates parameters for the REST API request to fetch candles.
@@ -174,7 +175,7 @@ class BtcMarketsSpotCandles(CandlesBase):
 
         return params
 
-    def _parse_rest_candles(self, data: List[List[str]], end_time: Optional[int] = None) -> List[List[float]]:
+    def _parse_rest_candles(self, data: list[list[str]], end_time: int | None = None) -> list[list[float]]:
         """
         Parse the REST API response into the standard candle format.
         """
@@ -223,7 +224,7 @@ class BtcMarketsSpotCandles(CandlesBase):
         new_hb_candles.sort(key=lambda x: x[0])
         return new_hb_candles
 
-    def _create_heartbeat_candle(self, timestamp: float) -> List[float]:
+    def _create_heartbeat_candle(self, timestamp: float) -> list[float]:
         """
         Create a "heartbeat" candle for periods with no trading activity.
         Uses the close price from the last real candle.
@@ -238,7 +239,7 @@ class BtcMarketsSpotCandles(CandlesBase):
 
         return [timestamp, close_price, close_price, close_price, close_price, 0.0, 0.0, 0.0, 0.0, 0.0]
 
-    def _fill_gaps_and_append(self, new_candle: List[float]):
+    def _fill_gaps_and_append(self, new_candle: list[float]):
         """
         Fill any gaps between last candle and new candle, then append the new candle.
         """
@@ -343,8 +344,8 @@ class BtcMarketsSpotCandles(CandlesBase):
             self._historical_fill_in_progress = False
 
     def _fill_historical_gaps_with_heartbeats(
-        self, candles: List[List[float]], start_timestamp: float, end_timestamp: float
-    ) -> List[List[float]]:
+        self, candles: list[list[float]], start_timestamp: float, end_timestamp: float
+    ) -> list[list[float]]:
         """
         Fill gaps in historical candle data with heartbeat candles.
         """
@@ -382,7 +383,7 @@ class BtcMarketsSpotCandles(CandlesBase):
 
         return result
 
-    async def fetch_recent_candles(self, limit: int = 3) -> List[List[float]]:
+    async def fetch_recent_candles(self, limit: int = 3) -> list[list[float]]:
         """Fetch recent candles from the API."""
         try:
             params = {"timeWindow": self.intervals[self.interval], "limit": limit}

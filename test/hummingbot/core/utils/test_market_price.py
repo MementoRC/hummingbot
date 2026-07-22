@@ -1,7 +1,7 @@
 import asyncio
 from decimal import Decimal
 import re
-from typing import Any, Awaitable, Dict
+from typing import Any, Awaitable
 import unittest
 from unittest.mock import patch
 
@@ -39,7 +39,7 @@ class MarketPriceUnitTests(unittest.TestCase):
 
         url = web_utils.public_rest_url(path_url=CONSTANTS.TICKER_PRICE_CHANGE_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
-        mock_response: Dict[str, Any] = {
+        mock_response: dict[str, Any] = {
             # truncated response
             "symbol": self.binance_ex_trading_pair,
             "lastPrice": "1",

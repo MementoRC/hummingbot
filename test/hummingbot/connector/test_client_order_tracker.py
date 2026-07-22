@@ -1,6 +1,6 @@
 import asyncio
 from decimal import Decimal
-from typing import Awaitable, Dict
+from typing import Awaitable
 import unittest
 from unittest.mock import patch
 
@@ -23,7 +23,7 @@ from hummingbot.core.event.events import (
 
 class MockExchange(ExchangeBase):
     @property
-    def order_books(self) -> Dict[str, OrderBook]:
+    def order_books(self) -> dict[str, OrderBook]:
         return dict()
 
 

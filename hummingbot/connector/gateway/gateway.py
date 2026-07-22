@@ -10,9 +10,11 @@ Architecture:
 - trading_type: Pool type passed to methods (e.g., "clmm", "amm", "router")
 """
 
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Union
 
 from pydantic import BaseModel, Field
 
@@ -69,8 +71,8 @@ class AMMPositionInfo(BaseModel):
     base_token_amount: float = Field(alias="baseTokenAmount")
     quote_token_amount: float = Field(alias="quoteTokenAmount")
     price: float
-    base_token: Optional[str] = None
-    quote_token: Optional[str] = None
+    base_token: str | None = None
+    quote_token: str | None = None
 
 
 class CLMMPositionInfo(BaseModel):
@@ -87,8 +89,8 @@ class CLMMPositionInfo(BaseModel):
     lower_price: float = Field(alias="lowerPrice")
     upper_price: float = Field(alias="upperPrice")
     price: float
-    base_token: Optional[str] = None
-    quote_token: Optional[str] = None
+    base_token: str | None = None
+    quote_token: str | None = None
 
 
 class Gateway(GatewayBase):
@@ -109,7 +111,7 @@ class Gateway(GatewayBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Store LP operation metadata for triggering proper events
-        self._lp_orders_metadata: Dict[str, Dict] = {}
+        self._lp_orders_metadata: dict[str, Dict] = {}
 
     def get_price_by_type(self, trading_pair: str, price_type: PriceType) -> Decimal:
         """
@@ -179,9 +181,9 @@ class Gateway(GatewayBase):
         trading_pair: str,
         is_buy: bool,
         amount: Decimal,
-        slippage_pct: Optional[Decimal] = None,
-        pool_address: Optional[str] = None,
-    ) -> Optional[Decimal]:
+        slippage_pct: Decimal | None = None,
+        pool_address: str | None = None,
+    ) -> Decimal | None:
         """
         Retrieves the volume weighted average price for a swap.
 
@@ -203,7 +205,7 @@ class Gateway(GatewayBase):
         dex, trading_type = self._parse_dex_name(self._swap_provider)
 
         try:
-            resp: Dict[str, Any] = await self._get_gateway_instance().quote_swap(
+            resp: dict[str, Any] = await self._get_gateway_instance().quote_swap(
                 network=self.network,
                 dex=dex,
                 trading_type=trading_type,
@@ -296,7 +298,7 @@ class Gateway(GatewayBase):
 
         dex, trading_type = self._parse_dex_name(self._swap_provider)
 
-        async def execute_gateway_swap() -> Dict[str, Any]:
+        async def execute_gateway_swap() -> dict[str, Any]:
             if quote_id:
                 return await self._get_gateway_instance().execute_quote(
                     dex=dex,
@@ -326,7 +328,7 @@ class Gateway(GatewayBase):
                 max_retries=max_retries,
             )
 
-            transaction_hash: Optional[str] = order_result.get("signature")
+            transaction_hash: str | None = order_result.get("signature")
             if transaction_hash is not None and transaction_hash != "":
                 self.update_order_from_hash(order_id, trading_pair, transaction_hash, order_result)
                 self._store_swap_result(order_id, trade_type, trading_pair, amount, order_result, transaction_hash)
@@ -342,7 +344,7 @@ class Gateway(GatewayBase):
         trade_type: TradeType,
         trading_pair: str,
         amount: Decimal,
-        order_result: Dict[str, Any],
+        order_result: dict[str, Any],
         transaction_hash: str,
     ):
         """Store swap result data by creating a TradeUpdate for proper fill tracking."""
@@ -476,7 +478,7 @@ class Gateway(GatewayBase):
         del self._lp_orders_metadata[order_id]
         self.stop_tracking_order(order_id)
 
-    async def update_order_status(self, tracked_orders: List[GatewayInFlightOrder]):
+    async def update_order_status(self, tracked_orders: list[GatewayInFlightOrder]):
         """Override to trigger RangePosition events after LP transactions complete."""
         await super().update_order_status(tracked_orders)
 
@@ -599,7 +601,7 @@ class Gateway(GatewayBase):
         return event
 
     @async_ttl_cache(ttl=300, maxsize=10)
-    async def get_pool_address(self, trading_pair: str, dex_name: str, trading_type: str = "clmm") -> Optional[str]:
+    async def get_pool_address(self, trading_pair: str, dex_name: str, trading_type: str = "clmm") -> str | None:
         """
         Get pool address for a trading pair (cached for 5 minutes).
 
@@ -633,7 +635,7 @@ class Gateway(GatewayBase):
         pool_address: str,
         dex_name: str,
         trading_type: str = "clmm",
-    ) -> Optional[Union[AMMPoolInfo, CLMMPoolInfo]]:
+    ) -> Union[AMMPoolInfo, CLMMPoolInfo] | None:
         """
         Retrieves pool information by pool address directly.
 
@@ -643,7 +645,7 @@ class Gateway(GatewayBase):
         :return: Pool info object or None if not found
         """
         try:
-            resp: Dict[str, Any] = await self._get_gateway_instance().pool_info(
+            resp: dict[str, Any] = await self._get_gateway_instance().pool_info(
                 network=self.network,
                 pool_address=pool_address,
                 dex=dex_name,
@@ -671,7 +673,7 @@ class Gateway(GatewayBase):
 
     async def get_pool_info(
         self, trading_pair: str, dex_name: str, trading_type: str = "clmm"
-    ) -> Optional[Union[AMMPoolInfo, CLMMPoolInfo]]:
+    ) -> Union[AMMPoolInfo, CLMMPoolInfo] | None:
         """
         Get pool information for a trading pair.
 
@@ -698,7 +700,7 @@ class Gateway(GatewayBase):
         pool_address: str,
         dex_name: str,
         trading_type: str = "clmm",
-    ) -> Optional[Dict[str, str]]:
+    ) -> dict[str, str] | None:
         """
         Resolve trading pair information from pool address.
         """
@@ -792,17 +794,17 @@ class Gateway(GatewayBase):
         order_id: str,
         trading_pair: str,
         price: float,
-        lower_price: Optional[float] = None,
-        upper_price: Optional[float] = None,
-        upper_width_pct: Optional[float] = None,
-        lower_width_pct: Optional[float] = None,
-        base_token_amount: Optional[float] = None,
-        quote_token_amount: Optional[float] = None,
-        slippage_pct: Optional[float] = None,
-        pool_address: Optional[str] = None,
-        extra_params: Optional[Dict[str, Any]] = None,
+        lower_price: float | None = None,
+        upper_price: float | None = None,
+        upper_width_pct: float | None = None,
+        lower_width_pct: float | None = None,
+        base_token_amount: float | None = None,
+        quote_token_amount: float | None = None,
+        slippage_pct: float | None = None,
+        pool_address: str | None = None,
+        extra_params: dict[str, Any] | None = None,
         max_retries: int = 10,
-        dex_name: Optional[str] = None,
+        dex_name: str | None = None,
         trading_type: str = "clmm",
     ):
         """Opens a concentrated liquidity position."""
@@ -857,7 +859,7 @@ class Gateway(GatewayBase):
             "fee_tier": pool_address,
         }
 
-        async def execute_open_position() -> Dict[str, Any]:
+        async def execute_open_position() -> dict[str, Any]:
             return await self._get_gateway_instance().clmm_open_position(
                 network=self.network,
                 wallet_address=self.address,
@@ -878,7 +880,7 @@ class Gateway(GatewayBase):
                 operation_name=f"CLMM open position on {trading_pair}",
                 max_retries=max_retries,
             )
-            transaction_hash: Optional[str] = transaction_result.get("signature")
+            transaction_hash: str | None = transaction_result.get("signature")
             if transaction_hash is not None and transaction_hash != "":
                 self.update_order_from_hash(order_id, trading_pair, transaction_hash, transaction_result)
                 data = transaction_result.get("data", {})
@@ -910,7 +912,7 @@ class Gateway(GatewayBase):
         quote_token_amount: float,
         dex_name: str,
         trading_type: str = "amm",
-        slippage_pct: Optional[float] = None,
+        slippage_pct: float | None = None,
     ):
         """Opens a regular AMM liquidity position."""
         tokens = trading_pair.split("-")
@@ -944,7 +946,7 @@ class Gateway(GatewayBase):
                 trading_type=trading_type,
                 slippage_pct=slippage_pct,
             )
-            transaction_hash: Optional[str] = transaction_result.get("signature")
+            transaction_hash: str | None = transaction_result.get("signature")
             if transaction_hash is not None and transaction_hash != "":
                 self.update_order_from_hash(order_id, trading_pair, transaction_hash, transaction_result)
                 return transaction_hash
@@ -960,7 +962,7 @@ class Gateway(GatewayBase):
         trading_pair: str,
         dex_name: str,
         trading_type: str = "clmm",
-        position_address: Optional[str] = None,
+        position_address: str | None = None,
         percentage: float = 100.0,
         **request_args,
     ) -> str:
@@ -1031,7 +1033,7 @@ class Gateway(GatewayBase):
         position_address: str,
         fail_silently: bool = False,
         max_retries: int = 10,
-        dex_name: Optional[str] = None,
+        dex_name: str | None = None,
         trading_type: str = "clmm",
     ):
         """Closes a concentrated liquidity position."""
@@ -1055,7 +1057,7 @@ class Gateway(GatewayBase):
         _trading_type = trading_type
         _network = self.network
 
-        async def execute_close_position() -> Dict[str, Any]:
+        async def execute_close_position() -> dict[str, Any]:
             return await self._get_gateway_instance().clmm_close_position(
                 network=_network,
                 wallet_address=self.address,
@@ -1071,7 +1073,7 @@ class Gateway(GatewayBase):
                 operation_name=f"CLMM close position {position_address}",
                 max_retries=max_retries,
             )
-            transaction_hash: Optional[str] = transaction_result.get("signature")
+            transaction_hash: str | None = transaction_result.get("signature")
             if transaction_hash is not None and transaction_hash != "":
                 self.update_order_from_hash(order_id, trading_pair, transaction_hash, transaction_result)
                 data = transaction_result.get("data", {})
@@ -1129,7 +1131,7 @@ class Gateway(GatewayBase):
                 trading_type=trading_type,
                 fail_silently=fail_silently,
             )
-            transaction_hash: Optional[str] = transaction_result.get("signature")
+            transaction_hash: str | None = transaction_result.get("signature")
             if transaction_hash is not None and transaction_hash != "":
                 self.update_order_from_hash(order_id, trading_pair, transaction_hash, transaction_result)
                 data = transaction_result.get("data", {})
@@ -1180,7 +1182,7 @@ class Gateway(GatewayBase):
                 trading_type=trading_type,
                 fail_silently=fail_silently,
             )
-            transaction_hash: Optional[str] = transaction_result.get("signature")
+            transaction_hash: str | None = transaction_result.get("signature")
             if transaction_hash is not None and transaction_hash != "":
                 self.update_order_from_hash(order_id, trading_pair, transaction_hash, transaction_result)
                 return transaction_hash
@@ -1193,7 +1195,7 @@ class Gateway(GatewayBase):
 
     @async_ttl_cache(ttl=5, maxsize=10)
     async def get_position_info(
-        self, trading_pair: str, dex_name: str, trading_type: str = "clmm", position_address: Optional[str] = None
+        self, trading_pair: str, dex_name: str, trading_type: str = "clmm", position_address: str | None = None
     ) -> Union[AMMPositionInfo, CLMMPositionInfo, None]:
         """Retrieves position information for a given liquidity position."""
         try:
@@ -1205,7 +1207,7 @@ class Gateway(GatewayBase):
                 if position_address is None:
                     raise ValueError("position_address is required for CLMM positions")
 
-                resp: Dict[str, Any] = await self._get_gateway_instance().clmm_position_info(
+                resp: dict[str, Any] = await self._get_gateway_instance().clmm_position_info(
                     network=self.network,
                     position_address=position_address,
                     wallet_address=self.address,
@@ -1215,7 +1217,7 @@ class Gateway(GatewayBase):
                 return CLMMPositionInfo(**resp) if resp else None
 
             elif trading_type == "amm":
-                resp: Dict[str, Any] = await self._get_gateway_instance().amm_position_info(
+                resp: dict[str, Any] = await self._get_gateway_instance().amm_position_info(
                     network=self.network,
                     pool_address=position_address,
                     wallet_address=self.address,
@@ -1239,8 +1241,8 @@ class Gateway(GatewayBase):
             return None
 
     async def get_user_positions(
-        self, dex_name: str, trading_type: str = "clmm", pool_address: Optional[str] = None
-    ) -> List[Union[AMMPositionInfo, CLMMPositionInfo]]:
+        self, dex_name: str, trading_type: str = "clmm", pool_address: str | None = None
+    ) -> list[Union[AMMPositionInfo, CLMMPositionInfo]]:
         """Fetch all user positions for this connector and wallet."""
         positions = []
 

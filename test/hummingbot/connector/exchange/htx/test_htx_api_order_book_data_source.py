@@ -2,7 +2,7 @@ import asyncio
 import gzip
 import json
 import re
-from typing import Any, Dict, List
+from typing import Any
 from unittest.mock import AsyncMock, patch
 
 import aiohttp
@@ -33,7 +33,7 @@ class HtxAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         await super().asyncSetUp()
         self.log_records = []
         self.listening_task = None
-        self.async_tasks: List[asyncio.Task] = []
+        self.async_tasks: list[asyncio.Task] = []
         self.connector = AsyncMock()
         self.connector.exchange_symbol_associated_to_pair.return_value = self.ex_trading_pair
         self.connector.trading_pair_associated_to_exchange_symbol.return_value = self.trading_pair
@@ -56,7 +56,7 @@ class HtxAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         self.resume_test_event.set()
         raise exception
 
-    def _compress(self, message: Dict[str, Any]) -> bytes:
+    def _compress(self, message: dict[str, Any]) -> bytes:
         return gzip.compress(json.dumps(message).encode())
 
     def _successfully_subscribed_event(self):

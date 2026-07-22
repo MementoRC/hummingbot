@@ -1,7 +1,8 @@
 """Unit tests for Evedex Perpetual User Stream Data Source."""
 
+from __future__ import annotations
+
 import asyncio
-from typing import Optional
 import unittest
 from unittest.mock import AsyncMock, MagicMock
 
@@ -35,7 +36,7 @@ class TestEvedexPerpetualUserStreamDataSource(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):
         super().setUp()
-        self.listening_task: Optional[asyncio.Task] = None
+        self.listening_task: asyncio.Task | None = None
 
         self.time_provider = MagicMock()
         self.private_key = "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"  # noqa: mock

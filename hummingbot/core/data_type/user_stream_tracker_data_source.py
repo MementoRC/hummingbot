@@ -1,18 +1,20 @@
+from __future__ import annotations
+
 from abc import ABCMeta
 import asyncio
 import logging
 import time
-from typing import Any, Dict, Optional
+from typing import Any
 
 from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.logger import HummingbotLogger
 
 
 class UserStreamTrackerDataSource(metaclass=ABCMeta):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(self):
-        self._ws_assistant: Optional[WSAssistant] = None
+        self._ws_assistant: WSAssistant | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -77,11 +79,11 @@ class UserStreamTrackerDataSource(metaclass=ABCMeta):
             data = ws_response.data
             await self._process_event_message(event_message=data, queue=queue)
 
-    async def _process_event_message(self, event_message: Dict[str, Any], queue: asyncio.Queue):
+    async def _process_event_message(self, event_message: dict[str, Any], queue: asyncio.Queue):
         if len(event_message) > 0:
             queue.put_nowait(event_message)
 
-    async def _on_user_stream_interruption(self, websocket_assistant: Optional[WSAssistant]):
+    async def _on_user_stream_interruption(self, websocket_assistant: WSAssistant | None):
         websocket_assistant and await websocket_assistant.disconnect()
 
     async def stop(self):

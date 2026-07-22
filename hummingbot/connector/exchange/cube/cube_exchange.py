@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import ROUND_DOWN, Decimal
 import math
-from typing import Any, Dict, List, Mapping, Optional, Tuple
+from typing import Any, Mapping
 
 from bidict import ValueDuplicationError, bidict
 
@@ -36,9 +38,9 @@ class CubeExchange(ExchangePyBase):
         cube_api_key: str,
         cube_api_secret: str,
         cube_subaccount_id: str,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
@@ -50,10 +52,10 @@ class CubeExchange(ExchangePyBase):
         self._trading_pairs = trading_pairs
         self._last_trades_poll_cube_timestamp = 1.0
         self._auth: CubeAuth = self.authenticator
-        self._trading_pair_symbol_map: Optional[Mapping[str, str]] = None
-        self._trading_pair_market_id_map: Optional[Mapping[int, str]] = None
-        self._token_id_map: Optional[Mapping[int, str]] = None
-        self._token_info: Dict[int, Any] = {}
+        self._trading_pair_symbol_map: Mapping[str, str] | None = None
+        self._trading_pair_market_id_map: Mapping[int, str] | None = None
+        self._token_id_map: Mapping[int, str] | None = None
+        self._token_info: dict[int, Any] = {}
         self._is_bootstrap_completed = False
         self._nonce_creator = NonceCreator.for_milliseconds()
         self._mapping_initialization_lock = asyncio.Lock()
@@ -122,7 +124,7 @@ class CubeExchange(ExchangePyBase):
     def supported_order_types(self):
         return [OrderType.LIMIT, OrderType.LIMIT_MAKER, OrderType.MARKET]
 
-    async def get_all_pairs_prices(self) -> List[Dict[str, str]]:
+    async def get_all_pairs_prices(self) -> list[dict[str, str]]:
         pairs_prices = await self._api_get(path_url=CONSTANTS.TICKER_BOOK_PATH_URL)
         return pairs_prices.get("result", [])
 
@@ -172,7 +174,7 @@ class CubeExchange(ExchangePyBase):
         order_side: TradeType,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         is_maker = order_type is OrderType.LIMIT_MAKER
         return DeductedFromReturnsTradeFee(percent=self.estimate_fee_pct(is_maker))
@@ -186,7 +188,7 @@ class CubeExchange(ExchangePyBase):
         order_type: OrderType,
         price: Decimal,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         # Response Example:
         # {
         #     "result": {
@@ -338,7 +340,7 @@ class CubeExchange(ExchangePyBase):
 
         return False
 
-    async def _format_trading_rules(self, exchange_info_dict: Dict[str, Any]) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: dict[str, Any]) -> list[TradingRule]:
         """
         Example:
         {
@@ -629,7 +631,7 @@ class CubeExchange(ExchangePyBase):
                 self.logger().error("Unexpected error in user stream listener loop.", exc_info=True)
                 await self._sleep(5.0)
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         trade_updates = []
 
         if order.exchange_order_id is not None:
@@ -859,7 +861,7 @@ class CubeExchange(ExchangePyBase):
             del self._account_available_balances[asset_name]
             del self._account_balances[asset_name]
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         markets = exchange_info.get("result", {}).get("markets", [])
         assets = {asset["assetId"]: asset for asset in exchange_info.get("result", {}).get("assets", [])}
 
@@ -894,25 +896,25 @@ class CubeExchange(ExchangePyBase):
         self._set_trading_pair_market_id_map(mapping_market_id)
         self._set_token_id_map(mapping_token_id)
 
-    def _set_trading_pair_symbol_map(self, trading_pair_and_symbol_map: Optional[Mapping[str, str]]):
+    def _set_trading_pair_symbol_map(self, trading_pair_and_symbol_map: Mapping[str, str] | None):
         """
         Method added to allow the pure Python subclasses to set the value of the map
         """
         self._trading_pair_symbol_map = trading_pair_and_symbol_map
 
-    def _set_trading_pair_market_id_map(self, trading_pair_market_id_map: Optional[Mapping[int, str]]):
+    def _set_trading_pair_market_id_map(self, trading_pair_market_id_map: Mapping[int, str] | None):
         """
         Method added to allow the pure Python subclasses to set the value of the map
         """
         self._trading_pair_market_id_map = trading_pair_market_id_map
 
-    def _set_token_id_map(self, token_id_map: Optional[Mapping[int, str]]):
+    def _set_token_id_map(self, token_id_map: Mapping[int, str] | None):
         """
         Method added to allow the pure Python subclasses to set the value of the map
         """
         self._token_id_map = token_id_map
 
-    def _set_token_info(self, token_info: Dict[str, Any]):
+    def _set_token_info(self, token_info: dict[str, Any]):
         """
         Method added to allow the pure Python subclasses to set the value of the map
         """
@@ -1156,7 +1158,7 @@ class CubeExchange(ExchangePyBase):
 
         return float(min_order_size)
 
-    async def get_base_quote_precision(self, trading_pair: str) -> Tuple[Decimal, Decimal]:
+    async def get_base_quote_precision(self, trading_pair: str) -> tuple[Decimal, Decimal]:
         """
         Returns the base and quote precision for a trading pair
         :param trading_pair: the trading pair to get the base and quote precision
@@ -1182,7 +1184,7 @@ class CubeExchange(ExchangePyBase):
             return False
         return True
 
-    async def all_trading_pairs(self) -> List[str]:
+    async def all_trading_pairs(self) -> list[str]:
         """
         Returns a list of all trading pairs on the exchange
         :return: a list of all trading pairs on the exchange

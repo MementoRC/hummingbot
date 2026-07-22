@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from decimal import Decimal
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING
 
 from pydantic import SecretStr
 
@@ -25,7 +27,7 @@ class CoinbaseAdvancedTradeRateSource(RateSourceBase):
         return "coinbase_advanced_trade"
 
     @async_ttl_cache(ttl=30, maxsize=1)
-    async def get_prices(self, quote_token: str | None = None) -> Dict[str, Decimal]:
+    async def get_prices(self, quote_token: str | None = None) -> dict[str, Decimal]:
         if quote_token is None:
             quote_token = "USD"
 
@@ -52,7 +54,7 @@ class CoinbaseAdvancedTradeRateSource(RateSourceBase):
 
     async def _get_coinbase_prices(
         self, exchange: "CoinbaseAdvancedTradeExchange", quote_token: str = None
-    ) -> Dict[str, Decimal]:
+    ) -> dict[str, Decimal]:
         """
         Fetches coinbase prices
 
@@ -60,7 +62,7 @@ class CoinbaseAdvancedTradeRateSource(RateSourceBase):
         :param quote_token: A quote symbol, if specified only pairs with the quote symbol are included for prices
         :return: A dictionary of trading pairs and prices
         """
-        token_price: Dict[str, str] = await exchange.get_exchange_rates(quote_token=quote_token)
+        token_price: dict[str, str] = await exchange.get_exchange_rates(quote_token=quote_token)
         self.logger().debug(f"retrieved {len(token_price)} prices for {quote_token}")
         self.logger().debug(f"   {token_price.get('ATOM')} {quote_token} for 1 ATOM")
         return {token: Decimal(1.0) / Decimal(price) for token, price in token_price.items() if Decimal(price) != 0}

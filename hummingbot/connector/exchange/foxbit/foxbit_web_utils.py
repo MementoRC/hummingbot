@@ -1,4 +1,6 @@
-from typing import Any, Callable, Dict, Optional
+from __future__ import annotations
+
+from typing import Any, Callable
 
 import hummingbot.connector.exchange.foxbit.foxbit_constants as CONSTANTS
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
@@ -64,7 +66,7 @@ def websocket_url() -> str:
     return f"wss://{CONSTANTS.WSS_URL}/"
 
 
-def format_ws_header(header: Dict[str, Any]) -> Dict[str, Any]:
+def format_ws_header(header: dict[str, Any]) -> dict[str, Any]:
     retValue = {}
     retValue.update(CONSTANTS.WS_HEADER.copy())
     retValue.update(header)
@@ -72,11 +74,11 @@ def format_ws_header(header: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def build_api_factory(
-    throttler: Optional[AsyncThrottler] = None,
-    time_synchronizer: Optional[TimeSynchronizer] = None,
+    throttler: AsyncThrottler | None = None,
+    time_synchronizer: TimeSynchronizer | None = None,
     domain: str = CONSTANTS.DEFAULT_DOMAIN,
-    time_provider: Optional[Callable] = None,
-    auth: Optional[AuthBase] = None,
+    time_provider: Callable | None = None,
+    auth: AuthBase | None = None,
 ) -> WebAssistantsFactory:
     throttler = throttler or create_throttler()
     time_synchronizer = time_synchronizer or TimeSynchronizer()
@@ -106,7 +108,7 @@ def create_throttler() -> AsyncThrottler:
 
 
 async def get_current_server_time(
-    throttler: Optional[AsyncThrottler] = None,
+    throttler: AsyncThrottler | None = None,
     domain: str = CONSTANTS.DEFAULT_DOMAIN,
 ) -> float:
     throttler = throttler or create_throttler()
