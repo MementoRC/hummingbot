@@ -360,7 +360,7 @@ class GlobalTokenConfigMap(BaseClientModel):
         default="$",
         json_schema_extra={"prompt": lambda cm: "What is your default display token symbol? (e.g. $,€)"},
     )
-    usd_equivalent_tokens: List[str] = Field(
+    usd_equivalent_tokens: list[str] = Field(
         default_factory=lambda: list(rate_oracle_utils.USD_EQUIVALENT_TOKENS),
         description="Token symbols treated as equivalent to USDT when looking up conversion rates "
         "(e.g. a USD balance is priced using USDT markets).",
@@ -379,7 +379,7 @@ class GlobalTokenConfigMap(BaseClientModel):
 
     @field_validator("usd_equivalent_tokens", mode="before")
     @classmethod
-    def validate_usd_equivalent_tokens(cls, value: Union[str, List[str]]) -> List[str]:
+    def validate_usd_equivalent_tokens(cls, value: Union[str, list[str]]) -> list[str]:
         tokens = value.split(",") if isinstance(value, str) else value
         return [token.strip().upper() for token in tokens if token.strip()]
 
