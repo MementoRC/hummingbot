@@ -8,11 +8,11 @@ This module tests:
 - OrderBookTrackerMetrics: Aggregate metrics tracking
 - OrderBookTracker: Integration tests for metrics in the tracker
 """
+
 import asyncio
+from collections import deque
 import time
 import unittest
-from collections import deque
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock
 
 import numpy as np
@@ -26,6 +26,7 @@ from hummingbot.core.data_type.order_book_tracker import (
     OrderBookTrackerMetrics,
 )
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 def create_order_book_with_snapshot_uid(snapshot_uid: int) -> OrderBook:
@@ -47,7 +48,7 @@ class LatencyStatsTests(unittest.TestCase):
 
         self.assertEqual(0, stats.count)
         self.assertEqual(0.0, stats.total_ms)
-        self.assertEqual(float('inf'), stats.min_ms)
+        self.assertEqual(float("inf"), stats.min_ms)
         self.assertEqual(0.0, stats.max_ms)
         self.assertEqual(0.0, stats.avg_ms)
         self.assertEqual(0.0, stats.recent_avg_ms)
