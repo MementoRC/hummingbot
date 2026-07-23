@@ -2,7 +2,7 @@ import asyncio
 from collections import defaultdict
 from decimal import Decimal
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Mapping, Optional
 
 import hummingbot.connector.derivative.binance_perpetual.binance_perpetual_constants as CONSTANTS
 import hummingbot.connector.derivative.binance_perpetual.binance_perpetual_web_utils as web_utils
@@ -23,14 +23,14 @@ if TYPE_CHECKING:
 
 class BinancePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
     _bpobds_logger: Optional[HummingbotLogger] = None
-    _trading_pair_symbol_map: Dict[str, Mapping[str, str]] = {}
+    _trading_pair_symbol_map: dict[str, Mapping[str, str]] = {}
     _mapping_initialization_lock = asyncio.Lock()
     _DYNAMIC_SUBSCRIBE_ID_START = 100
     _next_subscribe_id: int = _DYNAMIC_SUBSCRIBE_ID_START
 
     def __init__(
         self,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "BinancePerpetualDerivative",
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DOMAIN,
@@ -39,8 +39,8 @@ class BinancePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         self._connector = connector
         self._api_factory = api_factory
         self._domain = domain
-        self._trading_pairs: List[str] = trading_pairs
-        self._message_queue: Dict[str, asyncio.Queue] = defaultdict(asyncio.Queue)
+        self._trading_pairs: list[str] = trading_pairs
+        self._message_queue: dict[str, asyncio.Queue] = defaultdict(asyncio.Queue)
         self._trade_messages_queue_key = CONSTANTS.TRADE_STREAM_ID
         self._diff_messages_queue_key = CONSTANTS.DIFF_STREAM_ID
         self._funding_info_messages_queue_key = CONSTANTS.FUNDING_INFO_STREAM_ID
@@ -48,13 +48,13 @@ class BinancePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         self._market_ws_assistant: Optional[WSAssistant] = None
         # Last applied diff final update id (`u`) per trading pair, used to validate the `pu` chain
         # and detect order book sequence gaps. Reset on every (re)connection.
-        self._last_update_id: Dict[str, int] = {}
+        self._last_update_id: dict[str, int] = {}
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: Optional[str] = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def get_funding_info(self, trading_pair: str) -> FundingInfo:
-        symbol_info: Dict[str, Any] = await self._request_complete_funding_info(trading_pair)
+        symbol_info: dict[str, Any] = await self._request_complete_funding_info(trading_pair)
         funding_info = FundingInfo(
             trading_pair=trading_pair,
             index_price=Decimal(symbol_info["indexPrice"]),
@@ -64,7 +64,7 @@ class BinancePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         )
         return funding_info
 
-    async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, Any]:
+    async def _request_order_book_snapshot(self, trading_pair: str) -> dict[str, Any]:
         ex_trading_pair = await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
 
         params = {"symbol": ex_trading_pair, "limit": "1000"}
@@ -73,7 +73,7 @@ class BinancePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         return data
 
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBookMessage:
-        snapshot_response: Dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
+        snapshot_response: dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
         snapshot_timestamp: float = time.time()
         snapshot_response.update({"trading_pair": trading_pair})
         snapshot_msg: OrderBookMessage = OrderBookMessage(
@@ -151,7 +151,7 @@ class BinancePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         """
         await self._subscribe_public_channels(ws)
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         channel = ""
         if "result" not in event_message:
             stream_name = event_message.get("stream")
@@ -206,7 +206,7 @@ class BinancePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
                 if market_ws is not None:
                     await market_ws.disconnect()
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         timestamp: float = time.time()
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(raw_message["data"]["s"])
         raw_message["data"]["s"] = trading_pair
@@ -240,7 +240,7 @@ class BinancePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         )
         message_queue.put_nowait(order_book_message)
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         raw_message["data"]["s"] = await self._connector.trading_pair_associated_to_exchange_symbol(
             raw_message["data"]["s"]
         )
@@ -291,9 +291,9 @@ class BinancePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
                 )
                 await self._sleep(5.0)
 
-    async def _parse_funding_info_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_funding_info_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
 
-        data: Dict[str, Any] = raw_message["data"]
+        data: dict[str, Any] = raw_message["data"]
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(data["s"])
 
         if trading_pair not in self._trading_pairs:
