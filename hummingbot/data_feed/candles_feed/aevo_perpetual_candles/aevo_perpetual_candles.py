@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.data_feed.candles_feed.aevo_perpetual_candles import constants as CONSTANTS
@@ -8,7 +10,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class AevoPerpetualCandles(CandlesBase):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -19,7 +21,7 @@ class AevoPerpetualCandles(CandlesBase):
     def __init__(self, trading_pair: str, interval: str = "1m", max_records: int = 150):
         super().__init__(trading_pair, interval, max_records)
         self._ping_timeout = CONSTANTS.PING_TIMEOUT
-        self._current_ws_candle: Optional[Dict[str, Any]] = None
+        self._current_ws_candle: dict[str, Any] | None = None
 
     async def _initialize_exchange_data(self):
         if self._ex_trading_pair is None:
@@ -63,18 +65,18 @@ class AevoPerpetualCandles(CandlesBase):
 
     async def check_network(self) -> NetworkStatus:
         rest_assistant = await self._api_factory.get_rest_assistant()
-        await rest_assistant.execute_request(url=self.health_check_url,
-                                             throttler_limit_id=CONSTANTS.HEALTH_CHECK_ENDPOINT)
+        await rest_assistant.execute_request(
+            url=self.health_check_url, throttler_limit_id=CONSTANTS.HEALTH_CHECK_ENDPOINT
+        )
         return NetworkStatus.CONNECTED
 
     def get_exchange_trading_pair(self, trading_pair):
         base_asset = trading_pair.split("-")[0]
         return f"{base_asset}-PERP"
 
-    def _get_rest_candles_params(self,
-                                 start_time: Optional[int] = None,
-                                 end_time: Optional[int] = None,
-                                 limit: Optional[int] = None) -> dict:
+    def _get_rest_candles_params(
+        self, start_time: int | None = None, end_time: int | None = None, limit: int | None = None
+    ) -> dict:
         if limit is None:
             limit = self.candles_max_result_per_rest_request
             if start_time is not None and end_time is not None:
@@ -92,7 +94,7 @@ class AevoPerpetualCandles(CandlesBase):
             params["end_timestamp"] = int(end_time * 1e9)
         return params
 
-    def _parse_rest_candles(self, data: dict, end_time: Optional[int] = None) -> List[List[float]]:
+    def _parse_rest_candles(self, data: dict, end_time: int | None = None) -> list[list[float]]:
         history = []
         if data is not None:
             history = data.get("history", [])
@@ -100,18 +102,20 @@ class AevoPerpetualCandles(CandlesBase):
             candles = []
             for timestamp, price in reversed(history):
                 candle_price = float(price)
-                candles.append([
-                    self.ensure_timestamp_in_seconds(timestamp),
-                    candle_price,
-                    candle_price,
-                    candle_price,
-                    candle_price,
-                    0.,
-                    0.,
-                    0.,
-                    0.,
-                    0.,
-                ])
+                candles.append(
+                    [
+                        self.ensure_timestamp_in_seconds(timestamp),
+                        candle_price,
+                        candle_price,
+                        candle_price,
+                        candle_price,
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0,
+                    ]
+                )
             return candles
         return []
 
@@ -153,11 +157,11 @@ class AevoPerpetualCandles(CandlesBase):
                 "high": candle_price,
                 "low": candle_price,
                 "close": candle_price,
-                "volume": 0.,
-                "quote_asset_volume": 0.,
-                "n_trades": 0.,
-                "taker_buy_base_volume": 0.,
-                "taker_buy_quote_volume": 0.,
+                "volume": 0.0,
+                "quote_asset_volume": 0.0,
+                "n_trades": 0.0,
+                "taker_buy_base_volume": 0.0,
+                "taker_buy_quote_volume": 0.0,
             }
         elif candle_timestamp == self._current_ws_candle["timestamp"]:
             self._current_ws_candle["high"] = max(self._current_ws_candle["high"], candle_price)
