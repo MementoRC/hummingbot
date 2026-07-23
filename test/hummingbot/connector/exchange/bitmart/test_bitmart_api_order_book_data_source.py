@@ -1,7 +1,7 @@
 import asyncio
 import json
 import re
-from typing import Any, Dict
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aiohttp import WSMsgType
@@ -75,7 +75,7 @@ class BitmartAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
 
     @aioresponses()
     def test_get_last_traded_prices(self, mock_get):
-        mock_response: Dict[Any] = {
+        mock_response: dict[Any] = {
             "message": "OK",
             "code": 1000,
             "trace": "6e42c7c9-fdc5-461b-8fd1-b4e2e1b9ed57",
@@ -100,13 +100,13 @@ class BitmartAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         results = self.local_event_loop.run_until_complete(
             asyncio.gather(self.data_source.get_last_traded_prices([self.trading_pair]))
         )
-        results: Dict[str, Any] = results[0]
+        results: dict[str, Any] = results[0]
 
         self.assertEqual(results[self.trading_pair], float("1.00"))
 
     @aioresponses()
     def test_get_new_order_book_successful(self, mock_get):
-        mock_response: Dict[str, Any] = self._order_book_snapshot_example()
+        mock_response: dict[str, Any] = self._order_book_snapshot_example()
         regex_url = re.compile(f"{CONSTANTS.REST_URL}/{CONSTANTS.GET_ORDER_BOOK_PATH_URL}")
         mock_get.get(regex_url, body=json.dumps(mock_response))
 

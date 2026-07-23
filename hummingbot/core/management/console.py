@@ -5,7 +5,7 @@ from collections.abc import MutableMapping as MutableMappingABC
 import json
 import logging
 import pathlib
-from typing import Dict, Iterator, List, MutableMapping
+from typing import Iterator, MutableMapping
 
 import asyncssh
 from prompt_toolkit import print_formatted_text
@@ -15,7 +15,7 @@ from ptpython.repl import embed
 
 class MergedNamespace(MutableMappingABC):
     def __init__(self, *mappings):
-        self._mappings: List[MutableMapping] = list(mappings)
+        self._mappings: list[MutableMapping] = list(mappings)
         self._local_namespace = {}
 
     def __setitem__(self, k, v) -> None:
@@ -41,7 +41,7 @@ class MergedNamespace(MutableMappingABC):
                 yield k
 
     def __repr__(self) -> str:
-        dict_repr: Dict[str, any] = dict(self.items())
+        dict_repr: dict[str, any] = dict(self.items())
         return f"{self.__class__.__name__}({json.dumps(dict_repr)})"
 
 

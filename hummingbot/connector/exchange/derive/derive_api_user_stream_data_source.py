@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.exchange.derive import derive_constants as CONSTANTS, derive_web_utils as web_utils
 from hummingbot.connector.exchange.derive.derive_auth import DeriveAuth
@@ -19,12 +21,12 @@ if TYPE_CHECKING:
 class DeriveAPIUserStreamDataSource(UserStreamTrackerDataSource):
     LISTEN_KEY_KEEP_ALIVE_INTERVAL = 1800  # Recommended to Ping/Update listen key to keep connection alive
     WS_HEARTBEAT_TIME_INTERVAL = 30.0
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
         auth: DeriveAuth,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "DeriveExchange",
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -34,9 +36,9 @@ class DeriveAPIUserStreamDataSource(UserStreamTrackerDataSource):
         self._domain = domain
         self._api_factory = api_factory
         self._auth = auth
-        self._ws_assistants: List[WSAssistant] = []
+        self._ws_assistants: list[WSAssistant] = []
         self._connector = connector
-        self._trading_pairs: List[str] = trading_pairs
+        self._trading_pairs: list[str] = trading_pairs
 
         self.token = None
 
@@ -55,7 +57,7 @@ class DeriveAPIUserStreamDataSource(UserStreamTrackerDataSource):
         """
         Authenticates user to websocket
         """
-        auth_payload: List[str] = self._auth.get_ws_auth_payload()
+        auth_payload: list[str] = self._auth.get_ws_auth_payload()
         id = str(web_utils.utc_now_ms())
         payload = {
             "method": "public/login",
@@ -116,7 +118,7 @@ class DeriveAPIUserStreamDataSource(UserStreamTrackerDataSource):
             self.logger().exception("Unexpected error occurred subscribing to user streams...")
             raise
 
-    async def _process_event_message(self, event_message: Dict[str, Any], queue: asyncio.Queue):
+    async def _process_event_message(self, event_message: dict[str, Any], queue: asyncio.Queue):
         if event_message.get("error") is not None:
             err_msg = event_message["error"]["message"]
             raise IOError({"label": "WSS_ERROR", "message": f"Error received via websocket - {err_msg}."})

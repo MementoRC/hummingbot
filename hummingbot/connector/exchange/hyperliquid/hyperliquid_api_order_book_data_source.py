@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 # from bidict import bidict
 from hummingbot.connector.exchange.hyperliquid import (
@@ -26,11 +28,11 @@ class HyperliquidAPIOrderBookDataSource(OrderBookTrackerDataSource):
     _DYNAMIC_SUBSCRIBE_ID_START = 100
     _next_subscribe_id: int = _DYNAMIC_SUBSCRIBE_ID_START
 
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "HyperliquidExchange",
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DOMAIN,
@@ -47,10 +49,10 @@ class HyperliquidAPIOrderBookDataSource(OrderBookTrackerDataSource):
         self._domain = domain
         self._api_factory = api_factory
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
-    async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, Any]:
+    async def _request_order_book_snapshot(self, trading_pair: str) -> dict[str, Any]:
         ex_trading_pair = await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
         params = {"type": "l2Book", "coin": ex_trading_pair}
 
@@ -58,7 +60,7 @@ class HyperliquidAPIOrderBookDataSource(OrderBookTrackerDataSource):
         return data
 
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBookMessage:
-        snapshot: Dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
+        snapshot: dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
         snapshot.update({"trading_pair": trading_pair})
         snapshot_timestamp: float = snapshot["time"]
         snapshot_msg: OrderBookMessage = HyperliquidOrderBook.snapshot_message_from_exchange(
@@ -113,7 +115,7 @@ class HyperliquidAPIOrderBookDataSource(OrderBookTrackerDataSource):
             self.logger().error("Unexpected error occurred subscribing to order book data streams.")
             raise
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         timestamp: float = raw_message["data"]["time"] * 1e-3
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(raw_message["data"]["coin"])
         data = raw_message["data"]
@@ -122,7 +124,7 @@ class HyperliquidAPIOrderBookDataSource(OrderBookTrackerDataSource):
         )
         message_queue.put_nowait(order_book_message)
 
-    async def _parse_order_book_snapshot_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_snapshot_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(raw_message["data"]["coin"])
         data = raw_message["data"]
         timestamp: float = raw_message["data"]["time"] * 1e-3
@@ -133,7 +135,7 @@ class HyperliquidAPIOrderBookDataSource(OrderBookTrackerDataSource):
         )
         message_queue.put_nowait(trade_message)
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         data = raw_message["data"]
         for trade_data in data:
             trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(trade_data["coin"])
@@ -142,7 +144,7 @@ class HyperliquidAPIOrderBookDataSource(OrderBookTrackerDataSource):
             )
             message_queue.put_nowait(trade_message)
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         channel = ""
         if "result" not in event_message:
             stream_name = event_message.get("channel")
