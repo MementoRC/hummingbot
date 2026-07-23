@@ -49,7 +49,7 @@ def parse_enum_value(enum_class: type[E], value, field_name: str = "field") -> E
 
 def parse_comma_separated_list(value) -> list[float]:
     """
-    Parse a comma-separated string, scalar number, or list into a List[float].
+    Parse a comma-separated string, scalar number, or list into a list[float].
 
     Handles values coming from YAML configs where a single value is deserialized
     as a scalar (int/float) rather than a list.

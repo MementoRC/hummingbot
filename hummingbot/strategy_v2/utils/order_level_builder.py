@@ -49,7 +49,7 @@ class OrderLevelBuilder:
             input_data: The input data to resolve. Can be a single value, list, or dictionary.
 
         Returns:
-            List[Decimal | float | int]: List of resolved Decimal values.
+            list[Decimal | float | int]: List of resolved Decimal values.
         """
         if isinstance(input_data, Decimal) or isinstance(input_data, float) or isinstance(input_data, int):
             return [input_data] * self.n_levels
@@ -87,7 +87,7 @@ class OrderLevelBuilder:
             sides: Trading sides, either BUY or SELL. Default is both.
 
         Returns:
-            List[OrderLevel]: List of constructed OrderLevel objects.
+            list[OrderLevel]: List of constructed OrderLevel objects.
         """
         if sides is None:
             sides = [TradeType.BUY, TradeType.SELL]
