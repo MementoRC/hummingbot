@@ -129,6 +129,7 @@ cython-lint = "*"
 bandit = "*"
 pip-audit = "*"
 types-setuptools = "*"
+pytest-xdist = ">=3,<4"
 
 [tool.pixi.environments]
 default = { features = ["dev"], solve-group = "default" }
