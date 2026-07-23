@@ -1087,7 +1087,7 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
         """Process order update from the exchange.
 
         Args:
-            order_data (Dict[str, Any]): The order data received from the exchange.
+            order_data (dict[str, Any]): The order data received from the exchange.
             {'id': '00239:9d6ea491b48b471e82a66d6e4c', 'instrument': 'XRPUSD', 'user': '42520', 'side': 'BUY', 'quantity': 20, 'limitPrice': 1.44853206, 'status': 'FILLED', 'unFilledQuantity': 0, 'realizedPnL': 0, 'createdAt': '2026-03-20T02:41:24.587Z', 'updatedAt': '2026-03-20T02:41:33.799Z', 'filledAvgPrice': 1.44853206, 'type': 'LIMIT', 'timeInForce': 'GTC', 'cashQuantity': '0.00000000', 'rejectedReason': '', 'fee': [{'coin': 'usdt', 'quantity': 0.0043456}, {'coin': 'total', 'quantity': 0.01303678854}], 'group': 'manually', 'stopPrice': None, 'triggeredAt': None, 'check': False, 'completedAt': '2026-03-20T02:41:34.067Z', 'exchangeRequestId': '72057614201035602', 'userSession': None, 'fillQuantity': 20}
         """
 

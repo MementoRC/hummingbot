@@ -360,7 +360,7 @@ class GlobalTokenConfigMap(BaseClientModel):
         default="$",
         json_schema_extra={"prompt": lambda cm: "What is your default display token symbol? (e.g. $,€)"},
     )
-    usd_equivalent_tokens: List[str] = Field(
+    usd_equivalent_tokens: list[str] = Field(
         default_factory=lambda: list(rate_oracle_utils.USD_EQUIVALENT_TOKENS),
         description="Token symbols treated as equivalent to USDT when looking up conversion rates "
         "(e.g. a USD balance is priced using USDT markets).",
@@ -379,7 +379,7 @@ class GlobalTokenConfigMap(BaseClientModel):
 
     @field_validator("usd_equivalent_tokens", mode="before")
     @classmethod
-    def validate_usd_equivalent_tokens(cls, value: Union[str, List[str]]) -> List[str]:
+    def validate_usd_equivalent_tokens(cls, value: Union[str, list[str]]) -> list[str]:
         tokens = value.split(",") if isinstance(value, str) else value
         return [token.strip().upper() for token in tokens if token.strip()]
 
@@ -477,11 +477,6 @@ class ExchangeRateSourceModeBase(RateSourceModeBase):
         return RATE_ORACLE_SOURCES[self.model_config["title"]]()
 
 
-class AscendExRateSourceMode(ExchangeRateSourceModeBase):
-    name: str = Field(default="ascend_ex")
-    model_config = ConfigDict(title="ascend_ex")
-
-
 class BinanceRateSourceMode(ExchangeRateSourceModeBase):
     name: str = Field(default="binance")
     model_config = ConfigDict(title="binance")
@@ -490,11 +485,6 @@ class BinanceRateSourceMode(ExchangeRateSourceModeBase):
 class MexcRateSourceMode(ExchangeRateSourceModeBase):
     name: str = Field(default="mexc")
     model_config = ConfigDict(title="mexc")
-
-
-class CubeRateSourceMode(ExchangeRateSourceModeBase):
-    name: str = Field(default="cube")
-    model_config = ConfigDict(title="cube")
 
 
 class CoinGeckoRateSourceMode(RateSourceModeBase):
@@ -754,7 +744,6 @@ class DeriveRateSourceMode(ExchangeRateSourceModeBase):
 
 
 RATE_SOURCE_MODES = {
-    AscendExRateSourceMode.model_config["title"]: AscendExRateSourceMode,
     BinanceRateSourceMode.model_config["title"]: BinanceRateSourceMode,
     CoinGeckoRateSourceMode.model_config["title"]: CoinGeckoRateSourceMode,
     CoinCapRateSourceMode.model_config["title"]: CoinCapRateSourceMode,
@@ -765,7 +754,6 @@ RATE_SOURCE_MODES = {
     GateIoRateSourceMode.model_config["title"]: GateIoRateSourceMode,
     BackpackRateSourceMode.model_config["title"]: BackpackRateSourceMode,
     CoinbaseAdvancedTradeRateSourceMode.model_config["title"]: CoinbaseAdvancedTradeRateSourceMode,
-    CubeRateSourceMode.model_config["title"]: CubeRateSourceMode,
     HyperliquidRateSourceMode.model_config["title"]: HyperliquidRateSourceMode,
     HyperliquidPerpetualRateSourceMode.model_config["title"]: HyperliquidPerpetualRateSourceMode,
     ArchitectPerpetualRateSourceMode.model_config["title"]: ArchitectPerpetualRateSourceMode,
