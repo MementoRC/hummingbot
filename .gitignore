@@ -107,19 +107,16 @@ coverage.xml
 .claude/
 .cursor/
 .agents/
+.serena/
+.mcp.json
+
 
 # GRVT
 /grvt
 
-# MCP / Serena (local tool configs)
-.mcp.json
-.serena/
+# Rust extension build artifacts (hummingbot/rust/)
+/hummingbot/rust/target/
+/hummingbot/rust/Cargo.lock
 
-# Worktree artifacts (rebuild script creates .worktrees/rebase-* on failure)
-.worktrees/
-
-# Sub-package build/runtime logs
-sub-packages/logs/
-
-# Local credentials
-conf/password_verification.save
+# Sub-package stray logs
+/sub-packages/logs/
