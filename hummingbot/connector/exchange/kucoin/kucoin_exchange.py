@@ -168,7 +168,6 @@ class KucoinExchange(ExchangePyBase):
         price: Decimal = s_decimal_NaN,
         is_maker: bool | None = None,
     ) -> AddedToCostTradeFee:
-
         is_maker = is_maker or (order_type is OrderType.LIMIT_MAKER)
         trading_pair = combine_to_hb_trading_pair(base=base_currency, quote=quote_currency)
         if trading_pair in self._trading_fees:

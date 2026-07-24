@@ -18,7 +18,6 @@ class KrakenAPIUserStreamDataSource(UserStreamTrackerDataSource):
     _logger: HummingbotLogger | None = None
 
     def __init__(self, connector: "KrakenExchange", api_factory: WebAssistantsFactory | None = None):
-
         super().__init__()
         self._api_factory = api_factory
         self._connector = connector
