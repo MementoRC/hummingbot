@@ -2,7 +2,7 @@ import asyncio
 from decimal import Decimal
 import json
 import re
-from typing import Any, Dict, List
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses.core import aioresponses
@@ -41,7 +41,7 @@ class BitmartPerpetualAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTest
         super().setUp()
         self.log_records = []
         self.listening_task = None
-        self.async_tasks: List[asyncio.Task] = []
+        self.async_tasks: list[asyncio.Task] = []
 
         self.time_synchronizer = TimeSynchronizer()
         self.time_synchronizer.add_time_offset_ms_sample(0)
@@ -297,7 +297,7 @@ class BitmartPerpetualAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTest
         mock_response = self._order_book_snapshot_rest_data()
         mock_api.get(regex_url, status=200, body=json.dumps(mock_response))
 
-        result: Dict[str, Any] = await self.data_source._request_order_book_snapshot(trading_pair=self.trading_pair)
+        result: dict[str, Any] = await self.data_source._request_order_book_snapshot(trading_pair=self.trading_pair)
         self.assertEqual(mock_response, result)
 
     @aioresponses()

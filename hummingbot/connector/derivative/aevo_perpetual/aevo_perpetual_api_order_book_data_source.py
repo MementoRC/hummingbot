@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 from collections import defaultdict
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Mapping
 
 import hummingbot.connector.derivative.aevo_perpetual.aevo_perpetual_constants as CONSTANTS
 import hummingbot.connector.derivative.aevo_perpetual.aevo_perpetual_web_utils as web_utils
@@ -19,13 +21,13 @@ if TYPE_CHECKING:
 
 
 class AevoPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
-    _bpobds_logger: Optional[HummingbotLogger] = None
-    _trading_pair_symbol_map: Dict[str, Mapping[str, str]] = {}
+    _bpobds_logger: HummingbotLogger | None = None
+    _trading_pair_symbol_map: dict[str, Mapping[str, str]] = {}
     _mapping_initialization_lock = asyncio.Lock()
 
     def __init__(
         self,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "AevoPerpetualDerivative",
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -34,11 +36,11 @@ class AevoPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         self._connector = connector
         self._api_factory = api_factory
         self._domain = domain
-        self._trading_pairs: List[str] = trading_pairs
-        self._message_queue: Dict[str, asyncio.Queue] = defaultdict(asyncio.Queue)
+        self._trading_pairs: list[str] = trading_pairs
+        self._message_queue: dict[str, asyncio.Queue] = defaultdict(asyncio.Queue)
         self._snapshot_messages_queue_key = "order_book_snapshot"
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def get_funding_info(self, trading_pair: str) -> FundingInfo:
@@ -81,7 +83,7 @@ class AevoPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
                 self.logger().exception("Unexpected error when processing public funding info updates from exchange")
                 await self._sleep(CONSTANTS.WS_HEARTBEAT_TIME_INTERVAL)
 
-    async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, Any]:
+    async def _request_order_book_snapshot(self, trading_pair: str) -> dict[str, Any]:
         ex_trading_pair = await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
         data = await self._connector._api_get(
             path_url=CONSTANTS.ORDERBOOK_PATH_URL,
@@ -90,7 +92,7 @@ class AevoPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         return data
 
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBookMessage:
-        snapshot_response: Dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
+        snapshot_response: dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
         timestamp = int(snapshot_response["last_updated"]) * 1e-9
         snapshot_msg: OrderBookMessage = OrderBookMessage(
             OrderBookMessageType.SNAPSHOT,
@@ -138,7 +140,7 @@ class AevoPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             self.logger().error("Unexpected error occurred subscribing to order book data streams.")
             raise
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         channel = ""
         if "channel" in event_message:
             stream_name = event_message.get("channel")
@@ -154,7 +156,7 @@ class AevoPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
                 self.logger().warning(f"Unknown WS channel received: {stream_name}")
         return channel
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         data = raw_message["data"]
         timestamp = int(data["last_updated"]) * 1e-9
         instrument_name = raw_message["data"]["instrument_name"]
@@ -171,7 +173,7 @@ class AevoPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         )
         message_queue.put_nowait(order_book_message)
 
-    async def _parse_order_book_snapshot_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_snapshot_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         data = raw_message["data"]
         timestamp = int(data["last_updated"]) * 1e-9
         instrument_name = raw_message["data"]["instrument_name"]
@@ -188,7 +190,7 @@ class AevoPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         )
         message_queue.put_nowait(order_book_message)
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         data = raw_message["data"]
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(data["instrument_name"])
         timestamp = int(data.get("created_timestamp", "0")) * 1e-9
@@ -205,7 +207,7 @@ class AevoPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         )
         message_queue.put_nowait(trade_message)
 
-    async def _parse_funding_info_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_funding_info_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         pass
 
     async def subscribe_to_trading_pair(self, trading_pair: str) -> bool:

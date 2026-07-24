@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from dateutil.parser import parse as dateparse
 
@@ -18,17 +20,17 @@ if TYPE_CHECKING:
 
 
 class BtcMarketsAPIOrderBookDataSource(OrderBookTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
     _DYNAMIC_SUBSCRIBE_ID_START = 100
     _next_subscribe_id: int = _DYNAMIC_SUBSCRIBE_ID_START
 
-    def __init__(self, trading_pairs: List[str], connector: "BtcMarketsExchange", api_factory: WebAssistantsFactory):
+    def __init__(self, trading_pairs: list[str], connector: "BtcMarketsExchange", api_factory: WebAssistantsFactory):
         super().__init__(trading_pairs)
         self._connector: BtcMarketsExchange = connector
         self._domain = CONSTANTS.DEFAULT_DOMAIN
         self._api_factory = api_factory
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def _connected_websocket_assistant(self) -> WSAssistant:
@@ -83,7 +85,7 @@ class BtcMarketsAPIOrderBookDataSource(OrderBookTrackerDataSource):
             )
             raise
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         """
         Identifies the channel for a particular event message. Used to find the correct queue to add the message in
 
@@ -102,7 +104,7 @@ class BtcMarketsAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
     async def _process_websocket_messages(self, websocket_assistant: WSAssistant):
         async for ws_response in websocket_assistant.iter_messages():
-            data: Dict[str, Any] = ws_response.data
+            data: dict[str, Any] = ws_response.data
 
             channel: str = self._channel_originating_message(event_message=data)
             if channel in [
@@ -112,7 +114,7 @@ class BtcMarketsAPIOrderBookDataSource(OrderBookTrackerDataSource):
             ]:
                 self._message_queue[channel].put_nowait(data)
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         """
         Create an instance of OrderBookMessage of type OrderBookMessageType.TRADE
 
@@ -123,7 +125,7 @@ class BtcMarketsAPIOrderBookDataSource(OrderBookTrackerDataSource):
             trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(raw_message["marketId"])
             timestamp: float = float(dateparse(raw_message["timestamp"]).timestamp())
 
-            trade_message: Optional[OrderBookMessage] = BtcMarketsOrderBook.trade_message_from_exchange(
+            trade_message: OrderBookMessage | None = BtcMarketsOrderBook.trade_message_from_exchange(
                 raw_message, timestamp, {"marketId": trading_pair}
             )
 
@@ -134,7 +136,7 @@ class BtcMarketsAPIOrderBookDataSource(OrderBookTrackerDataSource):
         except Exception:
             self.logger().exception("Unexpected error when processing public trade updates from exchange")
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         """
         Create an instance of OrderBookMessage of type OrderBookMessageType.DIFF
 
@@ -145,7 +147,7 @@ class BtcMarketsAPIOrderBookDataSource(OrderBookTrackerDataSource):
             trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(raw_message["marketId"])
             timestamp: float = float(dateparse(raw_message["timestamp"]).timestamp())
 
-            diff_message: Optional[OrderBookMessage] = BtcMarketsOrderBook.diff_message_from_exchange(
+            diff_message: OrderBookMessage | None = BtcMarketsOrderBook.diff_message_from_exchange(
                 raw_message, timestamp, {"marketId": trading_pair}
             )
 
@@ -156,14 +158,14 @@ class BtcMarketsAPIOrderBookDataSource(OrderBookTrackerDataSource):
         except Exception:
             self.logger().exception("Unexpected error when processing public order book updates from exchange")
 
-    async def _parse_order_book_snapshot_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_snapshot_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         try:
             marketId = raw_message["marketId"]
 
             trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(marketId)
             timestamp: float = float(dateparse(raw_message["timestamp"]).timestamp())
 
-            snapshot_message: Optional[OrderBookMessage] = BtcMarketsOrderBook.snapshot_message_from_exchange_rest(
+            snapshot_message: OrderBookMessage | None = BtcMarketsOrderBook.snapshot_message_from_exchange_rest(
                 raw_message, timestamp, {"marketId": trading_pair}
             )
 
@@ -178,7 +180,7 @@ class BtcMarketsAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBookMessage:
         try:
-            snapshot: Dict[str, Any] = await self.get_snapshot(trading_pair=trading_pair)
+            snapshot: dict[str, Any] = await self.get_snapshot(trading_pair=trading_pair)
             snapshot_timestamp: float = float(snapshot["snapshotId"])
 
             return BtcMarketsOrderBook.snapshot_message_from_exchange_rest(
@@ -194,7 +196,7 @@ class BtcMarketsAPIOrderBookDataSource(OrderBookTrackerDataSource):
         self,
         trading_pair: str,
         limit: int = 1000,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Retrieves a copy of the full order book from the exchange, for a particular trading pair.
         :param trading_pair: the trading pair for which the order book will be retrieved

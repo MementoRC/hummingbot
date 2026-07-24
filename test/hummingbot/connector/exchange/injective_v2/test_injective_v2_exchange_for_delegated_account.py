@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import asyncio
 import base64
 from collections import OrderedDict
 from decimal import Decimal
 from functools import partial
 import json
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Union
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
@@ -82,7 +84,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         )
         self._initialize_timeout_height_patch.start()
         super().setUp()
-        self._logs_event: Optional[asyncio.Event] = None
+        self._logs_event: asyncio.Event | None = None
         self.exchange._data_source.logger().setLevel(1)
         self.exchange._data_source.logger().addHandler(self)
 
@@ -169,7 +171,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         }
 
     @property
-    def all_symbols_including_invalid_pair_mock_response(self) -> Tuple[str, Any]:
+    def all_symbols_including_invalid_pair_mock_response(self) -> tuple[str, Any]:
         response = self.all_markets_mock_response
         response["invalid_market_id"] = SpotMarket(
             id="invalid_market_id",
@@ -328,7 +330,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         return 9999.9
 
     @property
-    def expected_supported_order_types(self) -> List[OrderType]:
+    def expected_supported_order_types(self) -> list[OrderType]:
         return [OrderType.LIMIT, OrderType.LIMIT_MAKER, OrderType.MARKET]
 
     @property
@@ -475,7 +477,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         raise NotImplementedError
 
     def configure_all_symbols_response(
-        self, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         all_markets_mock_response = self.all_markets_mock_response
         self.exchange._data_source._query_executor._spot_markets_responses.put_nowait(all_markets_mock_response)
@@ -489,8 +491,8 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
     def configure_trading_rules_response(
         self,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
 
         self.configure_all_symbols_response(mock_api=mock_api, callback=callback)
         return ""
@@ -498,8 +500,8 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
     def configure_erroneous_trading_rules_response(
         self,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
 
         response = self.trading_rules_request_erroneous_mock_response
         self.exchange._data_source._query_executor._spot_markets_responses.put_nowait(response)
@@ -511,7 +513,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         return ""
 
     def configure_successful_cancelation_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         transaction_simulation_response = self._msg_exec_simulation_mock_response()
         self.exchange._data_source._query_executor._simulate_transaction_responses.put_nowait(
@@ -524,7 +526,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         return ""
 
     def configure_erroneous_cancelation_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         transaction_simulation_response = self._msg_exec_simulation_mock_response()
         self.exchange._data_source._query_executor._simulate_transaction_responses.put_nowait(
@@ -540,21 +542,21 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         raise NotImplementedError
 
     def configure_one_successful_one_erroneous_cancel_all_response(
         self, successful_order: InFlightOrder, erroneous_order: InFlightOrder, mock_api: aioresponses
-    ) -> List[str]:
+    ) -> list[str]:
         raise NotImplementedError
 
     def configure_completely_filled_order_status_response(
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
         self.configure_all_symbols_response(mock_api=mock_api)
         response = self._order_status_request_completely_filled_mock_response(order=order)
         mock_queue = AsyncMock()
@@ -563,8 +565,8 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         return []
 
     def configure_canceled_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
-    ) -> Union[str, List[str]]:
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
+    ) -> Union[str, list[str]]:
         self.configure_all_symbols_response(mock_api=mock_api)
 
         self.exchange._data_source._query_executor._spot_trades_responses.put_nowait(
@@ -578,8 +580,8 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         return []
 
     def configure_open_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
-    ) -> List[str]:
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
+    ) -> list[str]:
         self.configure_all_symbols_response(mock_api=mock_api)
 
         self.exchange._data_source._query_executor._spot_trades_responses.put_nowait(
@@ -593,7 +595,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         return []
 
     def configure_http_error_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         self.configure_all_symbols_response(mock_api=mock_api)
 
@@ -607,7 +609,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         return None
 
     def configure_partially_filled_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         self.configure_all_symbols_response(mock_api=mock_api)
         response = self._order_status_request_partially_filled_mock_response(order=order)
@@ -617,8 +619,8 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         return None
 
     def configure_order_not_found_error_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
-    ) -> List[str]:
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
+    ) -> list[str]:
         self.configure_all_symbols_response(mock_api=mock_api)
         response = self._order_status_request_not_found_mock_response(order=order)
         mock_queue = AsyncMock()
@@ -627,7 +629,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         return []
 
     def configure_partial_fill_trade_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         response = self._order_fills_request_partial_fill_mock_response(order=order)
         mock_queue = AsyncMock()
@@ -636,7 +638,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         return None
 
     def configure_erroneous_http_fill_trade_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         mock_queue = AsyncMock()
         mock_queue.get.side_effect = IOError("Test error for trades responses")
@@ -644,7 +646,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         return None
 
     def configure_full_fill_trade_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         response = self._order_fills_request_full_fill_mock_response(order=order)
         mock_queue = AsyncMock()
@@ -835,7 +837,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         queue_mock.get.side_effect = Exception("Test error")
         self.exchange._data_source._query_executor._spot_markets_responses = queue_mock
 
-        result: List[str] = await asyncio.wait_for(self.exchange.all_trading_pairs(), timeout=10)
+        result: list[str] = await asyncio.wait_for(self.exchange.all_trading_pairs(), timeout=10)
 
         self.assertEqual(0, len(result))
 
@@ -881,7 +883,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         )
         self.exchange._data_source._query_executor._send_transaction_responses = mock_queue
 
-        orders: List[LimitOrder] = self.exchange.batch_order_create(orders_to_create=orders_to_create)
+        orders: list[LimitOrder] = self.exchange.batch_order_create(orders_to_create=orders_to_create)
 
         buy_order_to_create_in_flight = GatewayInFlightOrder(
             client_order_id=orders[0].client_order_id,
@@ -986,7 +988,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
             volume=Decimal(str(sell_order_to_create.amount)),
         ).result_price
 
-        orders: List[LimitOrder] = self.exchange.batch_order_create(orders_to_create=orders_to_create)
+        orders: list[LimitOrder] = self.exchange.batch_order_create(orders_to_create=orders_to_create)
 
         buy_order_to_create_in_flight = GatewayInFlightOrder(
             client_order_id=orders[0].client_order_id,
@@ -1390,7 +1392,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         mock_queue.get.side_effect = [balance_event, asyncio.CancelledError]
         self.exchange._data_source._query_executor._chain_stream_events = mock_queue
 
-        self.async_tasks.append(asyncio.get_event_loop().create_task(self.exchange._user_stream_event_listener()))
+        self.async_tasks.append(asyncio.get_running_loop().create_task(self.exchange._user_stream_event_listener()))
 
         market = await asyncio.wait_for(
             self.exchange._data_source.spot_market_info_for_id(market_id=self.market_id), timeout=1
@@ -1433,7 +1435,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         mock_queue.get.side_effect = event_messages
         self.exchange._data_source._query_executor._chain_stream_events = mock_queue
 
-        self.async_tasks.append(asyncio.get_event_loop().create_task(self.exchange._user_stream_event_listener()))
+        self.async_tasks.append(asyncio.get_running_loop().create_task(self.exchange._user_stream_event_listener()))
 
         market = await asyncio.wait_for(
             self.exchange._data_source.spot_market_info_for_id(market_id=self.market_id), timeout=1
@@ -1487,7 +1489,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         mock_queue.get.side_effect = event_messages
         self.exchange._data_source._query_executor._chain_stream_events = mock_queue
 
-        self.async_tasks.append(asyncio.get_event_loop().create_task(self.exchange._user_stream_event_listener()))
+        self.async_tasks.append(asyncio.get_running_loop().create_task(self.exchange._user_stream_event_listener()))
 
         market = await asyncio.wait_for(
             self.exchange._data_source.spot_market_info_for_id(market_id=self.market_id), timeout=1
@@ -1537,7 +1539,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         mock_queue.get.side_effect = event_messages
         self.exchange._data_source._query_executor._chain_stream_events = mock_queue
 
-        self.async_tasks.append(asyncio.get_event_loop().create_task(self.exchange._user_stream_event_listener()))
+        self.async_tasks.append(asyncio.get_running_loop().create_task(self.exchange._user_stream_event_listener()))
 
         market = await asyncio.wait_for(
             self.exchange._data_source.spot_market_info_for_id(market_id=self.market_id), timeout=1
@@ -1591,13 +1593,13 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         chain_stream_queue_mock.get.side_effect = messages
         self.exchange._data_source._query_executor._chain_stream_events = chain_stream_queue_mock
 
-        self.async_tasks.append(asyncio.get_event_loop().create_task(self.exchange._user_stream_event_listener()))
+        self.async_tasks.append(asyncio.get_running_loop().create_task(self.exchange._user_stream_event_listener()))
 
         market = await asyncio.wait_for(
             self.exchange._data_source.spot_market_info_for_id(market_id=self.market_id), timeout=1
         )
         tasks = [
-            asyncio.get_event_loop().create_task(
+            asyncio.get_running_loop().create_task(
                 self.exchange._data_source._listen_to_chain_updates(
                     spot_markets=[market],
                     derivative_markets=[],
@@ -1676,7 +1678,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         mock_queue.get.side_effect = event_messages
         self.exchange._data_source._query_executor._chain_stream_events = mock_queue
 
-        self.async_tasks.append(asyncio.get_event_loop().create_task(self.exchange._user_stream_event_listener()))
+        self.async_tasks.append(asyncio.get_running_loop().create_task(self.exchange._user_stream_event_listener()))
 
         market = await asyncio.wait_for(
             self.exchange._data_source.spot_market_info_for_id(market_id=self.market_id), timeout=1
@@ -1729,7 +1731,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         mock_queue.get.side_effect = event_messages
         self.exchange._data_source._query_executor._chain_stream_events = mock_queue
 
-        self.async_tasks.append(asyncio.get_event_loop().create_task(self.exchange._user_stream_event_listener()))
+        self.async_tasks.append(asyncio.get_running_loop().create_task(self.exchange._user_stream_event_listener()))
 
         market = await asyncio.wait_for(
             self.exchange._data_source.spot_market_info_for_id(market_id=self.market_id), timeout=1
@@ -1789,13 +1791,13 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         chain_stream_queue_mock.get.side_effect = messages
         self.exchange._data_source._query_executor._chain_stream_events = chain_stream_queue_mock
 
-        self.async_tasks.append(asyncio.get_event_loop().create_task(self.exchange._user_stream_event_listener()))
+        self.async_tasks.append(asyncio.get_running_loop().create_task(self.exchange._user_stream_event_listener()))
 
         market = await asyncio.wait_for(
             self.exchange._data_source.spot_market_info_for_id(market_id=self.market_id), timeout=1
         )
         tasks = [
-            asyncio.get_event_loop().create_task(
+            asyncio.get_running_loop().create_task(
                 self.exchange._data_source._listen_to_chain_updates(
                     spot_markets=[market],
                     derivative_markets=[],
@@ -1874,7 +1876,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         response = self.latest_prices_request_mock_response
         self.exchange._data_source._query_executor._spot_trades_responses.put_nowait(response)
 
-        latest_prices: Dict[str, float] = await asyncio.wait_for(
+        latest_prices: dict[str, float] = await asyncio.wait_for(
             self.exchange.get_last_traded_prices(trading_pairs=[self.trading_pair]),
             timeout=1,
         )
@@ -2249,7 +2251,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
             )
         )
 
-    def _expected_initial_status_dict(self) -> Dict[str, bool]:
+    def _expected_initial_status_dict(self) -> dict[str, bool]:
         status_dict = super()._expected_initial_status_dict()
         status_dict["data_source_initialized"] = False
         return status_dict
@@ -2264,9 +2266,9 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
 
     def _configure_balance_response(
         self,
-        response: Dict[str, Any],
+        response: dict[str, Any],
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         all_markets_mock_response = self.all_markets_mock_response
         self.exchange._data_source._query_executor._spot_markets_responses.put_nowait(all_markets_mock_response)
@@ -2301,21 +2303,21 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
             },
         }
 
-    def _order_cancelation_request_successful_mock_response(self, order: InFlightOrder) -> Dict[str, Any]:
+    def _order_cancelation_request_successful_mock_response(self, order: InFlightOrder) -> dict[str, Any]:
         return {
             "txhash": "79DBF373DE9C534EE2DC9D009F32B850DA8D0C73833FAA0FD52C6AE8989EC659",  # noqa: mock"
             "rawLog": "[]",
             "code": 0,
         }  # noqa: mock
 
-    def _order_cancelation_request_erroneous_mock_response(self, order: InFlightOrder) -> Dict[str, Any]:
+    def _order_cancelation_request_erroneous_mock_response(self, order: InFlightOrder) -> dict[str, Any]:
         return {
             "txhash": "79DBF373DE9C534EE2DC9D009F32B850DA8D0C73833FAA0FD52C6AE8989EC659",  # noqa: mock"
             "rawLog": "Error",
             "code": 11,
         }  # noqa: mock
 
-    def _order_status_request_open_mock_response(self, order: GatewayInFlightOrder) -> Dict[str, Any]:
+    def _order_status_request_open_mock_response(self, order: GatewayInFlightOrder) -> dict[str, Any]:
         return {
             "orders": [
                 {
@@ -2340,7 +2342,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
             "paging": {"total": "1"},
         }
 
-    def _order_status_request_partially_filled_mock_response(self, order: GatewayInFlightOrder) -> Dict[str, Any]:
+    def _order_status_request_partially_filled_mock_response(self, order: GatewayInFlightOrder) -> dict[str, Any]:
         return {
             "orders": [
                 {
@@ -2365,7 +2367,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
             "paging": {"total": "1"},
         }
 
-    def _order_status_request_completely_filled_mock_response(self, order: GatewayInFlightOrder) -> Dict[str, Any]:
+    def _order_status_request_completely_filled_mock_response(self, order: GatewayInFlightOrder) -> dict[str, Any]:
         return {
             "orders": [
                 {
@@ -2390,7 +2392,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
             "paging": {"total": "1"},
         }
 
-    def _order_status_request_canceled_mock_response(self, order: GatewayInFlightOrder) -> Dict[str, Any]:
+    def _order_status_request_canceled_mock_response(self, order: GatewayInFlightOrder) -> dict[str, Any]:
         return {
             "orders": [
                 {
@@ -2415,13 +2417,13 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
             "paging": {"total": "1"},
         }
 
-    def _order_status_request_not_found_mock_response(self, order: GatewayInFlightOrder) -> Dict[str, Any]:
+    def _order_status_request_not_found_mock_response(self, order: GatewayInFlightOrder) -> dict[str, Any]:
         return {
             "orders": [],
             "paging": {"total": "0"},
         }
 
-    def _order_fills_request_partial_fill_mock_response(self, order: GatewayInFlightOrder) -> Dict[str, Any]:
+    def _order_fills_request_partial_fill_mock_response(self, order: GatewayInFlightOrder) -> dict[str, Any]:
         return {
             "trades": [
                 {
@@ -2448,7 +2450,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
             "paging": {"total": "1", "from": 1, "to": 1},
         }
 
-    def _order_fills_request_full_fill_mock_response(self, order: GatewayInFlightOrder) -> Dict[str, Any]:
+    def _order_fills_request_full_fill_mock_response(self, order: GatewayInFlightOrder) -> dict[str, Any]:
         return {
             "trades": [
                 {

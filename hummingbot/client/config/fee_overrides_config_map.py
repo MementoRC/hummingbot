@@ -1,14 +1,12 @@
-from typing import Dict
-
 from hummingbot.client.config.config_methods import new_fee_config_var
 from hummingbot.client.config.config_var import ConfigVar
 from hummingbot.client.settings import AllConnectorSettings
 
-fee_overrides_config_map: Dict[str, ConfigVar] = {}
+fee_overrides_config_map: dict[str, ConfigVar] = {}
 
 
-def fee_overrides_dict() -> Dict[str, ConfigVar]:
-    all_configs: Dict[str, ConfigVar] = {}
+def fee_overrides_dict() -> dict[str, ConfigVar]:
+    all_configs: dict[str, ConfigVar] = {}
     for name in AllConnectorSettings.get_connector_settings().keys():
         all_configs.update(
             {

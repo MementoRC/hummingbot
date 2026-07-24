@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import hmac
 import time
-from typing import Any, Dict, Optional
+from typing import Any
 from urllib.parse import urlencode
 
 import hummingbot.connector.derivative.bybit_perpetual.bybit_perpetual_constants as CONSTANTS
@@ -38,7 +40,7 @@ class BybitPerpetualAuth(AuthBase):
         headers = {"referer": CONSTANTS.HBOT_BROKER_ID}
         return headers
 
-    def add_auth_headers(self, method: str, request: Optional[Dict[str, Any]]):
+    def add_auth_headers(self, method: str, request: dict[str, Any] | None):
         """
         Add authentication headers in request object
 
@@ -64,7 +66,7 @@ class BybitPerpetualAuth(AuthBase):
         request.headers = {**request.headers, **headers} if request.headers is not None else headers
         return request
 
-    def _generate_rest_signature(self, timestamp, method: str, payload: Optional[Dict[str, Any]]) -> str:
+    def _generate_rest_signature(self, timestamp, method: str, payload: dict[str, Any] | None) -> str:
         param_str = ""
         if payload is None:
             payload = {}
