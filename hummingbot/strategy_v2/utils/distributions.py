@@ -18,7 +18,7 @@ class Distributions:
         - end: The ending value of the sequence.
 
         Returns:
-        List[Decimal]: A list containing the generated linear sequence.
+        list[Decimal]: A list containing the generated linear sequence.
         """
         if n_levels == 1:
             return [Decimal(start)]
@@ -45,7 +45,7 @@ class Distributions:
           represented as a percentage. Default is 1%.
 
         Returns:
-        List[Decimal]: A list containing the generated Fibonacci sequence of spreads, represented as percentages.
+        list[Decimal]: A list containing the generated Fibonacci sequence of spreads, represented as percentages.
 
         Example:
         If initial_value=0.01 and n_levels=5, the sequence would represent: [1%, 2%, 3%, 5%, 8%]
@@ -73,7 +73,7 @@ class Distributions:
         - initial_value: Initial value for translation.
 
         Returns:
-        List[Decimal]: A list containing the generated logarithmic sequence.
+        list[Decimal]: A list containing the generated logarithmic sequence.
         """
         translation = Decimal(start) - Decimal(scaling_factor) * Decimal(log(2, base))
         return [Decimal(scaling_factor) * Decimal(log(i + 2, base)) + translation for i in range(n_levels)]
@@ -89,7 +89,7 @@ class Distributions:
         - increment: The constant value to be added in each iteration.
 
         Returns:
-        List[Decimal]: A list containing the generated arithmetic sequence.
+        list[Decimal]: A list containing the generated arithmetic sequence.
         """
         return [Decimal(start) + i * Decimal(step) for i in range(n_levels)]
 
@@ -104,7 +104,7 @@ class Distributions:
         - ratio: The ratio to multiply the current value in each iteration. Should be greater than 1 for increasing sequence.
 
         Returns:
-        List[Decimal]: A list containing the generated geometric sequence.
+        list[Decimal]: A list containing the generated geometric sequence.
         """
         if ratio <= 1:
             raise ValueError(
