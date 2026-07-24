@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from decimal import Decimal
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING
 
 from hummingbot.connector.utils import split_hb_trading_pair
 from hummingbot.core.rate_oracle.sources.rate_source_base import RateSourceBase
@@ -12,16 +14,16 @@ if TYPE_CHECKING:
 class BackpackRateSource(RateSourceBase):
     def __init__(self):
         super().__init__()
-        self._exchange: Optional[BackpackExchange] = None  # delayed because of circular reference
+        self._exchange: BackpackExchange | None = None  # delayed because of circular reference
 
     @property
     def name(self) -> str:
         return "backpack"
 
     @async_ttl_cache(ttl=30, maxsize=1)
-    async def get_prices(self, quote_token: Optional[str] = None) -> Dict[str, Decimal]:
+    async def get_prices(self, quote_token: str | None = None) -> dict[str, Decimal]:
         self._ensure_exchange()
-        all_prices: Dict[str, Decimal] = {}
+        all_prices: dict[str, Decimal] = {}
         try:
             pairs_prices = await self._exchange.get_all_pairs_prices()
             for pair_price in pairs_prices:
@@ -61,17 +63,14 @@ class BackpackRateSource(RateSourceBase):
             elif quote == quote_token:
                 reachable_quotes.add(base)
 
-        return {
-            pair: price for pair, price in all_prices.items()
-            if split_hb_trading_pair(pair)[1] in reachable_quotes
-        }
+        return {pair: price for pair, price in all_prices.items() if split_hb_trading_pair(pair)[1] in reachable_quotes}
 
     def _ensure_exchange(self):
         if self._exchange is None:
             self._exchange = self._build_backpack_connector_without_private_keys()
 
     @staticmethod
-    def _build_backpack_connector_without_private_keys() -> 'BackpackExchange':
+    def _build_backpack_connector_without_private_keys() -> "BackpackExchange":
         from hummingbot.connector.exchange.backpack.backpack_exchange import BackpackExchange
 
         return BackpackExchange(
