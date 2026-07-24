@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict, List
+from typing import Any, List
 
 from bidict import bidict
 import pandas as pd
@@ -77,7 +77,7 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
         # deducts only the margin (notional / leverage) from USDC, not the full quote notional.
         self.real_time_balance_update = False
 
-    def in_flight_asset_balances(self, in_flight_orders: Dict[str, InFlightOrder]) -> Dict[str, Decimal]:
+    def in_flight_asset_balances(self, in_flight_orders: dict[str, InFlightOrder]) -> dict[str, Decimal]:
         """
         Reserve each open order's initial margin (notional / leverage) against the USDC collateral
         for both buys and sells. Backpack perpetual is cross-margin and USDC-settled, so an order
@@ -85,7 +85,7 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
         gap between collateralQuery polls without the over-reservation of the spot base implementation
         that caused false "Not enough budget" errors (#8168).
         """
-        asset_balances: Dict[str, Decimal] = {}
+        asset_balances: dict[str, Decimal] = {}
         if in_flight_orders is None:
             return asset_balances
         leverage = self._leverage if self._leverage and self._leverage > 0 else Decimal("1")

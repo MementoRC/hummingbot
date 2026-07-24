@@ -1,8 +1,9 @@
 """``hbot status`` — report the bot's live state (one bot per install)."""
+
 import os
 import signal
 import time
-from typing import Any, Dict
+from typing import Any
 
 from hummingbot.cli import bot
 from hummingbot.cli.output import echo, emit, json_option, render_kv
@@ -13,7 +14,7 @@ REFRESH_TIMEOUT = 5.0
 ERROR_SCAN_LINES = 600
 
 
-def _recent_log_errors() -> Dict[str, Any]:
+def _recent_log_errors() -> dict[str, Any]:
     """Scan the tail of the bot's structured log for ERROR/CRITICAL events.
 
     A bot can be process-alive + strategy_running while erroring every tick, so the snapshot alone
@@ -53,12 +54,19 @@ def status(as_json: bool = json_option()) -> None:
         # the user sees what `hbot start` would launch — otherwise report the plain empty state.
         loaded = bot.read_loaded()
         if loaded and loaded.get("file"):
-            record = {"running": False, "note": "imported, not started",
-                      "config": loaded["file"], "type": loaded.get("type") or "-",
-                      "next": "hbot start"}
+            record = {
+                "running": False,
+                "note": "imported, not started",
+                "config": loaded["file"],
+                "type": loaded.get("type") or "-",
+                "next": "hbot start",
+            }
         else:
-            record = {"running": False, "note": "no strategy config loaded",
-                      "next": "hbot create <strategy>  or  hbot import <file>"}
+            record = {
+                "running": False,
+                "note": "no strategy config loaded",
+                "next": "hbot create <strategy>  or  hbot import <file>",
+            }
         emit(record, render_kv(record, title="status"), as_json)
         return
 
@@ -71,10 +79,14 @@ def status(as_json: bool = json_option()) -> None:
     if not running:
         loaded = bot.read_loaded()
         if loaded and loaded.get("file") and loaded["file"] != meta.get("file"):
-            record = {"running": False, "note": "imported, not started",
-                      "config": loaded["file"], "type": loaded.get("type") or "-",
-                      "last_run": meta.get("name") or meta.get("file") or "-",
-                      "next": "hbot start"}
+            record = {
+                "running": False,
+                "note": "imported, not started",
+                "config": loaded["file"],
+                "type": loaded.get("type") or "-",
+                "last_run": meta.get("name") or meta.get("file") or "-",
+                "next": "hbot start",
+            }
             emit(record, render_kv(record, title="status"), as_json)
             return
 
@@ -94,27 +106,31 @@ def status(as_json: bool = json_option()) -> None:
     text = snapshot.get("format_status")
 
     if as_json:
-        emit({
-            "running": running,
-            "name": name,
-            "pid": bot.read_pid() if running else None,
-            "config": meta.get("file"),
-            "type": meta.get("type"),
-            "strategy": strategy_name,
-            "uptime_s": round(uptime, 1) if uptime else None,
-            "snapshot_age_s": round(snapshot_age, 1) if snapshot_age is not None else None,
-            "errors": errors,
-            "format_status": text,
-            "balances": snapshot.get("balances"),
-        }, "", True)
+        emit(
+            {
+                "running": running,
+                "name": name,
+                "pid": bot.read_pid() if running else None,
+                "config": meta.get("file"),
+                "type": meta.get("type"),
+                "strategy": strategy_name,
+                "uptime_s": round(uptime, 1) if uptime else None,
+                "snapshot_age_s": round(snapshot_age, 1) if snapshot_age is not None else None,
+                "errors": errors,
+                "format_status": text,
+                "balances": snapshot.get("balances"),
+            },
+            "",
+            True,
+        )
         return
 
     fields = {
         "name": name,
         "state": "running" if running else "stopped",
         "pid": (bot.read_pid() if running else None) or "-",
-        "config": meta.get("file") or "-",       # the strategy config file this bot runs
-        "type": meta.get("type") or "-",          # v1-strategy / v2-script / controller
+        "config": meta.get("file") or "-",  # the strategy config file this bot runs
+        "type": meta.get("type") or "-",  # v1-strategy / v2-script / controller
         "strategy": strategy_name or "-",
     }
     if uptime:
@@ -124,8 +140,9 @@ def status(as_json: bool = json_option()) -> None:
     # Surface a running-but-broken bot: process is alive but the strategy is logging errors.
     if errors["count"]:
         last = errors["messages"][-1] if errors["messages"] else ""
-        fields["errors"] = (f"{errors['count']} in last {errors['window']} log lines — last: "
-                            f"{last[:120]} (run `hbot logs` for detail)")
+        fields["errors"] = (
+            f"{errors['count']} in last {errors['window']} log lines — last: {last[:120]} (run `hbot logs` for detail)"
+        )
     echo(render_kv(fields, title="status"))
 
     if text:
