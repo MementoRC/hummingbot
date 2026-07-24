@@ -165,6 +165,7 @@ class GatewayBase(ConnectorBase):
         """
         # Imported lazily to avoid a circular import at module load time.
         from hummingbot.client.settings import AllConnectorSettings, ConnectorSetting, ConnectorType
+
         all_settings = AllConnectorSettings.get_connector_settings()
         if self._connector_name in all_settings:
             return

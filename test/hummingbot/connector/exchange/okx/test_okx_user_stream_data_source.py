@@ -200,7 +200,6 @@ class OkxUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
 
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
     async def test_listen_for_user_stream_sends_ping_message_before_ping_interval_finishes(self, ws_connect_mock):
-
         successful_login_response = {"event": "login", "code": "0", "msg": ""}
 
         ws_connect_mock.return_value = self.mocking_assistant.create_websocket_mock()

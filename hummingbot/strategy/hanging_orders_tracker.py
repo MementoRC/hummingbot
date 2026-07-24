@@ -103,7 +103,6 @@ class HangingOrdersTracker:
                 market.remove_listener(event_pair[0], event_pair[1])
 
     def _did_cancel_order(self, event_tag: int, market: ConnectorBase, event: OrderCancelledEvent):
-
         self._process_cancel_as_part_of_renew(event)
 
         self.orders_being_cancelled.discard(event.order_id)
@@ -149,7 +148,6 @@ class HangingOrdersTracker:
                     pair.filled_sell = pair.filled_sell or not is_buy
 
     def _did_complete_hanging_order(self, order: HangingOrder):
-
         if order:
             order_side = "BUY" if order.is_buy else "SELL"
             self.completed_hanging_orders.add(order)
