@@ -72,7 +72,6 @@ class CrossExchangeMarketMakingConfigMapPydanticTest(unittest.TestCase):
         return config_settings
 
     def get_mock_connector_settings(self):
-
         conf_var_connector_maker = ConfigVar(key="mock_paper_exchange", prompt="")
         conf_var_connector_maker.value = "mock_paper_exchange"
 
@@ -151,7 +150,6 @@ class CrossExchangeMarketMakingConfigMapPydanticTest(unittest.TestCase):
     @patch("hummingbot.client.settings.AllConnectorSettings.get_exchange_names")
     @patch("hummingbot.client.settings.AllConnectorSettings.get_connector_settings")
     def test_load_configs_from_yaml(self, get_connector_settings_mock, get_exchange_names_mock):
-
         get_exchange_names_mock.return_value = set(self.get_mock_connector_settings().keys())
         get_connector_settings_mock.return_value = self.get_mock_connector_settings()
 

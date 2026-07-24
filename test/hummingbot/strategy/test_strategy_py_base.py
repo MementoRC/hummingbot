@@ -160,7 +160,6 @@ class StrategyPyBaseUnitTests(unittest.TestCase):
 
     @staticmethod
     def simulate_funding_payment_completed(market_info: MarketTradingPairTuple):
-
         example_rate: Decimal = Decimal("100")
 
         # Example API response for funding payment details
