@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 from asyncio import wait_for
 from copy import deepcopy
 import json
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Union
 
 from hummingbot.core.api_throttler.async_throttler_base import AsyncThrottlerBase
 from hummingbot.core.web_assistant.auth import AuthBase
@@ -23,9 +25,9 @@ class RESTAssistant:
         self,
         connection: RESTConnection,
         throttler: AsyncThrottlerBase,
-        rest_pre_processors: Optional[List[RESTPreProcessorBase]] = None,
-        rest_post_processors: Optional[List[RESTPostProcessorBase]] = None,
-        auth: Optional[AuthBase] = None,
+        rest_pre_processors: list[RESTPreProcessorBase] | None = None,
+        rest_post_processors: list[RESTPostProcessorBase] | None = None,
+        auth: AuthBase | None = None,
     ):
         self._connection = connection
         self._rest_pre_processors = rest_pre_processors or []
@@ -37,14 +39,14 @@ class RESTAssistant:
         self,
         url: str,
         throttler_limit_id: str,
-        params: Optional[Dict[str, Any]] = None,
-        data: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
+        data: dict[str, Any] | None = None,
         method: RESTMethod = RESTMethod.GET,
         is_auth_required: bool = False,
         return_err: bool = False,
-        timeout: Optional[float] = None,
-        headers: Optional[Dict[str, Any]] = None,
-    ) -> Union[str, Dict[str, Any]]:
+        timeout: float | None = None,
+        headers: dict[str, Any] | None = None,
+    ) -> Union[str, dict[str, Any]]:
         response = await self.execute_request_and_get_response(
             url=url,
             throttler_limit_id=throttler_limit_id,
@@ -63,13 +65,13 @@ class RESTAssistant:
         self,
         url: str,
         throttler_limit_id: str,
-        params: Optional[Dict[str, Any]] = None,
-        data: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
+        data: dict[str, Any] | None = None,
         method: RESTMethod = RESTMethod.GET,
         is_auth_required: bool = False,
         return_err: bool = False,
-        timeout: Optional[float] = None,
-        headers: Optional[Dict[str, Any]] = None,
+        timeout: float | None = None,
+        headers: dict[str, Any] | None = None,
     ) -> RESTResponse:
 
         headers = headers or {}
@@ -105,7 +107,7 @@ class RESTAssistant:
                     )
             return response
 
-    async def call(self, request: RESTRequest, timeout: Optional[float] = None) -> RESTResponse:
+    async def call(self, request: RESTRequest, timeout: float | None = None) -> RESTResponse:
         request = deepcopy(request)
         request = await self._pre_process_request(request)
         request = await self._authenticate(request)

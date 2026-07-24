@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 from functools import partial
 import json
 import re
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
@@ -113,7 +115,7 @@ class DexalotExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         ]
 
     @property
-    def all_symbols_including_invalid_pair_mock_response(self) -> Tuple[str, Any]:
+    def all_symbols_including_invalid_pair_mock_response(self) -> tuple[str, Any]:
         response = [
             {
                 "env": "production-multi-subnet",
@@ -308,7 +310,7 @@ class DexalotExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
     def expected_fill_trade_id(self) -> int:
         return 1809034423
 
-    def _expected_initial_status_dict(self) -> Dict[str, bool]:
+    def _expected_initial_status_dict(self) -> dict[str, bool]:
         return {
             "symbols_mapping_initialized": False,
             "order_books_initialized": False,
@@ -362,13 +364,13 @@ class DexalotExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         self.assertEqual(order.exchange_order_id, str(request_params["orderid"]))
 
     def configure_order_not_found_error_cancelation_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         pass
 
     def configure_one_successful_one_erroneous_cancel_all_response(
         self, successful_order: InFlightOrder, erroneous_order: InFlightOrder, mock_api: aioresponses
-    ) -> List[str]:
+    ) -> list[str]:
         """
         :return: a list of all configured URLs for the cancelations
         """
@@ -381,7 +383,7 @@ class DexalotExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return []
 
     def configure_completely_filled_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.ORDER_PATH_URL.format(order.exchange_order_id))
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -390,7 +392,7 @@ class DexalotExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return url
 
     def configure_canceled_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.ORDER_PATH_URL.format(order.exchange_order_id))
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -399,7 +401,7 @@ class DexalotExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return url
 
     def configure_erroneous_http_fill_trade_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(path_url=CONSTANTS.MY_TRADES_PATH_URL)
         regex_url = re.compile(url + r"\?.*")
@@ -407,7 +409,7 @@ class DexalotExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return url
 
     def configure_open_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         """
         :return: the URL configured
@@ -419,7 +421,7 @@ class DexalotExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return url
 
     def configure_http_error_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.ORDER_PATH_URL.format(order.exchange_order_id))
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -427,7 +429,7 @@ class DexalotExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return url
 
     def configure_partially_filled_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.ORDER_PATH_URL.format(order.exchange_order_id))
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -436,8 +438,8 @@ class DexalotExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return url
 
     def configure_order_not_found_error_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
-    ) -> List[str]:
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
+    ) -> list[str]:
         url = web_utils.private_rest_url(CONSTANTS.ORDER_PATH_URL.format(order.exchange_order_id))
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
         response = {"message": ""}
@@ -445,7 +447,7 @@ class DexalotExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return [url]
 
     def configure_partial_fill_trade_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(path_url=CONSTANTS.MY_TRADES_PATH_URL)
         regex_url = re.compile(url + r"\?.*")
@@ -454,7 +456,7 @@ class DexalotExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return url
 
     def configure_full_fill_trade_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(path_url=CONSTANTS.MY_TRADES_PATH_URL)
         regex_url = re.compile(url + r"\?.*")
@@ -463,7 +465,7 @@ class DexalotExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return url
 
     def _configure_balance_response(
-        self, _response=None, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, _response=None, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         mock_queue = AsyncMock()
         mock_queue.get.side_effect = partial(
@@ -473,7 +475,7 @@ class DexalotExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return ""
 
     def configure_successful_creation_order_status_response(
-        self, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         creation_response = self.order_creation_request_successful_mock_response
         mock_queue = AsyncMock()
@@ -484,7 +486,7 @@ class DexalotExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return ""
 
     def configure_erroneous_creation_order_status_response(
-        self, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         creation_response = self.order_creation_request_erroneous_mock_response
 
@@ -496,7 +498,7 @@ class DexalotExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return ""
 
     def configure_successful_cancelation_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         response = self._order_cancelation_request_successful_mock_response(order=order)
         mock_queue = AsyncMock()
@@ -508,7 +510,7 @@ class DexalotExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return ""
 
     def configure_erroneous_cancelation_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         response = self._order_cancelation_request_erroneous_mock_response(order=order)
         mock_queue = AsyncMock()
@@ -975,7 +977,7 @@ class DexalotExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         pass
 
     def _validate_auth_credentials_taking_parameters_from_argument(
-        self, request_call_tuple: RequestCall, params: Dict[str, Any]
+        self, request_call_tuple: RequestCall, params: dict[str, Any]
     ):
         self.assertIn("x-signature", params)
 
@@ -1158,7 +1160,7 @@ class DexalotExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
             websocket_mock=ws_connect_mock.return_value, message=json.dumps(result_subscribe)
         )
 
-        latest_prices: Dict[str, float] = await self.exchange.get_last_traded_prices(trading_pairs=[self.trading_pair])
+        latest_prices: dict[str, float] = await self.exchange.get_last_traded_prices(trading_pairs=[self.trading_pair])
         await self.mocking_assistant.run_until_all_aiohttp_messages_delivered(ws_connect_mock.return_value)
         self.assertEqual(1, len(latest_prices))
         self.assertEqual(self.expected_latest_price, latest_prices[self.trading_pair])

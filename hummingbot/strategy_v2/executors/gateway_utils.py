@@ -15,15 +15,17 @@ Provider Format:
 - Use parse_provider() to convert between formats
 """
 
+from __future__ import annotations
+
 import logging
-from typing import Callable, List, Optional, Tuple
+from typing import Callable
 
 from hummingbot.client.settings import GATEWAY_DEXS
 
 logger = logging.getLogger(__name__)
 
 
-def parse_provider(provider: str, default_trading_type: str = "router") -> Tuple[str, str]:
+def parse_provider(provider: str, default_trading_type: str = "router") -> tuple[str, str]:
     """
     Parse provider string into (dex_name, trading_type) tuple.
 
@@ -97,7 +99,7 @@ def validate_and_normalize_connector(
     connector_name: str,
     required_type: str,
     on_error: Callable[[str], None],
-) -> Tuple[Optional[str], bool]:
+) -> tuple[str | None, bool]:
     """
     Validate and normalize connector name for Gateway executors.
 
@@ -188,7 +190,7 @@ def validate_and_normalize_connector(
     return None, False
 
 
-def get_connectors_by_type(connector_type: str) -> List[str]:
+def get_connectors_by_type(connector_type: str) -> list[str]:
     """
     Get all Gateway connectors of a specific type.
 
@@ -202,7 +204,7 @@ def get_connectors_by_type(connector_type: str) -> List[str]:
     return [c for c in GATEWAY_DEXS if type_suffix in c]
 
 
-def get_network_connectors() -> List[str]:
+def get_network_connectors() -> list[str]:
     """
     Get all network-style connectors (chain-network format).
 

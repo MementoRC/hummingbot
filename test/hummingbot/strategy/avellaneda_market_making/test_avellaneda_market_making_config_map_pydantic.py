@@ -44,7 +44,7 @@ class AvellanedaMarketMakingConfigMapPydanticTest(unittest.TestCase):
         ret = self.ev_loop.run_until_complete(asyncio.wait_for(coroutine, timeout))
         return ret
 
-    def get_default_map(self) -> Dict[str, str]:
+    def get_default_map(self) -> dict[str, str]:
         config_settings = {
             "exchange": self.exchange,
             "market": self.trading_pair,

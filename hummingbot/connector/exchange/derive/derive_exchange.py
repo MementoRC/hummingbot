@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from copy import deepcopy
 from decimal import Decimal
 import hashlib
-from typing import Any, AsyncIterable, Dict, List, Optional, Tuple
+from typing import Any, AsyncIterable, List
 
 from bidict import bidict
 
@@ -36,13 +38,13 @@ class DeriveExchange(ExchangePyBase):
 
     def __init__(
         self,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
         derive_api_secret: str = None,
         sub_id: int = None,
         account_type: str = None,
         derive_api_key: str = None,
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
@@ -76,7 +78,7 @@ class DeriveExchange(ExchangePyBase):
         )
 
     @property
-    def rate_limits_rules(self) -> List[RateLimit]:
+    def rate_limits_rules(self) -> list[RateLimit]:
         return CONSTANTS.RATE_LIMITS
 
     @property
@@ -123,13 +125,13 @@ class DeriveExchange(ExchangePyBase):
     def funding_fee_poll_interval(self) -> int:
         return 120
 
-    def supported_order_types(self) -> List[OrderType]:
+    def supported_order_types(self) -> list[OrderType]:
         """
         :return a list of OrderType supported by this connector
         """
         return [OrderType.LIMIT, OrderType.LIMIT_MAKER, OrderType.MARKET]
 
-    async def get_all_pairs_prices(self) -> Dict[str, Any]:
+    async def get_all_pairs_prices(self) -> dict[str, Any]:
         res = []
         tasks = []
         if len(self._instrument_ticker) == 0:
@@ -197,7 +199,7 @@ class DeriveExchange(ExchangePyBase):
         order_side: TradeType,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         is_maker = order_type is OrderType.LIMIT_MAKER
         trade_base_fee = build_trade_fee(
@@ -349,7 +351,7 @@ class DeriveExchange(ExchangePyBase):
         order_type: OrderType,
         price: Decimal,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         """
         Creates an order on the exchange using the specified parameters.
         """
@@ -420,7 +422,7 @@ class DeriveExchange(ExchangePyBase):
             for trade_fill in all_fills_response["result"]["trades"]:
                 self._process_trade_rs_event_message(order_fill=trade_fill, all_fillable_order=all_fillable_orders)
 
-    def _process_trade_rs_event_message(self, order_fill: Dict[str, Any], all_fillable_order):
+    def _process_trade_rs_event_message(self, order_fill: dict[str, Any], all_fillable_order):
         exchange_order_id = str(order_fill.get("order_id"))
         fillable_order = all_fillable_order.get(exchange_order_id)
         if fillable_order is not None:
@@ -495,7 +497,7 @@ class DeriveExchange(ExchangePyBase):
                 )
             self._throttler.set_rate_limits(rate_limits_copy)
 
-    async def _iter_user_event_queue(self) -> AsyncIterable[Dict[str, any]]:
+    async def _iter_user_event_queue(self) -> AsyncIterable[dict[str, any]]:
         while True:
             try:
                 yield await self._user_stream_tracker.user_stream.get()
@@ -542,7 +544,7 @@ class DeriveExchange(ExchangePyBase):
                 self.logger().error("Unexpected error in user stream listener loop.", exc_info=True)
                 await self._sleep(5.0)
 
-    async def _process_trade_message(self, trade: Dict[str, Any], client_order_id: Optional[str] = None):
+    async def _process_trade_message(self, trade: dict[str, Any], client_order_id: str | None = None):
         """
         Updates in-flight order and trigger order filled event for trade message received. Triggers order completed
         event if the total executed amount equals to the specified order amount.
@@ -582,7 +584,7 @@ class DeriveExchange(ExchangePyBase):
             )
             self._order_tracker.process_trade_update(trade_update)
 
-    def _process_order_message(self, order_msg: Dict[str, Any]):
+    def _process_order_message(self, order_msg: dict[str, Any]):
         """
         Updates in-flight order and triggers cancelation or failure event if needed.
 
@@ -605,7 +607,7 @@ class DeriveExchange(ExchangePyBase):
         )
         self._order_tracker.process_order_update(order_update=order_update)
 
-    async def _format_trading_rules(self, exchange_info_dict: List) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: List) -> list[TradingRule]:
         """
         Queries the necessary API endpoint and initialize the TradingRule object for each trading pair being traded.
 
@@ -841,7 +843,7 @@ class DeriveExchange(ExchangePyBase):
                         )
                         self.logger().info(f"Recreating missing trade in TradeFill: {trade}")
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         trade_updates = []
 
         if order.exchange_order_id is not None:
@@ -891,7 +893,7 @@ class DeriveExchange(ExchangePyBase):
 
         return response["result"]["mark_price"]
 
-    async def get_last_traded_prices(self, trading_pairs: List[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str] = None) -> dict[str, float]:
         if trading_pairs is None:
             trading_pairs = []
 

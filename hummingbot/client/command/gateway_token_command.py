@@ -1,6 +1,8 @@
 #!/usr/bin/env python
+from __future__ import annotations
+
 import json
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Dict
 
 import pandas as pd
 
@@ -26,7 +28,7 @@ class GatewayTokenCommand:
     """Commands for managing gateway tokens."""
 
     @ensure_gateway_online
-    def gateway_token(self, symbol_or_address: Optional[str], action: Optional[str]):
+    def gateway_token(self, symbol_or_address: str | None, action: str | None):
         """
         View or update token information.
         Usage:
@@ -59,7 +61,7 @@ class GatewayTokenCommand:
             from hummingbot.connector.gateway.common_types import Chain
 
             chains_to_check = [chain.chain for chain in Chain]
-            found_tokens: List[Dict] = []
+            found_tokens: list[Dict] = []
 
             self.notify(f"\nSearching for token '{symbol_or_address}' across all chains' default networks...")
 
@@ -216,7 +218,7 @@ class GatewayTokenCommand:
         except Exception as e:
             self.notify(f"Error updating token: {str(e)}")
 
-    def _display_tokens_table(self, tokens: List[Dict]):
+    def _display_tokens_table(self, tokens: list[Dict]):
         """Display tokens in a table format."""
         self.notify("\nFound tokens:")
 

@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.exchange.kraken import kraken_constants as CONSTANTS, kraken_web_utils as web_utils
 from hummingbot.connector.exchange.kraken.kraken_order_book import KrakenOrderBook
@@ -30,7 +32,7 @@ class KrakenAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
     def __init__(
         self,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "KrakenExchange",
         api_factory: WebAssistantsFactory,
         # throttler: Optional[AsyncThrottler] = None
@@ -42,18 +44,18 @@ class KrakenAPIOrderBookDataSource(OrderBookTrackerDataSource):
         self._ws_assistant = None
         self._order_book_create_function = lambda: OrderBook()
 
-    _kraobds_logger: Optional[HummingbotLogger] = None
+    _kraobds_logger: HummingbotLogger | None = None
 
     async def _get_rest_assistant(self) -> RESTAssistant:
         if self._rest_assistant is None:
             self._rest_assistant = await self._api_factory.get_rest_assistant()
         return self._rest_assistant
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBook:
-        snapshot: Dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
+        snapshot: dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
         snapshot_timestamp: float = time.time()
         snapshot_msg: OrderBookMessage = KrakenOrderBook.snapshot_message_from_exchange(
             snapshot, snapshot_timestamp, metadata={"trading_pair": trading_pair}
@@ -63,7 +65,7 @@ class KrakenAPIOrderBookDataSource(OrderBookTrackerDataSource):
     async def _request_order_book_snapshot(
         self,
         trading_pair: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Retrieves a copy of the full order book from the exchange, for a particular trading pair.
 
@@ -84,7 +86,7 @@ class KrakenAPIOrderBookDataSource(OrderBookTrackerDataSource):
             raise IOError(
                 f"Error fetching Kraken market snapshot for {trading_pair}. Error is {response_json['error']}."
             )
-        data: Dict[str, Any] = next(iter(response_json["result"].values()))
+        data: dict[str, Any] = next(iter(response_json["result"].values()))
         data = {"trading_pair": trading_pair, **data}
         data["latest_update"] = max([*map(lambda x: x[2], data["bids"] + data["asks"])], default=0.0)
         return data
@@ -96,7 +98,7 @@ class KrakenAPIOrderBookDataSource(OrderBookTrackerDataSource):
         :param ws: the websocket assistant used to connect to the exchange
         """
         try:
-            trading_pairs: List[str] = []
+            trading_pairs: list[str] = []
             for tp in self._trading_pairs:
                 # trading_pairs.append(convert_to_exchange_trading_pair(tp, '/'))
                 symbol = convert_to_exchange_trading_pair(tp, "/")
@@ -144,7 +146,7 @@ class KrakenAPIOrderBookDataSource(OrderBookTrackerDataSource):
         await ws.connect(ws_url=CONSTANTS.WS_URL, ping_timeout=CONSTANTS.PING_TIMEOUT)
         return ws
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
 
         trades = [
             {"pair": convert_from_exchange_trading_pair(raw_message[-1]), "trade": trade} for trade in raw_message[1]
@@ -153,7 +155,7 @@ class KrakenAPIOrderBookDataSource(OrderBookTrackerDataSource):
             trade_msg: OrderBookMessage = KrakenOrderBook.trade_message_from_exchange(trade)
             message_queue.put_nowait(trade_msg)
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         msg_dict = {
             "trading_pair": convert_from_exchange_trading_pair(raw_message[-1]),
             "asks": raw_message[1].get("a", []) or raw_message[1].get("as", []) or [],

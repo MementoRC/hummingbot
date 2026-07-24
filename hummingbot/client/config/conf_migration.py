@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import binascii
 import importlib
 import logging
 from os import DirEntry, scandir
 from os.path import exists, join
 import shutil
-from typing import Any, Dict, List, Optional, Union, cast
+from typing import Any, Dict, Union, cast
 
 import yaml
 
@@ -37,7 +39,7 @@ conf_dir_path = CONF_DIR_PATH
 strategies_conf_dir_path = STRATEGIES_CONF_DIR_PATH
 
 
-def migrate_configs(secrets_manager: BaseSecretsManager) -> List[str]:
+def migrate_configs(secrets_manager: BaseSecretsManager) -> list[str]:
     logging.getLogger().info("Starting conf migration.")
     errors = backup_existing_dir()
     if len(errors) == 0:
@@ -52,7 +54,7 @@ def migrate_configs(secrets_manager: BaseSecretsManager) -> List[str]:
     return errors
 
 
-def migrate_non_secure_configs_only() -> List[str]:
+def migrate_non_secure_configs_only() -> list[str]:
     logging.getLogger().info("Starting strategies conf migration.")
     errors = backup_existing_dir()
     if len(errors) == 0:
@@ -65,7 +67,7 @@ def migrate_non_secure_configs_only() -> List[str]:
     return errors
 
 
-def backup_existing_dir() -> List[str]:
+def backup_existing_dir() -> list[str]:
     errors = []
     if conf_dir_path.exists():
         backup_path = conf_dir_path.parent / "conf_backup"
@@ -84,7 +86,7 @@ def backup_existing_dir() -> List[str]:
     return errors
 
 
-def migrate_global_config() -> List[str]:
+def migrate_global_config() -> list[str]:
     logging.getLogger().info("\nMigrating the global config...")
     global_config_path = CONF_DIR_PATH / "conf_global.yml"
     errors = []
@@ -199,7 +201,7 @@ def _migrate_global_config_modes(client_config_map: ClientConfigAdapter, data: D
 
 
 def _migrate_global_config_field(
-    cm: ClientConfigAdapter, global_config_data: Dict[str, Any], attr: str, cm_attr: Optional[str] = None
+    cm: ClientConfigAdapter, global_config_data: dict[str, Any], attr: str, cm_attr: str | None = None
 ):
     value = global_config_data.pop(attr)
     cm_attr = cm_attr if cm_attr is not None else attr
@@ -225,7 +227,7 @@ def migrate_strategy_confs_paths():
     return errors
 
 
-def migrate_amm_confs(conf, new_path) -> List[str]:
+def migrate_amm_confs(conf, new_path) -> list[str]:
     execution_timeframe = conf.pop("execution_timeframe")
     if execution_timeframe == "infinite":
         conf["execution_timeframe_mode"] = {}
@@ -266,7 +268,7 @@ def migrate_amm_confs(conf, new_path) -> List[str]:
     return errors
 
 
-def migrate_xemm_confs(conf, new_path) -> List[str]:
+def migrate_xemm_confs(conf, new_path) -> list[str]:
     if "active_order_canceling" in conf:
         if conf["active_order_canceling"]:
             conf["order_refresh_mode"] = {}
@@ -320,11 +322,11 @@ def migrate_connector_confs(secrets_manager: BaseSecretsManager):
     errors = []
     Security.secrets_manager = secrets_manager
     connector_exceptions = ["paper_trade"]
-    type_dirs: List[DirEntry] = [
+    type_dirs: list[DirEntry] = [
         cast(DirEntry, f) for f in scandir(f"{root_path() / 'hummingbot' / 'connector'}") if f.is_dir()
     ]
     for type_dir in type_dirs:
-        connector_dirs: List[DirEntry] = [
+        connector_dirs: list[DirEntry] = [
             cast(DirEntry, f) for f in scandir(type_dir.path) if f.is_dir() and exists(join(f.path, "__init__.py"))
         ]
         for connector_dir in connector_dirs:
@@ -349,7 +351,7 @@ def migrate_connector_confs(secrets_manager: BaseSecretsManager):
     return errors
 
 
-def _maybe_migrate_encrypted_confs(config_keys: BaseConnectorConfigMap) -> List[str]:
+def _maybe_migrate_encrypted_confs(config_keys: BaseConnectorConfigMap) -> list[str]:
     cm = ClientConfigAdapter(config_keys)
     found_one = False
     files_to_remove = []

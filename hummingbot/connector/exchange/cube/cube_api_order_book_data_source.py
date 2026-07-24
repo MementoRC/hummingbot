@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.exchange.cube import cube_constants as CONSTANTS, cube_web_utils as web_utils
 from hummingbot.connector.exchange.cube.cube_order_book import CubeOrderBook
@@ -25,11 +27,11 @@ class CubeAPIOrderBookDataSource(OrderBookTrackerDataSource):
     DIFF_STREAM_ID = 2
     ONE_HOUR = 60 * 60
 
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "CubeExchange",
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -42,10 +44,10 @@ class CubeAPIOrderBookDataSource(OrderBookTrackerDataSource):
         self._domain = domain
         self._api_factory = api_factory
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
-    async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, Any]:
+    async def _request_order_book_snapshot(self, trading_pair: str) -> dict[str, Any]:
         """
         Retrieves a copy of the full order book from the exchange, for a particular trading pair.
 
@@ -93,7 +95,7 @@ class CubeAPIOrderBookDataSource(OrderBookTrackerDataSource):
         return ws
 
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBookMessage:
-        snapshot: Dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
+        snapshot: dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
         snapshot_timestamp: float = snapshot["result"]["lastTransactTime"]
 
         price_scaler = await self._connector.get_price_scaler(trading_pair)
@@ -109,7 +111,7 @@ class CubeAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
         return snapshot_msg
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         trading_pair = raw_message["trading_pair"]
         trades: market_data_pb2.Trades = raw_message["trades"]
         trade: market_data_pb2.Trades.Trade
@@ -133,7 +135,7 @@ class CubeAPIOrderBookDataSource(OrderBookTrackerDataSource):
             trade_message = CubeOrderBook.trade_message_from_exchange(msg)
             message_queue.put_nowait(trade_message)
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         trading_pair = raw_message["trading_pair"]
         diff_msg: market_data_pb2.MarketByPriceDiff = raw_message["mbp_diff"]
         # mbp_diff = market_data_pb2.MarketByPriceDiff().From
@@ -149,8 +151,8 @@ class CubeAPIOrderBookDataSource(OrderBookTrackerDataSource):
             return
 
         for diff in diff_msg.diffs:
-            asks: List[OrderBookRow] = [OrderBookRow(0, 0, 0) for _ in range(0)]
-            bids: List[OrderBookRow] = [OrderBookRow(0, 0, 0) for _ in range(0)]
+            asks: list[OrderBookRow] = [OrderBookRow(0, 0, 0) for _ in range(0)]
+            bids: list[OrderBookRow] = [OrderBookRow(0, 0, 0) for _ in range(0)]
             price = diff.price * price_scaler
             qty = diff.quantity * quantity_scaler
             update_id = int(time.time_ns())
@@ -224,7 +226,7 @@ class CubeAPIOrderBookDataSource(OrderBookTrackerDataSource):
         """
 
         async def handle_subscription(trading_pair):
-            ws: Optional[WSAssistant] = None
+            ws: WSAssistant | None = None
             while True:
                 try:
                     ws: WSAssistant = await self._connected_websocket_assistant_for_pair(trading_pair=trading_pair)
