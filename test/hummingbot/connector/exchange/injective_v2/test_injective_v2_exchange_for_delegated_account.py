@@ -493,7 +493,6 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         mock_api: aioresponses,
         callback: Callable | None = lambda *args, **kwargs: None,
     ) -> list[str]:
-
         self.configure_all_symbols_response(mock_api=mock_api, callback=callback)
         return ""
 
@@ -502,7 +501,6 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         mock_api: aioresponses,
         callback: Callable | None = lambda *args, **kwargs: None,
     ) -> list[str]:
-
         response = self.trading_rules_request_erroneous_mock_response
         self.exchange._data_source._query_executor._spot_markets_responses.put_nowait(response)
         market = list(response.values())[0]
