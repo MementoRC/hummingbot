@@ -122,7 +122,7 @@ class InFlightOrder:
 
         self.last_update_timestamp: float = creation_timestamp
 
-        self.order_fills: dict[str, TradeUpdate] = {}  # Dict[trade_id, TradeUpdate]
+        self.order_fills: dict[str, TradeUpdate] = {}  # dict[trade_id, TradeUpdate]
 
         self.exchange_order_id_update_event = asyncio.Event()
         if self.exchange_order_id:

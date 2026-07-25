@@ -543,8 +543,8 @@ class CoinbaseAdvancedTradeExchange(ExchangePyBase):
         https://docs.cdp.coinbase.com/advanced-trade/reference/retailbrokerageapi_cancelorders
         MAX_ORDERS is 100 (ChangeLog: 2024-JAN-16)
 
-        :param order_ids: List[str]
-        :return: List[Dict[str, Any]]
+        :param order_ids: list[str]
+        :return: list[dict[str, Any]]
         """
         # Safeguarding the API call
         order_ids = [o for o in order_ids if o is not None and o != "" and o != "UNKNOWN"]

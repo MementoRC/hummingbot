@@ -72,7 +72,7 @@ class MarketDataProvider:
     def initialize_rate_sources(self, connector_pairs: list[ConnectorPair]):
         """
         Initializes a rate source based on the given connector pair.
-        :param connector_pairs: List[ConnectorPair]
+        :param connector_pairs: list[ConnectorPair]
         """
         for connector_pair in connector_pairs:
             self._rates_required.add_or_update(connector_pair.connector_name, connector_pair)
@@ -82,7 +82,7 @@ class MarketDataProvider:
     def remove_rate_sources(self, connector_pairs: list[ConnectorPair]):
         """
         Removes rate sources for the given connector pairs.
-        :param connector_pairs: List[ConnectorPair]
+        :param connector_pairs: list[ConnectorPair]
         """
         for connector_pair in connector_pairs:
             self._rates_required.remove(connector_pair.connector_name, connector_pair)
@@ -185,7 +185,7 @@ class MarketDataProvider:
     def initialize_candles_feed_list(self, config_list: list[CandlesConfig]):
         """
         Initializes a list of candle feeds based on the given configurations.
-        :param config_list: List[CandlesConfig]
+        :param config_list: list[CandlesConfig]
         """
         for config in config_list:
             self.get_candles_feed(config)
@@ -454,7 +454,7 @@ class MarketDataProvider:
         Dynamically initializes order books for multiple trading pairs in parallel.
 
         :param connector_name: str
-        :param trading_pairs: List[str]
+        :param trading_pairs: list[str]
         :return: Dict mapping trading pair to success status
         """
         tasks = [self.initialize_order_book(connector_name, tp) for tp in trading_pairs]
@@ -488,7 +488,7 @@ class MarketDataProvider:
         Removes order book tracking for multiple trading pairs in parallel.
 
         :param connector_name: str
-        :param trading_pairs: List[str]
+        :param trading_pairs: list[str]
         :return: Dict mapping trading pair to success status
         """
         tasks = [self.remove_order_book(connector_name, tp) for tp in trading_pairs]
