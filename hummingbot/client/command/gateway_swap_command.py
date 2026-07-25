@@ -1,6 +1,8 @@
 #!/usr/bin/env python
+from __future__ import annotations
+
 from decimal import Decimal
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 from hummingbot.client.command.command_utils import GatewayCommandUtils
 from hummingbot.connector.gateway.gateway import Gateway
@@ -15,7 +17,7 @@ if TYPE_CHECKING:
 class GatewaySwapCommand:
     """Handles gateway swap-related commands"""
 
-    def gateway_swap(self, connector: Optional[str] = None, args: List[str] = None):
+    def gateway_swap(self, connector: str | None = None, args: list[str] = None):
         """
         Perform swap operations through gateway - shows quote and asks for confirmation.
         Usage: gateway swap <network> [base-quote] [side] [amount]
@@ -27,9 +29,9 @@ class GatewaySwapCommand:
         # Parse arguments: [base-quote] [side] [amount]
         # Also accept shorthand form: <side> <amount> (pair prompted interactively)
         parsed = list(args) if args else []
-        pair: Optional[str] = None
-        side: Optional[str] = None
-        amount: Optional[str] = None
+        pair: str | None = None
+        side: str | None = None
+        amount: str | None = None
 
         if parsed and parsed[0].upper() in ("BUY", "SELL"):
             side = parsed[0]
@@ -47,10 +49,10 @@ class GatewaySwapCommand:
 
     async def _gateway_swap(
         self,
-        connector: Optional[str] = None,
-        pair: Optional[str] = None,
-        side: Optional[str] = None,
-        amount: Optional[str] = None,
+        connector: str | None = None,
+        pair: str | None = None,
+        side: str | None = None,
+        amount: str | None = None,
     ):
         """Unified swap flow - get quote first, then ask for confirmation to execute."""
         swap_connector = None

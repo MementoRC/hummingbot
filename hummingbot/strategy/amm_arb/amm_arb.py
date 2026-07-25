@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 from functools import lru_cache
 import logging
-from typing import Callable, Dict, List, Optional, Tuple, cast
+from typing import Callable, cast
 
 import pandas as pd
 
@@ -48,16 +50,16 @@ class AmmArbStrategy(StrategyPyBase):
     _market_2_slippage_buffer: Decimal
     _concurrent_orders_submission: bool
     _last_no_arb_reported: float
-    _arb_proposals: Optional[List[ArbProposal]]
+    _arb_proposals: list[ArbProposal] | None
     _all_markets_ready: bool
     _ev_loop: asyncio.AbstractEventLoop
-    _main_task: Optional[asyncio.Task]
+    _main_task: asyncio.Task | None
     _last_timestamp: float
     _status_report_interval: float
-    _quote_eth_rate_fetch_loop_task: Optional[asyncio.Task]
+    _quote_eth_rate_fetch_loop_task: asyncio.Task | None
     _market_1_quote_eth_rate: None  # XXX (martin_kou): Why are these here?
     _market_2_quote_eth_rate: None  # XXX (martin_kou): Why are these here?
-    _rate_source: Optional[RateOracle]
+    _rate_source: RateOracle | None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -76,7 +78,7 @@ class AmmArbStrategy(StrategyPyBase):
         market_2_slippage_buffer: Decimal = Decimal("0"),
         concurrent_orders_submission: bool = True,
         status_report_interval: float = 900,
-        rate_source: Optional[RateOracle] = RateOracle.get_instance(),
+        rate_source: RateOracle | None = RateOracle.get_instance(),
     ):
         """
         Assigns strategy parameters, this function must be called directly after init.
@@ -117,7 +119,7 @@ class AmmArbStrategy(StrategyPyBase):
 
         self._rate_source = rate_source
 
-        self._order_id_side_map: Dict[str, ArbProposalSide] = {}
+        self._order_id_side_map: dict[str, ArbProposalSide] = {}
 
     @property
     def all_markets_ready(self) -> bool:
@@ -140,15 +142,15 @@ class AmmArbStrategy(StrategyPyBase):
         self._order_amount = value
 
     @property
-    def rate_source(self) -> Optional[RateOracle]:
+    def rate_source(self) -> RateOracle | None:
         return self._rate_source
 
     @rate_source.setter
-    def rate_source(self, src: Optional[RateOracle]):
+    def rate_source(self, src: RateOracle | None):
         self._rate_source = src
 
     @property
-    def market_info_to_active_orders(self) -> Dict[MarketTradingPairTuple, List[LimitOrder]]:
+    def market_info_to_active_orders(self) -> dict[MarketTradingPairTuple, list[LimitOrder]]:
         return self._sb_order_tracker.market_pair_to_active_orders
 
     @staticmethod
@@ -211,7 +213,7 @@ class AmmArbStrategy(StrategyPyBase):
             ),
             order_amount=self._order_amount,
         )
-        profitable_arb_proposals: List[ArbProposal] = [
+        profitable_arb_proposals: list[ArbProposal] = [
             t.copy()
             for t in self._all_arb_proposals
             if t.profit_pct(
@@ -231,7 +233,7 @@ class AmmArbStrategy(StrategyPyBase):
         self.apply_budget_constraint(profitable_arb_proposals)
         await self.execute_arb_proposals(profitable_arb_proposals)
 
-    async def apply_slippage_buffers(self, arb_proposals: List[ArbProposal]):
+    async def apply_slippage_buffers(self, arb_proposals: list[ArbProposal]):
         """
         Updates arb_proposals by adjusting order price for slipper buffer percentage.
         E.g. if it is a buy order, for an order price of 100 and 1% slipper buffer, the new order price is 101,
@@ -254,7 +256,7 @@ class AmmArbStrategy(StrategyPyBase):
                     arb_side.market_info.trading_pair, arb_side.order_price
                 )
 
-    def apply_budget_constraint(self, arb_proposals: List[ArbProposal]):
+    def apply_budget_constraint(self, arb_proposals: list[ArbProposal]):
         """
         Updates arb_proposals by setting proposal amount to 0 if there is not enough balance to submit order with
         required order amount.
@@ -294,7 +296,7 @@ class AmmArbStrategy(StrategyPyBase):
 
         return ArbProposal(first_side=results[0], second_side=results[1])
 
-    async def execute_arb_proposals(self, arb_proposals: List[ArbProposal]):
+    async def execute_arb_proposals(self, arb_proposals: list[ArbProposal]):
         """
         Execute both sides of the arbitrage trades. If concurrent_orders_submission is False, it will wait for the
         first order to fill before submit the second order.
@@ -354,7 +356,7 @@ class AmmArbStrategy(StrategyPyBase):
                 return False
         return True
 
-    def short_proposal_msg(self, arb_proposal: List[ArbProposal], indented: bool = True) -> List[str]:
+    def short_proposal_msg(self, arb_proposal: list[ArbProposal], indented: bool = True) -> list[str]:
         """
         Composes a short proposal message.
         :param arb_proposal: The arbitrage proposal
@@ -448,12 +450,12 @@ class AmmArbStrategy(StrategyPyBase):
         return "\n".join(lines)
 
     def set_order_completed(self, order_id: str):
-        arb_side: Optional[ArbProposalSide] = self._order_id_side_map.get(order_id)
+        arb_side: ArbProposalSide | None = self._order_id_side_map.get(order_id)
         if arb_side:
             arb_side.set_completed()
 
     def set_order_failed(self, order_id: str):
-        arb_side: Optional[ArbProposalSide] = self._order_id_side_map.get(order_id)
+        arb_side: ArbProposalSide | None = self._order_id_side_map.get(order_id)
         if arb_side:
             arb_side.set_failed()
             arb_side.set_completed()
@@ -497,11 +499,11 @@ class AmmArbStrategy(StrategyPyBase):
         self.set_order_completed(order_id=expired_event.order_id)
 
     @property
-    def tracked_limit_orders(self) -> List[Tuple[ConnectorBase, LimitOrder]]:
+    def tracked_limit_orders(self) -> list[tuple[ConnectorBase, LimitOrder]]:
         return self._sb_order_tracker.tracked_limit_orders
 
     @property
-    def tracked_market_orders(self) -> List[Tuple[ConnectorBase, MarketOrder]]:
+    def tracked_market_orders(self) -> list[tuple[ConnectorBase, MarketOrder]]:
         return self._sb_order_tracker.tracked_market_orders
 
     def start(self, clock: Clock, timestamp: float):

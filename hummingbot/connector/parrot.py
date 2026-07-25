@@ -2,7 +2,6 @@ import asyncio
 from dataclasses import dataclass
 from decimal import Decimal
 import logging
-from typing import Dict, List
 
 import aiohttp
 
@@ -31,7 +30,7 @@ def logger():
     return logging.getLogger(__name__)
 
 
-async def get_campaign_summary(exchange: str, trading_pairs: List[str] = []) -> Dict[str, CampaignSummary]:
+async def get_campaign_summary(exchange: str, trading_pairs: list[str] = []) -> dict[str, CampaignSummary]:
     results = {}
     try:
         campaigns = await get_active_campaigns(exchange, trading_pairs)
@@ -87,7 +86,7 @@ async def get_market_last_snapshot(market_id: int):
     return resp_json
 
 
-async def get_active_campaigns(exchange: str, trading_pairs: List[str] = []) -> Dict[int, CampaignSummary]:
+async def get_active_campaigns(exchange: str, trading_pairs: list[str] = []) -> dict[int, CampaignSummary]:
     campaigns = {}
     async with aiohttp.ClientSession() as client:
         campaigns_url = f"{PARROT_MINER_BASE_URL}campaigns"
@@ -115,7 +114,7 @@ async def get_active_campaigns(exchange: str, trading_pairs: List[str] = []) -> 
     return campaigns
 
 
-async def get_active_markets(campaigns: Dict[int, CampaignSummary]) -> Dict[int, CampaignSummary]:
+async def get_active_markets(campaigns: dict[int, CampaignSummary]) -> dict[int, CampaignSummary]:
     async with aiohttp.ClientSession() as client:
         markets_url = f"{PARROT_MINER_BASE_URL}markets"
         resp = await client.get(markets_url)

@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from collections import defaultdict
 from decimal import Decimal
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, List
 
 from bidict import bidict
 
@@ -44,9 +46,9 @@ class KrakenExchange(ExchangePyBase):
         self,
         kraken_api_key: str,
         kraken_secret_key: str,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
         kraken_api_tier: str = "starter",
@@ -165,7 +167,7 @@ class KrakenExchange(ExchangePyBase):
         order_side: TradeType,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         is_maker = order_type is OrderType.LIMIT_MAKER
         trade_base_fee = build_trade_fee(
@@ -277,7 +279,7 @@ class KrakenExchange(ExchangePyBase):
         )
         return order_id
 
-    async def get_asset_pairs(self) -> Dict[str, Any]:
+    async def get_asset_pairs(self) -> dict[str, Any]:
         if not self._asset_pairs:
             asset_pairs = await self._api_request_with_retry(
                 method=RESTMethod.GET, path_url=CONSTANTS.ASSET_PAIRS_PATH_URL
@@ -298,7 +300,7 @@ class KrakenExchange(ExchangePyBase):
         order_type: OrderType,
         price: Decimal,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         trading_pair = await self.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
         data = {
             "pair": trading_pair,
@@ -324,11 +326,11 @@ class KrakenExchange(ExchangePyBase):
         self,
         method: RESTMethod,
         path_url: str,
-        params: Optional[Dict[str, Any]] = None,
-        data: Optional[Dict[str, Any]] = None,
+        params: dict[str, Any] | None = None,
+        data: dict[str, Any] | None = None,
         is_auth_required: bool = False,
         retry_interval=2.0,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         response_json = None
         result = None
         for retry_attempt in range(self.REQUEST_ATTEMPTS):
@@ -381,7 +383,7 @@ class KrakenExchange(ExchangePyBase):
             return True
         return False
 
-    async def _format_trading_rules(self, exchange_info_dict: Dict[str, Any]) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: dict[str, Any]) -> list[TradingRule]:
         """
         Example:
         {
@@ -462,7 +464,7 @@ class KrakenExchange(ExchangePyBase):
             try:
                 if isinstance(event_message, list):
                     channel: str = event_message[-2]
-                    results: List[Any] = event_message[0]
+                    results: list[Any] = event_message[0]
                     if channel == CONSTANTS.USER_TRADES_ENDPOINT_NAME:
                         self._process_trade_message(results)
                     elif channel == CONSTANTS.USER_ORDERS_ENDPOINT_NAME:
@@ -477,7 +479,7 @@ class KrakenExchange(ExchangePyBase):
                 self.logger().error("Unexpected error in user stream listener loop.", exc_info=True)
                 await self._sleep(5.0)
 
-    def _create_trade_update_with_order_fill_data(self, order_fill: Dict[str, Any], order: InFlightOrder):
+    def _create_trade_update_with_order_fill_data(self, order_fill: dict[str, Any], order: InFlightOrder):
         fee_asset = order.quote_asset
 
         fee = TradeFeeBase.new_spot_fee(
@@ -502,7 +504,7 @@ class KrakenExchange(ExchangePyBase):
     def _process_trade_message(self, trades: List):
         for update in trades:
             trade_id: str = next(iter(update))
-            trade: Dict[str, str] = update[trade_id]
+            trade: dict[str, str] = update[trade_id]
             trade["trade_id"] = trade_id
             exchange_order_id = trade.get("ordertxid")
             client_order_id = str(trade.get("userref", ""))
@@ -514,7 +516,7 @@ class KrakenExchange(ExchangePyBase):
                 trade_update = self._create_trade_update_with_order_fill_data(order_fill=trade, order=tracked_order)
                 self._order_tracker.process_trade_update(trade_update)
 
-    def _create_order_update_with_order_status_data(self, order_status: Dict[str, Any], order: InFlightOrder):
+    def _create_order_update_with_order_status_data(self, order_status: dict[str, Any], order: InFlightOrder):
         order_update = OrderUpdate(
             trading_pair=order.trading_pair,
             update_timestamp=self.current_timestamp,
@@ -539,7 +541,7 @@ class KrakenExchange(ExchangePyBase):
                     )
                     self._order_tracker.process_order_update(order_update=order_update)
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         trade_updates = []
 
         try:
@@ -552,7 +554,7 @@ class KrakenExchange(ExchangePyBase):
             )
 
             for trade_id, trade_fill in all_fills_response.items():
-                trade: Dict[str, str] = all_fills_response[trade_id]
+                trade: dict[str, str] = all_fills_response[trade_id]
                 trade["trade_id"] = trade_id
                 trade_update = self._create_trade_update_with_order_fill_data(order_fill=trade, order=order)
                 trade_updates.append(trade_update)
@@ -643,13 +645,13 @@ class KrakenExchange(ExchangePyBase):
             del self._account_available_balances[asset_name]
             del self._account_balances[asset_name]
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         mapping = bidict()
         for symbol_data in filter(web_utils.is_exchange_information_valid, exchange_info.values()):
             mapping[symbol_data["altname"]] = convert_from_exchange_trading_pair(symbol_data["wsname"])
         self._set_trading_pair_symbol_map(mapping)
 
-    async def get_last_traded_prices(self, trading_pairs: List[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str] = None) -> dict[str, float]:
         """
         Gets the last traded price for multiple trading pairs in a single API call.
         Assumes trading_pairs is always provided based on exchange_base implementation.
@@ -670,7 +672,7 @@ class KrakenExchange(ExchangePyBase):
             if symbol in symbol_to_pair
         }
 
-    async def _get_ticker_data(self, trading_pair: str = None) -> Dict[str, Any]:
+    async def _get_ticker_data(self, trading_pair: str = None) -> dict[str, Any]:
         """
         Shared method to fetch ticker data from Kraken, for one or all trading pairs.
         """
