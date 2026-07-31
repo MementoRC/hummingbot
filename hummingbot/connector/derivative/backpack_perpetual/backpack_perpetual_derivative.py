@@ -1,10 +1,9 @@
 import asyncio
-import copy
 from decimal import Decimal
 from typing import Any, Dict, List, Optional, Tuple
 
-import pandas as pd
 from bidict import bidict
+import pandas as pd
 
 from hummingbot.connector.constants import s_decimal_NaN
 from hummingbot.connector.derivative.backpack_perpetual import (
@@ -28,7 +27,6 @@ from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState,
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
 from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee, TokenAmount, TradeFeeBase
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
-from hummingbot.core.event.events import OrderFilledEvent
 from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.core.utils.tracking_nonce import NonceCreator
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod
@@ -51,15 +49,16 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
         "positionAdjusted",
     }
 
-    def __init__(self,
-                 backpack_api_key: str,
-                 backpack_api_secret: str,
-                 balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
-                 rate_limits_share_pct: Decimal = Decimal("100"),
-                 trading_pairs: Optional[List[str]] = None,
-                 trading_required: bool = True,
-                 domain: str = CONSTANTS.DEFAULT_DOMAIN,
-                 ):
+    def __init__(
+        self,
+        backpack_api_key: str,
+        backpack_api_secret: str,
+        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        rate_limits_share_pct: Decimal = Decimal("100"),
+        trading_pairs: Optional[List[str]] = None,
+        trading_required: bool = True,
+        domain: str = CONSTANTS.DEFAULT_DOMAIN,
+    ):
         self.api_key = backpack_api_key
         self.secret_key = backpack_api_secret
         self._domain = domain
@@ -71,123 +70,8 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
         self._leverage_initialized = False
         self._position_mode = None
         super().__init__(balance_asset_limit, rate_limits_share_pct)
-        # Backpack exposes no balance websocket stream, so available balance is refreshed only by the
-        # REST collateralQuery poll (~5s). real_time_balance_update = False lets the base class bridge
-        # that gap by locally reserving in-flight orders (apply_balance_update_since_snapshot) until the
-        # next poll. We override in_flight_asset_balances() below so the local reservation matches how a
-        # cross-margin, USDC-settled perpetual actually locks collateral -- the base (spot) implementation
-        # reserves each order's full quote notional (over-reserving longs -> root cause of #8168, false
-        # "Not enough budget") or the base asset for sells (leaving shorts unreserved), neither correct here.
+        # Backpack does not provide balance updates through websocket, use REST polling instead
         self.real_time_balance_update = False
-
-    def in_flight_asset_balances(self, in_flight_orders: Dict[str, InFlightOrder]) -> Dict[str, Decimal]:
-        """
-        Reserve each open order's *initial margin* (notional / leverage) against the USDC collateral,
-        for both buys and sells. Backpack perpetual is cross-margin and USDC-settled, so an order locks
-        only its margin -- not the full notional, and never the base asset. This bridges the ~5s window
-        between collateralQuery polls without the over-/under-reservation of the spot base implementation.
-        """
-        asset_balances: Dict[str, Decimal] = {}
-        if in_flight_orders is None:
-            return asset_balances
-        leverage = self._leverage if self._leverage and self._leverage > 0 else Decimal("1")
-        for order in (o for o in in_flight_orders.values()
-                      if not (o.is_done or o.is_failure or o.is_cancelled)):
-            if order.price is None or not order.price.is_finite():
-                continue
-            outstanding_amount = order.amount - order.executed_amount_base
-            margin = outstanding_amount * order.price / leverage
-            asset_balances[order.quote_asset] = asset_balances.get(order.quote_asset, Decimal("0")) + margin
-        return asset_balances
-
-    def order_filled_balances(self, starting_timestamp: float = 0) -> Dict[str, Decimal]:
-        """Cross-margin, USDC-settled perpetual version of filled-balance accounting.
-
-        The base (spot) implementation returns *full notional* for each fill: a buy fill
-        debits ``-price * amount`` from quote, a sell fill credits ``+price * amount``.
-        On a spot exchange this is correct because the quote currency actually changes
-        hands. On a USDC-settled perpetual, however, fills do **not** move the full
-        notional in/out of collateral -- only the *initial margin* (notional / leverage)
-        is locked or released:
-
-        - **OPEN** fill: the order's margin becomes position margin. Collateral is still
-          locked, so the net effect on available balance is ``-margin`` regardless of
-          buy/sell direction. The base class would return ``-notional`` (buy) or
-          ``+notional`` (sell), both wrong by a factor of ~leverage.
-        - **CLOSE** fill: the position margin is released **and** the realised PnL is
-          settled in USDC. The net effect on available balance is ``+margin`` (the
-          margin of the closed portion is returned). The base class would return
-          ``-notional`` (buy-to-close) or ``+notional`` (sell-to-close), again wrong.
-
-        We therefore return *margin* (notional / leverage) with a sign determined by
-        ``PositionAction``: negative for OPEN (collateral stays locked), positive for
-        CLOSE (collateral is released). This keeps the unit consistent with
-        ``in_flight_asset_balances()`` so that ``apply_balance_update_since_snapshot()``
-        can combine them without a leverage correction.
-
-        Non-USDC currencies fall through to the base implementation (Backpack perp only
-        settles in USDC, so this branch is never hit in production but keeps the override
-        safe for any future multi-collateral support).
-        """
-        order_filled_events = list(filter(lambda e: isinstance(e, OrderFilledEvent), self.event_logs))
-        order_filled_events = [o for o in order_filled_events if o.timestamp > starting_timestamp]
-        leverage = self._leverage if self._leverage and self._leverage > 0 else Decimal("1")
-        balances: Dict[str, Decimal] = {}
-        for event in order_filled_events:
-            quote = event.trading_pair.split("-")[1]
-            if quote != CONSTANTS.CURRENCY:
-                # Delegate to spot logic for non-USDC quotes (future-proofing)
-                return super().order_filled_balances(starting_timestamp)
-            notional = event.price * event.amount
-            margin = notional / leverage
-            # OPEN locks margin (negative), CLOSE releases margin (positive)
-            if event.position == PositionAction.OPEN.value:
-                quote_value = -margin
-            elif event.position == PositionAction.CLOSE.value:
-                quote_value = margin
-            else:
-                # NIL (unknown) — fall back to spot sign to avoid hiding bugs
-                quote_value = notional if event.trade_type is TradeType.SELL else -notional
-            if quote not in balances:
-                balances[quote] = Decimal("0")
-            balances[quote] += quote_value
-        return balances
-
-    def apply_balance_update_since_snapshot(self, currency: str, available_balance: Decimal) -> Decimal:
-        """Cross-margin, USDC-settled perpetual version of the snapshot reconciliation.
-
-        The base (spot) implementation mixes two incompatible units:
-          - ``in_flight_asset_balances()`` returns *margin* (notional / leverage) -- overridden above
-          - ``order_filled_balances()`` returns *full notional* (not divided by leverage)
-
-        That mismatch causes ~leverage-fold over-reservation after each fill, driving
-        ``get_available_balance()`` negative and triggering false "Not enough budget" errors
-        (root cause of the post-fill failure observed after PR #8323).
-
-        Backpack's REST ``netEquityAvailable`` is the *free collateral* -- it already nets out the
-        margin of open positions AND open orders (confirmed empirically: with 79.14$ total,
-        25.78$ position margin and 14.92$ open-orders margin, REST returns 38.44$; with no open
-        orders it returns total - position_margin). See ``MarginAccountSummary`` in Backpack docs:
-        ``netExposureFutures`` is "Total exposure of positions as well potential open positions".
-
-        Both ``in_flight_asset_balances()`` and ``order_filled_balances()`` are overridden to
-        return *margin* (notional / leverage) in consistent units, so the reconciliation is a
-        simple algebraic identity:
-
-        - ``available_balance`` (REST) already subtracts ``snapshot_margin`` at time T0
-        - ``in_flight_margin`` covers ALL current in-flight orders (snapshot + new ones)
-        - adding ``snapshot_margin`` back cancels the part already netted out by REST, leaving
-          only the margin of orders created since T0 to subtract
-        - ``fills_margin`` corrects for fills since T0: OPEN fills keep collateral locked
-          (negative), CLOSE fills release it (positive). This matches what REST will report
-          at the next poll, so the local view stays accurate between polls.
-        """
-        if currency != CONSTANTS.CURRENCY:
-            return super().apply_balance_update_since_snapshot(currency, available_balance)
-        snapshot_margin = self.in_flight_asset_balances(self._in_flight_orders_snapshot).get(currency, Decimal("0"))
-        in_flight_margin = self.in_flight_asset_balances(self.in_flight_orders).get(currency, Decimal("0"))
-        fills_margin = self.order_filled_balances(self._in_flight_orders_snapshot_timestamp).get(currency, Decimal("0"))
-        return available_balance + snapshot_margin - in_flight_margin + fills_margin
 
     @staticmethod
     def backpack_order_type(order_type: OrderType) -> str:
@@ -200,9 +84,8 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
     @property
     def authenticator(self):
         return BackpackPerpetualAuth(
-            api_key=self.api_key,
-            secret_key=self.secret_key,
-            time_provider=self._time_synchronizer)
+            api_key=self.api_key, secret_key=self.secret_key, time_provider=self._time_synchronizer
+        )
 
     @property
     def name(self) -> str:
@@ -254,12 +137,15 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
     def supported_order_types(self):
         return [OrderType.LIMIT, OrderType.LIMIT_MAKER, OrderType.MARKET]
 
-    def buy(self, trading_pair: str, amount: Decimal, order_type=OrderType.LIMIT, price: Decimal = s_decimal_NaN, **kwargs) -> str:
+    def buy(
+        self, trading_pair: str, amount: Decimal, order_type=OrderType.LIMIT, price: Decimal = s_decimal_NaN, **kwargs
+    ) -> str:
         """
         Override to use simple uint32 order IDs for Backpack
         """
-        new_order_id = get_new_numeric_client_order_id(nonce_creator=self._nonce_creator,
-                                                       max_id_bit_count=CONSTANTS.MAX_ORDER_ID_LEN)
+        new_order_id = get_new_numeric_client_order_id(
+            nonce_creator=self._nonce_creator, max_id_bit_count=CONSTANTS.MAX_ORDER_ID_LEN
+        )
         numeric_order_id = str(new_order_id)
 
         safe_ensure_future(
@@ -275,12 +161,20 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
         )
         return numeric_order_id
 
-    def sell(self, trading_pair: str, amount: Decimal, order_type: OrderType = OrderType.LIMIT, price: Decimal = s_decimal_NaN, **kwargs) -> str:
+    def sell(
+        self,
+        trading_pair: str,
+        amount: Decimal,
+        order_type: OrderType = OrderType.LIMIT,
+        price: Decimal = s_decimal_NaN,
+        **kwargs,
+    ) -> str:
         """
         Override to use simple uint32 order IDs for Backpack
         """
-        new_order_id = get_new_numeric_client_order_id(nonce_creator=self._nonce_creator,
-                                                       max_id_bit_count=CONSTANTS.MAX_ORDER_ID_LEN)
+        new_order_id = get_new_numeric_client_order_id(
+            nonce_creator=self._nonce_creator, max_id_bit_count=CONSTANTS.MAX_ORDER_ID_LEN
+        )
         numeric_order_id = str(new_order_id)
         safe_ensure_future(
             self._create_order(
@@ -298,13 +192,10 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
     def _is_request_exception_related_to_time_synchronizer(self, request_exception: Exception):
         request_description = str(request_exception)
 
-        is_time_synchronizer_related = (
-            "INVALID_CLIENT_REQUEST" in request_description
-            and (
-                "timestamp" in request_description.lower()
-                or "Invalid timestamp" in request_description
-                or "Request has expired" in request_description
-            )
+        is_time_synchronizer_related = "INVALID_CLIENT_REQUEST" in request_description and (
+            "timestamp" in request_description.lower()
+            or "Invalid timestamp" in request_description
+            or "Request has expired" in request_description
         )
         return is_time_synchronizer_related
 
@@ -320,17 +211,16 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
 
     def _create_web_assistants_factory(self) -> WebAssistantsFactory:
         return web_utils.build_api_factory(
-            throttler=self._throttler,
-            time_synchronizer=self._time_synchronizer,
-            domain=self._domain,
-            auth=self._auth)
+            throttler=self._throttler, time_synchronizer=self._time_synchronizer, domain=self._domain, auth=self._auth
+        )
 
     def _create_order_book_data_source(self) -> OrderBookTrackerDataSource:
         return BackpackPerpetualAPIOrderBookDataSource(
             trading_pairs=self._trading_pairs,
             connector=self,
             domain=self.domain,
-            api_factory=self._web_assistants_factory)
+            api_factory=self._web_assistants_factory,
+        )
 
     def _create_user_stream_data_source(self) -> UserStreamTrackerDataSource:
         return BackpackPerpetualAPIUserStreamDataSource(
@@ -341,15 +231,17 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
             domain=self.domain,
         )
 
-    def _get_fee(self,
-                 base_currency: str,
-                 quote_currency: str,
-                 order_type: OrderType,
-                 order_side: TradeType,
-                 amount: Decimal,
-                 position_action: PositionAction = PositionAction.NIL,
-                 price: Decimal = s_decimal_NaN,
-                 is_maker: Optional[bool] = None) -> TradeFeeBase:
+    def _get_fee(
+        self,
+        base_currency: str,
+        quote_currency: str,
+        order_type: OrderType,
+        order_side: TradeType,
+        amount: Decimal,
+        position_action: PositionAction = PositionAction.NIL,
+        price: Decimal = s_decimal_NaN,
+        is_maker: Optional[bool] = None,
+    ) -> TradeFeeBase:
         is_maker = order_type in [OrderType.LIMIT, OrderType.LIMIT_MAKER]
         return AddedToCostTradeFee(percent=self.estimate_fee_pct(is_maker))
 
@@ -359,15 +251,17 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
     def trading_pair_associated_to_exchange_symbol(self, symbol: str) -> str:
         return symbol.replace("_", "-").replace("-PERP", "")
 
-    async def _place_order(self,
-                           order_id: str,
-                           trading_pair: str,
-                           amount: Decimal,
-                           trade_type: TradeType,
-                           order_type: OrderType,
-                           price: Decimal,
-                           position_action: PositionAction = PositionAction.NIL,
-                           **kwargs) -> Tuple[str, float]:
+    async def _place_order(
+        self,
+        order_id: str,
+        trading_pair: str,
+        amount: Decimal,
+        trade_type: TradeType,
+        order_type: OrderType,
+        price: Decimal,
+        position_action: PositionAction = PositionAction.NIL,
+        **kwargs,
+    ) -> Tuple[str, float]:
         amount_str = f"{amount:f}"
         order_type_enum = self.backpack_order_type(order_type)
         side_str = CONSTANTS.SIDE_BUY if trade_type is TradeType.BUY else CONSTANTS.SIDE_SELL
@@ -386,10 +280,7 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
             data["postOnly"] = order_type == OrderType.LIMIT_MAKER
             data["timeInForce"] = CONSTANTS.TIME_IN_FORCE_GTC
         try:
-            order_result = await self._api_post(
-                path_url=CONSTANTS.ORDER_PATH_URL,
-                data=data,
-                is_auth_required=True)
+            order_result = await self._api_post(path_url=CONSTANTS.ORDER_PATH_URL, data=data, is_auth_required=True)
             o_id = str(order_result["id"])
             transact_time = order_result["createdAt"] * 1e-3
         except IOError as e:
@@ -434,9 +325,8 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
             "clientId": int(order_id),
         }
         cancel_result = await self._api_delete(
-            path_url=CONSTANTS.ORDER_PATH_URL,
-            data=api_params,
-            is_auth_required=True)
+            path_url=CONSTANTS.ORDER_PATH_URL, data=api_params, is_auth_required=True
+        )
         if cancel_result.get("status") == "Cancelled":
             return True
         return False
@@ -459,11 +349,14 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
                 step_size = Decimal(filters["quantity"]["stepSize"])
                 min_notional = Decimal("0")  # same as Bybit inverse, disables notional validation
                 retval.append(
-                    TradingRule(trading_pair,
-                                min_order_size=min_order_size,
-                                min_price_increment=Decimal(tick_size),
-                                min_base_amount_increment=Decimal(step_size),
-                                min_notional_size=Decimal(min_notional)))
+                    TradingRule(
+                        trading_pair,
+                        min_order_size=min_order_size,
+                        min_price_increment=Decimal(tick_size),
+                        min_base_amount_increment=Decimal(step_size),
+                        min_notional_size=Decimal(min_notional),
+                    )
+                )
             except Exception:
                 self.logger().exception(f"Error parsing the trading pair rule {rule}. Skipping.")
         return retval
@@ -504,10 +397,9 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
                 pos_key = self._perpetual_trading.position_key(hb_trading_pair, side)
                 self._perpetual_trading.remove_position(pos_key)
             else:
-                position.update_position(position_side=side,
-                                         unrealized_pnl=Decimal(data["P"]),
-                                         entry_price=Decimal(data["B"]),
-                                         amount=amount)
+                position.update_position(
+                    position_side=side, unrealized_pnl=Decimal(data["P"]), entry_price=Decimal(data["B"]), amount=amount
+                )
         else:
             await self._update_positions()
 
@@ -593,15 +485,10 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
             exchange_order_id = order.exchange_order_id
             trading_pair = self.exchange_symbol_associated_to_pair(trading_pair=order.trading_pair)
             try:
-                params = {
-                    "instruction": "fillHistoryQueryAll",
-                    "symbol": trading_pair,
-                    "orderId": exchange_order_id
-                }
+                params = {"instruction": "fillHistoryQueryAll", "symbol": trading_pair, "orderId": exchange_order_id}
                 all_fills_response = await self._api_get(
-                    path_url=CONSTANTS.MY_TRADES_PATH_URL,
-                    params=params,
-                    is_auth_required=True)
+                    path_url=CONSTANTS.MY_TRADES_PATH_URL, params=params, is_auth_required=True
+                )
 
                 # Check for error responses from the exchange
                 if isinstance(all_fills_response, dict) and "code" in all_fills_response:
@@ -616,8 +503,8 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
                             update_timestamp=self._time_synchronizer.time(),
                             misc_updates={
                                 "error_type": "INVALID_ORDER",
-                                "error_message": all_fills_response.get("msg", "Order does not exist on exchange")
-                            }
+                                "error_message": all_fills_response.get("msg", "Order does not exist on exchange"),
+                            },
                         )
                         self._order_tracker.process_order_update(order_update=order_update)
                         return trade_updates
@@ -629,7 +516,7 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
                         fee_schema=self.trade_fee_schema(),
                         position_action=PositionAction.NIL,
                         percent_token=trade["feeSymbol"],
-                        flat_fees=[TokenAmount(amount=Decimal(trade["fee"]), token=trade["feeSymbol"])]
+                        flat_fees=[TokenAmount(amount=Decimal(trade["fee"]), token=trade["feeSymbol"])],
                     )
                     trade_update = TradeUpdate(
                         trade_id=str(trade["tradeId"]),
@@ -652,11 +539,9 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
         trading_pair = self.exchange_symbol_associated_to_pair(trading_pair=tracked_order.trading_pair)
         updated_order_data = await self._api_get(
             path_url=CONSTANTS.ORDER_PATH_URL,
-            params={
-                "instruction": "orderQuery",
-                "symbol": trading_pair,
-                "clientId": tracked_order.client_order_id},
-            is_auth_required=True)
+            params={"instruction": "orderQuery", "symbol": trading_pair, "clientId": tracked_order.client_order_id},
+            is_auth_required=True,
+        )
 
         new_state = CONSTANTS.ORDER_STATE[updated_order_data["status"]]
 
@@ -677,40 +562,27 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
         as the total and available balances in the quote currency (USDC).
         """
         account_info = await self._api_get(
-            path_url=CONSTANTS.BALANCE_PATH_URL,
-            params={"instruction": "collateralQuery"},
-            is_auth_required=True)
+            path_url=CONSTANTS.BALANCE_PATH_URL, params={"instruction": "collateralQuery"}, is_auth_required=True
+        )
 
         quote = CONSTANTS.CURRENCY
         self._account_balances[quote] = Decimal(account_info["netEquity"])
         self._account_available_balances[quote] = Decimal(account_info["netEquityAvailable"])
-        # Refresh the in-flight orders snapshot so that apply_balance_update_since_snapshot()
-        # and order_filled_balances(snapshot_timestamp) only consider orders/fills since the
-        # last REST poll. Without this, the snapshot timestamp stays at 0.0 for the bot's
-        # lifetime (perpetual_derivative_py_base bypasses _update_all_balances which normally
-        # refreshes it), causing cumulative double-counting of fills and a negative available
-        # balance -- root cause of the persistent "Not enough budget" after the first fill.
-        if not self.real_time_balance_update:
-            self._in_flight_orders_snapshot = {k: copy.copy(v) for k, v in self.in_flight_orders.items()}
-            self._in_flight_orders_snapshot_timestamp = self.current_timestamp
 
     def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: List[Dict[str, Any]]):
         mapping = bidict()
         for symbol_data in exchange_info:
             if utils.is_exchange_information_valid(symbol_data):
-                mapping[symbol_data["symbol"]] = combine_to_hb_trading_pair(base=symbol_data["baseSymbol"],
-                                                                            quote=symbol_data["quoteSymbol"])
+                mapping[symbol_data["symbol"]] = combine_to_hb_trading_pair(
+                    base=symbol_data["baseSymbol"], quote=symbol_data["quoteSymbol"]
+                )
         self._set_trading_pair_symbol_map(mapping)
 
     async def _get_last_traded_price(self, trading_pair: str) -> float:
-        params = {
-            "symbol": self.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
-        }
+        params = {"symbol": self.exchange_symbol_associated_to_pair(trading_pair=trading_pair)}
 
         resp_json = await self._api_request(
-            method=RESTMethod.GET,
-            path_url=CONSTANTS.TICKER_PRICE_CHANGE_PATH_URL,
-            params=params
+            method=RESTMethod.GET, path_url=CONSTANTS.TICKER_PRICE_CHANGE_PATH_URL, params=params
         )
 
         return float(resp_json["lastPrice"])
@@ -734,11 +606,7 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
         """Fetch and initialize leverage from exchange if not already set."""
         if not self._leverage_initialized:
             try:
-                account_info = await self._api_get(
-                    path_url=CONSTANTS.ACCOUNT_PATH_URL,
-                    params={"instruction": "accountQuery"},
-                    is_auth_required=True
-                )
+                account_info = await self._api_get(path_url=CONSTANTS.ACCOUNT_PATH_URL, is_auth_required=True)
                 self._leverage = Decimal(str(account_info.get("leverageLimit", "1")))
                 self._leverage_initialized = True
             except Exception as e:
@@ -755,9 +623,7 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
             "instruction": "positionQuery",
         }
         try:
-            positions = await self._api_get(path_url=CONSTANTS.POSITIONS_PATH_URL,
-                                            params=params,
-                                            is_auth_required=True)
+            positions = await self._api_get(path_url=CONSTANTS.POSITIONS_PATH_URL, params=params, is_auth_required=True)
             for position in positions:
                 trading_pair = position.get("symbol")
                 try:
@@ -778,7 +644,7 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
                         unrealized_pnl=unrealized_pnl,
                         entry_price=entry_price,
                         amount=amount,
-                        leverage=self._leverage
+                        leverage=self._leverage,
                     )
                     self._perpetual_trading.set_position(pos_key, _position)
                 else:
@@ -803,7 +669,7 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
             return False, "Backpack only supports the ONEWAY position mode."
 
         self._position_mode = PositionMode.ONEWAY
-        self.logger().debug(f"Backpack switching position mode to " f"{mode} for {trading_pair} succeeded.")
+        self.logger().debug(f"Backpack switching position mode to {mode} for {trading_pair} succeeded.")
         return True, ""
 
     async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> Tuple[bool, str]:
@@ -849,9 +715,9 @@ class BackpackPerpetualDerivative(PerpetualDerivativePyBase):
             "symbol": self.exchange_symbol_associated_to_pair(trading_pair=trading_pair),
             "sortDirection": "Desc",
         }
-        funding_payment_info = await self._api_get(path_url=CONSTANTS.FUNDING_PAYMENTS_PATH_URL,
-                                                   params=params,
-                                                   is_auth_required=True)
+        funding_payment_info = await self._api_get(
+            path_url=CONSTANTS.FUNDING_PAYMENTS_PATH_URL, params=params, is_auth_required=True
+        )
         if not funding_payment_info:
             return 0, Decimal("-1"), Decimal("-1")
         last_payment = funding_payment_info[0]
