@@ -612,7 +612,6 @@ class DexalotExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         }
 
     def trade_event_for_full_fill_websocket_update(self, order: InFlightOrder):
-
         return {
             "data": {
                 "version": 1,

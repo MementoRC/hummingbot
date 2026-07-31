@@ -145,7 +145,6 @@ class DydxPerpetualV4Client:
         order_flags: int,
         good_til_block_time: int,
     ):
-
         subaccount_id = SubaccountId(owner=self._dydx_v4_chain_address, number=self._subaccount_num)
         order_id = OrderId(
             subaccount_id=subaccount_id, client_id=client_id, order_flags=order_flags, clob_pair_id=int(clob_pair_id)
@@ -166,7 +165,6 @@ class DydxPerpetualV4Client:
         reduce_only: bool = False,
         good_til_time_in_seconds: int = 6000,
     ):
-
         clob_pair_id = self._connector._margin_fractions[market]["clob_pair_id"]
         atomic_resolution = self._connector._margin_fractions[market]["atomicResolution"]
         step_base_quantums = self._connector._margin_fractions[market]["stepBaseQuantums"]

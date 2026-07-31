@@ -5,7 +5,7 @@ import hmac
 import json
 import threading
 import time
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
 from hummingbot.core.web_assistant.auth import AuthBase
@@ -40,7 +40,7 @@ class GeminiAuth(AuthBase):
         nonce = self._get_nonce()
 
         # Build the payload from existing request data
-        payload_dict: Dict[str, Any] = {}
+        payload_dict: dict[str, Any] = {}
         if request.data:
             if isinstance(request.data, str):
                 payload_dict = json.loads(request.data)
@@ -55,11 +55,7 @@ class GeminiAuth(AuthBase):
         payload_json = json.dumps(payload_dict)
         payload_b64 = base64.b64encode(payload_json.encode("utf-8"))
 
-        signature = hmac.new(
-            self.secret_key.encode("utf-8"),
-            payload_b64,
-            hashlib.sha384
-        ).hexdigest()
+        signature = hmac.new(self.secret_key.encode("utf-8"), payload_b64, hashlib.sha384).hexdigest()
 
         headers = {}
         if request.headers is not None:
@@ -84,11 +80,7 @@ class GeminiAuth(AuthBase):
         nonce = self._get_ws_nonce()
         payload_b64 = base64.b64encode(nonce.encode("utf-8")).decode("utf-8")
 
-        signature = hmac.new(
-            self.secret_key.encode("utf-8"),
-            payload_b64.encode("utf-8"),
-            hashlib.sha384
-        ).hexdigest()
+        signature = hmac.new(self.secret_key.encode("utf-8"), payload_b64.encode("utf-8"), hashlib.sha384).hexdigest()
 
         headers = request.headers or {}
         headers["X-GEMINI-APIKEY"] = self.api_key
@@ -99,7 +91,7 @@ class GeminiAuth(AuthBase):
 
         return request
 
-    def get_ws_auth_headers(self) -> Dict[str, str]:
+    def get_ws_auth_headers(self) -> dict[str, str]:
         """
         Generate authentication headers for WebSocket connection.
         Used when connecting via raw websocket libraries that need headers at connect time.
@@ -107,11 +99,7 @@ class GeminiAuth(AuthBase):
         nonce = self._get_ws_nonce()
         payload_b64 = base64.b64encode(nonce.encode("utf-8")).decode("utf-8")
 
-        signature = hmac.new(
-            self.secret_key.encode("utf-8"),
-            payload_b64.encode("utf-8"),
-            hashlib.sha384
-        ).hexdigest()
+        signature = hmac.new(self.secret_key.encode("utf-8"), payload_b64.encode("utf-8"), hashlib.sha384).hexdigest()
 
         return {
             "X-GEMINI-APIKEY": self.api_key,
