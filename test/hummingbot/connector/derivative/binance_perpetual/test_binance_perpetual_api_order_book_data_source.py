@@ -369,7 +369,8 @@ class BinancePerpetualAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTest
         diff_queue: asyncio.Queue = asyncio.Queue()
 
         await self.data_source._parse_order_book_diff_message(
-            raw_message=self._orderbook_update_event(), message_queue=diff_queue)
+            raw_message=self._orderbook_update_event(), message_queue=diff_queue
+        )
 
         result: OrderBookMessage = diff_queue.get_nowait()
         self.assertEqual(OrderBookMessageType.DIFF, result.type)
@@ -384,7 +385,8 @@ class BinancePerpetualAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTest
 
         # First diff establishes the sequence (the `pu` chain is not validated on the first event).
         await self.data_source._parse_order_book_diff_message(
-            raw_message=self._orderbook_update_event(), message_queue=diff_queue)
+            raw_message=self._orderbook_update_event(), message_queue=diff_queue
+        )
         self.assertEqual(1, diff_queue.qsize())
         last_u = self.data_source._last_update_id[self.trading_pair]
 

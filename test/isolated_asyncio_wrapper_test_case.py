@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 from asyncio import Task
-from collections.abc import Set
 import functools
 from typing import Any, Awaitable, Callable, Coroutine, TypeVar
 import unittest
@@ -139,7 +138,7 @@ class IsolatedAsyncioWrapperTestCase(unittest.IsolatedAsyncioTestCase):
             return
         if isinstance(tasks_name, str):
             tasks_name = [tasks_name]
-        tasks: Set[Task] = asyncio.all_tasks()
+        tasks: set[Task] = asyncio.all_tasks()
         tasks = {task for task in tasks for task_name in tasks_name if task_name == get_coro_func_name(task)}
 
         if tasks:
@@ -187,7 +186,7 @@ class LocalClassEventLoopWrapperTestCase(unittest.TestCase):
     @classmethod
     def tearDownClass(cls) -> None:
         if cls.local_event_loop is not None:
-            tasks: Set[Task] = asyncio.all_tasks(cls.local_event_loop)
+            tasks: set[Task] = asyncio.all_tasks(cls.local_event_loop)
             for task in tasks:
                 task.cancel()
             cls.local_event_loop.run_until_complete(asyncio.gather(*tasks, return_exceptions=True))
@@ -254,7 +253,7 @@ class LocalTestEventLoopWrapperTestCase(unittest.TestCase):
 
     def tearDown(self) -> None:
         if self.local_event_loop is not None:
-            tasks: Set[Task] = asyncio.all_tasks(self.local_event_loop)
+            tasks: set[Task] = asyncio.all_tasks(self.local_event_loop)
             for task in tasks:
                 task.cancel()
             self.local_event_loop.run_until_complete(asyncio.gather(*tasks, return_exceptions=True))
