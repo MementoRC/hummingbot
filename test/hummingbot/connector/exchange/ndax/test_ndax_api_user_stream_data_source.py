@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 import json
-from typing import Awaitable, Optional
+from typing import Awaitable
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from bidict import bidict
@@ -39,7 +41,7 @@ class NdaxAPIUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
     async def asyncSetUp(self) -> None:
         await super().asyncSetUp()
         self.log_records = []
-        self.listening_task: Optional[asyncio.Task] = None
+        self.listening_task: asyncio.Task | None = None
         self.mocking_assistant = NetworkMockingAssistant(self.local_event_loop)
 
         self.throttler = AsyncThrottler(rate_limits=CONSTANTS.RATE_LIMITS)

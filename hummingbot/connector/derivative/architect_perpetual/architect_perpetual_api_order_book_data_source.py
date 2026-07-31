@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.derivative.architect_perpetual import (
     architect_perpetual_constants as CONSTANTS,
@@ -28,7 +30,7 @@ class ArchitectPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
     def __init__(
         self,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "ArchitectPerpetualDerivative",
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -72,7 +74,7 @@ class ArchitectPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         )
         return funding_info
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def subscribe_to_trading_pair(self, trading_pair: str) -> bool:
@@ -113,10 +115,10 @@ class ArchitectPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
         return success
 
-    async def _parse_funding_info_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_funding_info_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         raise NotImplementedError  # no stream offered
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(symbol=raw_message["s"])
         trade_message: OrderBookMessage = OrderBookMessage(
             OrderBookMessageType.TRADE,
@@ -132,10 +134,10 @@ class ArchitectPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
         message_queue.put_nowait(trade_message)
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         raise NotImplementedError  # only snapshot events provided
 
-    async def _parse_order_book_snapshot_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_snapshot_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(symbol=raw_message["s"])
         update_id = int(f"{raw_message['ts']}{raw_message['tn']}")
         snapshot_message = OrderBookMessage(
@@ -247,7 +249,7 @@ class ArchitectPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             )
             raise
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         message_type = event_message.get("t", None)
         channel = ""
         if message_type == WSMessageTypes.ORDER_BOOK_SNAPSHOT:
@@ -257,7 +259,7 @@ class ArchitectPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         return channel
 
     async def _process_message_for_unknown_channel(
-        self, event_message: Dict[str, Any], websocket_assistant: WSAssistant
+        self, event_message: dict[str, Any], websocket_assistant: WSAssistant
     ):
         pass
 

@@ -1,9 +1,11 @@
 """Unit tests for Evedex Perpetual Derivative connector."""
 
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import json
-from typing import Any, Awaitable, Dict, List, Optional
+from typing import Any, Awaitable
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses.core import aioresponses
@@ -74,7 +76,7 @@ class EvedexPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         self.exchange.logger().addHandler(self)
 
         self.mocking_assistant = NetworkMockingAssistant(self.local_event_loop)
-        self.test_task: Optional[asyncio.Task] = None
+        self.test_task: asyncio.Task | None = None
         self._initialize_event_loggers()
 
     def async_run_with_timeout(self, coroutine: Awaitable, timeout: float = 5) -> Any:
@@ -134,7 +136,7 @@ class EvedexPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
     def _is_logged(self, log_level: str, message: str) -> bool:
         return any(record.levelname == log_level and record.getMessage() == message for record in self.log_records)
 
-    def _instruments_response(self) -> List[Dict[str, Any]]:
+    def _instruments_response(self) -> list[dict[str, Any]]:
         """
         Mock response for GET /api/market/instrument based on Swagger API.
         Instrument schema from official OpenAPI spec.
@@ -190,11 +192,11 @@ class EvedexPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
             }
         ]
 
-    def _ping_response(self) -> Dict[str, Any]:
+    def _ping_response(self) -> dict[str, Any]:
         """Mock response for GET /api/ping."""
         return {"time": 1640780000}
 
-    def _balance_response(self) -> Dict[str, Any]:
+    def _balance_response(self) -> dict[str, Any]:
         """
         Mock response for GET /api/market/available-balance based on actual API.
         Returns funding balance info with availableBalance.
@@ -206,7 +208,7 @@ class EvedexPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
             "maintenanceMargin": 100.0,
         }
 
-    def _positions_response(self) -> Dict[str, Any]:
+    def _positions_response(self) -> dict[str, Any]:
         """
         Mock response for GET /api/position based on Swagger API.
         Position schema from official OpenAPI spec.
@@ -233,7 +235,7 @@ class EvedexPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
             "count": 1,
         }
 
-    def _order_response(self, status: str = "NEW") -> Dict[str, Any]:
+    def _order_response(self, status: str = "NEW") -> dict[str, Any]:
         """
         Mock response for order operations based on Swagger API Order schema.
         """
@@ -260,7 +262,7 @@ class EvedexPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
             "updatedAt": "2024-01-01T00:00:00.000Z",
         }
 
-    def _fills_response(self) -> Dict[str, Any]:
+    def _fills_response(self) -> dict[str, Any]:
         """
         Mock response for GET /api/fill based on Swagger API.
         """
@@ -282,7 +284,7 @@ class EvedexPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
             "count": 1,
         }
 
-    def _user_me_response(self) -> Dict[str, Any]:
+    def _user_me_response(self) -> dict[str, Any]:
         """Mock response for GET /api/user/me."""
         return {
             "id": "user_001",
@@ -1619,7 +1621,7 @@ class EvedexPerpetualOrderCreationTests(IsolatedAsyncioWrapperTestCase):
         )
         self.exchange._set_current_timestamp(1640780000)
 
-    def _limit_order_response(self) -> Dict[str, Any]:
+    def _limit_order_response(self) -> dict[str, Any]:
         """Mock response for POST /api/v2/order/limit."""
         return {
             "id": "00001:00000000000000000000000001",
@@ -1644,7 +1646,7 @@ class EvedexPerpetualOrderCreationTests(IsolatedAsyncioWrapperTestCase):
             "updatedAt": "2024-01-01T00:00:00.000Z",
         }
 
-    def _market_order_response(self) -> Dict[str, Any]:
+    def _market_order_response(self) -> dict[str, Any]:
         """Mock response for POST /api/v2/order/market."""
         return {
             "id": "00001:00000000000000000000000002",
@@ -1741,7 +1743,7 @@ class EvedexPerpetualPositionTests(IsolatedAsyncioWrapperTestCase):
         )
         self.exchange._set_current_timestamp(1640780000)
 
-    def _positions_response(self) -> Dict[str, Any]:
+    def _positions_response(self) -> dict[str, Any]:
         """Mock response for GET /api/position."""
         return {
             "list": [
@@ -1806,7 +1808,7 @@ class EvedexPerpetualWebSocketTests(IsolatedAsyncioWrapperTestCase):
     def async_run_with_timeout(self, coroutine, timeout: float = 5):
         return self.local_event_loop.run_until_complete(asyncio.wait_for(coroutine, timeout))
 
-    def _order_ws_update(self, status: str = "NEW") -> Dict[str, Any]:
+    def _order_ws_update(self, status: str = "NEW") -> dict[str, Any]:
         """
         Mock WebSocket message from order-{userExchangeId} channel.
         """
@@ -1836,7 +1838,7 @@ class EvedexPerpetualWebSocketTests(IsolatedAsyncioWrapperTestCase):
             },
         }
 
-    def _fill_ws_update(self) -> Dict[str, Any]:
+    def _fill_ws_update(self) -> dict[str, Any]:
         """
         Mock WebSocket message from orderFills-{userExchangeId} channel.
         """
@@ -1857,7 +1859,7 @@ class EvedexPerpetualWebSocketTests(IsolatedAsyncioWrapperTestCase):
             },
         }
 
-    def _funding_ws_update(self) -> Dict[str, Any]:
+    def _funding_ws_update(self) -> dict[str, Any]:
         """
         Mock WebSocket message from funding-{userExchangeId} channel.
         """
@@ -1866,7 +1868,7 @@ class EvedexPerpetualWebSocketTests(IsolatedAsyncioWrapperTestCase):
             "data": {"coin": self.quote_asset.lower(), "quantity": "8.0", "updatedAt": "2024-01-01T00:00:00.000Z"},
         }
 
-    def _position_ws_update(self) -> Dict[str, Any]:
+    def _position_ws_update(self) -> dict[str, Any]:
         """
         Mock WebSocket message for position update from position-{userExchangeId} channel.
         """

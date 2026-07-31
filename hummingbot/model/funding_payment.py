@@ -1,6 +1,8 @@
 #!/usr/bin/env python
+from __future__ import annotations
+
 from datetime import datetime
-from typing import List, Optional
+from typing import List
 
 import pandas as pd
 from sqlalchemy import BigInteger, Column, Float, Index, Text
@@ -35,7 +37,7 @@ class FundingPayment(HummingbotBase):
         timestamp: str = None,
         market: str = None,
         trading_pair: str = None,
-    ) -> Optional[List["FundingPayment"]]:
+    ) -> list["FundingPayment"] | None:
         filters = []
         if timestamp is not None:
             filters.append(FundingPayment.timestamp == timestamp)
@@ -44,14 +46,14 @@ class FundingPayment(HummingbotBase):
         if trading_pair is not None:
             filters.append(FundingPayment.symbol == trading_pair)
 
-        payments: Optional[List[FundingPayment]] = (
+        payments: list[FundingPayment] | None = (
             sql_session.query(FundingPayment).filter(*filters).order_by(FundingPayment.timestamp.asc()).all()
         )
         return payments
 
     @classmethod
     def to_pandas(cls, payments: List):
-        columns: List[str] = ["Index", "Timestamp", "Exchange", "Market", "Rate", "Amount"]
+        columns: list[str] = ["Index", "Timestamp", "Exchange", "Market", "Rate", "Amount"]
         data = []
         index = 0
         for payment in payments:

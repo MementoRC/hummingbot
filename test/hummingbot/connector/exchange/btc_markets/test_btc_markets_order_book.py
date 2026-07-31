@@ -1,4 +1,5 @@
-from typing import Optional
+from __future__ import annotations
+
 from unittest import TestCase
 
 from hummingbot.connector.exchange.btc_markets import btc_markets_constants as CONSTANTS
@@ -24,7 +25,7 @@ class TestOrderbook(TestCase):
             "messageType": CONSTANTS.DIFF_EVENT_TYPE,
         }
 
-        diff_message: Optional[OrderBookMessage] = BtcMarketsOrderBook.snapshot_message_from_exchange_websocket(
+        diff_message: OrderBookMessage | None = BtcMarketsOrderBook.snapshot_message_from_exchange_websocket(
             diff_event, diff_event["timestamp"], {"marketId": "BAT-AUD"}
         )
 
@@ -65,7 +66,7 @@ class TestOrderbook(TestCase):
             "messageType": CONSTANTS.DIFF_EVENT_TYPE,
         }
 
-        diff_message: Optional[OrderBookMessage] = BtcMarketsOrderBook.snapshot_message_from_exchange_rest(
+        diff_message: OrderBookMessage | None = BtcMarketsOrderBook.snapshot_message_from_exchange_rest(
             diff_event, diff_event["timestamp"], {"marketId": "BAT-AUD"}
         )
 
@@ -106,7 +107,7 @@ class TestOrderbook(TestCase):
             "messageType": CONSTANTS.DIFF_EVENT_TYPE,
         }
 
-        diff_message: Optional[OrderBookMessage] = BtcMarketsOrderBook.diff_message_from_exchange(
+        diff_message: OrderBookMessage | None = BtcMarketsOrderBook.diff_message_from_exchange(
             diff_event, diff_event["timestamp"], {"marketId": "BAT-AUD"}
         )
 
@@ -142,7 +143,7 @@ class TestOrderbook(TestCase):
             "messageType": CONSTANTS.TRADE_EVENT_TYPE,
         }
 
-        trade_message: Optional[OrderBookMessage] = BtcMarketsOrderBook.trade_message_from_exchange(
+        trade_message: OrderBookMessage | None = BtcMarketsOrderBook.trade_message_from_exchange(
             trade_event, trade_event["timestamp"], {"marketId": "BAT-AUD"}
         )
 
@@ -164,7 +165,7 @@ class TestOrderbook(TestCase):
             "messageType": CONSTANTS.TRADE_EVENT_TYPE,
         }
 
-        trade_message: Optional[OrderBookMessage] = BtcMarketsOrderBook.trade_message_from_exchange(
+        trade_message: OrderBookMessage | None = BtcMarketsOrderBook.trade_message_from_exchange(
             trade_event, trade_event["timestamp"], {"marketId": "BAT-AUD"}
         )
 

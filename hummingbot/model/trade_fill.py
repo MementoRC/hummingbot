@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, List
 
 import numpy
 import pandas as pd
@@ -61,7 +63,7 @@ class TradeFill(HummingbotBase):
         order_type: str = None,
         start_time: int = None,
         end_time: int = None,
-    ) -> Optional[List["TradeFill"]]:
+    ) -> list["TradeFill"] | None:
         filters = []
         if strategy is not None:
             filters.append(TradeFill.strategy == strategy)
@@ -82,14 +84,14 @@ class TradeFill(HummingbotBase):
         if end_time is not None:
             filters.append(TradeFill.timestamp <= end_time)
 
-        trades: Optional[List[TradeFill]] = (
+        trades: list[TradeFill] | None = (
             sql_session.query(TradeFill).filter(*filters).order_by(TradeFill.timestamp.asc()).all()
         )
         return trades
 
     @classmethod
     def to_pandas(cls, trades: List):
-        columns: List[str] = [
+        columns: list[str] = [
             "Id",
             "Timestamp",
             "Exchange",
@@ -131,7 +133,7 @@ class TradeFill(HummingbotBase):
         return df
 
     @staticmethod
-    def to_bounty_api_json(trade_fill: "TradeFill") -> Dict[str, Any]:
+    def to_bounty_api_json(trade_fill: "TradeFill") -> dict[str, Any]:
         return {
             "market": trade_fill.market,
             "trade_id": trade_fill.exchange_trade_id,
