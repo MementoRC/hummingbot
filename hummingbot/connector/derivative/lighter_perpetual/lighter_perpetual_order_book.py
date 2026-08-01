@@ -12,10 +12,7 @@ class LighterOrderBook(OrderBook):
 
     @staticmethod
     def _rest_levels(levels: List[Dict[str, Any]]) -> List[List[float]]:
-        return [
-            [float(level["price"]), float(level["remaining_base_amount"])]
-            for level in levels
-        ]
+        return [[float(level["price"]), float(level["remaining_base_amount"])] for level in levels]
 
     @classmethod
     def snapshot_message_from_rest(
