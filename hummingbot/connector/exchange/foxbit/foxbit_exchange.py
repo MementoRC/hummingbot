@@ -928,7 +928,6 @@ class FoxbitExchange(ExchangePyBase):
         return order_update
 
     async def _get_last_traded_price(self, trading_pair: str) -> float:
-
         ixm_id = await self.exchange_instrument_id_associated_to_pair(trading_pair=trading_pair)
 
         ws: WSAssistant = await self._create_web_assistants_factory().get_ws_assistant()

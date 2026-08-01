@@ -590,7 +590,6 @@ class InjectiveV2PerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpe
         mock_api: aioresponses,
         callback: Callable | None = lambda *args, **kwargs: None,
     ) -> list[str]:
-
         self.configure_all_symbols_response(mock_api=mock_api, callback=callback)
         return ""
 
@@ -599,7 +598,6 @@ class InjectiveV2PerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpe
         mock_api: aioresponses,
         callback: Callable | None = lambda *args, **kwargs: None,
     ) -> list[str]:
-
         self.exchange._data_source._query_executor._spot_markets_responses.put_nowait({})
         response = self.trading_rules_request_erroneous_mock_response
         self.exchange._data_source._query_executor._derivative_markets_responses.put_nowait(response)

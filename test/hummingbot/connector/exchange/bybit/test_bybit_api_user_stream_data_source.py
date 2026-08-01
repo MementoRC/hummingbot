@@ -123,7 +123,6 @@ class TestBybitAPIUserStreamDataSource(IsolatedAsyncioWrapperTestCase):
 
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
     async def test_listen_for_user_stream_does_not_queue_pong_payload(self, mock_ws):
-
         mock_pong = {"pong": "1545910590801"}
         mock_ws.return_value = self.mocking_assistant.create_websocket_mock()
         self.mocking_assistant.add_websocket_aiohttp_message(mock_ws.return_value, json.dumps(mock_pong))
@@ -139,7 +138,6 @@ class TestBybitAPIUserStreamDataSource(IsolatedAsyncioWrapperTestCase):
 
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
     async def test_listen_for_user_stream_does_not_queue_ticket_info(self, mock_ws):
-
         ticket_info = [
             {
                 "e": "ticketInfo",
@@ -226,7 +224,6 @@ class TestBybitAPIUserStreamDataSource(IsolatedAsyncioWrapperTestCase):
     async def test_listen_for_user_stream_sends_ping_message_before_ping_interval_finishes(
         self, time_mock, ws_connect_mock
     ):
-
         time_mock.side_effect = [1000, 1100, 1101, 1102]  # Simulate first ping interval is already due
 
         ws_connect_mock.return_value = self.mocking_assistant.create_websocket_mock()
