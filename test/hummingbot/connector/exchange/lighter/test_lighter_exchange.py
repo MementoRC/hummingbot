@@ -861,14 +861,14 @@ class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         self.exchange.quantize_order_price = MagicMock(side_effect=lambda trading_pair, price: price)
 
         sell_price = self.exchange._effective_order_price(
-            trading_pair=self.trading_pair, trade_type=TradeType.SELL,
-            order_type=OrderType.MARKET, price=Decimal("120"))
+            trading_pair=self.trading_pair, trade_type=TradeType.SELL, order_type=OrderType.MARKET, price=Decimal("120")
+        )
         buy_price = self.exchange._effective_order_price(
-            trading_pair=self.trading_pair, trade_type=TradeType.BUY,
-            order_type=OrderType.MARKET, price=Decimal("80"))
+            trading_pair=self.trading_pair, trade_type=TradeType.BUY, order_type=OrderType.MARKET, price=Decimal("80")
+        )
 
         self.assertEqual(Decimal("114.00"), sell_price)  # 120 * (1 - 0.05), NOT 120
-        self.assertEqual(Decimal("84.00"), buy_price)    # 80 * (1 + 0.05), NOT 80
+        self.assertEqual(Decimal("84.00"), buy_price)  # 80 * (1 + 0.05), NOT 80
 
     async def test_get_last_traded_price_lazily_loads_markets(self):
         # A non-trading price-feed connector starts with an empty market map (no trading-rules
@@ -879,12 +879,15 @@ class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
 
         async def _load_rules():
             self.exchange._markets_by_trading_pair = {self.trading_pair: self._market_info()}
+
         self.exchange._update_trading_rules = AsyncMock(side_effect=_load_rules)
-        self.exchange._api_get = AsyncMock(return_value={
-            "spot_order_book_details": [
-                self._market_detail(self.exchange_symbol, self.market_id, last_trade_price="2501")
-            ]
-        })
+        self.exchange._api_get = AsyncMock(
+            return_value={
+                "spot_order_book_details": [
+                    self._market_detail(self.exchange_symbol, self.market_id, last_trade_price="2501")
+                ]
+            }
+        )
 
         price = await self.exchange._get_last_traded_price(self.trading_pair)
 

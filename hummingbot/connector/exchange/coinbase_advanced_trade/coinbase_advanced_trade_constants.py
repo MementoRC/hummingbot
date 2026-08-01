@@ -109,7 +109,7 @@ WS_ORDER_SUBSCRIPTION_CHANNELS: bidict[str, str] = bidict({"l2_data": "order_boo
 WS_MAX_MSG_SIZE = 8 * 1024 * 1024
 
 WS_USER_SUBSCRIPTION_KEYS: str = "user"
-# WS_USER_SUBSCRIPTION_KEYS: Tuple[str, ...] = ("user",)
+# WS_USER_SUBSCRIPTION_KEYS: tuple[str, ...] = ("user",)
 WS_USER_SUBSCRIPTION_CHANNELS: bidict[str, str] = bidict({k: k for k in WS_USER_SUBSCRIPTION_KEYS})
 
 WS_OTHERS_SUBSCRIPTION_KEYS: tuple[str, ...] = ("ticker", "ticker_batch", "status", "candles")
