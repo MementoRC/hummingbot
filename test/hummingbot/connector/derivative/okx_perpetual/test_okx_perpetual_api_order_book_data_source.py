@@ -2,7 +2,7 @@ import asyncio
 from decimal import Decimal
 import json
 import re
-from typing import Dict, List
+from typing import Dict
 from unittest.mock import AsyncMock, MagicMock, patch
 from urllib.parse import urlencode
 
@@ -352,7 +352,7 @@ class OKXPerpetualAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):
     def configure_trading_rules_response(
         self,
         mock_api: aioresponses,
-    ) -> List[str]:
+    ) -> list[str]:
         base_url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.REST_GET_INSTRUMENTS[CONSTANTS.ENDPOINT], domain=CONSTANTS.DEFAULT_DOMAIN
         )

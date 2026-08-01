@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
+from __future__ import annotations
+
 from datetime import datetime
 from logging import StreamHandler
-from typing import Optional
 
 
 class CLIHandler(StreamHandler):
-    def formatException(self, _) -> Optional[str]:
+    def formatException(self, _) -> str | None:
         return None
 
     def format(self, record) -> str:

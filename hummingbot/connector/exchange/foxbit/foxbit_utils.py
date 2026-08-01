@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 import json
-from typing import Any, Dict
+from typing import Any
 
 from pydantic import Field, SecretStr
 
@@ -37,7 +37,7 @@ def get_ws_message_frame(
     endpoint: str,
     msg_type: str = "0",
     payload: str = "",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     retValue = CONSTANTS.WS_MESSAGE_FRAME.copy()
     retValue["m"] = msg_type
     retValue["i"] = _get_next_message_frame_sequence_number()
@@ -55,7 +55,7 @@ def _get_next_message_frame_sequence_number() -> int:
     return _seq_nr
 
 
-def is_exchange_information_valid(exchange_info: Dict[str, Any]) -> bool:
+def is_exchange_information_valid(exchange_info: dict[str, Any]) -> bool:
     """
     Verifies if a trading pair is enabled to operate with based on its exchange information
     :param exchange_info: the exchange information for a trading pair. Dictionary with status and permissions
@@ -67,7 +67,7 @@ def is_exchange_information_valid(exchange_info: Dict[str, Any]) -> bool:
     return True
 
 
-def ws_data_to_dict(data: str) -> Dict[str, Any]:
+def ws_data_to_dict(data: str) -> dict[str, Any]:
     return eval(data.replace(":null", ":None").replace(":false", ":False").replace(":true", ":True"))
 
 

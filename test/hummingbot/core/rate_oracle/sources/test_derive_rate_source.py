@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import json
 import re
-from typing import Awaitable, Callable, List, Optional
+from typing import Awaitable, Callable
 import unittest
 from unittest.mock import AsyncMock, patch
 
@@ -107,8 +109,8 @@ class DeriveRateSourceTest(unittest.TestCase):
     def configure_trading_rules_response(
         self,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
 
         url = self.trading_rules_url
         response = self.trading_rules_request_mock_response
@@ -118,8 +120,8 @@ class DeriveRateSourceTest(unittest.TestCase):
     def configure_currency_trading_rules_response(
         self,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
 
         url = self.trading_rules_currency_url
         response = self.currency_request_mock_response
@@ -129,8 +131,8 @@ class DeriveRateSourceTest(unittest.TestCase):
     def configure_all_symbols_response(
         self,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
 
         url = self.all_symbols_url
         response = self.trading_rules_request_mock_response

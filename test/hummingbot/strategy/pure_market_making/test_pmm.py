@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 from decimal import Decimal
-from typing import List, Optional
 import unittest
 
 import pandas as pd
@@ -27,8 +28,8 @@ from test.mock.mock_asset_price_delegate import MockAssetPriceDelegate
 # Update the orderbook so that the top bids and asks are lower than actual for a wider bid ask spread
 # this basically removes the orderbook entries above top bid and below top ask
 def simulate_order_book_widening(order_book: OrderBook, top_bid: float, top_ask: float):
-    bid_diffs: List[OrderBookRow] = []
-    ask_diffs: List[OrderBookRow] = []
+    bid_diffs: list[OrderBookRow] = []
+    ask_diffs: list[OrderBookRow] = []
     update_id: int = order_book.last_diff_uid + 1
     for row in order_book.bid_entries():
         if row.price > top_bid:
@@ -185,7 +186,7 @@ class PMMUnitTest(unittest.TestCase):
         is_buy: bool,
         quantity: Decimal,
         price: Decimal,
-        market: Optional[MockPaperExchange] = None,
+        market: MockPaperExchange | None = None,
     ):
         if market is None:
             market = self.market
@@ -1231,7 +1232,7 @@ class PureMarketMakingMinimumSpreadUnitTest(unittest.TestCase):
     start_timestamp: float = start.timestamp()
     end_timestamp: float = end.timestamp()
     trading_pair = "COINALPHA-WETH"
-    maker_trading_pairs: List[str] = ["COINALPHA-WETH", "COINALPHA", "WETH"]
+    maker_trading_pairs: list[str] = ["COINALPHA-WETH", "COINALPHA", "WETH"]
 
     def setUp(self):
         self.clock_tick_size = 1

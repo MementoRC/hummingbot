@@ -4,7 +4,7 @@ from enum import Enum
 from functools import lru_cache
 import logging
 from math import ceil, floor
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 
 from bidict import bidict
 import pandas as pd
@@ -79,7 +79,7 @@ class CrossExchangeMarketMakingStrategy(StrategyPyBase):
     def init_params(
         self,
         config_map: CrossExchangeMarketMakingConfigMap,
-        market_pairs: List[MakerTakerMarketPair],
+        market_pairs: list[MakerTakerMarketPair],
         status_report_interval: float = 900,
         logging_options: int = OPTION_LOG_ALL,
         hb_app_notification: bool = False,
@@ -193,7 +193,7 @@ class CrossExchangeMarketMakingStrategy(StrategyPyBase):
         return self._config_map.slippage_buffer / Decimal("100")
 
     @property
-    def active_maker_limit_orders(self) -> List[Tuple[ExchangeBase, LimitOrder]]:
+    def active_maker_limit_orders(self) -> list[tuple[ExchangeBase, LimitOrder]]:
         return [
             (ex, order, order.client_order_id)
             for ex, order in self._sb_order_tracker.active_limit_orders
@@ -201,11 +201,11 @@ class CrossExchangeMarketMakingStrategy(StrategyPyBase):
         ]
 
     @property
-    def cached_limit_orders(self) -> List[Tuple[ExchangeBase, LimitOrder]]:
+    def cached_limit_orders(self) -> list[tuple[ExchangeBase, LimitOrder]]:
         return self._sb_order_tracker.shadow_limit_orders
 
     @property
-    def active_maker_bids(self) -> List[Tuple[ExchangeBase, LimitOrder]]:
+    def active_maker_bids(self) -> list[tuple[ExchangeBase, LimitOrder]]:
         return [
             (market, limit_order)
             for market, limit_order, order_id in self.active_maker_limit_orders
@@ -213,7 +213,7 @@ class CrossExchangeMarketMakingStrategy(StrategyPyBase):
         ]
 
     @property
-    def active_maker_asks(self) -> List[Tuple[ExchangeBase, LimitOrder]]:
+    def active_maker_asks(self) -> list[tuple[ExchangeBase, LimitOrder]]:
         return [
             (market, limit_order)
             for market, limit_order, order_id in self.active_maker_limit_orders
@@ -241,7 +241,7 @@ class CrossExchangeMarketMakingStrategy(StrategyPyBase):
         self._logging_options = logging_options
 
     @property
-    def market_info_to_active_orders(self) -> Dict[MarketTradingPairTuple, List[LimitOrder]]:
+    def market_info_to_active_orders(self) -> dict[MarketTradingPairTuple, list[LimitOrder]]:
         return self._sb_order_tracker.market_pair_to_active_orders
 
     @staticmethod
@@ -1028,7 +1028,7 @@ class CrossExchangeMarketMakingStrategy(StrategyPyBase):
                     f"allowed on the taker market. No hedging possible yet.",
                 )
 
-    def get_adjusted_limit_order_size(self, market_pair: MakerTakerMarketPair) -> Tuple[Decimal, Decimal]:
+    def get_adjusted_limit_order_size(self, market_pair: MakerTakerMarketPair) -> tuple[Decimal, Decimal]:
         """
         Given the proposed order size of a proposed limit order (regardless of bid or ask), adjust and refine the order
         sizing according to either the trade size override setting (if it exists), or the portfolio ratio limit (if
@@ -1706,7 +1706,7 @@ class CrossExchangeMarketMakingStrategy(StrategyPyBase):
         amount: Decimal,
         price: Decimal,
         maker_order_id: str = None,
-        fill_records: List[OrderFilledEvent] = None,
+        fill_records: list[OrderFilledEvent] = None,
     ):
         expiration_seconds = s_float_nan
         market_info = market_pair.maker if is_maker else market_pair.taker
@@ -1784,25 +1784,25 @@ class CrossExchangeMarketMakingStrategy(StrategyPyBase):
 
     # ----------------------------------------------------------------------------------------------------------
     # Helpers
-    def check_multiple_buy_orders(self, fill_records: List[OrderFilledEvent]):
+    def check_multiple_buy_orders(self, fill_records: list[OrderFilledEvent]):
         maker_order_ids = [r.order_id for _, r in fill_records]
         if len(set(maker_order_ids)) != 1:
             self.logger().warning("Multiple buy maker orders")
 
-    def check_multiple_sell_orders(self, fill_records: List[OrderFilledEvent]):
+    def check_multiple_sell_orders(self, fill_records: list[OrderFilledEvent]):
         maker_order_ids = [r.order_id for _, r in fill_records]
         if len(set(maker_order_ids)) != 1:
             self.logger().warning("Multiple sell maker orders")
 
-    def get_unhedged_buy_records(self, market_pair: MakerTakerMarketPair) -> List[OrderFilledEvent]:
+    def get_unhedged_buy_records(self, market_pair: MakerTakerMarketPair) -> list[OrderFilledEvent]:
         buy_fill_records = self._order_fill_buy_events.get(market_pair, [])
         return self.get_unhedged_events(buy_fill_records)
 
-    def get_unhedged_sell_records(self, market_pair: MakerTakerMarketPair) -> List[OrderFilledEvent]:
+    def get_unhedged_sell_records(self, market_pair: MakerTakerMarketPair) -> list[OrderFilledEvent]:
         sell_fill_records = self._order_fill_sell_events.get(market_pair, [])
         return self.get_unhedged_events(sell_fill_records)
 
-    def get_unhedged_events(self, fill_records: List[OrderFilledEvent]) -> List[OrderFilledEvent]:
+    def get_unhedged_events(self, fill_records: list[OrderFilledEvent]) -> list[OrderFilledEvent]:
         return [fill_event for fill_event in fill_records if (not self.is_fill_event_in_ongoing_hedging(fill_event))]
 
     def is_fill_event_in_ongoing_hedging(self, fill_event: OrderFilledEvent) -> bool:
@@ -1813,7 +1813,7 @@ class CrossExchangeMarketMakingStrategy(StrategyPyBase):
                     return True
         return False
 
-    def set_ongoing_hedging(self, fill_records: List[OrderFilledEvent], order_id: str):
+    def set_ongoing_hedging(self, fill_records: list[OrderFilledEvent], order_id: str):
         maker_exchange_trade_ids = tuple(r.exchange_trade_id for _, r in fill_records)
         self._ongoing_hedging[maker_exchange_trade_ids] = order_id
 

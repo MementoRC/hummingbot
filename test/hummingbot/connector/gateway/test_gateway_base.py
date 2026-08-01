@@ -1,6 +1,5 @@
 import asyncio
 from decimal import Decimal
-from typing import List
 import unittest
 
 from hummingbot.connector.gateway.gateway_base import GatewayBase
@@ -49,7 +48,7 @@ class GatewayBaseEventOrderingTest(unittest.TestCase):
         self.connector = MockGatewayConnector()
         self.connector._set_current_timestamp(1640000000.0)
         self._initialize_event_loggers()
-        self.events_received: List[str] = []
+        self.events_received: list[str] = []
 
     def _initialize_event_loggers(self):
         """Set up event loggers to track event order."""

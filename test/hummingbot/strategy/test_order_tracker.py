@@ -1,7 +1,7 @@
 import asyncio
 from decimal import Decimal
 import time
-from typing import List, Union
+from typing import Union
 import unittest
 
 import pandas as pd
@@ -26,7 +26,7 @@ class OrderTrackerUnitTests(unittest.TestCase):
         cls.ev_loop = asyncio.get_event_loop()
         cls.trading_pair = "COINALPHA-HBOT"
 
-        cls.limit_orders: List[LimitOrder] = [
+        cls.limit_orders: list[LimitOrder] = [
             LimitOrder(
                 client_order_id=f"LIMIT//-{i}-{int(time.time() * 1e6)}",
                 trading_pair=cls.trading_pair,
@@ -39,7 +39,7 @@ class OrderTrackerUnitTests(unittest.TestCase):
             )
             for i in range(20)
         ]
-        cls.market_orders: List[MarketOrder] = [
+        cls.market_orders: list[MarketOrder] = [
             MarketOrder(
                 order_id=f"MARKET//-{i}-{int(time.time() * 1e3)}",
                 trading_pair=cls.trading_pair,

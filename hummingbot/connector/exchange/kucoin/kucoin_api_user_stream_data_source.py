@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.exchange.kucoin import kucoin_constants as CONSTANTS, kucoin_web_utils as web_utils
 from hummingbot.connector.exchange.kucoin.kucoin_auth import KucoinAuth
@@ -14,12 +16,12 @@ if TYPE_CHECKING:
 
 
 class KucoinAPIUserStreamDataSource(UserStreamTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
         auth: KucoinAuth,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "KucoinExchange",
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -100,7 +102,7 @@ class KucoinAPIUserStreamDataSource(UserStreamTrackerDataSource):
                 self._last_ws_message_sent_timestamp = self._time()
                 await websocket_assistant.send(request=ping_request)
 
-    async def _process_event_message(self, event_message: Dict[str, Any], queue: asyncio.Queue):
+    async def _process_event_message(self, event_message: dict[str, Any], queue: asyncio.Queue):
         if (
             len(event_message) > 0
             and event_message.get("type") == "message"

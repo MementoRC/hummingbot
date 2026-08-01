@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import logging
-from typing import Dict, List, Optional, Union
+from typing import Dict, Union
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.common import OrderType, PositionAction, PositionMode, PriceType, TradeType
@@ -70,11 +72,11 @@ class PositionExecutor(ExecutorBase):
         self.trading_rules = self.get_trading_rules(self.config.connector_name, self.config.trading_pair)
 
         # Order tracking
-        self._open_order: Optional[TrackedOrder] = None
-        self._close_order: Optional[TrackedOrder] = None
-        self._take_profit_limit_order: Optional[TrackedOrder] = None
-        self._failed_orders: List[TrackedOrder] = []
-        self._trailing_stop_trigger_pct: Optional[Decimal] = None
+        self._open_order: TrackedOrder | None = None
+        self._close_order: TrackedOrder | None = None
+        self._take_profit_limit_order: TrackedOrder | None = None
+        self._failed_orders: list[TrackedOrder] = []
+        self._trailing_stop_trigger_pct: Decimal | None = None
 
         self._total_executed_amount_backup: Decimal = Decimal("0")
 
@@ -304,7 +306,7 @@ class PositionExecutor(ExecutorBase):
         )
 
     @property
-    def end_time(self) -> Optional[float]:
+    def end_time(self) -> float | None:
         """
         Calculate the end time of the position based on the time limit
 

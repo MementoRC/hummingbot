@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import re
-from typing import Callable, Dict, NamedTuple, Optional, Tuple
+from typing import Callable, Dict, NamedTuple, Tuple
 
 import hummingbot.connector.exchange.coinbase_advanced_trade.coinbase_advanced_trade_constants as constants
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
@@ -56,11 +58,11 @@ def endpoint_from_url(path_url: str, domain: str = constants.DEFAULT_DOMAIN) -> 
 
 
 def build_api_factory(
-    throttler: Optional[AsyncThrottler] = None,
-    time_synchronizer: Optional[TimeSynchronizer] = None,
+    throttler: AsyncThrottler | None = None,
+    time_synchronizer: TimeSynchronizer | None = None,
     domain: str = constants.DEFAULT_DOMAIN,
-    time_provider: Optional[Callable] = None,
-    auth: Optional[AuthBase] = None,
+    time_provider: Callable | None = None,
+    auth: AuthBase | None = None,
 ) -> WebAssistantsFactory:
     throttler = throttler or create_throttler()
     time_synchronizer = time_synchronizer or TimeSynchronizer()
@@ -88,7 +90,7 @@ def create_throttler() -> AsyncThrottler:
 
 
 async def get_current_server_time_s(
-    throttler: Optional[AsyncThrottler] = None,
+    throttler: AsyncThrottler | None = None,
     domain: str = constants.DEFAULT_DOMAIN,
 ) -> float:
     """
@@ -114,14 +116,14 @@ async def get_current_server_time_s(
 
 
 async def get_current_server_time(
-    throttler: Optional[AsyncThrottler] = None,
+    throttler: AsyncThrottler | None = None,
     domain: str = constants.DEFAULT_DOMAIN,
 ) -> float:
     return await get_current_server_time_s(throttler=throttler, domain=domain)
 
 
 async def get_current_server_time_ms(
-    throttler: Optional[AsyncThrottler] = None,
+    throttler: AsyncThrottler | None = None,
     domain: str = constants.DEFAULT_DOMAIN,
 ) -> int:
     server_time_s = await get_current_server_time_s(throttler=throttler, domain=domain)

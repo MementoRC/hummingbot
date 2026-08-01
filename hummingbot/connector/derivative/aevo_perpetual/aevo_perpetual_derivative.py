@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import random
 import time
-from typing import Any, AsyncIterable, Dict, List, Optional, Tuple
+from typing import Any, AsyncIterable, List
 
 from bidict import bidict
 
@@ -41,13 +43,13 @@ class AevoPerpetualDerivative(PerpetualDerivativePyBase):
 
     def __init__(
         self,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
         aevo_perpetual_api_key: str = None,
         aevo_perpetual_api_secret: str = None,
         aevo_perpetual_signing_key: str = None,
         aevo_perpetual_account_address: str = None,
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
@@ -60,8 +62,8 @@ class AevoPerpetualDerivative(PerpetualDerivativePyBase):
         self._domain = domain
         self._position_mode = None
         self._last_trade_history_timestamp = None
-        self._instrument_ids: Dict[str, int] = {}
-        self._instrument_names: Dict[str, str] = {}
+        self._instrument_ids: dict[str, int] = {}
+        self._instrument_names: dict[str, str] = {}
         super().__init__(balance_asset_limit, rate_limits_share_pct)
 
     @property
@@ -69,7 +71,7 @@ class AevoPerpetualDerivative(PerpetualDerivativePyBase):
         return self._domain
 
     @property
-    def authenticator(self) -> Optional[AevoPerpetualAuth]:
+    def authenticator(self) -> AevoPerpetualAuth | None:
         if self._api_key and self._api_secret and self._signing_key and self._account_address:
             return AevoPerpetualAuth(
                 api_key=self._api_key,
@@ -81,7 +83,7 @@ class AevoPerpetualDerivative(PerpetualDerivativePyBase):
         return None
 
     @property
-    def rate_limits_rules(self) -> List[RateLimit]:
+    def rate_limits_rules(self) -> list[RateLimit]:
         return CONSTANTS.RATE_LIMITS
 
     @property
@@ -141,16 +143,16 @@ class AevoPerpetualDerivative(PerpetualDerivativePyBase):
                 return fallback_price
         return price
 
-    def supported_order_types(self) -> List[OrderType]:
+    def supported_order_types(self) -> list[OrderType]:
         return [OrderType.LIMIT, OrderType.LIMIT_MAKER, OrderType.MARKET]
 
-    async def get_all_pairs_prices(self) -> List[Dict[str, str]]:
+    async def get_all_pairs_prices(self) -> list[dict[str, str]]:
         pairs_data = await self._api_get(
             path_url=CONSTANTS.MARKETS_PATH_URL,
             params={"instrument_type": CONSTANTS.PERPETUAL_INSTRUMENT_TYPE},
             limit_id=CONSTANTS.MARKETS_PATH_URL,
         )
-        pairs_prices: List[Dict[str, str]] = []
+        pairs_prices: list[dict[str, str]] = []
 
         for pair_data in pairs_data:
             symbol = pair_data.get("instrument_name")
@@ -211,7 +213,7 @@ class AevoPerpetualDerivative(PerpetualDerivativePyBase):
         amount: Decimal,
         trade_type: TradeType,
         order_type: OrderType,
-        price: Optional[Decimal],
+        price: Decimal | None,
         exception: Exception,
         **kwargs,
     ):
@@ -268,7 +270,7 @@ class AevoPerpetualDerivative(PerpetualDerivativePyBase):
         )
         return exchange_info
 
-    def _get_funding_price_fallback(self, trading_pair: str) -> Optional[Decimal]:
+    def _get_funding_price_fallback(self, trading_pair: str) -> Decimal | None:
         try:
             funding_info = self.get_funding_info(trading_pair)
         except KeyError:
@@ -308,8 +310,8 @@ class AevoPerpetualDerivative(PerpetualDerivativePyBase):
             self._instrument_names[trading_pair] = exchange_symbol
         self._set_trading_pair_symbol_map(mapping)
 
-    async def _format_trading_rules(self, exchange_info_dict: List) -> List[TradingRule]:
-        return_val: List[TradingRule] = []
+    async def _format_trading_rules(self, exchange_info_dict: List) -> list[TradingRule]:
+        return_val: list[TradingRule] = []
         for market in exchange_info_dict:
             try:
                 if market.get("instrument_type") != CONSTANTS.PERPETUAL_INSTRUMENT_TYPE:
@@ -366,7 +368,7 @@ class AevoPerpetualDerivative(PerpetualDerivativePyBase):
         position_action: PositionAction,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         is_maker = is_maker or False
         fee = build_trade_fee(
@@ -456,7 +458,7 @@ class AevoPerpetualDerivative(PerpetualDerivativePyBase):
         price: Decimal,
         position_action: PositionAction = PositionAction.NIL,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
 
         instrument_id = self._instrument_ids.get(trading_pair)
         if instrument_id is None:
@@ -538,7 +540,7 @@ class AevoPerpetualDerivative(PerpetualDerivativePyBase):
             exchange_order_id=str(order_update.get("order_id")),
         )
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         exchange_order_id = str(order.exchange_order_id)
         if exchange_order_id is None:
             return []
@@ -554,7 +556,7 @@ class AevoPerpetualDerivative(PerpetualDerivativePyBase):
             is_auth_required=True,
             limit_id=CONSTANTS.TRADE_HISTORY_PATH_URL,
         )
-        trade_updates: List[TradeUpdate] = []
+        trade_updates: list[TradeUpdate] = []
         for trade in response.get("trade_history", []):
             if str(trade.get("order_id")) != exchange_order_id:
                 continue
@@ -653,10 +655,10 @@ class AevoPerpetualDerivative(PerpetualDerivativePyBase):
             for key in keys:
                 self._perpetual_trading.remove_position(key)
 
-    async def _get_position_mode(self) -> Optional[PositionMode]:
+    async def _get_position_mode(self) -> PositionMode | None:
         return PositionMode.ONEWAY
 
-    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> Tuple[bool, str]:
+    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> tuple[bool, str]:
         return True, ""
 
     async def _ensure_instrument_id(self, trading_pair: str) -> bool:
@@ -672,7 +674,7 @@ class AevoPerpetualDerivative(PerpetualDerivativePyBase):
             )
         return trading_pair in self._instrument_ids
 
-    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> Tuple[bool, str]:
+    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> tuple[bool, str]:
         if not await self._ensure_instrument_id(trading_pair):
             return False, "Instrument not found"
         instrument_id = self._instrument_ids.get(trading_pair)
@@ -693,7 +695,7 @@ class AevoPerpetualDerivative(PerpetualDerivativePyBase):
         except Exception as exception:
             return False, f"Error setting leverage: {exception}"
 
-    async def _fetch_last_fee_payment(self, trading_pair: str) -> Tuple[int, Decimal, Decimal]:
+    async def _fetch_last_fee_payment(self, trading_pair: str) -> tuple[int, Decimal, Decimal]:
         return 0, Decimal("-1"), Decimal("-1")
 
     async def _user_stream_event_listener(self):
@@ -732,7 +734,7 @@ class AevoPerpetualDerivative(PerpetualDerivativePyBase):
                 self.logger().error("Unexpected error in user stream listener loop.", exc_info=True)
                 await self._sleep(5.0)
 
-    async def _process_position_message(self, position: Dict[str, Any]):
+    async def _process_position_message(self, position: dict[str, Any]):
         if position.get("instrument_type") != CONSTANTS.PERPETUAL_INSTRUMENT_TYPE:
             return
 
@@ -762,7 +764,7 @@ class AevoPerpetualDerivative(PerpetualDerivativePyBase):
         else:
             self._perpetual_trading.remove_position(pos_key)
 
-    async def _process_trade_message(self, trade: Dict[str, Any]):
+    async def _process_trade_message(self, trade: dict[str, Any]):
         exchange_order_id = str(trade.get("order_id", ""))
         tracked_order = self._order_tracker.all_fillable_orders_by_exchange_order_id.get(exchange_order_id)
 
@@ -795,7 +797,7 @@ class AevoPerpetualDerivative(PerpetualDerivativePyBase):
         )
         self._order_tracker.process_trade_update(trade_update)
 
-    def _process_order_message(self, order_msg: Dict[str, Any]):
+    def _process_order_message(self, order_msg: dict[str, Any]):
         exchange_order_id = str(order_msg.get("order_id", ""))
         tracked_order = self._order_tracker.all_updatable_orders_by_exchange_order_id.get(exchange_order_id)
         if not tracked_order:
@@ -812,7 +814,7 @@ class AevoPerpetualDerivative(PerpetualDerivativePyBase):
         )
         self._order_tracker.process_order_update(order_update=order_update)
 
-    async def _iter_user_event_queue(self) -> AsyncIterable[Dict[str, any]]:
+    async def _iter_user_event_queue(self) -> AsyncIterable[dict[str, any]]:
         while True:
             try:
                 yield await self._user_stream_tracker.user_stream.get()

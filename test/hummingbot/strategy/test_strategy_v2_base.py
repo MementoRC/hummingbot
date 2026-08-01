@@ -1,6 +1,5 @@
 import asyncio
 from decimal import Decimal
-from typing import List
 import unittest
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
@@ -526,7 +525,7 @@ class StrategyV2BaseBasicTest(unittest.TestCase):
         self.assertEqual("HBOT", assets[2])
 
     def test_get_market_trading_pair_tuples_basic(self):
-        market_infos: List[MarketTradingPairTuple] = self.strategy.get_market_trading_pair_tuples()
+        market_infos: list[MarketTradingPairTuple] = self.strategy.get_market_trading_pair_tuples()
         self.assertEqual(1, len(market_infos))
         market_info = market_infos[0]
         self.assertEqual(market_info.market, self.connector)

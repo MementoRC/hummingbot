@@ -1,4 +1,6 @@
-from typing import Dict, List, Optional
+from __future__ import annotations
+
+from typing import Dict
 
 import numpy as np
 import pandas as pd
@@ -16,17 +18,17 @@ class BacktestingResult:
     def __init__(self, backtesting_result: Dict, controller_config: ControllerConfigBase):
         self.processed_data: pd.DataFrame = backtesting_result["processed_data"]["features"]
         self.results: Dict = backtesting_result["results"]
-        self.executors: List[ExecutorInfo] = backtesting_result["executors"]
-        self.position_holds: List[BacktestPositionHold] = backtesting_result.get("position_holds", [])
-        self.position_held_timeseries: List[Dict] = backtesting_result.get("position_held_timeseries", [])
-        self.pnl_timeseries: List[Dict] = backtesting_result.get("pnl_timeseries", [])
+        self.executors: list[ExecutorInfo] = backtesting_result["executors"]
+        self.position_holds: list[BacktestPositionHold] = backtesting_result.get("position_holds", [])
+        self.position_held_timeseries: list[Dict] = backtesting_result.get("position_held_timeseries", [])
+        self.pnl_timeseries: list[Dict] = backtesting_result.get("pnl_timeseries", [])
         self.controller_config = controller_config
 
     # ------------------------------------------------------------------
     # Summary
     # ------------------------------------------------------------------
 
-    def get_results_summary(self, results: Optional[Dict] = None) -> str:
+    def get_results_summary(self, results: Dict | None = None) -> str:
         if results is None:
             results = self.results
         net_pnl_quote = results["net_pnl_quote"]
