@@ -1,6 +1,6 @@
 from collections import defaultdict
 from decimal import Decimal
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, Optional, Union
 
 from pydantic import Field, field_validator
 from pydantic_core.core_schema import ValidationInfo
@@ -36,10 +36,10 @@ class PMMisterConfig(ControllerConfigBase):
     target_base_pct: Decimal = Field(default=Decimal("0.5"), json_schema_extra={"is_updatable": True})
     min_base_pct: Decimal = Field(default=Decimal("0.3"), json_schema_extra={"is_updatable": True})
     max_base_pct: Decimal = Field(default=Decimal("0.7"), json_schema_extra={"is_updatable": True})
-    buy_spreads: List[float] = Field(default="0.0005", json_schema_extra={"is_updatable": True})
-    sell_spreads: List[float] = Field(default="0.0005", json_schema_extra={"is_updatable": True})
-    buy_amounts_pct: Union[List[Decimal], None] = Field(default="1", json_schema_extra={"is_updatable": True})
-    sell_amounts_pct: Union[List[Decimal], None] = Field(default="1", json_schema_extra={"is_updatable": True})
+    buy_spreads: list[float] = Field(default="0.0005", json_schema_extra={"is_updatable": True})
+    sell_spreads: list[float] = Field(default="0.0005", json_schema_extra={"is_updatable": True})
+    buy_amounts_pct: Union[list[Decimal], None] = Field(default="1", json_schema_extra={"is_updatable": True})
+    sell_amounts_pct: Union[list[Decimal], None] = Field(default="1", json_schema_extra={"is_updatable": True})
     executor_refresh_time: int = Field(default=30, json_schema_extra={"is_updatable": True})
 
     # Enhanced timing parameters
@@ -230,8 +230,8 @@ class PMMisterConfig(ControllerConfigBase):
     def update_parameters(
         self,
         trade_type: TradeType,
-        new_spreads: Union[List[float], str],
-        new_amounts_pct: Optional[Union[List[int], str]] = None,
+        new_spreads: Union[list[float], str],
+        new_amounts_pct: Optional[Union[list[int], str]] = None,
     ):
         spreads_field = "buy_spreads" if trade_type == TradeType.BUY else "sell_spreads"
         amounts_pct_field = "buy_amounts_pct" if trade_type == TradeType.BUY else "sell_amounts_pct"
@@ -246,7 +246,7 @@ class PMMisterConfig(ControllerConfigBase):
         else:
             setattr(self, amounts_pct_field, [1 for _ in getattr(self, spreads_field)])
 
-    def get_spreads_and_amounts_in_quote(self, trade_type: TradeType) -> Tuple[List[float], List[float]]:
+    def get_spreads_and_amounts_in_quote(self, trade_type: TradeType) -> tuple[list[float], list[float]]:
         buy_amounts_pct = getattr(self, "buy_amounts_pct")
         sell_amounts_pct = getattr(self, "sell_amounts_pct")
 
@@ -291,6 +291,7 @@ class PMMister(ControllerBase):
         self._global_close_phase: Optional[str] = None  # None | "stopping" | "closing"
         self._global_close_side: Optional[TradeType] = None  # Side of the position when TP/SL triggered
         self._global_close_retries: int = 0  # Count how many times PHASE 2 has created a close executor
+        self._global_close_cooling_down: bool = False  # True after a successful close until processed_data confirms 0
 
     def _verify_position_mode(self) -> bool:
         """Check that the connector's position mode matches the config. Blocks trading until confirmed."""
@@ -356,7 +357,7 @@ class PMMister(ControllerBase):
 
     # ── Executor actions (called by framework) ────────────────────────────
 
-    def determine_executor_actions(self) -> List[ExecutorAction]:
+    def determine_executor_actions(self) -> list[ExecutorAction]:
         # Guard: verify position mode matches config before operating
         if not self._verify_position_mode():
             return []
@@ -393,7 +394,7 @@ class PMMister(ControllerBase):
             return self.config.target_base_pct
         return self.config.max_base_pct
 
-    def _get_exchange_position(self) -> Tuple[Decimal, Optional[TradeType]]:
+    def _get_exchange_position(self) -> tuple[Decimal, Optional[TradeType]]:
         """Read the REAL position from the exchange connector (WebSocket-updated, no orchestrator delay).
         Returns (abs_amount, side) where side is BUY for long, SELL for short, None if no position."""
         try:
@@ -414,7 +415,7 @@ class PMMister(ControllerBase):
             self.logger().warning(f"Failed to read exchange position: {e}")
             return Decimal("0"), None
 
-    def _check_global_tp_sl(self) -> List[ExecutorAction]:
+    def _check_global_tp_sl(self) -> list[ExecutorAction]:
         """Check global TP/SL using a two-phase approach:
         Phase 1 (stopping): Stop all active executors with keep_position=True.
         Phase 2 (closing): Once no active executors remain, close the actual position."""
@@ -462,6 +463,7 @@ class PMMister(ControllerBase):
                 self._global_close_phase = None
                 self._global_close_side = None
                 self._global_close_retries = 0
+                self._global_close_cooling_down = True
                 return []
 
             # SAFETY: Detect position side flip — if position flipped direction, abort close
@@ -504,7 +506,19 @@ class PMMister(ControllerBase):
         position_amount = self.processed_data.get("position_amount", Decimal("0"))
 
         if position_amount == Decimal("0"):
+            self._global_close_cooling_down = False
             return []
+
+        # After a successful close, processed_data can lag behind the exchange by one tick.
+        # Suppress re-triggering until the exchange also confirms no position remains.
+        # If the exchange already shows a new non-zero position, a genuinely new position
+        # has opened and the cooldown no longer applies.
+        if self._global_close_cooling_down:
+            exchange_amount, _ = self._get_exchange_position()
+            if exchange_amount > Decimal("0"):
+                self._global_close_cooling_down = False
+            else:
+                return []
 
         triggered = False
         trigger_reason = ""
@@ -613,7 +627,7 @@ class PMMister(ControllerBase):
             return
 
         # -- 1. Group executors by level_id in a single pass -----------------
-        executors_by_level: Dict[str, list] = defaultdict(list)
+        executors_by_level: dict[str, list] = defaultdict(list)
         for e in self.executors_info:
             level_id = e.custom_info.get("level_id")
             if level_id:
@@ -628,8 +642,8 @@ class PMMister(ControllerBase):
         all_level_ids.update(executors_by_level.keys())
 
         # -- 2. Per-level analysis + blocking conditions ----------------------
-        levels_analysis: Dict[str, Dict] = {}
-        level_conditions: Dict[str, Dict] = {}
+        levels_analysis: dict[str, Dict] = {}
+        level_conditions: dict[str, Dict] = {}
         working_levels = set()
 
         cooldown_status = {
@@ -670,7 +684,7 @@ class PMMister(ControllerBase):
             is_buy = level_id.startswith("buy")
             level = self.get_level_from_level_id(level_id)
 
-            blocking: List[str] = []
+            blocking: list[str] = []
 
             # a) Has open (not yet filled) executors
             if active_not_trading:
@@ -955,7 +969,7 @@ class PMMister(ControllerBase):
 
     # ── Create / stop proposals ───────────────────────────────────────────
 
-    def create_actions_proposal(self) -> List[ExecutorAction]:
+    def create_actions_proposal(self) -> list[ExecutorAction]:
         create_actions = []
 
         levels_to_execute = self.processed_data.get("levels_to_execute", [])
@@ -1021,7 +1035,7 @@ class PMMister(ControllerBase):
 
         return create_actions
 
-    def stop_actions_proposal(self) -> List[ExecutorAction]:
+    def stop_actions_proposal(self) -> list[ExecutorAction]:
         stop_actions = []
 
         for executor in self.processed_data.get("executors_to_refresh", []):
@@ -1038,7 +1052,7 @@ class PMMister(ControllerBase):
 
     # ── Helpers ───────────────────────────────────────────────────────────
 
-    def _get_executable_levels(self, working_levels: set) -> List[str]:
+    def _get_executable_levels(self, working_levels: set) -> list[str]:
         """Get levels that should be executed, applying position constraints."""
         buy_missing = [f"buy_{i}" for i in range(len(self.config.buy_spreads)) if f"buy_{i}" not in working_levels]
         sell_missing = [f"sell_{i}" for i in range(len(self.config.sell_spreads)) if f"sell_{i}" not in working_levels]
@@ -1192,7 +1206,7 @@ class PMMister(ControllerBase):
 
     # ── Status display ────────────────────────────────────────────────────
 
-    def to_format_status(self) -> List[str]:
+    def to_format_status(self) -> list[str]:
         from decimal import Decimal
         from itertools import zip_longest
 
@@ -1438,7 +1452,7 @@ class PMMister(ControllerBase):
         progress = cooldown_data.get("progress_pct", Decimal("0"))
         return f"{remaining:.1f}s ({progress:.0%})"
 
-    def _format_level_conditions(self, level_conditions: Dict, inner_width: int) -> List[str]:
+    def _format_level_conditions(self, level_conditions: Dict, inner_width: int) -> list[str]:
         lines = []
         buy_levels = {k: v for k, v in level_conditions.items() if v.get("trade_type") == "BUY"}
         sell_levels = {k: v for k, v in level_conditions.items() if v.get("trade_type") == "SELL"}
@@ -1475,7 +1489,7 @@ class PMMister(ControllerBase):
 
     def _format_cooldown_bars(
         self, buy_cooldown: Dict, sell_cooldown: Dict, bar_width: int, inner_width: int
-    ) -> List[str]:
+    ) -> list[str]:
         lines = []
         if buy_cooldown.get("active"):
             progress = float(buy_cooldown.get("progress_pct", 0))
@@ -1489,7 +1503,7 @@ class PMMister(ControllerBase):
             lines.append(f"│ SELL Cooldown:  [{bar}] {remaining:.1f}s remaining │")
         return lines
 
-    def _format_effectivization_bars(self, effectivization: Dict, bar_width: int, inner_width: int) -> List[str]:
+    def _format_effectivization_bars(self, effectivization: Dict, bar_width: int, inner_width: int) -> list[str]:
         lines = []
         hanging_executors = effectivization.get("hanging_executors", [])
         if not hanging_executors:
@@ -1514,7 +1528,7 @@ class PMMister(ControllerBase):
 
         return lines
 
-    def _format_refresh_bars(self, refresh_tracking: Dict, bar_width: int, inner_width: int) -> List[str]:
+    def _format_refresh_bars(self, refresh_tracking: Dict, bar_width: int, inner_width: int) -> list[str]:
         lines = []
         refresh_candidates = refresh_tracking.get("refresh_candidates", [])
         if not refresh_candidates:
@@ -1567,7 +1581,7 @@ class PMMister(ControllerBase):
         pnl: Decimal,
         bar_width: int,
         inner_width: int,
-    ) -> List[str]:
+    ) -> list[str]:
         lines = []
 
         filled_width = int(float(base_pct) * bar_width)
@@ -1661,7 +1675,7 @@ class PMMister(ControllerBase):
 
     def _format_price_graph(
         self, current_price: Decimal, breakeven_price: Optional[Decimal], inner_width: int
-    ) -> List[str]:
+    ) -> list[str]:
         lines = []
 
         if len(self.price_history) < 10:

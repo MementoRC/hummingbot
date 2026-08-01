@@ -1,7 +1,6 @@
+from decimal import Decimal
 import os
 import time
-from decimal import Decimal
-from typing import Dict
 
 from pydantic import Field
 
@@ -77,7 +76,7 @@ class XRPLTriggeredLiquidity(StrategyV2Base):
     It uses a connector to get the current price and manage liquidity in AMM Pools
     """
 
-    def __init__(self, connectors: Dict[str, ConnectorBase], config: XRPLTriggeredLiquidityConfig):
+    def __init__(self, connectors: dict[str, ConnectorBase], config: XRPLTriggeredLiquidityConfig):
         super().__init__(connectors, config)
         self.config = config
         self.exchange = "xrpl"
@@ -185,7 +184,7 @@ class XRPLTriggeredLiquidity(StrategyV2Base):
                 await self.check_position_balance()
             else:
                 self.logger().info(
-                    f"Current price: {self.last_price}, Target: {self.config.target_price}, " f"Condition not met yet."
+                    f"Current price: {self.last_price}, Target: {self.config.target_price}, Condition not met yet."
                 )
                 self.position_opening = False
 

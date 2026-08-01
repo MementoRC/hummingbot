@@ -149,11 +149,11 @@ rust-build = { cmd = "maturin develop --manifest-path hummingbot/rust/Cargo.toml
 test = { cmd = "pytest test", depends-on = ["build"] }
 test-unit = { cmd = "pytest test/hummingbot", depends-on = ["build"] }
 test-fast = "pytest --timeout=30 --tb=short -q"
-lint = "ruff check hummingbot test controllers scripts"
+lint = "ruff check hummingbot test controllers scripts bin"
 lint-boundaries = "lint-imports"
 lint-cython = "cython-lint hummingbot"
-format = { cmd = "ruff format hummingbot test controllers scripts" }
-format-check = "ruff format --check hummingbot test controllers scripts"
+format = { cmd = "ruff format hummingbot test controllers scripts bin" }
+format-check = "ruff format --check hummingbot test controllers scripts bin"
 type-check = "mypy hummingbot"
 security-scan = "bandit -c pyproject.toml -r hummingbot/"
 dependency-scan = { cmd = "pip-audit --strict --desc on", depends-on = ["install-dev"] }
@@ -172,7 +172,7 @@ migrate-pytest-dry = { cmd = "python $HOME/PycharmProjects/refactor-applications
 [tool.ruff]
 line-length = 120
 target-version = "py312"
-include = ["hummingbot/**/*.py", "test/**/*.py"]
+include = ["hummingbot/**/*.py", "hummingbot/**/*.pyi", "test/**/*.py", "controllers/**/*.py", "scripts/**/*.py", "bin/**/*.py", "bin/hbot"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]

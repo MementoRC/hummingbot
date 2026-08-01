@@ -207,7 +207,6 @@ class Gateway(GatewayBase):
         try:
             resp: dict[str, Any] = await self._get_gateway_instance().quote_swap(
                 network=self.network,
-                chain=self.chain,
                 dex=dex,
                 trading_type=trading_type,
                 base_asset=base,
@@ -317,7 +316,6 @@ class Gateway(GatewayBase):
                     side=trade_type,
                     amount=amount,
                     network=self.network,
-                    chain=self.chain,
                     wallet_address=self.address,
                     pool_address=pool_address,
                     slippage_pct=slippage_pct,
