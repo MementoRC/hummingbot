@@ -77,6 +77,13 @@ class HummingbotApplication(*commands):
         self.placeholder_mode = False
         self._app_warnings: Deque[ApplicationWarning] = deque()
 
+        # Wire hb-logger's callback API so HummingbotLogger.notify()/network()
+        # route to this application instance (MementoRC/hb-logger#1 Phase 0
+        # callback-registration refactor). Without this, notify()/network()
+        # silently no-op beyond standard logging.
+        HummingbotLogger.register_notify_handler(self.notify)
+        HummingbotLogger.register_network_handler(self.add_application_warning)
+
         # MQTT management
         self._mqtt: MQTTGateway | None = None
 
