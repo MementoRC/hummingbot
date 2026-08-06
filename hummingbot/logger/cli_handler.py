@@ -2,11 +2,11 @@
 
 from datetime import datetime
 from logging import StreamHandler
-from typing import Optional
+from typing import TextIO
 
 
-class CLIHandler(StreamHandler):
-    def formatException(self, _) -> Optional[str]:
+class CLIHandler(StreamHandler[TextIO]):
+    def formatException(self, _) -> str | None:
         return None
 
     def format(self, record) -> str:
