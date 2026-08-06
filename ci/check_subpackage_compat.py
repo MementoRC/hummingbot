@@ -29,6 +29,7 @@ SUBPACKAGE_IMPORTS = {
     "rate-oracle": "rate_oracle",
     "remote-iface": "remote_iface",
     "strategy-framework": "strategy_framework",
+    "user-stream-tracker": "user_stream_tracker",
     "web-assistant": "web_assistant",
 }
 

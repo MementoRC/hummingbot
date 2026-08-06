@@ -142,7 +142,7 @@ ci = { features = ["ci", "dev"], solve-group = "default" }
 
 [tool.pixi.tasks]
 # Sub-package editable install. HUMMINGBOT_SKIP_CYTHON=1 skips Cython compilation during pip install -e (sub-packages don't ship Cython extensions).
-install-subpackages = { cmd = "python -m pip install --no-deps --no-build-isolation -e sub-packages/async-utils -e sub-packages/candles-feed -e sub-packages/connector-utils -e sub-packages/data-type-primitives -e sub-packages/event-bus -e sub-packages/liquidations-feed -e sub-packages/logger -e sub-packages/market-connector -e sub-packages/market-data -e sub-packages/market-simulator -e sub-packages/rate-oracle -e sub-packages/remote-iface -e sub-packages/strategy-framework -e sub-packages/web-assistant", env = { HUMMINGBOT_SKIP_CYTHON = "1" } }
+install-subpackages = { cmd = "python -m pip install --no-deps --no-build-isolation -e sub-packages/async-utils -e sub-packages/candles-feed -e sub-packages/connector-utils -e sub-packages/data-type-primitives -e sub-packages/event-bus -e sub-packages/liquidations-feed -e sub-packages/logger -e sub-packages/market-connector -e sub-packages/market-data -e sub-packages/market-simulator -e sub-packages/rate-oracle -e sub-packages/remote-iface -e sub-packages/strategy-framework -e sub-packages/user-stream-tracker -e sub-packages/web-assistant", env = { HUMMINGBOT_SKIP_CYTHON = "1" } }
 install-dev = { depends-on = ["install-subpackages"], cmd = "python -m pip install --no-deps --no-build-isolation -e ." }
 build = { cmd = "python setup.py build_ext --inplace", depends-on = ["install-dev"] }
 rust-build = { cmd = "maturin develop --manifest-path hummingbot/rust/Cargo.toml", depends-on = ["install-dev"] }

@@ -25,6 +25,7 @@ root_packages =
     rate_oracle
     remote_iface
     strategy_framework
+    user_stream_tracker
     web_assistant
 
 # ---------------------------------------------------------------------------
@@ -197,10 +198,17 @@ forbidden_modules =
 # L2->L3 (hummingbot) boundary is NOT enforced here — it stays with the per-package
 # `forbidden` contracts above (hb_compat carve-outs).
 
+# user_stream_tracker sits ABOVE the L2 row rather than inside it: it consumes
+# web_assistant (WSAssistant) plus the L0 leaves async_utils/logger, all strictly
+# downward. Modelled as its own layer instead of an ignore_imports carve-out so the
+# contract still ENFORCES the direction. If web_assistant later gains several more
+# consumers, promote web_assistant to its own lower layer instead (hb-user-stream-tracker#1).
+
 [importlinter:contract:adr-0001-layers]
 name = ADR 0001 sub-package layering (downward-only)
 type = layers
 layers =
+    user_stream_tracker
     candles_feed | liquidations_feed | rate_oracle | market_data | market_connector | market_simulator | web_assistant | remote_iface
     strategy_framework.primitives | data_type_primitives | event_bus | logger | async_utils | connector_utils
 # hb_compat isolation shim: logger is a real pinned dep of async_utils (hb-async-utils#14).

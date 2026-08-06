@@ -54,3 +54,7 @@
 	path = sub-packages/logger
 	url = https://github.com/MementoRC/hb-logger.git
 	branch = development
+[submodule "sub-packages/user-stream-tracker"]
+	path = sub-packages/user-stream-tracker
+	url = https://github.com/MementoRC/hb-user-stream-tracker.git
+	branch = development
