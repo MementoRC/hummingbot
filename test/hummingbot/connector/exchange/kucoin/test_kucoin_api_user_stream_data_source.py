@@ -273,7 +273,6 @@ class TestKucoinAPIUserStreamDataSource(IsolatedAsyncioWrapperTestCase):
     async def test_listen_for_user_stream_sends_ping_message_before_ping_interval_finishes(
         self, mock_api, time_mock, id_mock, ws_connect_mock
     ):
-
         id_mock.side_effect = [1, 2, 3, 4]
         time_mock.side_effect = [1000, 1100, 1101, 1102]  # Simulate first ping interval is already due
         url = web_utils.private_rest_url(path_url=CONSTANTS.PRIVATE_WS_DATA_PATH_URL)

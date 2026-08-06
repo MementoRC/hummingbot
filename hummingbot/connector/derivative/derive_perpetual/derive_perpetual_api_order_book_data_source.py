@@ -246,7 +246,6 @@ class DerivePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             return channel
 
     async def _parse_funding_info_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
-
         data: dict[str, Any] = raw_message["params"]["data"]
         # ticker_slim.ETH-PERP.1000
 

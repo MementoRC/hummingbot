@@ -105,7 +105,6 @@ class BitgetPerpetualCandles(CandlesBase):
         end_time: int | None = None,
         limit: int | None = CONSTANTS.MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST,
     ) -> dict:
-
         params = {
             "symbol": self._ex_trading_pair,
             "productType": self.product_type_associated_to_trading_pair(self._trading_pair),

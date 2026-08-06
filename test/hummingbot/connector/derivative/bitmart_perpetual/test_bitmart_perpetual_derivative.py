@@ -627,7 +627,6 @@ class BitmartPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         "hummingbot.connector.derivative.bitmart_perpetual.bitmart_perpetual_derivative.BitmartPerpetualDerivative.get_price_by_type"
     )
     def test_account_position_updated_on_stream_event(self, mock_api, mock_price):
-
         self._simulate_trading_rules_initialized()
         url = web_utils.private_rest_url(CONSTANTS.POSITION_INFORMATION_URL, domain=self.domain)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
