@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 import os
-from typing import Dict, Optional
+from typing import Optional
 
 import pandas as pd
 from pydantic import Field
@@ -50,7 +50,7 @@ class AMMDataFeedExample(StrategyV2Base):
     This example shows how to use the AmmGatewayDataFeed to fetch prices from a DEX
     """
 
-    def __init__(self, connectors: Dict[str, ConnectorBase], config: AMMDataFeedConfig):
+    def __init__(self, connectors: dict[str, ConnectorBase], config: AMMDataFeedConfig):
         super().__init__(connectors, config)
         self.config = config
         self.price_history = []

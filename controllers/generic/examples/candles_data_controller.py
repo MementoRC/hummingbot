@@ -1,5 +1,3 @@
-from typing import List
-
 import pandas as pd
 import pandas_ta as ta  # noqa: F401
 from pydantic import Field, field_validator
@@ -14,7 +12,7 @@ class CandlesDataControllerConfig(ControllerConfigBase):
     controller_name: str = "examples.candles_data_controller"
 
     # Candles configuration - user can modify these
-    candles_config: List[CandlesConfig] = Field(
+    candles_config: list[CandlesConfig] = Field(
         default_factory=lambda: [
             CandlesConfig(connector="binance", trading_pair="ETH-USDT", interval="1m", max_records=1000),
             CandlesConfig(connector="binance", trading_pair="ETH-USDT", interval="1h", max_records=1000),
@@ -28,7 +26,7 @@ class CandlesDataControllerConfig(ControllerConfigBase):
 
     @field_validator("candles_config", mode="before")
     @classmethod
-    def parse_candles_config(cls, v) -> List[CandlesConfig]:
+    def parse_candles_config(cls, v) -> list[CandlesConfig]:
         # Handle string input (user provided)
         if isinstance(v, str):
             return cls.parse_candles_config_str(v)
@@ -46,7 +44,7 @@ class CandlesDataControllerConfig(ControllerConfigBase):
         return v
 
     @staticmethod
-    def parse_candles_config_str(v: str) -> List[CandlesConfig]:
+    def parse_candles_config_str(v: str) -> list[CandlesConfig]:
         configs = []
         if v.strip():
             entries = v.split(":")
@@ -127,7 +125,7 @@ class CandlesDataController(ControllerBase):
         # This controller is for data monitoring only, no trading actions
         return []
 
-    def to_format_status(self) -> List[str]:
+    def to_format_status(self) -> list[str]:
         lines = []
         lines.extend(["\n" + "=" * 100])
         lines.extend(["                              CANDLES DATA CONTROLLER"])
