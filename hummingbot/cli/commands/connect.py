@@ -5,10 +5,11 @@ Secrets are NEVER taken as flags. Supply them either interactively (hidden promp
 automation, as a JSON object on stdin (``--keys-stdin``). Keys are encrypted with the keystore
 password via ``Security.update_secure_config`` and written to ``conf/connectors/<connector>.yml``.
 """
+
 import asyncio
 import getpass
 import sys
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 import typer
 
@@ -19,14 +20,18 @@ if TYPE_CHECKING:
     from hummingbot.client.config.config_helpers import ClientConfigAdapter
 
 
-def _connectable_exchanges() -> List[str]:
+def _connectable_exchanges() -> list[str]:
     from hummingbot.client.settings import connectable_exchange_names
+
     return sorted(connectable_exchange_names())
 
 
-def _connect_key_fields(cfg: "ClientConfigAdapter") -> List[Any]:
-    return [item for item in cfg.traverse(secure=False)
-            if item.client_field_data is not None and item.client_field_data.is_connect_key]
+def _connect_key_fields(cfg: "ClientConfigAdapter") -> list[Any]:
+    return [
+        item
+        for item in cfg.traverse(secure=False)
+        if item.client_field_data is not None and item.client_field_data.is_connect_key
+    ]
 
 
 def _prompt_text(item: Any, cfg: "ClientConfigAdapter") -> str:
@@ -42,8 +47,11 @@ def _prompt_text(item: Any, cfg: "ClientConfigAdapter") -> str:
 def _list_all() -> None:
     """Static checklist of every connectable connector (no password / network needed)."""
     from hummingbot.client.config.security import Security
-    rows = [{"connector": name, "keys_added": Security.connector_config_file_exists(name)}
-            for name in _connectable_exchanges()]
+
+    rows = [
+        {"connector": name, "keys_added": Security.connector_config_file_exists(name)}
+        for name in _connectable_exchanges()
+    ]
     echo(render_table(rows, columns=["connector", "keys_added"], title="connectable connectors"))
 
 
@@ -52,10 +60,13 @@ def _show_connections(ccm, password_stdin: bool) -> None:
     from hummingbot.client.config.config_crypt import ETHKeyFileSecretManger
     from hummingbot.client.config.security import Security
     from hummingbot.user.user_balances import UserBalances
+
     keyed = [name for name in _connectable_exchanges() if Security.connector_config_file_exists(name)]
     if not keyed:
-        echo("No connectors connected. Run `hbot connect <connector>` to add keys, "
-             "or `hbot connect --all` to list connectable connectors.")
+        echo(
+            "No connectors connected. Run `hbot connect <connector>` to add keys, "
+            "or `hbot connect --all` to list connectable connectors."
+        )
         return
 
     password = resolve_password(password_stdin=password_stdin)
@@ -65,8 +76,9 @@ def _show_connections(ccm, password_stdin: bool) -> None:
     typer.echo("Testing connections, please wait...", err=True)
     timeout = float(ccm.commands_timeout.other_commands_timeout)
     try:
-        err_msgs = asyncio.run(asyncio.wait_for(
-            UserBalances.instance().update_exchanges(ccm, reconnect=True, exchanges=keyed), timeout))
+        err_msgs = asyncio.run(
+            asyncio.wait_for(UserBalances.instance().update_exchanges(ccm, reconnect=True, exchanges=keyed), timeout)
+        )
     except asyncio.TimeoutError:
         fail("network timeout testing connections", ExitCode.TIMEOUT)
 
@@ -74,14 +86,20 @@ def _show_connections(ccm, password_stdin: bool) -> None:
     for ex in keyed:
         err = err_msgs.get(ex)
         rows.append({"connector": ex, "keys_added": True, "keys_confirmed": err is None, "error": err})
-    echo(render_table(rows, columns=["connector", "keys_added", "keys_confirmed", "error"],
-                      title="connections", max_widths={"error": 100}))
+    echo(
+        render_table(
+            rows,
+            columns=["connector", "keys_added", "keys_confirmed", "error"],
+            title="connections",
+            max_widths={"error": 100},
+        )
+    )
 
 
-def _collect_key_values(fields: List[Any], cfg: "ClientConfigAdapter",
-                        keys_stdin: bool) -> Dict[str, str]:
+def _collect_key_values(fields: list[Any], cfg: "ClientConfigAdapter", keys_stdin: bool) -> dict[str, str]:
     if keys_stdin or not sys.stdin.isatty():
         from hummingbot.cli.commands._common import read_json_object_from_stdin
+
         payload = read_json_object_from_stdin()
         values, missing = {}, []
         for f in fields:
@@ -90,15 +108,13 @@ def _collect_key_values(fields: List[Any], cfg: "ClientConfigAdapter",
             else:
                 missing.append(f.attr)
         if missing:
-            fail(f"missing required fields on stdin: {', '.join(missing)}",
-                 ExitCode.CONFIG_ERROR)
+            fail(f"missing required fields on stdin: {', '.join(missing)}", ExitCode.CONFIG_ERROR)
         return values
 
     values = {}
     for f in fields:
         text = _prompt_text(f, cfg)
-        values[f.attr] = (getpass.getpass(f"{text}: ") if f.client_field_data.is_secure
-                          else input(f"{text}: "))
+        values[f.attr] = getpass.getpass(f"{text}: ") if f.client_field_data.is_secure else input(f"{text}: ")
     return values
 
 
@@ -109,7 +125,8 @@ def connect(
     show_fields: bool = typer.Option(False, "--fields", help="List the connector's required key fields and exit."),
     show_all: bool = typer.Option(False, "--all", help="List every connectable connector (no key test)."),
     password_stdin: bool = typer.Option(
-        False, "--password-stdin", help="Read the keystore password from stdin (else $HBOT_PASSWORD or a prompt)."),
+        False, "--password-stdin", help="Read the keystore password from stdin (else $HBOT_PASSWORD or a prompt)."
+    ),
 ) -> None:
     """Show connections or add a connector's API keys."""
     from hummingbot.client.config.config_helpers import ClientConfigAdapter, load_client_config_map_from_file
@@ -124,8 +141,7 @@ def connect(
         return
 
     if connector not in _connectable_exchanges():
-        fail(f"unknown connector '{connector}' (run `hbot connect` to list)",
-             ExitCode.CONFIG_ERROR)
+        fail(f"unknown connector '{connector}' (run `hbot connect` to list)", ExitCode.CONFIG_ERROR)
 
     config_keys = AllConnectorSettings.get_connector_config_keys(connector)
     if config_keys is None:
@@ -134,15 +150,22 @@ def connect(
     fields = _connect_key_fields(cfg)
 
     if show_fields:
-        described = [{"field": f.attr, "prompt": _prompt_text(f, cfg),
-                      "secret": bool(f.client_field_data.is_secure)} for f in fields]
-        echo(render_table(described, columns=["field", "secret", "prompt"],
-                          title=f"key fields for {connector}", max_widths={"prompt": 100}))
+        described = [
+            {"field": f.attr, "prompt": _prompt_text(f, cfg), "secret": bool(f.client_field_data.is_secure)}
+            for f in fields
+        ]
+        echo(
+            render_table(
+                described,
+                columns=["field", "secret", "prompt"],
+                title=f"key fields for {connector}",
+                max_widths={"prompt": 100},
+            )
+        )
         return
 
     if Security.connector_config_file_exists(connector) and not replace:
-        fail(f"keys for '{connector}' already exist; pass --replace to overwrite",
-             ExitCode.CONFIG_ERROR)
+        fail(f"keys for '{connector}' already exist; pass --replace to overwrite", ExitCode.CONFIG_ERROR)
 
     values = _collect_key_values(fields, cfg, keys_stdin)
 

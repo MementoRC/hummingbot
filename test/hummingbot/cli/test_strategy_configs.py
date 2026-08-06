@@ -1,13 +1,12 @@
-import unittest
 from decimal import Decimal
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
-from typing import List
+import unittest
 from unittest.mock import patch
 
-import yaml
 from pydantic import BaseModel, Field
+import yaml
 
 from hummingbot.cli import strategy_configs as sc
 from hummingbot.cli.strategy_configs import (
@@ -21,6 +20,7 @@ from hummingbot.cli.strategy_configs import (
 
 class FakeControllerConfig(BaseModel):
     """Stand-in for a controller pydantic config (hermetic — no controller module import)."""
+
     controller_type: str = "generic"
     controller_name: str = "fake"
     id: str = ""
@@ -52,15 +52,13 @@ class StrategyConfigHelpersTest(unittest.TestCase):
         with TemporaryDirectory() as d:
             path = Path(d) / "ctrl.yml"
             path.write_text(
-                "total_amount_quote: '2000'   # deployed size\n"
-                "manual_kill_switch: false\n"
-                "# trailing comment\n"
+                "total_amount_quote: '2000'   # deployed size\nmanual_kill_switch: false\n# trailing comment\n"
             )
             new_value = set_value_preserving_comments(path, "manual_kill_switch", "true")
             self.assertEqual(new_value, True)
             text = path.read_text()
-            self.assertIn("# deployed size", text)     # inline comment preserved
-            self.assertIn("# trailing comment", text)   # standalone comment preserved
+            self.assertIn("# deployed size", text)  # inline comment preserved
+            self.assertIn("# trailing comment", text)  # standalone comment preserved
             self.assertIn("manual_kill_switch: true", text)
             # untouched Decimal-as-string keeps its quote style
             self.assertIn("total_amount_quote: '2000'", text)
@@ -91,12 +89,7 @@ class StrategyConfigHelpersTest(unittest.TestCase):
     def test_set_uppercases_trading_pair_fields(self):
         with TemporaryDirectory() as d:
             path = Path(d) / "ctrl.yml"
-            path.write_text(
-                "trading_pair: BTC-USDT\n"
-                "market: eth-usdt\n"
-                "maker_market: gate_io\n"
-                "leverage: 1\n"
-            )
+            path.write_text("trading_pair: BTC-USDT\nmarket: eth-usdt\nmaker_market: gate_io\nleverage: 1\n")
             self.assertEqual(set_value_preserving_comments(path, "trading_pair", "btc-usdt"), "BTC-USDT")
             self.assertEqual(set_value_preserving_comments(path, "market", "sol-usdt"), "SOL-USDT")
             # *_market fields hold exchange names, not pairs — casing must be preserved
@@ -104,6 +97,7 @@ class StrategyConfigHelpersTest(unittest.TestCase):
 
     def test_normalize_pairs_handles_lists_and_non_pair_keys(self):
         from hummingbot.cli.strategy_configs import _normalize_pairs
+
         self.assertEqual(_normalize_pairs("markets", "ltc-usdt,eth-usdt"), "LTC-USDT,ETH-USDT")
         self.assertEqual(_normalize_pairs("taker_trading_pair", "btc-usdt"), "BTC-USDT")
         self.assertEqual(_normalize_pairs("trading_pairs", ["btc-usdt", "eth-usdt"]), ["BTC-USDT", "ETH-USDT"])
@@ -111,9 +105,9 @@ class StrategyConfigHelpersTest(unittest.TestCase):
 
     def test_fill_template_uppercases_trading_pair(self):
         from hummingbot.cli.strategy_configs import fill_template
+
         data = {"trading_pair": None, "exchange": None}
-        fill_template(data, required=[], stype="v2-script",
-                      values={"trading_pair": "btc-usdt", "exchange": "gate_io"})
+        fill_template(data, required=[], stype="v2-script", values={"trading_pair": "btc-usdt", "exchange": "gate_io"})
         self.assertEqual(data["trading_pair"], "BTC-USDT")
         self.assertEqual(data["exchange"], "gate_io")
 
@@ -130,12 +124,14 @@ class StrategyConfigHelpersTest(unittest.TestCase):
 
     def test_available_sources(self):
         from hummingbot.cli.strategy_configs import available_sources
+
         self.assertIn("pmm_simple", available_sources("controller"))
         self.assertIn("simple_pmm.py", available_sources("v2-script"))
         self.assertIn("pure_market_making", available_sources("v1-strategy"))
 
     def test_describe_strategy_controller(self):
         from hummingbot.cli.strategy_configs import describe_strategy
+
         data, required, updatable = describe_strategy("controller", "pmm_simple")
         self.assertEqual(data["controller_name"], "pmm_simple")
         self.assertIn("total_amount_quote", updatable)
@@ -149,6 +145,7 @@ class StrategyConfigHelpersTest(unittest.TestCase):
 
     def test_parse_set_pairs(self):
         from hummingbot.cli.strategy_configs import parse_set_pairs
+
         self.assertEqual(parse_set_pairs(["a=1", "b=x=y"]), {"a": "1", "b": "x=y"})  # only first = splits
         with self.assertRaises(ValueError):
             parse_set_pairs(["noequals"])
@@ -157,6 +154,7 @@ class StrategyConfigHelpersTest(unittest.TestCase):
 
     def test_fill_template_coerces_validates_and_reports_remaining(self):
         from hummingbot.cli.strategy_configs import fill_template
+
         data = {"a": None, "b": 0, "flag": False}
         # b's int placeholder coerces the string; a stays unfilled and is reported as remaining
         remaining = fill_template(data, required=["a", "b"], stype="v2-script", values={"b": "5", "flag": "true"})
@@ -166,23 +164,26 @@ class StrategyConfigHelpersTest(unittest.TestCase):
 
     def test_fill_template_unknown_field_raises(self):
         from hummingbot.cli.strategy_configs import fill_template
+
         with self.assertRaises(ValueError):
             fill_template({"a": 1}, required=[], stype="v2-script", values={"nope": "1"})
 
     def test_suggest_free_name_increments_past_existing(self):
         from hummingbot.cli import strategy_configs as sc
+
         existing = {"conf_x.yml", "conf_x_2.yml"}
         original = sc.matching_config_types
         sc.matching_config_types = lambda fn: ["controller"] if fn in existing else []
         try:
             self.assertEqual(sc.suggest_free_name("conf_new.yml"), "conf_new.yml")  # free → unchanged
-            self.assertEqual(sc.suggest_free_name("conf_x"), "conf_x_3.yml")         # taken → next free, .yml added
-            self.assertEqual(sc.suggest_free_name("conf_x_2.yml"), "conf_x_3.yml")   # strips trailing _n first
+            self.assertEqual(sc.suggest_free_name("conf_x"), "conf_x_3.yml")  # taken → next free, .yml added
+            self.assertEqual(sc.suggest_free_name("conf_x_2.yml"), "conf_x_3.yml")  # strips trailing _n first
         finally:
             sc.matching_config_types = original
 
     def test_clone_config_copies_preserves_comments_and_applies_changes(self):
         from hummingbot.cli import strategy_configs as sc
+
         with TemporaryDirectory() as d:
             src = Path(d) / "src.yml"
             src.write_text("script_file_name: simple_pmm.py\norder_amount: 0.01  # tuned\n")
@@ -196,11 +197,12 @@ class StrategyConfigHelpersTest(unittest.TestCase):
             self.assertIsNone(new_id)  # only controllers get a regenerated id
             text = (Path(d) / "dest.yml").read_text()
             self.assertIn("order_amount: 0.05", text)
-            self.assertIn("# tuned", text)               # inline comment preserved
+            self.assertIn("# tuned", text)  # inline comment preserved
             self.assertEqual(src.read_text().count("0.01"), 1)  # source untouched
 
     def test_clone_config_atomic_on_bad_value(self):
         from hummingbot.cli import strategy_configs as sc
+
         with TemporaryDirectory() as d:
             src = Path(d) / "src.yml"
             src.write_text("flag: true\n")
@@ -219,8 +221,8 @@ class StrategyConfigHelpersTest(unittest.TestCase):
             y: str  # required, no default
 
         data, required = template_config_data(Model, {"x": 9})
-        self.assertEqual(data["x"], 9)        # fixed override wins
-        self.assertIsNone(data["y"])          # required -> placeholder
+        self.assertEqual(data["x"], 9)  # fixed override wins
+        self.assertIsNone(data["y"])  # required -> placeholder
         self.assertEqual(required, ["y"])
 
 
@@ -329,29 +331,32 @@ class DescribeStrategyTest(unittest.TestCase):
             strategy: str = "fake_v1"
             exchange: str  # required, no default
 
-        with patch("hummingbot.client.config.config_helpers.get_strategy_pydantic_config_cls",
-                   return_value=FakeV1Config):
+        with patch(
+            "hummingbot.client.config.config_helpers.get_strategy_pydantic_config_cls", return_value=FakeV1Config
+        ):
             data, required, updatable = sc.describe_strategy("v1-strategy", "fake_v1")
         self.assertEqual(data["strategy"], "fake_v1")
         self.assertEqual(required, ["exchange"])
         self.assertEqual(updatable, set())
 
     def test_v1_legacy_config_map(self):
-        config_map = {"strategy": SimpleNamespace(default="legacy_v1", required=False),
-                      "exchange": SimpleNamespace(default=None, required=True)}
-        with patch("hummingbot.client.config.config_helpers.get_strategy_pydantic_config_cls",
-                   return_value=None), \
-                patch("hummingbot.client.config.config_helpers.get_strategy_config_map",
-                      return_value=config_map):
+        config_map = {
+            "strategy": SimpleNamespace(default="legacy_v1", required=False),
+            "exchange": SimpleNamespace(default=None, required=True),
+        }
+        with (
+            patch("hummingbot.client.config.config_helpers.get_strategy_pydantic_config_cls", return_value=None),
+            patch("hummingbot.client.config.config_helpers.get_strategy_config_map", return_value=config_map),
+        ):
             data, required, updatable = sc.describe_strategy("v1-strategy", "legacy_v1")
         self.assertEqual(data["strategy"], "legacy_v1")
         self.assertEqual(required, ["exchange"])
 
     def test_v1_unknown_strategy_raises(self):
-        with patch("hummingbot.client.config.config_helpers.get_strategy_pydantic_config_cls",
-                   return_value=None), \
-                patch("hummingbot.client.config.config_helpers.get_strategy_config_map",
-                      return_value=None):
+        with (
+            patch("hummingbot.client.config.config_helpers.get_strategy_pydantic_config_cls", return_value=None),
+            patch("hummingbot.client.config.config_helpers.get_strategy_config_map", return_value=None),
+        ):
             with self.assertRaises(ValueError):
                 sc.describe_strategy("v1-strategy", "nope")
 
@@ -359,7 +364,7 @@ class DescribeStrategyTest(unittest.TestCase):
 class ResolverErrorsTest(unittest.TestCase):
     def test_controller_config_class_requires_type_and_name(self):
         with self.assertRaises(ValueError):
-            sc.controller_config_class({"controller_name": "x"})   # missing type
+            sc.controller_config_class({"controller_name": "x"})  # missing type
         with self.assertRaises(ValueError):
             sc.controller_config_class({"controller_type": "generic"})  # missing name
 
@@ -392,8 +397,7 @@ class ControllerValidationTest(unittest.TestCase):
         return path
 
     def test_validate_controller_returns_config_and_updatable(self):
-        with TemporaryDirectory() as d, \
-                patch.object(sc, "controller_config_class", return_value=FakeControllerConfig):
+        with TemporaryDirectory() as d, patch.object(sc, "controller_config_class", return_value=FakeControllerConfig):
             config, updatable = sc.validate_controller(self._write(d))
         self.assertEqual(config.controller_name, "fake")
         self.assertEqual(updatable, {"total_amount_quote"})
@@ -434,11 +438,15 @@ class ControllerValidationTest(unittest.TestCase):
             self.assertEqual(path.read_text(), "total_amount_quote: 100.0\n")  # restored
 
     def test_fill_template_controller_full_validation_when_complete(self):
-        data = {"controller_type": "generic", "controller_name": "fake", "id": "abc",
-                "total_amount_quote": 100.0, "fixed_field": 1}
+        data = {
+            "controller_type": "generic",
+            "controller_name": "fake",
+            "id": "abc",
+            "total_amount_quote": 100.0,
+            "fixed_field": 1,
+        }
         with patch.object(sc, "controller_config_class", return_value=FakeControllerConfig):
-            remaining = sc.fill_template(data, required=[], stype="controller",
-                                         values={"total_amount_quote": "42.5"})
+            remaining = sc.fill_template(data, required=[], stype="controller", values={"total_amount_quote": "42.5"})
         self.assertEqual(remaining, [])
         self.assertEqual(data["total_amount_quote"], 42.5)
 
@@ -465,13 +473,13 @@ class YamlHelpersTest(unittest.TestCase):
         class Nested(BaseModel):
             amount: int = 3
 
-        self.assertEqual(sc._yaml_safe(Nested()), {"amount": 3})            # pydantic -> dict
+        self.assertEqual(sc._yaml_safe(Nested()), {"amount": 3})  # pydantic -> dict
         self.assertEqual(sc._yaml_safe({"d": Decimal("1.5")}), {"d": "1.5"})  # dict values recurse
-        self.assertEqual(sc._yaml_safe(Path("/x")), "/x")                   # last-resort str()
+        self.assertEqual(sc._yaml_safe(Path("/x")), "/x")  # last-resort str()
 
     def test_template_config_data_uses_default_factory(self):
         class M(BaseModel):
-            items: List[str] = Field(default_factory=lambda: ["a"])
+            items: list[str] = Field(default_factory=lambda: ["a"])
 
         data, required = template_config_data(M, {})
         self.assertEqual(data["items"], ["a"])
@@ -486,18 +494,18 @@ class YamlHelpersTest(unittest.TestCase):
                 raise RuntimeError("boom")
 
         obj = Obj()
-        self.assertEqual(sc._safe_attr(obj, "ok"), 3)      # callable -> invoked
-        self.assertIsNone(sc._safe_attr(obj, "bad"))       # raising callable -> None
-        self.assertIsNone(sc._safe_attr(obj, "missing"))   # absent attr -> None
+        self.assertEqual(sc._safe_attr(obj, "ok"), 3)  # callable -> invoked
+        self.assertIsNone(sc._safe_attr(obj, "bad"))  # raising callable -> None
+        self.assertIsNone(sc._safe_attr(obj, "missing"))  # absent attr -> None
 
     def test_set_in_template_nested_and_unknown_paths(self):
         data = {"outer": {"inner": 1}}
         sc._set_in_template(data, "outer.inner", "9")
         self.assertEqual(data["outer"]["inner"], 9)
         with self.assertRaises(ValueError):
-            sc._set_in_template(data, "ghost.inner", "1")   # unknown intermediate
+            sc._set_in_template(data, "ghost.inner", "1")  # unknown intermediate
         with self.assertRaises(ValueError):
-            sc._set_in_template(data, "outer.ghost", "1")   # unknown leaf
+            sc._set_in_template(data, "outer.ghost", "1")  # unknown leaf
 
     def test_regenerate_controller_id_preserves_comments(self):
         with TemporaryDirectory() as d:
