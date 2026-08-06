@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 import asyncio
 import time
-from typing import List, Optional
 
 from hummingbot.connector.derivative.bybit_perpetual import (
     bybit_perpetual_constants as CONSTANTS,
@@ -15,7 +16,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class BybitPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
@@ -27,7 +28,7 @@ class BybitPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
         self._domain = domain
         self._api_factory = api_factory
         self._auth = auth
-        self._ws_assistants: List[WSAssistant] = []
+        self._ws_assistants: list[WSAssistant] = []
 
     @property
     def last_recv_time(self) -> float:

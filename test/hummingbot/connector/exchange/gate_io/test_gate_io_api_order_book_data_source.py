@@ -1,7 +1,7 @@
 import asyncio
 import json
 import re
-from typing import Dict, List
+from typing import Dict
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
@@ -30,7 +30,7 @@ class TestGateIoAPIOrderBookDataSource(IsolatedAsyncioWrapperTestCase):
     async def asyncSetUp(self) -> None:
         await super().asyncSetUp()
         self.log_records = []
-        self.async_tasks: List[asyncio.Task] = []
+        self.async_tasks: list[asyncio.Task] = []
 
         self.mocking_assistant = NetworkMockingAssistant(self.local_event_loop)
         self.connector = GateIoExchange(
@@ -111,7 +111,7 @@ class TestGateIoAPIOrderBookDataSource(IsolatedAsyncioWrapperTestCase):
         }
         return ob_update
 
-    def get_order_book_diff_mock(self, asks: List[str], bids: List[str]) -> Dict:
+    def get_order_book_diff_mock(self, asks: list[str], bids: list[str]) -> Dict:
         ob_snapshot = {
             "time": 1606295412,
             "channel": "spot.order_book_update",

@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 from decimal import Decimal
-from typing import List, Optional
 
 import pandas as pd
 from pydantic import Field, field_validator
@@ -59,7 +60,7 @@ class DirectionalTradingControllerConfigBase(ControllerConfigBase):
         default="HEDGE", json_schema_extra={"prompt": "Enter the position mode (HEDGE/ONEWAY): "}
     )
     # Triple Barrier Configuration
-    stop_loss: Optional[Decimal] = Field(
+    stop_loss: Decimal | None = Field(
         default=Decimal("0.03"),
         gt=0,
         json_schema_extra={
@@ -68,7 +69,7 @@ class DirectionalTradingControllerConfigBase(ControllerConfigBase):
             "is_updatable": True,
         },
     )
-    take_profit: Optional[Decimal] = Field(
+    take_profit: Decimal | None = Field(
         default=Decimal("0.02"),
         gt=0,
         json_schema_extra={
@@ -77,7 +78,7 @@ class DirectionalTradingControllerConfigBase(ControllerConfigBase):
             "is_updatable": True,
         },
     )
-    time_limit: Optional[int] = Field(
+    time_limit: int | None = Field(
         default=60 * 45,
         gt=0,
         json_schema_extra={
@@ -94,7 +95,7 @@ class DirectionalTradingControllerConfigBase(ControllerConfigBase):
             "is_updatable": True,
         },
     )
-    trailing_stop: Optional[TrailingStop] = Field(
+    trailing_stop: TrailingStop | None = Field(
         default=None,
         json_schema_extra={
             "prompt": "Enter the trailing stop as activation_price,trailing_delta (e.g., 0.015,0.003): ",
@@ -165,7 +166,7 @@ class DirectionalTradingControllerBase(ControllerBase):
             [ConnectorPair(connector_name=config.connector_name, trading_pair=config.trading_pair)]
         )
 
-    def determine_executor_actions(self) -> List[ExecutorAction]:
+    def determine_executor_actions(self) -> list[ExecutorAction]:
         """
         Determine actions based on the provided executor handler report.
         """
@@ -180,7 +181,7 @@ class DirectionalTradingControllerBase(ControllerBase):
         """
         self.processed_data = {"signal": 0, "features": pd.DataFrame()}
 
-    def create_actions_proposal(self) -> List[ExecutorAction]:
+    def create_actions_proposal(self) -> list[ExecutorAction]:
         """
         Create actions based on the provided executor handler report.
         """
@@ -214,7 +215,7 @@ class DirectionalTradingControllerBase(ControllerBase):
         cooldown_condition = self.market_data_provider.time() - max_timestamp > self.config.cooldown_time
         return active_executors_condition and cooldown_condition
 
-    def stop_actions_proposal(self) -> List[ExecutorAction]:
+    def stop_actions_proposal(self) -> list[ExecutorAction]:
         """
         Stop actions based on the provided executor handler report.
         """
@@ -237,7 +238,7 @@ class DirectionalTradingControllerBase(ControllerBase):
             leverage=self.config.leverage,
         )
 
-    def to_format_status(self) -> List[str]:
+    def to_format_status(self) -> list[str]:
         df = self.processed_data.get("features", pd.DataFrame())
         if df.empty:
             return []

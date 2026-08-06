@@ -1331,7 +1331,7 @@ class TestXRPLNodePoolProactivePingLoop(IsolatedAsyncioWrapperTestCase):
                 await asyncio.sleep(0.1)
                 pool._running = False
 
-            task = asyncio.get_event_loop().create_task(pool._proactive_ping_loop())
+            task = asyncio.get_running_loop().create_task(pool._proactive_ping_loop())
             await run_one_iter()
             task.cancel()
             try:
@@ -1366,7 +1366,7 @@ class TestXRPLNodePoolProactivePingLoop(IsolatedAsyncioWrapperTestCase):
                 await asyncio.sleep(0.1)
                 pool._running = False
 
-            task = asyncio.get_event_loop().create_task(pool._proactive_ping_loop())
+            task = asyncio.get_running_loop().create_task(pool._proactive_ping_loop())
             await run_one_iter()
             task.cancel()
             try:

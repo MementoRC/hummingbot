@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import base64
 import hashlib
 import hmac
 import json
 import time
-from typing import Any, Dict, Optional
+from typing import Any
 from urllib.parse import urlparse
 
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
@@ -30,7 +32,7 @@ class KrakenAuth(AuthBase):
         data = json.loads(request.data) if request.data is not None else {}
         _path = urlparse(request.url).path
 
-        auth_dict: Dict[str, Any] = self._generate_auth_dict(_path, data)
+        auth_dict: dict[str, Any] = self._generate_auth_dict(_path, data)
         request.headers = auth_dict["headers"]
         request.data = auth_dict["postDict"]
         return request
@@ -42,7 +44,7 @@ class KrakenAuth(AuthBase):
         """
         return request  # pass-through
 
-    def _generate_auth_dict(self, uri: str, data: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def _generate_auth_dict(self, uri: str, data: dict[str, str] | None = None) -> dict[str, Any]:
         """
         Generates authentication signature and returns it in a dictionary
         :return: a dictionary of request info including the request signature and post data

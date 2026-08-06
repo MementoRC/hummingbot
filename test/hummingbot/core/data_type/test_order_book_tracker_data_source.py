@@ -7,7 +7,9 @@ This module tests:
 - remove_trading_pair: Removes a trading pair from the internal list
 """
 
-from typing import Any, Dict, List, Optional
+from __future__ import annotations
+
+from typing import Any
 import unittest
 
 from hummingbot.core.data_type.order_book import OrderBook
@@ -19,7 +21,7 @@ from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 class MockOrderBookTrackerDataSource(OrderBookTrackerDataSource):
     """Concrete implementation of OrderBookTrackerDataSource for testing."""
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return {pair: 100.0 for pair in trading_pairs}
 
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBookMessage:
@@ -31,7 +33,7 @@ class MockOrderBookTrackerDataSource(OrderBookTrackerDataSource):
     async def _subscribe_channels(self, ws: WSAssistant):
         raise NotImplementedError
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         return ""
 
     async def subscribe_to_trading_pair(self, trading_pair: str) -> bool:

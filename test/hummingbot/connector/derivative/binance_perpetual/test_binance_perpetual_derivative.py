@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import functools
 import json
 import re
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, List
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses.core import aioresponses
@@ -74,7 +76,7 @@ class BinancePerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         self.exchange._order_tracker.logger().setLevel(1)
         self.exchange._order_tracker.logger().addHandler(self)
         self.mocking_assistant = NetworkMockingAssistant(self.local_event_loop)
-        self.test_task: Optional[asyncio.Task] = None
+        self.test_task: asyncio.Task | None = None
         self.resume_test_event = asyncio.Event()
         self._initialize_event_loggers()
 
@@ -155,7 +157,7 @@ class BinancePerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         self.resume_test_event.set()
         return calculation(*args, **kwargs)
 
-    def _get_position_risk_api_endpoint_single_position_list(self) -> List[Dict[str, Any]]:
+    def _get_position_risk_api_endpoint_single_position_list(self) -> list[dict[str, Any]]:
         positions = [
             {
                 "symbol": self.symbol,
@@ -177,7 +179,7 @@ class BinancePerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         ]
         return positions
 
-    def _get_wrong_symbol_position_risk_api_endpoint_single_position_list(self) -> List[Dict[str, Any]]:
+    def _get_wrong_symbol_position_risk_api_endpoint_single_position_list(self) -> list[dict[str, Any]]:
         positions = [
             {
                 "symbol": f"{self.symbol}_230331",
@@ -199,7 +201,7 @@ class BinancePerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         ]
         return positions
 
-    def _get_account_update_ws_event_single_position_dict(self) -> Dict[str, Any]:
+    def _get_account_update_ws_event_single_position_dict(self) -> dict[str, Any]:
         account_update = {
             "e": "ACCOUNT_UPDATE",
             "E": 1564745798939,
@@ -225,7 +227,7 @@ class BinancePerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         }
         return account_update
 
-    def _get_wrong_symbol_account_update_ws_event_single_position_dict(self) -> Dict[str, Any]:
+    def _get_wrong_symbol_account_update_ws_event_single_position_dict(self) -> dict[str, Any]:
         account_update = {
             "e": "ACCOUNT_UPDATE",
             "E": 1564745798939,
@@ -261,7 +263,7 @@ class BinancePerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         ]
         return income_history
 
-    def _get_funding_info_dict(self) -> Dict[str, Any]:
+    def _get_funding_info_dict(self) -> dict[str, Any]:
         funding_info = {
             "indexPrice": 1000,
             "markPrice": 1001,
@@ -270,7 +272,7 @@ class BinancePerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         }
         return funding_info
 
-    def _get_trading_pair_symbol_map(self) -> Dict[str, str]:
+    def _get_trading_pair_symbol_map(self) -> dict[str, str]:
         trading_pair_symbol_map = {self.symbol: f"{self.base_asset}-{self.quote_asset}"}
         return trading_pair_symbol_map
 
@@ -281,7 +283,7 @@ class BinancePerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         min_price_increment: float = 2,
         min_base_amount_increment: float = 3,
         min_notional_size: float = 4,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         mocked_exchange_info = {  # irrelevant fields removed
             "symbols": [
                 {
@@ -323,7 +325,7 @@ class BinancePerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         min_price_increment: float = 2,
         min_base_amount_increment: float = 3,
         min_notional_size: float = 4,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         mocked_exchange_info = {  # irrelevant fields removed
             "symbols": [
                 {

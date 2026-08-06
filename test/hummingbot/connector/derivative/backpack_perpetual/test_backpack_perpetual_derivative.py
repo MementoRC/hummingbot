@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import functools
 import json
 import re
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, List
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses.core import aioresponses
@@ -71,7 +73,7 @@ class BackpackPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         self.exchange._order_tracker.logger().setLevel(1)
         self.exchange._order_tracker.logger().addHandler(self)
         self.mocking_assistant = NetworkMockingAssistant(self.local_event_loop)
-        self.test_task: Optional[asyncio.Task] = None
+        self.test_task: asyncio.Task | None = None
         self.resume_test_event = asyncio.Event()
         self._initialize_event_loggers()
 
@@ -154,7 +156,7 @@ class BackpackPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         self.resume_test_event.set()
         return calculation(*args, **kwargs)
 
-    def _get_position_risk_api_endpoint_single_position_list(self) -> List[Dict[str, Any]]:
+    def _get_position_risk_api_endpoint_single_position_list(self) -> list[dict[str, Any]]:
         positions = [
             {
                 "breakEvenPrice": "126.9307",
@@ -181,7 +183,7 @@ class BackpackPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         ]
         return positions
 
-    def _get_account_update_ws_event_single_position_dict(self) -> Dict[str, Any]:
+    def _get_account_update_ws_event_single_position_dict(self) -> dict[str, Any]:
         account_update = {
             "data": {
                 "B": "126.97",
@@ -217,7 +219,7 @@ class BackpackPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         ]
         return income_history
 
-    def _get_funding_info_dict(self) -> Dict[str, Any]:
+    def _get_funding_info_dict(self) -> dict[str, Any]:
         funding_info = [
             {
                 "indexPrice": "1000",
@@ -233,7 +235,7 @@ class BackpackPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         min_order_size: float = 0.01,
         min_price_increment: float = 0.01,
         min_base_amount_increment: float = 0.01,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         mocked_exchange_info = [
             {
                 "baseSymbol": self.base_asset,

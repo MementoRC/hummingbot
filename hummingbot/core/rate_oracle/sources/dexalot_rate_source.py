@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from decimal import Decimal
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING
 
 from hummingbot.core.rate_oracle.sources.rate_source_base import RateSourceBase
 from hummingbot.core.utils import async_ttl_cache
@@ -11,14 +13,14 @@ if TYPE_CHECKING:
 class DexalotRateSource(RateSourceBase):
     def __init__(self):
         super().__init__()
-        self._exchange: Optional[DexalotExchange] = None  # delayed because of circular reference
+        self._exchange: DexalotExchange | None = None  # delayed because of circular reference
 
     @property
     def name(self) -> str:
         return "dexalot"
 
     @async_ttl_cache(ttl=30, maxsize=1)
-    async def get_prices(self, quote_token: Optional[str] = None) -> Dict[str, Decimal]:
+    async def get_prices(self, quote_token: str | None = None) -> dict[str, Decimal]:
         self._ensure_exchange()
         results = {}
         try:

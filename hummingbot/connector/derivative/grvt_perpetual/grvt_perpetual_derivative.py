@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from bidict import bidict
 
@@ -45,10 +47,10 @@ class GrvtPerpetualDerivative(PerpetualDerivativePyBase):
         grvt_perpetual_api_key: str = None,
         grvt_perpetual_private_key: str = None,
         grvt_perpetual_trading_account_id: str = None,
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
     ):
         self.api_key = grvt_perpetual_api_key
@@ -59,8 +61,8 @@ class GrvtPerpetualDerivative(PerpetualDerivativePyBase):
         self._trading_pairs = trading_pairs or []
         self._position_mode = PositionMode.ONEWAY
         self._nonce_creator = NonceCreator.for_milliseconds()
-        self._instrument_info_by_symbol: Dict[str, Dict[str, Any]] = {}
-        self._leverage_by_trading_pair: Dict[str, Decimal] = {}
+        self._instrument_info_by_symbol: dict[str, dict[str, Any]] = {}
+        self._leverage_by_trading_pair: dict[str, Decimal] = {}
         self._symbol_map = bidict()
         self.real_time_balance_update = False
         super().__init__(balance_asset_limit=balance_asset_limit, rate_limits_share_pct=rate_limits_share_pct)
@@ -79,7 +81,7 @@ class GrvtPerpetualDerivative(PerpetualDerivativePyBase):
         )
 
     @property
-    def rate_limits_rules(self) -> List[RateLimit]:
+    def rate_limits_rules(self) -> list[RateLimit]:
         return CONSTANTS.RATE_LIMITS
 
     @property
@@ -107,7 +109,7 @@ class GrvtPerpetualDerivative(PerpetualDerivativePyBase):
         return CONSTANTS.INSTRUMENTS_PATH_URL
 
     @property
-    def trading_pairs(self) -> List[str]:
+    def trading_pairs(self) -> list[str]:
         return self._trading_pairs
 
     @property
@@ -122,7 +124,7 @@ class GrvtPerpetualDerivative(PerpetualDerivativePyBase):
     def funding_fee_poll_interval(self) -> int:
         return CONSTANTS.FUNDING_RATE_UPDATE_INTERVAL
 
-    def supported_order_types(self) -> List[OrderType]:
+    def supported_order_types(self) -> list[OrderType]:
         return [OrderType.LIMIT, OrderType.LIMIT_MAKER, OrderType.MARKET]
 
     def supported_position_modes(self):
@@ -185,7 +187,7 @@ class GrvtPerpetualDerivative(PerpetualDerivativePyBase):
         trading_pair: str,
         amount: Decimal,
         order_type: OrderType,
-        price: Optional[Decimal] = None,
+        price: Decimal | None = None,
         position_action: PositionAction = PositionAction.NIL,
         **kwargs,
     ):
@@ -252,7 +254,7 @@ class GrvtPerpetualDerivative(PerpetualDerivativePyBase):
         order_side: TradeType,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
         position_action: PositionAction = PositionAction.NIL,
     ) -> TradeFeeBase:
         return build_trade_fee(
@@ -283,7 +285,7 @@ class GrvtPerpetualDerivative(PerpetualDerivativePyBase):
         symbol_map = await self.trading_pair_symbol_map()
         return symbol_map[symbol]
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: List[Dict[str, Any]]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: list[dict[str, Any]]):
         mapping = bidict()
         info_by_symbol = {}
         for instrument_info in exchange_info:
@@ -296,7 +298,7 @@ class GrvtPerpetualDerivative(PerpetualDerivativePyBase):
         self._instrument_info_by_symbol = info_by_symbol
         self._set_trading_pair_symbol_map(mapping)
 
-    async def _format_trading_rules(self, exchange_info_dict: List[Dict[str, Any]]) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: list[dict[str, Any]]) -> list[TradingRule]:
         trading_rules = []
         for instrument_info in exchange_info_dict:
             if not utils.is_exchange_information_valid(instrument_info):
@@ -336,7 +338,7 @@ class GrvtPerpetualDerivative(PerpetualDerivativePyBase):
         price: Decimal,
         position_action: PositionAction = PositionAction.NIL,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         exchange_symbol = await self.exchange_symbol_associated_to_pair(trading_pair)
         instrument_info = self._instrument_info_by_symbol[exchange_symbol]
         payload = self._auth.get_order_payload(
@@ -372,7 +374,7 @@ class GrvtPerpetualDerivative(PerpetualDerivativePyBase):
         )
         return bool(response.get("result", {}).get("ack"))
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         exchange_symbol = await self.exchange_symbol_associated_to_pair(order.trading_pair)
         instrument_info = self._instrument_info_by_symbol[exchange_symbol]
         response = await self._api_post(
@@ -488,7 +490,7 @@ class GrvtPerpetualDerivative(PerpetualDerivativePyBase):
             if pos_key not in remote_position_keys:
                 self._perpetual_trading.remove_position(pos_key)
 
-    async def _fetch_last_fee_payment(self, trading_pair: str) -> Tuple[float, Decimal, Decimal]:
+    async def _fetch_last_fee_payment(self, trading_pair: str) -> tuple[float, Decimal, Decimal]:
         exchange_symbol = await self.exchange_symbol_associated_to_pair(trading_pair)
         payment_response = await self._api_post(
             path_url=CONSTANTS.FUNDING_PAYMENT_HISTORY_PATH_URL,
@@ -585,7 +587,7 @@ class GrvtPerpetualDerivative(PerpetualDerivativePyBase):
                 self.logger().error("Unexpected error in user stream listener loop.", exc_info=True)
                 await self._sleep(5.0)
 
-    async def _process_position_stream_event(self, feed: Dict[str, Any]):
+    async def _process_position_stream_event(self, feed: dict[str, Any]):
         exchange_symbol = feed["instrument"]
         if not self.trading_pair_symbol_map_ready():
             await self.trading_pair_symbol_map()
@@ -611,7 +613,7 @@ class GrvtPerpetualDerivative(PerpetualDerivativePyBase):
             ),
         )
 
-    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> Tuple[bool, str]:
+    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> tuple[bool, str]:
         if mode != PositionMode.ONEWAY:
             error_msg = "GRVT only supports the ONEWAY position mode."
             self.trigger_event(
@@ -626,7 +628,7 @@ class GrvtPerpetualDerivative(PerpetualDerivativePyBase):
         )
         return True, ""
 
-    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> Tuple[bool, str]:
+    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> tuple[bool, str]:
         exchange_symbol = await self.exchange_symbol_associated_to_pair(trading_pair)
         response = await self._api_post(
             path_url=CONSTANTS.SET_INITIAL_LEVERAGE_PATH_URL,
@@ -678,7 +680,7 @@ class GrvtPerpetualDerivative(PerpetualDerivativePyBase):
             return position_action
         return PositionAction.CLOSE
 
-    def _active_position_for_trading_pair(self, trading_pair: str) -> Optional[Position]:
+    def _active_position_for_trading_pair(self, trading_pair: str) -> Position | None:
         position = self.account_positions.get(trading_pair)
         if position is not None and position.amount != Decimal("0"):
             return position
@@ -694,7 +696,7 @@ class GrvtPerpetualDerivative(PerpetualDerivativePyBase):
         amount: Decimal,
         trade_type: TradeType,
         order_type: OrderType,
-        price: Optional[Decimal],
+        price: Decimal | None,
         exception: Exception,
         **kwargs,
     ):
@@ -732,12 +734,12 @@ class GrvtPerpetualDerivative(PerpetualDerivativePyBase):
         )
 
     @staticmethod
-    def _is_active_exchange_order_id(exchange_order_id: Optional[str]) -> bool:
+    def _is_active_exchange_order_id(exchange_order_id: str | None) -> bool:
         return exchange_order_id not in (None, "", "0x00", "0x0", "0")
 
     def _tracked_order_from_ids(
-        self, client_order_id: Optional[str], exchange_order_id: Optional[str]
-    ) -> Optional[InFlightOrder]:
+        self, client_order_id: str | None, exchange_order_id: str | None
+    ) -> InFlightOrder | None:
         tracked_order = None
         if client_order_id:
             tracked_order = self._order_tracker.all_fillable_orders.get(
@@ -750,7 +752,7 @@ class GrvtPerpetualDerivative(PerpetualDerivativePyBase):
                     break
         return tracked_order
 
-    def _order_update_from_order_data(self, order_data: Dict[str, Any], tracked_order: InFlightOrder) -> OrderUpdate:
+    def _order_update_from_order_data(self, order_data: dict[str, Any], tracked_order: InFlightOrder) -> OrderUpdate:
         state = order_data["state"]
         return OrderUpdate(
             trading_pair=tracked_order.trading_pair,
@@ -760,7 +762,7 @@ class GrvtPerpetualDerivative(PerpetualDerivativePyBase):
             exchange_order_id=str(order_data["order_id"]),
         )
 
-    def _grvt_order_state(self, state_data: Dict[str, Any]) -> OrderState:
+    def _grvt_order_state(self, state_data: dict[str, Any]) -> OrderState:
         status = state_data["status"]
         if status == "OPEN":
             traded = Decimal(str((state_data.get("traded_size") or ["0"])[0]))
