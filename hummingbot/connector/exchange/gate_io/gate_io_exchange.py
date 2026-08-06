@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from bidict import bidict
 
@@ -33,9 +35,9 @@ class GateIoExchange(ExchangePyBase):
         self,
         gate_io_api_key: str,
         gate_io_secret_key: str,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         domain: str = DEFAULT_DOMAIN,
     ):
@@ -137,7 +139,7 @@ class GateIoExchange(ExchangePyBase):
             domain=self.domain,
         )
 
-    async def _format_trading_rules(self, raw_trading_pair_info: Dict[str, Any]) -> List[TradingRule]:
+    async def _format_trading_rules(self, raw_trading_pair_info: dict[str, Any]) -> list[TradingRule]:
         """
         Converts json API response into a dictionary of trading rules.
 
@@ -182,7 +184,7 @@ class GateIoExchange(ExchangePyBase):
         order_type: OrderType,
         price: Decimal,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         order_type_str = order_type.name.lower().split("_")[0]
         symbol = await self.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
         # When type is market, it refers to different currency according to side
@@ -269,7 +271,7 @@ class GateIoExchange(ExchangePyBase):
             raise e
         return account_info
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         trade_updates = []
 
         try:
@@ -322,7 +324,7 @@ class GateIoExchange(ExchangePyBase):
         order_side: TradeType,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> AddedToCostTradeFee:
         is_maker = order_type is OrderType.LIMIT_MAKER
         return AddedToCostTradeFee(percent=self.estimate_fee_pct(is_maker))
@@ -345,7 +347,7 @@ class GateIoExchange(ExchangePyBase):
         ]
         async for event_message in self._iter_user_event_queue():
             channel: str = event_message.get("channel", None)
-            results: List[Dict[str, Any]] = event_message.get("result", None)
+            results: list[dict[str, Any]] = event_message.get("result", None)
             try:
                 if channel not in user_channels:
                     self.logger().error(f"Unexpected message in user stream: {event_message}.", exc_info=True)
@@ -366,7 +368,7 @@ class GateIoExchange(ExchangePyBase):
                 self.logger().error("Unexpected error in user stream listener loop.", exc_info=True)
                 await self._sleep(5.0)
 
-    def _normalise_order_message_state(self, order_msg: Dict[str, Any], tracked_order):
+    def _normalise_order_message_state(self, order_msg: dict[str, Any], tracked_order):
         state = None
         # we do not handle:
         #   "failed" because it is handled by create order
@@ -413,7 +415,7 @@ class GateIoExchange(ExchangePyBase):
                 state = OrderState.CANCELED
         return state
 
-    def _create_order_update_with_order_status_data(self, order_status: Dict[str, Any], order: InFlightOrder):
+    def _create_order_update_with_order_status_data(self, order_status: dict[str, Any], order: InFlightOrder):
         client_order_id = str(order_status.get("text", ""))
         state = self._normalise_order_message_state(order_status, order) or order.current_state
 
@@ -426,7 +428,7 @@ class GateIoExchange(ExchangePyBase):
         )
         return order_update
 
-    def _process_order_message(self, order_msg: Dict[str, Any]):
+    def _process_order_message(self, order_msg: dict[str, Any]):
         """
         Updates in-flight order and triggers cancelation or failure event if needed.
 
@@ -444,7 +446,7 @@ class GateIoExchange(ExchangePyBase):
         order_update = self._create_order_update_with_order_status_data(order_status=order_msg, order=tracked_order)
         self._order_tracker.process_order_update(order_update=order_update)
 
-    def _create_trade_update_with_order_fill_data(self, order_fill: Dict[str, Any], order: InFlightOrder):
+    def _create_trade_update_with_order_fill_data(self, order_fill: dict[str, Any], order: InFlightOrder):
 
         fee = TradeFeeBase.new_spot_fee(
             fee_schema=self.trade_fee_schema(),
@@ -465,7 +467,7 @@ class GateIoExchange(ExchangePyBase):
         )
         return trade_update
 
-    def _process_trade_message(self, trade: Dict[str, Any], client_order_id: Optional[str] = None):
+    def _process_trade_message(self, trade: dict[str, Any], client_order_id: str | None = None):
         """
         Updates in-flight order and trigger order filled event for trade message received. Triggers order completed
         event if the total executed amount equals to the specified order amount.
@@ -499,7 +501,7 @@ class GateIoExchange(ExchangePyBase):
             self._account_available_balances[asset_name] = Decimal(str(account["available"]))
             self._account_balances[asset_name] = Decimal(str(account["total"]))
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         mapping = bidict()
         for symbol_data in filter(web_utils.is_exchange_information_valid, exchange_info):
             mapping[symbol_data["id"]] = combine_to_hb_trading_pair(

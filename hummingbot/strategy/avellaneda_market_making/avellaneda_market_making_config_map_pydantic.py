@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from datetime import datetime, time
 from decimal import Decimal
-from typing import Dict, Optional, Union
+from typing import Dict, Union
 
 from pydantic import ConfigDict, Field, field_validator, model_validator
 
@@ -39,7 +41,7 @@ class FromDateToDateModel(BaseClientModel):
 
     @field_validator("start_datetime", "end_datetime", mode="before")
     @classmethod
-    def validate_execution_time(cls, v: Union[str, datetime]) -> Optional[str]:
+    def validate_execution_time(cls, v: Union[str, datetime]) -> str | None:
         if not isinstance(v, str):
             v = v.strftime("%Y-%m-%d %H:%M:%S")
         ret = validate_datetime_iso_string(v)
@@ -63,7 +65,7 @@ class DailyBetweenTimesModel(BaseClientModel):
 
     @field_validator("start_time", "end_time", mode="before")
     @classmethod
-    def validate_execution_time(cls, v: Union[str, datetime]) -> Optional[str]:
+    def validate_execution_time(cls, v: Union[str, datetime]) -> str | None:
         if not isinstance(v, str):
             v = v.strftime("%H:%M:%S")
         ret = validate_time_iso_string(v)
@@ -266,7 +268,7 @@ class AvellanedaMarketMakingConfigMap(BaseTradingStrategyConfigMap):
         description="Allows activating multi-order levels.",
         json_schema_extra={"prompt": f"Select the order levels mode ({'/'.join(list(ORDER_LEVEL_MODELS.keys()))})"},
     )
-    order_override: Optional[Dict] = Field(
+    order_override: Dict | None = Field(
         default=None,
         description="Allows custom specification of the order levels and their spreads and amounts.",
     )

@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 import json
 import re
-from typing import Any, Dict, Optional
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses import aioresponses
@@ -34,7 +36,7 @@ class BitrueUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
 
     async def asyncSetUp(self) -> None:
         self.log_records = []
-        self.listening_task: Optional[asyncio.Task] = None
+        self.listening_task: asyncio.Task | None = None
         self.mocking_assistant = NetworkMockingAssistant(self.local_event_loop)
 
         self.throttler = AsyncThrottler(rate_limits=CONSTANTS.RATE_LIMITS)
@@ -89,7 +91,7 @@ class BitrueUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         self.resume_test_event.set()
         return value
 
-    def _error_response(self) -> Dict[str, Any]:
+    def _error_response(self) -> dict[str, Any]:
         resp = {"code": "ERROR CODE", "msg": "ERROR MESSAGE"}
 
         return resp

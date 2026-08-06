@@ -1,6 +1,5 @@
 from decimal import Decimal
 from pathlib import Path
-from typing import Dict
 import unittest
 from unittest.mock import patch
 
@@ -61,7 +60,7 @@ class HedgeConfigMapPydanticTest(unittest.TestCase):
 
         return settings
 
-    def get_default_map(self) -> Dict[str, str]:
+    def get_default_map(self) -> dict[str, str]:
         config_settings = {
             "hedge_connector": self.hedge_connector,
             "hedge_markets": [self.trading_pair],

@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import base64
 from collections import OrderedDict
 import datetime
 import hashlib
 import hmac
-from typing import Any, Dict, Optional
+from typing import Any
 from urllib.parse import urlencode
 
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
@@ -44,10 +46,10 @@ class OkxAuth(AuthBase):
         return request  # pass-through
 
     @staticmethod
-    def keysort(dictionary: Dict[str, str]) -> Dict[str, str]:
+    def keysort(dictionary: dict[str, str]) -> dict[str, str]:
         return OrderedDict(sorted(dictionary.items(), key=lambda t: t[0]))
 
-    def _generate_signature(self, timestamp: str, method: str, path_url: str, body: Optional[str] = None) -> str:
+    def _generate_signature(self, timestamp: str, method: str, path_url: str, body: str | None = None) -> str:
         unsigned_signature = timestamp + method + path_url
         if body is not None:
             unsigned_signature += body
@@ -57,7 +59,7 @@ class OkxAuth(AuthBase):
         ).decode()
         return signature
 
-    def authentication_headers(self, request: RESTRequest) -> Dict[str, Any]:
+    def authentication_headers(self, request: RESTRequest) -> dict[str, Any]:
         # timestamp = datetime.utcfromtimestamp(self.time_provider.time()).isoformat(timespec="milliseconds") + "Z"
         timestamp = datetime.datetime.fromtimestamp(self.time_provider.time(), datetime.UTC).isoformat(
             timespec="milliseconds"
@@ -78,7 +80,7 @@ class OkxAuth(AuthBase):
 
         return header
 
-    def websocket_login_parameters(self) -> Dict[str, Any]:
+    def websocket_login_parameters(self) -> dict[str, Any]:
         timestamp = str(int(self.time_provider.time()))
 
         return {

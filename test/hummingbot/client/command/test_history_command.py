@@ -3,7 +3,6 @@ import datetime
 from decimal import Decimal
 from pathlib import Path
 import time
-from typing import List
 from unittest.mock import patch
 
 from hummingbot.client.config.client_config_map import ClientConfigMap, DBSqliteMode
@@ -43,7 +42,7 @@ class HistoryCommandTest(IsolatedAsyncioWrapperTestCase):
 
         return async_sleep
 
-    def get_trades(self) -> List[TradeFill]:
+    def get_trades(self) -> list[TradeFill]:
         trade_fee = AddedToCostTradeFee(percent=Decimal("5"))
         trades = [
             TradeFill(

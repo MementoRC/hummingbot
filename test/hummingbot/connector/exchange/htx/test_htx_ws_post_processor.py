@@ -23,7 +23,7 @@ class HtxWSPostProcessorTest(unittest.TestCase):
 
         self.post_processor = GZipCompressionWSPostProcessor()
 
-    def _compress(self, message: Dict[str, Any]) -> bytes:
+    def _compress(self, message: dict[str, Any]) -> bytes:
         return gzip.compress(json.dumps(message).encode())
 
     def async_run_with_timeout(self, coroutine: Awaitable, timeout: float = 1):

@@ -1,7 +1,6 @@
 from datetime import datetime, timezone
 import hashlib
 import hmac
-from typing import Dict
 
 from hummingbot.connector.exchange.foxbit import foxbit_web_utils as web_utils
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
@@ -80,7 +79,7 @@ class FoxbitAuth(AuthBase):
     def get_ws_authenticate_payload(
         self,
         request: WSRequest = None,
-    ) -> Dict[str, any]:
+    ) -> dict[str, any]:
         timestamp = int(datetime.now(timezone.utc).timestamp() * 1e3)
 
         msg = "{}{}{}".format(timestamp, self.user_id, self.api_key)

@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.exchange.kraken import kraken_constants as CONSTANTS
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
@@ -13,14 +15,14 @@ if TYPE_CHECKING:
 
 
 class KrakenAPIUserStreamDataSource(UserStreamTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
-    def __init__(self, connector: "KrakenExchange", api_factory: Optional[WebAssistantsFactory] = None):
+    def __init__(self, connector: "KrakenExchange", api_factory: WebAssistantsFactory | None = None):
 
         super().__init__()
         self._api_factory = api_factory
         self._connector = connector
-        self._current_auth_token: Optional[str] = None
+        self._current_auth_token: str | None = None
 
     async def _connected_websocket_assistant(self) -> WSAssistant:
         ws: WSAssistant = await self._api_factory.get_ws_assistant()
@@ -75,7 +77,7 @@ class KrakenAPIUserStreamDataSource(UserStreamTrackerDataSource):
             self.logger().exception("Unexpected error occurred subscribing to user streams...")
             raise
 
-    async def _process_event_message(self, event_message: Dict[str, Any], queue: asyncio.Queue):
+    async def _process_event_message(self, event_message: dict[str, Any], queue: asyncio.Queue):
         if type(event_message) is list and event_message[-2] in [
             CONSTANTS.USER_TRADES_ENDPOINT_NAME,
             CONSTANTS.USER_ORDERS_ENDPOINT_NAME,

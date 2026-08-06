@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
-from typing import Any, AsyncIterable, Dict, List, Optional
+from typing import Any, AsyncIterable
 
 from bidict import bidict
 
@@ -30,9 +32,9 @@ class HtxExchange(ExchangePyBase):
         self,
         htx_api_key: str,
         htx_secret_key: str,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
     ):
         self.htx_api_key = htx_api_key
@@ -101,7 +103,7 @@ class HtxExchange(ExchangePyBase):
         order_side: TradeType,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ):
         return build_trade_fee(
             self.name,
@@ -158,7 +160,7 @@ class HtxExchange(ExchangePyBase):
         order_side: TradeType,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
 
         is_maker = is_maker or (order_type is OrderType.LIMIT_MAKER)
@@ -213,7 +215,7 @@ class HtxExchange(ExchangePyBase):
             self._account_available_balances = new_available_balances
             self._account_balances = new_balances
 
-    async def _format_trading_rules(self, raw_trading_pair_info: List[Dict[str, Any]]) -> List[TradingRule]:
+    async def _format_trading_rules(self, raw_trading_pair_info: list[dict[str, Any]]) -> list[TradingRule]:
         trading_rules = []
         supported_symbols = await self.trading_pair_symbol_map()
         for info in raw_trading_pair_info["data"]:
@@ -240,7 +242,7 @@ class HtxExchange(ExchangePyBase):
                 self.logger().error(f"Error parsing the trading pair rule {info}. Skipping.", exc_info=True)
         return trading_rules
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         trade_updates = []
 
         if order.exchange_order_id is not None:
@@ -296,7 +298,7 @@ class HtxExchange(ExchangePyBase):
         else:
             raise ValueError(f"Erroneous order status response {updated_order_data}")
 
-    async def _iter_user_event_queue(self) -> AsyncIterable[Dict[str, Any]]:
+    async def _iter_user_event_queue(self) -> AsyncIterable[dict[str, Any]]:
         """
         Called by _user_stream_event_listener.
         """
@@ -337,7 +339,7 @@ class HtxExchange(ExchangePyBase):
                 self.logger().error("Unexpected error in user stream listener loop.", exc_info=True)
                 await self._sleep(5.0)
 
-    async def _process_order_update(self, msg: Dict[str, Any]):
+    async def _process_order_update(self, msg: dict[str, Any]):
         client_order_id = msg["clientOrderId"]
         order_status = msg["orderStatus"]
         tracked_order = self._order_tracker.all_updatable_orders.get(client_order_id)
@@ -350,7 +352,7 @@ class HtxExchange(ExchangePyBase):
             )
             self._order_tracker.process_order_update(order_update=order_update)
 
-    async def _process_trade_event(self, trade_event: Dict[str, Any]):
+    async def _process_trade_event(self, trade_event: dict[str, Any]):
         client_order_id = trade_event["clientOrderId"]
         tracked_order = self._order_tracker.all_fillable_orders.get(client_order_id)
 
@@ -431,7 +433,7 @@ class HtxExchange(ExchangePyBase):
             return True
         return False
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         mapping = bidict()
         for symbol_data in filter(is_exchange_information_valid, exchange_info.get("data", [])):
             mapping[symbol_data["symbol"]] = combine_to_hb_trading_pair(

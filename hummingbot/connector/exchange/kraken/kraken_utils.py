@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from decimal import Decimal
-from typing import List, Optional, Tuple
+from typing import Tuple
 
 from pydantic import ConfigDict, Field, SecretStr, field_validator
 
@@ -31,14 +33,14 @@ def convert_to_exchange_symbol(symbol: str) -> str:
     return inverted_kraken_to_hb_map.get(symbol, symbol)
 
 
-def split_to_base_quote(exchange_trading_pair: str) -> Tuple[Optional[str], Optional[str]]:
+def split_to_base_quote(exchange_trading_pair: str) -> tuple[str | None, str | None]:
     base, quote = exchange_trading_pair.split("-")
     return base, quote
 
 
 def convert_from_exchange_trading_pair(
-    exchange_trading_pair: str, available_trading_pairs: Optional[Tuple] = None
-) -> Optional[str]:
+    exchange_trading_pair: str, available_trading_pairs: Tuple | None = None
+) -> str | None:
     base, quote = "", ""
     if "-" in exchange_trading_pair:
         base, quote = split_to_base_quote(exchange_trading_pair)
@@ -88,7 +90,7 @@ def convert_to_exchange_trading_pair(hb_trading_pair: str, delimiter: str = "") 
     return exchange_trading_pair
 
 
-def _build_private_rate_limits(tier: KrakenAPITier = KrakenAPITier.STARTER) -> List[RateLimit]:
+def _build_private_rate_limits(tier: KrakenAPITier = KrakenAPITier.STARTER) -> list[RateLimit]:
     private_rate_limits = []
 
     PRIVATE_ENDPOINT_LIMIT, MATCHING_ENGINE_LIMIT = CONSTANTS.KRAKEN_TIER_LIMITS[tier]
@@ -161,7 +163,7 @@ def _build_private_rate_limits(tier: KrakenAPITier = KrakenAPITier.STARTER) -> L
     return private_rate_limits
 
 
-def build_rate_limits_by_tier(tier: KrakenAPITier = KrakenAPITier.STARTER) -> List[RateLimit]:
+def build_rate_limits_by_tier(tier: KrakenAPITier = KrakenAPITier.STARTER) -> list[RateLimit]:
     rate_limits = []
 
     rate_limits.extend(CONSTANTS.PUBLIC_API_LIMITS)
@@ -201,7 +203,7 @@ class KrakenConfigMap(BaseConnectorConfigMap):
 
     @field_validator("kraken_api_tier", mode="before")
     @classmethod
-    def _api_tier_validator(cls, value: str) -> Optional[str]:
+    def _api_tier_validator(cls, value: str) -> str | None:
         """
         Determines if input value is a valid API tier
         """

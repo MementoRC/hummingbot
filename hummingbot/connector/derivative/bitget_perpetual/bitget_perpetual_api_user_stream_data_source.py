@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List, NoReturn, Optional
+from typing import TYPE_CHECKING, Any, NoReturn
 
 from hummingbot.connector.derivative.bitget_perpetual import bitget_perpetual_constants as CONSTANTS
 from hummingbot.connector.derivative.bitget_perpetual.bitget_perpetual_auth import BitgetPerpetualAuth
@@ -20,12 +22,12 @@ class BitgetPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
     the Bitget Perpetual exchange via WebSocket APIs.
     """
 
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
         auth: BitgetPerpetualAuth,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "BitgetPerpetualDerivative",
         api_factory: WebAssistantsFactory,
     ) -> None:
@@ -34,7 +36,7 @@ class BitgetPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
         self._auth = auth
         self._trading_pairs = trading_pairs
         self._connector = connector
-        self._ping_task: Optional[asyncio.Task] = None
+        self._ping_task: asyncio.Task | None = None
 
     async def _authenticate(self, websocket_assistant: WSAssistant) -> None:
         """
@@ -51,7 +53,7 @@ class BitgetPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
     async def _parse_pong_message(self) -> None:
         self.logger().debug("PING-PONG message for user stream completed")
 
-    async def _process_message_for_unknown_channel(self, event_message: Dict[str, Any]) -> None:
+    async def _process_message_for_unknown_channel(self, event_message: dict[str, Any]) -> None:
         if event_message == CONSTANTS.PUBLIC_WS_PONG_RESPONSE:
             await self._parse_pong_message()
         elif "event" in event_message:
@@ -66,7 +68,7 @@ class BitgetPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
         else:
             self.logger().warning(f"Message for unknown channel received: {event_message}")
 
-    async def _process_event_message(self, event_message: Dict[str, Any], queue: asyncio.Queue) -> None:
+    async def _process_event_message(self, event_message: dict[str, Any], queue: asyncio.Queue) -> None:
         if "arg" in event_message and "action" in event_message:
             queue.put_nowait(event_message)
         else:
