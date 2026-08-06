@@ -28,7 +28,6 @@ class KrakenAuth(AuthBase):
         return str(self._last_tracking_nonce)
 
     async def rest_authenticate(self, request: RESTRequest) -> RESTRequest:
-
         data = json.loads(request.data) if request.data is not None else {}
         _path = urlparse(request.url).path
 

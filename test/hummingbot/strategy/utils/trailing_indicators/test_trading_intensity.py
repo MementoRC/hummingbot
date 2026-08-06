@@ -113,7 +113,6 @@ class TradingIntensityTest(unittest.TestCase):
         price_step,
         amount_stdev,
     ):
-
         prices_bid = np.linspace(price_bid, price_bid - price_depth, math.ceil(price_depth / price_step))
         amounts_bid = np.random.normal(amount_bid, amount_stdev, len(prices_bid))
         amounts_bid[0] = amount_bid
