@@ -73,7 +73,7 @@ class BitgetAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         """
         Create a mock WebSocket response for trade updates.
 
-        :return: Dict[str, Any]: Mock trade response data.
+        :return: dict[str, Any]: Mock trade response data.
         """
         return {
             "arg": {"instType": "SPOT", "channel": CONSTANTS.PUBLIC_WS_TRADE, "instId": self.exchange_trading_pair},
@@ -87,7 +87,7 @@ class BitgetAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         """
         Create a mock REST response for last traded price.
 
-        :return: Dict[str, Any]: Mock last traded price response data.
+        :return: dict[str, Any]: Mock last traded price response data.
         """
         return {
             "code": "00000",
@@ -117,7 +117,7 @@ class BitgetAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         """
         Create a mock WebSocket response for order book snapshot.
 
-        :return: Dict[str, Any]: Mock order book snapshot response data.
+        :return: dict[str, Any]: Mock order book snapshot response data.
         """
         return {
             "action": "snapshot",
@@ -138,7 +138,7 @@ class BitgetAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         """
         Create a mock WebSocket response for order book diff updates.
 
-        :return: Dict[str, Any]: Mock order book diff response data.
+        :return: dict[str, Any]: Mock order book diff response data.
         """
         snapshot: dict[str, Any] = self.ws_order_book_snapshot_mock_response()
         snapshot["action"] = "update"
@@ -149,7 +149,7 @@ class BitgetAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         """
         Create a mock WebSocket response for error events.
 
-        :return: Dict[str, Any]: Mock error event response data.
+        :return: dict[str, Any]: Mock error event response data.
         """
 
         return {"event": "error", "code": "30005", "msg": "Invalid request"}
@@ -158,7 +158,7 @@ class BitgetAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         """
         Create a mock REST response for order book snapshot.
 
-        :return: Dict[str, Any]: Mock order book snapshot response data.
+        :return: dict[str, Any]: Mock order book snapshot response data.
         """
         return {
             "code": "00000",

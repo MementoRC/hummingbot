@@ -17,7 +17,8 @@ Two scopes, one command — matching the interactive client's ``config``:
 A bare ``hbot config`` shows global only when nothing is loaded, and global + strategy when one is.
 Global keys take precedence: a key that names a global setting is always read/written globally.
 """
-from typing import TYPE_CHECKING, Optional, Tuple
+
+from typing import TYPE_CHECKING, Optional
 
 import typer
 
@@ -31,6 +32,7 @@ if TYPE_CHECKING:
 def _leaf_items(cm: "ClientConfigAdapter"):
     """Traversal items that hold a value (skip section/parent nodes)."""
     from hummingbot.client.config.config_helpers import ClientConfigAdapter
+
     return [item for item in cm.traverse() if not isinstance(item.value, ClientConfigAdapter)]
 
 
@@ -47,7 +49,7 @@ def _navigate(cm: "ClientConfigAdapter", key: str):
     return model, parts[-1]
 
 
-def _active_strategy() -> Optional[Tuple[str, str, bool]]:
+def _active_strategy() -> Optional[tuple[str, str, bool]]:
     """The strategy config ``config`` should show/edit — ``(file, type, running)`` — or None.
 
     A running bot's own config wins (so ``config`` reflects the live bot); otherwise the config
@@ -63,44 +65,62 @@ def _active_strategy() -> Optional[Tuple[str, str, bool]]:
     return None
 
 
-def _list(cm: "ClientConfigAdapter", active: Optional[Tuple[str, str, bool]], as_json: bool) -> None:
+def _list(cm: "ClientConfigAdapter", active: Optional[tuple[str, str, bool]], as_json: bool) -> None:
     rows = [{"key": item.config_path, "value": item.printable_value} for item in _leaf_items(cm)]
-    out = render_table(rows, columns=["key", "value"], title="global settings",
-                       max_widths={"key": 55, "value": 120})
+    out = render_table(rows, columns=["key", "value"], title="global settings", max_widths={"key": 55, "value": 120})
     payload: dict = {"global": {r["key"]: r["value"] for r in rows}, "strategy": None}
     if active is not None:
         file, stype, running = active
         from hummingbot.cli.strategy_configs import config_path, read_yaml, updatable_for
+
         path = config_path(stype, file)
         if not path.exists():
             # The loaded pointer can dangle (config deleted/renamed out-of-band). Still list the
             # globals, but say so explicitly rather than crashing or silently dropping the section.
             # A bot can still be RUNNING from the deleted file — that must stay visible.
             if running:
-                out += (f"\n\nstrategy config {file} ({stype}) is missing on disk, but a bot is "
-                        f"STILL RUNNING from it — `hbot status` to inspect, `hbot stop` to stop it")
+                out += (
+                    f"\n\nstrategy config {file} ({stype}) is missing on disk, but a bot is "
+                    f"STILL RUNNING from it — `hbot status` to inspect, `hbot stop` to stop it"
+                )
             else:
-                out += (f"\n\nloaded strategy config {file} ({stype}) is missing on disk — "
-                        f"load another with `hbot import <file>`")
-            payload["strategy"] = {"file": file, "type": stype, "state": "missing",
-                                   "running": running, "fields": {}, "live_fields": []}
+                out += (
+                    f"\n\nloaded strategy config {file} ({stype}) is missing on disk — "
+                    f"load another with `hbot import <file>`"
+                )
+            payload["strategy"] = {
+                "file": file,
+                "type": stype,
+                "state": "missing",
+                "running": running,
+                "fields": {},
+                "live_fields": [],
+            }
         else:
             data = read_yaml(path)
             updatable = updatable_for(stype, path)
             srows = [{"field": k, "value": cell(val), "live": k in updatable} for k, val in data.items()]
             state = "running" if running else "loaded"
             out += "\n\n" + render_table(
-                srows, columns=["field", "value", "live"],
+                srows,
+                columns=["field", "value", "live"],
                 title=f"strategy config — {file} ({stype}, {state})",
-                max_widths={"field": 55, "value": 120})
-            payload["strategy"] = {"file": file, "type": stype, "state": state,
-                                   "fields": data, "live_fields": sorted(updatable)}
+                max_widths={"field": 55, "value": 120},
+            )
+            payload["strategy"] = {
+                "file": file,
+                "type": stype,
+                "state": state,
+                "fields": data,
+                "live_fields": sorted(updatable),
+            }
     emit(payload, out, as_json)
 
 
 def _read_or_set_global(cm: "ClientConfigAdapter", key: str, value: Optional[str], as_json: bool) -> None:
     from hummingbot.client.config.config_helpers import ClientConfigAdapter, save_to_yml
     from hummingbot.client.settings import CLIENT_CONFIG_PATH
+
     model, leaf = _navigate(cm, key)
     if isinstance(getattr(model, leaf), ClientConfigAdapter):
         fail(f"'{key}' is a section, not a value; specify a sub-key", ExitCode.CONFIG_ERROR)
@@ -115,21 +135,26 @@ def _read_or_set_global(cm: "ClientConfigAdapter", key: str, value: Optional[str
     emit(record, render_kv(record, title="config"), as_json)
 
 
-def _read_or_set_strategy(active: Tuple[str, str, bool], key: str, value: Optional[str], as_json: bool) -> None:
+def _read_or_set_strategy(active: tuple[str, str, bool], key: str, value: Optional[str], as_json: bool) -> None:
     from hummingbot.cli.strategy_configs import config_path, edit_config, get_value, read_yaml
+
     file, stype, running = active
     path = config_path(stype, file)
     if not path.exists():
-        state = ("a bot is STILL RUNNING from it — `hbot stop` to stop it" if running
-                 else "load another with `hbot import <file>`")
-        fail(f"loaded strategy config {file} ({stype}) no longer exists on disk — {state}",
-             ExitCode.NOT_FOUND)
+        state = (
+            "a bot is STILL RUNNING from it — `hbot stop` to stop it"
+            if running
+            else "load another with `hbot import <file>`"
+        )
+        fail(f"loaded strategy config {file} ({stype}) no longer exists on disk — {state}", ExitCode.NOT_FOUND)
     data = read_yaml(path)
     try:
         current = get_value(data, key)
     except KeyError:
-        fail(f"unknown config key '{key}' — not a global setting nor a field of {file} "
-             f"(run `hbot config` to list)", ExitCode.CONFIG_ERROR)
+        fail(
+            f"unknown config key '{key}' — not a global setting nor a field of {file} (run `hbot config` to list)",
+            ExitCode.CONFIG_ERROR,
+        )
 
     if value is None:
         record = {"key": key, "value": current if as_json else cell(current), "scope": f"{stype}:{file}"}
@@ -152,13 +177,15 @@ def _read_or_set_strategy(active: Tuple[str, str, bool], key: str, value: Option
 
 def config(
     key: Optional[str] = typer.Argument(
-        None, help="Config key: a global setting (dotted, e.g. mqtt_bridge.mqtt_host) or a loaded-strategy field. Omit to list."),
-    value: Optional[str] = typer.Argument(
-        None, help="New value to set. Omit to read the key."),
+        None,
+        help="Config key: a global setting (dotted, e.g. mqtt_bridge.mqtt_host) or a loaded-strategy field. Omit to list.",
+    ),
+    value: Optional[str] = typer.Argument(None, help="New value to set. Omit to read the key."),
     as_json: bool = json_option(),
 ) -> None:
     """View or set configuration — global client settings, plus the loaded strategy's config."""
     from hummingbot.client.config.config_helpers import load_client_config_map_from_file
+
     cm = load_client_config_map_from_file()
     active = _active_strategy()
 
@@ -172,7 +199,9 @@ def config(
         return
 
     if active is None:
-        fail(f"unknown config key '{key}' — not a global setting, and no strategy is loaded "
-             f"(run `hbot import <file>` to load one, or `hbot config` to list settings)",
-             ExitCode.CONFIG_ERROR)
+        fail(
+            f"unknown config key '{key}' — not a global setting, and no strategy is loaded "
+            f"(run `hbot import <file>` to load one, or `hbot config` to list settings)",
+            ExitCode.CONFIG_ERROR,
+        )
     _read_or_set_strategy(active, key, value, as_json)
