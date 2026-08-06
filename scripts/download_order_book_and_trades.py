@@ -1,7 +1,6 @@
 from datetime import datetime
 import json
 import os
-from typing import Dict
 
 from pydantic import Field
 
@@ -34,7 +33,7 @@ class DownloadTradesAndOrderBookSnapshots(StrategyV2Base):
     trades_file_paths = {}
     subscribed_to_order_book_trade_event: bool = False
 
-    def __init__(self, connectors: Dict[str, ConnectorBase], config: DownloadTradesAndOrderBookSnapshotsConfig):
+    def __init__(self, connectors: dict[str, ConnectorBase], config: DownloadTradesAndOrderBookSnapshotsConfig):
         super().__init__(connectors, config)
         self.config = config
 
