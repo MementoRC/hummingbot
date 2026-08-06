@@ -1,6 +1,4 @@
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from test.logger_mixin_for_test import LoggerMixinForTest
 from unittest.mock import MagicMock, PropertyMock, patch
 
 from hummingbot.connector.exchange_py_base import ExchangePyBase
@@ -15,6 +13,8 @@ from hummingbot.strategy_v2.executors.twap_executor.data_types import TWAPExecut
 from hummingbot.strategy_v2.executors.twap_executor.twap_executor import TWAPExecutor
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
+from test.logger_mixin_for_test import LoggerMixinForTest
 
 
 class TestTWAPExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
@@ -87,7 +87,7 @@ class TestTWAPExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             amount=Decimal("1"),
             price=Decimal("120"),
             creation_timestamp=1,
-            initial_state=OrderState.OPEN
+            initial_state=OrderState.OPEN,
         )
 
     @property
@@ -101,7 +101,7 @@ class TestTWAPExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             amount=Decimal("1"),
             price=Decimal("120"),
             creation_timestamp=1,
-            initial_state=OrderState.OPEN
+            initial_state=OrderState.OPEN,
         )
 
     @patch.object(TWAPExecutor, "get_price", MagicMock(return_value=Decimal("120")))
@@ -127,12 +127,16 @@ class TestTWAPExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         await executor.control_task()
         self.assertEqual(executor._order_plan[1].order_id, "OID-BUY-3")
 
-    @patch.object(TWAPExecutor, 'get_trading_rules')
-    @patch.object(TWAPExecutor, 'adjust_order_candidates')
+    @patch.object(TWAPExecutor, "get_trading_rules")
+    @patch.object(TWAPExecutor, "adjust_order_candidates")
     async def test_validate_sufficient_balance(self, mock_adjust_order_candidates, mock_get_trading_rules):
         # Mock trading rules
-        trading_rules = TradingRule(trading_pair="ETH-USDT", min_order_size=Decimal("0.1"),
-                                    min_price_increment=Decimal("0.1"), min_base_amount_increment=Decimal("0.1"))
+        trading_rules = TradingRule(
+            trading_pair="ETH-USDT",
+            min_order_size=Decimal("0.1"),
+            min_price_increment=Decimal("0.1"),
+            min_base_amount_increment=Decimal("0.1"),
+        )
         mock_get_trading_rules.return_value = trading_rules
         executor = TWAPExecutor(self.strategy, self.twap_config_long_taker)
         # Mock order candidate
@@ -142,7 +146,7 @@ class TestTWAPExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             order_type=OrderType.LIMIT,
             order_side=TradeType.BUY,
             amount=Decimal("1"),
-            price=Decimal("100")
+            price=Decimal("100"),
         )
         # Test for sufficient balance
         mock_adjust_order_candidates.return_value = [order_candidate]
@@ -192,7 +196,7 @@ class TestTWAPExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             amount=Decimal("1"),
             price=Decimal("100"),
             order_id="OID-BUY-1",
-            creation_timestamp=1
+            creation_timestamp=1,
         )
         executor = self.get_twap_executor_from_config(self.twap_config_long_taker)
         executor._status = RunnableStatus.RUNNING
