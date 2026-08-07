@@ -172,7 +172,6 @@ class BtcMarketsAPIUserStreamDataSourceTest(IsolatedAsyncioWrapperTestCase):
 
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
     async def test_listen_for_user_stream_does_not_queue_heartbeat_payload(self, mock_ws):
-
         mock_pong = {"messageType": CONSTANTS.HEARTBEAT}
         mock_ws.return_value = self.mocking_assistant.create_websocket_mock()
         self.mocking_assistant.add_websocket_aiohttp_message(mock_ws.return_value, json.dumps(mock_pong))

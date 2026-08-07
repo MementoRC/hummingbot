@@ -49,7 +49,6 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
         trading_required: bool = True,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
-
         self.bybit_perpetual_api_key = bybit_perpetual_api_key
         self.bybit_perpetual_secret_key = bybit_perpetual_secret_key
         self._trading_required = trading_required
@@ -915,7 +914,6 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
         trading_pair: str | None = None,
         **kwargs,
     ) -> dict[str, Any]:
-
         rest_assistant = await self._web_assistants_factory.get_rest_assistant()
         if limit_id is None:
             limit_id = web_utils.get_rest_api_limit_id_for_endpoint(

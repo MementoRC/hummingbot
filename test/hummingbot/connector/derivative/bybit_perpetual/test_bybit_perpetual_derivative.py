@@ -103,7 +103,6 @@ class BybitPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDe
         mock_api: aioresponses,
         callback: Callable | None = lambda *args, **kwargs: None,
     ) -> list[str]:
-
         linear_url = self.all_symbols_url
         non_linear_url = linear_url.replace("linear", "inverse")
         linear_response = self.all_symbols_request_mock_response
@@ -120,7 +119,6 @@ class BybitPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDe
         mock_api: aioresponses,
         callback: Callable | None = lambda *args, **kwargs: None,
     ) -> list[str]:
-
         linear_url = self.trading_rules_url
         non_linear_url = self.trading_rules_url.replace("linear", "inverse")
         response = self.trading_rules_request_mock_response
@@ -135,7 +133,6 @@ class BybitPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDe
         mock_api: aioresponses,
         callback: Callable | None = lambda *args, **kwargs: None,
     ) -> list[str]:
-
         linear_url = self.trading_rules_url
         non_linear_url = self.trading_rules_url.replace("linear", "inverse")
         response = self.trading_rules_request_erroneous_mock_response

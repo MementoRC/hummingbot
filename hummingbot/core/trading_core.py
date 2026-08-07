@@ -783,7 +783,6 @@ class TradingCore:
     def _get_trades_from_session(
         start_timestamp: int, session: Session, number_of_rows: int | None = None, config_file_path: str = None
     ) -> list[TradeFill]:
-
         filters = [TradeFill.timestamp >= start_timestamp]
         if config_file_path is not None:
             filters.append(TradeFill.config_file_path.like(f"%{config_file_path}%"))

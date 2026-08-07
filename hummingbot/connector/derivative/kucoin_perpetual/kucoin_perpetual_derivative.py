@@ -51,7 +51,6 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
         trading_required: bool = True,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
-
         self.kucoin_perpetual_api_key = kucoin_perpetual_api_key
         self.kucoin_perpetual_secret_key = kucoin_perpetual_secret_key
         self.kucoin_perpetual_passphrase = kucoin_perpetual_passphrase
@@ -991,7 +990,6 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
         client_order_id: str | None = None,
         **kwargs,
     ) -> dict[str, Any]:
-
         rest_assistant = await self._web_assistants_factory.get_rest_assistant()
         if limit_id is None:
             limit_id = web_utils.get_rest_api_limit_id_for_endpoint(

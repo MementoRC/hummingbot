@@ -417,7 +417,7 @@ class DCAExecutor(ExecutorBase):
             self.close_type = CloseType.EARLY_STOP
             self.place_close_order_and_cancel_open_orders()
 
-    def _collect_held_position_orders(self) -> List[Dict]:
+    def _collect_held_position_orders(self) -> list[Dict]:
         """Snapshot residual exposure for a forced stop at the shutdown deadline.
 
         Every open- and close-side fill is reported; the position store nets them by
@@ -426,8 +426,11 @@ class DCAExecutor(ExecutorBase):
         held = list(self._held_position_orders)
         seen = {order.get("client_order_id") for order in held}
         for tracked in self._open_orders + self._close_orders:
-            if (tracked.order and tracked.executed_amount_base > Decimal("0")
-                    and tracked.order.client_order_id not in seen):
+            if (
+                tracked.order
+                and tracked.executed_amount_base > Decimal("0")
+                and tracked.order.client_order_id not in seen
+            ):
                 seen.add(tracked.order.client_order_id)
                 held.append(tracked.order.to_json())
         return held
