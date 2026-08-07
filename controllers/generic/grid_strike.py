@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import Field
 
@@ -71,13 +71,13 @@ class GridStrike(ControllerBase):
             [ConnectorPair(connector_name=self.config.connector_name, trading_pair=self.config.trading_pair)]
         )
 
-    def active_executors(self) -> List[ExecutorInfo]:
+    def active_executors(self) -> list[ExecutorInfo]:
         return [executor for executor in self.executors_info if executor.is_active]
 
     def is_inside_bounds(self, price: Decimal) -> bool:
         return self.config.start_price <= price <= self.config.end_price
 
-    def determine_executor_actions(self) -> List[ExecutorAction]:
+    def determine_executor_actions(self) -> list[ExecutorAction]:
         mid_price = self.market_data_provider.get_price_by_type(
             self.config.connector_name, self.config.trading_pair, PriceType.MidPrice
         )
@@ -112,7 +112,7 @@ class GridStrike(ControllerBase):
     async def update_processed_data(self):
         pass
 
-    def to_format_status(self) -> List[str]:
+    def to_format_status(self) -> list[str]:
         status = []
         mid_price = self.market_data_provider.get_price_by_type(
             self.config.connector_name, self.config.trading_pair, PriceType.MidPrice

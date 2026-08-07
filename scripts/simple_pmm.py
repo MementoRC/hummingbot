@@ -1,7 +1,6 @@
 from decimal import Decimal
 import logging
 import os
-from typing import Dict, List
 
 from pydantic import Field
 
@@ -14,7 +13,7 @@ from hummingbot.strategy.strategy_v2_base import StrategyV2Base, StrategyV2Confi
 
 class SimplePMMConfig(StrategyV2ConfigBase):
     script_file_name: str = os.path.basename(__file__)
-    controllers_config: List[str] = []
+    controllers_config: list[str] = []
     exchange: str = Field("binance_paper_trade")
     trading_pair: str = Field("ETH-USDT")
     order_amount: Decimal = Field(0.01)
@@ -42,7 +41,7 @@ class SimplePMM(StrategyV2Base):
     create_timestamp = 0
     price_source = PriceType.MidPrice
 
-    def __init__(self, connectors: Dict[str, ConnectorBase], config: SimplePMMConfig):
+    def __init__(self, connectors: dict[str, ConnectorBase], config: SimplePMMConfig):
         super().__init__(connectors, config)
         self.config = config
         self.price_source = PriceType.LastTrade if self.config.price_type == "last" else PriceType.MidPrice
@@ -50,12 +49,12 @@ class SimplePMM(StrategyV2Base):
     def on_tick(self):
         if self.create_timestamp <= self.current_timestamp:
             self.cancel_all_orders()
-            proposal: List[OrderCandidate] = self.create_proposal()
-            proposal_adjusted: List[OrderCandidate] = self.adjust_proposal_to_budget(proposal)
+            proposal: list[OrderCandidate] = self.create_proposal()
+            proposal_adjusted: list[OrderCandidate] = self.adjust_proposal_to_budget(proposal)
             self.place_orders(proposal_adjusted)
             self.create_timestamp = self.config.order_refresh_time + self.current_timestamp
 
-    def create_proposal(self) -> List[OrderCandidate]:
+    def create_proposal(self) -> list[OrderCandidate]:
         ref_price = self.connectors[self.config.exchange].get_price_by_type(self.config.trading_pair, self.price_source)
         buy_price = ref_price * Decimal(1 - self.config.bid_spread)
         sell_price = ref_price * Decimal(1 + self.config.ask_spread)
@@ -80,13 +79,13 @@ class SimplePMM(StrategyV2Base):
 
         return [buy_order, sell_order]
 
-    def adjust_proposal_to_budget(self, proposal: List[OrderCandidate]) -> List[OrderCandidate]:
+    def adjust_proposal_to_budget(self, proposal: list[OrderCandidate]) -> list[OrderCandidate]:
         proposal_adjusted = self.connectors[self.config.exchange].budget_checker.adjust_candidates(
             proposal, all_or_none=True
         )
         return proposal_adjusted
 
-    def place_orders(self, proposal: List[OrderCandidate]) -> None:
+    def place_orders(self, proposal: list[OrderCandidate]) -> None:
         for order in proposal:
             self.place_order(connector_name=self.config.exchange, order=order)
 

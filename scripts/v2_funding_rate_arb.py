@@ -1,6 +1,6 @@
 from decimal import Decimal
 import os
-from typing import Dict, List, Set
+from typing import Dict
 
 import pandas as pd
 from pydantic import Field, field_validator
@@ -29,7 +29,7 @@ class FundingRateArbitrageConfig(StrategyV2ConfigBase):
             "prompt_on_new": True,
         },
     )
-    connectors: Set[str] = Field(
+    connectors: set[str] = Field(
         default="hyperliquid_perpetual,binance_perpetual",
         json_schema_extra={
             "prompt": lambda mi: (
@@ -38,7 +38,7 @@ class FundingRateArbitrageConfig(StrategyV2ConfigBase):
             "prompt_on_new": True,
         },
     )
-    tokens: Set[str] = Field(
+    tokens: set[str] = Field(
         default="WIF,FET",
         json_schema_extra={
             "prompt": lambda mi: "Enter the tokens separated by commas (e.g. WIF,FET): ",
@@ -103,7 +103,7 @@ class FundingRateArbitrage(StrategyV2Base):
     def get_trading_pair_for_connector(cls, token, connector):
         return f"{token}-{cls.quote_markets_map.get(connector, 'USDT')}"
 
-    def __init__(self, connectors: Dict[str, ConnectorBase], config: FundingRateArbitrageConfig):
+    def __init__(self, connectors: dict[str, ConnectorBase], config: FundingRateArbitrageConfig):
         super().__init__(connectors, config)
         self.config = config
         self.active_funding_arbitrages = {}
@@ -215,7 +215,7 @@ class FundingRateArbitrage(StrategyV2Base):
             connector_name, 60 * 60 * 8
         )
 
-    def create_actions_proposal(self) -> List[CreateExecutorAction]:
+    def create_actions_proposal(self) -> list[CreateExecutorAction]:
         """
         In this method we are going to evaluate if a new set of positions has to be created for each of the tokens that
         don't have an active arbitrage.
@@ -265,7 +265,7 @@ class FundingRateArbitrage(StrategyV2Base):
                     ]
         return create_actions
 
-    def stop_actions_proposal(self) -> List[StopExecutorAction]:
+    def stop_actions_proposal(self) -> list[StopExecutorAction]:
         """
         Once the funding rate arbitrage is created we are going to control the funding payments pnl and the current
         pnl of each of the executors at the cost of closing the open position at market.
