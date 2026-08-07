@@ -211,6 +211,9 @@ layers =
     user_stream_tracker
     candles_feed | liquidations_feed | rate_oracle | market_data | market_connector | market_simulator | web_assistant | remote_iface
     strategy_framework.primitives | data_type_primitives | event_bus | logger | async_utils | connector_utils
+# hb_compat isolation shim: logger is a real pinned dep of async_utils (hb-async-utils#14).
+ignore_imports =
+    async_utils.hb_compat.common -> logger
 
 [importlinter:contract:adr-0001-l0-leaf-independence]
 name = ADR 0001 L0 leaf independence
@@ -222,6 +225,9 @@ modules =
     async_utils
     connector_utils
     strategy_framework.primitives
+# hb_compat isolation shim: logger is a real pinned dep of async_utils (hb-async-utils#14).
+ignore_imports =
+    async_utils.hb_compat.common -> logger
 
 # ADR-0001 Group D: strategy_framework (L2) may depend downward on L0 leaves
 # (event_bus, data_type_primitives, logger, async_utils, connector_utils) but must
