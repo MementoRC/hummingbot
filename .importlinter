@@ -212,8 +212,20 @@ layers =
     candles_feed | liquidations_feed | rate_oracle | market_data | market_connector | market_simulator | web_assistant | remote_iface
     strategy_framework.primitives | data_type_primitives | event_bus | logger | async_utils | connector_utils
 # hb_compat isolation shim: logger is a real pinned dep of async_utils (hb-async-utils#14).
+#
+# Recipe-1 re-export shims: hummingbot/core/data_type/user_stream_tracker{,_data_source}.py
+# are 3-line re-exports over the extracted sub-package. Because this contract deliberately
+# does NOT model hummingbot (see note above), import-linter walks straight THROUGH it, so
+# every L2 hb_compat module that touches hummingbot appears to import user_stream_tracker
+# upward (observed: candles_feed via a 7-hop api_throttler chain, market_simulator directly).
+# Those are not real L2->L2 edges - the coupling is mediated by L3. Ignoring the two shim
+# edges removes the false traversal while still ENFORCING user_stream_tracker's own downward
+# direction onto web_assistant/async_utils/logger, which is why it was layered in the first
+# place. Expect an equivalent pair for any future shim of an above-L2 package.
 ignore_imports =
     async_utils.hb_compat.common -> logger
+    hummingbot.core.data_type.user_stream_tracker -> user_stream_tracker.tracker
+    hummingbot.core.data_type.user_stream_tracker_data_source -> user_stream_tracker.data_source
 
 [importlinter:contract:adr-0001-l0-leaf-independence]
 name = ADR 0001 L0 leaf independence
