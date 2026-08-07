@@ -50,7 +50,7 @@ class NdaxAPIOrderBookDataSource(OrderBookTrackerDataSource):
             throttler (AsyncThrottler): API-requests throttler to use.
 
         Returns:
-            Dict[str, any]: Parsed API Response.
+            dict[str, any]: Parsed API Response.
         """
         params = {
             "OMSId": 1,
