@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from decimal import Decimal
 import os
@@ -11,8 +13,8 @@ from hummingbot import root_path
 if TYPE_CHECKING:
     from hummingbot import ClientConfigAdapter
 
-_default_paths: Optional["GatewayPaths"] = None
-_hummingbot_pipe: Optional[aioprocessing.AioConnection] = None
+_default_paths: "GatewayPaths" | None = None
+_hummingbot_pipe: aioprocessing.AioConnection | None = None
 
 S_DECIMAL_0: Decimal = Decimal(0)
 
@@ -61,9 +63,9 @@ def get_gateway_paths(client_config_map: "ClientConfigAdapter") -> GatewayPaths:
     if _default_paths is not None:
         return _default_paths
 
-    external_certs_path: Optional[Path] = os.getenv("CERTS_FOLDER") and Path(os.getenv("CERTS_FOLDER"))
-    external_conf_path: Optional[Path] = os.getenv("GATEWAY_CONF_FOLDER") and Path(os.getenv("GATEWAY_CONF_FOLDER"))
-    external_logs_path: Optional[Path] = os.getenv("GATEWAY_LOGS_FOLDER") and Path(os.getenv("GATEWAY_LOGS_FOLDER"))
+    external_certs_path: Path | None = os.getenv("CERTS_FOLDER") and Path(os.getenv("CERTS_FOLDER"))
+    external_conf_path: Path | None = os.getenv("GATEWAY_CONF_FOLDER") and Path(os.getenv("GATEWAY_CONF_FOLDER"))
+    external_logs_path: Path | None = os.getenv("GATEWAY_LOGS_FOLDER") and Path(os.getenv("GATEWAY_LOGS_FOLDER"))
     local_certs_path: Path = root_path().joinpath("certs")
     local_conf_path: Path = root_path().joinpath("gateway/conf")
     local_logs_path: Path = root_path().joinpath("gateway/logs")

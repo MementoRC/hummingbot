@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from decimal import Decimal
-from typing import List, Optional, Tuple, Union
+from typing import Union
 
 from pydantic import Field, field_validator
 from pydantic_core.core_schema import ValidationInfo
@@ -28,7 +30,7 @@ class MarketMakingControllerConfigBase(ControllerConfigBase):
         default="WLD-USDT",
         json_schema_extra={"prompt": "Enter the trading pair to trade on (e.g., WLD-USDT): ", "prompt_on_new": True},
     )
-    buy_spreads: List[float] = Field(
+    buy_spreads: list[float] = Field(
         default="0.01,0.02",
         json_schema_extra={
             "prompt": "Enter a comma-separated list of buy spreads (e.g., '0.01, 0.02'): ",
@@ -36,7 +38,7 @@ class MarketMakingControllerConfigBase(ControllerConfigBase):
             "is_updatable": True,
         },
     )
-    sell_spreads: List[float] = Field(
+    sell_spreads: list[float] = Field(
         default="0.01,0.02",
         json_schema_extra={
             "prompt": "Enter a comma-separated list of sell spreads (e.g., '0.01, 0.02'): ",
@@ -44,7 +46,7 @@ class MarketMakingControllerConfigBase(ControllerConfigBase):
             "is_updatable": True,
         },
     )
-    buy_amounts_pct: Union[List[Decimal], None] = Field(
+    buy_amounts_pct: Union[list[Decimal], None] = Field(
         default=None,
         json_schema_extra={
             "prompt": "Enter a comma-separated list of buy amounts as percentages (e.g., '50, 50'), or leave blank to distribute equally: ",
@@ -52,7 +54,7 @@ class MarketMakingControllerConfigBase(ControllerConfigBase):
             "is_updatable": True,
         },
     )
-    sell_amounts_pct: Union[List[Decimal], None] = Field(
+    sell_amounts_pct: Union[list[Decimal], None] = Field(
         default=None,
         json_schema_extra={
             "prompt": "Enter a comma-separated list of sell amounts as percentages (e.g., '50, 50'), or leave blank to distribute equally: ",
@@ -87,7 +89,7 @@ class MarketMakingControllerConfigBase(ControllerConfigBase):
         default="HEDGE", json_schema_extra={"prompt": "Enter the position mode (HEDGE/ONEWAY): "}
     )
     # Triple Barrier Configuration
-    stop_loss: Optional[Decimal] = Field(
+    stop_loss: Decimal | None = Field(
         default=Decimal("0.03"),
         gt=0,
         json_schema_extra={
@@ -96,7 +98,7 @@ class MarketMakingControllerConfigBase(ControllerConfigBase):
             "is_updatable": True,
         },
     )
-    take_profit: Optional[Decimal] = Field(
+    take_profit: Decimal | None = Field(
         default=Decimal("0.02"),
         gt=0,
         json_schema_extra={
@@ -105,7 +107,7 @@ class MarketMakingControllerConfigBase(ControllerConfigBase):
             "is_updatable": True,
         },
     )
-    time_limit: Optional[int] = Field(
+    time_limit: int | None = Field(
         default=60 * 45,
         gt=0,
         json_schema_extra={
@@ -122,7 +124,7 @@ class MarketMakingControllerConfigBase(ControllerConfigBase):
             "is_updatable": True,
         },
     )
-    trailing_stop: Optional[TrailingStop] = Field(
+    trailing_stop: TrailingStop | None = Field(
         default=None,
         json_schema_extra={
             "prompt": "Enter the trailing stop as activation_price,trailing_delta (e.g., 0.015,0.003): ",
@@ -208,7 +210,7 @@ class MarketMakingControllerConfigBase(ControllerConfigBase):
             time_limit_order_type=OrderType.MARKET,  # Defaulting to MARKET as per requirement
         )
 
-    def get_spreads_and_amounts_in_quote(self, trade_type: TradeType) -> Tuple[List[float], List[float]]:
+    def get_spreads_and_amounts_in_quote(self, trade_type: TradeType) -> tuple[list[float], list[float]]:
         buy_amounts_pct = getattr(self, "buy_amounts_pct")
         sell_amounts_pct = getattr(self, "sell_amounts_pct")
 
@@ -248,7 +250,7 @@ class MarketMakingControllerBase(ControllerBase):
             [ConnectorPair(connector_name=config.connector_name, trading_pair=config.trading_pair)]
         )
 
-    def determine_executor_actions(self) -> List[ExecutorAction]:
+    def determine_executor_actions(self) -> list[ExecutorAction]:
         """
         Determine actions based on the provided executor handler report.
         """
@@ -257,7 +259,7 @@ class MarketMakingControllerBase(ControllerBase):
         actions.extend(self.stop_actions_proposal())
         return actions
 
-    def create_actions_proposal(self) -> List[ExecutorAction]:
+    def create_actions_proposal(self) -> list[ExecutorAction]:
         """
         Create actions proposal based on the current state of the controller.
         """
@@ -279,7 +281,7 @@ class MarketMakingControllerBase(ControllerBase):
                 )
         return create_actions
 
-    def get_levels_to_execute(self) -> List[str]:
+    def get_levels_to_execute(self) -> list[str]:
         working_levels = self.filter_executors(
             executors=self.executors_info,
             filter_func=lambda x: (
@@ -293,7 +295,7 @@ class MarketMakingControllerBase(ControllerBase):
         working_levels_ids = [executor.custom_info["level_id"] for executor in working_levels]
         return self.get_not_active_levels_ids(working_levels_ids)
 
-    def stop_actions_proposal(self) -> List[ExecutorAction]:
+    def stop_actions_proposal(self) -> list[ExecutorAction]:
         """
         Create a list of actions to stop the executors based on order refresh and early stop conditions.
         """
@@ -302,7 +304,7 @@ class MarketMakingControllerBase(ControllerBase):
         stop_actions.extend(self.executors_to_early_stop())
         return stop_actions
 
-    def executors_to_refresh(self) -> List[ExecutorAction]:
+    def executors_to_refresh(self) -> list[ExecutorAction]:
         executors_to_refresh = self.filter_executors(
             executors=self.executors_info,
             filter_func=lambda x: (
@@ -317,7 +319,7 @@ class MarketMakingControllerBase(ControllerBase):
             for executor in executors_to_refresh
         ]
 
-    def executors_to_early_stop(self) -> List[ExecutorAction]:
+    def executors_to_early_stop(self) -> list[ExecutorAction]:
         """
         Get the executors to early stop based on the current state of market data. This method can be overridden to
         implement custom behavior.
@@ -341,7 +343,7 @@ class MarketMakingControllerBase(ControllerBase):
         """
         raise NotImplementedError
 
-    def get_price_and_amount(self, level_id: str) -> Tuple[Decimal, Decimal]:
+    def get_price_and_amount(self, level_id: str) -> tuple[Decimal, Decimal]:
         """
         Get the spread and amount in quote for a given level id.
         """
@@ -366,7 +368,7 @@ class MarketMakingControllerBase(ControllerBase):
     def get_level_from_level_id(self, level_id: str) -> int:
         return int(level_id.split("_")[1])
 
-    def get_not_active_levels_ids(self, active_levels_ids: List[str]) -> List[str]:
+    def get_not_active_levels_ids(self, active_levels_ids: list[str]) -> list[str]:
         """
         Get the levels to execute based on the current state of the controller.
         """
@@ -382,7 +384,7 @@ class MarketMakingControllerBase(ControllerBase):
         ]
         return buy_ids_missing + sell_ids_missing
 
-    def check_position_rebalance(self) -> Optional[CreateExecutorAction]:
+    def check_position_rebalance(self) -> CreateExecutorAction | None:
         """
         Check if position needs rebalancing and create OrderExecutor to acquire missing base asset.
         Only applies to spot trading (not perpetual contracts).

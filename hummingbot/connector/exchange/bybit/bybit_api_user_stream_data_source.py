@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 import logging
 import time
-from typing import Optional
 
 from hummingbot.connector.exchange.bybit.bybit_auth import BybitAuth
 import hummingbot.connector.exchange.bybit.bybit_constants as CONSTANTS
@@ -18,15 +19,15 @@ from hummingbot.logger import HummingbotLogger
 class BybitAPIUserStreamDataSource(UserStreamTrackerDataSource):
     HEARTBEAT_TIME_INTERVAL = 30.0
 
-    _bausds_logger: Optional[HummingbotLogger] = None
+    _bausds_logger: HummingbotLogger | None = None
 
     def __init__(
         self,
         auth: BybitAuth,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
-        api_factory: Optional[WebAssistantsFactory] = None,
-        throttler: Optional[AsyncThrottler] = None,
-        time_synchronizer: Optional[TimeSynchronizer] = None,
+        api_factory: WebAssistantsFactory | None = None,
+        throttler: AsyncThrottler | None = None,
+        time_synchronizer: TimeSynchronizer | None = None,
     ):
         super().__init__()
         self._auth: BybitAuth = auth
@@ -37,7 +38,7 @@ class BybitAPIUserStreamDataSource(UserStreamTrackerDataSource):
         self._api_factory = api_factory or web_utils.build_api_factory(
             throttler=self._throttler, time_synchronizer=self._time_synchronizer, domain=self._domain, auth=self._auth
         )
-        self._ws_assistant: Optional[WSAssistant] = None
+        self._ws_assistant: WSAssistant | None = None
         self._last_ws_message_sent_timestamp = 0
 
     @classmethod

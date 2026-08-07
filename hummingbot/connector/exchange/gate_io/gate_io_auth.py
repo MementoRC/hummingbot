@@ -1,7 +1,7 @@
 import hashlib
 import hmac
 import json
-from typing import Any, Dict
+from typing import Any
 from urllib.parse import urlparse
 
 import six
@@ -35,7 +35,7 @@ class GateIoAuth(AuthBase):
         request.payload["auth"] = self._get_auth_headers_ws(payload=request.payload)
         return request
 
-    def _get_auth_headers_ws(self, payload: Dict[str, Any] = None) -> Dict[str, Any]:
+    def _get_auth_headers_ws(self, payload: dict[str, Any] = None) -> dict[str, Any]:
         """
         Generates authn for Gate.io websockets
 
@@ -49,7 +49,7 @@ class GateIoAuth(AuthBase):
         }
         return headers
 
-    def _get_auth_headers(self, request: RESTRequest) -> Dict[str, Any]:
+    def _get_auth_headers(self, request: RESTRequest) -> dict[str, Any]:
         """
         Generates authentication headers for Gate.io REST API
 

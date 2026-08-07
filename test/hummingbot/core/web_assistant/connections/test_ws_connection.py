@@ -1,6 +1,5 @@
 import asyncio
 import json
-from typing import List
 from unittest.mock import AsyncMock, patch
 
 import aiohttp
@@ -25,7 +24,7 @@ class WSConnectionTest(IsolatedAsyncioWrapperTestCase):
         await self.mocking_assistant.async_init()
         self.client_session = aiohttp.ClientSession()
         self.ws_connection = WSConnection(self.client_session)
-        self.async_tasks: List[asyncio.Task] = []
+        self.async_tasks: list[asyncio.Task] = []
 
     async def asyncTearDown(self) -> None:
         await self.client_session.close()

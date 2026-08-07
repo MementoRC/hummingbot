@@ -1,6 +1,8 @@
 #!/usr/bin/env python
+from __future__ import annotations
+
 import asyncio
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from hummingbot.client.command.command_utils import GatewayCommandUtils
 from hummingbot.connector.gateway.gateway_base import GatewayBase
@@ -14,7 +16,7 @@ if TYPE_CHECKING:
 class GatewayApproveCommand:
     """Handles gateway token approval commands"""
 
-    def gateway_approve(self, connector: Optional[str], token: Optional[str]):
+    def gateway_approve(self, connector: str | None, token: str | None):
         if connector is not None and token is not None:
             safe_ensure_future(self._update_gateway_approve_token(connector, token), loop=self.ev_loop)
         else:

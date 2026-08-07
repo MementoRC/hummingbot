@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 import json
 import re
-from typing import Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses import aioresponses
@@ -30,7 +31,7 @@ class BitstampUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
     async def asyncSetUp(self) -> None:
         await super().asyncSetUp()
         self.log_records = []
-        self.listening_task: Optional[asyncio.Task] = None
+        self.listening_task: asyncio.Task | None = None
         self.mocking_assistant = NetworkMockingAssistant()
         self.mock_time_provider = MagicMock()
         self.mock_time_provider.time.return_value = 1000

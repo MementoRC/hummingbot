@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from bidict import bidict
 
@@ -34,9 +36,9 @@ class KucoinExchange(ExchangePyBase):
         kucoin_api_key: str,
         kucoin_passphrase: str,
         kucoin_secret_key: str,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
@@ -113,7 +115,7 @@ class KucoinExchange(ExchangePyBase):
     def supported_order_types(self):
         return [OrderType.MARKET, OrderType.LIMIT, OrderType.LIMIT_MAKER]
 
-    async def get_all_pairs_prices(self) -> List[Dict[str, str]]:
+    async def get_all_pairs_prices(self) -> list[dict[str, str]]:
         pairs_prices = await self._api_get(path_url=CONSTANTS.ALL_TICKERS_PATH_URL)
         return pairs_prices
 
@@ -164,7 +166,7 @@ class KucoinExchange(ExchangePyBase):
         order_side: TradeType,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> AddedToCostTradeFee:
 
         is_maker = is_maker or (order_type is OrderType.LIMIT_MAKER)
@@ -186,7 +188,7 @@ class KucoinExchange(ExchangePyBase):
             )
         return fee
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         mapping = bidict()
         for symbol_data in filter(utils.is_pair_information_valid, exchange_info.get("data", [])):
             mapping[symbol_data["symbol"]] = combine_to_hb_trading_pair(
@@ -203,7 +205,7 @@ class KucoinExchange(ExchangePyBase):
         order_type: OrderType,
         price: Decimal,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         side = trade_type.name.lower()
         order_type_str = "market" if order_type == OrderType.MARKET else "limit"
         data = {
@@ -261,7 +263,7 @@ class KucoinExchange(ExchangePyBase):
                 # Refer to https://docs.kucoin.com/#private-order-change-events
                 if event_type == "message" and event_subject == CONSTANTS.ORDER_CHANGE_EVENT_TYPE:
                     order_event_type = execution_data["type"]
-                    client_order_id: Optional[str] = execution_data.get("clientOid")
+                    client_order_id: str | None = execution_data.get("clientOid")
 
                     fillable_order = self._order_tracker.all_fillable_orders.get(client_order_id)
                     updatable_order = self._order_tracker.all_updatable_orders.get(client_order_id)
@@ -348,7 +350,7 @@ class KucoinExchange(ExchangePyBase):
                 del self._account_available_balances[asset_name]
                 del self._account_balances[asset_name]
 
-    async def _format_trading_rules(self, raw_trading_pair_info: Dict[str, Any]) -> List[TradingRule]:
+    async def _format_trading_rules(self, raw_trading_pair_info: dict[str, Any]) -> list[TradingRule]:
         trading_rules = []
 
         for info in raw_trading_pair_info["data"]:
@@ -390,17 +392,17 @@ class KucoinExchange(ExchangePyBase):
             trading_pair = await self.trading_pair_associated_to_exchange_symbol(symbol=fee_json["symbol"])
             self._trading_fees[trading_pair] = fee_json
 
-    async def _update_orders_fills(self, orders: List[InFlightOrder]):
+    async def _update_orders_fills(self, orders: list[InFlightOrder]):
         # This method in the base ExchangePyBase, makes an API call for each order.
         # Given the rate limit of the API method and the breadth of info provided by the method
         # the mitigation proposal is to collect all orders in one shot, then parse them
         # Note that this is limited to 500 orders (pagination)
         # An alternative for Kucoin would be to use the limit/fills that returns 24hr updates, which should
         # be sufficient, the rate limit seems better suited
-        all_trades_updates: List[TradeUpdate] = []
+        all_trades_updates: list[TradeUpdate] = []
         if len(orders) > 0:
             try:
-                all_trades_updates: List[TradeUpdate] = await self._all_trades_updates(orders)
+                all_trades_updates: list[TradeUpdate] = await self._all_trades_updates(orders)
             except asyncio.CancelledError:
                 raise
             except Exception as request_error:
@@ -409,8 +411,8 @@ class KucoinExchange(ExchangePyBase):
             for trade_update in all_trades_updates:
                 self._order_tracker.process_trade_update(trade_update)
 
-    async def _all_trades_updates(self, orders: List[InFlightOrder]) -> List[TradeUpdate]:
-        trade_updates: List[TradeUpdate] = []
+    async def _all_trades_updates(self, orders: list[InFlightOrder]) -> list[TradeUpdate]:
+        trade_updates: list[TradeUpdate] = []
         if len(orders) > 0:
             exchange_to_client = {
                 o.exchange_order_id: {"client_id": o.client_order_id, "trading_pair": o.trading_pair} for o in orders
@@ -462,7 +464,7 @@ class KucoinExchange(ExchangePyBase):
 
         return trade_updates
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         raise Exception("Developer: This method should not be called, it is obsoleted for Kucoin")
 
         trade_updates = []

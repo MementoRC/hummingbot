@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 import json
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.exchange.bitmart import bitmart_constants as CONSTANTS, bitmart_utils as utils
 from hummingbot.connector.exchange.bitmart.bitmart_auth import BitmartAuth
@@ -15,12 +17,12 @@ if TYPE_CHECKING:
 
 
 class BitmartAPIUserStreamDataSource(UserStreamTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
         auth: BitmartAuth,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "BitmartExchange",
         api_factory: WebAssistantsFactory,
     ):
@@ -77,7 +79,7 @@ class BitmartAPIUserStreamDataSource(UserStreamTrackerDataSource):
 
     async def _process_websocket_messages(self, websocket_assistant: WSAssistant, queue: asyncio.Queue):
         async for ws_response in websocket_assistant.iter_messages():
-            data: Dict[str, Any] = ws_response.data
+            data: dict[str, Any] = ws_response.data
             decompressed_data = utils.decompress_ws_message(data)
             try:
                 if isinstance(decompressed_data, str):
@@ -98,7 +100,7 @@ class BitmartAPIUserStreamDataSource(UserStreamTrackerDataSource):
 
             await self._process_event_message(event_message=json_data, queue=queue)
 
-    async def _process_event_message(self, event_message: Dict[str, Any], queue: asyncio.Queue):
+    async def _process_event_message(self, event_message: dict[str, Any], queue: asyncio.Queue):
         if len(event_message) > 0 and "table" in event_message and "data" in event_message:
             queue.put_nowait(event_message)
 

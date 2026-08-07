@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.derivative.evedex_perpetual.evedex_perpetual_auth import EvedexPerpetualAuth
 import hummingbot.connector.derivative.evedex_perpetual.evedex_perpetual_constants as CONSTANTS
@@ -29,7 +31,7 @@ class EvedexPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
     HEARTBEAT_TIME_INTERVAL = 25.0  # Centrifugo ping interval (send before server timeout)
     PING_TIMEOUT = 10.0  # How long to wait for pong response
 
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     _message_id: int = 0
 
@@ -45,9 +47,9 @@ class EvedexPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
         self._api_factory = api_factory
         self._auth = auth
         self._connector = connector
-        self._user_exchange_id: Optional[str] = None
-        self._ping_task: Optional[asyncio.Task] = None
-        self._ws_assistant: Optional[WSAssistant] = None
+        self._user_exchange_id: str | None = None
+        self._ping_task: asyncio.Task | None = None
+        self._ws_assistant: WSAssistant | None = None
 
     def _next_message_id(self) -> int:
         """Generate the next message ID for Centrifugo protocol."""
@@ -232,7 +234,7 @@ class EvedexPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
                 continue
             await self._process_event_message(event_message=data, queue=queue)
 
-    async def _on_user_stream_interruption(self, websocket_assistant: Optional[WSAssistant]):
+    async def _on_user_stream_interruption(self, websocket_assistant: WSAssistant | None):
         """
         Called when the user stream gets interrupted.
         Cleans up the ping task and connection state.
@@ -249,7 +251,7 @@ class EvedexPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
         self._ws_assistant = None
         await super()._on_user_stream_interruption(websocket_assistant=websocket_assistant)
 
-    async def _process_event_message(self, event_message: Dict[str, Any], queue: asyncio.Queue):
+    async def _process_event_message(self, event_message: dict[str, Any], queue: asyncio.Queue):
         # Handle empty pong responses from Centrifugo ping (ignore them)
         if not event_message or event_message == {}:
             self.logger().debug("Received Centrifugo pong")

@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 from datetime import datetime
 from decimal import Decimal
 import threading
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 
@@ -18,7 +20,7 @@ def get_timestamp(days_ago: float = 0.0) -> float:
     return time.time() - (60.0 * 60.0 * 24.0 * days_ago)
 
 
-def smart_round(value: Decimal, precision: Optional[int] = None) -> str:
+def smart_round(value: Decimal, precision: int | None = None) -> str:
     """Round decimal value smartly for display."""
     if precision is not None:
         return f"{float(value):.{precision}f}"
@@ -39,7 +41,7 @@ class LPHistoryCommand:
         self,  # type: HummingbotApplication
         days: float = 0,
         verbose: bool = False,
-        precision: Optional[int] = None,
+        precision: int | None = None,
     ):
         """
         Display LP position history and performance metrics.
@@ -56,7 +58,7 @@ class LPHistoryCommand:
         start_time = get_timestamp(days) if days > 0 else self.init_time
 
         with self.trading_core.trade_fill_db.get_new_session() as session:
-            updates: List[RangePositionUpdate] = self._get_lp_updates_from_session(
+            updates: list[RangePositionUpdate] = self._get_lp_updates_from_session(
                 int(start_time * 1e3), session=session, config_file_path=self.strategy_file_name
             )
             if not updates:
@@ -71,19 +73,19 @@ class LPHistoryCommand:
     def get_lp_history_json(
         self,  # type: HummingbotApplication
         days: float = 0,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Get LP history as JSON for MQTT/API consumption."""
         if self.strategy_file_name is None:
             return []
         start_time = get_timestamp(days) if days > 0 else self.init_time
         with self.trading_core.trade_fill_db.get_new_session() as session:
-            updates: List[RangePositionUpdate] = self._get_lp_updates_from_session(
+            updates: list[RangePositionUpdate] = self._get_lp_updates_from_session(
                 int(start_time * 1e3), session=session, config_file_path=self.strategy_file_name
             )
             return [self._lp_update_to_json(u) for u in updates]
 
     @staticmethod
-    def _lp_update_to_json(update: RangePositionUpdate) -> Dict[str, Any]:
+    def _lp_update_to_json(update: RangePositionUpdate) -> dict[str, Any]:
         """Convert a RangePositionUpdate record to JSON format for API."""
         return {
             "id": update.hb_id,
@@ -111,7 +113,7 @@ class LPHistoryCommand:
         start_timestamp: int,
         session,
         config_file_path: str = None,
-    ) -> List[RangePositionUpdate]:
+    ) -> list[RangePositionUpdate]:
         """Query RangePositionUpdate records from database."""
         query = session.query(RangePositionUpdate).filter(RangePositionUpdate.timestamp >= start_timestamp)
         if config_file_path:
@@ -120,7 +122,7 @@ class LPHistoryCommand:
 
     def _list_lp_updates(
         self,  # type: HummingbotApplication
-        updates: List[RangePositionUpdate],
+        updates: list[RangePositionUpdate],
     ):
         """Display list of LP updates in a table."""
         lines = []
@@ -165,8 +167,8 @@ class LPHistoryCommand:
     async def _lp_performance_report(
         self,  # type: HummingbotApplication
         start_time: float,
-        updates: List[RangePositionUpdate],
-        precision: Optional[int] = None,
+        updates: list[RangePositionUpdate],
+        precision: int | None = None,
     ):
         """Calculate and display LP performance metrics."""
         lines = []
@@ -182,7 +184,7 @@ class LPHistoryCommand:
         )
 
         # Group by (market, trading_pair) like history command
-        market_info: Set[Tuple[str, str]] = set((u.market or "unknown", u.trading_pair or "UNKNOWN") for u in updates)
+        market_info: set[tuple[str, str]] = set((u.market or "unknown", u.trading_pair or "UNKNOWN") for u in updates)
 
         # Report for each market/trading pair
         for market, trading_pair in market_info:
@@ -193,15 +195,15 @@ class LPHistoryCommand:
 
     async def _report_pair_performance(
         self,  # type: HummingbotApplication
-        lines: List[str],
+        lines: list[str],
         market: str,
         trading_pair: str,
-        updates: List[RangePositionUpdate],
-        precision: Optional[int] = None,
+        updates: list[RangePositionUpdate],
+        precision: int | None = None,
     ):
         """Calculate and format performance for a single trading pair (closed positions only)."""
         # Group updates by position_address
-        positions: Dict[str, Dict[str, RangePositionUpdate]] = {}
+        positions: dict[str, dict[str, RangePositionUpdate]] = {}
         for u in updates:
             addr = u.position_address or "unknown"
             if addr not in positions:
