@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from copy import deepcopy
+from datetime import timezone
 from decimal import Decimal
 import json
 import logging
@@ -480,7 +481,7 @@ class GateIoPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
     def target_funding_info_next_funding_utc_str(self):
         datetime_str = (
             str(
-                pd.Timestamp.fromtimestamp(self.target_funding_info_next_funding_utc_timestamp, tz=pd.Timestamp.UTC)
+                pd.Timestamp.fromtimestamp(self.target_funding_info_next_funding_utc_timestamp, tz=timezone.utc)
             ).replace(" ", "T")
             + "Z"
         )
@@ -491,7 +492,7 @@ class GateIoPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         datetime_str = (
             str(
                 pd.Timestamp.fromtimestamp(
-                    self.target_funding_info_next_funding_utc_timestamp_ws_updated, tz=pd.Timestamp.UTC
+                    self.target_funding_info_next_funding_utc_timestamp_ws_updated, tz=timezone.utc
                 )
             ).replace(" ", "T")
             + "Z"
@@ -501,9 +502,7 @@ class GateIoPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
     @property
     def target_funding_payment_timestamp_str(self):
         datetime_str = (
-            str(pd.Timestamp.fromtimestamp(self.target_funding_payment_timestamp, tz=pd.Timestamp.UTC)).replace(
-                " ", "T"
-            )
+            str(pd.Timestamp.fromtimestamp(self.target_funding_payment_timestamp, tz=timezone.utc)).replace(" ", "T")
             + "Z"
         )
         return datetime_str
