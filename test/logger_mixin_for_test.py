@@ -78,7 +78,7 @@ class LoggerMixinForTest(LoggerMixinProtocol):
         if not hasattr(self, "log_records"):
             self._initialize()
 
-        if isinstance(loggers, HummingbotLogger):
+        if not isinstance(loggers, (list, tuple)):
             loggers = [loggers]
 
         for logger in loggers:
