@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 import logging
 from logging import Handler, LogRecord
 from types import UnionType
-from typing import Callable, List, Protocol
+from typing import Callable, Protocol
 
 from async_timeout import timeout
 
@@ -23,7 +25,7 @@ _IntOrStr: UnionType = int | str
 
 class LoggerMixinProtocol(Protocol):
     level: _IntOrStr
-    log_records: List[LogRecord]
+    log_records: list[LogRecord]
 
 
 class _LoggerProtocol(LoggerMixinProtocol, Protocol):
@@ -57,7 +59,7 @@ class LoggerMixinForTest(LoggerMixinProtocol):
         Initialize the test logger mixin by setting the default log level and initializing the log records list.
         """
         self.level: _IntOrStr = 1
-        self.log_records: List[LogRecord] = []
+        self.log_records: list[LogRecord] = []
 
     @staticmethod
     def _to_loglevel(log_level: _IntOrStr) -> str:
@@ -69,7 +71,7 @@ class LoggerMixinForTest(LoggerMixinProtocol):
             log_level = logging.getLevelName(log_level)
         return log_level
 
-    def set_loggers(self, loggers: List[HummingbotLogger] | HummingbotLogger):
+    def set_loggers(self, loggers: list[HummingbotLogger] | HummingbotLogger):
         """
         Set up the test logger mixin by adding the test logger to the provided loggers list.
         :params List[HummingbotLogger] | HummingbotLogger loggers: The loggers to add to the LoggerMixinForTest.

@@ -2,7 +2,7 @@ from __future__ import unicode_literals
 
 from collections import deque
 import re
-from typing import Callable, Deque, Dict, List, Tuple
+from typing import Callable, Deque
 
 from prompt_toolkit.auto_suggest import DynamicAutoSuggest
 from prompt_toolkit.buffer import Buffer
@@ -40,7 +40,7 @@ class FormattedTextLexer(Lexer):
 
     def __init__(self, client_config_map: ClientConfigAdapter) -> None:
         super().__init__()
-        self.html_tag_css_style_map: Dict[str, str] = {
+        self.html_tag_css_style_map: dict[str, str] = {
             style: css for style, css in load_style(client_config_map).style_rules
         }
         self.html_tag_css_style_map.update(
@@ -52,7 +52,7 @@ class FormattedTextLexer(Lexer):
         )
 
         # Maps specific text to its corresponding UI styles
-        self.text_style_tag_map: Dict[str, str] = text_ui_style
+        self.text_style_tag_map: dict[str, str] = text_ui_style
 
     def get_css_style(self, tag: str) -> str:
         style = self.html_tag_css_style_map.get(tag, "")
@@ -70,7 +70,7 @@ class FormattedTextLexer(Lexer):
                 if current_line.startswith(self.PROMPT_TEXT):
                     return [(self.get_css_style("primary_label"), current_line)]
 
-                matched_indexes: List[Tuple[int, int, str]] = [
+                matched_indexes: list[tuple[int, int, str]] = [
                     (match.start(), match.end(), style)
                     for special_word, style in self.text_style_tag_map.items()
                     for match in list(re.finditer(special_word, current_line))
@@ -259,7 +259,7 @@ class CustomTextArea:
 
         # Split the string into multiple lines if there is a "\n" or if the string exceeds max window width
         # This operation should not be too expensive because only the newly added lines are processed
-        new_lines_raw: List[str] = str(text).split("\n")
+        new_lines_raw: list[str] = str(text).split("\n")
         new_lines = []
         for line in new_lines_raw:
             while len(line) > max_width:
