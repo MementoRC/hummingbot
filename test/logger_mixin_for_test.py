@@ -74,7 +74,7 @@ class LoggerMixinForTest(LoggerMixinProtocol):
     def set_loggers(self, loggers: list[HummingbotLogger] | HummingbotLogger):
         """
         Set up the test logger mixin by adding the test logger to the provided loggers list.
-        :params List[HummingbotLogger] | HummingbotLogger loggers: The loggers to add to the LoggerMixinForTest.
+        :params list[HummingbotLogger] | HummingbotLogger loggers: The loggers to add to the LoggerMixinForTest.
         """
         # __init__() may not be called if the class is used as a mixin
         if not hasattr(self, "log_records"):
