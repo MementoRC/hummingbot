@@ -252,7 +252,7 @@ class TestTWAPExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             amount=Decimal("1"),
             price=Decimal("119"),
             creation_timestamp=1,
-            initial_state=OrderState.OPEN
+            initial_state=OrderState.OPEN,
         )
         tracked_refreshed = TrackedOrder("OID-REFRESHED")
         tracked_refreshed.order = refreshed

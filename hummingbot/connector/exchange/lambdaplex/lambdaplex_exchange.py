@@ -1,6 +1,6 @@
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional
 
 from bidict import bidict
 
@@ -38,9 +38,9 @@ class LambdaplexExchange(ExchangePyBase):
         self,
         lambdaplex_api_key: str,
         lambdaplex_private_key: str,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: Optional[dict[str, dict[str, Decimal]]] = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: Optional[list[str]] = None,
         trading_required: bool = True,
     ):
         self._api_key = lambdaplex_api_key
@@ -48,7 +48,7 @@ class LambdaplexExchange(ExchangePyBase):
         self._trading_required = trading_required
         self._trading_pairs = trading_pairs
         self._last_trades_poll_lambdaplex_timestamp = 1.0
-        self._asset_decimals: Dict[str, int] = {}
+        self._asset_decimals: dict[str, int] = {}
         super().__init__(balance_asset_limit, rate_limits_share_pct)
 
     @property
@@ -64,7 +64,7 @@ class LambdaplexExchange(ExchangePyBase):
         )
 
     @property
-    def rate_limits_rules(self) -> List[RateLimit]:
+    def rate_limits_rules(self) -> list[RateLimit]:
         return CONSTANTS.RATE_LIMITS
 
     @property
@@ -92,7 +92,7 @@ class LambdaplexExchange(ExchangePyBase):
         return CONSTANTS.SERVER_AVAILABILITY_URL
 
     @property
-    def trading_pairs(self) -> List[str]:
+    def trading_pairs(self) -> list[str]:
         return self._trading_pairs
 
     @property
@@ -110,7 +110,7 @@ class LambdaplexExchange(ExchangePyBase):
     def start(self, *args, **kwargs):
         super().start(*args, **kwargs)
 
-    def supported_order_types(self) -> List[OrderType]:
+    def supported_order_types(self) -> list[OrderType]:
         return [OrderType.LIMIT, OrderType.MARKET]
 
     def _is_request_exception_related_to_time_synchronizer(self, request_exception: Exception) -> bool:
@@ -120,7 +120,7 @@ class LambdaplexExchange(ExchangePyBase):
         return "Not Found" in str(status_update_exception)
 
     def _is_order_not_found_during_cancelation_error(self, cancelation_exception: Exception) -> bool:
-        return "\"status\": 404" in str(cancelation_exception) and "Not Found" in str(cancelation_exception)
+        return '"status": 404' in str(cancelation_exception) and "Not Found" in str(cancelation_exception)
 
     async def _place_cancel(self, order_id: str, tracked_order: InFlightOrder):
         try:
@@ -154,7 +154,7 @@ class LambdaplexExchange(ExchangePyBase):
         order_type: OrderType,
         price: Decimal,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         data = {
             "symbol": await self.exchange_symbol_associated_to_pair(trading_pair),
             "side": trade_type.name,
@@ -195,11 +195,7 @@ class LambdaplexExchange(ExchangePyBase):
 
         if trading_pair in self._trading_fees:
             fee_schema: TradeFeeSchema = self._trading_fees[trading_pair]
-            fee_rate = (
-                fee_schema.maker_percent_fee_decimal
-                if is_maker
-                else fee_schema.taker_percent_fee_decimal
-            )
+            fee_rate = fee_schema.maker_percent_fee_decimal if is_maker else fee_schema.taker_percent_fee_decimal
             fee = TradeFeeBase.new_spot_fee(
                 fee_schema=fee_schema,
                 trade_type=order_side,
@@ -278,7 +274,7 @@ class LambdaplexExchange(ExchangePyBase):
                     fee_schema=self.trade_fee_schema(),
                     trade_type=tracked_order.trade_type,
                     # percent_token=event_message["N"]
-                    flat_fees=[TokenAmount(amount=Decimal(event_message["n"]), token=event_message["N"])]
+                    flat_fees=[TokenAmount(amount=Decimal(event_message["n"]), token=event_message["N"])],
                 )
                 trade_update = TradeUpdate(
                     trade_id=str(event_message["t"]),
@@ -321,7 +317,7 @@ class LambdaplexExchange(ExchangePyBase):
             self._account_available_balances[asset_name] = free_balance
             self._account_balances[asset_name] = total_balance
 
-    async def _format_trading_rules(self, exchange_info_dict: Dict[str, Any]) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: dict[str, Any]) -> list[TradingRule]:
         """
         Example:
         {
@@ -408,7 +404,7 @@ class LambdaplexExchange(ExchangePyBase):
             del self._account_available_balances[asset_name]
             del self._account_balances[asset_name]
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         trade_updates = []
 
         if order.exchange_order_id is not None:
@@ -416,10 +412,7 @@ class LambdaplexExchange(ExchangePyBase):
             trading_pair = await self.exchange_symbol_associated_to_pair(trading_pair=order.trading_pair)
             all_fills_response = await self._api_get(
                 path_url=CONSTANTS.MY_TRADES_PATH_URL,
-                params={
-                    "symbol": trading_pair,
-                    "orderId": exchange_order_id
-                },
+                params={"symbol": trading_pair, "orderId": exchange_order_id},
                 is_auth_required=True,
                 limit_id=CONSTANTS.MY_TRADES_PATH_URL,
             )
@@ -429,7 +422,7 @@ class LambdaplexExchange(ExchangePyBase):
                 fee = TradeFeeBase.new_spot_fee(
                     fee_schema=self.trade_fee_schema(),
                     trade_type=order.trade_type,
-                    flat_fees=[TokenAmount(amount=Decimal(trade["commission"]), token=trade["commissionAsset"])]
+                    flat_fees=[TokenAmount(amount=Decimal(trade["commission"]), token=trade["commissionAsset"])],
                 )
                 trade_update = TradeUpdate(
                     trade_id=str(trade.get("cursorId", trade["id"])),
@@ -494,7 +487,7 @@ class LambdaplexExchange(ExchangePyBase):
             api_factory=self._web_assistants_factory,
         )
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         mapping = bidict()
         asset_decimals = {}
         for symbol_data in exchange_info["exchangeSymbols"]:
@@ -507,18 +500,14 @@ class LambdaplexExchange(ExchangePyBase):
                 asset_decimals[base] = int(symbol_data["baseAssetPrecision"])
                 asset_decimals[quote] = int(symbol_data["quoteAssetPrecision"])
             except Exception as exception:
-                self.logger().error(
-                    f"There was an error parsing a trading pair information ({exception})"
-                )
+                self.logger().error(f"There was an error parsing a trading pair information ({exception})")
         self._asset_decimals = asset_decimals
         self._set_trading_pair_symbol_map(mapping)
 
     async def _get_last_traded_price(self, trading_pair: str) -> float:
         resp_json = await self._api_get(
             path_url=CONSTANTS.LAST_PRICE_URL,
-            params={
-                "symbol": await self.exchange_symbol_associated_to_pair(trading_pair)
-            },
+            params={"symbol": await self.exchange_symbol_associated_to_pair(trading_pair)},
             limit_id=CONSTANTS.LAST_PRICE_SINGLE_LIMIT,
         )
 

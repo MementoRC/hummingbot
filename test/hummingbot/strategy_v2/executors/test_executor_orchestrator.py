@@ -554,6 +554,7 @@ class TestExecutorOrchestrator(unittest.TestCase):
         e.g. flipping an LP mid-unwind from EARLY_STOP to POSITION_HOLD, which silently
         skips its close-out swap.
         """
+
         async def test_async():
             executor = self._make_unfinished_executor("mid-unwind", RunnableStatus.SHUTTING_DOWN)
             self.orchestrator.active_executors["test"] = [executor]
@@ -587,6 +588,7 @@ class TestExecutorOrchestrator(unittest.TestCase):
     def test_stop_extends_wait_while_executor_makes_progress(self, store_all_executors, store_all_positions):
         """The stall budget resets on observable progress, so a multi-tick unwind that
         outlives the base budget still finishes without being force-stopped."""
+
         async def test_async():
             executor = self._make_unfinished_executor("slow-unwind", RunnableStatus.SHUTTING_DOWN)
             # Advance through one custom_info state per poll — more polls than the
@@ -611,6 +613,7 @@ class TestExecutorOrchestrator(unittest.TestCase):
     @patch.object(ExecutorOrchestrator, "store_all_executors")
     def test_stop_gives_up_on_stalled_executor(self, store_all_executors, store_all_positions):
         """No observable progress exhausts the stall budget and triggers the forced stop."""
+
         async def test_async():
             executor = self._make_unfinished_executor("hung", RunnableStatus.SHUTTING_DOWN)
 
@@ -629,6 +632,7 @@ class TestExecutorOrchestrator(unittest.TestCase):
     @patch.object(ExecutorOrchestrator, "store_all_executors")
     def test_stop_logs_and_continues_when_force_stop_raises(self, store_all_executors, store_all_positions):
         """One executor failing to force-stop must not prevent the others from being forced."""
+
         async def test_async():
             broken = self._make_unfinished_executor("broken", RunnableStatus.SHUTTING_DOWN)
             broken.force_stop_with_position_hold.side_effect = RuntimeError("connector already gone")

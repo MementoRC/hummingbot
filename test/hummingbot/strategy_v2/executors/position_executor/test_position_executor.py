@@ -1078,7 +1078,7 @@ class TestPositionExecutor(IsolatedAsyncioWrapperTestCase):
             price=Decimal("100"),
             amount=Decimal("1"),
             creation_timestamp=1640001112.223,
-            initial_state=OrderState.FILLED
+            initial_state=OrderState.FILLED,
         )
         tracked = TrackedOrder("OID-ENTRY")
         tracked.order = entry

@@ -17,7 +17,6 @@ class BitstampRESTPreProcessor(RESTPreProcessorBase):
     CONTENT_TYPE_HEADER = "Content-Type"
 
     async def pre_process(self, request: RESTRequest) -> RESTRequest:
-
         if not request.data and self.CONTENT_TYPE_HEADER in request.headers:
             # aiohttp adds the Content-Type header which is not allowed by bitstamp when sending an empty body.
             request.headers[self.CONTENT_TYPE_HEADER] = ""
