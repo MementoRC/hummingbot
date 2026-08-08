@@ -1,6 +1,5 @@
 from decimal import Decimal
 import os
-from typing import Dict, List
 
 import pandas as pd
 from pydantic import Field
@@ -15,7 +14,7 @@ from hummingbot.strategy_v2.executors.data_types import ConnectorPair
 
 class SimpleXEMMConfig(StrategyV2ConfigBase):
     script_file_name: str = os.path.basename(__file__)
-    controllers_config: List[str] = []
+    controllers_config: list[str] = []
     maker_connector: str = Field(
         "kucoin_paper_trade",
         json_schema_extra={"prompt": "Maker connector where the bot will place maker orders", "prompt_on_new": True},
@@ -65,7 +64,7 @@ class SimpleXEMM(StrategyV2Base):
     and taker hedge price) dips below min_spread, the bot refreshes the order
     """
 
-    def __init__(self, connectors: Dict[str, ConnectorBase], config: SimpleXEMMConfig):
+    def __init__(self, connectors: dict[str, ConnectorBase], config: SimpleXEMMConfig):
         super().__init__(connectors, config)
         self.config = config
         # Track our active maker order IDs

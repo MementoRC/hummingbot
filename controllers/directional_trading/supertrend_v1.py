@@ -1,5 +1,3 @@
-from typing import List
-
 import pandas_ta as ta  # noqa: F401
 from pydantic import Field, field_validator
 from pydantic_core.core_schema import ValidationInfo
@@ -92,7 +90,7 @@ class SuperTrend(DirectionalTradingControllerBase):
         self.processed_data["signal"] = df["signal"].iloc[-1]
         self.processed_data["features"] = df
 
-    def get_candles_config(self) -> List[CandlesConfig]:
+    def get_candles_config(self) -> list[CandlesConfig]:
         return [
             CandlesConfig(
                 connector=self.config.candles_connector,

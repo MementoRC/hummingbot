@@ -1,6 +1,6 @@
 from decimal import Decimal
 import logging
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import Field, field_validator, model_validator
 
@@ -40,7 +40,7 @@ class LPRebalancerConfig(ControllerConfigBase):
 
     controller_type: str = "generic"
     controller_name: str = "lp_rebalancer"
-    candles_config: List[CandlesConfig] = []
+    candles_config: list[CandlesConfig] = []
 
     # Network connector - e.g., "solana-mainnet-beta"
     connector_name: str = "solana-mainnet-beta"
@@ -386,7 +386,7 @@ class LPRebalancer(ControllerBase):
         except Exception as e:
             self.logger().debug(f"Could not trigger balance update: {e}")
 
-    def determine_executor_actions(self) -> List[ExecutorAction]:
+    def determine_executor_actions(self) -> list[ExecutorAction]:
         """
         Decide whether to create executors.
 
@@ -901,7 +901,7 @@ class LPRebalancer(ControllerBase):
         except Exception as e:
             self.logger().debug(f"Could not fetch pool price: {e}")
 
-    def to_format_status(self) -> List[str]:
+    def to_format_status(self) -> list[str]:
         """Format status for display."""
         status = []
         box_width = 100
