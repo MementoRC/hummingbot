@@ -664,27 +664,30 @@ class PacificaPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
 
         url = web_utils.public_rest_url(CONSTANTS.GET_TRADE_HISTORY_PATH_URL, domain=self.domain)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
-        req_mock.get(regex_url, payload={
-            "success": True,
-            "data": [
-                {
-                    "history_id": 19329801,
-                    "order_id": 123456789,
-                    "client_order_id": None,
-                    "symbol": self.symbol,
-                    "amount": "0.6",
-                    "price": "1900.0",
-                    "entry_price": "1899.0",
-                    "fee": "0.1",
-                    "pnl": "-0.001",
-                    "event_type": "fulfill_taker",
-                    "side": "open_long",
-                    "created_at": 1640780000500,
-                    "cause": "normal"
-                }
-            ],
-            "has_more": False,
-        })
+        req_mock.get(
+            regex_url,
+            payload={
+                "success": True,
+                "data": [
+                    {
+                        "history_id": 19329801,
+                        "order_id": 123456789,
+                        "client_order_id": None,
+                        "symbol": self.symbol,
+                        "amount": "0.6",
+                        "price": "1900.0",
+                        "entry_price": "1899.0",
+                        "fee": "0.1",
+                        "pnl": "-0.001",
+                        "event_type": "fulfill_taker",
+                        "side": "open_long",
+                        "created_at": 1640780000500,
+                        "cause": "normal",
+                    }
+                ],
+                "has_more": False,
+            },
+        )
 
         self.exchange._order_tracker.start_tracking_order(
             InFlightOrder(
@@ -699,12 +702,14 @@ class PacificaPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
             )
         )
 
-        await self.exchange._process_account_order_updates_ws_event_message({
-            "channel": "account_order_updates",
-            "data": [
-                {"i": 123456789, "os": "filled", "f": "0.6", "ut": 1640780001000},
-            ],
-        })
+        await self.exchange._process_account_order_updates_ws_event_message(
+            {
+                "channel": "account_order_updates",
+                "data": [
+                    {"i": 123456789, "os": "filled", "f": "0.6", "ut": 1640780001000},
+                ],
+            }
+        )
         # let the tracker's order-update future run to completion
         await asyncio.sleep(0.1)
 
@@ -736,24 +741,28 @@ class PacificaPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
             creation_timestamp=1640780000,
         )
         self.exchange._order_tracker.start_tracking_order(order)
-        self.exchange._order_tracker.process_trade_update(TradeUpdate(
-            trade_id="ws_trade_1",
-            client_order_id="test_client_order_id",
-            exchange_order_id="123456789",
-            trading_pair=self.trading_pair,
-            fill_timestamp=1640780000.5,
-            fill_price=Decimal("1900.0"),
-            fill_base_amount=Decimal("0.6"),
-            fill_quote_amount=Decimal("1140.0"),
-            fee=AddedToCostTradeFee(flat_fees=[TokenAmount(token="USDC", amount=Decimal("0.1"))]),
-        ))
+        self.exchange._order_tracker.process_trade_update(
+            TradeUpdate(
+                trade_id="ws_trade_1",
+                client_order_id="test_client_order_id",
+                exchange_order_id="123456789",
+                trading_pair=self.trading_pair,
+                fill_timestamp=1640780000.5,
+                fill_price=Decimal("1900.0"),
+                fill_base_amount=Decimal("0.6"),
+                fill_quote_amount=Decimal("1140.0"),
+                fee=AddedToCostTradeFee(flat_fees=[TokenAmount(token="USDC", amount=Decimal("0.1"))]),
+            )
+        )
 
-        await self.exchange._process_account_order_updates_ws_event_message({
-            "channel": "account_order_updates",
-            "data": [
-                {"i": 123456789, "os": "filled", "f": "0.6", "ut": 1640780001000},
-            ],
-        })
+        await self.exchange._process_account_order_updates_ws_event_message(
+            {
+                "channel": "account_order_updates",
+                "data": [
+                    {"i": 123456789, "os": "filled", "f": "0.6", "ut": 1640780001000},
+                ],
+            }
+        )
         await asyncio.sleep(0.1)
 
         # completed correctly from the WS-delivered fill alone
@@ -870,13 +879,16 @@ class PacificaPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
     async def test_get_all_pairs_prices_skips_unmapped_symbols(self, req_mock):
         url = web_utils.public_rest_url(CONSTANTS.GET_PRICES_PATH_URL, domain=self.domain)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
-        req_mock.get(regex_url, payload={
-            "success": True,
-            "data": [
-                {"symbol": self.symbol, "mark": "1900.5"},
-                {"symbol": "SOL-USDC", "mark": "85.9"},
-            ],
-        })
+        req_mock.get(
+            regex_url,
+            payload={
+                "success": True,
+                "data": [
+                    {"symbol": self.symbol, "mark": "1900.5"},
+                    {"symbol": "SOL-USDC", "mark": "85.9"},
+                ],
+            },
+        )
 
         results = await self.exchange.get_all_pairs_prices()
 

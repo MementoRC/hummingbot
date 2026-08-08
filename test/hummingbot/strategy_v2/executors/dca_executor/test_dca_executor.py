@@ -745,10 +745,15 @@ class TestDCAExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
 
     def test_force_stop_with_position_hold_holds_partial_fills(self):
         """A forced stop nets every open- and close-side fill into the position hold."""
-        config = DCAExecutorConfig(id="test-forced", timestamp=123, side=TradeType.BUY, connector_name="binance",
-                                   trading_pair="ETH-USDT",
-                                   amounts_quote=[Decimal(10), Decimal(20)],
-                                   prices=[Decimal(100), Decimal(80)])
+        config = DCAExecutorConfig(
+            id="test-forced",
+            timestamp=123,
+            side=TradeType.BUY,
+            connector_name="binance",
+            trading_pair="ETH-USDT",
+            amounts_quote=[Decimal(10), Decimal(20)],
+            prices=[Decimal(100), Decimal(80)],
+        )
         executor = self.get_dca_executor_from_config(config)
         executor._status = RunnableStatus.SHUTTING_DOWN
 
@@ -760,7 +765,7 @@ class TestDCAExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             price=Decimal("100"),
             amount=Decimal("0.1"),
             creation_timestamp=1640001112.223,
-            initial_state=OrderState.PARTIALLY_FILLED
+            initial_state=OrderState.PARTIALLY_FILLED,
         )
         filled.executed_amount_base = Decimal("0.05")
         tracked_filled = TrackedOrder("OID-DCA-1")
@@ -774,7 +779,7 @@ class TestDCAExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             price=Decimal("80"),
             amount=Decimal("0.25"),
             creation_timestamp=1640001112.223,
-            initial_state=OrderState.OPEN
+            initial_state=OrderState.OPEN,
         )
         tracked_untouched = TrackedOrder("OID-DCA-2")
         tracked_untouched.order = untouched
