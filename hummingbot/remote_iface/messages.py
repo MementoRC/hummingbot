@@ -1,8 +1,6 @@
-from __future__ import annotations
+from typing import Any, Dict, List, Optional, Tuple
 
-from typing import Any
-
-from commlib.msg import PubSubMessage, RPCMessage
+from pydantic import BaseModel
 
 
 class MQTT_STATUS_CODE:
@@ -10,22 +8,48 @@ class MQTT_STATUS_CODE:
     SUCCESS: int = 200
 
 
+class PubSubMessage(BaseModel):
+    """Base class for pub/sub messages.
+
+    Local replacement for ``commlib.msg.PubSubMessage`` (a bare pydantic
+    ``BaseModel``). Kept so the wire format and field semantics are identical
+    after dropping the commlib dependency.
+    """
+
+    pass
+
+
+class RPCMessage(BaseModel):
+    """Namespace base for RPC request/response messages.
+
+    Local replacement for ``commlib.msg.RPCMessage``: a ``BaseModel`` exposing
+    nested ``Request``/``Response`` ``BaseModel`` classes for subclasses to
+    extend.
+    """
+
+    class Request(BaseModel):
+        pass
+
+    class Response(BaseModel):
+        pass
+
+
 class NotifyMessage(PubSubMessage):
-    seq: int | None = 0
-    timestamp: int | None = -1
-    msg: str | None = ""
+    seq: Optional[int] = 0
+    timestamp: Optional[int] = -1
+    msg: Optional[str] = ""
 
 
 class StatusUpdateMessage(PubSubMessage):
-    timestamp: int | None = -1
-    type: str | None = ""
-    msg: str | None = ""
+    timestamp: Optional[int] = -1
+    type: Optional[str] = ""
+    msg: Optional[str] = ""
 
 
 class InternalEventMessage(PubSubMessage):
-    timestamp: int | None = -1
-    type: str | None = "ievent"
-    data: dict | None = {}
+    timestamp: Optional[int] = -1
+    type: Optional[str] = "ievent"
+    data: Optional[dict] = {}
 
 
 class LogMessage(PubSubMessage):
@@ -37,44 +61,44 @@ class LogMessage(PubSubMessage):
 
 
 class ExternalEventMessage(PubSubMessage):
-    timestamp: int | None = -1
-    sequence: int | None = 0
-    type: str | None = "eevent"
-    data: dict[str, Any] | None = {}
+    timestamp: Optional[int] = -1
+    sequence: Optional[int] = 0
+    type: Optional[str] = "eevent"
+    data: Optional[Dict[str, Any]] = {}
 
 
 class StartCommandMessage(RPCMessage):
     class Request(RPCMessage.Request):
-        log_level: str | None = None
-        script: str | None = None
-        conf: str | None = None
-        is_quickstart: bool | None = False
-        async_backend: bool | None = True
+        log_level: Optional[str] = None
+        script: Optional[str] = None
+        conf: Optional[str] = None
+        is_quickstart: Optional[bool] = False
+        async_backend: Optional[bool] = True
 
     class Response(RPCMessage.Response):
-        status: int | None = MQTT_STATUS_CODE.SUCCESS
-        msg: str | None = ""
+        status: Optional[int] = MQTT_STATUS_CODE.SUCCESS
+        msg: Optional[str] = ""
 
 
 class StopCommandMessage(RPCMessage):
     class Request(RPCMessage.Request):
-        skip_order_cancellation: bool | None = False
-        async_backend: bool | None = True
+        skip_order_cancellation: Optional[bool] = False
+        async_backend: Optional[bool] = True
 
     class Response(RPCMessage.Response):
-        status: int | None = MQTT_STATUS_CODE.SUCCESS
-        msg: str | None = ""
+        status: Optional[int] = MQTT_STATUS_CODE.SUCCESS
+        msg: Optional[str] = ""
 
 
 class ConfigCommandMessage(RPCMessage):
     class Request(RPCMessage.Request):
-        params: list[tuple[str, Any]] | None = []
+        params: Optional[List[Tuple[str, Any]]] = []
 
     class Response(RPCMessage.Response):
-        changes: list[tuple[str, Any]] | None = []
-        config: dict[str, Any] | None = {}
-        status: int | None = MQTT_STATUS_CODE.SUCCESS
-        msg: str | None = ""
+        changes: Optional[List[Tuple[str, Any]]] = []
+        config: Optional[Dict[str, Any]] = {}
+        status: Optional[int] = MQTT_STATUS_CODE.SUCCESS
+        msg: Optional[str] = ""
 
 
 class ImportCommandMessage(RPCMessage):
@@ -82,31 +106,31 @@ class ImportCommandMessage(RPCMessage):
         strategy: str
 
     class Response(RPCMessage.Response):
-        status: int | None = MQTT_STATUS_CODE.SUCCESS
-        msg: str | None = ""
+        status: Optional[int] = MQTT_STATUS_CODE.SUCCESS
+        msg: Optional[str] = ""
 
 
 class StatusCommandMessage(RPCMessage):
     class Request(RPCMessage.Request):
-        async_backend: bool | None = True
+        async_backend: Optional[bool] = True
 
     class Response(RPCMessage.Response):
-        status: int | None = MQTT_STATUS_CODE.SUCCESS
-        msg: str | None = ""
-        data: Any | None = ""
+        status: Optional[int] = MQTT_STATUS_CODE.SUCCESS
+        msg: Optional[str] = ""
+        data: Optional[Any] = ""
 
 
 class HistoryCommandMessage(RPCMessage):
     class Request(RPCMessage.Request):
-        days: float | None = 0
-        verbose: bool | None = False
-        precision: int | None = None
-        async_backend: bool | None = True
+        days: Optional[float] = 0
+        verbose: Optional[bool] = False
+        precision: Optional[int] = None
+        async_backend: Optional[bool] = True
 
     class Response(RPCMessage.Response):
-        status: int | None = MQTT_STATUS_CODE.SUCCESS
-        msg: str | None = ""
-        trades: list[Any] | None = []
+        status: Optional[int] = MQTT_STATUS_CODE.SUCCESS
+        msg: Optional[str] = ""
+        trades: Optional[List[Any]] = []
 
 
 class BalanceLimitCommandMessage(RPCMessage):
@@ -116,9 +140,9 @@ class BalanceLimitCommandMessage(RPCMessage):
         amount: float
 
     class Response(RPCMessage.Response):
-        status: int | None = MQTT_STATUS_CODE.SUCCESS
-        msg: str | None = ""
-        data: str | None = ""
+        status: Optional[int] = MQTT_STATUS_CODE.SUCCESS
+        msg: Optional[str] = ""
+        data: Optional[str] = ""
 
 
 class BalancePaperCommandMessage(RPCMessage):
@@ -127,6 +151,6 @@ class BalancePaperCommandMessage(RPCMessage):
         amount: float
 
     class Response(RPCMessage.Response):
-        status: int | None = MQTT_STATUS_CODE.SUCCESS
-        msg: str | None = ""
-        data: str | None = ""
+        status: Optional[int] = MQTT_STATUS_CODE.SUCCESS
+        msg: Optional[str] = ""
+        data: Optional[str] = ""

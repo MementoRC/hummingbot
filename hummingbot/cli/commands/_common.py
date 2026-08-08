@@ -1,8 +1,9 @@
 """Helpers shared across hbot command modules (kept here so commands don't import each other)."""
+
 import json
-import sys
 from pathlib import Path
-from typing import Optional, Tuple
+import sys
+from typing import Optional
 
 from hummingbot.cli import bot
 from hummingbot.cli.output import ExitCode, fail
@@ -39,8 +40,8 @@ def position_dict(p) -> dict:
         "amount": amt,
         "entry_price": entry,
         "mark_price": mark,
-        "value": abs(amt) * mark,          # current market value (notional at mark, in quote currency)
-        "notional": abs(amt) * entry,      # entry notional (kept for balance's existing render)
+        "value": abs(amt) * mark,  # current market value (notional at mark, in quote currency)
+        "notional": abs(amt) * entry,  # entry notional (kept for balance's existing render)
         "unrealized_pnl": upnl,
         "leverage": int(p.leverage),
     }
@@ -58,7 +59,7 @@ def read_json_object_from_stdin() -> dict:
     return parsed
 
 
-def resolve_db_for_command(name: Optional[str]) -> Tuple[Path, Optional[str], bool]:
+def resolve_db_for_command(name: Optional[str]) -> tuple[Path, Optional[str], bool]:
     """Resolve ``(db_path, config_filter, running)`` for the trades/history commands.
 
     With ``name`` -> a past/stopped bot's DB (no config filter, not running). Otherwise the current
@@ -67,8 +68,10 @@ def resolve_db_for_command(name: Optional[str]) -> Tuple[Path, Optional[str], bo
     if name:
         db_path = bot.db_path_for(name)
         if db_path is None:
-            fail(f"no trades database for '{name}' (available: {', '.join(bot.list_bots()) or 'none'})",
-                 ExitCode.NOT_FOUND)
+            fail(
+                f"no trades database for '{name}' (available: {', '.join(bot.list_bots()) or 'none'})",
+                ExitCode.NOT_FOUND,
+            )
         return db_path, None, False
     if not bot.exists():
         fail("no bot has been started (pass a name to view a past bot)", ExitCode.NOT_FOUND)
