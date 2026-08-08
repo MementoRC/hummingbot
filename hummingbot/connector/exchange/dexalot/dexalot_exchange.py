@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import hashlib
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 from async_timeout import timeout
 from bidict import bidict
@@ -43,9 +45,9 @@ class DexalotExchange(ExchangePyBase):
         self,
         dexalot_api_key: str,
         dexalot_api_secret: str,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
@@ -56,8 +58,8 @@ class DexalotExchange(ExchangePyBase):
         self._trading_pairs = trading_pairs
         self._last_trades_poll_dexalot_timestamp = 1.0
 
-        self._orders_queued_to_create: List[GatewayInFlightOrder] = []
-        self._orders_queued_to_cancel: List[GatewayInFlightOrder] = []
+        self._orders_queued_to_create: list[GatewayInFlightOrder] = []
+        self._orders_queued_to_cancel: list[GatewayInFlightOrder] = []
         self._queued_orders_task = None
 
         self._evm_params = {}
@@ -140,7 +142,7 @@ class DexalotExchange(ExchangePyBase):
     def supported_order_types(self):
         return [OrderType.LIMIT, OrderType.LIMIT_MAKER, OrderType.MARKET]
 
-    async def get_all_pairs_prices(self) -> List[Dict[str, str]]:
+    async def get_all_pairs_prices(self) -> list[dict[str, str]]:
         # pairs_prices = await self._api_get(path_url=CONSTANTS.ALL_TICKERS_PATH_URL)
         api_factory = self._web_assistants_factory
         ws = await api_factory.get_ws_assistant()
@@ -223,7 +225,7 @@ class DexalotExchange(ExchangePyBase):
         order_side: TradeType,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         is_maker = order_type is OrderType.LIMIT_MAKER
         trade_base_fee = build_trade_fee(
@@ -245,7 +247,7 @@ class DexalotExchange(ExchangePyBase):
         amount: Decimal,
         trade_type: TradeType,
         order_type: OrderType,
-        price: Optional[Decimal],
+        price: Decimal | None,
         exception: Exception,
     ):
         self.logger().network(
@@ -266,7 +268,7 @@ class DexalotExchange(ExchangePyBase):
         self._order_tracker.process_order_update(order_update)
         return order_update
 
-    def batch_order_cancel(self, orders_to_cancel: List[LimitOrder]):
+    def batch_order_cancel(self, orders_to_cancel: list[LimitOrder]):
         """
         Issues a batch order cancelation as a single API request for exchanges that implement this feature. The default
         implementation of this method is to send the requests discretely (one by one).
@@ -274,7 +276,7 @@ class DexalotExchange(ExchangePyBase):
         """
         safe_ensure_future(coro=self._execute_batch_cancel(orders_to_cancel=orders_to_cancel))
 
-    async def cancel_all(self, timeout_seconds: float) -> List[CancellationResult]:
+    async def cancel_all(self, timeout_seconds: float) -> list[CancellationResult]:
         """
         Cancels all currently active orders. The cancellations are performed in parallel tasks.
 
@@ -310,7 +312,7 @@ class DexalotExchange(ExchangePyBase):
         failed_cancellations = [CancellationResult(oid, False) for oid in incomplete_orders.keys()]
         return successful_cancellations + failed_cancellations
 
-    async def _execute_batch_cancel(self, orders_to_cancel: List[LimitOrder]) -> List[CancellationResult]:
+    async def _execute_batch_cancel(self, orders_to_cancel: list[LimitOrder]) -> list[CancellationResult]:
         results = []
         tracked_orders_to_cancel = []
 
@@ -327,8 +329,8 @@ class DexalotExchange(ExchangePyBase):
         return results
 
     async def _execute_batch_order_cancel(
-        self, orders_to_cancel: List[GatewayInFlightOrder]
-    ) -> List[CancellationResult]:
+        self, orders_to_cancel: list[GatewayInFlightOrder]
+    ) -> list[CancellationResult]:
         try:
             async with self._throttler.execute_task(limit_id=CONSTANTS.UID_REQUEST_WEIGHT):
                 cancelation_results = []
@@ -382,7 +384,7 @@ class DexalotExchange(ExchangePyBase):
         order_type: OrderType,
         price: Decimal,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         # Not required because of _place_order_and_process_update redefinition
         raise NotImplementedError
 
@@ -472,7 +474,7 @@ class DexalotExchange(ExchangePyBase):
         return hex_order_id
 
     async def _execute_batch_inflight_order_cancel_and_create(
-        self, orders_to_cancel: List[LimitOrder], inflight_orders_to_create: List[GatewayInFlightOrder]
+        self, orders_to_cancel: list[LimitOrder], inflight_orders_to_create: list[GatewayInFlightOrder]
     ):
         tracked_orders_to_cancel = []
         for order in orders_to_cancel:
@@ -530,7 +532,7 @@ class DexalotExchange(ExchangePyBase):
                     exception=ex,
                 )
 
-    async def _format_trading_rules(self, exchange_info_dict: List) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: List) -> list[TradingRule]:
         trading_pair_rules = exchange_info_dict
         retval = []
         for rule in filter(dexalot_utils.is_exchange_information_valid, trading_pair_rules):
@@ -585,7 +587,7 @@ class DexalotExchange(ExchangePyBase):
                 self.logger().error("Unexpected error in user stream listener loop.", exc_info=True)
                 await self._sleep(5.0)
 
-    def _create_trade_update_with_order_fill_data(self, order_fill: Dict[str, Any], order: InFlightOrder):
+    def _create_trade_update_with_order_fill_data(self, order_fill: dict[str, Any], order: InFlightOrder):
 
         is_maker = True if order_fill.get("addressMaker", "") == self.api_key else False
         takerSide = order_fill.get("takerSide")
@@ -622,7 +624,7 @@ class DexalotExchange(ExchangePyBase):
         )
         return trade_update
 
-    async def _process_trade_message(self, trade: Dict[str, Any], client_order_id: Optional[str] = None):
+    async def _process_trade_message(self, trade: dict[str, Any], client_order_id: str | None = None):
 
         exchange_order_id = (
             trade["data"].get("makerOrder", "")
@@ -656,7 +658,7 @@ class DexalotExchange(ExchangePyBase):
             trade_update = self._create_trade_update_with_order_fill_data(order_fill=trade["data"], order=tracked_order)
             self._order_tracker.process_trade_update(trade_update)
 
-    def _create_order_update_with_order_status_data(self, order_status: Dict[str, Any], order: InFlightOrder):
+    def _create_order_update_with_order_status_data(self, order_status: dict[str, Any], order: InFlightOrder):
         client_order_id = str(order_status.get("clientOrderId", ""))
         order.update_exchange_order_id(order_status["orderId"])
         order_update = OrderUpdate(
@@ -668,7 +670,7 @@ class DexalotExchange(ExchangePyBase):
         )
         return order_update
 
-    def _process_order_message(self, raw_msg: Dict[str, Any]):
+    def _process_order_message(self, raw_msg: dict[str, Any]):
         order_msg = raw_msg.get("data", {})
         client_order_id = str(order_msg.get("clientOrderId", ""))
         tracked_order = self._order_tracker.all_updatable_orders.get(client_order_id)
@@ -754,7 +756,7 @@ class DexalotExchange(ExchangePyBase):
                     self._account_available_balances[base_coin] += base_collateral_value
                     self._account_available_balances[base_coin] -= base_filled_value
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         trade_updates = []
 
         if order.exchange_order_id is not None:

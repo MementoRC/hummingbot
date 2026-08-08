@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.derivative.injective_v2_perpetual import injective_constants as CONSTANTS
 from hummingbot.connector.exchange.injective_v2.data_sources.injective_data_source import InjectiveDataSource
@@ -18,7 +20,7 @@ if TYPE_CHECKING:
 class InjectiveV2PerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
     def __init__(
         self,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "InjectiveV2Dericative",
         data_source: InjectiveDataSource,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -37,7 +39,7 @@ class InjectiveV2PerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource
 
         return funding_info
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def listen_for_subscriptions(self):
@@ -64,7 +66,7 @@ class InjectiveV2PerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource
         # by the data source
         message_queue.put_nowait(raw_message)
 
-    async def _parse_funding_info_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_funding_info_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         # In Injective 'raw_message' is not a raw message, but the FundingInfoUpdate created
         # by the data source
         message_queue.put_nowait(raw_message)

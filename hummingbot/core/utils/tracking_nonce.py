@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import time
-from typing import Optional, Union
+from typing import Union
 import warnings
 
 
@@ -24,7 +26,7 @@ class NonceCreator:
     def for_microseconds(cls):
         return cls(precision=cls.MICROSECONDS_PRECISION)
 
-    def get_tracking_nonce(self, timestamp: Optional[Union[float, int]] = None) -> int:
+    def get_tracking_nonce(self, timestamp: Union[float, int] | None = None) -> int:
         """
         Returns a unique number based on the timestamp provided as parameter or the machine time
         :params timestamp: The timestamp to use as the base for the nonce. If not provided the current time will be used.

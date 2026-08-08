@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import asyncio
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 from hummingbot.connector.exchange.foxbit import (
     foxbit_constants as CONSTANTS,
@@ -18,12 +20,12 @@ if TYPE_CHECKING:
 
 
 class FoxbitAPIUserStreamDataSource(UserStreamTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
         auth: FoxbitAuth,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "FoxbitExchange",
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -119,6 +121,6 @@ class FoxbitAPIUserStreamDataSource(UserStreamTrackerDataSource):
             self.logger().error(f"Unexpected error occurred subscribing to account events stream...{ex}", exc_info=True)
             raise
 
-    async def _on_user_stream_interruption(self, websocket_assistant: Optional[WSAssistant]):
+    async def _on_user_stream_interruption(self, websocket_assistant: WSAssistant | None):
         await super()._on_user_stream_interruption(websocket_assistant=websocket_assistant)
         await self._sleep(5)

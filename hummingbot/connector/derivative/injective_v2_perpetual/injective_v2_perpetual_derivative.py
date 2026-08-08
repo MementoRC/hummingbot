@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from collections import defaultdict
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Union
 
 from async_timeout import timeout
 
@@ -47,9 +49,9 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
     def __init__(
         self,
         connector_configuration: InjectiveConfigMap,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         **kwargs,
     ):
@@ -65,9 +67,9 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
         self._forwarders = []
         self._configure_event_forwarders()
         self._latest_polled_order_fill_time: float = self._time()
-        self._orders_transactions_check_task: Optional[asyncio.Task] = None
-        self._orders_queued_to_create: List[GatewayPerpetualInFlightOrder] = []
-        self._orders_queued_to_cancel: List[GatewayPerpetualInFlightOrder] = []
+        self._orders_transactions_check_task: asyncio.Task | None = None
+        self._orders_queued_to_create: list[GatewayPerpetualInFlightOrder] = []
+        self._orders_queued_to_cancel: list[GatewayPerpetualInFlightOrder] = []
 
         self._orders_transactions_check_task = None
         self._queued_orders_task = None
@@ -82,7 +84,7 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
         return None
 
     @property
-    def rate_limits_rules(self) -> List[RateLimit]:
+    def rate_limits_rules(self) -> list[RateLimit]:
         return self._rate_limits
 
     @property
@@ -110,7 +112,7 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
         raise NotImplementedError
 
     @property
-    def trading_pairs(self) -> List[str]:
+    def trading_pairs(self) -> list[str]:
         return self._trading_pairs
 
     @property
@@ -125,7 +127,7 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
     def funding_fee_poll_interval(self) -> int:
         return FUNDING_FEE_POLL_INTERVAL
 
-    def supported_position_modes(self) -> List[PositionMode]:
+    def supported_position_modes(self) -> list[PositionMode]:
         return [PositionMode.ONEWAY]
 
     def get_buy_collateral_token(self, trading_pair: str) -> str:
@@ -137,7 +139,7 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
         return trading_rule.sell_order_collateral_token
 
     @property
-    def status_dict(self) -> Dict[str, bool]:
+    def status_dict(self) -> dict[str, bool]:
         status = super().status_dict
         status["data_source_initialized"] = self._data_source.is_started()
         return status
@@ -170,13 +172,13 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
             self._queued_orders_task.cancel()
             self._queued_orders_task = None
 
-    def supported_order_types(self) -> List[OrderType]:
+    def supported_order_types(self) -> list[OrderType]:
         return self._data_source.supported_order_types()
 
     def start_tracking_order(
         self,
         order_id: str,
-        exchange_order_id: Optional[str],
+        exchange_order_id: str | None,
         trading_pair: str,
         trade_type: TradeType,
         price: Decimal,
@@ -201,7 +203,7 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
             )
         )
 
-    def batch_order_create(self, orders_to_create: List[Union[MarketOrder, LimitOrder]]) -> List[LimitOrder]:
+    def batch_order_create(self, orders_to_create: list[Union[MarketOrder, LimitOrder]]) -> list[LimitOrder]:
         """
         Issues a batch order creation as a single API request for exchanges that implement this feature. The default
         implementation of this method is to send the requests discretely (one by one).
@@ -222,7 +224,7 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
         safe_ensure_future(self._execute_batch_order_create(orders_to_create=orders_with_ids_to_create))
         return orders_with_ids_to_create
 
-    def batch_order_cancel(self, orders_to_cancel: List[LimitOrder]):
+    def batch_order_cancel(self, orders_to_cancel: list[LimitOrder]):
         """
         Issues a batch order cancelation as a single API request for exchanges that implement this feature. The default
         implementation of this method is to send the requests discretely (one by one).
@@ -230,7 +232,7 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
         """
         safe_ensure_future(coro=self._execute_batch_cancel(orders_to_cancel=orders_to_cancel))
 
-    async def cancel_all(self, timeout_seconds: float) -> List[CancellationResult]:
+    async def cancel_all(self, timeout_seconds: float) -> list[CancellationResult]:
         """
         Cancels all currently active orders. The cancellations are performed in parallel tasks.
 
@@ -309,17 +311,17 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
             )
             self._perpetual_trading.set_position(pos_key=position_key, position=position)
 
-    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> Tuple[bool, str]:
+    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> tuple[bool, str]:
         # Injective supports only one mode. It can't be changes in the chain
         return True, ""
 
-    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> Tuple[bool, str]:
+    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> tuple[bool, str]:
         """
         Leverage is set on a per order basis. See place_order()
         """
         return True, ""
 
-    async def _fetch_last_fee_payment(self, trading_pair: str) -> Tuple[float, Decimal, Decimal]:
+    async def _fetch_last_fee_payment(self, trading_pair: str) -> tuple[float, Decimal, Decimal]:
         last_funding_rate = Decimal("-1")
         market_id = await self.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
         payment_amount, payment_timestamp = await self._data_source.last_funding_payment(market_id=market_id)
@@ -358,7 +360,7 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
         order_type: OrderType,
         price: Decimal,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         # Not required because of _place_order_and_process_update redefinition
         raise NotImplementedError
 
@@ -369,7 +371,7 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
         trading_pair: str,
         amount: Decimal,
         order_type: OrderType,
-        price: Optional[Decimal] = None,
+        price: Decimal | None = None,
         position_action: PositionAction = PositionAction.NIL,
         **kwargs,
     ):
@@ -426,7 +428,7 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
         self._orders_queued_to_create.append(order)
         return None
 
-    async def _execute_batch_order_create(self, orders_to_create: List[Union[MarketOrder, LimitOrder]]):
+    async def _execute_batch_order_create(self, orders_to_create: list[Union[MarketOrder, LimitOrder]]):
         inflight_orders_to_create = []
         for order in orders_to_create:
             valid_order = await self._start_tracking_and_validate_order(
@@ -443,7 +445,7 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
         await self._execute_batch_inflight_order_create(inflight_orders_to_create=inflight_orders_to_create)
 
     async def _execute_batch_inflight_order_create(
-        self, inflight_orders_to_create: List[GatewayPerpetualInFlightOrder]
+        self, inflight_orders_to_create: list[GatewayPerpetualInFlightOrder]
     ):
         try:
             place_order_results = await self._data_source.create_orders(perpetual_orders=inflight_orders_to_create)
@@ -487,9 +489,9 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
         trading_pair: str,
         amount: Decimal,
         order_type: OrderType,
-        price: Optional[Decimal] = None,
+        price: Decimal | None = None,
         **kwargs,
-    ) -> Optional[GatewayPerpetualInFlightOrder]:
+    ) -> GatewayPerpetualInFlightOrder | None:
         trading_rule = self._trading_rules[trading_pair]
 
         if price is None:
@@ -541,10 +543,10 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
 
     def _update_order_after_creation_success(
         self,
-        exchange_order_id: Optional[str],
+        exchange_order_id: str | None,
         order: GatewayPerpetualInFlightOrder,
         update_timestamp: float,
-        misc_updates: Optional[Dict[str, Any]] = None,
+        misc_updates: dict[str, Any] | None = None,
     ):
         order_update: OrderUpdate = OrderUpdate(
             client_order_id=order.client_order_id,
@@ -564,7 +566,7 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
         amount: Decimal,
         trade_type: TradeType,
         order_type: OrderType,
-        price: Optional[Decimal],
+        price: Decimal | None,
         exception: Exception,
     ):
         self.logger().network(
@@ -584,7 +586,7 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
         )
         self._order_tracker.process_order_update(order_update)
 
-    async def _execute_batch_cancel(self, orders_to_cancel: List[LimitOrder]) -> List[CancellationResult]:
+    async def _execute_batch_cancel(self, orders_to_cancel: list[LimitOrder]) -> list[CancellationResult]:
         results = []
         tracked_orders_to_cancel = []
 
@@ -602,8 +604,8 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
 
     async def _execute_batch_order_cancel(
         self,
-        orders_to_cancel: List[GatewayPerpetualInFlightOrder],
-    ) -> List[CancellationResult]:
+        orders_to_cancel: list[GatewayPerpetualInFlightOrder],
+    ) -> list[CancellationResult]:
         try:
             cancel_order_results = await self._data_source.cancel_orders(perpetual_orders=orders_to_cancel)
             cancelation_results = []
@@ -673,7 +675,7 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
         position_action: PositionAction,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         is_maker = is_maker or (order_type is OrderType.LIMIT_MAKER)
         trading_pair = combine_to_hb_trading_pair(base=base_currency, quote=quote_currency)
@@ -777,7 +779,7 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
             except Exception:
                 self.logger().exception("Unexpected error in user stream listener loop")
 
-    async def _format_trading_rules(self, exchange_info_dict: Dict[str, Any]) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: dict[str, Any]) -> list[TradingRule]:
         # Not used in Injective
         raise NotImplementedError  # pragma: no cover
 
@@ -801,11 +803,11 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
             self._account_balances[token] = token_balance_info["total_balance"]
             self._account_available_balances[token] = token_balance_info["available_balance"]
 
-    async def _all_trade_updates_for_order(self, order: GatewayPerpetualInFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: GatewayPerpetualInFlightOrder) -> list[TradeUpdate]:
         # Not required because of _update_orders_fills redefinition
         raise NotImplementedError
 
-    async def _update_orders_fills(self, orders: List[GatewayPerpetualInFlightOrder]):
+    async def _update_orders_fills(self, orders: list[GatewayPerpetualInFlightOrder]):
         oldest_order_creation_time = self.current_timestamp
         all_market_ids = set()
 
@@ -836,7 +838,7 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
         raise NotImplementedError
 
     async def _update_orders_with_error_handler(
-        self, orders: List[GatewayPerpetualInFlightOrder], error_handler: Callable
+        self, orders: list[GatewayPerpetualInFlightOrder], error_handler: Callable
     ):
         oldest_order_creation_time = self.current_timestamp
         all_market_ids = set()
@@ -917,7 +919,7 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
         # Injective does not use a tracker for the private streams
         return None
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         # Not used in Injective
         raise NotImplementedError()  # pragma: no cover
 
@@ -970,7 +972,7 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
     def _process_user_trade_update(self, trade_update: TradeUpdate):
         self._all_trading_events_queue.put_nowait({"channel": "trade", "data": trade_update})
 
-    def _process_transaction_event(self, transaction_event: Dict[str, Any]):
+    def _process_transaction_event(self, transaction_event: dict[str, Any]):
         self._all_trading_events_queue.put_nowait({"channel": "transaction", "data": transaction_event})
 
     async def _check_orders_transactions(self):
@@ -990,7 +992,7 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
                 await self._sleep(0.5)
 
     async def _check_orders_creation_transactions(self):
-        orders: List[GatewayPerpetualInFlightOrder] = self._order_tracker.active_orders.values()
+        orders: list[GatewayPerpetualInFlightOrder] = self._order_tracker.active_orders.values()
         orders_by_creation_tx = defaultdict(list)
 
         for order in orders:

@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from bidict import bidict
@@ -36,8 +38,8 @@ class BitgetAPIUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
     async def asyncSetUp(self) -> None:
         await super().asyncSetUp()
 
-        self.log_records: List[Any] = []
-        self.listening_task: Optional[asyncio.Task] = None
+        self.log_records: list[Any] = []
+        self.listening_task: asyncio.Task | None = None
         self.mocking_assistant: NetworkMockingAssistant = NetworkMockingAssistant()
         self.client_config_map: ClientConfigAdapter = ClientConfigAdapter(ClientConfigMap())
         self.time_synchronizer = MagicMock()
@@ -86,7 +88,7 @@ class BitgetAPIUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
         """
         return "1234567890"
 
-    def ws_login_event_mock_response(self) -> Dict[str, Any]:
+    def ws_login_event_mock_response(self) -> dict[str, Any]:
         """
         Create a mock WebSocket response for login events.
 
@@ -94,7 +96,7 @@ class BitgetAPIUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
         """
         return {"event": "login", "code": "0", "msg": ""}
 
-    def ws_error_event_mock_response(self) -> Dict[str, Any]:
+    def ws_error_event_mock_response(self) -> dict[str, Any]:
         """
         Create a mock WebSocket response for error events.
 
@@ -102,7 +104,7 @@ class BitgetAPIUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
         """
         return {"event": "error", "code": "30005", "msg": "Invalid request"}
 
-    def order_event_for_new_order_websocket_update(self, order: InFlightOrder) -> Dict[str, Any]:
+    def order_event_for_new_order_websocket_update(self, order: InFlightOrder) -> dict[str, Any]:
         """
         Create a mock WebSocket response for a order event.
 
@@ -181,7 +183,7 @@ class BitgetAPIUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
         :param mock_ws: Mocked WebSocket connection object.
         """
         mock_ws.return_value = self.mocking_assistant.create_websocket_mock()
-        result_subscribe_orders: Dict[str, Any] = {
+        result_subscribe_orders: dict[str, Any] = {
             "event": "subscribe",
             "arg": {"instType": "SPOT", "channel": CONSTANTS.WS_ORDERS_ENDPOINT, "instId": self.exchange_trading_pair},
         }
@@ -202,7 +204,7 @@ class BitgetAPIUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
         await self.mocking_assistant.run_until_all_aiohttp_messages_delivered(mock_ws.return_value)
 
         sent_messages = self.mocking_assistant.json_messages_sent_through_websocket(websocket_mock=mock_ws.return_value)
-        expected_login: Dict[str, Any] = {
+        expected_login: dict[str, Any] = {
             "op": "login",
             "args": [
                 {
@@ -213,7 +215,7 @@ class BitgetAPIUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
                 }
             ],
         }
-        expected_orders_subscription: Dict[str, Any] = {
+        expected_orders_subscription: dict[str, Any] = {
             "op": "subscribe",
             "args": [
                 {"instType": "SPOT", "channel": CONSTANTS.WS_ACCOUNT_ENDPOINT, "coin": "default"},
@@ -234,7 +236,7 @@ class BitgetAPIUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
 
         :param mock_ws: Mocked WebSocket connection object.
         """
-        error_mock_response: Dict[str, Any] = self.ws_error_event_mock_response()
+        error_mock_response: dict[str, Any] = self.ws_error_event_mock_response()
         mock_ws.return_value = self.mocking_assistant.create_websocket_mock()
 
         self.mocking_assistant.add_websocket_aiohttp_message(
@@ -280,8 +282,8 @@ class BitgetAPIUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
             initial_state=OrderState.OPEN,
         )
         order: InFlightOrder = self.connector.in_flight_orders[order_id]
-        mock_response: Dict[str, Any] = self.order_event_for_new_order_websocket_update(order)
-        event_without_data: Dict[str, Any] = {"arg": mock_response["arg"]}
+        mock_response: dict[str, Any] = self.order_event_for_new_order_websocket_update(order)
+        event_without_data: dict[str, Any] = {"arg": mock_response["arg"]}
         invalid_event: str = "invalid message content"
 
         mock_ws.return_value = self.mocking_assistant.create_websocket_mock()
@@ -414,7 +416,7 @@ class BitgetAPIUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
             initial_state=OrderState.OPEN,
         )
         order: InFlightOrder = self.connector.in_flight_orders[order_id]
-        expected_order_event: Dict[str, Any] = self.order_event_for_new_order_websocket_update(order)
+        expected_order_event: dict[str, Any] = self.order_event_for_new_order_websocket_update(order)
 
         mock_ws.return_value = self.mocking_assistant.create_websocket_mock()
         self.mocking_assistant.add_websocket_aiohttp_message(
@@ -440,7 +442,7 @@ class BitgetAPIUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
 
         :param mock_ws: Mocked WebSocket connection object.
         """
-        error_mock_response: Dict[str, Any] = self.ws_error_event_mock_response()
+        error_mock_response: dict[str, Any] = self.ws_error_event_mock_response()
 
         mock_ws.return_value = self.mocking_assistant.create_websocket_mock()
         self.mocking_assistant.add_websocket_aiohttp_message(

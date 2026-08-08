@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import json
 import re
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Any, Callable
 from unittest.mock import patch
 
 from aioresponses import aioresponses
@@ -146,7 +148,7 @@ class OkxPerpetualDerivativeTests(
         }
 
     @property
-    def all_symbols_including_invalid_pair_mock_response(self) -> Tuple[str, Any]:
+    def all_symbols_including_invalid_pair_mock_response(self) -> tuple[str, Any]:
         response = {
             "code": "0",
             "data": [
@@ -667,7 +669,7 @@ class OkxPerpetualDerivativeTests(
         }
 
     @property
-    def expected_supported_position_modes(self) -> List[PositionMode]:
+    def expected_supported_position_modes(self) -> list[PositionMode]:
         raise NotImplementedError  # test is overwritten
 
     @property
@@ -677,7 +679,9 @@ class OkxPerpetualDerivativeTests(
     @property
     def target_funding_info_next_funding_utc_str(self):
         datetime_str = (
-            str(pd.Timestamp.utcfromtimestamp(self.target_funding_info_next_funding_utc_timestamp)).replace(" ", "T")
+            str(
+                pd.Timestamp.fromtimestamp(self.target_funding_info_next_funding_utc_timestamp, tz=pd.Timestamp.UTC)
+            ).replace(" ", "T")
             + "Z"
         )
         return datetime_str
@@ -685,9 +689,11 @@ class OkxPerpetualDerivativeTests(
     @property
     def target_funding_info_next_funding_utc_str_ws_updated(self):
         datetime_str = (
-            str(pd.Timestamp.utcfromtimestamp(self.target_funding_info_next_funding_utc_timestamp_ws_updated)).replace(
-                " ", "T"
-            )
+            str(
+                pd.Timestamp.fromtimestamp(
+                    self.target_funding_info_next_funding_utc_timestamp_ws_updated, tz=pd.Timestamp.UTC
+                )
+            ).replace(" ", "T")
             + "Z"
         )
         return datetime_str
@@ -741,7 +747,7 @@ class OkxPerpetualDerivativeTests(
         order: InFlightOrder,
         mock_api: aioresponses,
         response_scode: int = 0,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         """
         :return: the URL configured for the cancelation
@@ -758,7 +764,7 @@ class OkxPerpetualDerivativeTests(
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.REST_CANCEL_ACTIVE_ORDER[CONSTANTS.ENDPOINT], domain=CONSTANTS.DEFAULT_DOMAIN
@@ -784,7 +790,7 @@ class OkxPerpetualDerivativeTests(
         successful_order: InFlightOrder,
         erroneous_order: InFlightOrder,
         mock_api: aioresponses,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         :return: a list of all configured URLs for the cancelations
         """
@@ -796,20 +802,20 @@ class OkxPerpetualDerivativeTests(
         return all_urls
 
     def configure_order_not_found_error_cancelation_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         # Implement the expected not found response when enabling test_cancel_order_not_found_in_the_exchange
         raise NotImplementedError
 
     def configure_order_not_found_error_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
-    ) -> List[str]:
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
+    ) -> list[str]:
         # Implement the expected not found response when enabling
         # test_lost_order_removed_if_not_found_during_order_status_update
         raise NotImplementedError
 
     def configure_completely_filled_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             CONSTANTS.REST_QUERY_ACTIVE_ORDER[CONSTANTS.ENDPOINT], domain=CONSTANTS.DEFAULT_DOMAIN
@@ -823,7 +829,7 @@ class OkxPerpetualDerivativeTests(
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.REST_QUERY_ACTIVE_ORDER[CONSTANTS.ENDPOINT], domain=CONSTANTS.DEFAULT_DOMAIN
@@ -837,7 +843,7 @@ class OkxPerpetualDerivativeTests(
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.REST_QUERY_ACTIVE_ORDER[CONSTANTS.ENDPOINT], domain=CONSTANTS.DEFAULT_DOMAIN
@@ -851,7 +857,7 @@ class OkxPerpetualDerivativeTests(
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.REST_QUERY_ACTIVE_ORDER[CONSTANTS.ENDPOINT], domain=CONSTANTS.DEFAULT_DOMAIN
@@ -864,7 +870,7 @@ class OkxPerpetualDerivativeTests(
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.REST_QUERY_ACTIVE_ORDER[CONSTANTS.ENDPOINT], domain=CONSTANTS.DEFAULT_DOMAIN
@@ -878,7 +884,7 @@ class OkxPerpetualDerivativeTests(
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.REST_USER_TRADE_RECORDS[CONSTANTS.ENDPOINT], domain=CONSTANTS.DEFAULT_DOMAIN
@@ -892,7 +898,7 @@ class OkxPerpetualDerivativeTests(
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.REST_USER_TRADE_RECORDS[CONSTANTS.ENDPOINT], domain=CONSTANTS.DEFAULT_DOMAIN
@@ -906,7 +912,7 @@ class OkxPerpetualDerivativeTests(
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.REST_USER_TRADE_RECORDS[CONSTANTS.ENDPOINT], domain=CONSTANTS.DEFAULT_DOMAIN
@@ -919,7 +925,7 @@ class OkxPerpetualDerivativeTests(
         self,
         position_mode: PositionMode,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ):
         url = web_utils.get_rest_url_for_endpoint(endpoint=CONSTANTS.REST_SET_POSITION_MODE[CONSTANTS.ENDPOINT])
         response = {"code": "0", "data": [{"posMode": "long_short_mode"}], "msg": ""}
@@ -930,7 +936,7 @@ class OkxPerpetualDerivativeTests(
         self,
         position_mode: PositionMode,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ):
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.REST_SET_POSITION_MODE[CONSTANTS.ENDPOINT], domain=CONSTANTS.DEFAULT_DOMAIN
@@ -948,8 +954,8 @@ class OkxPerpetualDerivativeTests(
         self,
         leverage: PositionMode,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> Tuple[str, str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> tuple[str, str]:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.REST_SET_LEVERAGE[CONSTANTS.ENDPOINT], domain=CONSTANTS.DEFAULT_DOMAIN
         )
@@ -966,7 +972,7 @@ class OkxPerpetualDerivativeTests(
         self,
         leverage: int,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ):
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.REST_SET_LEVERAGE[CONSTANTS.ENDPOINT], domain=CONSTANTS.DEFAULT_DOMAIN

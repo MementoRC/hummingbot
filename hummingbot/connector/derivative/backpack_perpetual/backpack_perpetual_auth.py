@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import base64
 import json
-from typing import Any, Dict, Optional
+from typing import Any
 
 from cryptography.hazmat.primitives.asymmetric import ed25519
 
@@ -54,7 +56,7 @@ class BackpackPerpetualAuth(AuthBase):
     async def ws_authenticate(self, request: WSRequest) -> WSRequest:
         return request  # pass-through
 
-    def _get_signable_params(self, request: RESTRequest) -> tuple[Dict[str, Any], Optional[str]]:
+    def _get_signable_params(self, request: RESTRequest) -> tuple[dict[str, Any], str | None]:
         """
         Backpack: sign the request BODY (for POST/PUT/DELETE with body) OR QUERY params.
         Do NOT include timestamp/window/signature here (those are appended separately).
@@ -74,10 +76,10 @@ class BackpackPerpetualAuth(AuthBase):
 
     def generate_signature(
         self,
-        params: Dict[str, Any],
+        params: dict[str, Any],
         timestamp_ms: int,
         window_ms: int,
-        instruction: Optional[str] = None,
+        instruction: str | None = None,
     ) -> str:
         params_message = "&".join(f"{k}={params[k]}" for k in sorted(params))
         params_message = params_message.replace("True", "true").replace("False", "false")

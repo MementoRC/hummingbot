@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import asyncio
 from collections import defaultdict, deque
 import contextlib
 import functools
 import logging
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Union
 from unittest.mock import AsyncMock, PropertyMock
 import uuid
 
@@ -33,15 +35,15 @@ class MockWebsocketClientSession:
     # are required when working with websockets
     def __init__(self, mock_websocket: AsyncMock):
         self._mock_websocket = mock_websocket
-        self._connection_args: Optional[Tuple[Any]] = None
-        self._connection_kwargs: Optional[Dict[str, Any]] = None
+        self._connection_args: tuple[Any] | None = None
+        self._connection_kwargs: dict[str, Any] | None = None
 
     @property
-    def connection_args(self) -> Tuple[Any]:
+    def connection_args(self) -> tuple[Any]:
         return self._connection_args or ()
 
     @property
-    def connection_kwargs(self) -> Dict[str, Any]:
+    def connection_kwargs(self) -> dict[str, Any]:
         return self._connection_kwargs or {}
 
     async def ws_connect(self, *args, **kwargs):
