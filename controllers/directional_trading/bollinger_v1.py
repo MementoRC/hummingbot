@@ -1,5 +1,3 @@
-from typing import List
-
 import pandas_ta as ta  # noqa: F401
 from pydantic import Field, field_validator
 from pydantic_core.core_schema import ValidationInfo
@@ -59,7 +57,7 @@ class BollingerV1Controller(DirectionalTradingControllerBase):
         self.max_records = self.config.bb_length
         super().__init__(config, *args, **kwargs)
 
-    def get_candles_config(self) -> List[CandlesConfig]:
+    def get_candles_config(self) -> list[CandlesConfig]:
         return [
             CandlesConfig(
                 connector=self.config.candles_connector,
