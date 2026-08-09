@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from contextlib import ExitStack
 import logging
 import threading
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Union
 
 from prompt_toolkit.application import Application
 from prompt_toolkit.clipboard.pyperclip import PyperclipClipboard
@@ -57,7 +59,7 @@ class HummingbotCLI(PubSub):
         input_handler: Callable,
         bindings: KeyBindings,
         completer: Completer,
-        command_tabs: Dict[str, CommandTab],
+        command_tabs: dict[str, CommandTab],
     ):
         super().__init__()
         self.client_config_map: Union[ClientConfigAdapter, ClientConfigMap] = client_config_map
@@ -91,7 +93,7 @@ class HummingbotCLI(PubSub):
         self.bindings = bindings
         self.input_handler = input_handler
         self.input_field.accept_handler = self.accept
-        self.app: Optional[Application] = None
+        self.app: Application | None = None
 
         # settings
         self.prompt_text = ">>> "
@@ -266,7 +268,7 @@ class HummingbotCLI(PubSub):
             self.command_tabs[command_name].task = None
         self.redraw_app()
 
-    def handle_tab_command(self, hummingbot: "HummingbotApplication", command_name: str, kwargs: Dict[str, Any]):
+    def handle_tab_command(self, hummingbot: "HummingbotApplication", command_name: str, kwargs: dict[str, Any]):
         if command_name not in self.command_tabs:
             return
         cmd_tab = self.command_tabs[command_name]
@@ -284,7 +286,7 @@ class HummingbotCLI(PubSub):
         self.tab_button_clicked(command_name)
         self.display_tab_output(cmd_tab, hummingbot, kwargs)
 
-    def display_tab_output(self, command_tab: CommandTab, hummingbot: "HummingbotApplication", kwargs: Dict[Any, Any]):
+    def display_tab_output(self, command_tab: CommandTab, hummingbot: "HummingbotApplication", kwargs: dict[Any, Any]):
         if command_tab.task is not None and not command_tab.task.done():
             return
         if threading.current_thread() != threading.main_thread():

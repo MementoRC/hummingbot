@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 import logging
 import time
-from typing import Optional
 
 from hummingbot.connector.exchange.bing_x.bing_x_auth import BingXAuth
 import hummingbot.connector.exchange.bing_x.bing_x_constants as CONSTANTS
@@ -19,14 +20,14 @@ from hummingbot.logger import HummingbotLogger
 class BingXAPIUserStreamDataSource(UserStreamTrackerDataSource):
     LISTEN_KEY_KEEP_ALIVE_INTERVAL = 1800
 
-    _bausds_logger: Optional[HummingbotLogger] = None
+    _bausds_logger: HummingbotLogger | None = None
 
     def __init__(
         self,
         auth: BingXAuth,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
-        api_factory: Optional[WebAssistantsFactory] = None,
-        throttler: Optional[AsyncThrottler] = None,
+        api_factory: WebAssistantsFactory | None = None,
+        throttler: AsyncThrottler | None = None,
     ):
         super().__init__()
         self._auth: BingXAuth = auth
@@ -36,7 +37,7 @@ class BingXAPIUserStreamDataSource(UserStreamTrackerDataSource):
         self._api_factory = api_factory or web_utils.build_api_factory(
             throttler=self._throttler, domain=self._domain, auth=self._auth
         )
-        self._ws_assistant: Optional[WSAssistant] = None
+        self._ws_assistant: WSAssistant | None = None
         self._last_ws_message_sent_timestamp = 0
 
         self._listen_key_initialized_event: asyncio.Event = asyncio.Event()
@@ -227,7 +228,7 @@ class BingXAPIUserStreamDataSource(UserStreamTrackerDataSource):
         await ws.connect(ws_url=url, ping_timeout=CONSTANTS.WS_HEARTBEAT_TIME_INTERVAL)
         return ws
 
-    async def _on_user_stream_interruption(self, websocket_assistant: Optional[WSAssistant]):
+    async def _on_user_stream_interruption(self, websocket_assistant: WSAssistant | None):
         await super()._on_user_stream_interruption(websocket_assistant=websocket_assistant)
         self._manage_listen_key_task and self._manage_listen_key_task.cancel()
         self._current_listen_key = None

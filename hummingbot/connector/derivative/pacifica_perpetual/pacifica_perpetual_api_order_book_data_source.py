@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.derivative.pacifica_perpetual import (
     pacifica_perpetual_constants as CONSTANTS,
@@ -24,11 +26,11 @@ if TYPE_CHECKING:
 
 
 class PacificaPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "PacificaPerpetualDerivative",
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -37,18 +39,18 @@ class PacificaPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         self._connector = connector
         self._api_factory = api_factory
         self._domain = domain
-        self._ping_task: Optional[asyncio.Task] = None
+        self._ping_task: asyncio.Task | None = None
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
-    def _get_headers(self) -> Dict[str, str]:
+    def _get_headers(self) -> dict[str, str]:
         headers = {}
         if self._connector.api_config_key:
             headers["PF-API-KEY"] = self._connector.api_config_key
         return headers
 
-    async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, Any]:
+    async def _request_order_book_snapshot(self, trading_pair: str) -> dict[str, Any]:
         """
         https://docs.pacifica.fi/api-documentation/api/rest-api/markets/get-orderbook
 
@@ -240,7 +242,7 @@ class PacificaPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             self.logger().exception("Unexpected error occurred subscribing to order book trading pairs.")
             raise
 
-    async def _on_order_stream_interruption(self, websocket_assistant: Optional[WSAssistant] = None):
+    async def _on_order_stream_interruption(self, websocket_assistant: WSAssistant | None = None):
         await super()._on_order_stream_interruption(websocket_assistant)
         if self._ping_task is not None:
             self._ping_task.cancel()
@@ -262,7 +264,7 @@ class PacificaPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
                 self.logger().warning("Error sending ping to Pacifica WebSocket", exc_info=True)
                 await asyncio.sleep(5.0)  # Wait before retrying
 
-    async def _parse_order_book_snapshot_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_snapshot_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         """
         https://docs.pacifica.fi/api-documentation/api/websocket/subscriptions/orderbook
 
@@ -315,7 +317,7 @@ class PacificaPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
         message_queue.put_nowait(snapshot_msg)
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         """
         https://docs.pacifica.fi/api-documentation/api/websocket/subscriptions/trades
 
@@ -356,7 +358,7 @@ class PacificaPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
                 "amount": trade_data["a"],
                 "price": trade_data["p"],
             }
-            trade_message: Optional[OrderBookMessage] = OrderBookMessage(
+            trade_message: OrderBookMessage | None = OrderBookMessage(
                 message_type=OrderBookMessageType.TRADE,
                 content=message_content,
                 timestamp=trade_data["t"] / 1000,  # originally it's time in ms
@@ -364,7 +366,7 @@ class PacificaPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
             message_queue.put_nowait(trade_message)
 
-    async def _parse_funding_info_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_funding_info_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         """
         https://docs.pacifica.fi/api-documentation/api/websocket/subscriptions/prices
 
@@ -416,7 +418,7 @@ class PacificaPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
                 mark_price=Decimal(price_entry["mark"]),
             )
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         channel = ""
         if "data" in event_message:
             event_channel = event_message["channel"]

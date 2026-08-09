@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Union
 
 from pydantic import BaseModel, field_validator
 
@@ -40,8 +40,8 @@ class OrderLevelBuilder:
         self.n_levels = n_levels
 
     def resolve_input(
-        self, input_data: Union[Decimal | float, List[Decimal | float], Dict[str, Any]]
-    ) -> List[Decimal | float | int]:
+        self, input_data: Union[Decimal | float, list[Decimal | float], dict[str, Any]]
+    ) -> list[Decimal | float | int]:
         """
         Resolve the provided input data into a list of Decimal values.
 
@@ -68,13 +68,13 @@ class OrderLevelBuilder:
 
     def build_order_levels(
         self,
-        amounts: Union[Decimal, List[Decimal], Dict[str, Any]],
-        spreads: Union[Decimal, List[Decimal], Dict[str, Any]],
-        triple_barrier_confs: Union[TripleBarrierConfig, List[TripleBarrierConfig]] = TripleBarrierConfig(),
-        order_refresh_time: Union[int, List[int], Dict[str, Any]] = 60 * 5,
-        cooldown_time: Union[int, List[int], Dict[str, Any]] = 0,
-        sides: Optional[List[TradeType]] = None,
-    ) -> List[OrderLevel]:
+        amounts: Union[Decimal, list[Decimal], dict[str, Any]],
+        spreads: Union[Decimal, list[Decimal], dict[str, Any]],
+        triple_barrier_confs: Union[TripleBarrierConfig, list[TripleBarrierConfig]] = TripleBarrierConfig(),
+        order_refresh_time: Union[int, list[int], dict[str, Any]] = 60 * 5,
+        cooldown_time: Union[int, list[int], dict[str, Any]] = 0,
+        sides: list[TradeType] | None = None,
+    ) -> list[OrderLevel]:
         """
         Build a list of OrderLevels based on the given parameters.
 

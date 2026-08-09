@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 from decimal import Decimal
-from typing import Optional
 
 from hummingbot.client.settings import AllConnectorSettings, ConnectorType
 
 
-async def get_last_price(exchange: str, trading_pair: str) -> Optional[Decimal]:
+async def get_last_price(exchange: str, trading_pair: str) -> Decimal | None:
     if exchange in AllConnectorSettings.get_connector_settings():
         conn_setting = AllConnectorSettings.get_connector_settings()[exchange]
         if AllConnectorSettings.get_connector_settings()[exchange].type in [

@@ -1,4 +1,6 @@
-from typing import Callable, Optional
+from __future__ import annotations
+
+from typing import Callable
 
 import hummingbot.connector.exchange.htx.htx_constants as CONSTANTS
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
@@ -18,11 +20,11 @@ def private_rest_url(path_url: str, domain: str = None) -> str:
 
 
 def build_api_factory(
-    throttler: Optional[AsyncThrottler] = None,
-    time_synchronizer: Optional[TimeSynchronizer] = None,
+    throttler: AsyncThrottler | None = None,
+    time_synchronizer: TimeSynchronizer | None = None,
     domain: str = None,
-    time_provider: Optional[Callable] = None,
-    auth: Optional[AuthBase] = None,
+    time_provider: Callable | None = None,
+    auth: AuthBase | None = None,
 ) -> WebAssistantsFactory:
     throttler = throttler or AsyncThrottler(CONSTANTS.RATE_LIMITS)
     time_synchronizer = time_synchronizer or TimeSynchronizer()
@@ -51,7 +53,7 @@ def build_api_factory_without_time_synchronizer_pre_processor(throttler: AsyncTh
 
 
 async def get_current_server_time(
-    throttler: Optional[AsyncThrottler] = None,
+    throttler: AsyncThrottler | None = None,
     domain: str = None,
 ) -> float:
     throttler = throttler or AsyncThrottler(CONSTANTS.RATE_LIMITS)

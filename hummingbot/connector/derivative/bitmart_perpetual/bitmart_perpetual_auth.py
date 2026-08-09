@@ -1,6 +1,6 @@
 import hashlib
 import hmac
-from typing import Any, Dict
+from typing import Any
 
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
 from hummingbot.core.web_assistant.auth import AuthBase
@@ -41,7 +41,7 @@ class BitmartPerpetualAuth(AuthBase):
         signature = hmac.new(secret, message, hashlib.sha256).hexdigest()
         return signature
 
-    def get_ws_login_with_args(self) -> Dict[str, Any]:
+    def get_ws_login_with_args(self) -> dict[str, Any]:
         """
         Constructs the arguments for WebSocket authentication.
         """

@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.exchange.btc_markets.btc_markets_auth import BtcMarketsAuth
 import hummingbot.connector.exchange.btc_markets.btc_markets_constants as CONSTANTS
@@ -14,12 +16,12 @@ if TYPE_CHECKING:
 
 
 class BtcMarketsAPIUserStreamDataSource(UserStreamTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
         auth: BtcMarketsAuth,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "BtcMarketsExchange",
         api_factory: WebAssistantsFactory,
     ):
@@ -81,7 +83,7 @@ class BtcMarketsAPIUserStreamDataSource(UserStreamTrackerDataSource):
 
     async def _process_websocket_messages(self, websocket_assistant: WSAssistant, queue: asyncio.Queue):
         async for ws_response in websocket_assistant.iter_messages():
-            data: Dict[str, Any] = ws_response.data
+            data: dict[str, Any] = ws_response.data
 
             messageType = data.get("messageType")
             if messageType == "error":
