@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
+from __future__ import annotations
+
 import asyncio
 import base64
 import logging
 import pickle
 import time
-from typing import AsyncIterable, Dict, Optional, Tuple
+from typing import AsyncIterable
 
 import aiohttp
 import pandas as pd
@@ -27,7 +29,7 @@ class RemoteAPIOrderBookDataSource(OrderBookTrackerDataSource):
     MESSAGE_TIMEOUT = 30.0
     PING_TIMEOUT = 10.0
 
-    _raobds_logger: Optional[HummingbotLogger] = None
+    _raobds_logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -37,10 +39,10 @@ class RemoteAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
     def __init__(self):
         super().__init__()
-        self._client_session: Optional[aiohttp.ClientSession] = None
+        self._client_session: aiohttp.ClientSession | None = None
 
     @property
-    def authentication_headers(self) -> Dict[str, str]:
+    def authentication_headers(self) -> dict[str, str]:
         auth_str: str = f"{conf.coinalpha_order_book_api_username}:{conf.coinalpha_order_book_api_password}"
         encoded_auth: str = base64.standard_b64encode(auth_str.encode("utf8")).decode("utf8")
         return {"Authorization": f"Basic {encoded_auth}"}
@@ -50,7 +52,7 @@ class RemoteAPIOrderBookDataSource(OrderBookTrackerDataSource):
             self._client_session = aiohttp.ClientSession()
         return self._client_session
 
-    async def get_tracking_pairs(self) -> Dict[str, OrderBookTrackerEntry]:
+    async def get_tracking_pairs(self) -> dict[str, OrderBookTrackerEntry]:
         auth: aiohttp.BasicAuth = aiohttp.BasicAuth(
             login=conf.coinalpha_order_book_api_username, password=conf.coinalpha_order_book_api_password
         )
@@ -61,8 +63,8 @@ class RemoteAPIOrderBookDataSource(OrderBookTrackerDataSource):
             raise EnvironmentError(f"Error fetching order book tracker snapshot from {self.SNAPSHOT_REST_URL}.")
 
         binary_data: bytes = await response.read()
-        order_book_tracker_data: Dict[str, Tuple[pd.DataFrame, pd.DataFrame]] = pickle.loads(binary_data)
-        retval: Dict[str, OrderBookTrackerEntry] = {}
+        order_book_tracker_data: dict[str, tuple[pd.DataFrame, pd.DataFrame]] = pickle.loads(binary_data)
+        retval: dict[str, OrderBookTrackerEntry] = {}
 
         for trading_pair, (bids_df, asks_df) in order_book_tracker_data.items():
             order_book: BinanceOrderBook = BinanceOrderBook()

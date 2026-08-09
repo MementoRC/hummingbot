@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import logging
 import math
-from typing import Dict, List, Optional, Union
+from typing import Dict, Union
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.common import OrderType, PositionAction, PriceType, TradeType
@@ -64,21 +66,21 @@ class DCAExecutor(ExecutorBase):
             self.config.activation_bounds = [Decimal("0.0001"), Decimal("0.005")]  # 0.01% and 0.5%
 
         # executors tracking
-        self._open_orders: List[TrackedOrder] = []
-        self._close_orders: List[TrackedOrder] = []  # for now will be just one order but we can have multiple
-        self._failed_orders: List[TrackedOrder] = []
-        self._trailing_stop_trigger_pct: Optional[Decimal] = None
+        self._open_orders: list[TrackedOrder] = []
+        self._close_orders: list[TrackedOrder] = []  # for now will be just one order but we can have multiple
+        self._failed_orders: list[TrackedOrder] = []
+        self._trailing_stop_trigger_pct: Decimal | None = None
 
         # used to track the total amount filled that is updated by the event in case that the InFlightOrder is
         # not available
         self._total_executed_amount_backup: Decimal = Decimal("0")
 
     @property
-    def active_open_orders(self) -> List[TrackedOrder]:
+    def active_open_orders(self) -> list[TrackedOrder]:
         return self._open_orders
 
     @property
-    def active_close_orders(self) -> List[TrackedOrder]:
+    def active_close_orders(self) -> list[TrackedOrder]:
         return self._close_orders
 
     @property

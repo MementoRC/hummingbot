@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from collections import defaultdict
 from decimal import Decimal
 import time
-from typing import Any, AsyncIterable, Dict, List, Optional, Tuple
+from typing import Any, AsyncIterable
 
 from bidict import bidict
 
@@ -43,11 +45,11 @@ class BinancePerpetualDerivative(PerpetualDerivativePyBase):
 
     def __init__(
         self,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
         binance_perpetual_api_key: str = None,
         binance_perpetual_api_secret: str = None,
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         domain: str = CONSTANTS.DOMAIN,
     ):
@@ -71,7 +73,7 @@ class BinancePerpetualDerivative(PerpetualDerivativePyBase):
         )
 
     @property
-    def rate_limits_rules(self) -> List[RateLimit]:
+    def rate_limits_rules(self) -> list[RateLimit]:
         return CONSTANTS.RATE_LIMITS
 
     @property
@@ -114,7 +116,7 @@ class BinancePerpetualDerivative(PerpetualDerivativePyBase):
     def funding_fee_poll_interval(self) -> int:
         return 600
 
-    def supported_order_types(self) -> List[OrderType]:
+    def supported_order_types(self) -> list[OrderType]:
         """
         :return a list of OrderType supported by this connector
         """
@@ -181,7 +183,7 @@ class BinancePerpetualDerivative(PerpetualDerivativePyBase):
         position_action: PositionAction,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         is_maker = is_maker or False
         fee = build_trade_fee(
@@ -235,7 +237,7 @@ class BinancePerpetualDerivative(PerpetualDerivativePyBase):
         price: Decimal,
         position_action: PositionAction = PositionAction.NIL,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
 
         amount_str = f"{amount:f}"
         price_str = f"{price:f}"
@@ -279,7 +281,7 @@ class BinancePerpetualDerivative(PerpetualDerivativePyBase):
                 raise
         return o_id, transact_time
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         trade_updates = []
         try:
             exchange_order_id = await order.get_exchange_order_id()
@@ -357,7 +359,7 @@ class BinancePerpetualDerivative(PerpetualDerivativePyBase):
         )
         return _order_update
 
-    async def _iter_user_event_queue(self) -> AsyncIterable[Dict[str, any]]:
+    async def _iter_user_event_queue(self) -> AsyncIterable[dict[str, any]]:
         while True:
             try:
                 yield await self._user_stream_tracker.user_stream.get()
@@ -385,7 +387,7 @@ class BinancePerpetualDerivative(PerpetualDerivativePyBase):
                 self.logger().error(f"Unexpected error in user stream listener loop: {e}", exc_info=True)
                 await self._sleep(5.0)
 
-    async def _process_user_stream_event(self, event_message: Dict[str, Any]):
+    async def _process_user_stream_event(self, event_message: dict[str, Any]):
         event_type = event_message.get("e")
         if event_type == "ORDER_TRADE_UPDATE":
             order_message = event_message.get("o")
@@ -505,7 +507,7 @@ class BinancePerpetualDerivative(PerpetualDerivativePyBase):
                 f"Margin Required: {total_maint_margin_required}. Negative PnL assets: {negative_pnls_msg}."
             )
 
-    async def _format_trading_rules(self, exchange_info_dict: Dict[str, Any]) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: dict[str, Any]) -> list[TradingRule]:
         """
         Queries the necessary API endpoint and initialize the TradingRule object for each trading pair being traded.
 
@@ -546,7 +548,7 @@ class BinancePerpetualDerivative(PerpetualDerivativePyBase):
                 )
         return return_val
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         mapping = bidict()
         for symbol_data in filter(web_utils.is_exchange_information_valid, exchange_info.get("symbols", [])):
             exchange_symbol = symbol_data["pair"]
@@ -640,7 +642,7 @@ class BinancePerpetualDerivative(PerpetualDerivativePyBase):
         last_tick = int(self._last_poll_timestamp / self.UPDATE_ORDER_STATUS_MIN_INTERVAL)
         current_tick = int(self.current_timestamp / self.UPDATE_ORDER_STATUS_MIN_INTERVAL)
         if current_tick > last_tick and len(self._order_tracker.active_orders) > 0:
-            trading_pairs_to_order_map: Dict[str, Dict[str, Any]] = defaultdict(lambda: {})
+            trading_pairs_to_order_map: dict[str, dict[str, Any]] = defaultdict(lambda: {})
             for order in self._order_tracker.active_orders.values():
                 trading_pairs_to_order_map[order.trading_pair][order.exchange_order_id] = order
             trading_pairs = list(trading_pairs_to_order_map.keys())
@@ -746,7 +748,7 @@ class BinancePerpetualDerivative(PerpetualDerivativePyBase):
 
                 self._order_tracker.process_order_update(new_order_update)
 
-    async def _fetch_account_position_mode(self) -> Optional[PositionMode]:
+    async def _fetch_account_position_mode(self) -> PositionMode | None:
         response = await self._api_get(
             path_url=CONSTANTS.CHANGE_POSITION_MODE_URL,
             is_auth_required=True,
@@ -755,13 +757,13 @@ class BinancePerpetualDerivative(PerpetualDerivativePyBase):
         self._position_mode = PositionMode.HEDGE if response.get("dualSidePosition") else PositionMode.ONEWAY
         return self._position_mode
 
-    async def _get_position_mode(self) -> Optional[PositionMode]:
+    async def _get_position_mode(self) -> PositionMode | None:
         # To-do: ensure there's no active order or contract before changing position mode
         if self._position_mode is None:
             await self._fetch_account_position_mode()
         return self._position_mode
 
-    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> Tuple[bool, str]:
+    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> tuple[bool, str]:
         msg = ""
         success = True
         initial_mode = await self._get_position_mode()
@@ -782,7 +784,7 @@ class BinancePerpetualDerivative(PerpetualDerivativePyBase):
             self._position_mode = mode
         return success, msg
 
-    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> Tuple[bool, str]:
+    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> tuple[bool, str]:
         symbol = await self.exchange_symbol_associated_to_pair(trading_pair)
         params = {"symbol": symbol, "leverage": leverage}
         set_leverage = await self._api_post(
@@ -798,7 +800,7 @@ class BinancePerpetualDerivative(PerpetualDerivativePyBase):
             msg = "Unable to set leverage"
         return success, msg
 
-    async def _fetch_last_fee_payment(self, trading_pair: str) -> Tuple[int, Decimal, Decimal]:
+    async def _fetch_last_fee_payment(self, trading_pair: str) -> tuple[int, Decimal, Decimal]:
         exchange_symbol = await self.exchange_symbol_associated_to_pair(trading_pair)
         payment_response = await self._api_get(
             path_url=CONSTANTS.GET_INCOME_HISTORY_URL,

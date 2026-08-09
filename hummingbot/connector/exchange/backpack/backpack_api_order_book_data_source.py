@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.exchange.backpack import backpack_constants as CONSTANTS, backpack_web_utils as web_utils
 from hummingbot.connector.exchange.backpack.backpack_order_book import BackpackOrderBook
@@ -16,11 +18,11 @@ if TYPE_CHECKING:
 
 
 class BackpackAPIOrderBookDataSource(OrderBookTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "BackpackExchange",
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -32,10 +34,10 @@ class BackpackAPIOrderBookDataSource(OrderBookTrackerDataSource):
         self._domain = domain
         self._api_factory = api_factory
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
-    async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, Any]:
+    async def _request_order_book_snapshot(self, trading_pair: str) -> dict[str, Any]:
         """
         Retrieves a copy of the full order book from the exchange, for a particular trading pair.
 
@@ -65,20 +67,20 @@ class BackpackAPIOrderBookDataSource(OrderBookTrackerDataSource):
         return ws
 
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBookMessage:
-        snapshot: Dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
+        snapshot: dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
         snapshot_timestamp: float = time.time()
         snapshot_msg: OrderBookMessage = BackpackOrderBook.snapshot_message_from_exchange(
             snapshot, snapshot_timestamp, metadata={"trading_pair": trading_pair}
         )
         return snapshot_msg
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         if "data" in raw_message and CONSTANTS.TRADE_EVENT_TYPE in raw_message.get("stream"):
             trading_pair = self._connector.trading_pair_associated_to_exchange_symbol(symbol=raw_message["data"]["s"])
             trade_message = BackpackOrderBook.trade_message_from_exchange(raw_message, {"trading_pair": trading_pair})
             message_queue.put_nowait(trade_message)
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         if "data" in raw_message and CONSTANTS.DIFF_EVENT_TYPE in raw_message.get("stream"):
             trading_pair = self._connector.trading_pair_associated_to_exchange_symbol(symbol=raw_message["data"]["s"])
             order_book_message: OrderBookMessage = BackpackOrderBook.diff_message_from_exchange(
@@ -86,7 +88,7 @@ class BackpackAPIOrderBookDataSource(OrderBookTrackerDataSource):
             )
             message_queue.put_nowait(order_book_message)
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         channel = ""
         stream = event_message.get("stream", "")
         if CONSTANTS.DIFF_EVENT_TYPE in stream:

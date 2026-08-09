@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 from decimal import Decimal
 import numbers
 from random import randint
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from pydantic import ConfigDict, Field, SecretStr
 
@@ -30,7 +32,7 @@ def convert_timestamp(timestamp: Any) -> float:
     return float(timestamp) / 1e9
 
 
-def trading_pair_to_product_id(trading_pair: str, exchange_market_info: Dict, is_perp: Optional[bool] = False) -> int:
+def trading_pair_to_product_id(trading_pair: str, exchange_market_info: Dict, is_perp: bool | None = False) -> int:
     tp = trading_pair.replace("-", "/")
     for product_id in exchange_market_info:
         if is_perp and "perp" not in exchange_market_info[product_id]["symbol"].lower():
@@ -45,7 +47,7 @@ def market_to_trading_pair(market: str) -> str:
     return market.replace("/", "-")
 
 
-def convert_from_x18(data: Any, precision: Optional[Decimal] = None) -> Any:
+def convert_from_x18(data: Any, precision: Decimal | None = None) -> Any:
     """
     Converts numerical data encoded as x18 to a string representation of a
     floating point number, recursively applies the conversion for other data types.
@@ -71,7 +73,7 @@ def convert_from_x18(data: Any, precision: Optional[Decimal] = None) -> Any:
     return data
 
 
-def convert_to_x18(data: Any, precision: Optional[Decimal] = None) -> Any:
+def convert_to_x18(data: Any, precision: Decimal | None = None) -> Any:
     """
     Converts numerical data encoded to a string representation of x18, recursively
     applies the conversion for other data types.
@@ -97,7 +99,7 @@ def convert_to_x18(data: Any, precision: Optional[Decimal] = None) -> Any:
     return data
 
 
-def generate_expiration(timestamp: float = None, order_type: Optional[str] = None) -> str:
+def generate_expiration(timestamp: float = None, order_type: str | None = None) -> str:
     default_max_time = 8640000000000000  # NOTE: Forever
     default_day_time = 86400
     # Default significant bit is 0 for GTC
@@ -137,7 +139,7 @@ def convert_address_to_sender(address: str) -> str:
     raise TypeError("Address must be of type string")
 
 
-def is_exchange_information_valid(exchange_info: Dict[str, Any]) -> bool:
+def is_exchange_information_valid(exchange_info: dict[str, Any]) -> bool:
     """
     Default's to true, there isn't anything to check agaisnt.
     """

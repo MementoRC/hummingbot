@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from typing import Any, Dict
+from typing import Any
 
 from sqlalchemy import BigInteger, Column, ForeignKey, Index, Integer, Text
 from sqlalchemy.orm import relationship
@@ -23,7 +23,7 @@ class OrderStatus(HummingbotBase):
         )
 
     @staticmethod
-    def to_bounty_api_json(order_status: "OrderStatus") -> Dict[str, Any]:
+    def to_bounty_api_json(order_status: "OrderStatus") -> dict[str, Any]:
         return {
             "order_id": order_status.order_id,
             "timestamp": order_status.timestamp,

@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import asyncio
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 from hummingbot.connector.derivative.backpack_perpetual import backpack_perpetual_constants as CONSTANTS
 from hummingbot.connector.derivative.backpack_perpetual.backpack_perpetual_auth import BackpackPerpetualAuth
@@ -22,12 +24,12 @@ class BackpackPerpetualAPIUserStreamDataSource(UserStreamTrackerDataSource):
     LISTEN_KEY_RETRY_INTERVAL = 5.0
     MAX_RETRIES = 3
 
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
         auth: AuthBase,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "BackpackPerpetualDerivative",
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -97,7 +99,7 @@ class BackpackPerpetualAPIUserStreamDataSource(UserStreamTrackerDataSource):
             self.logger().exception("Unexpected error occurred subscribing to user streams...")
             raise
 
-    async def _on_user_stream_interruption(self, websocket_assistant: Optional[WSAssistant]):
+    async def _on_user_stream_interruption(self, websocket_assistant: WSAssistant | None):
         """
         Handles websocket disconnection by cleaning up resources.
 

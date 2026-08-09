@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any
 
 import numpy
 from sqlalchemy import BigInteger, Column, Index, Integer, Text
@@ -48,7 +48,7 @@ class Order(HummingbotBase):
         )
 
     @staticmethod
-    def to_bounty_api_json(order: "Order") -> Dict[str, Any]:
+    def to_bounty_api_json(order: "Order") -> dict[str, Any]:
         return {
             "order_id": order.id,
             "price": numpy.format_float_positional(order.price),

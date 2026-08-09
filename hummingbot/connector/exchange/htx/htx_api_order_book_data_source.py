@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict
 import uuid
 
 import hummingbot.connector.exchange.htx.htx_constants as CONSTANTS
@@ -17,13 +19,13 @@ if TYPE_CHECKING:
 
 
 class HtxAPIOrderBookDataSource(OrderBookTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
     _DYNAMIC_SUBSCRIBE_ID_START = 100
     _next_subscribe_id: int = _DYNAMIC_SUBSCRIBE_ID_START
 
     def __init__(
         self,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "HtxExchange",
         api_factory: WebAssistantsFactory,
     ):
@@ -39,7 +41,7 @@ class HtxAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
         return ws
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def listen_for_order_book_snapshots(self, ev_loop: asyncio.AbstractEventLoop, output: asyncio.Queue):
@@ -49,7 +51,7 @@ class HtxAPIOrderBookDataSource(OrderBookTrackerDataSource):
         """
         pass
 
-    def snapshot_message_from_exchange(self, msg: Dict[str, Any], metadata: Optional[Dict] = None) -> OrderBookMessage:
+    def snapshot_message_from_exchange(self, msg: dict[str, Any], metadata: Dict | None = None) -> OrderBookMessage:
         """
         Creates a snapshot message with the order book snapshot message
         :param msg: the response from the exchange when requesting the order book snapshot
@@ -69,7 +71,7 @@ class HtxAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
         return OrderBookMessage(OrderBookMessageType.SNAPSHOT, content, timestamp=msg_ts)
 
-    def trade_message_from_exchange(self, msg: Dict[str, Any], metadata: Dict[str, Any] = None) -> OrderBookMessage:
+    def trade_message_from_exchange(self, msg: dict[str, Any], metadata: dict[str, Any] = None) -> OrderBookMessage:
         """
         Creates a trade message with the information from the trade event sent by the exchange
         :param msg: the trade event details sent by the exchange
@@ -90,7 +92,7 @@ class HtxAPIOrderBookDataSource(OrderBookTrackerDataSource):
         }
         return OrderBookMessage(OrderBookMessageType.TRADE, content, timestamp=msg_ts)
 
-    async def _request_new_orderbook_snapshot(self, trading_pair: str) -> Dict[str, Any]:
+    async def _request_new_orderbook_snapshot(self, trading_pair: str) -> dict[str, Any]:
         rest_assistant = await self._api_factory.get_rest_assistant()
         url = public_rest_url(CONSTANTS.DEPTH_URL)
         exchange_symbol = await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
@@ -105,7 +107,7 @@ class HtxAPIOrderBookDataSource(OrderBookTrackerDataSource):
         return snapshot_data
 
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBookMessage:
-        snapshot: Dict[str, Any] = await self._request_new_orderbook_snapshot(trading_pair)
+        snapshot: dict[str, Any] = await self._request_new_orderbook_snapshot(trading_pair)
         snapshot_msg: OrderBookMessage = self.snapshot_message_from_exchange(
             msg=snapshot,
             metadata={"trading_pair": trading_pair},
@@ -134,7 +136,7 @@ class HtxAPIOrderBookDataSource(OrderBookTrackerDataSource):
             )
             raise
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         channel = event_message.get("ch", "")
         retval = ""
         if channel.endswith(self._trade_messages_queue_key):
@@ -144,7 +146,7 @@ class HtxAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
         return retval
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
 
         ex_symbol = raw_message["ch"].split(".")[1]
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(symbol=ex_symbol)
@@ -154,7 +156,7 @@ class HtxAPIOrderBookDataSource(OrderBookTrackerDataSource):
             )
             message_queue.put_nowait(trade_message)
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         msg_channel = raw_message["ch"]
         order_book_symbol = msg_channel.split(".")[1]
         snapshot_msg: OrderBookMessage = self.snapshot_message_from_exchange(
@@ -166,7 +168,7 @@ class HtxAPIOrderBookDataSource(OrderBookTrackerDataSource):
         message_queue.put_nowait(snapshot_msg)
 
     async def _process_message_for_unknown_channel(
-        self, event_message: Dict[str, Any], websocket_assistant: WSAssistant
+        self, event_message: dict[str, Any], websocket_assistant: WSAssistant
     ):
         if "ping" in event_message:
             pong_request = WSJSONRequest(payload={"pong": event_message["ping"]})

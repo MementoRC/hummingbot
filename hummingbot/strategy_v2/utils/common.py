@@ -2,7 +2,7 @@ from enum import Enum
 import hashlib
 import random
 import time
-from typing import List, Type, TypeVar
+from typing import TypeVar
 
 import base58
 
@@ -18,7 +18,7 @@ def generate_unique_id():
 E = TypeVar("E", bound=Enum)
 
 
-def parse_enum_value(enum_class: Type[E], value, field_name: str = "field") -> E:
+def parse_enum_value(enum_class: type[E], value, field_name: str = "field") -> E:
     """
     Parse enum from string name or return as-is if already correct type.
 
@@ -47,7 +47,7 @@ def parse_enum_value(enum_class: Type[E], value, field_name: str = "field") -> E
     return value
 
 
-def parse_comma_separated_list(value) -> List[float]:
+def parse_comma_separated_list(value) -> list[float]:
     """
     Parse a comma-separated string, scalar number, or list into a List[float].
 

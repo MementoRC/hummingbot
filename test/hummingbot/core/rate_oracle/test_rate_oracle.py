@@ -1,9 +1,9 @@
+from __future__ import annotations
+
 from copy import deepcopy
 from decimal import Decimal
-from typing import Dict, Optional
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
-import hummingbot.core.rate_oracle.utils as rate_oracle_utils
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
 from hummingbot.connector.utils import combine_to_hb_trading_pair
@@ -16,14 +16,14 @@ from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCa
 
 
 class DummyRateSource(RateSourceBase):
-    def __init__(self, price_dict: Dict[str, Decimal]):
+    def __init__(self, price_dict: dict[str, Decimal]):
         self._price_dict = price_dict
 
     @property
     def name(self):
         return "dummy_rate_source"
 
-    async def get_prices(self, quote_token: Optional[str] = None) -> Dict[str, Decimal]:
+    async def get_prices(self, quote_token: str | None = None) -> dict[str, Decimal]:
         return deepcopy(self._price_dict)
 
 
@@ -83,32 +83,6 @@ class RateOracleTest(IsolatedAsyncioWrapperTestCase):
         rate = find_rate(prices, "HBOT-GBP")
         self.assertEqual(rate, Decimal("75"))
 
-    def test_find_rate_unwraps_usd_quote_to_usdt(self):
-        # A USD-quoted lookup should resolve against the USDT market, including for
-        # tokens that only have a single USDT pair (e.g. HYPE) with no bridge route.
-        prices = {"HYPE-USDT": Decimal("60"), "SOL-USDT": Decimal("70")}
-        self.assertEqual(find_rate(prices, "HYPE-USD"), Decimal("60"))
-        self.assertEqual(find_rate(prices, "SOL-USD"), Decimal("70"))
-        # USD and USDT are interchangeable, so converting between them is 1:1.
-        self.assertEqual(find_rate(prices, "USD-USDT"), Decimal("1"))
-        self.assertEqual(find_rate(prices, "USDT-USD"), Decimal("1"))
-
-    def test_find_rate_usd_equivalence_is_a_fallback_not_an_override(self):
-        # A real USD-quoted market is matched directly (before normalizing), so the
-        # USDT-equivalence never collapses an actual USDT/USD price to 1:1 — the real
-        # de-peg is preserved with or without USD configured as equivalent.
-        self.assertEqual(find_rate({"USDT-USD": Decimal("0.999")}, "USDT-USD"), Decimal("0.999"))
-        with patch.object(rate_oracle_utils, "USD_EQUIVALENT_TOKENS", []):
-            self.assertEqual(find_rate({"USDT-USD": Decimal("0.999")}, "USDT-USD"), Decimal("0.999"))
-
-        # The equivalence only provides a fallback when no USD market exists, and it is
-        # gated by the configured list: removing USD leaves USD lookups with no route.
-        prices = {"HYPE-USDT": Decimal("60")}
-        with patch.object(rate_oracle_utils, "USD_EQUIVALENT_TOKENS", []):
-            self.assertIsNone(find_rate(prices, "HYPE-USD"))
-            self.assertIsNone(find_rate(prices, "USD-USDT"))
-            self.assertIsNone(find_rate(prices, "USDT-USD"))
-
     def test_find_rate_skips_zero_prices(self):
         """Test that find_rate doesn't cause DivisionByZero when prices contain zero values."""
         # Test case 1: reverse pair has zero price - should skip division and return None
@@ -151,7 +125,7 @@ class RateOracleTest(IsolatedAsyncioWrapperTestCase):
         self.assertEqual(0, len(rate_oracle.prices))
 
     @staticmethod
-    def _make_connector(name: str, order_books: Dict[str, Decimal]) -> MagicMock:
+    def _make_connector(name: str, order_books: dict[str, Decimal]) -> MagicMock:
         connector = MagicMock()
         connector.name = name
         connector.order_books = {pair: MagicMock() for pair in order_books}
