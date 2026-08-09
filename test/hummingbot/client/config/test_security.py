@@ -1,8 +1,8 @@
 import asyncio
-import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Awaitable
+import unittest
 
 from hummingbot.client.config import config_crypt, config_helpers, security
 from hummingbot.client.config.config_crypt import ETHKeyFileSecretManger, store_password_verification, validate_password
@@ -18,7 +18,6 @@ from hummingbot.core.utils.async_call_scheduler import AsyncCallScheduler
 
 
 class SecurityTest(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -35,9 +34,7 @@ class SecurityTest(unittest.TestCase):
         config_crypt.PASSWORD_VERIFICATION_PATH = mock_conf_dir / ".password_verification"
 
         security.PASSWORD_VERIFICATION_PATH = config_crypt.PASSWORD_VERIFICATION_PATH
-        config_helpers.CONNECTORS_CONF_DIR_PATH = (
-            Path(self.new_conf_dir_path.name) / "connectors"
-        )
+        config_helpers.CONNECTORS_CONF_DIR_PATH = Path(self.new_conf_dir_path.name) / "connectors"
         config_helpers.CONNECTORS_CONF_DIR_PATH.mkdir(parents=True, exist_ok=True)
         self.connector = "binance"
         self.api_key = "someApiKey"

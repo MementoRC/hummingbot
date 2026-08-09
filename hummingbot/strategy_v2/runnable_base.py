@@ -1,6 +1,6 @@
+from abc import ABC
 import asyncio
 import logging
-from abc import ABC
 
 from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.logger import HummingbotLogger
@@ -12,6 +12,7 @@ class RunnableBase(ABC):
     Base class for smart components in the Hummingbot application.
     This class provides a basic structure for components that need to perform tasks at regular intervals.
     """
+
     _logger = None
 
     @classmethod

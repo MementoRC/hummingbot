@@ -1,11 +1,11 @@
 import asyncio
 import binascii
-import logging
-import time
 from collections import deque
 from dataclasses import dataclass, field
 from decimal import Decimal
+import logging
 from random import randrange
+import time
 from typing import Dict, Final, List, Optional, cast
 from urllib.parse import urlparse
 
@@ -67,10 +67,7 @@ def _get_offer_change(node: NormalizedNode) -> Optional[AccountOfferChange]:
     flags = _get_fields(node, "Flags")
     # if required fields are None: return None
     if (
-        taker_gets is None
-        or taker_pays is None
-        or account is None
-        or sequence is None
+        taker_gets is None or taker_pays is None or account is None or sequence is None
         # or flags is None # flags can be None
     ):
         return None
@@ -471,26 +468,31 @@ KEYS = XRPLConfigMap.model_construct()
 # ============================================
 class XRPLConnectionError(Exception):
     """Raised when all connections in the pool have failed."""
+
     pass
 
 
 class XRPLTimeoutError(Exception):
     """Raised when a request times out."""
+
     pass
 
 
 class XRPLTransactionError(Exception):
     """Raised when XRPL rejects a transaction."""
+
     pass
 
 
 class XRPLSystemBusyError(Exception):
     """Raised when the request queue is full."""
+
     pass
 
 
 class XRPLCircuitBreakerOpen(Exception):
     """Raised when too many failures have occurred."""
+
     pass
 
 
@@ -526,6 +528,7 @@ class XRPLConnection:
     Represents a persistent WebSocket connection to an XRPL node.
     Tracks connection health, latency metrics, and usage statistics.
     """
+
     url: str
     client: Optional[AsyncWebsocketClient] = None
     is_healthy: bool = True
@@ -702,6 +705,7 @@ class XRPLNodePool:
     - Graceful degradation when connections fail
     - Singleton pattern: shared across all XrplExchange instances
     """
+
     _logger = None
     DEFAULT_NODES = ["wss://xrplcluster.com/", "wss://s1.ripple.com/", "wss://s2.ripple.com/"]
 
@@ -891,10 +895,7 @@ class XRPLNodePool:
 
             # Test connection with ServerInfo request and measure latency
             start_time = time.time()
-            response = await asyncio.wait_for(
-                client._request_impl(ServerInfo()),
-                timeout=self._connection_timeout
-            )
+            response = await asyncio.wait_for(client._request_impl(ServerInfo()), timeout=self._connection_timeout)
             latency = time.time() - start_time
 
             if not response.is_successful():
@@ -1137,10 +1138,7 @@ class XRPLNodePool:
 
             # Use ServerInfo as a lightweight ping (small response)
             start_time = time.time()
-            response = await asyncio.wait_for(
-                conn.client._request_impl(ServerInfo()),
-                timeout=10.0
-            )
+            response = await asyncio.wait_for(conn.client._request_impl(ServerInfo()), timeout=10.0)
             latency = time.time() - start_time
             conn.update_latency(latency)
 
@@ -1183,10 +1181,7 @@ class XRPLNodePool:
             elif conn.is_open and conn.client is not None:
                 try:
                     start_time = time.time()
-                    response = await asyncio.wait_for(
-                        conn.client._request_impl(ServerInfo()),
-                        timeout=10.0
-                    )
+                    response = await asyncio.wait_for(conn.client._request_impl(ServerInfo()), timeout=10.0)
                     latency = time.time() - start_time
                     conn.update_latency(latency)
                     conn.last_health_check = now
