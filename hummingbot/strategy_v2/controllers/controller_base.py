@@ -66,7 +66,7 @@ class ControllerConfigBase(BaseClientModel):
     Attributes:
         id (str): A unique identifier for the controller. Required.
         controller_name (str): The name of the trading strategy that the controller will use.
-        candles_config (List[CandlesConfig]): A list of configurations for the candles data feed.
+        candles_config (list[CandlesConfig]): A list of configurations for the candles data feed.
     """
 
     id: str = Field(..., description="Unique identifier for the controller. Required.")
@@ -96,7 +96,7 @@ class ControllerConfigBase(BaseClientModel):
     def parse_initial_positions(cls, v) -> list[InitialPositionConfig]:
         if isinstance(v, list):
             return v
-        raise ValueError("Invalid type for initial_positions. Expected List[InitialPositionConfig]")
+        raise ValueError("Invalid type for initial_positions. Expected list[InitialPositionConfig]")
 
     def update_markets(self, markets: MarketDict) -> MarketDict:
         """
@@ -243,7 +243,7 @@ class ControllerBase(RunnableBase):
 
         Example:
         ```python
-        def get_candles_config(self) -> List[CandlesConfig]:
+        def get_candles_config(self) -> list[CandlesConfig]:
             return [CandlesConfig(
                 connector=self.config.connector_name,
                 trading_pair=self.config.trading_pair,
@@ -253,7 +253,7 @@ class ControllerBase(RunnableBase):
         ```
 
         Returns:
-            List[CandlesConfig]: List of candles configurations
+            list[CandlesConfig]: List of candles configurations
         """
         return []
 

@@ -1,8 +1,6 @@
-from __future__ import annotations
-
 import asyncio
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from hummingbot.connector.derivative.binance_perpetual.binance_perpetual_auth import BinancePerpetualAuth
 import hummingbot.connector.derivative.binance_perpetual.binance_perpetual_constants as CONSTANTS
@@ -25,7 +23,7 @@ class BinancePerpetualUserStreamDataSource(UserStreamTrackerDataSource):
     HEARTBEAT_TIME_INTERVAL = 30.0
     LISTEN_KEY_RETRY_INTERVAL = 5.0
     MAX_RETRIES = 3
-    _logger: HummingbotLogger | None = None
+    _logger: Optional[HummingbotLogger] = None
 
     def __init__(
         self,
@@ -142,8 +140,8 @@ class BinancePerpetualUserStreamDataSource(UserStreamTrackerDataSource):
                         self.logger().error(
                             f"Failed to refresh listen key {self._current_listen_key}. Getting new key..."
                         )
-                        raise
-                        # Continue to next iteration which will get a new key
+                        # Raise so the except below resets the key and a new one is obtained next iteration
+                        raise IOError(f"Failed to refresh listen key {self._current_listen_key}")
                 await self._sleep(self.LISTEN_KEY_RETRY_INTERVAL)
             except asyncio.CancelledError:
                 self._current_listen_key = None
@@ -208,7 +206,7 @@ class BinancePerpetualUserStreamDataSource(UserStreamTrackerDataSource):
         """
         pass
 
-    async def _on_user_stream_interruption(self, websocket_assistant: WSAssistant | None):
+    async def _on_user_stream_interruption(self, websocket_assistant: Optional[WSAssistant]):
         """
         Handles websocket disconnection by cleaning up resources.
 
