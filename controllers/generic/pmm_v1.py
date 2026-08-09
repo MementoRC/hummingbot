@@ -10,7 +10,7 @@ This controller replicates the legacy pure_market_making strategy with:
 """
 
 from decimal import Decimal
-from typing import Dict, List, Optional, Tuple
+from typing import Optional
 
 import numpy as np
 from pydantic import Field, field_validator
@@ -62,7 +62,7 @@ class PMMV1Config(ControllerConfigBase):
             "prompt": "Enter the order amount in base asset (e.g., 0.01 for BTC):",
         },
     )
-    buy_spreads: List[float] = Field(
+    buy_spreads: list[float] = Field(
         default="0.01",
         json_schema_extra={
             "prompt_on_new": True,
@@ -70,7 +70,7 @@ class PMMV1Config(ControllerConfigBase):
             "prompt": "Enter comma-separated buy spreads as decimals (e.g., '0.01,0.02' for 1%, 2%):",
         },
     )
-    sell_spreads: List[float] = Field(
+    sell_spreads: list[float] = Field(
         default="0.01",
         json_schema_extra={
             "prompt_on_new": True,
@@ -159,7 +159,7 @@ class PMMV1Config(ControllerConfigBase):
             return [float(x.strip()) for x in v.split(",")]
         return [float(x) for x in v]
 
-    def get_spreads(self, trade_type: TradeType) -> List[float]:
+    def get_spreads(self, trade_type: TradeType) -> list[float]:
         """Get spreads for a trade type. Each spread defines one order level."""
         if trade_type == TradeType.BUY:
             return self.buy_spreads
@@ -184,9 +184,9 @@ class PMMV1(ControllerBase):
         )
 
         # Track when each level can next create orders (for filled_order_delay)
-        self._level_next_create_timestamps: Dict[str, float] = {}
+        self._level_next_create_timestamps: dict[str, float] = {}
         # Track last seen executor states to detect fills
-        self._last_seen_executors: Dict[str, bool] = {}
+        self._last_seen_executors: dict[str, bool] = {}
 
     def _detect_filled_executors(self):
         """Detect executors that were filled (not cancelled)."""
@@ -277,7 +277,7 @@ class PMMV1(ControllerBase):
             "sell_proposal_prices": sell_proposal_prices,
         }
 
-    def _get_balances(self) -> Tuple[Decimal, Decimal]:
+    def _get_balances(self) -> tuple[Decimal, Decimal]:
         """Get base and quote balances from the connector."""
         try:
             base, quote = self.config.trading_pair.split("-")
@@ -289,7 +289,7 @@ class PMMV1(ControllerBase):
 
     def _calculate_inventory_skew_legacy(
         self, current_base_pct: Decimal, base_balance: Decimal, quote_balance: Decimal, reference_price: Decimal
-    ) -> Tuple[Decimal, Decimal]:
+    ) -> tuple[Decimal, Decimal]:
         """
         Calculate inventory skew multipliers matching the legacy inventory_skew_calculator.pyx algorithm.
 
@@ -332,7 +332,7 @@ class PMMV1(ControllerBase):
         price: float,
         target_base_asset_ratio: float,
         base_asset_range: float,
-    ) -> Tuple[Decimal, Decimal]:
+    ) -> tuple[Decimal, Decimal]:
         """
         Exact port of legacy c_calculate_bid_ask_ratios_from_base_asset_ratio.
         """
@@ -364,7 +364,7 @@ class PMMV1(ControllerBase):
 
         return Decimal(str(bid_adjustment)), Decimal(str(ask_adjustment))
 
-    def _calculate_proposal_prices(self, reference_price: Decimal) -> Tuple[List[Decimal], List[Decimal]]:
+    def _calculate_proposal_prices(self, reference_price: Decimal) -> tuple[list[Decimal], list[Decimal]]:
         """Calculate what the proposal prices would be for tolerance comparison."""
         buy_spreads = self.config.get_spreads(TradeType.BUY)
         sell_spreads = self.config.get_spreads(TradeType.SELL)
@@ -381,7 +381,7 @@ class PMMV1(ControllerBase):
 
         return buy_prices, sell_prices
 
-    def determine_executor_actions(self) -> List[ExecutorAction]:
+    def determine_executor_actions(self) -> list[ExecutorAction]:
         """Determine actions based on current state."""
         # Don't create new actions if the controller is being stopped
         if self.status == RunnableStatus.TERMINATED:
@@ -392,7 +392,7 @@ class PMMV1(ControllerBase):
         actions.extend(self.stop_actions_proposal())
         return actions
 
-    def create_actions_proposal(self) -> List[ExecutorAction]:
+    def create_actions_proposal(self) -> list[ExecutorAction]:
         """Create actions proposal for new executors."""
         create_actions = []
 
@@ -452,7 +452,7 @@ class PMMV1(ControllerBase):
 
         return create_actions
 
-    def get_levels_to_execute(self) -> List[str]:
+    def get_levels_to_execute(self) -> list[str]:
         """Get levels that need new executors.
 
         A level is considered "working" (and won't get a new executor) if:
@@ -480,7 +480,7 @@ class PMMV1(ControllerBase):
 
         return missing_levels
 
-    def _get_not_active_levels_ids(self, active_level_ids: List[str]) -> List[str]:
+    def _get_not_active_levels_ids(self, active_level_ids: list[str]) -> list[str]:
         """Get level IDs that are not currently active."""
         buy_spreads = self.config.get_spreads(TradeType.BUY)
         sell_spreads = self.config.get_spreads(TradeType.SELL)
@@ -500,7 +500,7 @@ class PMMV1(ControllerBase):
         ]
         return buy_ids_missing + sell_ids_missing
 
-    def _apply_price_band_filter(self, level_ids: List[str]) -> List[str]:
+    def _apply_price_band_filter(self, level_ids: list[str]) -> list[str]:
         """Filter out levels that violate price band constraints.
 
         Price band logic (matching legacy pure_market_making):
@@ -523,13 +523,13 @@ class PMMV1(ControllerBase):
             filtered.append(level_id)
         return filtered
 
-    def stop_actions_proposal(self) -> List[ExecutorAction]:
+    def stop_actions_proposal(self) -> list[ExecutorAction]:
         """Create actions to stop executors."""
         stop_actions = []
         stop_actions.extend(self._executors_to_refresh())
         return stop_actions
 
-    def _executors_to_refresh(self) -> List[StopExecutorAction]:
+    def _executors_to_refresh(self) -> list[StopExecutorAction]:
         """Get executors that should be refreshed.
 
         Matching legacy behavior:
@@ -604,7 +604,7 @@ class PMMV1(ControllerBase):
             for executor in executors_past_refresh
         ]
 
-    def _is_within_tolerance(self, current_prices: List[Decimal], proposal_prices: List[Decimal]) -> bool:
+    def _is_within_tolerance(self, current_prices: list[Decimal], proposal_prices: list[Decimal]) -> bool:
         """Check if current prices are within tolerance of proposal prices.
 
         Matching legacy c_is_within_tolerance behavior.
@@ -656,7 +656,7 @@ class PMMV1(ControllerBase):
             return 0
         return int(level_id.split("_")[1])
 
-    def to_format_status(self) -> List[str]:
+    def to_format_status(self) -> list[str]:
         """Get formatted status display."""
         from itertools import zip_longest
 
