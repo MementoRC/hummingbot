@@ -1,6 +1,6 @@
 from decimal import Decimal
 import os
-from typing import Dict, List, Optional
+from typing import Optional
 
 from hummingbot.client.hummingbot_application import HummingbotApplication
 from hummingbot.connector.connector_base import ConnectorBase
@@ -30,7 +30,7 @@ class V2WithControllers(StrategyV2Base):
 
     performance_report_interval: int = 1
 
-    def __init__(self, connectors: Dict[str, ConnectorBase], config: V2WithControllersConfig):
+    def __init__(self, connectors: dict[str, ConnectorBase], config: V2WithControllersConfig):
         super().__init__(connectors, config)
         self.config = config
         self.max_pnl_by_controller = {}
@@ -148,10 +148,10 @@ class V2WithControllers(StrategyV2Base):
                 ]
             )
 
-    def create_actions_proposal(self) -> List[CreateExecutorAction]:
+    def create_actions_proposal(self) -> list[CreateExecutorAction]:
         return []
 
-    def stop_actions_proposal(self) -> List[StopExecutorAction]:
+    def stop_actions_proposal(self) -> list[StopExecutorAction]:
         return []
 
     def apply_initial_setting(self):

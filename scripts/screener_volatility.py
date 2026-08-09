@@ -1,12 +1,11 @@
 import os
-from typing import List
 
 import pandas as pd
 import pandas_ta as ta  # noqa: F401
 from pydantic import Field
 
 from hummingbot.client.ui.interface_utils import format_df_for_printout
-from hummingbot.connector.connector_base import ConnectorBase, Dict
+from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.common import MarketDict
 from hummingbot.data_feed.candles_feed.candles_factory import CandlesFactory
 from hummingbot.data_feed.candles_feed.data_types import CandlesConfig
@@ -15,7 +14,7 @@ from hummingbot.strategy.strategy_v2_base import StrategyV2Base, StrategyV2Confi
 
 class VolatilityScreenerConfig(StrategyV2ConfigBase):
     script_file_name: str = os.path.basename(__file__)
-    controllers_config: List[str] = []
+    controllers_config: list[str] = []
     exchange: str = Field(default="binance_perpetual")
     trading_pairs: list = Field(default=["BTC-USDT", "ETH-USDT", "BNB-USDT", "SOL-USDT", "MET-USDT"])
 
@@ -35,7 +34,7 @@ class VolatilityScreener(StrategyV2Base):
     top_n = 20
     report_interval = 60 * 60 * 6  # 6 hours
 
-    def __init__(self, connectors: Dict[str, ConnectorBase], config: VolatilityScreenerConfig):
+    def __init__(self, connectors: dict[str, ConnectorBase], config: VolatilityScreenerConfig):
         super().__init__(connectors, config)
         self.config = config
         self.last_time_reported = 0

@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import List, Optional
+from typing import Optional
 
 import pandas_ta as ta  # noqa: F401
 from pydantic import Field, field_validator
@@ -21,14 +21,14 @@ class DManMakerV2Config(MarketMakingControllerConfigBase):
     controller_name: str = "dman_maker_v2"
 
     # DCA configuration
-    dca_spreads: List[Decimal] = Field(
+    dca_spreads: list[Decimal] = Field(
         default="0.01,0.02,0.04,0.08",
         json_schema_extra={
             "prompt": "Enter a comma-separated list of spreads for each DCA level: ",
             "prompt_on_new": True,
         },
     )
-    dca_amounts: List[Decimal] = Field(
+    dca_amounts: list[Decimal] = Field(
         default="0.1,0.2,0.4,0.8",
         json_schema_extra={
             "prompt": "Enter a comma-separated list of amounts for each DCA level: ",
@@ -36,7 +36,7 @@ class DManMakerV2Config(MarketMakingControllerConfigBase):
         },
     )
     top_executor_refresh_time: Optional[float] = Field(default=None, json_schema_extra={"is_updatable": True})
-    executor_activation_bounds: Optional[List[Decimal]] = Field(default=None, json_schema_extra={"is_updatable": True})
+    executor_activation_bounds: Optional[list[Decimal]] = Field(default=None, json_schema_extra={"is_updatable": True})
 
     @field_validator("executor_activation_bounds", mode="before")
     @classmethod
@@ -90,7 +90,7 @@ class DManMakerV2(MarketMakingControllerBase):
     def order_level_refresh_condition(self, executor):
         return self.market_data_provider.time() - executor.timestamp > self.config.executor_refresh_time
 
-    def executors_to_refresh(self) -> List[ExecutorAction]:
+    def executors_to_refresh(self) -> list[ExecutorAction]:
         executors_to_refresh = self.filter_executors(
             executors=self.executors_info,
             filter_func=lambda x: (

@@ -11,7 +11,6 @@ minimal noise and predictable hedge behavior.
 """
 
 from decimal import Decimal
-from typing import List
 
 from pydantic import Field
 
@@ -120,7 +119,7 @@ class HedgeAssetController(ControllerBase):
             }
         )
 
-    def determine_executor_actions(self) -> List[ExecutorAction]:
+    def determine_executor_actions(self) -> list[ExecutorAction]:
         if self.processed_data["cool_down_time_condition"] and self.processed_data["min_notional_size_condition"]:
             side = TradeType.SELL if self.processed_data["hedge_position_gap"] >= 0 else TradeType.BUY
             order_executor_config = OrderExecutorConfig(
@@ -137,7 +136,7 @@ class HedgeAssetController(ControllerBase):
             return [CreateExecutorAction(controller_id=self.config.id, executor_config=order_executor_config)]
         return []
 
-    def to_format_status(self) -> List[str]:
+    def to_format_status(self) -> list[str]:
         """
         These report will be showing the metrics that are important to determine the state of the hedge.
         """
