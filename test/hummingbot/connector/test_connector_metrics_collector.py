@@ -49,7 +49,6 @@ class TradeVolumeMetricCollectorTests(TestCase):
         return ret
 
     def test_instance_creation_using_configuration_parameters(self):
-
         metrics_collector = TradeVolumeMetricCollector(
             connector=self.connector_mock,
             activation_interval=300,

@@ -679,7 +679,7 @@ class PositionExecutor(ExecutorBase):
         self.close_type = CloseType.POSITION_HOLD if keep_position else CloseType.EARLY_STOP
         self._status = RunnableStatus.SHUTTING_DOWN
 
-    def _collect_held_position_orders(self) -> List[Dict]:
+    def _collect_held_position_orders(self) -> list[Dict]:
         """Snapshot residual exposure for a forced stop at the shutdown deadline.
 
         Same fills the POSITION_HOLD branch of control_shutdown_process would retain:

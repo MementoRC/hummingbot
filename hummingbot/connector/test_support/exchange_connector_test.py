@@ -428,7 +428,6 @@ class AbstractExchangeConnectorTests:
             mock_api: aioresponses,
             callback: Callable | None = lambda *args, **kwargs: None,
         ) -> list[str]:
-
             url = self.all_symbols_url
             response = self.all_symbols_request_mock_response
             mock_api.get(url, body=json.dumps(response), callback=callback)
@@ -439,7 +438,6 @@ class AbstractExchangeConnectorTests:
             mock_api: aioresponses,
             callback: Callable | None = lambda *args, **kwargs: None,
         ) -> list[str]:
-
             url = self.trading_rules_url
             response = self.trading_rules_request_mock_response
             mock_api.get(url, body=json.dumps(response), callback=callback)
@@ -450,7 +448,6 @@ class AbstractExchangeConnectorTests:
             mock_api: aioresponses,
             callback: Callable | None = lambda *args, **kwargs: None,
         ) -> list[str]:
-
             url = self.trading_rules_url
             response = self.trading_rules_request_erroneous_mock_response
             mock_api.get(url, body=json.dumps(response), callback=callback)
@@ -1857,7 +1854,6 @@ class AbstractExchangeConnectorTests:
             mock_api: aioresponses,
             callback: Callable | None = lambda *args, **kwargs: None,
         ) -> str:
-
             url = self.balance_url
             mock_api.get(
                 re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?")),
