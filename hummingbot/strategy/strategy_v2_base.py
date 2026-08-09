@@ -355,13 +355,9 @@ class StrategyV2Base(StrategyPyBase):
         # executors to close. ``add_markets`` also restores the strategy event listeners
         # required to track those final orders.
         active_markets = set(self.active_markets)
-        missing_markets = [
-            connector for connector in self.connectors.values()
-            if connector not in active_markets
-        ]
+        missing_markets = [connector for connector in self.connectors.values() if connector not in active_markets]
         if missing_markets:
-            self.logger().warning(
-                "Restoring market registrations required to close active executors during shutdown.")
+            self.logger().warning("Restoring market registrations required to close active executors during shutdown.")
             self.add_markets(missing_markets)
 
         await self.executor_orchestrator.stop(self.max_executors_close_attempts)

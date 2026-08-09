@@ -152,16 +152,25 @@ class TestGridExecutorBugFixes(IsolatedAsyncioWrapperTestCase, LoggerMixinForTes
         open and close liquidity have drained; the shutdown-deadline fallback must
         collect the same fills synchronously instead of losing them.
         """
-        trading_rules = TradingRule(trading_pair="ETH-USDT", min_order_size=Decimal("0.001"),
-                                    min_base_amount_increment=Decimal("0.001"),
-                                    min_price_increment=Decimal("0.01"), min_notional_size=Decimal("10"))
+        trading_rules = TradingRule(
+            trading_pair="ETH-USDT",
+            min_order_size=Decimal("0.001"),
+            min_base_amount_increment=Decimal("0.001"),
+            min_price_increment=Decimal("0.01"),
+            min_notional_size=Decimal("10"),
+        )
         trading_rules_mock.return_value = trading_rules
         from hummingbot.strategy_v2.executors.grid_executor.data_types import GridExecutorConfig
         from hummingbot.strategy_v2.executors.position_executor.data_types import TripleBarrierConfig
+
         config = GridExecutorConfig(
-            id="test", timestamp=1234567890, trading_pair="ETH-USDT",
-            connector_name="binance", side=TradeType.BUY,
-            start_price=Decimal("90"), end_price=Decimal("110"),
+            id="test",
+            timestamp=1234567890,
+            trading_pair="ETH-USDT",
+            connector_name="binance",
+            side=TradeType.BUY,
+            start_price=Decimal("90"),
+            end_price=Decimal("110"),
             limit_price=Decimal("90"),
             total_amount_quote=Decimal("100"),
             min_order_amount_quote=Decimal("10"),
