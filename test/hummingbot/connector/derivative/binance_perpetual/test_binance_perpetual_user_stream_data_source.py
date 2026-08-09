@@ -248,11 +248,11 @@ class BinancePerpetualUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCa
         self.assertEqual(None, self.data_source._current_listen_key)
         self.assertTrue(
             self._is_logged(
-                "ERROR",
-                f"Error occurred renewing listen key ... Failed to refresh listen key {self.listen_key}"))
+                "ERROR", f"Error occurred renewing listen key ... Failed to refresh listen key {self.listen_key}"
+            )
+        )
         # The bare `raise` previously produced a misleading RuntimeError; it must no longer appear.
-        self.assertFalse(
-            any("No active exception to re-raise" in record.getMessage() for record in self.log_records))
+        self.assertFalse(any("No active exception to re-raise" in record.getMessage() for record in self.log_records))
 
     @aioresponses()
     async def test_manage_listen_key_task_loop_keep_alive_successful(self, mock_api):

@@ -22,7 +22,7 @@ class LiquidationsConfig(BaseModel):
 
     Attributes:
         connector (str): The identifier for the data source or exchange connector.
-        trading_pairs (Set[str]): A set of trading pairs to subscribe to for liquidation events. If not provided,
+        trading_pairs (set[str]): A set of trading pairs to subscribe to for liquidation events. If not provided,
                                   subscriptions will be made to all liquidations available on the exchange.
         max_retention_seconds (int): The maximum duration in seconds that liquidation data should be retained.
                                      Defaults to 60 seconds if not specified.
