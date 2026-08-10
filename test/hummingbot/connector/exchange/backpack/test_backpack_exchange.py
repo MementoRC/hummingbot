@@ -936,13 +936,7 @@ class BackpackExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTest
         `staked`; ignoring it would under-report (or hide) the balance.
         """
         url = self.balance_url
-        response = {
-            "USDC": {
-                "available": "100.0",
-                "locked": "10.0",
-                "staked": "890.0"
-            }
-        }
+        response = {"USDC": {"available": "100.0", "locked": "10.0", "staked": "890.0"}}
 
         mock_api.get(url, body=json.dumps(response))
 
@@ -965,20 +959,13 @@ class BackpackExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTest
         ignored.
         """
         capital_url = self.balance_url
-        capital_response = {
-            "USDC": {
-                "available": "50.0",
-                "locked": "0.0",
-                "staked": "0.0"
-            }
-        }
+        capital_response = {"USDC": {"available": "50.0", "locked": "0.0", "staked": "0.0"}}
         mock_api.get(capital_url, body=json.dumps(capital_response))
 
-        lend_url = web_utils.private_rest_url(
-            CONSTANTS.BORROW_LEND_POSITIONS_PATH_URL, domain=self.exchange._domain)
+        lend_url = web_utils.private_rest_url(CONSTANTS.BORROW_LEND_POSITIONS_PATH_URL, domain=self.exchange._domain)
         lend_response = [
-            {"symbol": "USDC", "netQuantity": "950.0"},   # lent -> should be added
-            {"symbol": "SOL", "netQuantity": "-2.0"},     # borrowed -> should be ignored
+            {"symbol": "USDC", "netQuantity": "950.0"},  # lent -> should be added
+            {"symbol": "SOL", "netQuantity": "-2.0"},  # borrowed -> should be ignored
         ]
         mock_api.get(lend_url, body=json.dumps(lend_response))
 
@@ -1000,13 +987,10 @@ class BackpackExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTest
         the capital balances should still be applied.
         """
         capital_url = self.balance_url
-        capital_response = {
-            "USDC": {"available": "123.0", "locked": "0.0", "staked": "0.0"}
-        }
+        capital_response = {"USDC": {"available": "123.0", "locked": "0.0", "staked": "0.0"}}
         mock_api.get(capital_url, body=json.dumps(capital_response))
 
-        lend_url = web_utils.private_rest_url(
-            CONSTANTS.BORROW_LEND_POSITIONS_PATH_URL, domain=self.exchange._domain)
+        lend_url = web_utils.private_rest_url(CONSTANTS.BORROW_LEND_POSITIONS_PATH_URL, domain=self.exchange._domain)
         mock_api.get(lend_url, status=500, body=json.dumps({"message": "boom"}))
 
         self.async_run_with_timeout(self.exchange._update_balances())
