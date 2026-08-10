@@ -1,12 +1,12 @@
-import json
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
+import json
 
 from aioresponses import aioresponses
 
 from hummingbot.connector.exchange.mexc import mexc_constants as CONSTANTS, mexc_web_utils as web_utils
 from hummingbot.connector.utils import combine_to_hb_trading_pair
 from hummingbot.core.rate_oracle.sources.mexc_rate_source import MexcRateSource
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class MexcRateSourceTest(IsolatedAsyncioWrapperTestCase):
