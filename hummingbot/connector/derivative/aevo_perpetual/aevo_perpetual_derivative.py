@@ -459,7 +459,6 @@ class AevoPerpetualDerivative(PerpetualDerivativePyBase):
         position_action: PositionAction = PositionAction.NIL,
         **kwargs,
     ) -> tuple[str, float]:
-
         instrument_id = self._instrument_ids.get(trading_pair)
         if instrument_id is None:
             self.logger().error(f"Order {order_id} rejected: instrument not found for {trading_pair}.")

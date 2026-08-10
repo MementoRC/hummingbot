@@ -73,7 +73,6 @@ class RESTAssistant:
         timeout: float | None = None,
         headers: dict[str, Any] | None = None,
     ) -> RESTResponse:
-
         headers = headers or {}
 
         local_headers = {

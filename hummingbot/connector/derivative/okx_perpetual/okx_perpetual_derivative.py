@@ -49,7 +49,6 @@ class OkxPerpetualDerivative(PerpetualDerivativePyBase):
         trading_required: bool = True,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
-
         self.okx_perpetual_api_key = okx_perpetual_api_key
         self.okx_perpetual_secret_key = okx_perpetual_secret_key
         self.okx_perpetual_passphrase = okx_perpetual_passphrase
@@ -909,7 +908,6 @@ class OkxPerpetualDerivative(PerpetualDerivativePyBase):
         trading_pair: str | None = None,
         **kwargs,
     ) -> dict[str, Any]:
-
         rest_assistant = await self._web_assistants_factory.get_rest_assistant()
         if limit_id is None:
             limit_id = web_utils.get_rest_api_limit_id_for_endpoint(

@@ -149,7 +149,6 @@ class OkxExchange(ExchangePyBase):
         price: Decimal = s_decimal_NaN,
         is_maker: bool | None = None,
     ) -> TradeFeeBase:
-
         is_maker = is_maker or (order_type is OrderType.LIMIT_MAKER)
         fee = build_trade_fee(
             self.name,
@@ -192,7 +191,6 @@ class OkxExchange(ExchangePyBase):
         price: Decimal,
         **kwargs,
     ) -> tuple[str, float]:
-
         data = {
             "clOrdId": order_id,
             "tdMode": "cash",

@@ -980,9 +980,15 @@ class BackpackPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         """A USDC-quoted pair for fill/balance tests (Backpack perp only settles in USDC)."""
         return f"SOL-{CONSTANTS.CURRENCY}"
 
-    def _create_fill_event(self, trade_type: TradeType, price: Decimal, amount: Decimal,
-                           position: PositionAction, timestamp: float,
-                           trading_pair: str = None) -> OrderFilledEvent:
+    def _create_fill_event(
+        self,
+        trade_type: TradeType,
+        price: Decimal,
+        amount: Decimal,
+        position: PositionAction,
+        timestamp: float,
+        trading_pair: str = None,
+    ) -> OrderFilledEvent:
         """Create an OrderFilledEvent and register it with the connector's event logger.
         Uses a USDC-quoted pair by default since Backpack perp only settles in USDC."""
         if trading_pair is None:
@@ -1026,8 +1032,7 @@ class BackpackPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         # At calculation time the order is fully filled → no longer in in_flight_orders
         self.exchange._in_flight_orders = {}
         # Fill event after snapshot
-        self._create_fill_event(
-            TradeType.BUY, Decimal("69.5"), Decimal("2.87"), PositionAction.OPEN, 1640000001)
+        self._create_fill_event(TradeType.BUY, Decimal("69.5"), Decimal("2.87"), PositionAction.OPEN, 1640000001)
 
         notional = Decimal("69.5") * Decimal("2.87")
         margin = notional / Decimal("10")
@@ -1060,8 +1065,7 @@ class BackpackPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         self.exchange._in_flight_orders_snapshot = {"OID2": sell_order}
         self.exchange._in_flight_orders_snapshot_timestamp = 1640000000
         self.exchange._in_flight_orders = {}
-        self._create_fill_event(
-            TradeType.SELL, Decimal("69.5"), Decimal("2.87"), PositionAction.OPEN, 1640000001)
+        self._create_fill_event(TradeType.SELL, Decimal("69.5"), Decimal("2.87"), PositionAction.OPEN, 1640000001)
 
         notional = Decimal("69.5") * Decimal("2.87")
         margin = notional / Decimal("10")
@@ -1082,8 +1086,7 @@ class BackpackPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         self.exchange._in_flight_orders_snapshot = {}
         self.exchange._in_flight_orders_snapshot_timestamp = 1640000000
         self.exchange._in_flight_orders = {}
-        self._create_fill_event(
-            TradeType.SELL, Decimal("69.5"), Decimal("2.87"), PositionAction.CLOSE, 1640000001)
+        self._create_fill_event(TradeType.SELL, Decimal("69.5"), Decimal("2.87"), PositionAction.CLOSE, 1640000001)
 
         notional = Decimal("69.5") * Decimal("2.87")
         margin = notional / Decimal("10")
@@ -1098,8 +1101,7 @@ class BackpackPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         self.exchange._in_flight_orders_snapshot = {}
         self.exchange._in_flight_orders_snapshot_timestamp = 1640000000
         self.exchange._in_flight_orders = {}
-        self._create_fill_event(
-            TradeType.BUY, Decimal("69.5"), Decimal("2.87"), PositionAction.CLOSE, 1640000001)
+        self._create_fill_event(TradeType.BUY, Decimal("69.5"), Decimal("2.87"), PositionAction.CLOSE, 1640000001)
 
         notional = Decimal("69.5") * Decimal("2.87")
         margin = notional / Decimal("10")
@@ -1149,8 +1151,9 @@ class BackpackPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         self.assertEqual(self.exchange.current_timestamp, self.exchange._in_flight_orders_snapshot_timestamp)
         self.assertIn("OID-SNAP", self.exchange._in_flight_orders_snapshot)
         # Verify it's a copy, not the same object
-        self.assertIsNot(self.exchange.in_flight_orders["OID-SNAP"],
-                         self.exchange._in_flight_orders_snapshot["OID-SNAP"])
+        self.assertIsNot(
+            self.exchange.in_flight_orders["OID-SNAP"], self.exchange._in_flight_orders_snapshot["OID-SNAP"]
+        )
 
     async def test_user_stream_logs_errors(self):
         mock_user_stream = AsyncMock()
