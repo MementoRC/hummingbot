@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel
 
@@ -64,7 +64,7 @@ class ExternalEventMessage(PubSubMessage):
     timestamp: Optional[int] = -1
     sequence: Optional[int] = 0
     type: Optional[str] = "eevent"
-    data: Optional[dict[str, Any]] = {}
+    data: Optional[Dict[str, Any]] = {}
 
 
 class StartCommandMessage(RPCMessage):
@@ -92,11 +92,11 @@ class StopCommandMessage(RPCMessage):
 
 class ConfigCommandMessage(RPCMessage):
     class Request(RPCMessage.Request):
-        params: Optional[list[tuple[str, Any]]] = []
+        params: Optional[List[Tuple[str, Any]]] = []
 
     class Response(RPCMessage.Response):
-        changes: Optional[list[tuple[str, Any]]] = []
-        config: Optional[dict[str, Any]] = {}
+        changes: Optional[List[Tuple[str, Any]]] = []
+        config: Optional[Dict[str, Any]] = {}
         status: Optional[int] = MQTT_STATUS_CODE.SUCCESS
         msg: Optional[str] = ""
 
@@ -130,7 +130,7 @@ class HistoryCommandMessage(RPCMessage):
     class Response(RPCMessage.Response):
         status: Optional[int] = MQTT_STATUS_CODE.SUCCESS
         msg: Optional[str] = ""
-        trades: Optional[list[Any]] = []
+        trades: Optional[List[Any]] = []
 
 
 class BalanceLimitCommandMessage(RPCMessage):
