@@ -1,6 +1,6 @@
 from decimal import Decimal
 import time
-from typing import List, Optional, Tuple
+from typing import Optional
 
 import pandas_ta as ta  # noqa: F401
 from pydantic import Field, field_validator
@@ -49,7 +49,7 @@ class DManV3ControllerConfig(DirectionalTradingControllerConfigBase):
             "prompt_on_new": True,
         },
     )
-    dca_spreads: List[Decimal] = Field(
+    dca_spreads: list[Decimal] = Field(
         default="0.001,0.018,0.15,0.25",
         json_schema_extra={
             "prompt": "Enter the spreads for each DCA level (comma-separated) if dynamic_spread=True this value "
@@ -58,7 +58,7 @@ class DManV3ControllerConfig(DirectionalTradingControllerConfigBase):
             "prompt_on_new": True,
         },
     )
-    dca_amounts_pct: List[Decimal] = Field(
+    dca_amounts_pct: list[Decimal] = Field(
         default=None,
         json_schema_extra={
             "prompt": "Enter the amounts for each DCA level (as a percentage of the total balance, "
@@ -74,7 +74,7 @@ class DManV3ControllerConfig(DirectionalTradingControllerConfigBase):
         default=None,
         json_schema_extra={"prompt": "Do you want to make the target dynamic? (Yes/No) ", "prompt_on_new": True},
     )
-    activation_bounds: Optional[List[Decimal]] = Field(
+    activation_bounds: Optional[list[Decimal]] = Field(
         default=None,
         json_schema_extra={
             "prompt": "Enter the activation bounds for the orders (e.g., 0.01 activates the next order when the price is closer than 1%): ",
@@ -131,7 +131,7 @@ class DManV3ControllerConfig(DirectionalTradingControllerConfigBase):
 
     def get_spreads_and_amounts_in_quote(
         self, trade_type: TradeType, total_amount_quote: Decimal
-    ) -> Tuple[List[Decimal], List[Decimal]]:
+    ) -> tuple[list[Decimal], list[Decimal]]:
         amounts_pct = self.dca_amounts_pct
         if amounts_pct is None:
             # Equally distribute if amounts_pct is not set
@@ -229,7 +229,7 @@ class DManV3Controller(DirectionalTradingControllerBase):
             activation_bounds=self.config.activation_bounds,
         )
 
-    def get_candles_config(self) -> List[CandlesConfig]:
+    def get_candles_config(self) -> list[CandlesConfig]:
         return [
             CandlesConfig(
                 connector=self.config.candles_connector,

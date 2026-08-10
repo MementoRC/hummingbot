@@ -2,7 +2,7 @@ from decimal import Decimal
 import logging
 import math
 import os
-from typing import Dict, List
+from typing import Dict
 
 from pydantic import Field
 
@@ -20,7 +20,7 @@ class VWAPConfig(StrategyV2ConfigBase):
     """
 
     script_file_name: str = os.path.basename(__file__)
-    controllers_config: List[str] = []
+    controllers_config: list[str] = []
     connector_name: str = Field(
         "binance_paper_trade",
         json_schema_extra={"prompt": lambda mi: "Exchange where the bot will place orders", "prompt_on_new": True},
@@ -73,7 +73,7 @@ class VWAPExample(StrategyV2Base):
     - Use of the rate oracle has been removed
     """
 
-    def __init__(self, connectors: Dict[str, ConnectorBase], config: VWAPConfig):
+    def __init__(self, connectors: dict[str, ConnectorBase], config: VWAPConfig):
         super().__init__(connectors, config)
         self.config = config
         self.initialized = False
