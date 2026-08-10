@@ -3,7 +3,6 @@ import asyncio
 from decimal import Decimal
 import logging
 import time
-from typing import List, Tuple
 
 from hummingbot.core.api_throttler.data_types import RateLimit, TaskLog
 from hummingbot.logger.logger import HummingbotLogger
@@ -29,9 +28,9 @@ class AsyncRequestContextBase(ABC):
 
     def __init__(
         self,
-        task_logs: List[TaskLog],
+        task_logs: list[TaskLog],
         rate_limit: RateLimit,
-        related_limits: List[Tuple[RateLimit, int]],
+        related_limits: list[tuple[RateLimit, int]],
         lock: asyncio.Lock,
         safety_margin_pct: float,
         retry_interval: float = 0.1,
@@ -44,9 +43,9 @@ class AsyncRequestContextBase(ABC):
         :param lock: A shared asyncio.Lock used between all instances of APIRequestContextBase
         :param retry_interval: Time between each limit check
         """
-        self._task_logs: List[TaskLog] = task_logs
+        self._task_logs: list[TaskLog] = task_logs
         self._rate_limit: RateLimit = rate_limit
-        self._related_limits: List[Tuple[RateLimit, int]] = related_limits
+        self._related_limits: list[tuple[RateLimit, int]] = related_limits
         self._lock: asyncio.Lock = lock
         self._safety_margin_pct: float = safety_margin_pct
         self._retry_interval: float = retry_interval

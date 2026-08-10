@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 import hashlib
 import hmac
 import json
-from typing import Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from hummingbot.connector.exchange.bybit import bybit_constants as CONSTANTS, bybit_web_utils as web_utils
@@ -32,7 +33,7 @@ class TestBybitAPIUserStreamDataSource(IsolatedAsyncioWrapperTestCase):
     async def asyncSetUp(self) -> None:
         await super().asyncSetUp()
         self.log_records = []
-        self.listening_task: Optional[asyncio.Task] = None
+        self.listening_task: asyncio.Task | None = None
         self.mocking_assistant = NetworkMockingAssistant(self.local_event_loop)
 
         self.throttler = AsyncThrottler(CONSTANTS.RATE_LIMITS)

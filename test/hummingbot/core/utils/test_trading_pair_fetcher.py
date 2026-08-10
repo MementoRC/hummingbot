@@ -1,7 +1,7 @@
 import asyncio
 from decimal import Decimal
 import json
-from typing import Any, Awaitable, Dict
+from typing import Any, Awaitable
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -68,7 +68,7 @@ class TestTradingPairFetcher(unittest.TestCase):
         def connector_connected(self) -> bool:
             return True
 
-        def add_domain_parameter(*_, **__) -> Dict[str, Any]:
+        def add_domain_parameter(*_, **__) -> dict[str, Any]:
             return {}
 
         def uses_gateway_generic_connector(self) -> bool:
@@ -157,7 +157,7 @@ class TestTradingPairFetcher(unittest.TestCase):
         }
 
         url = binance_web_utils.public_rest_url(path_url=CONSTANTS.EXCHANGE_INFO_PATH_URL)
-        mock_response: Dict[str, Any] = {
+        mock_response: dict[str, Any] = {
             "timezone": "UTC",
             "serverTime": 1639598493658,
             "rateLimits": [],

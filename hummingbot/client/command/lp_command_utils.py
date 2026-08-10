@@ -2,7 +2,9 @@
 LP-specific utilities for gateway liquidity provision commands.
 """
 
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Union
 
 import pandas as pd
 
@@ -28,7 +30,7 @@ class LPCommandUtils:
         user_trading_pair: str,
         dex_name: str,
         trading_type: str = "clmm",
-    ) -> Optional[Tuple[Any, str, str, str, str]]:
+    ) -> tuple[Any, str, str, str, str] | None:
         """
         Fetch pool info and display enhanced notification with pool details.
 
@@ -92,7 +94,7 @@ class LPCommandUtils:
         pool_info: Any,  # Union[AMMPoolInfo, CLMMPoolInfo]
         base_symbol: str,
         quote_symbol: str,
-    ) -> List[Dict[str, str]]:
+    ) -> list[dict[str, str]]:
         """
         Format pool information for display.
 
@@ -125,7 +127,7 @@ class LPCommandUtils:
     @staticmethod
     def format_position_info_display(
         position: Any,  # Union[AMMPositionInfo, CLMMPositionInfo]
-    ) -> List[Dict[str, str]]:
+    ) -> list[dict[str, str]]:
         """
         Format position information for display.
 
@@ -167,9 +169,9 @@ class LPCommandUtils:
     @staticmethod
     async def prompt_for_position_selection(
         app: Any,  # HummingbotApplication
-        positions: List[Any],
+        positions: list[Any],
         prompt_text: str = None,
-    ) -> Optional[Any]:
+    ) -> Any | None:
         """
         Prompt user to select a position from a list.
 
@@ -209,7 +211,7 @@ class LPCommandUtils:
         percentage: float,
         base_token: str,
         quote_token: str,
-    ) -> Tuple[float, float]:
+    ) -> tuple[float, float]:
         """
         Display the impact of removing liquidity from a position.
 
@@ -283,7 +285,7 @@ class LPCommandUtils:
     @staticmethod
     def calculate_removal_amounts(
         position: Union["AMMPositionInfo", "CLMMPositionInfo"], percentage: float
-    ) -> Tuple[float, float]:
+    ) -> tuple[float, float]:
         """Calculate token amounts to receive when removing liquidity"""
         factor = percentage / 100.0
 
@@ -377,7 +379,7 @@ class LPCommandUtils:
     @staticmethod
     def display_positions_with_fees(
         app: Any,  # HummingbotApplication
-        positions: List["CLMMPositionInfo"],
+        positions: list["CLMMPositionInfo"],
     ):
         """Display positions that have uncollected fees"""
         rows = []
@@ -398,7 +400,7 @@ class LPCommandUtils:
         app.notify("\n".join(lines))
 
     @staticmethod
-    def calculate_total_fees(positions: List["CLMMPositionInfo"]) -> Dict[str, float]:
+    def calculate_total_fees(positions: list["CLMMPositionInfo"]) -> dict[str, float]:
         """Calculate total fees across positions grouped by token"""
         fees_by_token = {}
 

@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import asyncio
 from datetime import datetime
 from decimal import Decimal
 import threading
 import time
-from typing import TYPE_CHECKING, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING
 
 import pandas as pd
 
@@ -30,7 +32,7 @@ class HistoryCommand:
         self,  # type: HummingbotApplication
         days: float = 0,
         verbose: bool = False,
-        precision: Optional[int] = None,
+        precision: int | None = None,
     ):
         if threading.current_thread() != threading.main_thread():
             self.ev_loop.call_soon_threadsafe(self.history, days, verbose, precision)
@@ -41,7 +43,7 @@ class HistoryCommand:
             return
         start_time = get_timestamp(days) if days > 0 else self.init_time
         with self.trading_core.trade_fill_db.get_new_session() as session:
-            trades: List[TradeFill] = self._get_trades_from_session(
+            trades: list[TradeFill] = self._get_trades_from_session(
                 int(start_time * 1e3), session=session, config_file_path=self.strategy_file_name
             )
             if not trades:
@@ -59,7 +61,7 @@ class HistoryCommand:
             return
         start_time = get_timestamp(days) if days > 0 else self.init_time
         with self.trading_core.trade_fill_db.get_new_session() as session:
-            trades: List[TradeFill] = self._get_trades_from_session(
+            trades: list[TradeFill] = self._get_trades_from_session(
                 int(start_time * 1e3), session=session, config_file_path=self.strategy_file_name
             )
             return list([TradeFill.to_bounty_api_json(t) for t in trades])
@@ -67,11 +69,11 @@ class HistoryCommand:
     async def history_report(
         self,  # type: HummingbotApplication
         start_time: float,
-        trades: List[TradeFill],
-        precision: Optional[int] = None,
+        trades: list[TradeFill],
+        precision: int | None = None,
         display_report: bool = True,
     ) -> Decimal:
-        market_info: Set[Tuple[str, str]] = set((t.market, t.symbol) for t in trades)
+        market_info: set[tuple[str, str]] = set((t.market, t.symbol) for t in trades)
         if display_report:
             self.report_header(start_time)
         return_pcts = []
@@ -213,7 +215,7 @@ class HistoryCommand:
         lines = []
 
         with self.trading_core.trade_fill_db.get_new_session() as session:
-            queried_trades: List[TradeFill] = self._get_trades_from_session(
+            queried_trades: list[TradeFill] = self._get_trades_from_session(
                 int(start_time * 1e3),
                 session=session,
                 number_of_rows=MAXIMUM_TRADE_FILLS_DISPLAY_OUTPUT + 1,

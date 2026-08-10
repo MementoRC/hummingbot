@@ -1,6 +1,5 @@
 from decimal import Decimal
 import logging
-from typing import Dict, Optional
 
 import pandas as pd
 
@@ -39,7 +38,7 @@ class BacktestingDataProvider(MarketDataProvider):
         "injective_v2",
     ]
 
-    def __init__(self, connectors: Dict[str, ConnectorBase]):
+    def __init__(self, connectors: dict[str, ConnectorBase]):
         super().__init__(connectors)
         self.start_time = None
         self.end_time = None
@@ -47,7 +46,7 @@ class BacktestingDataProvider(MarketDataProvider):
         self._time = None
         self.trading_rules = {}
         self.conn_settings = AllConnectorSettings.get_connector_settings()
-        self.connectors = LazyDict[str, Optional[ConnectorBase]](
+        self.connectors = LazyDict[str, ConnectorBase | None](
             lambda name: (
                 self.get_connector(name)
                 if (
