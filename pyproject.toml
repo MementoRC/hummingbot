@@ -130,6 +130,7 @@ cython-lint = "*"
 bandit = "*"
 pip-audit = "*"
 types-setuptools = "*"
+pytest-xdist = ">=3,<4"
 
 [tool.pixi.feature.dev.pypi-dependencies]
 import-linter = ">=2.0"
