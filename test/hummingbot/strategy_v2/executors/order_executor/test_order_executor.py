@@ -42,6 +42,7 @@ class TestOrderExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         type(connector).trading_rules = PropertyMock(return_value={"ETH-USDT": TradingRule(trading_pair="ETH-USDT")})
         strategy.connectors = {
             "binance": connector,
+            "binance_perpetual": connector,
         }
         return strategy
 

@@ -277,7 +277,7 @@ class BacktestingEngineBase:
             trade_cost (float): The cost per trade.
 
         Returns:
-            List[ExecutorInfo]: List of executor information objects detailing the simulation results.
+            list[ExecutorInfo]: List of executor information objects detailing the simulation results.
         """
         processed_features = self.prepare_market_data()
         self.active_executor_simulations: list[ExecutorSimulation] = []
