@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 from decimal import Decimal
-from typing import Optional
 
 from hummingbot.client.config.config_validators import (
     validate_bool,
@@ -23,12 +24,12 @@ def maker_trading_pair_prompt():
 
 
 # strategy specific validators
-def validate_derivative_trading_pair(value: str) -> Optional[str]:
+def validate_derivative_trading_pair(value: str) -> str | None:
     derivative = perpetual_market_making_config_map.get("derivative").value
     return validate_market_trading_pair(derivative, value)
 
 
-def validate_derivative_position_mode(value: str) -> Optional[str]:
+def validate_derivative_position_mode(value: str) -> str | None:
     if value not in ["One-way", "Hedge"]:
         return "Position mode can either be One-way or Hedge mode"
 
@@ -39,7 +40,7 @@ def order_amount_prompt() -> str:
     return f"What is the amount of {base_asset} per order? >>> "
 
 
-def validate_price_source(value: str) -> Optional[str]:
+def validate_price_source(value: str) -> str | None:
     if value not in {"current_market", "external_market", "custom_api"}:
         return "Invalid price source type."
 
@@ -54,7 +55,7 @@ def on_validate_price_source(value: str):
         perpetual_market_making_config_map["price_type"].value = "custom"
 
 
-def validate_price_type(value: str) -> Optional[str]:
+def validate_price_type(value: str) -> str | None:
     error = None
     price_source = perpetual_market_making_config_map.get("price_source").value
     if price_source != "custom_api":
@@ -71,7 +72,7 @@ def price_source_market_prompt() -> str:
     return f"Enter the token trading pair on {external_market} >>> "
 
 
-def validate_price_source_derivative(value: str) -> Optional[str]:
+def validate_price_source_derivative(value: str) -> str | None:
     if value == perpetual_market_making_config_map.get("derivative").value:
         return "Price source derivative cannot be the same as maker derivative."
     if validate_derivative(value) is not None and validate_exchange(value) is not None:
@@ -83,12 +84,12 @@ def on_validated_price_source_derivative(value: str):
         perpetual_market_making_config_map["price_source_market"].value = None
 
 
-def validate_price_source_market(value: str) -> Optional[str]:
+def validate_price_source_market(value: str) -> str | None:
     market = perpetual_market_making_config_map.get("price_source_derivative").value
     return validate_market_trading_pair(market, value)
 
 
-def validate_price_floor_ceiling(value: str) -> Optional[str]:
+def validate_price_floor_ceiling(value: str) -> str | None:
     try:
         decimal_value = Decimal(value)
     except Exception:

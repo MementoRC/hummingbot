@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 import json
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses import aioresponses
@@ -37,8 +39,8 @@ class BitgetAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
     async def asyncSetUp(self) -> None:
         await super().asyncSetUp()
 
-        self.log_records: List[Any] = []
-        self.listening_task: Optional[asyncio.Task] = None
+        self.log_records: list[Any] = []
+        self.listening_task: asyncio.Task | None = None
         self.mocking_assistant: NetworkMockingAssistant = NetworkMockingAssistant()
         self.client_config_map: ClientConfigAdapter = ClientConfigAdapter(ClientConfigMap())
 
@@ -67,7 +69,7 @@ class BitgetAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         """
         self.log_records.append(record)
 
-    def ws_trade_mock_response(self) -> Dict[str, Any]:
+    def ws_trade_mock_response(self) -> dict[str, Any]:
         """
         Create a mock WebSocket response for trade updates.
 
@@ -81,7 +83,7 @@ class BitgetAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
             ],
         }
 
-    def rest_last_traded_price_mock_response(self) -> Dict[str, Any]:
+    def rest_last_traded_price_mock_response(self) -> dict[str, Any]:
         """
         Create a mock REST response for last traded price.
 
@@ -111,7 +113,7 @@ class BitgetAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
             ],
         }
 
-    def ws_order_book_snapshot_mock_response(self) -> Dict[str, Any]:
+    def ws_order_book_snapshot_mock_response(self) -> dict[str, Any]:
         """
         Create a mock WebSocket response for order book snapshot.
 
@@ -132,18 +134,18 @@ class BitgetAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
             "ts": 1695710946294,
         }
 
-    def ws_order_book_diff_mock_response(self) -> Dict[str, Any]:
+    def ws_order_book_diff_mock_response(self) -> dict[str, Any]:
         """
         Create a mock WebSocket response for order book diff updates.
 
         :return: Dict[str, Any]: Mock order book diff response data.
         """
-        snapshot: Dict[str, Any] = self.ws_order_book_snapshot_mock_response()
+        snapshot: dict[str, Any] = self.ws_order_book_snapshot_mock_response()
         snapshot["action"] = "update"
 
         return snapshot
 
-    def ws_error_event_mock_response(self) -> Dict[str, Any]:
+    def ws_error_event_mock_response(self) -> dict[str, Any]:
         """
         Create a mock WebSocket response for error events.
 
@@ -152,7 +154,7 @@ class BitgetAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
 
         return {"event": "error", "code": "30005", "msg": "Invalid request"}
 
-    def rest_order_book_snapshot_mock_response(self) -> Dict[str, Any]:
+    def rest_order_book_snapshot_mock_response(self) -> dict[str, Any]:
         """
         Create a mock REST response for order book snapshot.
 
@@ -188,16 +190,16 @@ class BitgetAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
 
         :param mock_get: Mocked HTTP response object.
         """
-        mock_response: Dict[str, Any] = self.rest_last_traded_price_mock_response()
+        mock_response: dict[str, Any] = self.rest_last_traded_price_mock_response()
         url: str = web_utils.public_rest_url(CONSTANTS.PUBLIC_TICKERS_ENDPOINT)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
 
         mock_get.get(regex_url, body=json.dumps(mock_response))
 
-        results: List[Dict[str, float]] = self.local_event_loop.run_until_complete(
+        results: list[dict[str, float]] = self.local_event_loop.run_until_complete(
             asyncio.gather(self.data_source.get_last_traded_prices([self.trading_pair]))
         )
-        result: Dict[str, float] = results[0]
+        result: dict[str, float] = results[0]
 
         self.assertEqual(result[self.trading_pair], float("2200.1"))
 
@@ -208,17 +210,17 @@ class BitgetAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
 
         :param mock_get: Mocked HTTP response object.
         """
-        mock_response: Dict[str, Any] = self.rest_order_book_snapshot_mock_response()
+        mock_response: dict[str, Any] = self.rest_order_book_snapshot_mock_response()
         url: str = web_utils.public_rest_url(CONSTANTS.PUBLIC_ORDERBOOK_ENDPOINT)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
 
         mock_get.get(regex_url, body=json.dumps(mock_response))
 
-        results: List[OrderBook] = self.local_event_loop.run_until_complete(
+        results: list[OrderBook] = self.local_event_loop.run_until_complete(
             asyncio.gather(self.data_source.get_new_order_book(self.trading_pair))
         )
         order_book: OrderBook = results[0]
-        data: Dict[str, Any] = mock_response["data"]
+        data: dict[str, Any] = mock_response["data"]
         update_id: int = int(data["ts"])
 
         self.assertTrue(isinstance(order_book, OrderBook))
@@ -244,7 +246,7 @@ class BitgetAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         :param mock_ws: Mocked WebSocket connection object.
         """
         mock_ws.return_value = self.mocking_assistant.create_websocket_mock()
-        subscription_topics: List[Dict[str, str]] = []
+        subscription_topics: list[dict[str, str]] = []
 
         for channel in [CONSTANTS.PUBLIC_WS_BOOKS, CONSTANTS.PUBLIC_WS_TRADE]:
             subscription_topics.append({"instType": "SPOT", "channel": channel, "instId": self.exchange_trading_pair})
@@ -260,7 +262,7 @@ class BitgetAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         sent_subscription_messages = self.mocking_assistant.json_messages_sent_through_websocket(
             websocket_mock=mock_ws.return_value
         )
-        expected_ws_subscription: Dict[str, Any] = {
+        expected_ws_subscription: dict[str, Any] = {
             "op": "subscribe",
             "args": [
                 {"instType": "SPOT", "channel": CONSTANTS.PUBLIC_WS_BOOKS, "instId": self.exchange_trading_pair},
@@ -344,7 +346,7 @@ class BitgetAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         :param mock_ws: Mocked WebSocket connection object.
         """
         msg_queue: asyncio.Queue = asyncio.Queue()
-        mock_response: Dict[str, Any] = self.ws_trade_mock_response()
+        mock_response: dict[str, Any] = self.ws_trade_mock_response()
 
         mock_ws.get.side_effect = [mock_response, asyncio.CancelledError]
         self.data_source._message_queue[self.data_source._trade_messages_queue_key] = mock_ws
@@ -380,7 +382,7 @@ class BitgetAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
 
         :param mock_ws: Mocked WebSocket connection object.
         """
-        mock_response: Dict[str, Any] = self.ws_order_book_diff_mock_response()
+        mock_response: dict[str, Any] = self.ws_order_book_diff_mock_response()
 
         mock_ws.get.side_effect = [mock_response, asyncio.CancelledError]
         self.data_source._message_queue[self.data_source._diff_messages_queue_key] = mock_ws
@@ -392,7 +394,7 @@ class BitgetAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         )
 
         msg: OrderBookMessage = await msg_queue.get()
-        data: Dict[str, Any] = mock_response["data"][0]
+        data: dict[str, Any] = mock_response["data"][0]
         expected_update_id: int = int(data["ts"])
 
         self.assertEqual(OrderBookMessageType.DIFF, msg.type)
@@ -419,7 +421,7 @@ class BitgetAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
 
         :param mock_ws: Mocked WebSocket connection object.
         """
-        mock_response: Dict[str, Any] = self.ws_order_book_snapshot_mock_response()
+        mock_response: dict[str, Any] = self.ws_order_book_snapshot_mock_response()
 
         mock_ws.get.side_effect = [mock_response, asyncio.CancelledError]
         self.data_source._message_queue[self.data_source._snapshot_messages_queue_key] = mock_ws
@@ -431,7 +433,7 @@ class BitgetAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         )
 
         msg: OrderBookMessage = await msg_queue.get()
-        data: Dict[str, Any] = mock_response["data"][0]
+        data: dict[str, Any] = mock_response["data"][0]
         expected_update_id: int = int(data["ts"])
 
         self.assertEqual(OrderBookMessageType.SNAPSHOT, msg.type)
@@ -474,7 +476,7 @@ class BitgetAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
 
         :param mock_ws: Mocked WebSocket connection object.
         """
-        incomplete_mock_response: Dict[str, Any] = self.ws_order_book_snapshot_mock_response()
+        incomplete_mock_response: dict[str, Any] = self.ws_order_book_snapshot_mock_response()
         incomplete_mock_response["data"] = [{"instId": self.exchange_trading_pair, "ts": 1542337219120}]
 
         mock_ws.get.side_effect = [incomplete_mock_response, asyncio.CancelledError]
@@ -498,7 +500,7 @@ class BitgetAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
 
         :param mock_ws: Mocked WebSocket connection object.
         """
-        incomplete_mock_response: Dict[str, Any] = self.ws_trade_mock_response()
+        incomplete_mock_response: dict[str, Any] = self.ws_trade_mock_response()
         incomplete_mock_response["data"] = [{"instId": self.exchange_trading_pair, "ts": 1542337219120}]
 
         mock_ws.get.side_effect = [incomplete_mock_response, asyncio.CancelledError]

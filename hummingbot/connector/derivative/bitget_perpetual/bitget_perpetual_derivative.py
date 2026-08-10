@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict
 
 from bidict import bidict
 
@@ -39,12 +41,12 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
 
     def __init__(
         self,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
         bitget_perpetual_api_key: str = None,
         bitget_perpetual_secret_key: str = None,
         bitget_perpetual_passphrase: str = None,
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
     ) -> None:
 
@@ -73,7 +75,7 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
         )
 
     @property
-    def rate_limits_rules(self) -> List[RateLimit]:
+    def rate_limits_rules(self) -> list[RateLimit]:
         return CONSTANTS.RATE_LIMITS
 
     @property
@@ -101,7 +103,7 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
         return CONSTANTS.PUBLIC_TIME_ENDPOINT
 
     @property
-    def trading_pairs(self) -> Optional[List[str]]:
+    def trading_pairs(self) -> list[str] | None:
         return self._trading_pairs
 
     @property
@@ -129,10 +131,10 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
             await self.set_margin_mode(self._margin_mode)
             await self._initialize_position_mode()
 
-    def supported_order_types(self) -> List[OrderType]:
+    def supported_order_types(self) -> list[OrderType]:
         return [OrderType.LIMIT, OrderType.MARKET]
 
-    def supported_position_modes(self) -> List[PositionMode]:
+    def supported_position_modes(self) -> list[PositionMode]:
         return [PositionMode.ONEWAY, PositionMode.HEDGE]
 
     def _is_request_exception_related_to_time_synchronizer(self, request_exception: Exception) -> bool:
@@ -157,7 +159,7 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
 
         return collateral_token
 
-    async def _fetch_account_position_mode(self) -> Optional[PositionMode]:
+    async def _fetch_account_position_mode(self) -> PositionMode | None:
         """
         Fetches the current position mode from the Bitget exchange account.
         Uses the first trading pair to query the account info.
@@ -166,7 +168,7 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
             return None
         trading_pair = self.trading_pairs[0]
         product_type = await self.product_type_associated_to_trading_pair(trading_pair)
-        account_info_response: Dict[str, Any] = await self._api_get(
+        account_info_response: dict[str, Any] = await self._api_get(
             path_url=CONSTANTS.ACCOUNT_INFO_ENDPOINT,
             params={
                 "symbol": await self.exchange_symbol_associated_to_pair(trading_pair=trading_pair),
@@ -267,7 +269,7 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
         price: Decimal,
         position_action: PositionAction = PositionAction.NIL,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         product_type = await self.product_type_associated_to_trading_pair(trading_pair)
         margin_modes = {MarginMode.CROSS: "crossed", MarginMode.ISOLATED: "isolated"}
         data = {
@@ -312,7 +314,7 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
         position_action: PositionAction,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         is_maker = is_maker or (order_type is OrderType.LIMIT_MAKER)
         trading_pair = combine_to_hb_trading_pair(base=base_currency, quote=quote_currency)
@@ -386,7 +388,7 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
         } or CONSTANTS.ALL_PRODUCT_TYPES
 
         for product_type in product_types:
-            accounts_info_response: Dict[str, Any] = await self._api_get(
+            accounts_info_response: dict[str, Any] = await self._api_get(
                 path_url=CONSTANTS.ACCOUNTS_INFO_ENDPOINT,
                 params={"productType": product_type},
                 is_auth_required=True,
@@ -439,7 +441,7 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
         position_sides = {"long": PositionSide.LONG, "short": PositionSide.SHORT}
 
         for product_type in product_types:
-            all_positions_response: Dict[str, Any] = await self._api_get(
+            all_positions_response: dict[str, Any] = await self._api_get(
                 path_url=CONSTANTS.ALL_POSITIONS_ENDPOINT,
                 params={"productType": product_type},
                 is_auth_required=True,
@@ -473,7 +475,7 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
                 else:
                     self._perpetual_trading.remove_position(pos_key)
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         trade_updates = []
 
         if order.exchange_order_id is not None:
@@ -490,7 +492,7 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
 
         return trade_updates
 
-    async def _request_order_fills(self, order: InFlightOrder) -> Dict[str, Any]:
+    async def _request_order_fills(self, order: InFlightOrder) -> dict[str, Any]:
         symbol = await self.exchange_symbol_associated_to_pair(order.trading_pair)
         product_type = await self.product_type_associated_to_trading_pair(order.trading_pair)
         order_fills_response = await self._api_get(
@@ -630,7 +632,7 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
                 self.logger().error(f"Failed to set position mode to {mode}: {msg}")
             self._fire_position_mode_events(mode, success=all_success, message=msg)
 
-    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> Tuple[bool, str]:
+    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> tuple[bool, str]:
         if len(self.account_positions) > 0:
             return False, "Cannot change position because active positions exist"
 
@@ -654,7 +656,7 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
 
         return True, ""
 
-    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> Tuple[bool, str]:
+    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> tuple[bool, str]:
         if len(self.account_positions) > 0:
             return False, "cannot change leverage because active positions exist"
 
@@ -662,7 +664,7 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
             product_type = await self.product_type_associated_to_trading_pair(trading_pair)
             symbol = await self.exchange_symbol_associated_to_pair(trading_pair)
 
-            response: Dict[str, Any] = await self._api_post(
+            response: dict[str, Any] = await self._api_post(
                 path_url=CONSTANTS.SET_LEVERAGE_ENDPOINT,
                 data={
                     "symbol": symbol,
@@ -680,11 +682,11 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
 
         return True, ""
 
-    async def _fetch_last_fee_payment(self, trading_pair: str) -> Tuple[float, Decimal, Decimal]:
+    async def _fetch_last_fee_payment(self, trading_pair: str) -> tuple[float, Decimal, Decimal]:
         timestamp, funding_rate, payment = 0, Decimal("-1"), Decimal("-1")
 
         product_type = await self.product_type_associated_to_trading_pair(trading_pair)
-        payment_response: Dict[str, Any] = await self._api_get(
+        payment_response: dict[str, Any] = await self._api_get(
             path_url=CONSTANTS.ACCOUNT_BILLS_ENDPOINT,
             params={
                 "productType": product_type,
@@ -692,7 +694,7 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
             },
             is_auth_required=True,
         )
-        payment_data: Dict[str, Any] = payment_response["data"]["bills"]
+        payment_data: dict[str, Any] = payment_response["data"]["bills"]
 
         if payment_data:
             last_data = payment_data[0]
@@ -724,7 +726,7 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
             except Exception:
                 self.logger().exception("Unexpected error in user stream listener loop.")
 
-    async def _process_account_position_event(self, position_entries: List[Dict[str, Any]]):
+    async def _process_account_position_event(self, position_entries: list[dict[str, Any]]):
         """
         Updates position
         :param position_msg: The position event message payload
@@ -765,7 +767,7 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
         for position_key in positions_to_remove:
             self._perpetual_trading.remove_position(position_key)
 
-    def _process_order_event_message(self, order_msg: Dict[str, Any]):
+    def _process_order_event_message(self, order_msg: dict[str, Any]):
         """
         Updates in-flight order and triggers cancellation or failure event if needed.
 
@@ -785,7 +787,7 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
             )
             self._order_tracker.process_order_update(new_order_update)
 
-    def _process_balance_update_from_order_event(self, order_msg: Dict[str, Any]):
+    def _process_balance_update_from_order_event(self, order_msg: dict[str, Any]):
         order_status = CONSTANTS.STATE_TYPES[order_msg["status"]]
         symbol = order_msg["marginCoin"]
         states_to_consider = [OrderState.OPEN, OrderState.CANCELED]
@@ -802,7 +804,7 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
             multiplier = Decimal(-1) if order_status == OrderState.OPEN else Decimal(1)
             self._account_available_balances[symbol] += margin_amount * multiplier
 
-    def _process_trade_event_message(self, trade_msg: Dict[str, Any]):
+    def _process_trade_event_message(self, trade_msg: dict[str, Any]):
         """
         Updates in-flight order and trigger order filled event for trade message received.
         Triggers order completed event if the total executed amount equals to the specified order amount.
@@ -895,7 +897,7 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
 
         return trade_update
 
-    def _process_wallet_event_message(self, wallet_msg: Dict[str, Any]):
+    def _process_wallet_event_message(self, wallet_msg: dict[str, Any]):
         """
         Updates account balances.
         :param wallet_msg: The account balance update message payload
@@ -908,7 +910,7 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
         self._account_available_balances[symbol] = available
 
     async def _make_trading_pairs_request(self) -> Any:
-        all_exchange_info: List[Dict[str, Any]] = []
+        all_exchange_info: list[dict[str, Any]] = []
 
         for product_type in CONSTANTS.ALL_PRODUCT_TYPES:
             exchange_info = await self._api_get(
@@ -921,7 +923,7 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
     async def _make_trading_rules_request(self) -> Any:
         return await self._make_trading_pairs_request()
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: List[Dict[str, Any]]) -> None:
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: list[dict[str, Any]]) -> None:
         mapping = bidict()
         for symbol_data in exchange_info:
             if bitget_perpetual_utils.is_exchange_information_valid(exchange_info=symbol_data):
@@ -937,7 +939,7 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
                     )
         self._set_trading_pair_symbol_map(mapping)
 
-    async def _format_trading_rules(self, exchange_info_dict: Dict[str, List[Dict[str, Any]]]) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: dict[str, list[dict[str, Any]]]) -> list[TradingRule]:
         """
         Converts JSON API response into a local dictionary of trading rules.
 

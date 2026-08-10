@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import asyncio
-from typing import List, Optional
 
 from hummingbot.connector.derivative.okx_perpetual import (
     okx_perpetual_constants as CONSTANTS,
@@ -14,7 +15,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class OkxPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
@@ -26,7 +27,7 @@ class OkxPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
         self._domain = domain
         self._api_factory = api_factory
         self._auth = auth
-        self._ws_assistants: List[WSAssistant] = []
+        self._ws_assistants: list[WSAssistant] = []
 
     @property
     def last_recv_time(self) -> float:
@@ -62,7 +63,7 @@ class OkxPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
             raise
 
     async def _listen_for_user_stream_on_url(self, url: str, output: asyncio.Queue):
-        ws: Optional[WSAssistant] = None
+        ws: WSAssistant | None = None
         while True:
             try:
                 ws = await self._get_connected_websocket_assistant(url)
@@ -91,7 +92,7 @@ class OkxPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
         """
         Authenticates user to websocket
         """
-        auth_args: List[str] = self._auth.get_ws_auth_args()
+        auth_args: list[str] = self._auth.get_ws_auth_args()
         payload = {"op": "login", "args": auth_args}
         login_request: WSJSONRequest = WSJSONRequest(payload=payload)
         await ws.send(login_request)

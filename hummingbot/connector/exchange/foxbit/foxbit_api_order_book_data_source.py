@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.exchange.foxbit import (
     foxbit_constants as CONSTANTS,
@@ -25,7 +27,7 @@ if TYPE_CHECKING:
 
 
 class FoxbitAPIOrderBookDataSource(OrderBookTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
     _trading_pair_exc_id = {}
     _trading_pair_hb_dict = {}
     _ORDER_BOOK_INTERVAL = 1.0
@@ -34,7 +36,7 @@ class FoxbitAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
     def __init__(
         self,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "FoxbitExchange",
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -68,7 +70,7 @@ class FoxbitAPIOrderBookDataSource(OrderBookTrackerDataSource):
         order_book.apply_snapshot(snapshot_msg.bids, snapshot_msg.asks, snapshot_msg.update_id)
         return order_book
 
-    async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, Any]:
+    async def _request_order_book_snapshot(self, trading_pair: str) -> dict[str, Any]:
         """
         Retrieves a copy of the full order book from the exchange, for a particular trading pair.
 
@@ -141,7 +143,7 @@ class FoxbitAPIOrderBookDataSource(OrderBookTrackerDataSource):
         return ws
 
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBookMessage:
-        snapshot: Dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
+        snapshot: dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
         snapshot_timestamp: float = time.time()
         snapshot_msg: OrderBookMessage = FoxbitOrderBook.snapshot_message_from_exchange(
             snapshot, snapshot_timestamp, metadata={"trading_pair": trading_pair}
@@ -149,7 +151,7 @@ class FoxbitAPIOrderBookDataSource(OrderBookTrackerDataSource):
         self._first_update_id[trading_pair] = snapshot["sequence_id"]
         return snapshot_msg
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         if CONSTANTS.WS_SUBSCRIBE_TRADES or CONSTANTS.WS_TRADE_RESPONSE in raw_message["n"]:
             full_msg = eval(raw_message["o"].replace(",false,", ",False,"))
             for msg in full_msg:
@@ -167,7 +169,7 @@ class FoxbitAPIOrderBookDataSource(OrderBookTrackerDataSource):
                 )
                 message_queue.put_nowait(trade_message)
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         if CONSTANTS.WS_ORDER_BOOK_RESPONSE or CONSTANTS.WS_ORDER_STATE in raw_message["n"]:
             full_msg = eval(raw_message["o"])
             for msg in full_msg:
@@ -187,7 +189,7 @@ class FoxbitAPIOrderBookDataSource(OrderBookTrackerDataSource):
                 message_queue.put_nowait(order_book_message)
                 self._live_stream_connected[instrument_id] = True
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         channel = ""
         if "o" in event_message:
             event_type = event_message.get("n")
@@ -197,7 +199,7 @@ class FoxbitAPIOrderBookDataSource(OrderBookTrackerDataSource):
                 return self._diff_messages_queue_key
         return channel
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def _load_exchange_instrument_id(self):

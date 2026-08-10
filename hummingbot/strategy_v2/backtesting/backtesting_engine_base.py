@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 from decimal import Decimal
 import importlib
 import inspect
 import os
-from typing import Dict, List, Optional, Type, Union
+from typing import Dict, List, Union
 
 import numpy as np
 import pandas as pd
@@ -151,7 +153,7 @@ class BacktestPositionHold:
 
 
 class BacktestingEngineBase:
-    __controller_class_cache = LazyDict[str, Type[ControllerBase]]()
+    __controller_class_cache = LazyDict[str, type[ControllerBase]]()
 
     def __init__(self):
         self.controller = None
@@ -278,13 +280,13 @@ class BacktestingEngineBase:
             List[ExecutorInfo]: List of executor information objects detailing the simulation results.
         """
         processed_features = self.prepare_market_data()
-        self.active_executor_simulations: List[ExecutorSimulation] = []
-        self.stopped_executors_info: List[ExecutorInfo] = []
-        self.active_position_holds: Dict[str, BacktestPositionHold] = {}
+        self.active_executor_simulations: list[ExecutorSimulation] = []
+        self.stopped_executors_info: list[ExecutorInfo] = []
+        self.active_position_holds: dict[str, BacktestPositionHold] = {}
         self._position_hold_processed_ids: set = set()
-        self._pending_position_hold_executors: List[ExecutorInfo] = []
-        self.position_held_timeseries: List[Dict] = []
-        self.pnl_timeseries: List[Dict] = []
+        self._pending_position_hold_executors: list[ExecutorInfo] = []
+        self.position_held_timeseries: list[Dict] = []
+        self.pnl_timeseries: list[Dict] = []
         self._executor_realized_pnl = 0.0
         self._cumulative_volume = 0.0
         last_index = processed_features.index[-1]
@@ -435,7 +437,7 @@ class BacktestingEngineBase:
         config: Union[PositionExecutorConfig, DCAExecutorConfig, GridExecutorConfig, OrderExecutorConfig],
         df: pd.DataFrame,
         trade_cost: float,
-    ) -> Optional[ExecutorSimulation]:
+    ) -> ExecutorSimulation | None:
         """
         Simulates the execution of a trading strategy given a configuration.
 
@@ -559,9 +561,9 @@ class BacktestingEngineBase:
     def summarize_results(
         executors_info: List,
         total_amount_quote: float = 1000,
-        position_holds: Optional[List["BacktestPositionHold"]] = None,
-        final_price: Optional[Decimal] = None,
-        pnl_timeseries: Optional[List[Dict]] = None,
+        position_holds: list["BacktestPositionHold"] | None = None,
+        final_price: Decimal | None = None,
+        pnl_timeseries: list[Dict] | None = None,
     ):
         if len(executors_info) > 0:
             executors_df = pd.DataFrame([ei.to_dict() for ei in executors_info])

@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.derivative.decibel_perpetual import (
     decibel_perpetual_constants as CONSTANTS,
@@ -24,11 +26,11 @@ if TYPE_CHECKING:
 
 
 class DecibelPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "DecibelPerpetualDerivative",
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -37,17 +39,17 @@ class DecibelPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         self._connector = connector
         self._api_factory = api_factory
         self._domain = domain
-        self._ping_task: Optional[asyncio.Task] = None
+        self._ping_task: asyncio.Task | None = None
         # Map market addresses to trading pairs for WebSocket message routing
-        self._market_addr_to_trading_pair: Dict[str, str] = {}
+        self._market_addr_to_trading_pair: dict[str, str] = {}
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         """
         Get last traded prices for given trading pairs.
         """
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
-    def _get_headers(self) -> Dict[str, str]:
+    def _get_headers(self) -> dict[str, str]:
         """
         Build headers for REST requests.
         Includes API key if available for better rate limits.
@@ -190,7 +192,7 @@ class DecibelPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             self.logger().exception("Unexpected error occurred subscribing to order book data streams.")
             raise
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         """
         Route incoming messages to the correct queue based on the topic.
         """
@@ -206,12 +208,12 @@ class DecibelPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         return ""
 
     async def _process_message_for_unknown_channel(
-        self, event_message: Dict[str, Any], websocket_assistant: WSAssistant
+        self, event_message: dict[str, Any], websocket_assistant: WSAssistant
     ):
         """Log unrouted messages for debugging."""
         self.logger().debug(f"Unknown channel message: {str(event_message)[:300]}")
 
-    async def _parse_order_book_snapshot_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_snapshot_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         """
         Process order book update message.
         """
@@ -253,7 +255,7 @@ class DecibelPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         )
         message_queue.put_nowait(order_book_message)
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         """
         Process trade message.
         Topic format: "trades:{marketAddr}"
@@ -292,7 +294,7 @@ class DecibelPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             )
             message_queue.put_nowait(trade_message)
 
-    async def _parse_funding_info_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_funding_info_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         """
         Process funding rate update message.
         Topic format: "market_price:{marketAddr}"
@@ -346,7 +348,7 @@ class DecibelPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
                 self.logger().exception("Unexpected error while sending ping")
                 break
 
-    async def _on_ws_connection_error(self, websocket_assistant: Optional[WSAssistant]):
+    async def _on_ws_connection_error(self, websocket_assistant: WSAssistant | None):
         """
         Clean up ping task when WebSocket connection is lost.
         """
