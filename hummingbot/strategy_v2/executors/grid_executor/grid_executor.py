@@ -21,6 +21,7 @@ from hummingbot.core.event.events import (
 from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.executor_base import ExecutorBase
+from hummingbot.strategy_v2.executors.executor_factory import ExecutorFactory
 from hummingbot.strategy_v2.executors.grid_executor.data_types import GridExecutorConfig, GridLevel, GridLevelStates
 from hummingbot.strategy_v2.executors.mixins.balance_validation import BalanceValidationMixin
 from hummingbot.strategy_v2.executors.mixins.trailing_stop import TrailingStopMixin
@@ -29,6 +30,7 @@ from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 from hummingbot.strategy_v2.utils.distributions import Distributions
 
 
+@ExecutorFactory.register(GridExecutorConfig)
 class GridExecutor(BalanceValidationMixin, TrailingStopMixin, ExecutorBase):
     _logger = None
 
