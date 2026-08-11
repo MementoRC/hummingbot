@@ -23,6 +23,7 @@ class ExecutorConfigBase(BaseModel):
         "xemm_executor",
         "arbitrage_executor",
         "twap_executor",
+        "position_on_exchange_executor",
         "lp_executor",
         "progressive_executor",
     ]
