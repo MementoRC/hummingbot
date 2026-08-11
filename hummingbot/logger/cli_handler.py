@@ -4,9 +4,10 @@ from __future__ import annotations
 
 from datetime import datetime
 from logging import StreamHandler
+from typing import TextIO
 
 
-class CLIHandler(StreamHandler):
+class CLIHandler(StreamHandler[TextIO]):
     def formatException(self, _) -> str | None:
         return None
 
