@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import json
 import re
-from typing import Awaitable, Dict, List, NamedTuple, Optional
+from typing import Awaitable, Dict, NamedTuple
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -53,7 +55,7 @@ class KucoinExchangeTests(unittest.TestCase):
         super().setUp()
 
         self.log_records = []
-        self.test_task: Optional[asyncio.Task] = None
+        self.test_task: asyncio.Task | None = None
         self.client_config_map = ClientConfigAdapter(ClientConfigMap())
 
         self.exchange = KucoinExchange(
@@ -200,7 +202,7 @@ class KucoinExchangeTests(unittest.TestCase):
 
         mock_api.get(regex_url, exception=Exception)
 
-        result: List[str] = self.async_run_with_timeout(self.exchange.all_trading_pairs())
+        result: list[str] = self.async_run_with_timeout(self.exchange.all_trading_pairs())
 
         self.assertEqual(0, len(result))
 
@@ -1319,7 +1321,7 @@ class KucoinExchangeTests(unittest.TestCase):
 
     # ---- Testing the _update_orders_fills() method overwritten from the ExchangePyBase
     def test__update_orders_fills_raises_asyncio(self):
-        orders: List[InFlightOrder] = [
+        orders: list[InFlightOrder] = [
             InFlightOrder(
                 client_order_id="COID1-1",
                 exchange_order_id="EOID1-1",
@@ -1345,7 +1347,7 @@ class KucoinExchangeTests(unittest.TestCase):
         self.assertEqual(0, self.exchange._last_order_fill_ts_s)
 
     def test__update_orders_fills_calls_on_orders(self):
-        orders: List[InFlightOrder] = [
+        orders: list[InFlightOrder] = [
             InFlightOrder(
                 client_order_id="COID1-1",
                 exchange_order_id="EOID1-1",
@@ -1395,7 +1397,7 @@ class KucoinExchangeTests(unittest.TestCase):
                 mock_updates.assert_called_once_with(orders)
 
     def test__update_orders_fills_handles_exception(self):
-        orders: List[InFlightOrder] = [
+        orders: list[InFlightOrder] = [
             InFlightOrder(
                 client_order_id="COID1-1",
                 exchange_order_id="EOID1-1",
@@ -1420,7 +1422,7 @@ class KucoinExchangeTests(unittest.TestCase):
 
     @aioresponses()
     def test__all_trades_updates_empty_orders(self, mock_api):
-        orders: List[InFlightOrder] = []
+        orders: list[InFlightOrder] = []
 
         # Simulate the order has been filled with a TradeUpdate
         # Updating with only the oldest order(fee called once)
@@ -1433,7 +1435,7 @@ class KucoinExchangeTests(unittest.TestCase):
         self.assertEqual(0, len(trades))
 
     def test__update_orders_fills_empty_orders(self):
-        orders: List[InFlightOrder] = []
+        orders: list[InFlightOrder] = []
 
         with patch.object(ClientOrderTracker, "process_trade_update") as mock_tracker:
             mock_tracker.return_value = None
@@ -1449,7 +1451,7 @@ class KucoinExchangeTests(unittest.TestCase):
 
     @aioresponses()
     def test__all_trades_updates_last_fill(self, mock_api):
-        orders: List[InFlightOrder] = []
+        orders: list[InFlightOrder] = []
         order_fills_status: Dict = {
             "currentPage": 1,
             "pageSize": 500,
@@ -1579,7 +1581,7 @@ class KucoinExchangeTests(unittest.TestCase):
             price=Decimal("10000"),
             amount=Decimal("1"),
         )
-        orders: List[InFlightOrder] = [self.exchange.in_flight_orders["OID1"], self.exchange.in_flight_orders["OID2"]]
+        orders: list[InFlightOrder] = [self.exchange.in_flight_orders["OID1"], self.exchange.in_flight_orders["OID2"]]
 
         url_fills = web_utils.private_rest_url(
             f"{CONSTANTS.FILLS_PATH_URL}?pageSize=500&startAt={int(orders[0].creation_timestamp * 1000)}"
@@ -1783,7 +1785,7 @@ class KucoinExchangeTests(unittest.TestCase):
             price=Decimal("10000"),
             amount=Decimal("1"),
         )
-        orders: List[InFlightOrder] = [self.exchange.in_flight_orders["OID1"], self.exchange.in_flight_orders["OID2"]]
+        orders: list[InFlightOrder] = [self.exchange.in_flight_orders["OID1"], self.exchange.in_flight_orders["OID2"]]
 
         url_fills = web_utils.private_rest_url(
             f"{CONSTANTS.FILLS_PATH_URL}?pageSize=500&startAt={int(orders[0].creation_timestamp * 1000)}"
@@ -1974,7 +1976,7 @@ class KucoinExchangeTests(unittest.TestCase):
             price=Decimal("10000"),
             amount=Decimal("1"),
         )
-        orders: List[InFlightOrder] = [self.exchange.in_flight_orders["OID1"], self.exchange.in_flight_orders["OID2"]]
+        orders: list[InFlightOrder] = [self.exchange.in_flight_orders["OID1"], self.exchange.in_flight_orders["OID2"]]
 
         url_fills = web_utils.private_rest_url(
             f"{CONSTANTS.FILLS_PATH_URL}?pageSize=500&startAt={int(orders[0].creation_timestamp * 1000)}"
@@ -2125,7 +2127,7 @@ class KucoinExchangeTests(unittest.TestCase):
             price=Decimal("10000"),
             amount=Decimal("1"),
         )
-        orders: List[InFlightOrder] = [self.exchange.in_flight_orders["OID1"], self.exchange.in_flight_orders["OID2"]]
+        orders: list[InFlightOrder] = [self.exchange.in_flight_orders["OID1"], self.exchange.in_flight_orders["OID2"]]
 
         url_fills = web_utils.private_rest_url(
             f"{CONSTANTS.FILLS_PATH_URL}?pageSize=500&startAt={int(orders[0].creation_timestamp * 1000)}"
@@ -2174,7 +2176,7 @@ class KucoinExchangeTests(unittest.TestCase):
             price=Decimal("10000"),
             amount=Decimal("1"),
         )
-        orders: List[InFlightOrder] = [self.exchange.in_flight_orders["OID1"], self.exchange.in_flight_orders["OID2"]]
+        orders: list[InFlightOrder] = [self.exchange.in_flight_orders["OID1"], self.exchange.in_flight_orders["OID2"]]
         orders[0].exchange_order_id_update_event = update_event
 
         url_fills = web_utils.private_rest_url(

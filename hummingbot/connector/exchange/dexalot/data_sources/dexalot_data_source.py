@@ -1,7 +1,7 @@
 import asyncio
 from asyncio import Lock
 from decimal import Decimal
-from typing import Dict, List
+from typing import Dict
 
 from eth_account import Account
 from eth_account.signers.local import LocalAccount
@@ -107,7 +107,7 @@ class DexalotClient:
         return account_balances, account_available_balances
 
     async def cancel_and_add_order_list(
-        self, orders_to_cancel: List[GatewayInFlightOrder], order_list: List[GatewayInFlightOrder]
+        self, orders_to_cancel: list[GatewayInFlightOrder], order_list: list[GatewayInFlightOrder]
     ):
         new_order_list = []
         if order_list:
@@ -135,7 +135,7 @@ class DexalotClient:
         result = await self._build_and_send_tx(function, gas)
         return result
 
-    async def cancel_order_list(self, orders_to_cancel: List[GatewayInFlightOrder]):
+    async def cancel_order_list(self, orders_to_cancel: list[GatewayInFlightOrder]):
         cancel_order_list = [i.exchange_order_id for i in orders_to_cancel]
         gas = len(orders_to_cancel) * CONSTANTS.CANCEL_GAS_LIMIT
         function = self.trade_pairs_manager.functions.cancelOrderList(cancel_order_list)

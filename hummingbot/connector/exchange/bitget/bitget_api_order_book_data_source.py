@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List, NoReturn, Optional
+from typing import TYPE_CHECKING, Any, NoReturn
 
 from hummingbot.connector.exchange.bitget import bitget_constants as CONSTANTS, bitget_web_utils as web_utils
 from hummingbot.core.data_type.common import TradeType
@@ -24,16 +26,16 @@ class BitgetAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
     def __init__(
         self,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "BitgetExchange",
         api_factory: WebAssistantsFactory,
     ) -> None:
         super().__init__(trading_pairs)
         self._connector: "BitgetExchange" = connector
         self._api_factory: WebAssistantsFactory = api_factory
-        self._ping_task: Optional[asyncio.Task] = None
+        self._ping_task: asyncio.Task | None = None
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def _parse_pong_message(self) -> None:
@@ -41,7 +43,7 @@ class BitgetAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
     async def _process_message_for_unknown_channel(
         self,
-        event_message: Dict[str, Any],
+        event_message: dict[str, Any],
         websocket_assistant: WSAssistant,
     ) -> None:
         if event_message == CONSTANTS.PUBLIC_WS_PONG_RESPONSE:
@@ -58,15 +60,15 @@ class BitgetAPIOrderBookDataSource(OrderBookTrackerDataSource):
         else:
             self.logger().info(f"Message for unknown channel received: {event_message}")
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> Optional[str]:
-        channel: Optional[str] = None
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str | None:
+        channel: str | None = None
 
         if "arg" in event_message and "action" in event_message:
-            arg: Dict[str, Any] = event_message["arg"]
-            response_channel: Optional[str] = arg.get("channel")
+            arg: dict[str, Any] = event_message["arg"]
+            response_channel: str | None = arg.get("channel")
 
             if response_channel == CONSTANTS.PUBLIC_WS_BOOKS:
-                action: Optional[str] = event_message.get("action")
+                action: str | None = event_message.get("action")
                 channels = {"snapshot": self._snapshot_messages_queue_key, "update": self._diff_messages_queue_key}
                 channel = channels.get(action)
             elif response_channel == CONSTANTS.PUBLIC_WS_TRADE:
@@ -76,7 +78,7 @@ class BitgetAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
     async def _parse_any_order_book_message(
         self,
-        data: Dict[str, Any],
+        data: dict[str, Any],
         symbol: str,
         message_type: OrderBookMessageType,
     ) -> OrderBookMessage:
@@ -92,7 +94,7 @@ class BitgetAPIOrderBookDataSource(OrderBookTrackerDataSource):
         update_id: int = int(data["ts"])
         timestamp: float = update_id * 1e-3
 
-        order_book_message_content: Dict[str, Any] = {
+        order_book_message_content: dict[str, Any] = {
             "trading_pair": trading_pair,
             "update_id": update_id,
             "bids": data["bids"],
@@ -101,8 +103,8 @@ class BitgetAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
         return OrderBookMessage(message_type=message_type, content=order_book_message_content, timestamp=timestamp)
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue) -> None:
-        diffs_data: Dict[str, Any] = raw_message["data"]
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue) -> None:
+        diffs_data: dict[str, Any] = raw_message["data"]
         symbol: str = raw_message["arg"]["instId"]
 
         for diff in diffs_data:
@@ -113,9 +115,9 @@ class BitgetAPIOrderBookDataSource(OrderBookTrackerDataSource):
             message_queue.put_nowait(diff_message)
 
     async def _parse_order_book_snapshot_message(
-        self, raw_message: Dict[str, Any], message_queue: asyncio.Queue
+        self, raw_message: dict[str, Any], message_queue: asyncio.Queue
     ) -> None:
-        snapshot_data: Dict[str, Any] = raw_message["data"]
+        snapshot_data: dict[str, Any] = raw_message["data"]
         symbol: str = raw_message["arg"]["instId"]
 
         for snapshot in snapshot_data:
@@ -125,8 +127,8 @@ class BitgetAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
             message_queue.put_nowait(snapshot_message)
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue) -> None:
-        data: List[Dict[str, Any]] = raw_message["data"]
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue) -> None:
+        data: list[dict[str, Any]] = raw_message["data"]
         symbol: str = raw_message["arg"]["instId"]
         trading_pair: str = await self._connector.trading_pair_associated_to_exchange_symbol(symbol)
 
@@ -134,7 +136,7 @@ class BitgetAPIOrderBookDataSource(OrderBookTrackerDataSource):
             trade_type: float = (
                 float(TradeType.BUY.value) if trade_data["side"] == "buy" else float(TradeType.SELL.value)
             )
-            message_content: Dict[str, Any] = {
+            message_content: dict[str, Any] = {
                 "trade_id": int(trade_data["tradeId"]),
                 "trading_pair": trading_pair,
                 "trade_type": trade_type,
@@ -160,7 +162,7 @@ class BitgetAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
     async def _subscribe_channels(self, ws: WSAssistant) -> None:
         try:
-            subscription_topics: List[Dict[str, str]] = []
+            subscription_topics: list[dict[str, str]] = []
 
             for trading_pair in self._trading_pairs:
                 symbol: str = await self._connector.exchange_symbol_associated_to_pair(trading_pair)
@@ -183,11 +185,11 @@ class BitgetAPIOrderBookDataSource(OrderBookTrackerDataSource):
             self.logger().exception("Unexpected error occurred subscribing to public channels...")
             raise
 
-    async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, Any]:
+    async def _request_order_book_snapshot(self, trading_pair: str) -> dict[str, Any]:
         symbol: str = await self._connector.exchange_symbol_associated_to_pair(trading_pair)
         rest_assistant: RESTAssistant = await self._api_factory.get_rest_assistant()
 
-        data: Dict[str, Any] = await rest_assistant.execute_request(
+        data: dict[str, Any] = await rest_assistant.execute_request(
             url=web_utils.public_rest_url(path_url=CONSTANTS.PUBLIC_ORDERBOOK_ENDPOINT),
             params={
                 "symbol": symbol,
@@ -200,12 +202,12 @@ class BitgetAPIOrderBookDataSource(OrderBookTrackerDataSource):
         return data
 
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBookMessage:
-        snapshot_response: Dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
-        snapshot_data: Dict[str, Any] = snapshot_response["data"]
+        snapshot_response: dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
+        snapshot_data: dict[str, Any] = snapshot_response["data"]
         update_id: int = int(snapshot_data["ts"])
         timestamp: float = update_id * 1e-3
 
-        order_book_message_content: Dict[str, Any] = {
+        order_book_message_content: dict[str, Any] = {
             "trading_pair": trading_pair,
             "update_id": update_id,
             "bids": snapshot_data["bids"],
@@ -236,7 +238,7 @@ class BitgetAPIOrderBookDataSource(OrderBookTrackerDataSource):
             self.logger().exception("Error sending interval PING")
 
     async def listen_for_subscriptions(self) -> NoReturn:
-        ws: Optional[WSAssistant] = None
+        ws: WSAssistant | None = None
         while True:
             try:
                 ws: WSAssistant = await self._connected_websocket_assistant()

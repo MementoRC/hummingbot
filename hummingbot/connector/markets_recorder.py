@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import json
@@ -6,7 +8,7 @@ import os.path
 from shutil import move
 import threading
 import time
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Union
 
 import pandas as pd
 from sqlalchemy.orm import Query, Session
@@ -51,7 +53,7 @@ from hummingbot.strategy_v2.models.executors_info import ExecutorInfo
 class MarketsRecorder:
     _logger = None
     _shared_instance: "MarketsRecorder" = None
-    market_event_tag_map: Dict[int, MarketEvent] = {
+    market_event_tag_map: dict[int, MarketEvent] = {
         event_obj.value: event_obj for event_obj in MarketEvent.__members__.values()
     }
 
@@ -70,7 +72,7 @@ class MarketsRecorder:
     def __init__(
         self,
         sql: SQLConnectionManager,
-        markets: List[ConnectorBase],
+        markets: list[ConnectorBase],
         config_file_path: str,
         strategy_name: str,
         market_data_collection: MarketDataCollectionConfigMap,
@@ -80,11 +82,11 @@ class MarketsRecorder:
 
         self._ev_loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
         self._sql_manager: SQLConnectionManager = sql
-        self._markets: List[ConnectorBase] = markets
+        self._markets: list[ConnectorBase] = markets
         self._config_file_path: str = config_file_path
         self._strategy_name: str = strategy_name
         self._market_data_collection_config: MarketDataCollectionConfigMap = market_data_collection
-        self._market_data_collection_task: Optional[asyncio.Task] = None
+        self._market_data_collection_task: asyncio.Task | None = None
         # Internal collection of trade fills in connector will be used for remote/local history reconciliation
         for market in self._markets:
             trade_fills = self.get_trades_for_config(self._config_file_path, 2000)
@@ -108,7 +110,7 @@ class MarketsRecorder:
             self._did_update_range_position
         )
 
-        self._event_pairs: List[Tuple[MarketEvent, SourceInfoEventForwarder]] = [
+        self._event_pairs: list[tuple[MarketEvent, SourceInfoEventForwarder]] = [
             (MarketEvent.BuyOrderCreated, self._create_order_forwarder),
             (MarketEvent.SellOrderCreated, self._create_order_forwarder),
             (MarketEvent.OrderFilled, self._fill_order_forwarder),
@@ -284,32 +286,32 @@ class MarketsRecorder:
             session.add(controller)
             session.commit()
 
-    def get_executors_by_ids(self, executor_ids: List[str]):
+    def get_executors_by_ids(self, executor_ids: list[str]):
         with self._sql_manager.get_new_session() as session:
             executors = session.query(Executors).filter(Executors.id.in_(executor_ids)).all()
             return executors
 
-    def get_executors_by_controller(self, controller_id: str = None) -> List[ExecutorInfo]:
+    def get_executors_by_controller(self, controller_id: str = None) -> list[ExecutorInfo]:
         with self._sql_manager.get_new_session() as session:
             executors = session.query(Executors).filter(Executors.controller_id == controller_id).all()
             return [executor.to_executor_info() for executor in executors]
 
-    def get_all_executors(self) -> List[ExecutorInfo]:
+    def get_all_executors(self) -> list[ExecutorInfo]:
         with self._sql_manager.get_new_session() as session:
             executors = session.query(Executors).all()
             return [executor.to_executor_info() for executor in executors]
 
-    def get_positions_by_ids(self, position_ids: List[str]) -> List[Position]:
+    def get_positions_by_ids(self, position_ids: list[str]) -> list[Position]:
         with self._sql_manager.get_new_session() as session:
             positions = session.query(Position).filter(Position.id.in_(position_ids)).all()
             return positions
 
-    def get_positions_by_controller(self, controller_id: str = None) -> List[Position]:
+    def get_positions_by_controller(self, controller_id: str = None) -> list[Position]:
         with self._sql_manager.get_new_session() as session:
             positions = session.query(Position).filter(Position.controller_id == controller_id).all()
             return positions
 
-    def get_all_positions(self) -> List[Position]:
+    def get_all_positions(self) -> list[Position]:
         with self._sql_manager.get_new_session() as session:
             positions = session.query(Position).all()
             return positions
@@ -318,9 +320,9 @@ class MarketsRecorder:
         self,
         config_file_path: str,
         market: ConnectorBase,
-        with_exchange_order_id_present: Optional[bool] = False,
-        number_of_rows: Optional[int] = None,
-    ) -> List[Order]:
+        with_exchange_order_id_present: bool | None = False,
+        number_of_rows: int | None = None,
+    ) -> list[Order]:
         with self._sql_manager.get_new_session() as session:
             filters = [Order.config_file_path == config_file_path, Order.market == market.display_name]
             if with_exchange_order_id_present:
@@ -331,7 +333,7 @@ class MarketsRecorder:
             else:
                 return query.limit(number_of_rows).all()
 
-    def get_trades_for_config(self, config_file_path: str, number_of_rows: Optional[int] = None) -> List[TradeFill]:
+    def get_trades_for_config(self, config_file_path: str, number_of_rows: int | None = None) -> list[TradeFill]:
         with self._sql_manager.get_new_session() as session:
             query: Query = (
                 session.query(TradeFill)
@@ -344,7 +346,7 @@ class MarketsRecorder:
                 return query.limit(number_of_rows).all()
 
     def save_market_states(self, config_file_path: str, market: ConnectorBase, session: Session):
-        market_states: Optional[MarketState] = self.get_market_states(config_file_path, market, session=session)
+        market_states: MarketState | None = self.get_market_states(config_file_path, market, session=session)
         timestamp: int = self.db_timestamp
 
         if market_states is not None:
@@ -361,18 +363,16 @@ class MarketsRecorder:
 
     def restore_market_states(self, config_file_path: str, market: ConnectorBase):
         with self._sql_manager.get_new_session() as session:
-            market_states: Optional[MarketState] = self.get_market_states(config_file_path, market, session=session)
+            market_states: MarketState | None = self.get_market_states(config_file_path, market, session=session)
 
             if market_states is not None:
                 market.restore_tracking_states(market_states.saved_state)
 
-    def get_market_states(
-        self, config_file_path: str, market: ConnectorBase, session: Session
-    ) -> Optional[MarketState]:
+    def get_market_states(self, config_file_path: str, market: ConnectorBase, session: Session) -> MarketState | None:
         query: Query = session.query(MarketState).filter(
             MarketState.config_file_path == config_file_path, MarketState.market == market.display_name
         )
-        market_states: Optional[MarketState] = query.one_or_none()
+        market_states: MarketState | None = query.one_or_none()
         return market_states
 
     def _did_create_order(
@@ -425,7 +425,7 @@ class MarketsRecorder:
         with self._sql_manager.get_new_session() as session:
             with session.begin():
                 # Try to find the order record, and update it if necessary.
-                order_record: Optional[Order] = session.query(Order).filter(Order.id == order_id).one_or_none()
+                order_record: Order | None = session.query(Order).filter(Order.id == order_id).one_or_none()
                 if order_record is not None:
                     order_record.last_status = event_type.name
                     order_record.last_update_timestamp = timestamp
@@ -484,7 +484,7 @@ class MarketsRecorder:
         with self._sql_manager.get_new_session() as session:
             with session.begin():
                 # Try to find the funding payment has been recorded already.
-                payment_record: Optional[FundingPayment] = (
+                payment_record: FundingPayment | None = (
                     session.query(FundingPayment).filter(FundingPayment.timestamp == timestamp).one_or_none()
                 )
                 if payment_record is None:
@@ -523,7 +523,10 @@ class MarketsRecorder:
         field_data += (age,)
 
         if os.path.exists(csv_path) and (not self._csv_matches_header(csv_path, field_names)):
-            move(csv_path, csv_path[:-4] + "_old_" + pd.Timestamp.utcnow().strftime("%Y%m%d-%H%M%S") + ".csv")
+            move(
+                csv_path,
+                csv_path[:-4] + "_old_" + pd.Timestamp.now(pd.Timestamp.UTC).strftime("%Y%m%d-%H%M%S") + ".csv",
+            )
 
         if not os.path.exists(csv_path):
             df_header = pd.DataFrame([field_names])
@@ -553,7 +556,7 @@ class MarketsRecorder:
 
         with self._sql_manager.get_new_session() as session:
             with session.begin():
-                order_record: Optional[Order] = session.query(Order).filter(Order.id == order_id).one_or_none()
+                order_record: Order | None = session.query(Order).filter(Order.id == order_id).one_or_none()
 
                 if order_record is not None:
                     order_record.last_status = event_type.name

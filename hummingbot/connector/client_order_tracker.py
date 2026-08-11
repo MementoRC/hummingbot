@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import asyncio
 from collections import defaultdict
 from decimal import Decimal
 from itertools import chain
 import logging
-from typing import TYPE_CHECKING, Callable, Dict, Optional
+from typing import TYPE_CHECKING, Callable, Dict
 
 from cachetools import TTLCache
 
@@ -53,44 +55,44 @@ class ClientOrderTracker:
         """
         self._connector: ConnectorBase = connector
         self._lost_order_count_limit = lost_order_count_limit
-        self._in_flight_orders: Dict[str, InFlightOrder] = {}
+        self._in_flight_orders: dict[str, InFlightOrder] = {}
         self._cached_orders: TTLCache = TTLCache(maxsize=self.MAX_CACHE_SIZE, ttl=self.CACHED_ORDER_TTL)
-        self._lost_orders: Dict[str, InFlightOrder] = {}
+        self._lost_orders: dict[str, InFlightOrder] = {}
 
-        self._order_tracking_task: Optional[asyncio.Task] = None
+        self._order_tracking_task: asyncio.Task | None = None
         self._last_poll_timestamp: int = -1
-        self._order_not_found_records: Dict[str, int] = defaultdict(lambda: 0)
+        self._order_not_found_records: dict[str, int] = defaultdict(lambda: 0)
 
     @property
-    def active_orders(self) -> Dict[str, InFlightOrder]:
+    def active_orders(self) -> dict[str, InFlightOrder]:
         """
         Returns orders that are actively tracked
         """
         return self._in_flight_orders
 
     @property
-    def cached_orders(self) -> Dict[str, InFlightOrder]:
+    def cached_orders(self) -> dict[str, InFlightOrder]:
         """
         Returns orders that are no longer actively tracked.
         """
         return {client_order_id: order for client_order_id, order in self._cached_orders.items()}
 
     @property
-    def all_orders(self) -> Dict[str, InFlightOrder]:
+    def all_orders(self) -> dict[str, InFlightOrder]:
         """
         Returns both active and cached order.
         """
         return {**self.active_orders, **self.cached_orders}
 
     @property
-    def all_fillable_orders(self) -> Dict[str, InFlightOrder]:
+    def all_fillable_orders(self) -> dict[str, InFlightOrder]:
         """
         Returns all orders that could still be impacted by trades: active orders, cached orders and lost orders
         """
         return {**self.active_orders, **self.cached_orders, **self.lost_orders}
 
     @property
-    def all_fillable_orders_by_exchange_order_id(self) -> Dict[str, InFlightOrder]:
+    def all_fillable_orders_by_exchange_order_id(self) -> dict[str, InFlightOrder]:
         """
         Same as `all_fillable_orders`, but the orders are mapped by exchange order ID.
         """
@@ -101,14 +103,14 @@ class ClientOrderTracker:
         return orders_map
 
     @property
-    def all_updatable_orders(self) -> Dict[str, InFlightOrder]:
+    def all_updatable_orders(self) -> dict[str, InFlightOrder]:
         """
         Returns all orders that could receive status updates
         """
         return {**self.active_orders, **self.lost_orders}
 
     @property
-    def all_updatable_orders_by_exchange_order_id(self) -> Dict[str, InFlightOrder]:
+    def all_updatable_orders_by_exchange_order_id(self) -> dict[str, InFlightOrder]:
         """
         Same as `all_updatable_orders`, but the orders are mapped by exchange order ID.
         """
@@ -125,7 +127,7 @@ class ClientOrderTracker:
         return self._connector.current_timestamp
 
     @property
-    def lost_orders(self) -> Dict[str, InFlightOrder]:
+    def lost_orders(self) -> dict[str, InFlightOrder]:
         """
         Returns a dictionary of all orders marked as failed after not being found more times than the configured limit
         """
@@ -149,7 +151,7 @@ class ClientOrderTracker:
             if client_order_id in self._order_not_found_records:
                 del self._order_not_found_records[client_order_id]
 
-    def restore_tracking_states(self, tracking_states: Dict[str, any]):
+    def restore_tracking_states(self, tracking_states: dict[str, any]):
         """
         Restore in-flight orders from saved tracking states.
         :param tracking_states: a dictionary associating order ids with the serialized order (JSON format).
@@ -162,15 +164,15 @@ class ClientOrderTracker:
                 # If the order is marked as failed but is still in the tracking states, it was a lost order
                 self._lost_orders[order.client_order_id] = order
 
-    def fetch_tracked_order(self, client_order_id: str) -> Optional[InFlightOrder]:
+    def fetch_tracked_order(self, client_order_id: str) -> InFlightOrder | None:
         return self._in_flight_orders.get(client_order_id, None)
 
-    def fetch_cached_order(self, client_order_id: str) -> Optional[InFlightOrder]:
+    def fetch_cached_order(self, client_order_id: str) -> InFlightOrder | None:
         return self._cached_orders.get(client_order_id, None)
 
     def fetch_order(
-        self, client_order_id: Optional[str] = None, exchange_order_id: Optional[str] = None
-    ) -> Optional[InFlightOrder]:
+        self, client_order_id: str | None = None, exchange_order_id: str | None = None
+    ) -> InFlightOrder | None:
         found_order = None
 
         if client_order_id in self.all_orders:
@@ -183,8 +185,8 @@ class ClientOrderTracker:
         return found_order
 
     def fetch_lost_order(
-        self, client_order_id: Optional[str] = None, exchange_order_id: Optional[str] = None
-    ) -> Optional[InFlightOrder]:
+        self, client_order_id: str | None = None, exchange_order_id: str | None = None
+    ) -> InFlightOrder | None:
         found_order = None
 
         if client_order_id in self._lost_orders:
@@ -201,7 +203,7 @@ class ClientOrderTracker:
 
     def process_trade_update(self, trade_update: TradeUpdate):
         client_order_id: str = trade_update.client_order_id
-        tracked_order: Optional[InFlightOrder] = self.all_fillable_orders.get(client_order_id)
+        tracked_order: InFlightOrder | None = self.all_fillable_orders.get(client_order_id)
 
         if tracked_order:
             previous_executed_amount_base: Decimal = tracked_order.executed_amount_base
@@ -226,7 +228,7 @@ class ClientOrderTracker:
         :type client_order_id: str
         """
         # Only concerned with active orders.
-        tracked_order: Optional[InFlightOrder] = self.fetch_tracked_order(client_order_id=client_order_id)
+        tracked_order: InFlightOrder | None = self.fetch_tracked_order(client_order_id=client_order_id)
 
         if tracked_order is not None:
             self._order_not_found_records[client_order_id] += 1
@@ -268,7 +270,7 @@ class ClientOrderTracker:
             self.logger().error("OrderUpdate does not contain any client_order_id or exchange_order_id", exc_info=True)
             return
 
-        tracked_order: Optional[InFlightOrder] = self.fetch_order(
+        tracked_order: InFlightOrder | None = self.fetch_order(
             order_update.client_order_id, order_update.exchange_order_id
         )
 
@@ -423,7 +425,7 @@ class ClientOrderTracker:
                 exchange_order_id=exchange_order_id,
             )
 
-    def _trigger_order_completion(self, tracked_order: InFlightOrder, order_update: Optional[OrderUpdate] = None):
+    def _trigger_order_completion(self, tracked_order: InFlightOrder, order_update: OrderUpdate | None = None):
         if tracked_order.is_open:
             return
 
