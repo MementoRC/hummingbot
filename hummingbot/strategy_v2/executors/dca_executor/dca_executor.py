@@ -19,11 +19,15 @@ from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.dca_executor.data_types import DCAExecutorConfig, DCAMode
 from hummingbot.strategy_v2.executors.executor_base import ExecutorBase
+from hummingbot.strategy_v2.executors.mixins.order_tracking import OrderTrackingMixin
+from hummingbot.strategy_v2.executors.mixins.pnl_calculator import PNLCalculatorMixin
+from hummingbot.strategy_v2.executors.mixins.retry import RetryMixin
+from hummingbot.strategy_v2.executors.mixins.trailing_stop import TrailingStopMixin
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 
 
-class DCAExecutor(ExecutorBase):
+class DCAExecutor(PNLCalculatorMixin, TrailingStopMixin, OrderTrackingMixin, RetryMixin, ExecutorBase):
     _logger = None
 
     @classmethod
@@ -47,6 +51,9 @@ class DCAExecutor(ExecutorBase):
             update_interval=update_interval,
             max_retries=max_retries,
         )
+        self.init_retry(max_retries)
+        self.init_trailing_stop()
+        self.init_order_tracking()
         self.config: DCAExecutorConfig = config
 
         # validate amounts with exchange trading rules
@@ -82,6 +89,9 @@ class DCAExecutor(ExecutorBase):
     @property
     def active_close_orders(self) -> list[TrackedOrder]:
         return self._close_orders
+
+    def _get_trackable_orders(self) -> list[TrackedOrder]:
+        return self._open_orders + self._close_orders
 
     @property
     def open_order_type(self) -> OrderType:
