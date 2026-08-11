@@ -9,15 +9,16 @@ comments/formatting via ruamel round-trip. Only controllers can be validated aga
 pydantic config class and expose `is_updatable` fields (the only kind applied live by a running
 bot, via the 10s controller-config poll in StrategyV2Base).
 """
+
 import importlib
 import inspect
+from pathlib import Path
 import re
 import shutil
-from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Any, Optional
 
-import yaml
 from ruamel.yaml import YAML
+import yaml
 
 from hummingbot import prefix_path
 from hummingbot.client.settings import (
@@ -40,7 +41,7 @@ TYPE_DIRS = {
 V2_CONTROLLER_RUNNER = "v2_with_controllers.py"
 
 
-def list_configs(stype: str) -> List[str]:
+def list_configs(stype: str) -> list[str]:
     directory = TYPE_DIRS[stype]
     if not directory.exists():
         return []
@@ -51,12 +52,12 @@ def config_path(stype: str, filename: str) -> Path:
     return TYPE_DIRS[stype] / filename
 
 
-def matching_config_types(filename: str) -> List[str]:
+def matching_config_types(filename: str) -> list[str]:
     """Types whose CONFIG dir (conf/strategies | conf/scripts | conf/controllers) holds ``filename``."""
     return [t for t in STRATEGY_TYPES if config_path(t, filename).exists()]
 
 
-def matching_strategy_types(name: str) -> List[str]:
+def matching_strategy_types(name: str) -> list[str]:
     """Types whose SOURCE catalog contains ``name`` — v1 strategy folder, scripts/<name>.py, or
     controllers/<type>/<name>.py. (v2 scripts carry a .py suffix, so match it with or without.)"""
     out = []
@@ -85,20 +86,28 @@ def resolve_config_type(filename: str, explicit: Optional[str] = None) -> str:
         return matches[0]
     if not matches:
         raise FileNotFoundError(f"config not found: {filename}")
-    raise ValueError(f"'{filename}' exists as {' and '.join(matches)} — pass "
-                     f"{' / '.join('--' + m for m in matches)} to disambiguate")
+    raise ValueError(
+        f"'{filename}' exists as {' and '.join(matches)} — pass {' / '.join('--' + m for m in matches)} to disambiguate"
+    )
 
 
-def available_controllers() -> List[str]:
+def available_controllers() -> list[str]:
     """Controller module names that can be scaffolded (controllers/<type>/<name>.py)."""
     base = Path(prefix_path()) / CONTROLLERS_MODULE
     if not base.exists():
         return []
-    return sorted({f.stem for type_dir in base.iterdir() if type_dir.is_dir() and not type_dir.name.startswith("__")
-                   for f in type_dir.glob("*.py") if not f.name.startswith("__")})
+    return sorted(
+        {
+            f.stem
+            for type_dir in base.iterdir()
+            if type_dir.is_dir() and not type_dir.name.startswith("__")
+            for f in type_dir.glob("*.py")
+            if not f.name.startswith("__")
+        }
+    )
 
 
-def available_scripts() -> List[str]:
+def available_scripts() -> list[str]:
     """V2 script files (scripts/*.py)."""
     base = Path(prefix_path()) / "scripts"
     if not base.exists():
@@ -106,19 +115,22 @@ def available_scripts() -> List[str]:
     return sorted(f.name for f in base.glob("*.py") if not f.name.startswith("__"))
 
 
-def available_v1_strategies() -> List[str]:
+def available_v1_strategies() -> list[str]:
     """List v1 strategies (the strategy folders). Fast — a directory scan, no config-map imports."""
     from hummingbot import get_strategy_list
+
     return sorted(get_strategy_list())
 
 
-def available_sources(stype: str) -> List[str]:
-    return {"v1-strategy": available_v1_strategies,
-            "v2-script": available_scripts,
-            "controller": available_controllers}[stype]()
+def available_sources(stype: str) -> list[str]:
+    return {
+        "v1-strategy": available_v1_strategies,
+        "v2-script": available_scripts,
+        "controller": available_controllers,
+    }[stype]()
 
 
-def describe_strategy(stype: str, source: str, scaffold_id: bool = True) -> Tuple[dict, List[str], Set[str]]:
+def describe_strategy(stype: str, source: str, scaffold_id: bool = True) -> tuple[dict, list[str], set[str]]:
     """Return (template fields, required field names, live-updatable field names) for a creatable
     strategy/controller/script — used by both `strategy show` (preview) and `strategy create`.
 
@@ -129,6 +141,7 @@ def describe_strategy(stype: str, source: str, scaffold_id: bool = True) -> Tupl
 
     if stype == "controller":
         from hummingbot.strategy_v2.utils.common import generate_unique_id
+
         config_class, ctype = resolve_controller_class_by_name(source)
         data, required = template_config_data(config_class, {"controller_name": source, "controller_type": ctype})
         # A controller needs a STABLE, persisted id. If left blank, StrategyV2Base generates a fresh
@@ -169,16 +182,25 @@ def controller_config_class(config_data: dict):
         raise ValueError("controller config is missing controller_type or controller_name")
     module = importlib.import_module(f"{CONTROLLERS_MODULE}.{ctype}.{cname}")
     bases = (ControllerConfigBase, MarketMakingControllerConfigBase, DirectionalTradingControllerConfigBase)
-    cls = next((m for _, m in inspect.getmembers(module)
-                if inspect.isclass(m) and m not in bases and issubclass(m, ControllerConfigBase)), None)
+    cls = next(
+        (
+            m
+            for _, m in inspect.getmembers(module)
+            if inspect.isclass(m) and m not in bases and issubclass(m, ControllerConfigBase)
+        ),
+        None,
+    )
     if cls is None:
         raise ValueError(f"no controller config class found in module for '{cname}'")
     return cls
 
 
-def controller_updatable_fields(config_class) -> Set[str]:
-    return {name for name, field in config_class.model_fields.items()
-            if (field.json_schema_extra or {}).get("is_updatable", False)}
+def controller_updatable_fields(config_class) -> set[str]:
+    return {
+        name
+        for name, field in config_class.model_fields.items()
+        if (field.json_schema_extra or {}).get("is_updatable", False)
+    }
 
 
 def read_yaml(path: Path) -> dict:
@@ -207,8 +229,9 @@ def _normalize_pairs(key: str, value: Any) -> Any:
     the exact keys match because prefixed ``*_market`` names hold exchange names (e.g. maker_market).
     """
     leaf = key.split(".")[-1]
-    if leaf not in ("trading_pair", "trading_pairs", "market", "markets") and \
-            not leaf.endswith(("_trading_pair", "_trading_pairs")):
+    if leaf not in ("trading_pair", "trading_pairs", "market", "markets") and not leaf.endswith(
+        ("_trading_pair", "_trading_pairs")
+    ):
         return value
     if isinstance(value, str):
         return value.upper()
@@ -246,7 +269,7 @@ def set_value_preserving_comments(path: Path, key: str, value: str) -> Any:
     return new_value
 
 
-def validate_controller(path: Path) -> Tuple[object, Set[str]]:
+def validate_controller(path: Path) -> tuple[object, set[str]]:
     """Instantiate the controller config class to validate the file; return (config, updatable fields)."""
     data = read_yaml(path)
     config_class = controller_config_class(data)
@@ -254,7 +277,7 @@ def validate_controller(path: Path) -> Tuple[object, Set[str]]:
     return config, controller_updatable_fields(config_class)
 
 
-def updatable_for(stype: str, path: Path) -> Set[str]:
+def updatable_for(stype: str, path: Path) -> set[str]:
     """Fields that a running bot applies live. Only controllers have any."""
     if stype != "controller":
         return set()
@@ -265,7 +288,7 @@ def updatable_for(stype: str, path: Path) -> Set[str]:
         return set()
 
 
-def edit_config(path: Path, stype: str, key: str, value: str) -> Tuple[Any, Set[str]]:
+def edit_config(path: Path, stype: str, key: str, value: str) -> tuple[Any, set[str]]:
     """Set ``key=value`` in ``path`` (comment-preserving), validating controllers and rolling back
     on failure. Returns (new_value, updatable_fields). Raises KeyError for a missing key, or another
     exception (with the file restored) if the value is rejected.
@@ -278,7 +301,7 @@ def edit_config(path: Path, stype: str, key: str, value: str) -> Tuple[Any, Set[
     except Exception:
         path.write_text(original)
         raise
-    updatable: Set[str] = set()
+    updatable: set[str] = set()
     if stype == "controller":
         try:
             _, updatable = validate_controller(path)
@@ -307,9 +330,14 @@ def resolve_script_config_class(script_filename: str):
 
     mod_name = script_filename[:-3] if script_filename.endswith(".py") else script_filename
     module = importlib.import_module(f"scripts.{mod_name}")
-    candidates = [m for _, m in inspect.getmembers(module)
-                  if inspect.isclass(m) and issubclass(m, BaseClientModel)
-                  and m is not BaseClientModel and m.__module__ == module.__name__]
+    candidates = [
+        m
+        for _, m in inspect.getmembers(module)
+        if inspect.isclass(m)
+        and issubclass(m, BaseClientModel)
+        and m is not BaseClientModel
+        and m.__module__ == module.__name__
+    ]
     if not candidates:
         raise ValueError(f"no config class found in script '{script_filename}'")
     return candidates[0]
@@ -317,6 +345,7 @@ def resolve_script_config_class(script_filename: str):
 
 def _yaml_safe(value: Any) -> Any:
     from decimal import Decimal
+
     if value is None or isinstance(value, (str, int, float, bool)):
         return value
     if isinstance(value, Decimal):
@@ -332,7 +361,7 @@ def _yaml_safe(value: Any) -> Any:
     return str(value)  # last-resort: never let yaml.safe_dump choke
 
 
-def template_config_data(config_class, fixed: dict) -> Tuple[dict, List[str]]:
+def template_config_data(config_class, fixed: dict) -> tuple[dict, list[str]]:
     """Build a template config dict from a pydantic config class.
 
     Fields with defaults get them; required fields (no default) get None and are returned in the
@@ -342,7 +371,7 @@ def template_config_data(config_class, fixed: dict) -> Tuple[dict, List[str]]:
     from pydantic_core import PydanticUndefined
 
     data: dict = {}
-    required: List[str] = []
+    required: list[str] = []
     for name, field in config_class.model_fields.items():
         if field.default is not PydanticUndefined:
             data[name] = _yaml_safe(field.default)
@@ -370,10 +399,10 @@ def _safe_attr(obj: Any, name: str) -> Any:
     return value
 
 
-def template_legacy_data(config_map: dict) -> Tuple[dict, List[str]]:
+def template_legacy_data(config_map: dict) -> tuple[dict, list[str]]:
     """Build a template from a legacy ConfigVar map (strategies without a pydantic config)."""
     data: dict = {}
-    required: List[str] = []
+    required: list[str] = []
     for key, cvar in config_map.items():
         default = _safe_attr(cvar, "default")
         data[key] = _yaml_safe(default)
@@ -409,9 +438,9 @@ def suggest_free_name(desired: str) -> str:
     return f"{base}_{n}.yml"
 
 
-def parse_set_pairs(pairs: List[str]) -> Dict[str, str]:
+def parse_set_pairs(pairs: list[str]) -> dict[str, str]:
     """Parse ``--set key=value`` strings into a {key: value} dict (string values)."""
-    out: Dict[str, str] = {}
+    out: dict[str, str] = {}
     for p in pairs:
         if "=" not in p:
             raise ValueError(f"invalid --set '{p}', expected key=value")
@@ -439,7 +468,7 @@ def _set_in_template(data: dict, key: str, value: Any) -> None:
     node[leaf] = _normalize_pairs(key, new_value)
 
 
-def fill_template(data: dict, required: List[str], stype: str, values: Dict[str, Any]) -> List[str]:
+def fill_template(data: dict, required: list[str], stype: str, values: dict[str, Any]) -> list[str]:
     """Apply ``values`` into a scaffold ``data`` in place, then return the still-unfilled required
     fields. Validates each field exists and, once a controller has every required field, validates the
     whole pydantic model so a complete-but-invalid combination fails at create time. Raises ValueError.
@@ -457,6 +486,7 @@ def regenerate_controller_id(path: Path) -> str:
     """Give a controller config a fresh unique id (comment-preserving). A clone MUST get a new id:
     two controllers sharing an id break StrategyV2Base's live-reload matching and spawn a duplicate."""
     from hummingbot.strategy_v2.utils.common import generate_unique_id
+
     ruamel = YAML()
     ruamel.preserve_quotes = True
     with open(path) as f:
@@ -468,7 +498,7 @@ def regenerate_controller_id(path: Path) -> str:
     return new_id
 
 
-def clone_config(stype: str, src_name: str, dest_name: str, values: Dict[str, Any]) -> Optional[str]:
+def clone_config(stype: str, src_name: str, dest_name: str, values: dict[str, Any]) -> Optional[str]:
     """Copy an existing config (comments/formatting preserved) to ``dest_name``, mint a fresh id for a
     controller, then apply ``values`` (validated for controllers). Atomic: any failure removes the copy.
     Returns the controller's new id (or None). Raises FileExistsError/FileNotFoundError/KeyError/ValueError.
