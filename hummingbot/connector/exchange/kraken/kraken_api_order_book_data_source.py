@@ -147,7 +147,6 @@ class KrakenAPIOrderBookDataSource(OrderBookTrackerDataSource):
         return ws
 
     async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
-
         trades = [
             {"pair": convert_from_exchange_trading_pair(raw_message[-1]), "trade": trade} for trade in raw_message[1]
         ]

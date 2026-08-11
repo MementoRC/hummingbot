@@ -81,7 +81,6 @@ class StrategyBaseUnitTests(unittest.TestCase):
 
     @staticmethod
     def simulate_order_filled(market_info: MarketTradingPairTuple, order: Union[LimitOrder, MarketOrder]):
-
         market_info.market.trigger_event(
             MarketEvent.OrderFilled,
             OrderFilledEvent(
@@ -120,7 +119,6 @@ class StrategyBaseUnitTests(unittest.TestCase):
         self.assertEqual(1, len(self.strategy.trades))
 
     def test_add_markets(self):
-
         self.assertEqual(1, len(self.strategy.active_markets))
 
         new_market: MockPaperExchange = MockPaperExchange()
@@ -136,7 +134,6 @@ class StrategyBaseUnitTests(unittest.TestCase):
         self.assertEqual(0, len(self.strategy.active_markets))
 
     def test_cum_flat_fees(self):
-
         fee_asset = self.trading_pair.split("-")[1]
         trades: list[tuple[str, Decimal]] = [(fee_asset, Decimal(f"{i}")) for i in range(5)]
 
@@ -364,7 +361,6 @@ class StrategyBaseUnitTests(unittest.TestCase):
         self.assertEqual(1, len(self.strategy.order_tracker.tracked_market_orders))
 
     def test_track_restored_order(self):
-
         self.assertEqual(0, len(self.market.limit_orders))
 
         saved_states: dict[str, Any] = {

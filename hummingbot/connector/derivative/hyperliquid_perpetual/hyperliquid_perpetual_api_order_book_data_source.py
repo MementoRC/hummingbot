@@ -305,7 +305,6 @@ class HyperliquidPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource
             self.logger().debug(f"Error parsing funding info message: {e}")
 
     async def _request_complete_funding_info(self, trading_pair: str):
-
         data = await self._connector._api_post(
             path_url=CONSTANTS.EXCHANGE_INFO_URL, data={"type": CONSTANTS.ASSET_CONTEXT_TYPE}
         )

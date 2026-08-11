@@ -224,8 +224,7 @@ class TestStrategyV2Base(IsolatedAsyncioWrapperTestCase):
 
         await self.strategy.on_stop()
 
-        self.strategy.executor_orchestrator.stop.assert_awaited_once_with(
-            self.strategy.max_executors_close_attempts)
+        self.strategy.executor_orchestrator.stop.assert_awaited_once_with(self.strategy.max_executors_close_attempts)
         self.assertIn(self.connector, self.strategy.active_markets)
 
     def test_parse_markets_str_valid(self):

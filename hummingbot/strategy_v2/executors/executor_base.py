@@ -218,7 +218,7 @@ class ExecutorBase(RunnableBase):
         """
         raise NotImplementedError
 
-    def _collect_held_position_orders(self) -> List[Dict]:
+    def _collect_held_position_orders(self) -> list[Dict]:
         """
         Synchronous snapshot of every fill that still represents exchange exposure.
 
