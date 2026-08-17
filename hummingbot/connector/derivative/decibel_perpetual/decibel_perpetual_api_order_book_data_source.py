@@ -284,7 +284,7 @@ class DecibelPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
                 OrderBookMessageType.TRADE,
                 {
                     "trading_pair": trading_pair,
-                    "trade_type": float(TradeType.BUY.value) if is_buy else float(TradeType.SELL.value),
+                    "trade_type": TradeType.BUY.value if is_buy else TradeType.SELL.value,
                     "trade_id": trade.get("trade_id"),
                     "update_id": ts_ms,
                     "price": str(trade.get("price")),
