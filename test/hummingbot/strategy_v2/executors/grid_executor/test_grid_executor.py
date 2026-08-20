@@ -79,7 +79,7 @@ class TestGridExecutorBugFixes(IsolatedAsyncioWrapperTestCase, LoggerMixinForTes
             side=TradeType.BUY,
             start_price=Decimal("90"),
             end_price=Decimal("110"),
-            limit_price=Decimal("90"),
+            limit_price=Decimal("80"),
             total_amount_quote=Decimal("100"),
             min_order_amount_quote=Decimal("10"),
             min_spread_between_orders=Decimal("0.01"),
@@ -125,7 +125,7 @@ class TestGridExecutorBugFixes(IsolatedAsyncioWrapperTestCase, LoggerMixinForTes
             side=TradeType.BUY,
             start_price=Decimal("90"),
             end_price=Decimal("110"),
-            limit_price=Decimal("90"),
+            limit_price=Decimal("80"),
             total_amount_quote=Decimal("100"),
             min_order_amount_quote=Decimal("10"),
             min_spread_between_orders=Decimal("0.01"),
@@ -171,7 +171,7 @@ class TestGridExecutorBugFixes(IsolatedAsyncioWrapperTestCase, LoggerMixinForTes
             side=TradeType.BUY,
             start_price=Decimal("90"),
             end_price=Decimal("110"),
-            limit_price=Decimal("90"),
+            limit_price=Decimal("80"),
             total_amount_quote=Decimal("100"),
             min_order_amount_quote=Decimal("10"),
             min_spread_between_orders=Decimal("0.01"),
@@ -991,7 +991,7 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             order_frequency=1.0,
             max_open_orders=5,
             max_orders_per_batch=2,
-            limit_price=Decimal("90"),
+            limit_price=Decimal("130"),
             triple_barrier_config=TripleBarrierConfig(
                 take_profit=Decimal("0.001"),
                 stop_loss=Decimal("0.05"),
@@ -1202,31 +1202,15 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
     def test_creating_grid_with_unsupported_stop_loss_order(
         self,
     ):
-        config = GridExecutorConfig(
-            id="test",
-            timestamp=1234567890,
-            side=TradeType.BUY,
-            connector_name="binance",
-            trading_pair="ETH-USDT",
-            start_price=Decimal("100"),
-            end_price=Decimal("120"),
-            total_amount_quote=Decimal("100"),
-            min_spread_between_orders=Decimal("0.01"),
-            min_order_amount_quote=Decimal("10"),
-            order_frequency=1.0,
-            max_open_orders=5,
-            max_orders_per_batch=2,
-            limit_price=Decimal("90"),
-            triple_barrier_config=TripleBarrierConfig(
+        # The barrier order types are validated by the config, so the grid can never be built.
+        with self.assertRaises(ValueError):
+            TripleBarrierConfig(
                 take_profit=Decimal("0.001"),
                 stop_loss=Decimal("0.05"),
                 stop_loss_order_type=OrderType.LIMIT,
                 time_limit=100,
                 trailing_stop=TrailingStop(activation_price=Decimal("0.05"), trailing_delta=Decimal("0.005")),
-            ),
-        )
-        with self.assertRaises(ValueError):
-            self.get_grid_executor_from_config(config)
+            )
 
     @patch.object(GridExecutor, "get_price")
     async def test_evaluate_max_retries(self, mock_price):
