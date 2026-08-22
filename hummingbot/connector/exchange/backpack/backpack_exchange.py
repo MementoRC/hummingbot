@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict
+from typing import Any
 
 from bidict import bidict
 import pandas as pd
@@ -576,7 +576,7 @@ class BackpackExchange(ExchangePyBase):
                 del self._account_available_balances[asset_name]
                 del self._account_balances[asset_name]
 
-    async def _get_net_lent_balances(self) -> Dict[str, Decimal]:
+    async def _get_net_lent_balances(self) -> dict[str, Decimal]:
         """
         Returns the net lent quantity per asset from Backpack's borrowLend positions.
 
@@ -584,7 +584,7 @@ class BackpackExchange(ExchangePyBase):
         (negative ``netQuantity``) are margin liabilities and are ignored for spot balance
         reporting. Best-effort: a failure here must not break the primary balance update.
         """
-        lent_balances: Dict[str, Decimal] = {}
+        lent_balances: dict[str, Decimal] = {}
         try:
             positions = await self._api_get(
                 path_url=CONSTANTS.BORROW_LEND_POSITIONS_PATH_URL,
