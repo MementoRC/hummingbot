@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict, Union
+from typing import Any, Dict
 
 from bidict import ValueDuplicationError, bidict
 import pandas as pd
@@ -51,7 +51,6 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
         trading_required: bool = True,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
-
         self.kucoin_perpetual_api_key = kucoin_perpetual_api_key
         self.kucoin_perpetual_secret_key = kucoin_perpetual_secret_key
         self.kucoin_perpetual_passphrase = kucoin_perpetual_passphrase
@@ -991,7 +990,6 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
         client_order_id: str | None = None,
         **kwargs,
     ) -> dict[str, Any]:
-
         rest_assistant = await self._web_assistants_factory.get_rest_assistant()
         if limit_id is None:
             limit_id = web_utils.get_rest_api_limit_id_for_endpoint(
@@ -1025,5 +1023,5 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
         return CONSTANTS.RET_CODE_ORDER_NOT_EXISTS in error or CONSTANTS.RET_CODE_ORDER_CANNOT_BE_CANCELED in error
 
     @staticmethod
-    def _format_ret_code_for_print(ret_code: Union[str, int]) -> str:
+    def _format_ret_code_for_print(ret_code: str | int) -> str:
         return f"ret_code <{ret_code}>"

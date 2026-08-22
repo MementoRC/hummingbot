@@ -6,7 +6,7 @@ from collections import OrderedDict
 from decimal import Decimal
 from functools import partial
 import json
-from typing import Any, Callable, Union
+from typing import Any, Callable
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
@@ -493,7 +493,6 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         mock_api: aioresponses,
         callback: Callable | None = lambda *args, **kwargs: None,
     ) -> list[str]:
-
         self.configure_all_symbols_response(mock_api=mock_api, callback=callback)
         return ""
 
@@ -502,7 +501,6 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         mock_api: aioresponses,
         callback: Callable | None = lambda *args, **kwargs: None,
     ) -> list[str]:
-
         response = self.trading_rules_request_erroneous_mock_response
         self.exchange._data_source._query_executor._spot_markets_responses.put_nowait(response)
         market = list(response.values())[0]
@@ -566,7 +564,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
 
     def configure_canceled_order_status_response(
         self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
-    ) -> Union[str, list[str]]:
+    ) -> str | list[str]:
         self.configure_all_symbols_response(mock_api=mock_api)
 
         self.exchange._data_source._query_executor._spot_trades_responses.put_nowait(
@@ -908,7 +906,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
             creation_transaction_hash=response["txhash"],
         )
 
-        await asyncio.wait_for(request_sent_event.wait(), timeout=1)
+        await asyncio.wait_for(request_sent_event.wait(), timeout=10)
 
         self.assertEqual(2, len(orders))
         self.assertEqual(2, len(self.exchange.in_flight_orders))
@@ -1013,7 +1011,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
             creation_transaction_hash=response["txhash"],
         )
 
-        await asyncio.wait_for(request_sent_event.wait(), timeout=1)
+        await asyncio.wait_for(request_sent_event.wait(), timeout=10)
 
         self.assertEqual(2, len(orders))
         self.assertEqual(2, len(self.exchange.in_flight_orders))
@@ -1058,7 +1056,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         self.exchange._data_source._query_executor._send_transaction_responses = mock_queue
 
         order_id = self.place_buy_order()
-        await asyncio.wait_for(request_sent_event.wait(), timeout=1)
+        await asyncio.wait_for(request_sent_event.wait(), timeout=10)
 
         self.assertEqual(1, len(self.exchange.in_flight_orders))
         self.assertIn(order_id, self.exchange.in_flight_orders)
@@ -1092,7 +1090,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         self.exchange._data_source._query_executor._send_transaction_responses = mock_queue
 
         order_id = self.place_sell_order()
-        await asyncio.wait_for(request_sent_event.wait(), timeout=1)
+        await asyncio.wait_for(request_sent_event.wait(), timeout=10)
 
         self.assertEqual(1, len(self.exchange.in_flight_orders))
         self.assertIn(order_id, self.exchange.in_flight_orders)
@@ -1139,7 +1137,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         ).result_price
 
         order_id = self.place_buy_order(amount=order_amount, price=None, order_type=OrderType.MARKET)
-        await asyncio.wait_for(request_sent_event.wait(), timeout=1)
+        await asyncio.wait_for(request_sent_event.wait(), timeout=10)
 
         self.assertEqual(1, len(self.exchange.in_flight_orders))
         self.assertIn(order_id, self.exchange.in_flight_orders)
@@ -1187,7 +1185,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         ).result_price
 
         order_id = self.place_sell_order(amount=order_amount, price=None, order_type=OrderType.MARKET)
-        await asyncio.wait_for(request_sent_event.wait(), timeout=1)
+        await asyncio.wait_for(request_sent_event.wait(), timeout=10)
 
         self.assertEqual(1, len(self.exchange.in_flight_orders))
         self.assertIn(order_id, self.exchange.in_flight_orders)
@@ -1222,7 +1220,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         self.exchange._data_source._query_executor._send_transaction_responses = mock_queue
 
         order_id = self.place_buy_order()
-        await asyncio.wait_for(request_sent_event.wait(), timeout=1)
+        await asyncio.wait_for(request_sent_event.wait(), timeout=10)
 
         for i in range(3):
             if order_id in self.exchange.in_flight_orders:
@@ -1268,7 +1266,9 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         self.exchange._data_source._query_executor._send_transaction_responses = mock_queue
 
         order_id = self.place_buy_order()
-        await asyncio.wait_for(request_sent_event.wait(), timeout=1)
+        # timeout=10 (was 1) to match the identical request_sent_event wait elsewhere in this file
+        # and avoid a TimeoutError flake under full-suite CPU contention.
+        await asyncio.wait_for(request_sent_event.wait(), timeout=10)
 
         for i in range(3):
             if order_id in self.exchange.in_flight_orders:

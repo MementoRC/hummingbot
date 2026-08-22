@@ -66,6 +66,7 @@ setuptools = ">=80.8.0"
 wheel = ">=0.37.0"
 # Core runtime
 aiohttp = ">=3.8.5"
+aiomqtt = ">=2.0.0"
 aioprocessing = ">=2.0.1"
 aioresponses = ">=0.7.4"
 aiounittest = ">=1.4.2"
@@ -75,7 +76,6 @@ base58 = ">=2.1.1"
 bidict = ">=0.22.1"
 bip-utils = "*"
 cachetools = ">=5.3.1"
-commlib-py = ">=0.13.2"
 cryptography = ">=41.0.2"
 eth-account = ">=0.13.0"
 injective-py = ">=1.12"
@@ -106,6 +106,7 @@ sqlalchemy = ">=1.4.49"
 ta-lib = ">=0.6.4"
 tabulate = "==0.9.0"
 tqdm = ">=4.67.1"
+typer = ">=0.9.0"
 ujson = ">=5.7.0"
 urllib3 = ">=1.26.15,<2.0"
 web3 = "*"
@@ -129,6 +130,7 @@ cython-lint = "*"
 bandit = "*"
 pip-audit = "*"
 types-setuptools = "*"
+pytest-xdist = ">=3,<4"
 
 [tool.pixi.feature.dev.pypi-dependencies]
 import-linter = ">=2.0"
@@ -145,11 +147,11 @@ rust-build = { cmd = "maturin develop --manifest-path hummingbot/rust/Cargo.toml
 test = { cmd = "pytest test", depends-on = ["build"] }
 test-unit = { cmd = "pytest test/hummingbot", depends-on = ["build"] }
 test-fast = "pytest --timeout=30 --tb=short -q"
-lint = "ruff check hummingbot test controllers scripts"
+lint = "ruff check hummingbot test controllers scripts bin"
 lint-boundaries = "lint-imports"
 lint-cython = "cython-lint hummingbot"
-format = { cmd = "ruff format hummingbot test controllers scripts" }
-format-check = "ruff format --check hummingbot test controllers scripts"
+format = { cmd = "ruff format hummingbot test controllers scripts bin" }
+format-check = "ruff format --check hummingbot test controllers scripts bin"
 type-check = "mypy hummingbot"
 security-scan = "bandit -c pyproject.toml -r hummingbot/"
 dependency-scan = { cmd = "pip-audit --strict --desc on", depends-on = ["install-dev"] }
@@ -163,7 +165,7 @@ migrate-pytest-dry = { cmd = "python $HOME/PycharmProjects/refactor-applications
 [tool.ruff]
 line-length = 120
 target-version = "py312"
-include = ["hummingbot/**/*.py", "test/**/*.py"]
+include = ["hummingbot/**/*.py", "hummingbot/**/*.pyi", "test/**/*.py", "controllers/**/*.py", "scripts/**/*.py", "bin/**/*.py", "bin/hbot"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]

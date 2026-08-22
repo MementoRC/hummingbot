@@ -447,7 +447,6 @@ class GateIoExchange(ExchangePyBase):
         self._order_tracker.process_order_update(order_update=order_update)
 
     def _create_trade_update_with_order_fill_data(self, order_fill: dict[str, Any], order: InFlightOrder):
-
         fee = TradeFeeBase.new_spot_fee(
             fee_schema=self.trade_fee_schema(),
             trade_type=order.trade_type,

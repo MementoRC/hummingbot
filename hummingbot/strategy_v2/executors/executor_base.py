@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from decimal import Decimal
 from functools import lru_cache
-from typing import Dict, Union
+from typing import Dict
 
 from hummingbot.client.settings import AllConnectorSettings
 from hummingbot.connector.connector_base import ConnectorBase
@@ -218,6 +218,49 @@ class ExecutorBase(RunnableBase):
         """
         raise NotImplementedError
 
+    def _collect_held_position_orders(self) -> list[Dict]:
+        """
+        Synchronous snapshot of every fill that still represents exchange exposure.
+
+        Subclasses override this to report their fills from state they already hold —
+        no awaiting, no extra control-loop ticks — so that a forced stop at the
+        shutdown deadline can convert whatever executed into a position hold. The
+        default returns the orders a normal shutdown already accumulated.
+        """
+        return list(self._held_position_orders)
+
+    def _cancel_outstanding_orders(self):
+        """
+        Best-effort cancellation of live orders before a forced stop. Subclasses whose
+        cancellation entry point is not ``cancel_open_orders`` override this.
+        """
+        cancel_open_orders = getattr(self, "cancel_open_orders", None)
+        if callable(cancel_open_orders):
+            cancel_open_orders()
+
+    def force_stop_with_position_hold(self):
+        """
+        Terminate immediately, converting whatever has already executed into a
+        position hold.
+
+        This is the shutdown-deadline fallback. A normal shutdown lets the control
+        loop finish its close/unwind asynchronously; when the orchestrator's budget
+        expires the loop is about to lose its market registrations, so the only safe
+        move is to stop synchronously and hand any residual exposure to the position
+        store for recovery on the next start. Executors with nothing executed are
+        closed as FAILED so the abnormal end stays visible.
+        """
+        try:
+            self._cancel_outstanding_orders()
+        except Exception:
+            # The exposure still has to be persisted and the control loop stopped even
+            # if shutdown has already made strategy-level cancellation unavailable.
+            self.logger().exception("Failed to cancel outstanding orders during forced stop.")
+        held_orders = self._collect_held_position_orders()
+        self._held_position_orders = held_orders
+        self.close_type = CloseType.POSITION_HOLD if held_orders else CloseType.FAILED
+        self.stop()
+
     def evaluate_max_retries(self):
         """
         Evaluates the maximum number of retries to place an order and stops the executor
@@ -393,7 +436,7 @@ class ExecutorBase(RunnableBase):
         return self._strategy.get_active_orders(connector_name)
 
     def process_order_completed_event(
-        self, event_tag: int, market: ConnectorBase, event: Union[BuyOrderCompletedEvent, SellOrderCompletedEvent]
+        self, event_tag: int, market: ConnectorBase, event: BuyOrderCompletedEvent | SellOrderCompletedEvent
     ):
         """
         Processes the order completed event. This method should be overridden by subclasses.
@@ -405,7 +448,7 @@ class ExecutorBase(RunnableBase):
         pass
 
     def process_order_created_event(
-        self, event_tag: int, market: ConnectorBase, event: Union[BuyOrderCreatedEvent, SellOrderCreatedEvent]
+        self, event_tag: int, market: ConnectorBase, event: BuyOrderCreatedEvent | SellOrderCreatedEvent
     ):
         """
         Processes the order created event. This method should be overridden by subclasses.

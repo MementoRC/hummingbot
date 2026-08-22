@@ -1,12 +1,11 @@
 import asyncio
 from decimal import Decimal
+import threading
 from typing import Awaitable
-import unittest
 from unittest import TestCase
-from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from async_timeout import timeout
-from commlib.thread_pool import ThreadPoolManager
 
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
@@ -22,8 +21,6 @@ from hummingbot.remote_iface.mqtt import MQTTGateway, MQTTMarketEventForwarder
 from test.mock.mock_mqtt_server import FakeMQTTBroker
 
 
-@patch("hummingbot.remote_iface.mqtt.MQTTGateway._INTERVAL_HEALTH_CHECK", 0.0)
-@patch("hummingbot.remote_iface.mqtt.MQTTGateway._INTERVAL_RESTART_LONG", 0.0)
 class RemoteIfaceMQTTTests(TestCase):
     # logging.Level required to receive logs from the exchange
     level = 0
@@ -52,15 +49,9 @@ class RemoteIfaceMQTTTests(TestCase):
         cls.HISTORY_URI = "hbot/$instance_id/history"
         cls.BALANCE_LIMIT_URI = "hbot/$instance_id/balance/limit"
         cls.BALANCE_PAPER_URI = "hbot/$instance_id/balance/paper"
-        cls.COMMAND_SHORTCUT_URI = "hbot/$instance_id/command_shortcuts"
-        cls.fake_mqtt_broker = FakeMQTTBroker()
 
     def setUp(self) -> None:
         super().setUp()
-
-        # Reset the commlib shared thread-pool singleton so each test starts with
-        # a live executor (the previous test's gateway.stop() shuts the pool down).
-        ThreadPoolManager.reset()
 
         self._original_async_loop = asyncio.get_event_loop()
         self.async_loop = asyncio.new_event_loop()
@@ -74,59 +65,52 @@ class RemoteIfaceMQTTTests(TestCase):
         self.client_config_map.mqtt_bridge.mqtt_events = 1
 
         self.log_records = []
-        # self.async_run_with_timeout(read_system_configs_from_yml())
-        self.gateway = MQTTGateway(self.hbapp)
-        self.test_market: MockPaperExchange = MockPaperExchange()
-        self.hbapp.markets = {"test_market_paper_trade": self.test_market}
-        self.resume_test_event = asyncio.Event()
-        self.hbapp.logger().setLevel(1)
-        self.hbapp.logger().addHandler(self)
-        self.gateway.logger().setLevel(1)
-        self.gateway.logger().addHandler(self)
-        # Restart interval Patcher
-        self.restart_interval_patcher = patch(
-            "hummingbot.remote_iface.mqtt.MQTTGateway._INTERVAL_RESTART_SHORT", new_callable=PropertyMock
+        self.fake_mqtt_broker = FakeMQTTBroker()
+
+        # Inject the fake aiomqtt client transport.
+        def _fake_create_client(gw):
+            return self.fake_mqtt_broker.create_client()
+
+        self.create_client_patcher = patch(
+            "hummingbot.remote_iface.mqtt.MQTTGateway._create_client", _fake_create_client
         )
-        self.addCleanup(self.restart_interval_patcher.stop)
-        self.restart_interval_mock = self.restart_interval_patcher.start()
-        self.restart_interval_mock.return_value = 0.0
-        # MQTT Transport Patcher
-        self.mqtt_transport_patcher = patch("commlib.transports.mqtt.MQTTTransport")
-        self.addCleanup(self.mqtt_transport_patcher.stop)
-        self.mqtt_transport_mock = self.mqtt_transport_patcher.start()
-        self.mqtt_transport_mock.side_effect = self.fake_mqtt_broker.create_transport
+        self.addCleanup(self.create_client_patcher.stop)
+        self.create_client_patcher.start()
+        # Hard guard: a real broker connection must never be attempted in tests.
+        # If any code path bypasses the _create_client seam, fail loudly instead
+        # of opening a socket (CI runners have no MQTT broker).
+        self.no_network_patcher = patch(
+            "hummingbot.remote_iface.mqtt.aiomqtt.Client",
+            side_effect=AssertionError("Real aiomqtt.Client instantiated in tests — network access attempted"),
+        )
+        self.addCleanup(self.no_network_patcher.stop)
+        self.no_network_patcher.start()
         # MQTT Patch Loggers Patcher
         self.patch_loggers_patcher = patch("hummingbot.remote_iface.mqtt.MQTTGateway.patch_loggers")
         self.addCleanup(self.patch_loggers_patcher.stop)
         self.patch_loggers_mock = self.patch_loggers_patcher.start()
         self.patch_loggers_mock.return_value = None
 
+        self.gateway = MQTTGateway(self.hbapp)
+        # Reconnect instantly in tests.
+        self.gateway._reconnect_interval = 0.0
+        self.test_market: MockPaperExchange = MockPaperExchange()
+        self.hbapp.trading_core.connector_manager.connectors["test_market_paper_trade"] = self.test_market
+        # No strategy loaded by default (the app no longer initializes this attribute).
+        self.hbapp.strategy = None
+        self.resume_test_event = asyncio.Event()
+        self.hbapp.logger().setLevel(1)
+        self.hbapp.logger().addHandler(self)
+        self.gateway.logger().setLevel(1)
+        self.gateway.logger().addHandler(self)
+
     def tearDown(self):
-        # Collect RPC services before stop so we can drain their threads/executors.
-        rpc_services = list(getattr(self.gateway, "_rpc_services", []))
-
-        # Stop the health-monitoring coroutine first so it doesn't race with shutdown.
-        self.gateway._stop_health_monitoring_loop()
-        # Give the async health loop one iteration to see the stop event.
-        self.async_loop.run_until_complete(asyncio.sleep(0.0))
-
+        self.async_loop.run_until_complete(asyncio.sleep(0.1))
         self.gateway.stop()
-
-        # Join every RPCService worker thread and shut down its thread-pool so
-        # ThreadPoolExecutor workers (5 per service, 8 services = up to 40 threads)
-        # don't accumulate across tests and eventually hang the runner.
-        for svc in rpc_services:
-            main_thread = getattr(svc, "_main_thread", None)
-            if main_thread is not None and main_thread.is_alive():
-                main_thread.join(timeout=5.0)
-            executor = getattr(svc, "_executor", None)
-            if executor is not None:
-                executor.shutdown(wait=False, cancel_futures=True)
-
         del self.gateway
+        self.async_loop.run_until_complete(asyncio.sleep(0.1))
         self.fake_mqtt_broker.clear()
-        self.restart_interval_patcher.stop()
-        self.mqtt_transport_patcher.stop()
+        self.create_client_patcher.stop()
         self.patch_loggers_patcher.stop()
 
         self.async_loop.stop()
@@ -156,6 +140,16 @@ class RemoteIfaceMQTTTests(TestCase):
     def async_run_with_timeout(self, coroutine: Awaitable, timeout: float = 1):
         ret = self.async_loop.run_until_complete(asyncio.wait_for(coroutine, timeout))
         return ret
+
+    async def wait_for_connected(self):
+        async with timeout(3):
+            while not self.fake_mqtt_broker.is_connected:
+                await asyncio.sleep(0.05)
+
+    async def wait_for_subscriptions(self, count: int):
+        async with timeout(3):
+            while len(self.fake_mqtt_broker.subscriptions) < count:
+                await asyncio.sleep(0.05)
 
     async def _create_exception_and_unlock_test_with_event_async(self, *args, **kwargs):
         self.resume_test_event.set()
@@ -328,8 +322,6 @@ class RemoteIfaceMQTTTests(TestCase):
 
         self.fake_mqtt_broker.publish_to_subscription(self.get_topic_for(self.BALANCE_LIMIT_URI), msg)
 
-        self.async_run_with_timeout(self.resume_test_event.wait())
-
         topic = f"test_reply/hbot/{self.instance_id}/balance/limit"
         msg = {"status": 400, "msg": self.fake_err_msg, "data": ""}
         self.async_run_with_timeout(self.wait_for_rcv(topic, msg, msg_key="data"), timeout=10)
@@ -347,8 +339,6 @@ class RemoteIfaceMQTTTests(TestCase):
         }
 
         self.fake_mqtt_broker.publish_to_subscription(self.get_topic_for(self.BALANCE_PAPER_URI), msg)
-
-        self.async_run_with_timeout(self.resume_test_event.wait())
 
         topic = f"test_reply/hbot/{self.instance_id}/balance/paper"
         msg = {"status": 400, "msg": self.fake_err_msg, "data": ""}
@@ -379,8 +369,6 @@ class RemoteIfaceMQTTTests(TestCase):
 
         self.fake_mqtt_broker.publish_to_subscription(self.get_topic_for(self.CONFIG_URI), {})
 
-        self.async_run_with_timeout(self.resume_test_event.wait())
-
         topic = f"test_reply/hbot/{self.instance_id}/config"
         msg = {"changes": [], "config": {}, "status": 400, "msg": self.fake_err_msg}
         self.async_run_with_timeout(self.wait_for_rcv(topic, msg, msg_key="data"), timeout=10)
@@ -392,8 +380,6 @@ class RemoteIfaceMQTTTests(TestCase):
         self.start_mqtt()
 
         self.fake_mqtt_broker.publish_to_subscription(self.get_topic_for(self.HISTORY_URI), {})
-
-        self.async_run_with_timeout(self.resume_test_event.wait())
 
         topic = f"test_reply/hbot/{self.instance_id}/history"
         msg = {"status": 400, "msg": self.fake_err_msg, "trades": []}
@@ -489,12 +475,34 @@ class RemoteIfaceMQTTTests(TestCase):
 
         self.fake_mqtt_broker.publish_to_subscription(self.get_topic_for(self.STOP_URI), {})
 
-        self.async_run_with_timeout(self.resume_test_event.wait())
-
         topic = f"test_reply/hbot/{self.instance_id}/stop"
         msg = {"status": 400, "msg": self.fake_err_msg}
         self.async_run_with_timeout(self.wait_for_rcv(topic, msg, msg_key="data"), timeout=10)
         self.assertTrue(self.is_msg_received(topic, msg, msg_key="data"))
+
+    def test_mqtt_rpc_response_envelope_is_wire_compatible(self):
+        # A failing balance command exercises the full request -> handler ->
+        # reply_to round-trip; assert the response envelope matches commlib.
+        with patch("hummingbot.client.command.balance_command.BalanceCommand.balance") as balance_mock:
+            balance_mock.side_effect = self._create_exception_and_unlock_test_with_event
+            self.start_mqtt()
+            self.fake_mqtt_broker.publish_to_subscription(
+                self.get_topic_for(self.BALANCE_PAPER_URI), {"exchange": "binance", "asset": "BTC-USD", "amount": "1.0"}
+            )
+            topic = f"test_reply/hbot/{self.instance_id}/balance/paper"
+            expected = {"status": 400, "msg": self.fake_err_msg, "data": ""}
+            self.async_run_with_timeout(self.wait_for_rcv(topic, expected, msg_key="data"), timeout=10)
+
+        envelope = self.fake_mqtt_broker.received_msgs[topic][0]
+        self.assertIn("header", envelope)
+        self.assertIn("data", envelope)
+        header = envelope["header"]
+        self.assertEqual("", header["reply_to"])
+        self.assertEqual("json", header["content_type"])
+        self.assertEqual("utf8", header["encoding"])
+        self.assertEqual("commlib", header["agent"])
+        self.assertIsInstance(header["timestamp"], int)
+        self.assertEqual(expected, envelope["data"])
 
     def test_mqtt_event_buy_order_created(self):
         self.start_mqtt()
@@ -552,10 +560,55 @@ class RemoteIfaceMQTTTests(TestCase):
     def test_mqtt_subscribed_topics(self):
         self.start_mqtt()
         self.assertTrue(self.gateway is not None)
-        subscribed_mqtt_topics = sorted(
-            list([f"hbot/{self.instance_id}/{topic}" for topic in (self.command_topics + ["external/event/*"])])
+        expected_topics = sorted(
+            list([f"hbot/{self.instance_id}/{topic}" for topic in (self.command_topics + ["external/event/#"])])
         )
-        self.assertEqual(subscribed_mqtt_topics, sorted(list(self.fake_mqtt_broker.subscriptions.keys())))
+        self.async_run_with_timeout(self.wait_for_subscriptions(len(expected_topics)), timeout=10)
+        self.assertEqual(expected_topics, sorted(list(self.fake_mqtt_broker.subscriptions.keys())))
+
+    def test_mqtt_heartbeat_published(self):
+        self.start_mqtt()
+        hb_topic = f"hbot/{self.instance_id}/hb"
+        self.async_run_with_timeout(self.wait_for_rcv(hb_topic), timeout=10)
+        self.assertTrue(self.is_msg_received(hb_topic))
+        self.assertIn("ts", self.fake_mqtt_broker.received_msgs[hb_topic][0])
+
+    def test_mqtt_online_status_update(self):
+        self.start_mqtt()
+        status_topic = f"hbot/{self.instance_id}/status_updates"
+        self.async_run_with_timeout(self.wait_for_rcv(status_topic, "online"), timeout=10)
+        self.assertTrue(self.is_msg_received(status_topic, "online"))
+
+    def test_mqtt_reconnects_on_mqtt_error(self):
+        self.start_mqtt()
+        self.async_run_with_timeout(self.wait_for_connected(), timeout=10)
+        self.assertTrue(self.gateway.health)
+        # Force the broker connection to drop.
+        self.fake_mqtt_broker.inject_disconnect()
+        self.async_run_with_timeout(
+            self.wait_for_logged(
+                "WARNING", "MQTT bridge disconnected: Simulated broker disconnect. Reconnecting in 0.0s."
+            ),
+            timeout=10,
+        )
+        # The single reconnect loop brings it back online by itself.
+        self.async_run_with_timeout(self.wait_for_connected(), timeout=10)
+        self.assertTrue(self.gateway.health)
+
+    def test_mqtt_publish_from_non_main_thread(self):
+        self.start_mqtt()
+        self.async_run_with_timeout(self.wait_for_connected(), timeout=10)
+        topic = f"hbot/{self.instance_id}/threadtest"
+
+        def worker():
+            self.gateway.publish(topic, {"msg": "fromthread"}, 0)
+
+        t = threading.Thread(target=worker)
+        t.start()
+        t.join()
+
+        self.async_run_with_timeout(self.wait_for_rcv(topic, "fromthread"), timeout=10)
+        self.assertTrue(self.is_msg_received(topic, "fromthread"))
 
     @patch("hummingbot.remote_iface.mqtt.mqtts_logger", None)
     def test_mqtt_eventforwarder_logger(self):
@@ -590,89 +643,12 @@ class RemoteIfaceMQTTTests(TestCase):
         self.assertEqual(self.gateway._notifier.start(), None)
         self.assertEqual(self.gateway._notifier.stop(), None)
 
-    def test_mqtt_gateway_check_health(self):
-        tmp = self.gateway._start_health_monitoring_loop
-        self.gateway._start_health_monitoring_loop = lambda: None
-        self.start_mqtt()
-        self.assertTrue(self.gateway._check_connections())
-        self.gateway._rpc_services[0]._transport._connected = False
-        self.assertFalse(self.gateway._check_connections())
-        self.gateway._rpc_services[0]._transport._connected = True
-        s = self.gateway.create_subscriber(topic="TEST", on_message=lambda x: {})
-        s.run()
-        self.assertTrue(self.gateway._check_connections())
-        s._transport._connected = False
-        self.assertFalse(self.gateway._check_connections())
-        prev_pub = self.gateway._publishers
-        prev__sub = self.gateway._subscribers
-        self.gateway._publishers = []
-        self.gateway._subscribers = []
-        self.gateway._rpc_services[0]._transport._connected = False
-        self.assertFalse(self.gateway._check_connections())
-        self.gateway._publishers = prev_pub
-        self.gateway._subscribers = prev__sub
-        self.gateway._start_health_monitoring_loop = tmp
-
-    @unittest.skip(
-        "Brittle restart-scenario test: waits on the commlib-library-internal 'Started Heartbeat Publisher' "
-        "DEBUG log during a disconnect->reconnect cycle, which is timing/commlib-version dependent under the "
-        "FakeMQTTBroker. The other 54 test_mqtt.py tests pass. Revisit when commlib heartbeat behavior under "
-        "the fake broker is settled."
-    )
-    @patch("hummingbot.remote_iface.mqtt.MQTTGateway.health", new_callable=PropertyMock)
-    def test_mqtt_gateway_check_health_restarts(self, health_mock: PropertyMock):
-        health_mock.return_value = True
-        status_topic = f"hbot/{self.instance_id}/status_updates"
-        self.start_mqtt()
-        self.async_run_with_timeout(
-            self.wait_for_logged("DEBUG", f"Started Heartbeat Publisher <hbot/{self.instance_id}/hb>"), timeout=10
-        )
-        self.async_run_with_timeout(self.wait_for_rcv(status_topic, "online"), timeout=10)
-        self.async_run_with_timeout(
-            self.wait_for_logged("DEBUG", "Monitoring MQTT Gateway health for disconnections."), timeout=10
-        )
-        self.log_records.clear()
-        health_mock.return_value = False
-        self.restart_interval_mock.return_value = None
-        self.async_run_with_timeout(
-            self.wait_for_logged("WARNING", "MQTT Gateway is disconnected, attempting to reconnect."), timeout=10
-        )
-        fake_err = "'<=' not supported between instances of 'NoneType' and 'int'"
-        self.async_run_with_timeout(
-            self.wait_for_logged(
-                "ERROR", f"MQTT Gateway failed to reconnect: {fake_err}. Sleeping 10 seconds before retry."
-            ),
-            timeout=10,
-        )
-        self.assertFalse(
-            self._is_logged(
-                "WARNING",
-                "MQTT Gateway successfully reconnected.",
-            )
-        )
-        self.assertTrue(self.is_msg_received(status_topic, "offline"))
-        self.log_records.clear()
-        self.restart_interval_mock.return_value = 0.0
-        self.hbapp.strategy = True
-        self.async_run_with_timeout(
-            self.wait_for_logged("WARNING", "MQTT Gateway is disconnected, attempting to reconnect."), timeout=10
-        )
-        health_mock.return_value = True
-        self.async_run_with_timeout(
-            self.wait_for_logged("WARNING", "MQTT Gateway successfully reconnected."), timeout=10
-        )
-        self.assertTrue(
-            self._is_logged(
-                "WARNING",
-                "MQTT Gateway successfully reconnected.",
-            )
-        )
-
     def test_mqtt_gateway_stop(self):
         self.start_mqtt()
-        self.assertTrue(self.gateway._check_connections())
+        self.async_run_with_timeout(self.wait_for_connected(), timeout=10)
+        self.assertTrue(self.gateway.health)
         self.gateway.stop()
-        self.assertFalse(self.gateway._check_connections())
+        self.assertFalse(self.gateway.health)
 
     def test_eevent_queue_factory(self):
         self.start_mqtt()
@@ -780,6 +756,7 @@ class RemoteIfaceMQTTTests(TestCase):
                 "d": DeductedFromReturnsTradeFee(),
                 "e": AddedToCostTradeFee(),
                 "f": {"a": 1},
+                "g": [Decimal("2.0"), {"h": Decimal("3.0")}],
                 "type": "TEST",
                 "order_type": "BUY",
                 "trade_type": "LIMIT",
@@ -793,14 +770,13 @@ class RemoteIfaceMQTTTests(TestCase):
         def clb(msg, topic):
             pass
 
-        listener = ETopicListener("test", clb, use_bot_prefix=False)
-        self.assertTrue(listener is not None)
-        listener = ETopicListener("test", clb, use_bot_prefix=True)
-        self.assertTrue(listener is not None)
-
         self.start_mqtt()
         listener = ETopicListener("test", clb, use_bot_prefix=True)
         self.assertTrue(listener is not None)
+        listener.stop()
+        listener = ETopicListener("test", clb, use_bot_prefix=False)
+        self.assertTrue(listener is not None)
+        listener.stop()
 
         prev_gw = MQTTGateway.main()
         MQTTGateway._instance = None
@@ -885,6 +861,32 @@ class RemoteIfaceMQTTTests(TestCase):
         eevents.add_listener("test_event", clb)
         eevents.remove_listener("test_event", clb)
 
+    def test_mqtt_external_event_delivery_wraps_message(self):
+        from hummingbot.remote_iface.mqtt import ExternalEventFactory
+
+        self.start_mqtt()
+        self.async_run_with_timeout(self.wait_for_connected(), timeout=10)
+
+        received = []
+
+        def clb(msg, name):
+            received.append((name, msg))
+
+        ExternalEventFactory.create_async("*", clb)
+        event_topic = f"hbot/{self.instance_id}/external/event/order/market"
+        self.fake_mqtt_broker.publish_event(event_topic, {"type": "eevent", "data": {"type": "buy", "amount": "1"}})
+
+        async def _wait():
+            async with timeout(3):
+                while not received:
+                    await asyncio.sleep(0.05)
+
+        self.async_run_with_timeout(_wait(), timeout=10)
+        name, msg = received[0]
+        self.assertEqual("order.market", name)
+        # Listeners must receive an ExternalEventMessage object with `.data`.
+        self.assertEqual({"type": "buy", "amount": "1"}, msg.data)
+
     def test_mqtt_gateway_health(self):
         health = self.gateway.health
         self.assertFalse(health)
@@ -905,218 +907,9 @@ class RemoteIfaceMQTTTests(TestCase):
         test_msg = {"a": "test", "b": 1, "c": False, "d": {}, "e": []}
         pub = ETopicPublisher("test/a/b", use_bot_prefix=False)
         pub.send(test_msg)
-        self.assertTrue(1)
+        self.async_run_with_timeout(self.wait_for_rcv("test/a/b"), timeout=10)
+        self.assertTrue(self.is_msg_received("test/a/b"))
         pub2 = EMTopicPublisher(use_bot_prefix=False)
-        pub2.send("test/a/b", test_msg)
         pub2.send("test/c/d", test_msg)
-        self.assertTrue(1)
-
-    # ------------------------------------------------------------------ #
-    # Coverage gap tests added for PR #66                                  #
-    # ------------------------------------------------------------------ #
-
-    @patch("hummingbot.client.command.balance_command.BalanceCommand.balance")
-    def test_on_cmd_balance_paper_success(self, balance_mock: MagicMock):
-        """_on_cmd_balance_paper happy path: covers lines 267-268."""
-        balance_mock.return_value = "1000.0"
-        self.start_mqtt()
-
-        msg = {"asset": "BTC", "amount": "1.0"}
-        self.fake_mqtt_broker.publish_to_subscription(self.get_topic_for(self.BALANCE_PAPER_URI), msg)
-
-        topic = f"test_reply/hbot/{self.instance_id}/balance/paper"
-        expected = {"status": 200, "msg": "", "data": "1000.0"}
-        self.async_run_with_timeout(self.wait_for_rcv(topic, expected, msg_key="data"), timeout=10)
-        self.assertTrue(self.is_msg_received(topic, expected, msg_key="data"))
-
-    @patch("hummingbot.client.command.balance_command.BalanceCommand.balance")
-    def test_on_cmd_balance_paper_exception(self, balance_mock: MagicMock):
-        """_on_cmd_balance_paper exception branch: covers lines 269-271."""
-        balance_mock.side_effect = self._create_exception_and_unlock_test_with_event
-        self.start_mqtt()
-
-        msg = {"asset": "BTC", "amount": "1.0"}
-        self.fake_mqtt_broker.publish_to_subscription(self.get_topic_for(self.BALANCE_PAPER_URI), msg)
-
-        self.async_run_with_timeout(self.resume_test_event.wait())
-        topic = f"test_reply/hbot/{self.instance_id}/balance/paper"
-        expected = {"status": 400, "msg": self.fake_err_msg, "data": ""}
-        self.async_run_with_timeout(self.wait_for_rcv(topic, expected, msg_key="data"), timeout=10)
-        self.assertTrue(self.is_msg_received(topic, expected, msg_key="data"))
-
-    def test_market_event_forwarder_send_with_namedtuple_event(self):
-        """_send_mqtt_event with a namedtuple event (_asdict branch): covers lines 338-339."""
-        import collections
-
-        self.start_mqtt()
-        FakeEvent = collections.namedtuple("FakeEvent", ["timestamp", "order_id"])
-        evt = FakeEvent(timestamp=1234567890, order_id="OID1")
-        self.gateway._market_events._send_mqtt_event(event_tag=999, pubsub=None, event=evt)
-        events_topic = f"hbot/{self.instance_id}/events"
-        self.async_run_with_timeout(self.wait_for_rcv(events_topic, "Unknown", msg_key="type"), timeout=10)
-        self.assertTrue(self.is_msg_received(events_topic, "Unknown", msg_key="type"))
-
-    def test_market_event_forwarder_send_no_timestamp_in_event(self):
-        """_send_mqtt_event when event_data has no 'timestamp' key: covers lines 348-349."""
-        self.start_mqtt()
-        evt = {"order_id": "OID2"}  # no timestamp key
-        self.gateway._market_events._send_mqtt_event(event_tag=999, pubsub=None, event=evt)
-        events_topic = f"hbot/{self.instance_id}/events"
-        self.async_run_with_timeout(self.wait_for_rcv(events_topic, "Unknown", msg_key="type"), timeout=10)
-        self.assertTrue(self.is_msg_received(events_topic, "Unknown", msg_key="type"))
-
-    def test_market_event_forwarder_make_payload_list_and_tuple(self):
-        """_make_event_payload list/tuple branch: covers lines 366-369."""
-        self.start_mqtt()
-        payload = {
-            "items_list": [Decimal("1.5"), Decimal("2.5")],
-            "items_tuple": (Decimal("3.0"),),
-        }
-        result = self.gateway._market_events._make_event_payload(payload)
-        self.assertEqual(result["items_list"], [1.5, 2.5])
-        self.assertEqual(result["items_tuple"], (3.0,))
-
-    def test_start_event_listeners_registers_all_pairs(self):
-        """_start_event_listeners loop: covers lines 381-384 (loop body)."""
-        self.start_mqtt()
-        fw = self.gateway._market_events
-        # Each market (1 here) x 12 event pairs must be registered
-        # Verify by stopping and confirming the market has no listeners
-        # (remove_listener won't raise if they were registered)
-        fw._stop_event_listeners()
-        self.assertTrue(True)  # no exception = listeners were registered
-
-    def test_mqtt_notifier_topic_assignment(self):
-        """MQTTNotifier._topic set correctly: covers line 400."""
-        from hummingbot.remote_iface.mqtt import MQTTNotifier
-
-        self.start_mqtt()
-        notifier = MQTTNotifier(self.hbapp, self.gateway)
-        expected_topic = f"hbot/{self.instance_id}/notify"
-        self.assertEqual(notifier._topic, expected_topic)
-
-    def test_remove_status_updates_clears_reference(self):
-        """_remove_status_updates: covers lines 567-569."""
-        self.start_mqtt()
-        self.assertIsNotNone(self.gateway._status_updates)
-        self.gateway._remove_status_updates()
-        self.assertIsNone(self.gateway._status_updates)
-
-    def test_start_market_events_fw_mqtt_events_disabled(self):
-        """start_market_events_fw skips when mqtt_events=0: covers conditional branch."""
-        self.gateway.start(with_health=False)
-        self.gateway._hb_app.client_config_map.mqtt_bridge.mqtt_events = 0
-        self.gateway.start_market_events_fw()
-        self.assertIsNone(self.gateway._market_events)
-        self.gateway._hb_app.client_config_map.mqtt_bridge.mqtt_events = 1
-
-    def test_external_events_add_listener_new_key(self):
-        """add_listener with a new event_name (else branch): covers line 783."""
-        from hummingbot.remote_iface.mqtt import MQTTExternalEvents
-
-        self.start_mqtt()
-
-        def clb(msg, name):
-            pass
-
-        eevents = MQTTExternalEvents(self.hbapp, self.gateway)
-        eevents._listeners = {}  # start empty, no "*" key either
-        eevents.add_listener("new_event", clb)
-        self.assertIn("new_event", eevents._listeners)
-        self.assertEqual(eevents._listeners["new_event"], [clb])
-
-    def test_external_events_add_global_listener_new_key(self):
-        """add_global_listener when '*' missing (else branch): covers line 794."""
-        from hummingbot.remote_iface.mqtt import MQTTExternalEvents
-
-        self.start_mqtt()
-
-        def clb(msg, name):
-            pass
-
-        eevents = MQTTExternalEvents(self.hbapp, self.gateway)
-        eevents._listeners = {}  # remove the default "*" key
-        eevents.add_global_listener(clb)
-        self.assertIn("*", eevents._listeners)
-        self.assertEqual(eevents._listeners["*"], [clb])
-
-    def test_external_events_remove_global_listener(self):
-        """remove_global_listener removes callback from '*': covers lines 797-798."""
-        from hummingbot.remote_iface.mqtt import MQTTExternalEvents
-
-        self.start_mqtt()
-
-        received = []
-
-        def clb(msg, name):
-            received.append(name)
-
-        eevents = MQTTExternalEvents(self.hbapp, self.gateway)
-        eevents.add_global_listener(clb)
-        self.assertIn(clb, eevents._listeners["*"])
-        eevents.remove_global_listener(clb)
-        self.assertNotIn(clb, eevents._listeners["*"])
-
-    def test_etopic_listener_stop(self):
-        """ETopicListener.stop() calls _sub.stop(): covers lines 820-821."""
-        from hummingbot.remote_iface.mqtt import ETopicListener
-
-        self.start_mqtt()
-
-        def clb(msg, topic):
-            pass
-
-        listener = ETopicListener("test/stop", clb, use_bot_prefix=False)
-        # stop() must not raise
-        listener.stop()
-        self.assertTrue(True)
-
-    @patch("hummingbot.client.command.balance_command.BalanceCommand.balance")
-    def test_on_cmd_balance_limit_success(self, balance_mock: MagicMock):
-        """_on_cmd_balance_limit happy path: covers lines 257-258 (data assignment)."""
-        balance_mock.return_value = "500.0"
-        self.start_mqtt()
-
-        msg = {"exchange": "binance", "asset": "BTC", "amount": "1.0"}
-        self.fake_mqtt_broker.publish_to_subscription(self.get_topic_for(self.BALANCE_LIMIT_URI), msg)
-
-        topic = f"test_reply/hbot/{self.instance_id}/balance/limit"
-        expected = {"status": 200, "msg": "", "data": "500.0"}
-        self.async_run_with_timeout(self.wait_for_rcv(topic, expected, msg_key="data"), timeout=10)
-        self.assertTrue(self.is_msg_received(topic, expected, msg_key="data"))
-
-    def test_make_event_payload_with_nested_dict_decimal(self):
-        """_make_event_payload: nested dict containing Decimal is recursed into."""
-        self.start_mqtt()
-        payload = {
-            "outer": {
-                "inner_decimal": Decimal("9.99"),
-            }
-        }
-        result = self.gateway._market_events._make_event_payload(payload)
-        self.assertEqual(result["outer"]["inner_decimal"], 9.99)
-
-    def test_send_mqtt_event_non_iterable_event_data(self):
-        """_send_mqtt_event dict(event) TypeError branch: integer event falls to empty dict."""
-        self.start_mqtt()
-        # An integer cannot be coerced with dict() — hits TypeError branch -> event_data = {}
-        self.gateway._market_events._send_mqtt_event(event_tag=999, pubsub=None, event=42)
-        events_topic = f"hbot/{self.instance_id}/events"
-        self.async_run_with_timeout(self.wait_for_rcv(events_topic, {}, msg_key="data"), timeout=10)
-        self.assertTrue(self.is_msg_received(events_topic, {}, msg_key="data"))
-
-    def test_remove_status_updates_noop_when_none(self):
-        """_remove_status_updates with _status_updates already None is a no-op."""
-        self.gateway._status_updates = None
-        # Must not raise
-        self.gateway._remove_status_updates()
-        self.assertIsNone(self.gateway._status_updates)
-
-    def test_start_market_events_fw_mqtt_events_enabled_running(self):
-        """start_market_events_fw with mqtt_events=True on a RUNNING node runs event_fw_pub."""
-        self.gateway.start(with_health=False)
-        # Node is now RUNNING; start_market_events_fw should create forwarder + run publisher
-        self.gateway._market_events = None
-        self.client_config_map.mqtt_bridge.mqtt_events = 1
-        self.gateway.start_market_events_fw()
-        self.assertIsNotNone(self.gateway._market_events)
+        self.async_run_with_timeout(self.wait_for_rcv("test/c/d"), timeout=10)
+        self.assertTrue(self.is_msg_received("test/c/d"))

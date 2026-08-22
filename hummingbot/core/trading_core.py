@@ -9,7 +9,7 @@ import logging
 from pathlib import Path
 import sys
 import time
-from typing import Any, Callable, Type, Union
+from typing import Any, Callable, Type
 
 from sqlalchemy.orm import Query, Session
 
@@ -71,7 +71,7 @@ class TradingCore:
 
     def __init__(
         self,
-        client_config: Union[ClientConfigMap, ClientConfigAdapter, dict[str, Any]],
+        client_config: ClientConfigMap | ClientConfigAdapter | dict[str, Any],
         scripts_path: Path | None = None,
     ):
         """
@@ -453,7 +453,7 @@ class TradingCore:
     async def start_strategy(
         self,
         strategy_name: str,
-        strategy_config: Union[BaseStrategyConfigMap, dict[str, Any], str] | None = None,
+        strategy_config: BaseStrategyConfigMap | dict[str, Any] | str | None = None,
         strategy_file_name: str | None = None,
     ) -> bool:
         """
@@ -783,7 +783,6 @@ class TradingCore:
     def _get_trades_from_session(
         start_timestamp: int, session: Session, number_of_rows: int | None = None, config_file_path: str = None
     ) -> list[TradeFill]:
-
         filters = [TradeFill.timestamp >= start_timestamp]
         if config_file_path is not None:
             filters.append(TradeFill.config_file_path.like(f"%{config_file_path}%"))

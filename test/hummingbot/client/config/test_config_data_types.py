@@ -1,6 +1,5 @@
 from datetime import date, datetime, time
 from decimal import Decimal
-from typing import Union
 import unittest
 
 from pydantic import Field, SecretStr
@@ -90,7 +89,7 @@ class BaseClientModelTest(unittest.TestCase):
 
         class DummyModel(BaseClientModel):
             some_attr: int = Field(default=1)
-            nested_model: Union[NestedModelTwo, NestedModelOne] = Field(default=NestedModelOne())
+            nested_model: NestedModelTwo | NestedModelOne = Field(default=NestedModelOne())
             another_attr: Decimal = Field(default=Decimal("1.0"))
 
             class Config:

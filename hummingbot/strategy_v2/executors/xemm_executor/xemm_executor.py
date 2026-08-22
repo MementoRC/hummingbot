@@ -3,7 +3,7 @@ from decimal import Decimal
 import logging
 from typing import Dict
 
-from hummingbot.connector.connector_base import ConnectorBase, Union
+from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.connector.utils import split_hb_trading_pair
 from hummingbot.core.data_type.common import OrderType, PriceType, TradeType
 from hummingbot.core.data_type.order_candidate import OrderCandidate
@@ -291,7 +291,7 @@ class XEMMExecutor(ExecutorBase):
         return trade_profitability
 
     def process_order_created_event(
-        self, event_tag: int, market: ConnectorBase, event: Union[BuyOrderCreatedEvent, SellOrderCreatedEvent]
+        self, event_tag: int, market: ConnectorBase, event: BuyOrderCreatedEvent | SellOrderCreatedEvent
     ):
         if self.maker_order and event.order_id == self.maker_order.order_id:
             self.logger().info(f"Maker order {event.order_id} created.")
@@ -301,7 +301,7 @@ class XEMMExecutor(ExecutorBase):
             self.taker_order.order = self.get_in_flight_order(self.taker_connector, event.order_id)
 
     def process_order_completed_event(
-        self, event_tag: int, market: ConnectorBase, event: Union[BuyOrderCompletedEvent, SellOrderCompletedEvent]
+        self, event_tag: int, market: ConnectorBase, event: BuyOrderCompletedEvent | SellOrderCompletedEvent
     ):
         if self.maker_order and event.order_id == self.maker_order.order_id:
             self.logger().info(f"Maker order {event.order_id} completed. Executing taker order.")

@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Dict, Literal, Union
+from typing import Dict, Literal
 
 from pydantic import ConfigDict, Field, field_validator
 
@@ -29,24 +29,24 @@ MAX_CONNECTOR = 5
 
 
 class EmptyMarketConfigMap(BaseClientModel):
-    connector: Union[None, ExchangeEnum] = None
-    markets: Union[None, list[str]] = None
-    offsets: Union[None, list[Decimal]] = None
+    connector: None | ExchangeEnum = None
+    markets: None | list[str] = None
+    offsets: None | list[Decimal] = None
     model_config = ConfigDict(title="n")
 
 
 class MarketConfigMap(BaseClientModel):
-    connector: Union[None, ExchangeEnum] = Field(
+    connector: None | ExchangeEnum = Field(
         default=...,
         description="The name of the exchange connector.",
         json_schema_extra={"prompt": "Enter name of the exchange to use", "prompt_on_new": True},
     )
-    markets: Union[None, list[str]] = Field(
+    markets: None | list[str] = Field(
         default=...,
         description="The name of the trading pair.",
         json_schema_extra={"prompt": lambda mi: MarketConfigMap.trading_pair_prompt(mi), "prompt_on_new": True},
     )
-    offsets: Union[None, list[Decimal]] = Field(
+    offsets: None | list[Decimal] = Field(
         default=Decimal("0.0"),
         description="The offsets for each trading pair.",
         json_schema_extra={
@@ -71,7 +71,7 @@ class MarketConfigMap(BaseClientModel):
     model_config = ConfigDict(title="y")
 
 
-market_config_map = Union[EmptyMarketConfigMap, MarketConfigMap]
+market_config_map = EmptyMarketConfigMap | MarketConfigMap
 
 
 class HedgeConfigMap(BaseStrategyConfigMap):
@@ -148,7 +148,7 @@ class HedgeConfigMap(BaseStrategyConfigMap):
 
     @field_validator("connector_0", "connector_1", "connector_2", "connector_3", "connector_4", mode="before")
     @classmethod
-    def construct_connector(cls, v: Union[str, bool, EmptyMarketConfigMap, MarketConfigMap, Dict]):
+    def construct_connector(cls, v: str | bool | EmptyMarketConfigMap | MarketConfigMap | Dict):
         if isinstance(v, (EmptyMarketConfigMap, MarketConfigMap, Dict)):
             return v
         if validate_bool(v):

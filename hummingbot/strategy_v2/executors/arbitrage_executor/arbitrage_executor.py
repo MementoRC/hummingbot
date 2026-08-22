@@ -1,7 +1,7 @@
 import asyncio
 from decimal import Decimal
 import logging
-from typing import Dict, Union
+from typing import Dict
 
 from hummingbot.connector.utils import split_hb_trading_pair
 from hummingbot.core.data_type.common import OrderType, TradeType
@@ -331,7 +331,7 @@ class ArbitrageExecutor(ExecutorBase):
                 token=asset,
             )
 
-    def process_order_created_event(self, _, market, event: Union[BuyOrderCreatedEvent, SellOrderCreatedEvent]):
+    def process_order_created_event(self, _, market, event: BuyOrderCreatedEvent | SellOrderCreatedEvent):
         if self.buy_order.order_id == event.order_id:
             self.buy_order.order = self.get_in_flight_order(self.buying_market.connector_name, event.order_id)
             self.logger().info("Buy Order Created")

@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from decimal import Decimal
 import logging
-from typing import Dict, Union
+from typing import Dict
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.common import OrderType, PositionAction, PositionMode, PriceType, TradeType
@@ -687,6 +687,20 @@ class PositionExecutor(TrailingStopMixin, ActivationBoundsMixin, RetryMixin, Bal
         self.close_type = CloseType.POSITION_HOLD if keep_position else CloseType.EARLY_STOP
         self._status = RunnableStatus.SHUTTING_DOWN
 
+    def _collect_held_position_orders(self) -> list[Dict]:
+        """Snapshot residual exposure for a forced stop at the shutdown deadline.
+
+        Same fills the POSITION_HOLD branch of control_shutdown_process would retain:
+        the entry and any close-side fills, deduped by client order id.
+        """
+        held = list(self._held_position_orders)
+        seen = {order.get("client_order_id") for order in held}
+        for tracked in (self._open_order, self._close_order, self._take_profit_limit_order):
+            if tracked and tracked.is_filled and tracked.order and tracked.order.client_order_id not in seen:
+                seen.add(tracked.order.client_order_id)
+                held.append(tracked.order.to_json())
+        return held
+
     def update_tracked_orders_with_order_id(self, order_id: str):
         """
         This method is responsible for updating the tracked orders with the information from the InFlightOrder, using
@@ -703,7 +717,7 @@ class PositionExecutor(TrailingStopMixin, ActivationBoundsMixin, RetryMixin, Bal
         elif self._take_profit_limit_order and self._take_profit_limit_order.order_id == order_id:
             self._take_profit_limit_order.order = in_flight_order
 
-    def process_order_created_event(self, _, market, event: Union[BuyOrderCreatedEvent, SellOrderCreatedEvent]):
+    def process_order_created_event(self, _, market, event: BuyOrderCreatedEvent | SellOrderCreatedEvent):
         """
         This method is responsible for processing the order created event. Here we will update the TrackedOrder with the
         order_id.
@@ -718,7 +732,7 @@ class PositionExecutor(TrailingStopMixin, ActivationBoundsMixin, RetryMixin, Bal
         """
         self.update_tracked_orders_with_order_id(event.order_id)
 
-    def process_order_completed_event(self, _, market, event: Union[BuyOrderCompletedEvent, SellOrderCompletedEvent]):
+    def process_order_completed_event(self, _, market, event: BuyOrderCompletedEvent | SellOrderCompletedEvent):
         """
         This method is responsible for processing the order completed event. Here we will check if the id is one of the
         tracked orders and update the state

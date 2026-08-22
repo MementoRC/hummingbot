@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import asyncio
 from collections import defaultdict
 from decimal import Decimal
@@ -48,6 +46,9 @@ class BinancePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         self._funding_info_messages_queue_key = CONSTANTS.FUNDING_INFO_STREAM_ID
         self._snapshot_messages_queue_key = "order_book_snapshot"
         self._market_ws_assistant: WSAssistant | None = None
+        # Last applied diff final update id (`u`) per trading pair, used to validate the `pu` chain
+        # and detect order book sequence gaps. Reset on every (re)connection.
+        self._last_update_id: dict[str, int] = {}
 
     async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
@@ -167,6 +168,9 @@ class BinancePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         market_ws: WSAssistant | None = None
         while True:
             try:
+                # A fresh connection means the diff sequence restarts; drop any stale `u` tracking so the
+                # first diff after (re)connection is not falsely flagged as a gap.
+                self._last_update_id.clear()
                 public_ws = await self._connected_websocket_assistant()
                 self._ws_assistant = public_ws
                 await self._subscribe_public_channels(public_ws)
@@ -175,8 +179,8 @@ class BinancePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
                 self._market_ws_assistant = market_ws
                 await self._subscribe_market_channels(market_ws)
 
-                public_task = asyncio.create_task(self._process_websocket_messages(websocket_assistant=public_ws))
-                market_task = asyncio.create_task(self._process_websocket_messages(websocket_assistant=market_ws))
+                public_task = asyncio.ensure_future(self._process_websocket_messages(websocket_assistant=public_ws))
+                market_task = asyncio.ensure_future(self._process_websocket_messages(websocket_assistant=market_ws))
 
                 done, pending = await asyncio.wait(
                     [public_task, market_task],
@@ -204,13 +208,34 @@ class BinancePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
     async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         timestamp: float = time.time()
-        raw_message["data"]["s"] = await self._connector.trading_pair_associated_to_exchange_symbol(
-            raw_message["data"]["s"]
-        )
+        trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(raw_message["data"]["s"])
+        raw_message["data"]["s"] = trading_pair
         data = raw_message["data"]
+
+        # Binance futures requires each diff to chain to the previous one: the event's `pu` (previous
+        # final update id) must equal the last applied `u`. If the chain breaks the local book may be
+        # corrupt, so we drop the diff and force a fresh snapshot of the pair, as mandated by the official
+        # "How to manage a local order book correctly" guide.
+        previous_update_id = self._last_update_id.get(trading_pair)
+        if previous_update_id is not None and data["pu"] != previous_update_id:
+            self.logger().warning(
+                f"Order book diff sequence gap for {trading_pair} "
+                f"(expected pu={previous_update_id}, got pu={data['pu']}). Forcing a snapshot resync."
+            )
+            self._last_update_id.pop(trading_pair, None)
+            self._message_queue[self._snapshot_messages_queue_key].put_nowait(trading_pair)
+            return
+
+        self._last_update_id[trading_pair] = data["u"]
         order_book_message: OrderBookMessage = OrderBookMessage(
             OrderBookMessageType.DIFF,
-            {"trading_pair": data["s"], "update_id": data["u"], "bids": data["b"], "asks": data["a"]},
+            {
+                "trading_pair": trading_pair,
+                "first_update_id": data["U"],
+                "update_id": data["u"],
+                "bids": data["b"],
+                "asks": data["a"],
+            },
             timestamp=timestamp,
         )
         message_queue.put_nowait(order_book_message)
@@ -236,14 +261,28 @@ class BinancePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         message_queue.put_nowait(trade_message)
 
     async def listen_for_order_book_snapshots(self, ev_loop: asyncio.BaseEventLoop, output: asyncio.Queue):
+        snapshot_request_queue = self._message_queue[self._snapshot_messages_queue_key]
         while True:
             try:
+                # Hourly full reset of every tracked pair.
                 for trading_pair in self._trading_pairs:
                     snapshot_msg: OrderBookMessage = await self._order_book_snapshot(trading_pair)
                     output.put_nowait(snapshot_msg)
                     self.logger().debug(f"Saved order book snapshot for {trading_pair}")
-                delta = CONSTANTS.ONE_HOUR - time.time() % CONSTANTS.ONE_HOUR
-                await self._sleep(delta)
+                # Until the next hourly reset, serve on-demand resync requests pushed by the diff parser
+                # when it detects a sequence gap (pu mismatch), without blocking the diff hot path.
+                deadline = time.time() + (CONSTANTS.ONE_HOUR - time.time() % CONSTANTS.ONE_HOUR)
+                while True:
+                    remaining = deadline - time.time()
+                    if remaining <= 0:
+                        break
+                    try:
+                        trading_pair = await asyncio.wait_for(snapshot_request_queue.get(), timeout=remaining)
+                    except asyncio.TimeoutError:
+                        break
+                    snapshot_msg: OrderBookMessage = await self._order_book_snapshot(trading_pair)
+                    output.put_nowait(snapshot_msg)
+                    self.logger().debug(f"Saved on-demand order book snapshot for {trading_pair}")
             except asyncio.CancelledError:
                 raise
             except Exception:
@@ -253,7 +292,6 @@ class BinancePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
                 await self._sleep(5.0)
 
     async def _parse_funding_info_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
-
         data: dict[str, Any] = raw_message["data"]
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(data["s"])
 
@@ -271,9 +309,7 @@ class BinancePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
     async def _request_complete_funding_info(self, trading_pair: str):
         ex_trading_pair = await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
-        data = await self._connector._api_get(
-            path_url=CONSTANTS.MARK_PRICE_URL, params={"symbol": ex_trading_pair}, is_auth_required=True
-        )
+        data = await self._connector._api_get(path_url=CONSTANTS.MARK_PRICE_URL, params={"symbol": ex_trading_pair})
         return data
 
     async def subscribe_to_trading_pair(self, trading_pair: str) -> bool:

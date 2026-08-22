@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 import re
-from typing import Any, Union
+from typing import Any
 
 from google.protobuf.any_pb2 import Any as ProtoAny
 from v4_proto.cosmos.base.v1beta1.coin_pb2 import Coin
@@ -173,7 +173,7 @@ class Transaction:
 
     def seal(
         self,
-        signing_cfgs: Union[SigningCfg, list[SigningCfg]],
+        signing_cfgs: SigningCfg | list[SigningCfg],
         fee: str,
         gas_limit: int,
         memo: str | None = None,

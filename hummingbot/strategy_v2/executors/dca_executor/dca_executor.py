@@ -4,7 +4,7 @@ import asyncio
 from decimal import Decimal
 import logging
 import math
-from typing import Dict, Union
+from typing import Dict
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.common import OrderType, PositionAction, PriceType, TradeType
@@ -429,6 +429,24 @@ class DCAExecutor(PNLCalculatorMixin, TrailingStopMixin, OrderTrackingMixin, Ret
             self.close_type = CloseType.EARLY_STOP
             self.place_close_order_and_cancel_open_orders()
 
+    def _collect_held_position_orders(self) -> list[Dict]:
+        """Snapshot residual exposure for a forced stop at the shutdown deadline.
+
+        Every open- and close-side fill is reported; the position store nets them by
+        side, so a partially-closed DCA resolves to its remaining exposure.
+        """
+        held = list(self._held_position_orders)
+        seen = {order.get("client_order_id") for order in held}
+        for tracked in self._open_orders + self._close_orders:
+            if (
+                tracked.order
+                and tracked.executed_amount_base > Decimal("0")
+                and tracked.order.client_order_id not in seen
+            ):
+                seen.add(tracked.order.client_order_id)
+                held.append(tracked.order.to_json())
+        return held
+
     def place_close_order_and_cancel_open_orders(self, price: Decimal = Decimal("NaN")):
         """
         This method is responsible for placing the close order
@@ -535,7 +553,7 @@ class DCAExecutor(PNLCalculatorMixin, TrailingStopMixin, OrderTrackingMixin, Ret
                 active_order.order = in_flight_order
 
     def process_order_created_event(
-        self, event_tag: int, market: ConnectorBase, event: Union[BuyOrderCreatedEvent, SellOrderCreatedEvent]
+        self, event_tag: int, market: ConnectorBase, event: BuyOrderCreatedEvent | SellOrderCreatedEvent
     ):
         """
         This method is responsible for processing the order created event. Here we will add the InFlightOrder to the
@@ -602,4 +620,5 @@ class DCAExecutor(PNLCalculatorMixin, TrailingStopMixin, OrderTrackingMixin, Ret
             "max_retries": self._max_retries,
             "level_id": self.config.level_id,
             "order_ids": [order.order_id for order in self._open_orders + self._close_orders],
+            "held_position_orders": self._held_position_orders,
         }

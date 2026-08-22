@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import asyncio
 from decimal import Decimal
 from typing import Any, Dict
@@ -49,7 +47,6 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
         trading_pairs: list[str] | None = None,
         trading_required: bool = True,
     ) -> None:
-
         self.bitget_perpetual_api_key = bitget_perpetual_api_key
         self.bitget_perpetual_secret_key = bitget_perpetual_secret_key
         self.bitget_perpetual_passphrase = bitget_perpetual_passphrase
@@ -132,7 +129,7 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
             await self._initialize_position_mode()
 
     def supported_order_types(self) -> list[OrderType]:
-        return [OrderType.LIMIT, OrderType.MARKET]
+        return [OrderType.LIMIT, OrderType.LIMIT_MAKER, OrderType.MARKET]
 
     def supported_position_modes(self) -> list[PositionMode]:
         return [PositionMode.ONEWAY, PositionMode.HEDGE]
@@ -272,12 +269,18 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
     ) -> tuple[str, float]:
         product_type = await self.product_type_associated_to_trading_pair(trading_pair)
         margin_modes = {MarginMode.CROSS: "crossed", MarginMode.ISOLATED: "isolated"}
+        # LIMIT_MAKER maps to a post-only limit order (orderType "limit" + force "post_only").
+        force = (
+            CONSTANTS.POST_ONLY_TIME_IN_FORCE
+            if order_type is OrderType.LIMIT_MAKER
+            else CONSTANTS.DEFAULT_TIME_IN_FORCE
+        )
         data = {
             "marginCoin": self.get_buy_collateral_token(trading_pair),
             "symbol": await self.exchange_symbol_associated_to_pair(trading_pair),
             "productType": product_type,
             "size": str(amount),
-            "force": CONSTANTS.DEFAULT_TIME_IN_FORCE,
+            "force": force,
             "clientOid": order_id,
             "side": trade_type.name.lower(),
             "marginMode": margin_modes[self._margin_mode],

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from collections import OrderedDict, defaultdict
 import contextlib
 from dataclasses import dataclass
@@ -12,7 +10,8 @@ from os import listdir, scandir, unlink
 from os.path import isfile, join
 from pathlib import Path, PosixPath, PureWindowsPath
 import shutil
-from typing import Any, Callable, Dict, Generator, List, Tuple, Type, Union
+import types
+from typing import Any, Callable, Dict, Generator, List, Tuple, Type, Union, get_origin
 
 from pydantic import SecretStr, ValidationError
 from pydantic.fields import FieldInfo
@@ -247,8 +246,12 @@ class ClientConfigAdapter:
 
     @staticmethod
     def _is_union(t: Type) -> bool:
-        is_union = hasattr(t, "__origin__") and t.__origin__ == Union
-        return is_union
+        # Accept BOTH spellings: legacy `A | B` (get_origin -> typing.Union)
+        # and PEP 604 `A | B` (get_origin -> types.UnionType). The ci-base py312
+        # transform rewrites the former into the latter, so a check for only one
+        # form silently misclassifies a union as a plain submodule and makes
+        # _get_printable_value emit "" instead of the model's title.
+        return get_origin(t) in (Union, types.UnionType)
 
     def _dict_in_conf_order(self) -> dict[str, Any]:
         conf_dict = {}
@@ -531,7 +534,7 @@ def get_connector_class(connector_name: str) -> Callable:
     return getattr(mod, conn_setting.class_name())
 
 
-def get_strategy_config_map(strategy: str) -> Union[ClientConfigAdapter, dict[str, ConfigVar]] | None:
+def get_strategy_config_map(strategy: str) -> ClientConfigAdapter | dict[str, ConfigVar] | None:
     """
     Given the name of a strategy, find and load strategy-specific config map.
     """
@@ -612,7 +615,7 @@ def get_strategy_pydantic_config_cls(strategy_name: str):
     return pydantic_cm_class
 
 
-async def load_strategy_config_map_from_file(yml_path: Path) -> Union[ClientConfigAdapter, dict[str, ConfigVar]]:
+async def load_strategy_config_map_from_file(yml_path: Path) -> ClientConfigAdapter | dict[str, ConfigVar]:
     strategy_name = strategy_name_from_file(yml_path)
     config_cls = get_strategy_pydantic_config_cls(strategy_name)
     if config_cls is None:  # legacy
@@ -826,7 +829,7 @@ def save_to_yml(yml_path: Path, cm: ClientConfigAdapter):
 
 
 def write_config_to_yml(
-    strategy_config_map: Union[ClientConfigAdapter, Dict],
+    strategy_config_map: ClientConfigAdapter | Dict,
     strategy_file_name: str,
     client_config_map: ClientConfigAdapter,
 ):
@@ -892,7 +895,7 @@ def short_strategy_name(strategy: str) -> str:
         return strategy
 
 
-def all_configs_complete(strategy_config: Union[ClientConfigAdapter, Dict], client_config_map: ClientConfigAdapter):
+def all_configs_complete(strategy_config: ClientConfigAdapter | Dict, client_config_map: ClientConfigAdapter):
     return config_map_complete_legacy(strategy_config) if isinstance(strategy_config, Dict) else True
 
 

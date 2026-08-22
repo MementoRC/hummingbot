@@ -3,7 +3,7 @@ from __future__ import annotations
 from asyncio import wait_for
 from copy import deepcopy
 import json
-from typing import Any, Union
+from typing import Any
 
 from hummingbot.core.api_throttler.async_throttler_base import AsyncThrottlerBase
 from hummingbot.core.web_assistant.auth import AuthBase
@@ -46,7 +46,7 @@ class RESTAssistant:
         return_err: bool = False,
         timeout: float | None = None,
         headers: dict[str, Any] | None = None,
-    ) -> Union[str, dict[str, Any]]:
+    ) -> str | dict[str, Any]:
         response = await self.execute_request_and_get_response(
             url=url,
             throttler_limit_id=throttler_limit_id,
@@ -73,7 +73,6 @@ class RESTAssistant:
         timeout: float | None = None,
         headers: dict[str, Any] | None = None,
     ) -> RESTResponse:
-
         headers = headers or {}
 
         local_headers = {

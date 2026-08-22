@@ -5,7 +5,7 @@ from enum import Enum
 import importlib
 from os import DirEntry, scandir
 from os.path import exists, join
-from typing import TYPE_CHECKING, Any, Dict, NamedTuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, NamedTuple, cast
 
 from pydantic import SecretStr
 
@@ -401,7 +401,7 @@ class AllConnectorSettings:
 
     @staticmethod
     def _validate_trade_fee_schema(
-        exchange_name: str, trade_fee_schema: Union[TradeFeeSchema, list[float]] | None
+        exchange_name: str, trade_fee_schema: TradeFeeSchema | list[float] | None
     ) -> TradeFeeSchema:
         if not isinstance(trade_fee_schema, TradeFeeSchema):
             # backward compatibility
@@ -427,6 +427,17 @@ def gateway_connector_trading_pairs(connector: str) -> list[str]:
         if AllConnectorSettings.get_connector_settings()[conn].uses_gateway_generic_connector() and conn == connector:
             ret_val += t_pair
     return ret_val
+
+
+def connectable_exchange_names() -> set[str]:
+    """Exchanges a user can store API keys for: CEX/native connectors (not Ethereum-wallet, not the
+    gateway/DEX generic connector), minus probit_kr. Shared by the interactive `connect` command and
+    the `hbot connect` CLI so the connectable set can't drift between the two."""
+    return {
+        cs.name
+        for cs in AllConnectorSettings.get_connector_settings().values()
+        if not cs.use_ethereum_wallet and not cs.uses_gateway_generic_connector() and cs.name != "probit_kr"
+    }
 
 
 MAXIMUM_OUTPUT_PANE_LINE_COUNT = 1000

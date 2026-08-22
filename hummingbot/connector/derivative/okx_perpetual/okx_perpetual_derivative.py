@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict, Union
+from typing import Any, Dict
 
 from bidict import bidict
 
@@ -49,7 +49,6 @@ class OkxPerpetualDerivative(PerpetualDerivativePyBase):
         trading_required: bool = True,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
-
         self.okx_perpetual_api_key = okx_perpetual_api_key
         self.okx_perpetual_secret_key = okx_perpetual_secret_key
         self.okx_perpetual_passphrase = okx_perpetual_passphrase
@@ -909,7 +908,6 @@ class OkxPerpetualDerivative(PerpetualDerivativePyBase):
         trading_pair: str | None = None,
         **kwargs,
     ) -> dict[str, Any]:
-
         rest_assistant = await self._web_assistants_factory.get_rest_assistant()
         if limit_id is None:
             limit_id = web_utils.get_rest_api_limit_id_for_endpoint(
@@ -930,5 +928,5 @@ class OkxPerpetualDerivative(PerpetualDerivativePyBase):
         return resp
 
     @staticmethod
-    def _format_ret_code_for_print(ret_code: Union[str, int]) -> str:
+    def _format_ret_code_for_print(ret_code: str | int) -> str:
         return f"ret_code <{ret_code}>"

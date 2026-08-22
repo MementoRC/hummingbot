@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 from prompt_toolkit.utils import is_windows
@@ -155,7 +155,7 @@ class ConfigCommand:
 
     def build_df_data_from_config_map(
         self,  # type: HummingbotApplication
-        config_map: Union[ClientConfigAdapter, dict[str, ConfigVar]],
+        config_map: ClientConfigAdapter | dict[str, ConfigVar],
     ) -> list[tuple[str, Any]]:
         if isinstance(config_map, ClientConfigAdapter):
             data = self.build_model_df_data(config_map)

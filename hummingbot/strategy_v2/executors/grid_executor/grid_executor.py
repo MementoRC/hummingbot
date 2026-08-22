@@ -4,7 +4,7 @@ import asyncio
 from decimal import Decimal
 import logging
 import math
-from typing import Dict, Union
+from typing import Dict
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.common import OrderType, PositionAction, PriceType, TradeType
@@ -290,6 +290,27 @@ class GridExecutor(BalanceValidationMixin, TrailingStopMixin, ExecutorBase):
         self.cancel_open_orders()
         self._status = RunnableStatus.SHUTTING_DOWN
         self.close_type = CloseType.POSITION_HOLD if keep_position else CloseType.EARLY_STOP
+
+    def _collect_held_position_orders(self) -> list[Dict]:
+        """Snapshot residual exposure for a forced stop at the shutdown deadline.
+
+        Mirrors the POSITION_HOLD branch of control_shutdown_process without waiting
+        for open/close liquidity to drain: levels whose open order filled but whose
+        close order has not completed are the net exposure still on the exchange.
+        """
+        held = list(self._held_position_orders)
+        seen = {order.get("client_order_id") for order in held}
+        for state in (GridLevelStates.OPEN_ORDER_FILLED, GridLevelStates.CLOSE_ORDER_PLACED):
+            for level in self.levels_by_state.get(state, []):
+                tracked = (
+                    level.active_open_order if state == GridLevelStates.OPEN_ORDER_FILLED else level.active_close_order
+                )
+                if tracked and tracked.order:
+                    order_json = tracked.order.to_json()
+                    if order_json.get("client_order_id") not in seen:
+                        seen.add(order_json.get("client_order_id"))
+                        held.append(order_json)
+        return held
 
     def update_grid_levels(self):
         self.levels_by_state = {state: [] for state in GridLevelStates}
@@ -783,7 +804,7 @@ class GridExecutor(BalanceValidationMixin, TrailingStopMixin, ExecutorBase):
             if self._close_order and self._close_order.order_id == order_id:
                 self._close_order.order = in_flight_order
 
-    def process_order_created_event(self, _, market, event: Union[BuyOrderCreatedEvent, SellOrderCreatedEvent]):
+    def process_order_created_event(self, _, market, event: BuyOrderCreatedEvent | SellOrderCreatedEvent):
         """
         This method is responsible for processing the order created event. Here we will update the TrackedOrder with the
         order_id.
@@ -798,7 +819,7 @@ class GridExecutor(BalanceValidationMixin, TrailingStopMixin, ExecutorBase):
         """
         self.update_tracked_orders_with_order_id(event.order_id)
 
-    def process_order_completed_event(self, _, market, event: Union[BuyOrderCompletedEvent, SellOrderCompletedEvent]):
+    def process_order_completed_event(self, _, market, event: BuyOrderCompletedEvent | SellOrderCompletedEvent):
         """
         This method is responsible for processing the order completed event. Here we will check if the id is one of the
         tracked orders and update the state

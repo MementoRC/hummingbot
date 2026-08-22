@@ -172,6 +172,7 @@ class GatewaySwapCommand:
 
             quote_resp = await self._get_gateway_instance().quote_swap(
                 network=network,
+                chain=chain,
                 dex=dex_name,
                 trading_type=trading_type,
                 base_asset=base_token,

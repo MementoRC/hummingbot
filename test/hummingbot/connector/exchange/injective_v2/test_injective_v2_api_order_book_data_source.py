@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from decimal import Decimal
 import re
-from typing import Awaitable, Union
+from typing import Awaitable
 from unittest import TestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -130,7 +130,7 @@ class InjectiveV2APIOrderBookDataSourceTests(TestCase):
         if self._logs_event is not None:
             self._logs_event.set()
 
-    def is_logged(self, log_level: str, message: Union[str, re.Pattern]) -> bool:
+    def is_logged(self, log_level: str, message: str | re.Pattern) -> bool:
         expression = (
             re.compile(
                 f"^{message}$".replace(".", r"\.")

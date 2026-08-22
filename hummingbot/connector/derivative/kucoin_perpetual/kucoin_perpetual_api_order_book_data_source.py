@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from decimal import Decimal
 import time
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 
@@ -141,7 +141,6 @@ class KucoinPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         return channel
 
     async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
-
         event_type = raw_message["type"]
 
         if event_type == "message":
@@ -263,7 +262,7 @@ class KucoinPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         return data
 
     def _get_bids_and_asks_from_rest_msg_data(
-        self, trading_pair, snapshot: list[dict[str, Union[str, int, float]]]
+        self, trading_pair, snapshot: list[dict[str, str | int | float]]
     ) -> tuple[list[tuple[float, float]], list[tuple[float, float]]]:
         bids = [
             (float(row[0]), self._connector.get_value_of_contracts(trading_pair, Decimal(row[1])))
@@ -277,7 +276,7 @@ class KucoinPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
     @staticmethod
     def _get_bids_and_asks_from_ws_msg_data(
-        snapshot: dict[str, list[dict[str, Union[str, int, float]]]],
+        snapshot: dict[str, list[dict[str, str | int | float]]],
     ) -> tuple[list[tuple[float, float]], list[tuple[float, float]]]:
         bids = []
         asks = []

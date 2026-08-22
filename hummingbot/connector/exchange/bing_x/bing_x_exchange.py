@@ -4,7 +4,7 @@ import asyncio
 from decimal import ROUND_DOWN, Decimal
 import time
 from types import MethodType
-from typing import Any, Union
+from typing import Any
 
 from bidict import bidict
 
@@ -577,7 +577,7 @@ async def execute_request_with_content_type_none(
     return_err: bool = False,
     timeout: float | None = None,
     headers: dict[str, Any] | None = None,
-) -> Union[str, dict[str, Any]]:
+) -> str | dict[str, Any]:
     response = await self.execute_request_and_get_response(
         url=url,
         throttler_limit_id=throttler_limit_id,

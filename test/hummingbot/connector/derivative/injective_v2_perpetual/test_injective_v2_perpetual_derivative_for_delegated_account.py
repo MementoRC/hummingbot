@@ -6,7 +6,7 @@ from collections import OrderedDict
 from decimal import Decimal
 from functools import partial
 import json
-from typing import Any, Callable, Union
+from typing import Any, Callable
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
@@ -590,7 +590,6 @@ class InjectiveV2PerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpe
         mock_api: aioresponses,
         callback: Callable | None = lambda *args, **kwargs: None,
     ) -> list[str]:
-
         self.configure_all_symbols_response(mock_api=mock_api, callback=callback)
         return ""
 
@@ -599,7 +598,6 @@ class InjectiveV2PerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpe
         mock_api: aioresponses,
         callback: Callable | None = lambda *args, **kwargs: None,
     ) -> list[str]:
-
         self.exchange._data_source._query_executor._spot_markets_responses.put_nowait({})
         response = self.trading_rules_request_erroneous_mock_response
         self.exchange._data_source._query_executor._derivative_markets_responses.put_nowait(response)
@@ -660,7 +658,7 @@ class InjectiveV2PerpetualDerivativeTests(AbstractPerpetualDerivativeTests.Perpe
 
     def configure_canceled_order_status_response(
         self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
-    ) -> Union[str, list[str]]:
+    ) -> str | list[str]:
         self.configure_all_symbols_response(mock_api=mock_api)
 
         self.exchange._data_source._query_executor._spot_trades_responses.put_nowait(

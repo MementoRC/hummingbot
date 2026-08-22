@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict, Union
+from typing import Any, Dict
 
 from bidict import bidict
 
@@ -49,7 +49,6 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
         trading_required: bool = True,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
-
         self.bybit_perpetual_api_key = bybit_perpetual_api_key
         self.bybit_perpetual_secret_key = bybit_perpetual_secret_key
         self._trading_required = trading_required
@@ -900,7 +899,7 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
         return timestamp, funding_rate, payment
 
     @staticmethod
-    def _format_ret_code_for_print(ret_code: Union[str, int]) -> str:
+    def _format_ret_code_for_print(ret_code: str | int) -> str:
         return f"ret_code <{ret_code}>"
 
     async def _api_request(
@@ -915,7 +914,6 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
         trading_pair: str | None = None,
         **kwargs,
     ) -> dict[str, Any]:
-
         rest_assistant = await self._web_assistants_factory.get_rest_assistant()
         if limit_id is None:
             limit_id = web_utils.get_rest_api_limit_id_for_endpoint(

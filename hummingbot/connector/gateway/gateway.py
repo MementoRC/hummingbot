@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict, Union
+from typing import Any, Dict
 
 from pydantic import BaseModel, Field
 
@@ -635,7 +635,7 @@ class Gateway(GatewayBase):
         pool_address: str,
         dex_name: str,
         trading_type: str = "clmm",
-    ) -> Union[AMMPoolInfo, CLMMPoolInfo] | None:
+    ) -> AMMPoolInfo | CLMMPoolInfo | None:
         """
         Retrieves pool information by pool address directly.
 
@@ -673,7 +673,7 @@ class Gateway(GatewayBase):
 
     async def get_pool_info(
         self, trading_pair: str, dex_name: str, trading_type: str = "clmm"
-    ) -> Union[AMMPoolInfo, CLMMPoolInfo] | None:
+    ) -> AMMPoolInfo | CLMMPoolInfo | None:
         """
         Get pool information for a trading pair.
 
@@ -1196,7 +1196,7 @@ class Gateway(GatewayBase):
     @async_ttl_cache(ttl=5, maxsize=10)
     async def get_position_info(
         self, trading_pair: str, dex_name: str, trading_type: str = "clmm", position_address: str | None = None
-    ) -> Union[AMMPositionInfo, CLMMPositionInfo, None]:
+    ) -> AMMPositionInfo | CLMMPositionInfo | None:
         """Retrieves position information for a given liquidity position."""
         try:
             tokens = trading_pair.split("-")
@@ -1242,7 +1242,7 @@ class Gateway(GatewayBase):
 
     async def get_user_positions(
         self, dex_name: str, trading_type: str = "clmm", pool_address: str | None = None
-    ) -> list[Union[AMMPositionInfo, CLMMPositionInfo]]:
+    ) -> list[AMMPositionInfo | CLMMPositionInfo]:
         """Fetch all user positions for this connector and wallet."""
         positions = []
 

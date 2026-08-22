@@ -35,7 +35,7 @@ class KrakenAPIOrderBookDataSource(OrderBookTrackerDataSource):
         trading_pairs: list[str],
         connector: "KrakenExchange",
         api_factory: WebAssistantsFactory,
-        # throttler: Optional[AsyncThrottler] = None
+        # throttler: AsyncThrottler | None = None
     ):
         super().__init__(trading_pairs)
         self._connector = connector
@@ -147,7 +147,6 @@ class KrakenAPIOrderBookDataSource(OrderBookTrackerDataSource):
         return ws
 
     async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
-
         trades = [
             {"pair": convert_from_exchange_trading_pair(raw_message[-1]), "trade": trade} for trade in raw_message[1]
         ]

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, time
 from decimal import Decimal
-from typing import Dict, Union
+from typing import Dict
 
 from pydantic import ConfigDict, Field, field_validator, model_validator
 
@@ -41,7 +41,7 @@ class FromDateToDateModel(BaseClientModel):
 
     @field_validator("start_datetime", "end_datetime", mode="before")
     @classmethod
-    def validate_execution_time(cls, v: Union[str, datetime]) -> str | None:
+    def validate_execution_time(cls, v: str | datetime) -> str | None:
         if not isinstance(v, str):
             v = v.strftime("%Y-%m-%d %H:%M:%S")
         ret = validate_datetime_iso_string(v)
@@ -65,7 +65,7 @@ class DailyBetweenTimesModel(BaseClientModel):
 
     @field_validator("start_time", "end_time", mode="before")
     @classmethod
-    def validate_execution_time(cls, v: Union[str, datetime]) -> str | None:
+    def validate_execution_time(cls, v: str | datetime) -> str | None:
         if not isinstance(v, str):
             v = v.strftime("%H:%M:%S")
         ret = validate_time_iso_string(v)
@@ -159,7 +159,7 @@ HANGING_ORDER_MODELS = {
 
 class AvellanedaMarketMakingConfigMap(BaseTradingStrategyConfigMap):
     strategy: str = Field(default="avellaneda_market_making")
-    execution_timeframe_mode: Union[InfiniteModel, FromDateToDateModel, DailyBetweenTimesModel] = Field(
+    execution_timeframe_mode: InfiniteModel | FromDateToDateModel | DailyBetweenTimesModel = Field(
         default=...,
         description="The execution timeframe.",
         json_schema_extra={
@@ -263,7 +263,7 @@ class AvellanedaMarketMakingConfigMap(BaseTradingStrategyConfigMap):
         le=10_000,
         json_schema_extra={"prompt": "Enter amount of ticks that will be stored to estimate order book liquidity"},
     )
-    order_levels_mode: Union[SingleOrderLevelModel, MultiOrderLevelModel] = Field(
+    order_levels_mode: SingleOrderLevelModel | MultiOrderLevelModel = Field(
         default=SingleOrderLevelModel.model_construct(),
         description="Allows activating multi-order levels.",
         json_schema_extra={"prompt": f"Select the order levels mode ({'/'.join(list(ORDER_LEVEL_MODELS.keys()))})"},
@@ -272,7 +272,7 @@ class AvellanedaMarketMakingConfigMap(BaseTradingStrategyConfigMap):
         default=None,
         description="Allows custom specification of the order levels and their spreads and amounts.",
     )
-    hanging_orders_mode: Union[IgnoreHangingOrdersModel, TrackHangingOrdersModel] = Field(
+    hanging_orders_mode: IgnoreHangingOrdersModel | TrackHangingOrdersModel = Field(
         default=IgnoreHangingOrdersModel(),
         description="When tracking hanging orders, the orders on the side opposite to the filled orders remain active.",
         json_schema_extra={"prompt": f"Select the hanging orders mode ({'/'.join(list(HANGING_ORDER_MODELS.keys()))})"},
@@ -298,7 +298,7 @@ class AvellanedaMarketMakingConfigMap(BaseTradingStrategyConfigMap):
 
     @field_validator("execution_timeframe_mode", mode="before")
     @classmethod
-    def validate_execution_timeframe(cls, v: Union[str, InfiniteModel, FromDateToDateModel, DailyBetweenTimesModel]):
+    def validate_execution_timeframe(cls, v: str | InfiniteModel | FromDateToDateModel | DailyBetweenTimesModel):
         if isinstance(v, (InfiniteModel, FromDateToDateModel, DailyBetweenTimesModel, Dict)):
             sub_model = v
         elif v not in EXECUTION_TIMEFRAME_MODELS:
@@ -327,7 +327,7 @@ class AvellanedaMarketMakingConfigMap(BaseTradingStrategyConfigMap):
 
     @field_validator("order_levels_mode", mode="before")
     @classmethod
-    def validate_order_levels_mode(cls, v: Union[str, SingleOrderLevelModel, MultiOrderLevelModel]):
+    def validate_order_levels_mode(cls, v: str | SingleOrderLevelModel | MultiOrderLevelModel):
         if isinstance(v, (SingleOrderLevelModel, MultiOrderLevelModel, Dict)):
             sub_model = v
         elif v not in ORDER_LEVEL_MODELS:
@@ -338,7 +338,7 @@ class AvellanedaMarketMakingConfigMap(BaseTradingStrategyConfigMap):
 
     @field_validator("hanging_orders_mode", mode="before")
     @classmethod
-    def validate_hanging_orders_mode(cls, v: Union[str, IgnoreHangingOrdersModel, TrackHangingOrdersModel]):
+    def validate_hanging_orders_mode(cls, v: str | IgnoreHangingOrdersModel | TrackHangingOrdersModel):
         if isinstance(v, (TrackHangingOrdersModel, IgnoreHangingOrdersModel, Dict)):
             sub_model = v
         elif v not in HANGING_ORDER_MODELS:

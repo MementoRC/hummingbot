@@ -147,7 +147,6 @@ class HtxAPIOrderBookDataSource(OrderBookTrackerDataSource):
         return retval
 
     async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
-
         ex_symbol = raw_message["ch"].split(".")[1]
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(symbol=ex_symbol)
         for data in raw_message["tick"]["data"]:

@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from decimal import Decimal
 import logging
-from typing import Dict, Union
+from typing import Dict
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.common import PositionAction, PriceType, TradeType
@@ -180,7 +180,7 @@ class TWAPExecutor(PNLCalculatorMixin, OrderTrackingMixin, RetryMixin, BalanceVa
         self._order_plan[timestamp] = TrackedOrder(order_id=order_id)
 
     def process_order_created_event(
-        self, event_tag: int, market: ConnectorBase, event: Union[BuyOrderCreatedEvent, SellOrderCreatedEvent]
+        self, event_tag: int, market: ConnectorBase, event: BuyOrderCreatedEvent | SellOrderCreatedEvent
     ):
         """
         This method is responsible for processing the order created event. Here we will add the InFlightOrder to the
@@ -211,7 +211,7 @@ class TWAPExecutor(PNLCalculatorMixin, OrderTrackingMixin, RetryMixin, BalanceVa
                 active_order.order = in_flight_order
 
     def process_order_completed_event(
-        self, event_tag: int, market: ConnectorBase, event: Union[BuyOrderCompletedEvent, SellOrderCompletedEvent]
+        self, event_tag: int, market: ConnectorBase, event: BuyOrderCompletedEvent | SellOrderCompletedEvent
     ):
         """
         This method is responsible for processing the order completed event. Here we will check if the order id is one

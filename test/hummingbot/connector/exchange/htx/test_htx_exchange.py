@@ -5,7 +5,7 @@ import contextlib
 from decimal import Decimal
 import json
 import re
-from typing import Any, Callable, Union
+from typing import Any, Callable
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
@@ -418,7 +418,6 @@ class HtxExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests):
         return "100001"
 
     def create_exchange_instance(self):
-
         instance = HtxExchange(
             htx_api_key="testAPIKey",
             htx_secret_key="testSecret",
@@ -514,7 +513,7 @@ class HtxExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests):
 
     def configure_canceled_order_status_response(
         self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
-    ) -> Union[str, list[str]]:
+    ) -> str | list[str]:
         url = web_utils.private_rest_url(CONSTANTS.ORDER_DETAIL_URL).format(order.exchange_order_id)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + r"\?.*")
         response = self._order_status_request_canceled_mock_response(order=order)

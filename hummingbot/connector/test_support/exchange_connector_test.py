@@ -5,7 +5,7 @@ import asyncio
 from decimal import Decimal
 import json
 import re
-from typing import Any, Awaitable, Callable, Union
+from typing import Any, Awaitable, Callable
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
@@ -273,7 +273,7 @@ class AbstractExchangeConnectorTests:
             order: InFlightOrder,
             mock_api: aioresponses,
             callback: Callable | None = lambda *args, **kwargs: None,
-        ) -> Union[str, list[str]]:
+        ) -> str | list[str]:
             """
             :return: the URL configured
             """
@@ -428,7 +428,6 @@ class AbstractExchangeConnectorTests:
             mock_api: aioresponses,
             callback: Callable | None = lambda *args, **kwargs: None,
         ) -> list[str]:
-
             url = self.all_symbols_url
             response = self.all_symbols_request_mock_response
             mock_api.get(url, body=json.dumps(response), callback=callback)
@@ -439,7 +438,6 @@ class AbstractExchangeConnectorTests:
             mock_api: aioresponses,
             callback: Callable | None = lambda *args, **kwargs: None,
         ) -> list[str]:
-
             url = self.trading_rules_url
             response = self.trading_rules_request_mock_response
             mock_api.get(url, body=json.dumps(response), callback=callback)
@@ -450,7 +448,6 @@ class AbstractExchangeConnectorTests:
             mock_api: aioresponses,
             callback: Callable | None = lambda *args, **kwargs: None,
         ) -> list[str]:
-
             url = self.trading_rules_url
             response = self.trading_rules_request_erroneous_mock_response
             mock_api.get(url, body=json.dumps(response), callback=callback)
@@ -1842,7 +1839,7 @@ class AbstractExchangeConnectorTests:
                 )
             }
 
-        def _all_executed_requests(self, api_mock: aioresponses, url: Union[str, re.Pattern]) -> list[RequestCall]:
+        def _all_executed_requests(self, api_mock: aioresponses, url: str | re.Pattern) -> list[RequestCall]:
             request_calls = []
             for key, value in api_mock.requests.items():
                 req_url = key[1].human_repr()
@@ -1857,7 +1854,6 @@ class AbstractExchangeConnectorTests:
             mock_api: aioresponses,
             callback: Callable | None = lambda *args, **kwargs: None,
         ) -> str:
-
             url = self.balance_url
             mock_api.get(
                 re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?")),

@@ -1,5 +1,3 @@
-from typing import Union
-
 from prompt_toolkit.styles import Style
 from prompt_toolkit.utils import is_windows
 
@@ -12,7 +10,7 @@ def load_style(config_map: ClientConfigAdapter):
     """
     Return a dict mapping {ui_style_name -> style_dict}.
     """
-    config_map: Union[ClientConfigAdapter, ClientConfigMap] = config_map  # to enable IDE auto-complete
+    config_map: ClientConfigAdapter | ClientConfigMap = config_map  # to enable IDE auto-complete
     # Load config
     color_top_pane = config_map.color.top_pane
     color_bottom_pane = config_map.color.bottom_pane

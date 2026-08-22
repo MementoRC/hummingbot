@@ -1,7 +1,7 @@
+from decimal import Decimal
 import logging
 import os
 import time
-from decimal import Decimal
 from typing import Any, Dict
 
 import pandas as pd
@@ -57,7 +57,7 @@ class XRPLSimpleArb(StrategyV2Base):
     It uses a connector to get the current price and manage liquidity in AMM Pools
     """
 
-    def __init__(self, connectors: Dict[str, ConnectorBase], config: XRPLSimpleArbConfig):
+    def __init__(self, connectors: dict[str, ConnectorBase], config: XRPLSimpleArbConfig):
         super().__init__(connectors, config)
         self.config = config
         self.exchange_xrpl = "xrpl"
@@ -130,7 +130,7 @@ class XRPLSimpleArb(StrategyV2Base):
         vwap_prices = self.get_vwap_prices_for_amount(self.config.order_amount_in_base)
         proposal = self.check_profitability_and_create_proposal(vwap_prices)
         if len(proposal) > 0:
-            proposal_adjusted: Dict[str, OrderCandidate] = self.adjust_proposal_to_budget(proposal)
+            proposal_adjusted: dict[str, OrderCandidate] = self.adjust_proposal_to_budget(proposal)
             # self.place_orders(proposal_adjusted)
 
             self.logger().info(f"Proposal: {proposal}")
@@ -245,7 +245,7 @@ class XRPLSimpleArb(StrategyV2Base):
 
         return vwap_prices
 
-    def get_fees_percentages(self, vwap_prices: Dict[str, Any]) -> Dict:
+    def get_fees_percentages(self, vwap_prices: dict[str, Any]) -> Dict:
         # We assume that the fee percentage for buying or selling is the same
         if self.amm_info is None:
             return {}
@@ -264,7 +264,7 @@ class XRPLSimpleArb(StrategyV2Base):
 
         return {self.exchange_xrpl: xrpl_fee, self.exchange_cex: cex_fee}
 
-    def get_profitability_analysis(self, vwap_prices: Dict[str, Any]) -> Dict:
+    def get_profitability_analysis(self, vwap_prices: dict[str, Any]) -> Dict:
         if self.amm_info is None:
             return {}
 
@@ -301,7 +301,7 @@ class XRPLSimpleArb(StrategyV2Base):
             },
         }
 
-    def check_profitability_and_create_proposal(self, vwap_prices: Dict[str, Any]) -> Dict:
+    def check_profitability_and_create_proposal(self, vwap_prices: dict[str, Any]) -> Dict:
         if self.amm_info is None:
             return {}
 
@@ -347,12 +347,12 @@ class XRPLSimpleArb(StrategyV2Base):
 
         return proposal
 
-    def adjust_proposal_to_budget(self, proposal: Dict[str, OrderCandidate]) -> Dict[str, OrderCandidate]:
+    def adjust_proposal_to_budget(self, proposal: dict[str, OrderCandidate]) -> dict[str, OrderCandidate]:
         for connector, order in proposal.items():
             proposal[connector] = self.connectors[connector].budget_checker.adjust_candidate(order, all_or_none=True)
         return proposal
 
-    def place_orders(self, proposal: Dict[str, OrderCandidate]) -> None:
+    def place_orders(self, proposal: dict[str, OrderCandidate]) -> None:
         for connector, order in proposal.items():
             self.place_order(connector_name=connector, order=order)
 

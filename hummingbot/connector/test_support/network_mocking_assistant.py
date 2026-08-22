@@ -5,7 +5,7 @@ from collections import defaultdict, deque
 import contextlib
 import functools
 import logging
-from typing import Any, Union
+from typing import Any
 from unittest.mock import AsyncMock, PropertyMock
 import uuid
 
@@ -260,7 +260,7 @@ class NetworkMockingAssistant:
         self._incoming_websocket_aiohttp_queues[key].put_nowait(msg)
         self._all_incoming_websocket_aiohttp_delivered_event[key].clear()
 
-    def add_websocket_aiohttp_exception(self, websocket_mock, exception: Union[Exception, BaseException]):
+    def add_websocket_aiohttp_exception(self, websocket_mock, exception: Exception | BaseException):
         self.verify_async_init()
         key: uuid.UUID = get_stable_key(websocket_mock)
         self._incoming_websocket_aiohttp_queues[key].put_nowait(exception)

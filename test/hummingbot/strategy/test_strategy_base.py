@@ -3,7 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 import logging
 import time
-from typing import Any, Union
+from typing import Any
 import unittest
 import unittest.mock
 
@@ -80,8 +80,7 @@ class StrategyBaseUnitTests(unittest.TestCase):
         self.strategy.order_tracker._set_current_timestamp(1640001112.223)
 
     @staticmethod
-    def simulate_order_filled(market_info: MarketTradingPairTuple, order: Union[LimitOrder, MarketOrder]):
-
+    def simulate_order_filled(market_info: MarketTradingPairTuple, order: LimitOrder | MarketOrder):
         market_info.market.trigger_event(
             MarketEvent.OrderFilled,
             OrderFilledEvent(
@@ -120,7 +119,6 @@ class StrategyBaseUnitTests(unittest.TestCase):
         self.assertEqual(1, len(self.strategy.trades))
 
     def test_add_markets(self):
-
         self.assertEqual(1, len(self.strategy.active_markets))
 
         new_market: MockPaperExchange = MockPaperExchange()
@@ -136,7 +134,6 @@ class StrategyBaseUnitTests(unittest.TestCase):
         self.assertEqual(0, len(self.strategy.active_markets))
 
     def test_cum_flat_fees(self):
-
         fee_asset = self.trading_pair.split("-")[1]
         trades: list[tuple[str, Decimal]] = [(fee_asset, Decimal(f"{i}")) for i in range(5)]
 
@@ -364,7 +361,6 @@ class StrategyBaseUnitTests(unittest.TestCase):
         self.assertEqual(1, len(self.strategy.order_tracker.tracked_market_orders))
 
     def test_track_restored_order(self):
-
         self.assertEqual(0, len(self.market.limit_orders))
 
         saved_states: dict[str, Any] = {

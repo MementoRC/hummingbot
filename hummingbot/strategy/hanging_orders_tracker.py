@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from decimal import Decimal
 import logging
-from typing import Union
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.limit_order import LimitOrder
@@ -103,7 +102,6 @@ class HangingOrdersTracker:
                 market.remove_listener(event_pair[0], event_pair[1])
 
     def _did_cancel_order(self, event_tag: int, market: ConnectorBase, event: OrderCancelledEvent):
-
         self._process_cancel_as_part_of_renew(event)
 
         self.orders_being_cancelled.discard(event.order_id)
@@ -121,16 +119,16 @@ class HangingOrdersTracker:
             self.remove_order(limit_order_to_be_removed)
 
     def _did_complete_buy_order(
-        self, event_tag: int, market: ConnectorBase, event: Union[BuyOrderCompletedEvent, SellOrderCompletedEvent]
+        self, event_tag: int, market: ConnectorBase, event: BuyOrderCompletedEvent | SellOrderCompletedEvent
     ):
         self._did_complete_order(event, True)
 
     def _did_complete_sell_order(
-        self, event_tag: int, market: ConnectorBase, event: Union[BuyOrderCompletedEvent, SellOrderCompletedEvent]
+        self, event_tag: int, market: ConnectorBase, event: BuyOrderCompletedEvent | SellOrderCompletedEvent
     ):
         self._did_complete_order(event, False)
 
-    def _did_complete_order(self, event: Union[BuyOrderCompletedEvent, SellOrderCompletedEvent], is_buy: bool):
+    def _did_complete_order(self, event: BuyOrderCompletedEvent | SellOrderCompletedEvent, is_buy: bool):
         hanging_order = next(
             (
                 hanging_order
@@ -149,7 +147,6 @@ class HangingOrdersTracker:
                     pair.filled_sell = pair.filled_sell or not is_buy
 
     def _did_complete_hanging_order(self, order: HangingOrder):
-
         if order:
             order_side = "BUY" if order.is_buy else "SELL"
             self.completed_hanging_orders.add(order)

@@ -4,7 +4,7 @@ from decimal import Decimal
 import importlib
 import inspect
 import os
-from typing import Dict, List, Union
+from typing import Dict, List
 
 import numpy as np
 import pandas as pd
@@ -277,7 +277,7 @@ class BacktestingEngineBase:
             trade_cost (float): The cost per trade.
 
         Returns:
-            List[ExecutorInfo]: List of executor information objects detailing the simulation results.
+            list[ExecutorInfo]: List of executor information objects detailing the simulation results.
         """
         processed_features = self.prepare_market_data()
         self.active_executor_simulations: list[ExecutorSimulation] = []
@@ -434,7 +434,7 @@ class BacktestingEngineBase:
 
     def simulate_executor(
         self,
-        config: Union[PositionExecutorConfig, DCAExecutorConfig, GridExecutorConfig, OrderExecutorConfig],
+        config: PositionExecutorConfig | DCAExecutorConfig | GridExecutorConfig | OrderExecutorConfig,
         df: pd.DataFrame,
         trade_cost: float,
     ) -> ExecutorSimulation | None:
@@ -442,7 +442,7 @@ class BacktestingEngineBase:
         Simulates the execution of a trading strategy given a configuration.
 
         Args:
-            config (Union[PositionExecutorConfig, DCAExecutorConfig, GridExecutorConfig, OrderExecutorConfig]): The configuration of the executor.
+            config (PositionExecutorConfig | DCAExecutorConfig | GridExecutorConfig | OrderExecutorConfig): The configuration of the executor.
             df (pd.DataFrame): DataFrame containing the market data from the start time.
             trade_cost (float): The cost per trade.
 
@@ -468,7 +468,7 @@ class BacktestingEngineBase:
 
     @staticmethod
     def _get_executor_max_timestamp(
-        config: Union[PositionExecutorConfig, DCAExecutorConfig, GridExecutorConfig, OrderExecutorConfig],
+        config: PositionExecutorConfig | DCAExecutorConfig | GridExecutorConfig | OrderExecutorConfig,
         last_index: float,
     ) -> float:
         if isinstance(config, OrderExecutorConfig):
