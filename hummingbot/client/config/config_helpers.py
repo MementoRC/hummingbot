@@ -313,7 +313,6 @@ class ClientConfigAdapter:
         self,
         fragments_with_comments: list[str],
     ):
-
         fragments_with_comments.append("\n")
         first_level_conf_items_generator = (item for item in self.traverse() if item.depth == 0)
 

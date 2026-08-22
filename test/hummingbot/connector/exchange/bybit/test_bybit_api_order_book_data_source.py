@@ -224,7 +224,6 @@ class TestBybitAPIOrderBookDataSource(IsolatedAsyncioWrapperTestCase):
     async def test_listen_for_subscriptions_sends_ping_message_before_ping_interval_finishes(
         self, time_mock, ws_connect_mock
     ):
-
         time_mock.side_effect = [1000, 1100, 1101, 1102]  # Simulate first ping interval is already due
 
         ws_connect_mock.return_value = self.mocking_assistant.create_websocket_mock()

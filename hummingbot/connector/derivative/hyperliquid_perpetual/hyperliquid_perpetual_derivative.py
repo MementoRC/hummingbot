@@ -193,29 +193,10 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
 
     def quantize_order_price(self, trading_pair: str, price: Decimal) -> Decimal:
         """
-        Align price to Hyperliquid's limitPx rules: at most 5 significant figures
-        and at most ``MAX_DECIMALS - szDecimals`` decimal places.
-
-        Rounding to 6 decimals satisfies neither on its own. ARB-USD carries
-        szDecimals=1, so it accepts 5 decimals, but a market order priced at
-        BestBid * 1.05 quantizes to 0.094605 and the exchange rejects it with
-        "Order has invalid price." Rounding to min_price_increment fixes that:
-        the increment is derived from the markPx decimals, which for perpetuals
-        is never finer than szDecimals allows.
+        Applies trading rule to quantize order price.
         """
-        # HL allows at most 5 significant figures on limitPx
-        price = Decimal(str(float(f"{price:.5g}")))
-        trading_rule = self._trading_rules.get(trading_pair)
-        if trading_rule is not None and trading_rule.min_price_increment:
-            tick = trading_rule.min_price_increment
-            quantized = (price / tick).quantize(Decimal("1"), rounding=ROUND_HALF_UP) * tick
-            # Multiplying back by the tick inflates the scale (10000 -> 10000.0000).
-            # Strip the padding, without letting normalize() pick exponent form (1E+4).
-            quantized = quantized.normalize()
-            if quantized.as_tuple().exponent > 0:
-                quantized = quantized.quantize(Decimal("1"))
-            return quantized
-        return price
+        d_price = Decimal(round(float(f"{price:.5g}"), 6))
+        return d_price
 
     @staticmethod
     def _is_all_perp_metas_response(exchange_info_dex: Any) -> bool:
@@ -664,7 +645,6 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
         position_action: PositionAction = PositionAction.NIL,
         **kwargs,
     ) -> tuple[str, float]:
-
         coin = await self.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
         param_order_type = {"limit": {"tif": "Gtc"}}
         if order_type is OrderType.LIMIT_MAKER:

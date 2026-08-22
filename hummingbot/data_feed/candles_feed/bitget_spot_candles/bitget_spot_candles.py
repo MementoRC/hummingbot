@@ -88,7 +88,6 @@ class BitgetSpotCandles(CandlesBase):
         end_time: int | None = None,
         limit: int | None = CONSTANTS.MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST,
     ) -> dict:
-
         params = {"symbol": self._ex_trading_pair, "granularity": CONSTANTS.INTERVALS[self.interval], "limit": limit}
 
         if start_time is not None and end_time is not None:

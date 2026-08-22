@@ -16,7 +16,6 @@ from hummingbot.connector.exchange.gemini.gemini_web_utils import (
 
 
 class GeminiWebUtilsTests(TestCase):
-
     @staticmethod
     def async_run_with_timeout(coroutine, timeout: float = 1):
         return asyncio.get_event_loop().run_until_complete(asyncio.wait_for(coroutine, timeout))
