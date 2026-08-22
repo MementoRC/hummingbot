@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 import time
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING
 
 from hummingbot.connector.exchange.mexc import mexc_constants as CONSTANTS, mexc_web_utils as web_utils
 from hummingbot.connector.exchange.mexc.mexc_auth import MexcAuth
@@ -26,12 +28,12 @@ class MexcAPIUserStreamDataSource(UserStreamTrackerDataSource):
     LISTEN_KEY_RETRY_INTERVAL = 5.0  # Delay between listen key management iterations
     MAX_RETRIES = 3  # Maximum retries for obtaining a new listen key
 
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
         auth: MexcAuth,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "MexcExchange",
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -262,7 +264,7 @@ class MexcAPIUserStreamDataSource(UserStreamTrackerDataSource):
         ping_request: WSJSONRequest = WSJSONRequest(payload=payload)
         await websocket_assistant.send(ping_request)
 
-    async def _on_user_stream_interruption(self, websocket_assistant: Optional[WSAssistant]):
+    async def _on_user_stream_interruption(self, websocket_assistant: WSAssistant | None):
         """
         Handles websocket disconnection by cleaning up resources.
 

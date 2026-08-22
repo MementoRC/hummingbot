@@ -1,6 +1,6 @@
 import copy
 from decimal import Decimal
-from typing import Dict, List
+from typing import List
 import unittest
 import unittest.mock
 
@@ -32,7 +32,7 @@ class MockTestConnector(ConnectorBase):
         self._event_logs = []
 
     @property
-    def in_flight_orders(self) -> Dict[str, InFlightOrder]:
+    def in_flight_orders(self) -> dict[str, InFlightOrder]:
         return self._in_flight_orders
 
     @property

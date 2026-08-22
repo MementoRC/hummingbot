@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from concurrent.futures import ThreadPoolExecutor
 import logging
 from os import listdir, path
@@ -70,7 +72,7 @@ def set_data_path(path: str):
     _data_path = path
 
 
-_independent_package: Optional[bool] = None
+_independent_package: bool | None = None
 
 
 def is_independent_package() -> bool:
@@ -135,7 +137,7 @@ def get_logging_conf(conf_filename: str = "hummingbot_logs.yml"):
 def init_logging(
     conf_filename: str,
     client_config_map: "_ClientConfigAdapter",
-    override_log_level: Optional[str] = None,
+    override_log_level: str | None = None,
     strategy_file_path: str = "hummingbot",
 ):
     import io
@@ -173,7 +175,7 @@ def init_logging(
         logging.config.dictConfig(config_dict)
 
 
-def get_strategy_list() -> List[str]:
+def get_strategy_list() -> list[str]:
     """
     Search `hummingbot.strategy` folder for all available strategies
     Automatically hide all strategies that starts with "dev" if on master branch

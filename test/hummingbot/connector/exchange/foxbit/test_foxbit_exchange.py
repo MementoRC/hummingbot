@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import json
 import re
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
@@ -106,7 +108,7 @@ class FoxbitExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests)
         }
 
     @property
-    def all_symbols_including_invalid_pair_mock_response(self) -> Tuple[str, Any]:
+    def all_symbols_including_invalid_pair_mock_response(self) -> tuple[str, Any]:
         response = {
             "timezone": "UTC",
             "serverTime": 1639598493658,
@@ -336,7 +338,7 @@ class FoxbitExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests)
         self.assertEqual(order.exchange_order_id, str(request_params["orderId"]))
 
     def configure_successful_cancelation_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.CANCEL_ORDER_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -345,7 +347,7 @@ class FoxbitExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests)
         return url
 
     def configure_erroneous_cancelation_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.CANCEL_ORDER_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -356,7 +358,7 @@ class FoxbitExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests)
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.CANCEL_ORDER_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -365,7 +367,7 @@ class FoxbitExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests)
 
     def configure_one_successful_one_erroneous_cancel_all_response(
         self, successful_order: InFlightOrder, erroneous_order: InFlightOrder, mock_api: aioresponses
-    ) -> List[str]:
+    ) -> list[str]:
         """
         :return: a list of all configured URLs for the cancelations
         """
@@ -377,7 +379,7 @@ class FoxbitExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests)
         return all_urls
 
     def configure_completely_filled_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.GET_ORDER_BY_CLIENT_ID.format(order.client_order_id))
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -386,7 +388,7 @@ class FoxbitExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests)
         return url
 
     def configure_canceled_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.GET_ORDER_BY_CLIENT_ID.format(order.exchange_order_id))
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -395,13 +397,13 @@ class FoxbitExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests)
         return url
 
     def configure_erroneous_http_fill_trade_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         # Trade fills not requested during status update in this connector
         pass
 
     def configure_open_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         """
         :return: the URL configured
@@ -413,7 +415,7 @@ class FoxbitExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests)
         return url
 
     def configure_http_error_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.GET_ORDER_BY_CLIENT_ID.format(order.exchange_order_id))
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -421,7 +423,7 @@ class FoxbitExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests)
         return url
 
     def configure_partially_filled_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.GET_ORDER_BY_CLIENT_ID.format(order.exchange_order_id))
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -430,15 +432,15 @@ class FoxbitExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests)
         return url
 
     def configure_order_not_found_error_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
-    ) -> List[str]:
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
+    ) -> list[str]:
         url = web_utils.private_rest_url(CONSTANTS.ORDER_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
         mock_api.get(regex_url, status=404, callback=callback)
         return [url]
 
     def configure_partial_fill_trade_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(path_url=CONSTANTS.MY_TRADES_PATH_URL)
         regex_url = re.compile(url + r"\?.*")
@@ -447,7 +449,7 @@ class FoxbitExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests)
         return url
 
     def configure_full_fill_trade_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(path_url=CONSTANTS.MY_TRADES_PATH_URL)
         regex_url = re.compile(url + r"\?.*")
@@ -947,7 +949,7 @@ class FoxbitExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests)
         self.assertEqual(expected_value, ret_value)
 
     def _validate_auth_credentials_taking_parameters_from_argument(
-        self, request_call_tuple: RequestCall, params: Dict[str, Any]
+        self, request_call_tuple: RequestCall, params: dict[str, Any]
     ):
         request_headers = request_call_tuple.kwargs["headers"]
         self.assertIn("X-FB-ACCESS-SIGNATURE", request_headers)

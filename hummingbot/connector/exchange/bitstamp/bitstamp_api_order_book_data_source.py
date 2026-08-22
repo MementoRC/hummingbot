@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.exchange.bitstamp import bitstamp_constants as CONSTANTS, bitstamp_web_utils as web_utils
 from hummingbot.connector.exchange.bitstamp.bitstamp_order_book import BitstampOrderBook
@@ -16,13 +18,13 @@ if TYPE_CHECKING:
 
 
 class BitstampAPIOrderBookDataSource(OrderBookTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
     _DYNAMIC_SUBSCRIBE_ID_START = 100
     _next_subscribe_id: int = _DYNAMIC_SUBSCRIBE_ID_START
 
     def __init__(
         self,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "BitstampExchange",
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -35,10 +37,10 @@ class BitstampAPIOrderBookDataSource(OrderBookTrackerDataSource):
         self._api_factory = api_factory
         self._channel_associated_to_tradingpair = {}
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
-    async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, Any]:
+    async def _request_order_book_snapshot(self, trading_pair: str) -> dict[str, Any]:
         """
         Retrieves a copy of the full order book from the exchange, for a particular trading pair.
 
@@ -100,20 +102,20 @@ class BitstampAPIOrderBookDataSource(OrderBookTrackerDataSource):
         return ws
 
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBookMessage:
-        snapshot: Dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
+        snapshot: dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
         snapshot_msg: OrderBookMessage = BitstampOrderBook.snapshot_message_from_exchange(
             snapshot, time.time(), metadata={"trading_pair": trading_pair}
         )
         return snapshot_msg
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         trading_pair = self._channel_associated_to_tradingpair.get(raw_message["channel"])
 
         trade_message = BitstampOrderBook.trade_message_from_exchange(raw_message, {"trading_pair": trading_pair})
 
         message_queue.put_nowait(trade_message)
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         trading_pair = self._channel_associated_to_tradingpair.get(raw_message["channel"])
 
         order_book_message: OrderBookMessage = BitstampOrderBook.diff_message_from_exchange(
@@ -122,11 +124,11 @@ class BitstampAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
         message_queue.put_nowait(order_book_message)
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         return event_message.get("event", "")
 
     async def _process_message_for_unknown_channel(
-        self, event_message: Dict[str, Any], websocket_assistant: WSAssistant
+        self, event_message: dict[str, Any], websocket_assistant: WSAssistant
     ):
         event = event_message.get("event", "")
         channel = event_message.get("channel")

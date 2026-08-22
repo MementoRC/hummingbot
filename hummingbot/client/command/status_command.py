@@ -2,7 +2,7 @@ import asyncio
 from collections import OrderedDict, deque
 import threading
 import time
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING
 
 import pandas as pd
 
@@ -37,7 +37,7 @@ class StatusCommand:
     def _format_application_warnings(
         self,  # type: HummingbotApplication
     ) -> str:
-        lines: List[str] = []
+        lines: list[str] = []
         if len(self._app_warnings) < 1:
             return ""
 
@@ -58,9 +58,9 @@ class StatusCommand:
                 else:
                     module_based_warnings[logger_name].append(app_warning)
 
-            warning_lines: List[str] = []
+            warning_lines: list[str] = []
             while len(warning_lines) < self.APP_WARNING_STATUS_LIMIT:
-                logger_keys: List[str] = list(module_based_warnings.keys())
+                logger_keys: list[str] = list(module_based_warnings.keys())
                 for key in logger_keys:
                     warning_item: ApplicationWarning = module_based_warnings[key].popleft()
                     if len(module_based_warnings[key]) < 1:
@@ -99,7 +99,7 @@ class StatusCommand:
 
     async def validate_required_connections(
         self,  # type: HummingbotApplication
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         invalid_conns = {}
         if not any([str(exchange).endswith("paper_trade") for exchange in required_exchanges]):
             if any([UserBalances.instance().is_gateway_market(exchange) for exchange in required_exchanges]):
@@ -117,7 +117,7 @@ class StatusCommand:
 
     def missing_configurations_legacy(
         self,  # type: HummingbotApplication
-    ) -> List[str]:
+    ) -> list[str]:
         config_map = self.strategy_config_map
         missing_configs = []
         if not isinstance(config_map, ClientConfigAdapter):
@@ -188,7 +188,7 @@ class StatusCommand:
         if invalid_conns or missing_configs:
             return False
 
-        loading_markets: List[ConnectorBase] = []
+        loading_markets: list[ConnectorBase] = []
         for market in self.trading_core.markets.values():
             if not market.ready:
                 loading_markets.append(market)
@@ -220,7 +220,7 @@ class StatusCommand:
         elif not all(
             [market.network_status is NetworkStatus.CONNECTED for market in self.trading_core.markets.values()]
         ):
-            offline_markets: List[str] = [
+            offline_markets: list[str] = [
                 market_name
                 for market_name, market in self.trading_core.markets.items()
                 if market.network_status is not NetworkStatus.CONNECTED

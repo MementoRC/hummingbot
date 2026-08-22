@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from collections import deque
 from decimal import Decimal
 import logging
-from typing import TYPE_CHECKING, Dict, List, Optional
+from typing import TYPE_CHECKING, Dict
 import uuid
 
 from hummingbot.connector.markets_recorder import MarketsRecorder
@@ -224,7 +226,7 @@ class ExecutorOrchestrator:
         strategy: "StrategyV2Base",
         executors_update_interval: float = 1.0,
         executors_max_retries: int = 10,
-        initial_positions_by_controller: Optional[dict] = None,
+        initial_positions_by_controller: dict | None = None,
     ):
         self.strategy = strategy
         self.executors_update_interval = executors_update_interval
@@ -474,7 +476,7 @@ class ExecutorOrchestrator:
         elif isinstance(action, StoreExecutorAction):
             self.store_executor(action)
 
-    def execute_actions(self, actions: List[ExecutorAction]):
+    def execute_actions(self, actions: list[ExecutorAction]):
         """
         Execute a list of actions.
         """
@@ -587,7 +589,7 @@ class ExecutorOrchestrator:
                     position.add_orders_from_executor(executor_info)
                     positions.append(position)
 
-    def _determine_position_side(self, executor_info: ExecutorInfo) -> Optional[TradeType]:
+    def _determine_position_side(self, executor_info: ExecutorInfo) -> TradeType | None:
         """
         Determine the position side used to bucket a position hold.
 
@@ -619,8 +621,8 @@ class ExecutorOrchestrator:
         return None
 
     def _find_existing_position(
-        self, positions: List[PositionHold], executor_info: ExecutorInfo, position_side: Optional[TradeType]
-    ) -> Optional[PositionHold]:
+        self, positions: list[PositionHold], executor_info: ExecutorInfo, position_side: TradeType | None
+    ) -> PositionHold | None:
         """
         Find an existing position that matches the executor's trading pair and side.
         """
@@ -666,7 +668,7 @@ class ExecutorOrchestrator:
         del executor
         # Trigger garbage collection after executor cleanup
 
-    def get_executors_report(self) -> Dict[str, List[ExecutorInfo]]:
+    def get_executors_report(self) -> dict[str, list[ExecutorInfo]]:
         """
         Generate a report of all executors.
         """
@@ -675,7 +677,7 @@ class ExecutorOrchestrator:
             report[controller_id] = [executor.executor_info for executor in executors_list if executor]
         return report
 
-    def get_positions_report(self) -> Dict[str, List[PositionSummary]]:
+    def get_positions_report(self) -> dict[str, list[PositionSummary]]:
         """
         Generate a report of all positions held.
         """
@@ -692,7 +694,7 @@ class ExecutorOrchestrator:
             report[controller_id] = positions_summary
         return report
 
-    def get_all_reports(self) -> Dict[str, Dict]:
+    def get_all_reports(self) -> dict[str, Dict]:
         """
         Generate a unified report containing executors, positions, and performance for all controllers.
         Returns a dictionary with controller_id as key and a dict containing all reports as value.

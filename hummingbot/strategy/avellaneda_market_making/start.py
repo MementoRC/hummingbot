@@ -1,5 +1,4 @@
 import os.path
-from typing import List, Tuple
 
 import pandas as pd
 
@@ -17,8 +16,8 @@ async def start(self):
 
         trading_pair: str = raw_trading_pair
         base, quote = trading_pair.split("-")
-        maker_assets: Tuple[str, str] = (base, quote)
-        market_names: List[Tuple[str, List[str]]] = [(exchange, [trading_pair])]
+        maker_assets: tuple[str, str] = (base, quote)
+        market_names: list[tuple[str, list[str]]] = [(exchange, [trading_pair])]
         await self.initialize_markets(market_names)
         maker_data = [self.markets[exchange], trading_pair] + list(maker_assets)
         self.market_trading_pair_tuples = [MarketTradingPairTuple(*maker_data)]

@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 import json
 import re
-from typing import Awaitable, Dict, List, Optional
+from typing import Awaitable, Dict, List
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses import aioresponses
@@ -34,7 +36,7 @@ class KrakenAPIUserStreamDataSourceTest(IsolatedAsyncioWrapperTestCase):
     def setUp(self) -> None:
         super().setUp()
         self.log_records = []
-        self.listening_task: Optional[asyncio.Task] = None
+        self.listening_task: asyncio.Task | None = None
 
         self.mock_time_provider = MagicMock()
 
