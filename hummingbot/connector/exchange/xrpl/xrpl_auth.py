@@ -1,5 +1,5 @@
-import ecdsa
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+import ecdsa
 from xrpl.constants import CryptoAlgorithm
 from xrpl.wallet import Wallet
 

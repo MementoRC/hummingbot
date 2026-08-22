@@ -1,11 +1,9 @@
 import asyncio
-import hashlib
 from decimal import Decimal
+import hashlib
 from typing import Any, AsyncIterable, Dict, List, Literal, Optional, Set, Tuple
 
-import eth_account
 from bidict import bidict
-from eth_utils import to_checksum_address
 
 from hummingbot.connector.constants import s_decimal_NaN
 from hummingbot.connector.exchange.hyperliquid import (
@@ -47,16 +45,16 @@ class HyperliquidExchange(ExchangePyBase):
     LONG_POLL_INTERVAL = 120.0
 
     def __init__(
-            self,
-            balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
-            rate_limits_share_pct: Decimal = Decimal("100"),
-            hyperliquid_secret_key: str = None,
-            hyperliquid_address: str = None,
-            use_vault: bool = False,
-            hyperliquid_mode: Literal["arb_wallet", "api_wallet"] = "arb_wallet",
-            trading_pairs: Optional[List[str]] = None,
-            trading_required: bool = True,
-            domain: str = CONSTANTS.DOMAIN,
+        self,
+        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        rate_limits_share_pct: Decimal = Decimal("100"),
+        hyperliquid_secret_key: str = None,
+        hyperliquid_address: str = None,
+        use_vault: bool = False,
+        hyperliquid_mode: Literal["arb_wallet", "api_wallet"] = "arb_wallet",
+        trading_pairs: Optional[List[str]] = None,
+        trading_required: bool = True,
+        domain: str = CONSTANTS.DOMAIN,
     ):
         self.hyperliquid_address = hyperliquid_address
         self.hyperliquid_secret_key = hyperliquid_secret_key
@@ -72,7 +70,6 @@ class HyperliquidExchange(ExchangePyBase):
         # Builder code (HGP-87). Fee starts at 0 and is resolved at startup (_initialize_builder_fee).
         self._builder_address: str = CONSTANTS.FOUNDATION_BUILDER_ADDRESS.lower()
         self._builder_fee_tenths_bps: int = 0
-        self._key_authority_verified: bool = False
         super().__init__(balance_asset_limit, rate_limits_share_pct)
 
     @property
@@ -82,13 +79,8 @@ class HyperliquidExchange(ExchangePyBase):
 
     @property
     def authenticator(self) -> Optional[HyperliquidAuth]:
-        if self._trading_required or self.hyperliquid_secret_key:
-            return HyperliquidAuth(
-                self.hyperliquid_address,
-                self.hyperliquid_secret_key,
-                self._use_vault,
-                self._connection_mode,
-            )
+        if self._trading_required:
+            return HyperliquidAuth(self.hyperliquid_address, self.hyperliquid_secret_key, self._use_vault)
         return None
 
     @property
@@ -148,14 +140,16 @@ class HyperliquidExchange(ExchangePyBase):
     async def get_all_pairs_prices(self) -> List[Dict[str, str]]:
         res = []
         exchange_info = await self._api_post(
-            path_url=CONSTANTS.TICKER_PRICE_CHANGE_URL,
-            data={"type": CONSTANTS.ASSET_CONTEXT_TYPE})
+            path_url=CONSTANTS.TICKER_PRICE_CHANGE_URL, data={"type": CONSTANTS.ASSET_CONTEXT_TYPE}
+        )
         spot_infos: list = exchange_info[1]
         for spot_data in spot_infos:
-            res.append({
-                "symbol": spot_data.get("coin"),
-                "price": spot_data.get("markPx"),
-            })
+            res.append(
+                {
+                    "symbol": spot_data.get("coin"),
+                    "price": spot_data.get("markPx"),
+                }
+            )
 
         return res
 
@@ -163,18 +157,18 @@ class HyperliquidExchange(ExchangePyBase):
         return False
 
     def _create_web_assistants_factory(self) -> WebAssistantsFactory:
-        return web_utils.build_api_factory(
-            throttler=self._throttler,
-            auth=self._auth)
+        return web_utils.build_api_factory(throttler=self._throttler, auth=self._auth)
 
     async def _make_trading_rules_request(self) -> Any:
-        exchange_info = await self._api_post(path_url=self.trading_rules_request_path,
-                                             data={"type": CONSTANTS.ASSET_CONTEXT_TYPE})
+        exchange_info = await self._api_post(
+            path_url=self.trading_rules_request_path, data={"type": CONSTANTS.ASSET_CONTEXT_TYPE}
+        )
         return exchange_info
 
     async def _make_trading_pairs_request(self) -> Any:
-        exchange_info = await self._api_post(path_url=self.trading_pairs_request_path,
-                                             data={"type": CONSTANTS.ASSET_CONTEXT_TYPE})
+        exchange_info = await self._api_post(
+            path_url=self.trading_pairs_request_path, data={"type": CONSTANTS.ASSET_CONTEXT_TYPE}
+        )
         return exchange_info
 
     def _is_order_not_found_during_status_update_error(self, status_update_exception: Exception) -> bool:
@@ -191,8 +185,9 @@ class HyperliquidExchange(ExchangePyBase):
         return d_price
 
     async def _update_trading_rules(self):
-        exchange_info = await self._api_post(path_url=self.trading_rules_request_path,
-                                             data={"type": CONSTANTS.ASSET_CONTEXT_TYPE})
+        exchange_info = await self._api_post(
+            path_url=self.trading_rules_request_path, data={"type": CONSTANTS.ASSET_CONTEXT_TYPE}
+        )
         trading_rules_list = await self._format_trading_rules(exchange_info)
         self._trading_rules.clear()
         for trading_rule in trading_rules_list:
@@ -201,8 +196,9 @@ class HyperliquidExchange(ExchangePyBase):
 
     async def _initialize_trading_pair_symbol_map(self):
         try:
-            exchange_info = await self._api_post(path_url=self.trading_pairs_request_path,
-                                                 data={"type": CONSTANTS.ASSET_CONTEXT_TYPE})
+            exchange_info = await self._api_post(
+                path_url=self.trading_pairs_request_path, data={"type": CONSTANTS.ASSET_CONTEXT_TYPE}
+            )
 
             self._initialize_trading_pair_symbols_from_exchange_info(exchange_info=exchange_info)
         except Exception:
@@ -238,14 +234,16 @@ class HyperliquidExchange(ExchangePyBase):
     async def _update_lost_orders_status(self):
         await self._update_lost_orders()
 
-    def _get_fee(self,
-                 base_currency: str,
-                 quote_currency: str,
-                 order_type: OrderType,
-                 order_side: TradeType,
-                 amount: Decimal,
-                 price: Decimal = s_decimal_NaN,
-                 is_maker: Optional[bool] = None) -> TradeFeeBase:
+    def _get_fee(
+        self,
+        base_currency: str,
+        quote_currency: str,
+        order_type: OrderType,
+        order_side: TradeType,
+        amount: Decimal,
+        price: Decimal = s_decimal_NaN,
+        is_maker: Optional[bool] = None,
+    ) -> TradeFeeBase:
         is_maker = order_type is OrderType.LIMIT_MAKER
         return DeductedFromReturnsTradeFee(percent=self.estimate_fee_pct(is_maker))
 
@@ -259,59 +257,25 @@ class HyperliquidExchange(ExchangePyBase):
         symbol = await self.exchange_symbol_associated_to_pair(trading_pair=tracked_order.trading_pair)
         api_params = {
             "type": "cancel",
-            "cancels": {
-                "asset": self.coin_to_asset[symbol],
-                "cloid": order_id
-            },
+            "cancels": {"asset": self.coin_to_asset[symbol], "cloid": order_id},
         }
         cancel_result = await self._api_post(
-            path_url=CONSTANTS.CANCEL_ORDER_URL,
-            data=api_params,
-            is_auth_required=True)
+            path_url=CONSTANTS.CANCEL_ORDER_URL, data=api_params, is_auth_required=True
+        )
 
-        return self._process_cancel_result(order_id, cancel_result)
-
-    def _process_cancel_result(self, order_id: str, cancel_result: Dict[str, Any]) -> bool:
-        """
-        Interprets the ``/exchange`` cancel response.
-
-        Two different shapes come back from Hyperliquid:
-        - the action was accepted: ``{"status": "ok", "response": {"data": {"statuses": [...]}}}``,
-          where each status is either the string ``"success"`` or ``{"error": "<message>"}``;
-        - the action was rejected before reaching the order book (bad nonce, rate limit, unknown
-          wallet, ...): ``{"status": "err", "response": "<message>"}``, where the response is a
-          plain string.
-
-        The rejected shape must not be indexed as a dict. Errors are raised as ``IOError`` so the
-        base class classifies them via ``_is_order_not_found_during_cancelation_error``, instead of
-        this method assuming every failure means the order is gone.
-        """
-        response = cancel_result.get("response")
-        if cancel_result.get("status") == "err" or not isinstance(response, dict):
-            self.logger().warning(f"Hyperliquid rejected the cancelation of order {order_id}. "
-                                  f"Raw response: {cancel_result}")
-            raise IOError(f"Error cancelling order {order_id}: {response}")
-
-        statuses = response.get("data", {}).get("statuses") or []
-        status = statuses[0] if statuses else None
-        if isinstance(status, dict) and "error" in status:
-            self.logger().debug(f"Hyperliquid did not cancel order {order_id}. "
-                                f"Raw response: {cancel_result}")
-            raise IOError(f"Error cancelling order {order_id}: {status['error']}")
-        if status != "success":
-            self.logger().warning(f"Unexpected cancelation status for order {order_id}. "
-                                  f"Raw response: {cancel_result}")
-            return False
-        return True
+        if cancel_result.get("status") == "err" or "error" in cancel_result["response"]["data"]["statuses"][0]:
+            self.logger().debug(f"The order {order_id} does not exist on Hyperliquid s. No cancelation needed.")
+            await self._order_tracker.process_order_not_found(order_id)
+            raise IOError(f"{cancel_result['response']}")
+        if cancel_result["status"] == "ok" and "success" in cancel_result["response"]["data"]["statuses"][0]:
+            return True
+        return False
 
     # === Orders placing ===
 
-    def buy(self,
-            trading_pair: str,
-            amount: Decimal,
-            order_type=OrderType.LIMIT,
-            price: Decimal = s_decimal_NaN,
-            **kwargs) -> str:
+    def buy(
+        self, trading_pair: str, amount: Decimal, order_type=OrderType.LIMIT, price: Decimal = s_decimal_NaN, **kwargs
+    ) -> str:
         """
         Creates a promise to create a buy order using the parameters
 
@@ -326,31 +290,38 @@ class HyperliquidExchange(ExchangePyBase):
             is_buy=True,
             trading_pair=trading_pair,
             hbot_order_id_prefix=self.client_order_id_prefix,
-            max_id_len=self.client_order_id_max_length
+            max_id_len=self.client_order_id_max_length,
         )
         md5 = hashlib.md5()
-        md5.update(order_id.encode('utf-8'))
+        md5.update(order_id.encode("utf-8"))
         hex_order_id = f"0x{md5.hexdigest()}"
         if order_type is OrderType.MARKET:
             reference_price = self.get_mid_price(trading_pair) if price.is_nan() else price
-            price = self.quantize_order_price(trading_pair, reference_price * Decimal(1 + CONSTANTS.MARKET_ORDER_SLIPPAGE))
+            price = self.quantize_order_price(
+                trading_pair, reference_price * Decimal(1 + CONSTANTS.MARKET_ORDER_SLIPPAGE)
+            )
 
-        safe_ensure_future(self._create_order(
-            trade_type=TradeType.BUY,
-            order_id=hex_order_id,
-            trading_pair=trading_pair,
-            amount=amount,
-            order_type=order_type,
-            price=price,
-            **kwargs))
+        safe_ensure_future(
+            self._create_order(
+                trade_type=TradeType.BUY,
+                order_id=hex_order_id,
+                trading_pair=trading_pair,
+                amount=amount,
+                order_type=order_type,
+                price=price,
+                **kwargs,
+            )
+        )
         return hex_order_id
 
-    def sell(self,
-             trading_pair: str,
-             amount: Decimal,
-             order_type: OrderType = OrderType.LIMIT,
-             price: Decimal = s_decimal_NaN,
-             **kwargs) -> str:
+    def sell(
+        self,
+        trading_pair: str,
+        amount: Decimal,
+        order_type: OrderType = OrderType.LIMIT,
+        price: Decimal = s_decimal_NaN,
+        **kwargs,
+    ) -> str:
         """
         Creates a promise to create a sell order using the parameters.
         :param trading_pair: the token pair to operate with
@@ -363,34 +334,39 @@ class HyperliquidExchange(ExchangePyBase):
             is_buy=False,
             trading_pair=trading_pair,
             hbot_order_id_prefix=self.client_order_id_prefix,
-            max_id_len=self.client_order_id_max_length
+            max_id_len=self.client_order_id_max_length,
         )
         md5 = hashlib.md5()
-        md5.update(order_id.encode('utf-8'))
+        md5.update(order_id.encode("utf-8"))
         hex_order_id = f"0x{md5.hexdigest()}"
         if order_type is OrderType.MARKET:
             reference_price = self.get_mid_price(trading_pair) if price.is_nan() else price
-            price = self.quantize_order_price(trading_pair, reference_price * Decimal(1 - CONSTANTS.MARKET_ORDER_SLIPPAGE))
+            price = self.quantize_order_price(
+                trading_pair, reference_price * Decimal(1 - CONSTANTS.MARKET_ORDER_SLIPPAGE)
+            )
 
-        safe_ensure_future(self._create_order(
-            trade_type=TradeType.SELL,
-            order_id=hex_order_id,
-            trading_pair=trading_pair,
-            amount=amount,
-            order_type=order_type,
-            price=price,
-            **kwargs))
+        safe_ensure_future(
+            self._create_order(
+                trade_type=TradeType.SELL,
+                order_id=hex_order_id,
+                trading_pair=trading_pair,
+                amount=amount,
+                order_type=order_type,
+                price=price,
+                **kwargs,
+            )
+        )
         return hex_order_id
 
     async def _place_order(
-            self,
-            order_id: str,
-            trading_pair: str,
-            amount: Decimal,
-            trade_type: TradeType,
-            order_type: OrderType,
-            price: Decimal,
-            **kwargs,
+        self,
+        order_id: str,
+        trading_pair: str,
+        amount: Decimal,
+        trade_type: TradeType,
+        order_type: OrderType,
+        price: Decimal,
+        **kwargs,
     ) -> Tuple[str, float]:
 
         symbol = await self.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
@@ -411,20 +387,17 @@ class HyperliquidExchange(ExchangePyBase):
                 "reduceOnly": False,
                 "orderType": param_order_type,
                 "cloid": order_id,
-            }
+            },
         }
         # Builder code (HGP-87): part of the signed action dict.
         builder_field = self._build_builder_field()
         if builder_field is not None:
             api_params["builder"] = builder_field
-        order_result = await self._api_post(
-            path_url = CONSTANTS.CREATE_ORDER_URL,
-            data = api_params,
-            is_auth_required = True)
+        order_result = await self._api_post(path_url=CONSTANTS.CREATE_ORDER_URL, data=api_params, is_auth_required=True)
         if order_result.get("status") == "err":
             raise IOError(f"Error submitting order {order_id}: {order_result['response']}")
         else:
-            o_order_result = order_result['response']["data"]["statuses"][0]
+            o_order_result = order_result["response"]["data"]["statuses"][0]
         if "error" in o_order_result:
             raise IOError(f"Error submitting order {order_id}: {o_order_result['error']}")
         o_data = o_order_result.get("resting") or o_order_result.get("filled")
@@ -460,14 +433,16 @@ class HyperliquidExchange(ExchangePyBase):
         if not self._should_inject_builder():
             return
         try:
-            approved_max_tenths_bps = int(await self._api_post(
-                path_url=CONSTANTS.EXCHANGE_INFO_URL,
-                data={
-                    "type": CONSTANTS.MAX_BUILDER_FEE_TYPE,
-                    "user": self.hyperliquid_address,
-                    "builder": self._builder_address,
-                },
-            ))
+            approved_max_tenths_bps = int(
+                await self._api_post(
+                    path_url=CONSTANTS.EXCHANGE_INFO_URL,
+                    data={
+                        "type": CONSTANTS.MAX_BUILDER_FEE_TYPE,
+                        "user": self.hyperliquid_address,
+                        "builder": self._builder_address,
+                    },
+                )
+            )
         except Exception:
             self.logger().exception(
                 "Could not query the approved Hyperliquid builder fee; charging 0 bps this session."
@@ -483,17 +458,18 @@ class HyperliquidExchange(ExchangePyBase):
         if len(orders) > 0:
             try:
                 all_fills_response = await self._api_post(
-                    path_url = CONSTANTS.ACCOUNT_TRADE_LIST_URL,
-                    data = {
+                    path_url=CONSTANTS.ACCOUNT_TRADE_LIST_URL,
+                    data={
                         "type": CONSTANTS.TRADES_TYPE,
                         "user": self.hyperliquid_address,
-                    })
+                    },
+                )
             except asyncio.CancelledError:
                 raise
             except Exception as request_error:
                 self.logger().warning(
                     f"Failed to fetch trade updates. Error: {request_error}",
-                    exc_info = request_error,
+                    exc_info=request_error,
                 )
             for trade_fill in all_fills_response:
                 self._process_trade_rs_event_message(order_fill=trade_fill, all_fillable_order=all_fillable_orders)
@@ -508,7 +484,7 @@ class HyperliquidExchange(ExchangePyBase):
                 fee_schema=self.trade_fee_schema(),
                 trade_type=fillable_order.trade_type,
                 percent_token=fee_asset,
-                flat_fees=[TokenAmount(amount=Decimal(order_fill["fee"]), token=fee_asset)]
+                flat_fees=[TokenAmount(amount=Decimal(order_fill["fee"]), token=fee_asset)],
             )
 
             trade_update = TradeUpdate(
@@ -558,8 +534,7 @@ class HyperliquidExchange(ExchangePyBase):
                 else:
                     raise Exception(event_message)
                 if channel not in user_channels:
-                    self.logger().error(
-                        f"Unexpected message in user stream: {event_message}.", exc_info=True)
+                    self.logger().error(f"Unexpected message in user stream: {event_message}.", exc_info=True)
                     continue
                 if channel == CONSTANTS.USER_ORDERS_ENDPOINT_NAME:
                     for order_msg in results:
@@ -572,8 +547,7 @@ class HyperliquidExchange(ExchangePyBase):
             except asyncio.CancelledError:
                 raise
             except Exception:
-                self.logger().error(
-                    "Unexpected error in user stream listener loop.", exc_info=True)
+                self.logger().error("Unexpected error in user stream listener loop.", exc_info=True)
                 await self._sleep(5.0)
 
     async def _process_trade_message(self, trade: Dict[str, Any], client_order_id: Optional[str] = None):
@@ -593,7 +567,7 @@ class HyperliquidExchange(ExchangePyBase):
                     fee_schema=self.trade_fee_schema(),
                     trade_type=tracked_order.trade_type,
                     percent_token=fee_asset,
-                    flat_fees=[TokenAmount(amount=Decimal(trade["fee"]), token=fee_asset)]
+                    flat_fees=[TokenAmount(amount=Decimal(trade["fee"]), token=fee_asset)],
                 )
                 trade_update: TradeUpdate = TradeUpdate(
                     trade_id=str(trade["tid"]),
@@ -643,7 +617,9 @@ class HyperliquidExchange(ExchangePyBase):
         self.coin_to_asset = {}
         self.name_to_coin = {}
 
-        self.coin_to_asset = {asset_info["name"]: asset for (asset, asset_info) in enumerate(exchange_info_dict[0]["universe"])}
+        self.coin_to_asset = {
+            asset_info["name"]: asset for (asset, asset_info) in enumerate(exchange_info_dict[0]["universe"])
+        }
         self.name_to_coin = {asset_info["name"]: asset_info["name"] for asset_info in exchange_info_dict[0]["universe"]}
 
         coin_infos: list = exchange_info_dict[0]["universe"]
@@ -661,7 +637,7 @@ class HyperliquidExchange(ExchangePyBase):
                 if not self._is_valid_spot_entry(exchange_info_dict, coin_info):
                     continue
                 base, quote = coin_info["tokens"]
-                ex_name = f'{exchange_info_dict[0]["tokens"][base]["name"].replace(" ", "").upper()}/{exchange_info_dict[0]["tokens"][quote]["name"].replace(" ", "").upper()}'
+                ex_name = f"{exchange_info_dict[0]['tokens'][base]['name'].replace(' ', '').upper()}/{exchange_info_dict[0]['tokens'][quote]['name'].replace(' ', '').upper()}"
                 if ex_name not in self.name_to_coin:
                     self.name_to_coin[ex_name] = coin_info["name"]
 
@@ -670,18 +646,19 @@ class HyperliquidExchange(ExchangePyBase):
                 except KeyError:
                     continue
                 step_size = Decimal(str(10 ** -exchange_info_dict[0]["tokens"][base].get("szDecimals")))
-                price_size = Decimal(str(10 ** -len(price_info.get("markPx").split('.')[1])))
+                price_size = Decimal(str(10 ** -len(price_info.get("markPx").split(".")[1])))
                 return_val.append(
                     TradingRule(
                         trading_pair,
                         min_order_size=step_size,  # asset_price,
                         min_base_amount_increment=step_size,
-                        min_price_increment=price_size
+                        min_price_increment=price_size,
                     )
                 )
             except Exception:
-                self.logger().error(f"Error parsing the trading pair rule {exchange_info_dict}. Skipping.",
-                                    exc_info=True)
+                self.logger().error(
+                    f"Error parsing the trading pair rule {exchange_info_dict}. Skipping.", exc_info=True
+                )
         return return_val
 
     def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: List):
@@ -689,7 +666,9 @@ class HyperliquidExchange(ExchangePyBase):
         self.coin_to_asset = {}
         self.name_to_coin = {}
 
-        self.coin_to_asset = {asset_info["name"]: asset for (asset, asset_info) in enumerate(exchange_info[0]["universe"])}
+        self.coin_to_asset = {
+            asset_info["name"]: asset for (asset, asset_info) in enumerate(exchange_info[0]["universe"])
+        }
 
         self.name_to_coin = {asset_info["name"]: asset_info["name"] for asset_info in exchange_info[0]["universe"]}
 
@@ -699,7 +678,7 @@ class HyperliquidExchange(ExchangePyBase):
             self.coin_to_asset[spot_info["name"]] = spot_info["index"] + 10000
             self.name_to_coin[spot_info["name"]] = spot_info["name"]
             base, quote = spot_info["tokens"]
-            name = f'{exchange_info[0]["tokens"][base]["name"].replace(" ", "").upper()}/{exchange_info[0]["tokens"][quote]["name"].replace(" ", "").upper()}'
+            name = f"{exchange_info[0]['tokens'][base]['name'].replace(' ', '').upper()}/{exchange_info[0]['tokens'][quote]['name'].replace(' ', '').upper()}"
             ex_name = spot_info["name"]
 
             if name not in self.name_to_coin:
@@ -729,7 +708,8 @@ class HyperliquidExchange(ExchangePyBase):
             mapping[new_exchange_symbol] = trading_pair
         else:
             self.logger().error(
-                f"Could not resolve the exchange symbols {new_exchange_symbol} and {current_exchange_symbol}")
+                f"Could not resolve the exchange symbols {new_exchange_symbol} and {current_exchange_symbol}"
+            )
             mapping.pop(current_exchange_symbol)
 
     @staticmethod
@@ -765,72 +745,17 @@ class HyperliquidExchange(ExchangePyBase):
                 tradable_assets.add(quote.upper())
         return tradable_assets
 
-    async def _verify_key_authority(self):
-        """Surface a wrong-but-well-formed private key at connect time (#7866). Runs once.
-
-        The exchange cannot catch this itself: its balance query is an unauthenticated ``/info`` request
-        keyed by address, so it succeeds for any address. So we check explicitly whether the key may trade
-        for the account:
-          - arb_wallet: the key derives to the account address (offline, no network call).
-          - api_wallet: the key's address is an APPROVED AGENT of the account (one ``extraAgents`` lookup).
-        Vault mode is skipped here (the vault's agent set is out of scope for this check) and validated at
-        first authenticated request, as documented. Network/response errors do not block connect -- a truly
-        wrong key still fails at the first signed request; this only makes the common case explicit.
-        """
-        if self._key_authority_verified or not self.hyperliquid_secret_key or self._use_vault:
-            self._key_authority_verified = True
-            return
-        try:
-            derived = eth_account.Account.from_key(self.hyperliquid_secret_key).address
-        except Exception as exc:
-            raise ValueError(f"Invalid Hyperliquid private key format: {exc}") from exc
-        account = self.hyperliquid_address
-        # owner key (arb_wallet): authorised offline, no network call
-        if HyperliquidAuth.is_key_authorized(derived, account, []):
-            self._key_authority_verified = True
-            return
-        # otherwise the key must be an approved agent of the account
-        try:
-            agents = await self._api_post(
-                path_url=CONSTANTS.ACCOUNT_INFO_URL,
-                data={"type": CONSTANTS.EXTRA_AGENTS_TYPE, "user": account},
-            )
-        except Exception:
-            self.logger().warning(
-                "Could not verify Hyperliquid API/agent wallet authorization at connect "
-                "(extraAgents query failed); a wrong agent key will surface at the first signed request.",
-                exc_info=True,
-            )
-            return
-        if not isinstance(agents, list):
-            self.logger().warning(
-                "Could not verify Hyperliquid API/agent wallet authorization at connect "
-                "(unexpected extraAgents response); a wrong agent key will surface at the first signed request."
-            )
-            return
-        if not HyperliquidAuth.is_key_authorized(derived, account, agents):
-            raise ValueError(
-                f"The supplied private key is not a valid API wallet key for account {account}: "
-                f"its address {to_checksum_address(derived)} is not in the account's approved API (agent) "
-                "wallet list and is not the account owner. Approve this API wallet at "
-                "https://app.hyperliquid.xyz/API, verify you supplied the correct API wallet key, "
-                "or use the account owner's key with the arb_wallet connection mode."
-            )
-        self._key_authority_verified = True
-
     async def _update_balances(self):
         """
         Calls the REST API to update total and available balances.
         """
-        await self._verify_key_authority()
-
         local_asset_names = set(self._account_balances.keys())
         remote_asset_names = set()
 
-        account_info = await self._api_post(path_url=CONSTANTS.ACCOUNT_INFO_URL,
-                                            data={"type": CONSTANTS.USER_STATE_TYPE,
-                                                  "user": self.hyperliquid_address},
-                                            )
+        account_info = await self._api_post(
+            path_url=CONSTANTS.ACCOUNT_INFO_URL,
+            data={"type": CONSTANTS.USER_STATE_TYPE, "user": self.hyperliquid_address},
+        )
         # Only track balances for tokens that are still part of an active USDC trading pair present
         # in the symbol map. When a token is delisted it disappears from the map, but the exchange
         # keeps reporting its balance; tracking it would add a position we can no longer price.
@@ -858,8 +783,9 @@ class HyperliquidExchange(ExchangePyBase):
             data={
                 "type": CONSTANTS.ORDER_STATUS_TYPE,
                 "user": self.hyperliquid_address,
-                "oid": int(tracked_order.exchange_order_id) if tracked_order.exchange_order_id else client_order_id
-            })
+                "oid": int(tracked_order.exchange_order_id) if tracked_order.exchange_order_id else client_order_id,
+            },
+        )
         current_state = order_update["order"]["status"]
         _order_update: OrderUpdate = OrderUpdate(
             trading_pair=tracked_order.trading_pair,
@@ -884,8 +810,9 @@ class HyperliquidExchange(ExchangePyBase):
         long_interval_last_tick = self._last_poll_timestamp / self.LONG_POLL_INTERVAL
         long_interval_current_tick = self.current_timestamp / self.LONG_POLL_INTERVAL
 
-        if (long_interval_current_tick > long_interval_last_tick
-                or (self.in_flight_orders and small_interval_current_tick > small_interval_last_tick)):
+        if long_interval_current_tick > long_interval_last_tick or (
+            self.in_flight_orders and small_interval_current_tick > small_interval_last_tick
+        ):
             query_time = int(self._last_trades_poll_timestamp * 1e3)
             self._last_trades_poll_timestamp = self._time_synchronizer.time()
             order_by_exchange_id_map = {}
@@ -896,26 +823,22 @@ class HyperliquidExchange(ExchangePyBase):
             trading_pairs = self.trading_pairs
             for trading_pair in trading_pairs:
                 params = {
-                    'type': CONSTANTS.TRADES_TYPE,
-                    'user': self.hyperliquid_address,
+                    "type": CONSTANTS.TRADES_TYPE,
+                    "user": self.hyperliquid_address,
                 }
                 if self._last_poll_timestamp > 0:
-                    params['type'] = 'userFillsByTime'
+                    params["type"] = "userFillsByTime"
                     params["startTime"] = query_time
-                tasks.append(self._api_get(
-                    path_url=CONSTANTS.MY_TRADES_PATH_URL,
-                    params=params,
-                    is_auth_required=True))
+                tasks.append(self._api_get(path_url=CONSTANTS.MY_TRADES_PATH_URL, params=params, is_auth_required=True))
 
             self.logger().debug(f"Polling for order fills of {len(tasks)} trading pairs.")
             results = await safe_gather(*tasks, return_exceptions=True)
 
             for trades, trading_pair in zip(results, trading_pairs):
-
                 if isinstance(trades, Exception):
                     self.logger().network(
                         f"Error fetching trades update for the order {trading_pair}: {trades}.",
-                        app_warning_msg=f"Failed to fetch trade update for {trading_pair}."
+                        app_warning_msg=f"Failed to fetch trade update for {trading_pair}.",
                     )
                     continue
                 for trade in trades:
@@ -927,7 +850,7 @@ class HyperliquidExchange(ExchangePyBase):
                             fee_schema=self.trade_fee_schema(),
                             trade_type=tracked_order.trade_type,
                             percent_token=trade["feeToken"],
-                            flat_fees=[TokenAmount(amount=Decimal(trade["fee"]), token=trade["feeToken"])]
+                            flat_fees=[TokenAmount(amount=Decimal(trade["fee"]), token=trade["feeToken"])],
                         )
                         trade_update = TradeUpdate(
                             trade_id=str(trade["tid"]),
@@ -943,30 +866,27 @@ class HyperliquidExchange(ExchangePyBase):
                         self._order_tracker.process_trade_update(trade_update)
                     elif self.is_confirmed_new_order_filled_event(str(trade["tid"]), exchange_order_id, trading_pair):
                         # This is a fill of an order registered in the DB but not tracked any more
-                        self._current_trade_fills.add(TradeFillOrderDetails(
-                            market=self.display_name,
-                            exchange_trade_id=str(trade["tid"]),
-                            symbol=trading_pair))
+                        self._current_trade_fills.add(
+                            TradeFillOrderDetails(
+                                market=self.display_name, exchange_trade_id=str(trade["tid"]), symbol=trading_pair
+                            )
+                        )
                         self.trigger_event(
                             MarketEvent.OrderFilled,
                             OrderFilledEvent(
                                 timestamp=float(trade["time"]) * 1e-3,
                                 order_id=self._exchange_order_ids.get(str(trade["oid"]), None),
                                 trading_pair=trading_pair,
-                                trade_type=TradeType.BUY if trade["side"] == 'B' else TradeType.SELL,
+                                trade_type=TradeType.BUY if trade["side"] == "B" else TradeType.SELL,
                                 order_type=OrderType.LIMIT_MAKER if "Open" in trade["dir"] else OrderType.LIMIT,
                                 price=Decimal(trade["px"]),
                                 amount=Decimal(trade["sz"]),
                                 trade_fee=DeductedFromReturnsTradeFee(
-                                    flat_fees=[
-                                        TokenAmount(
-                                            trade["feeToken"],
-                                            Decimal(trade["fee"])
-                                        )
-                                    ]
+                                    flat_fees=[TokenAmount(trade["feeToken"], Decimal(trade["fee"]))]
                                 ),
-                                exchange_trade_id=str(trade["tid"])
-                            ))
+                                exchange_trade_id=str(trade["tid"]),
+                            ),
+                        )
                         self.logger().info(f"Recreating missing trade in TradeFill: {trade}")
 
     async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
@@ -979,10 +899,11 @@ class HyperliquidExchange(ExchangePyBase):
                 path_url=CONSTANTS.MY_TRADES_PATH_URL,
                 params={
                     "type": "userFills",
-                    'user': self.hyperliquid_address,
+                    "user": self.hyperliquid_address,
                 },
                 is_auth_required=True,
-                limit_id=CONSTANTS.MY_TRADES_PATH_URL)
+                limit_id=CONSTANTS.MY_TRADES_PATH_URL,
+            )
 
             for trade in all_fills_response:
                 exchange_order_id = str(trade["orderId"])
@@ -990,7 +911,7 @@ class HyperliquidExchange(ExchangePyBase):
                     fee_schema=self.trade_fee_schema(),
                     trade_type=order.trade_type,
                     percent_token=trade["feeToken"],
-                    flat_fees=[TokenAmount(amount=Decimal(trade["fee"]), token=trade["feeToken"])]
+                    flat_fees=[TokenAmount(amount=Decimal(trade["fee"]), token=trade["feeToken"])],
                 )
                 trade_update = TradeUpdate(
                     trade_id=str(trade["tid"]),
@@ -1009,11 +930,12 @@ class HyperliquidExchange(ExchangePyBase):
 
     async def _get_last_traded_price(self, trading_pair: str) -> float:
         exchange_symbol = await self.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
-        response = await self._api_post(path_url=CONSTANTS.TICKER_PRICE_CHANGE_URL,
-                                        data={"type": CONSTANTS.ASSET_CONTEXT_TYPE})
+        response = await self._api_post(
+            path_url=CONSTANTS.TICKER_PRICE_CHANGE_URL, data={"type": CONSTANTS.ASSET_CONTEXT_TYPE}
+        )
         price = 0.0
         for token in response[1]:
-            if token['coin'] == exchange_symbol:
-                price = float(token['markPx'])
+            if token["coin"] == exchange_symbol:
+                price = float(token["markPx"])
                 break
         return price

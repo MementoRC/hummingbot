@@ -1,6 +1,4 @@
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from test.logger_mixin_for_test import LoggerMixinForTest
 from unittest.mock import MagicMock, PropertyMock, patch
 
 from hummingbot.connector.exchange_py_base import ExchangePyBase
@@ -22,6 +20,8 @@ from hummingbot.strategy_v2.executors.grid_executor.grid_executor import GridExe
 from hummingbot.strategy_v2.executors.position_executor.data_types import TrailingStop, TripleBarrierConfig
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
+from test.logger_mixin_for_test import LoggerMixinForTest
 
 
 class TestGridExecutorBugFixes(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
@@ -60,17 +60,26 @@ class TestGridExecutorBugFixes(IsolatedAsyncioWrapperTestCase, LoggerMixinForTes
     @patch.object(GridExecutor, "get_trading_rules")
     def test_early_stop_keep_position_false_allows_close_order(self, trading_rules_mock):
         """Bug fix: early_stop(keep_position=False) with config.keep_position=True should place close order."""
-        trading_rules = TradingRule(trading_pair="ETH-USDT", min_order_size=Decimal("0.001"),
-                                    min_base_amount_increment=Decimal("0.001"),
-                                    min_price_increment=Decimal("0.01"), min_notional_size=Decimal("10"))
+        trading_rules = TradingRule(
+            trading_pair="ETH-USDT",
+            min_order_size=Decimal("0.001"),
+            min_base_amount_increment=Decimal("0.001"),
+            min_price_increment=Decimal("0.01"),
+            min_notional_size=Decimal("10"),
+        )
         trading_rules_mock.return_value = trading_rules
         from hummingbot.strategy_v2.executors.grid_executor.data_types import GridExecutorConfig
         from hummingbot.strategy_v2.executors.position_executor.data_types import TripleBarrierConfig
+
         config = GridExecutorConfig(
-            id="test", timestamp=1234567890, trading_pair="ETH-USDT",
-            connector_name="binance", side=TradeType.BUY,
-            start_price=Decimal("90"), end_price=Decimal("110"),
-            limit_price=Decimal("80"),
+            id="test",
+            timestamp=1234567890,
+            trading_pair="ETH-USDT",
+            connector_name="binance",
+            side=TradeType.BUY,
+            start_price=Decimal("90"),
+            end_price=Decimal("110"),
+            limit_price=Decimal("90"),
             total_amount_quote=Decimal("100"),
             min_order_amount_quote=Decimal("10"),
             min_spread_between_orders=Decimal("0.01"),
@@ -97,17 +106,26 @@ class TestGridExecutorBugFixes(IsolatedAsyncioWrapperTestCase, LoggerMixinForTes
     @patch.object(GridExecutor, "get_trading_rules")
     def test_early_stop_keep_position_true_sets_position_hold(self, trading_rules_mock):
         """early_stop(keep_position=True) should set close_type to POSITION_HOLD."""
-        trading_rules = TradingRule(trading_pair="ETH-USDT", min_order_size=Decimal("0.001"),
-                                    min_base_amount_increment=Decimal("0.001"),
-                                    min_price_increment=Decimal("0.01"), min_notional_size=Decimal("10"))
+        trading_rules = TradingRule(
+            trading_pair="ETH-USDT",
+            min_order_size=Decimal("0.001"),
+            min_base_amount_increment=Decimal("0.001"),
+            min_price_increment=Decimal("0.01"),
+            min_notional_size=Decimal("10"),
+        )
         trading_rules_mock.return_value = trading_rules
         from hummingbot.strategy_v2.executors.grid_executor.data_types import GridExecutorConfig
         from hummingbot.strategy_v2.executors.position_executor.data_types import TripleBarrierConfig
+
         config = GridExecutorConfig(
-            id="test", timestamp=1234567890, trading_pair="ETH-USDT",
-            connector_name="binance", side=TradeType.BUY,
-            start_price=Decimal("90"), end_price=Decimal("110"),
-            limit_price=Decimal("80"),
+            id="test",
+            timestamp=1234567890,
+            trading_pair="ETH-USDT",
+            connector_name="binance",
+            side=TradeType.BUY,
+            start_price=Decimal("90"),
+            end_price=Decimal("110"),
+            limit_price=Decimal("90"),
             total_amount_quote=Decimal("100"),
             min_order_amount_quote=Decimal("10"),
             min_spread_between_orders=Decimal("0.01"),
@@ -124,61 +142,6 @@ class TestGridExecutorBugFixes(IsolatedAsyncioWrapperTestCase, LoggerMixinForTes
         executor.early_stop(keep_position=True)
         self.assertEqual(executor.close_type, CloseType.POSITION_HOLD)
         self.assertEqual(executor.status, RunnableStatus.SHUTTING_DOWN)
-
-    @patch.object(GridExecutor, "get_price", MagicMock(return_value=Decimal("100")))
-    @patch.object(GridExecutor, "get_trading_rules")
-    def test_force_stop_mid_drain_holds_filled_levels(self, trading_rules_mock):
-        """A forced stop while the shutdown drain is still running keeps the hold.
-
-        control_shutdown_process only moves fills into _held_position_orders after
-        open and close liquidity have drained; the shutdown-deadline fallback must
-        collect the same fills synchronously instead of losing them.
-        """
-        trading_rules = TradingRule(trading_pair="ETH-USDT", min_order_size=Decimal("0.001"),
-                                    min_base_amount_increment=Decimal("0.001"),
-                                    min_price_increment=Decimal("0.01"), min_notional_size=Decimal("10"))
-        trading_rules_mock.return_value = trading_rules
-        from hummingbot.strategy_v2.executors.grid_executor.data_types import GridExecutorConfig
-        from hummingbot.strategy_v2.executors.position_executor.data_types import TripleBarrierConfig
-        config = GridExecutorConfig(
-            id="test", timestamp=1234567890, trading_pair="ETH-USDT",
-            connector_name="binance", side=TradeType.BUY,
-            start_price=Decimal("90"), end_price=Decimal("110"),
-            limit_price=Decimal("80"),
-            total_amount_quote=Decimal("100"),
-            min_order_amount_quote=Decimal("10"),
-            min_spread_between_orders=Decimal("0.01"),
-            keep_position=True,
-            triple_barrier_config=TripleBarrierConfig(
-                take_profit=Decimal("0.02"),
-                stop_loss=Decimal("0.05"),
-                take_profit_order_type=OrderType.LIMIT,
-                stop_loss_order_type=OrderType.MARKET,
-            ),
-        )
-        executor = GridExecutor(self.strategy, config)
-        executor.early_stop(keep_position=True)  # POSITION_HOLD chosen, drain in progress
-
-        filled_open = MagicMock()
-        filled_open.order.to_json.return_value = {"client_order_id": "open-1", "trade_type": "BUY"}
-        level_open_filled = MagicMock()
-        level_open_filled.active_open_order = filled_open
-        pending_close = MagicMock()
-        pending_close.order.to_json.return_value = {"client_order_id": "close-1", "trade_type": "SELL"}
-        level_close_placed = MagicMock()
-        level_close_placed.active_close_order = pending_close
-        executor.levels_by_state = {
-            GridLevelStates.OPEN_ORDER_PLACED: [],
-            GridLevelStates.OPEN_ORDER_FILLED: [level_open_filled],
-            GridLevelStates.CLOSE_ORDER_PLACED: [level_close_placed],
-        }
-
-        executor.force_stop_with_position_hold()
-
-        self.assertEqual(CloseType.POSITION_HOLD, executor.close_type)
-        self.assertEqual(RunnableStatus.TERMINATED, executor.status)
-        held_ids = {order["client_order_id"] for order in executor._held_position_orders}
-        self.assertEqual({"open-1", "close-1"}, held_ids)
 
 
 class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
@@ -202,10 +165,13 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         type(strategy).current_timestamp = PropertyMock(return_value=1234567890)
         strategy.cancel.return_value = None
         connector = MagicMock(spec=ExchangePyBase)
-        type(connector).trading_rules = PropertyMock(return_value={"ETH-USDT": TradingRule(trading_pair="ETH-USDT",
-                                                                                           min_order_value=Decimal("5"),
-                                                                                           min_price_increment=Decimal(
-                                                                                               "0.1"))})
+        type(connector).trading_rules = PropertyMock(
+            return_value={
+                "ETH-USDT": TradingRule(
+                    trading_pair="ETH-USDT", min_order_value=Decimal("5"), min_price_increment=Decimal("0.1")
+                )
+            }
+        )
         strategy.connectors = {
             "binance": connector,
             "binance_perpetual": connector,
@@ -237,11 +203,8 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             triple_barrier_config=TripleBarrierConfig(
                 take_profit=Decimal("0.001"),
                 stop_loss=Decimal("0.05"),
-                trailing_stop=TrailingStop(
-                    activation_price=Decimal("0.05"),
-                    trailing_delta=Decimal("0.005")
-                )
-            )
+                trailing_stop=TrailingStop(activation_price=Decimal("0.05"), trailing_delta=Decimal("0.005")),
+            ),
         )
         executor = self.get_grid_executor_from_config(config)
         executor._status = RunnableStatus.RUNNING
@@ -275,11 +238,8 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             triple_barrier_config=TripleBarrierConfig(
                 take_profit=Decimal("0.001"),
                 stop_loss=Decimal("0.05"),
-                trailing_stop=TrailingStop(
-                    activation_price=Decimal("0.05"),
-                    trailing_delta=Decimal("0.005")
-                )
-            )
+                trailing_stop=TrailingStop(activation_price=Decimal("0.05"), trailing_delta=Decimal("0.005")),
+            ),
         )
         executor = self.get_grid_executor_from_config(config)
         executor._status = RunnableStatus.RUNNING
@@ -307,11 +267,8 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             triple_barrier_config=TripleBarrierConfig(
                 take_profit=Decimal("0.001"),
                 stop_loss=Decimal("0.05"),
-                trailing_stop=TrailingStop(
-                    activation_price=Decimal("0.05"),
-                    trailing_delta=Decimal("0.005")
-                )
-            )
+                trailing_stop=TrailingStop(activation_price=Decimal("0.05"), trailing_delta=Decimal("0.005")),
+            ),
         )
         executor = self.get_grid_executor_from_config(config)
         executor._status = RunnableStatus.RUNNING
@@ -325,7 +282,7 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             amount=Decimal("10"),
             price=Decimal("100"),
             creation_timestamp=1640001112.223,
-            initial_state=OrderState.FILLED
+            initial_state=OrderState.FILLED,
         )
         order.executed_amount_base = Decimal("10")
         order.executed_amount_quote = Decimal("1000")
@@ -356,11 +313,8 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             triple_barrier_config=TripleBarrierConfig(
                 take_profit=Decimal("0.001"),
                 stop_loss=Decimal("0.05"),
-                trailing_stop=TrailingStop(
-                    activation_price=Decimal("0.05"),
-                    trailing_delta=Decimal("0.005")
-                )
-            )
+                trailing_stop=TrailingStop(activation_price=Decimal("0.05"), trailing_delta=Decimal("0.005")),
+            ),
         )
         executor = self.get_grid_executor_from_config(config)
         executor._status = RunnableStatus.RUNNING
@@ -374,7 +328,7 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             amount=Decimal("10"),
             price=Decimal("100"),
             creation_timestamp=1640001112.223,
-            initial_state=OrderState.FILLED
+            initial_state=OrderState.FILLED,
         )
         order.executed_amount_base = Decimal("10")
         order.executed_amount_quote = Decimal("1000")
@@ -402,11 +356,8 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             triple_barrier_config=TripleBarrierConfig(
                 take_profit=Decimal("0.001"),
                 stop_loss=Decimal("0.05"),
-                trailing_stop=TrailingStop(
-                    activation_price=Decimal("0.05"),
-                    trailing_delta=Decimal("0.005")
-                )
-            )
+                trailing_stop=TrailingStop(activation_price=Decimal("0.05"), trailing_delta=Decimal("0.005")),
+            ),
         )
         executor = self.get_grid_executor_from_config(config)
         executor._status = RunnableStatus.RUNNING
@@ -442,11 +393,8 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             triple_barrier_config=TripleBarrierConfig(
                 take_profit=Decimal("0.001"),
                 stop_loss=Decimal("0.05"),
-                trailing_stop=TrailingStop(
-                    activation_price=Decimal("0.05"),
-                    trailing_delta=Decimal("0.005")
-                )
-            )
+                trailing_stop=TrailingStop(activation_price=Decimal("0.05"), trailing_delta=Decimal("0.005")),
+            ),
         )
         executor = self.get_grid_executor_from_config(config)
         executor._status = RunnableStatus.RUNNING
@@ -460,7 +408,7 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             amount=Decimal("10"),
             price=Decimal("100"),
             creation_timestamp=1640001112.223,
-            initial_state=OrderState.FILLED
+            initial_state=OrderState.FILLED,
         )
         order.executed_amount_base = Decimal("10")
         order.executed_amount_quote = Decimal("1000")
@@ -481,7 +429,7 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             amount=Decimal("10"),
             price=Decimal("100"),
             creation_timestamp=1640001112.223,
-            initial_state=OrderState.FILLED
+            initial_state=OrderState.FILLED,
         )
         order.executed_amount_base = Decimal("10")
         order.executed_amount_quote = Decimal("1000")
@@ -509,11 +457,8 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             triple_barrier_config=TripleBarrierConfig(
                 take_profit=Decimal("0.001"),
                 stop_loss=Decimal("0.05"),
-                trailing_stop=TrailingStop(
-                    activation_price=Decimal("0.05"),
-                    trailing_delta=Decimal("0.005")
-                )
-            )
+                trailing_stop=TrailingStop(activation_price=Decimal("0.05"), trailing_delta=Decimal("0.005")),
+            ),
         )
         executor = self.get_grid_executor_from_config(config)
         executor._status = RunnableStatus.RUNNING
@@ -543,11 +488,8 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             triple_barrier_config=TripleBarrierConfig(
                 take_profit=Decimal("0.001"),
                 stop_loss=Decimal("0.05"),
-                trailing_stop=TrailingStop(
-                    activation_price=Decimal("0.05"),
-                    trailing_delta=Decimal("0.005")
-                )
-            )
+                trailing_stop=TrailingStop(activation_price=Decimal("0.05"), trailing_delta=Decimal("0.005")),
+            ),
         )
         executor = self.get_grid_executor_from_config(config)
         # Create three filled orders with different trade types and amounts
@@ -620,11 +562,8 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             triple_barrier_config=TripleBarrierConfig(
                 take_profit=Decimal("0.001"),
                 stop_loss=Decimal("0.05"),
-                trailing_stop=TrailingStop(
-                    activation_price=Decimal("0.05"),
-                    trailing_delta=Decimal("0.005")
-                )
-            )
+                trailing_stop=TrailingStop(activation_price=Decimal("0.05"), trailing_delta=Decimal("0.005")),
+            ),
         )
         executor = self.get_grid_executor_from_config(config)
         executor._status = RunnableStatus.SHUTTING_DOWN
@@ -639,14 +578,10 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             amount=Decimal("0.1"),
             price=Decimal("100"),
             creation_timestamp=1640001112.223,
-            initial_state=OrderState.OPEN
+            initial_state=OrderState.OPEN,
         )
         await executor.control_task()
-        self.strategy.cancel.assert_called_with(
-            connector_name="binance",
-            trading_pair="ETH-USDT",
-            order_id="OID-BUY-1"
-        )
+        self.strategy.cancel.assert_called_with(connector_name="binance", trading_pair="ETH-USDT", order_id="OID-BUY-1")
         executor.grid_levels[0].active_open_order = TrackedOrder("OID-BUY-1")
         executor.grid_levels[0].active_open_order.order = InFlightOrder(
             client_order_id="OID-BUY-1",
@@ -657,7 +592,7 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             amount=Decimal("0.1"),
             price=Decimal("100"),
             creation_timestamp=1640001112.223,
-            initial_state=OrderState.FILLED
+            initial_state=OrderState.FILLED,
         )
         await executor.control_task()
         self.assertEqual(len(executor.levels_by_state[GridLevelStates.OPEN_ORDER_FILLED]), 1)
@@ -671,7 +606,7 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             amount=Decimal("0.1"),
             price=Decimal("101"),
             creation_timestamp=1640001112.223,
-            initial_state=OrderState.FILLED
+            initial_state=OrderState.FILLED,
         )
         executor._close_order.order.executed_amount_base = Decimal("0.1")
         await executor.control_task()
@@ -695,11 +630,8 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             triple_barrier_config=TripleBarrierConfig(
                 take_profit=Decimal("0.001"),
                 stop_loss=Decimal("0.05"),
-                trailing_stop=TrailingStop(
-                    activation_price=Decimal("0.05"),
-                    trailing_delta=Decimal("0.005")
-                )
-            )
+                trailing_stop=TrailingStop(activation_price=Decimal("0.05"), trailing_delta=Decimal("0.005")),
+            ),
         )
         executor = self.get_grid_executor_from_config(config)
         executor.grid_levels[0].active_open_order = TrackedOrder("OID-BUY-1")
@@ -711,7 +643,7 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             type=OrderType.LIMIT,
             price=Decimal("100"),
             creation_timestamp=1640001112.223,
-            exchange_order_id="EOID4"
+            exchange_order_id="EOID4",
         )
         get_in_flight_order_mock.return_value = InFlightOrder(
             client_order_id="OID-BUY-1",
@@ -722,7 +654,7 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             amount=Decimal("0.1"),
             price=Decimal("100"),
             creation_timestamp=1640001112.223,
-            initial_state=OrderState.OPEN
+            initial_state=OrderState.OPEN,
         )
         executor.process_order_created_event(None, None, event)
         self.assertEqual(executor.grid_levels[0].active_open_order.order_id, "OID-BUY-1")
@@ -745,11 +677,8 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             triple_barrier_config=TripleBarrierConfig(
                 take_profit=Decimal("0.001"),
                 stop_loss=Decimal("0.05"),
-                trailing_stop=TrailingStop(
-                    activation_price=Decimal("0.05"),
-                    trailing_delta=Decimal("0.005")
-                )
-            )
+                trailing_stop=TrailingStop(activation_price=Decimal("0.05"), trailing_delta=Decimal("0.005")),
+            ),
         )
         executor = self.get_grid_executor_from_config(config)
         executor.grid_levels[0].active_open_order = TrackedOrder("OID-BUY-1")
@@ -772,7 +701,7 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             amount=Decimal("0.1"),
             price=Decimal("100"),
             creation_timestamp=1640001112.223,
-            initial_state=OrderState.PARTIALLY_FILLED
+            initial_state=OrderState.PARTIALLY_FILLED,
         )
         in_flight_updated.executed_amount_base = Decimal("0.1")
         get_in_flight_order_mock.return_value = in_flight_updated
@@ -810,11 +739,8 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             triple_barrier_config=TripleBarrierConfig(
                 take_profit=Decimal("0.001"),
                 stop_loss=Decimal("0.05"),
-                trailing_stop=TrailingStop(
-                    activation_price=Decimal("0.05"),
-                    trailing_delta=Decimal("0.005")
-                )
-            )
+                trailing_stop=TrailingStop(activation_price=Decimal("0.05"), trailing_delta=Decimal("0.005")),
+            ),
         )
         executor = self.get_grid_executor_from_config(config)
         executor.grid_levels[0].active_open_order = TrackedOrder("OID-BUY-1")
@@ -827,7 +753,7 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             amount=Decimal("0.1"),
             price=Decimal("100"),
             creation_timestamp=1640001112.223,
-            initial_state=OrderState.FILLED
+            initial_state=OrderState.FILLED,
         )
         event = BuyOrderCompletedEvent(
             timestamp=1234567890,
@@ -837,7 +763,7 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             base_asset_amount=Decimal("0.1"),
             quote_asset_amount=Decimal("10"),
             order_type=OrderType.LIMIT,
-            exchange_order_id="EOID4"
+            exchange_order_id="EOID4",
         )
         executor.process_order_completed_event(None, None, event)
         executor.update_grid_levels()
@@ -860,19 +786,12 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             triple_barrier_config=TripleBarrierConfig(
                 take_profit=Decimal("0.001"),
                 stop_loss=Decimal("0.05"),
-                trailing_stop=TrailingStop(
-                    activation_price=Decimal("0.05"),
-                    trailing_delta=Decimal("0.005")
-                )
-            )
+                trailing_stop=TrailingStop(activation_price=Decimal("0.05"), trailing_delta=Decimal("0.005")),
+            ),
         )
         executor = self.get_grid_executor_from_config(config)
         executor.grid_levels[0].active_open_order = TrackedOrder("OID-BUY-1")
-        event = OrderCancelledEvent(
-            timestamp=1234567890,
-            order_id="OID-BUY-1",
-            exchange_order_id="EOID4"
-        )
+        event = OrderCancelledEvent(timestamp=1234567890, order_id="OID-BUY-1", exchange_order_id="EOID4")
         executor.process_order_canceled_event(None, None, event)
         executor.update_grid_levels()
         self.assertEqual(len(executor.levels_by_state[GridLevelStates.OPEN_ORDER_PLACED]), 0)
@@ -886,14 +805,10 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             amount=Decimal("0.1"),
             price=Decimal("100"),
             creation_timestamp=1640001112.223,
-            initial_state=OrderState.FILLED
+            initial_state=OrderState.FILLED,
         )
         executor.grid_levels[0].active_close_order = TrackedOrder("OID-SELL-1")
-        event = OrderCancelledEvent(
-            timestamp=1234567890,
-            order_id="OID-SELL-1",
-            exchange_order_id="EOID4"
-        )
+        event = OrderCancelledEvent(timestamp=1234567890, order_id="OID-SELL-1", exchange_order_id="EOID4")
         executor.process_order_canceled_event(None, None, event)
         executor.update_grid_levels()
         self.assertEqual(len(executor.levels_by_state[GridLevelStates.CLOSE_ORDER_PLACED]), 0)
@@ -915,19 +830,12 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             triple_barrier_config=TripleBarrierConfig(
                 take_profit=Decimal("0.001"),
                 stop_loss=Decimal("0.05"),
-                trailing_stop=TrailingStop(
-                    activation_price=Decimal("0.05"),
-                    trailing_delta=Decimal("0.005")
-                )
-            )
+                trailing_stop=TrailingStop(activation_price=Decimal("0.05"), trailing_delta=Decimal("0.005")),
+            ),
         )
         executor = self.get_grid_executor_from_config(config)
         executor.grid_levels[0].active_open_order = TrackedOrder("OID-BUY-1")
-        event = MarketOrderFailureEvent(
-            timestamp=1234567890,
-            order_id="OID-BUY-1",
-            order_type=OrderType.LIMIT
-        )
+        event = MarketOrderFailureEvent(timestamp=1234567890, order_id="OID-BUY-1", order_type=OrderType.LIMIT)
         executor.process_order_failed_event(None, None, event)
         executor.update_grid_levels()
         self.assertEqual(len(executor.levels_by_state[GridLevelStates.OPEN_ORDER_PLACED]), 0)
@@ -941,19 +849,15 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             amount=Decimal("0.1"),
             price=Decimal("100"),
             creation_timestamp=1640001112.223,
-            initial_state=OrderState.FILLED
+            initial_state=OrderState.FILLED,
         )
         executor.grid_levels[0].active_close_order = TrackedOrder("OID-SELL-1")
-        event = MarketOrderFailureEvent(
-            timestamp=1234567890,
-            order_id="OID-SELL-1",
-            order_type=OrderType.LIMIT
-        )
+        event = MarketOrderFailureEvent(timestamp=1234567890, order_id="OID-SELL-1", order_type=OrderType.LIMIT)
         executor.process_order_failed_event(None, None, event)
         executor.update_grid_levels()
         self.assertEqual(len(executor.levels_by_state[GridLevelStates.CLOSE_ORDER_PLACED]), 0)
 
-    @patch.object(GridExecutor, 'adjust_order_candidates')
+    @patch.object(GridExecutor, "adjust_order_candidates")
     @patch.object(GridExecutor, "get_price")
     async def test_validate_sufficient_balance_spot(self, mock_price, mock_adjust_order_candidates):
         mock_price.return_value = Decimal("100")
@@ -972,38 +876,40 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             triple_barrier_config=TripleBarrierConfig(
                 take_profit=Decimal("0.001"),
                 stop_loss=Decimal("0.05"),
-                trailing_stop=TrailingStop(
-                    activation_price=Decimal("0.05"),
-                    trailing_delta=Decimal("0.005")
-                )
-            )
+                trailing_stop=TrailingStop(activation_price=Decimal("0.05"), trailing_delta=Decimal("0.005")),
+            ),
         )
         executor = self.get_grid_executor_from_config(config)
         # Test with sufficient balance
         mock_adjust_order_candidates.side_effect = [
-            [OrderCandidate(
-                trading_pair="ETH-USDT",
-                is_maker=True,
-                order_type=OrderType.LIMIT,
-                order_side=TradeType.BUY,
-                amount=Decimal("1"),
-                price=Decimal("100")
-            )],
-            [OrderCandidate(
-                trading_pair="ETH-USDT",
-                is_maker=True,
-                order_type=OrderType.LIMIT,
-                order_side=TradeType.BUY,
-                amount=Decimal("0"),
-                price=Decimal("100")
-            )]]
+            [
+                OrderCandidate(
+                    trading_pair="ETH-USDT",
+                    is_maker=True,
+                    order_type=OrderType.LIMIT,
+                    order_side=TradeType.BUY,
+                    amount=Decimal("1"),
+                    price=Decimal("100"),
+                )
+            ],
+            [
+                OrderCandidate(
+                    trading_pair="ETH-USDT",
+                    is_maker=True,
+                    order_type=OrderType.LIMIT,
+                    order_side=TradeType.BUY,
+                    amount=Decimal("0"),
+                    price=Decimal("100"),
+                )
+            ],
+        ]
         await executor.validate_sufficient_balance()
         self.assertEqual(executor.close_type, None)
         # Test with insufficient balance
         await executor.validate_sufficient_balance()
         self.assertEqual(executor.close_type, CloseType.INSUFFICIENT_BALANCE)
 
-    @patch.object(GridExecutor, 'adjust_order_candidates')
+    @patch.object(GridExecutor, "adjust_order_candidates")
     @patch.object(GridExecutor, "get_price")
     async def test_validate_sufficient_balance_perpetual(self, mock_price, mock_adjust_order_candidates):
         mock_price.return_value = Decimal("100")
@@ -1021,36 +927,38 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             order_frequency=1.0,
             max_open_orders=5,
             max_orders_per_batch=2,
-            limit_price=Decimal("130"),
+            limit_price=Decimal("90"),
             triple_barrier_config=TripleBarrierConfig(
                 take_profit=Decimal("0.001"),
                 stop_loss=Decimal("0.05"),
                 time_limit=100,
-                trailing_stop=TrailingStop(
-                    activation_price=Decimal("0.05"),
-                    trailing_delta=Decimal("0.005")
-                )
-            )
+                trailing_stop=TrailingStop(activation_price=Decimal("0.05"), trailing_delta=Decimal("0.005")),
+            ),
         )
         executor = self.get_grid_executor_from_config(config)
         # Test with sufficient balance
         mock_adjust_order_candidates.side_effect = [
-            [OrderCandidate(
-                trading_pair="ETH-USDT",
-                is_maker=True,
-                order_type=OrderType.LIMIT,
-                order_side=TradeType.SELL,
-                amount=Decimal("100"),
-                price=Decimal("100")
-            )],
-            [OrderCandidate(
-                trading_pair="ETH-USDT",
-                is_maker=True,
-                order_type=OrderType.LIMIT,
-                order_side=TradeType.SELL,
-                amount=Decimal("0"),
-                price=Decimal("100")
-            )]]
+            [
+                OrderCandidate(
+                    trading_pair="ETH-USDT",
+                    is_maker=True,
+                    order_type=OrderType.LIMIT,
+                    order_side=TradeType.SELL,
+                    amount=Decimal("100"),
+                    price=Decimal("100"),
+                )
+            ],
+            [
+                OrderCandidate(
+                    trading_pair="ETH-USDT",
+                    is_maker=True,
+                    order_type=OrderType.LIMIT,
+                    order_side=TradeType.SELL,
+                    amount=Decimal("0"),
+                    price=Decimal("100"),
+                )
+            ],
+        ]
         await executor.validate_sufficient_balance()
         self.assertEqual(executor.close_type, None)
         # Test with insufficient balance
@@ -1079,11 +987,8 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
                 take_profit=Decimal("0.001"),
                 stop_loss=Decimal("0.05"),
                 time_limit=1,
-                trailing_stop=TrailingStop(
-                    activation_price=Decimal("0.05"),
-                    trailing_delta=Decimal("0.005")
-                )
-            )
+                trailing_stop=TrailingStop(activation_price=Decimal("0.05"), trailing_delta=Decimal("0.005")),
+            ),
         )
         executor = self.get_grid_executor_from_config(config)
         executor._status = RunnableStatus.RUNNING
@@ -1113,11 +1018,8 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
                 take_profit=Decimal("0.001"),
                 stop_loss=Decimal("0.05"),
                 time_limit=1,
-                trailing_stop=TrailingStop(
-                    activation_price=Decimal("0.05"),
-                    trailing_delta=Decimal("0.005")
-                )
-            )
+                trailing_stop=TrailingStop(activation_price=Decimal("0.05"), trailing_delta=Decimal("0.005")),
+            ),
         )
         executor = self.get_grid_executor_from_config(config)
         executor._status = RunnableStatus.RUNNING
@@ -1147,11 +1049,8 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
                 take_profit=Decimal("0.001"),
                 stop_loss=Decimal("0.05"),
                 time_limit=100,
-                trailing_stop=TrailingStop(
-                    activation_price=Decimal("0.05"),
-                    trailing_delta=Decimal("0.005")
-                )
-            )
+                trailing_stop=TrailingStop(activation_price=Decimal("0.05"), trailing_delta=Decimal("0.005")),
+            ),
         )
         executor = self.get_grid_executor_from_config(config)
         executor._status = RunnableStatus.RUNNING
@@ -1181,11 +1080,8 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
                 take_profit=Decimal("0.001"),
                 stop_loss=Decimal("0.05"),
                 time_limit=100,
-                trailing_stop=TrailingStop(
-                    activation_price=Decimal("0.05"),
-                    trailing_delta=Decimal("0.005")
-                )
-            )
+                trailing_stop=TrailingStop(activation_price=Decimal("0.05"), trailing_delta=Decimal("0.005")),
+            ),
         )
         executor = self.get_grid_executor_from_config(config)
         executor._status = RunnableStatus.RUNNING
@@ -1215,17 +1111,15 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
                 take_profit=Decimal("0.001"),
                 stop_loss=Decimal("0.05"),
                 time_limit=100,
-                trailing_stop=TrailingStop(
-                    activation_price=Decimal("0.05"),
-                    trailing_delta=Decimal("0.005")
-                )
-            )
+                trailing_stop=TrailingStop(activation_price=Decimal("0.05"), trailing_delta=Decimal("0.005")),
+            ),
         )
         executor = self.get_grid_executor_from_config(config)
         executor_info = executor.executor_info
         custom_info = executor_info.custom_info
-        self.assertEqual(custom_info["levels_by_state"],
-                         {key.name: len(value) for key, value in executor.levels_by_state.items()})
+        self.assertEqual(
+            custom_info["levels_by_state"], {key.name: len(value) for key, value in executor.levels_by_state.items()}
+        )
         self.assertEqual(custom_info["filled_orders"], executor._filled_orders)
         self.assertEqual(custom_info["failed_orders"], executor._failed_orders)
         self.assertEqual(custom_info["canceled_orders"], executor._canceled_orders)
@@ -1241,19 +1135,34 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         self.assertEqual(custom_info["open_liquidity_placed"], executor.open_liquidity_placed)
         self.assertEqual(custom_info["close_liquidity_placed"], executor.close_liquidity_placed)
 
-    def test_creating_grid_with_unsupported_stop_loss_order(self, ):
-        # The barrier order types are validated by the config, so the grid can never be built.
-        with self.assertRaises(ValueError):
-            TripleBarrierConfig(
+    def test_creating_grid_with_unsupported_stop_loss_order(
+        self,
+    ):
+        config = GridExecutorConfig(
+            id="test",
+            timestamp=1234567890,
+            side=TradeType.BUY,
+            connector_name="binance",
+            trading_pair="ETH-USDT",
+            start_price=Decimal("100"),
+            end_price=Decimal("120"),
+            total_amount_quote=Decimal("100"),
+            min_spread_between_orders=Decimal("0.01"),
+            min_order_amount_quote=Decimal("10"),
+            order_frequency=1.0,
+            max_open_orders=5,
+            max_orders_per_batch=2,
+            limit_price=Decimal("90"),
+            triple_barrier_config=TripleBarrierConfig(
                 take_profit=Decimal("0.001"),
                 stop_loss=Decimal("0.05"),
                 stop_loss_order_type=OrderType.LIMIT,
                 time_limit=100,
-                trailing_stop=TrailingStop(
-                    activation_price=Decimal("0.05"),
-                    trailing_delta=Decimal("0.005")
-                )
-            )
+                trailing_stop=TrailingStop(activation_price=Decimal("0.05"), trailing_delta=Decimal("0.005")),
+            ),
+        )
+        with self.assertRaises(ValueError):
+            self.get_grid_executor_from_config(config)
 
     @patch.object(GridExecutor, "get_price")
     async def test_evaluate_max_retries(self, mock_price):
@@ -1277,11 +1186,8 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
                 take_profit=Decimal("0.001"),
                 stop_loss=Decimal("0.05"),
                 time_limit=100,
-                trailing_stop=TrailingStop(
-                    activation_price=Decimal("0.05"),
-                    trailing_delta=Decimal("0.005")
-                )
-            )
+                trailing_stop=TrailingStop(activation_price=Decimal("0.05"), trailing_delta=Decimal("0.005")),
+            ),
         )
         executor = self.get_grid_executor_from_config(config)
         executor._current_retries = 11
@@ -1305,10 +1211,7 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             min_spread_between_orders=Decimal("0.01"),
             min_order_amount_quote=Decimal("10"),
             limit_price=Decimal("90"),
-            triple_barrier_config=TripleBarrierConfig(
-                take_profit=Decimal("0.001"),
-                stop_loss=Decimal("0.05")
-            )
+            triple_barrier_config=TripleBarrierConfig(take_profit=Decimal("0.001"), stop_loss=Decimal("0.05")),
         )
         executor = self.get_grid_executor_from_config(config)
         executor.open_liquidity_placed = Decimal("0")
@@ -1326,7 +1229,7 @@ class TestGridExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             amount=Decimal("0.1"),
             price=Decimal("100"),
             creation_timestamp=1640001112.223,
-            initial_state=OrderState.FILLED
+            initial_state=OrderState.FILLED,
         )
         await executor.control_task()
         self.assertEqual(executor._status, RunnableStatus.TERMINATED)
