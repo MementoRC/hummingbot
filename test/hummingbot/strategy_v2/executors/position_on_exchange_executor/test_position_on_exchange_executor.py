@@ -15,8 +15,10 @@ from hummingbot.core.event.events import (
 )
 from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
-from hummingbot.strategy_v2.executors.position_executor.data_types import TripleBarrierConfig
-from hummingbot.strategy_v2.executors.position_on_exchange_executor.data_types import PositionOnExchangeExecutorConfig
+from hummingbot.strategy_v2.executors.position_on_exchange_executor.data_types import (
+    PositionOnExchangeExecutorConfig,
+    PositionOnExchangeTripleBarrierConfig,
+)
 from hummingbot.strategy_v2.executors.position_on_exchange_executor.position_on_exchange_executor import (
     PositionOnExchangeExecutor,
 )
@@ -49,7 +51,7 @@ class TestPositionOnExchangeExecutor(IsolatedAsyncioWrapperTestCase):
         return strategy
 
     def get_position_config_market_long(self):
-        return PositionOnExchangeExecutorConfig(
+        config = PositionOnExchangeExecutorConfig(
             id="test",
             timestamp=1234567890,
             trading_pair="ETH-USDT",
@@ -57,7 +59,7 @@ class TestPositionOnExchangeExecutor(IsolatedAsyncioWrapperTestCase):
             side=TradeType.BUY,
             entry_price=Decimal("100"),
             amount=Decimal("1"),
-            triple_barrier_config=TripleBarrierConfig(
+            triple_barrier_config=PositionOnExchangeTripleBarrierConfig(
                 stop_loss=Decimal("0.05"),
                 take_profit=Decimal("0.1"),
                 time_limit=60,
@@ -65,9 +67,10 @@ class TestPositionOnExchangeExecutor(IsolatedAsyncioWrapperTestCase):
                 stop_loss_order_type=OrderType.STOP_LOSS,
             ),
         )
+        return config
 
     def get_position_config_market_long_tp_order(self):
-        return PositionOnExchangeExecutorConfig(
+        config = PositionOnExchangeExecutorConfig(
             id="test-1",
             timestamp=1234567890,
             trading_pair="ETH-USDT",
@@ -75,7 +78,7 @@ class TestPositionOnExchangeExecutor(IsolatedAsyncioWrapperTestCase):
             side=TradeType.BUY,
             entry_price=Decimal("100"),
             amount=Decimal("1"),
-            triple_barrier_config=TripleBarrierConfig(
+            triple_barrier_config=PositionOnExchangeTripleBarrierConfig(
                 stop_loss=Decimal("0.05"),
                 take_profit=Decimal("0.1"),
                 time_limit=60,
@@ -83,9 +86,10 @@ class TestPositionOnExchangeExecutor(IsolatedAsyncioWrapperTestCase):
                 stop_loss_order_type=OrderType.STOP_LOSS,
             ),
         )
+        return config
 
     def get_position_config_market_short(self):
-        return PositionOnExchangeExecutorConfig(
+        config = PositionOnExchangeExecutorConfig(
             id="test-2",
             timestamp=1234567890,
             trading_pair="ETH-USDT",
@@ -93,7 +97,7 @@ class TestPositionOnExchangeExecutor(IsolatedAsyncioWrapperTestCase):
             side=TradeType.SELL,
             entry_price=Decimal("100"),
             amount=Decimal("1"),
-            triple_barrier_config=TripleBarrierConfig(
+            triple_barrier_config=PositionOnExchangeTripleBarrierConfig(
                 stop_loss=Decimal("0.05"),
                 take_profit=Decimal("0.1"),
                 time_limit=60,
@@ -101,9 +105,10 @@ class TestPositionOnExchangeExecutor(IsolatedAsyncioWrapperTestCase):
                 stop_loss_order_type=OrderType.STOP_LOSS,
             ),
         )
+        return config
 
     def get_incomplete_position_config(self):
-        return PositionOnExchangeExecutorConfig(
+        config = PositionOnExchangeExecutorConfig(
             id="test-3",
             timestamp=1234567890,
             trading_pair="ETH-USDT",
@@ -111,10 +116,11 @@ class TestPositionOnExchangeExecutor(IsolatedAsyncioWrapperTestCase):
             side=TradeType.SELL,
             entry_price=Decimal("100"),
             amount=Decimal("1"),
-            triple_barrier_config=TripleBarrierConfig(
+            triple_barrier_config=PositionOnExchangeTripleBarrierConfig(
                 take_profit_order_type=OrderType.LIMIT, stop_loss_order_type=OrderType.STOP_LOSS
             ),
         )
+        return config
 
     def get_position_on_exchange_executor_running_from_config(self, position_config):
         position_on_exchange_executor = PositionOnExchangeExecutor(self.strategy, position_config)
@@ -799,7 +805,7 @@ class TestPositionOnExchangeExecutor(IsolatedAsyncioWrapperTestCase):
             connector_name="binance",
             side=TradeType.BUY,
             amount=Decimal("1"),
-            triple_barrier_config=TripleBarrierConfig(
+            triple_barrier_config=PositionOnExchangeTripleBarrierConfig(
                 stop_loss=Decimal("0.05"),
                 take_profit=Decimal("0.1"),
                 time_limit=60,
@@ -825,7 +831,7 @@ class TestPositionOnExchangeExecutor(IsolatedAsyncioWrapperTestCase):
             side=TradeType.BUY,
             amount=Decimal("1"),
             entry_price=Decimal("102"),
-            triple_barrier_config=TripleBarrierConfig(
+            triple_barrier_config=PositionOnExchangeTripleBarrierConfig(
                 open_order_type=OrderType.LIMIT_MAKER,
                 stop_loss=Decimal("0.05"),
                 take_profit=Decimal("0.1"),
@@ -883,7 +889,7 @@ class TestPositionOnExchangeExecutor(IsolatedAsyncioWrapperTestCase):
             side=TradeType.BUY,
             entry_price=Decimal("100"),
             amount=Decimal("1"),
-            triple_barrier_config=TripleBarrierConfig(
+            triple_barrier_config=PositionOnExchangeTripleBarrierConfig(
                 stop_loss=Decimal("0.05"),
                 take_profit=Decimal("0.1"),
                 time_limit=60,

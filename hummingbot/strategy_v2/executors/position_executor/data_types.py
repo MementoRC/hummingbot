@@ -61,7 +61,7 @@ class TripleBarrierConfig(BaseModel):
                 trailing_delta=self.trailing_stop.trailing_delta * Decimal(volatility_factor),
             )
 
-        return TripleBarrierConfig(
+        return type(self)(
             stop_loss=self.stop_loss * Decimal(volatility_factor) if self.stop_loss is not None else None,
             take_profit=self.take_profit * Decimal(volatility_factor) if self.take_profit is not None else None,
             time_limit=self.time_limit,

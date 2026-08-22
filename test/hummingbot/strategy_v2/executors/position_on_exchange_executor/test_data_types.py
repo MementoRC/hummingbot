@@ -5,7 +5,10 @@ from pydantic import ValidationError
 
 from hummingbot.core.data_type.common import OrderType, TradeType
 from hummingbot.strategy_v2.executors.position_executor.data_types import TrailingStop, TripleBarrierConfig
-from hummingbot.strategy_v2.executors.position_on_exchange_executor.data_types import PositionOnExchangeExecutorConfig
+from hummingbot.strategy_v2.executors.position_on_exchange_executor.data_types import (
+    PositionOnExchangeExecutorConfig,
+    PositionOnExchangeTripleBarrierConfig,
+)
 
 
 class PositionOnExchangeExecutorConfigTest(unittest.TestCase):
@@ -17,7 +20,7 @@ class PositionOnExchangeExecutorConfigTest(unittest.TestCase):
             side=TradeType.BUY,
             amount=Decimal("1"),
             entry_price=Decimal("10000"),
-            triple_barrier_config=TripleBarrierConfig(),
+            triple_barrier_config=PositionOnExchangeTripleBarrierConfig(stop_loss_order_type=OrderType.STOP_LOSS),
         )
 
         self.assertEqual(config.type, "position_on_exchange_executor")
@@ -42,7 +45,7 @@ class PositionOnExchangeExecutorConfigTest(unittest.TestCase):
                 side=TradeType.BUY,
                 amount=Decimal("1"),
                 entry_price=Decimal("10000"),
-                triple_barrier_config=TripleBarrierConfig(),
+                triple_barrier_config=PositionOnExchangeTripleBarrierConfig(stop_loss_order_type=OrderType.STOP_LOSS),
             )
 
     def test_invalid_side(self):
@@ -54,7 +57,7 @@ class PositionOnExchangeExecutorConfigTest(unittest.TestCase):
                 side="invalid",  # Invalid side type
                 amount=Decimal("1"),
                 entry_price=Decimal("10000"),
-                triple_barrier_config=TripleBarrierConfig(),
+                triple_barrier_config=PositionOnExchangeTripleBarrierConfig(stop_loss_order_type=OrderType.STOP_LOSS),
             )
 
     def test_invalid_amount(self):
@@ -66,7 +69,7 @@ class PositionOnExchangeExecutorConfigTest(unittest.TestCase):
                 side=TradeType.BUY,
                 amount="invalid",  # Invalid amount type
                 entry_price=Decimal("10000"),
-                triple_barrier_config=TripleBarrierConfig(),
+                triple_barrier_config=PositionOnExchangeTripleBarrierConfig(stop_loss_order_type=OrderType.STOP_LOSS),
             )
 
     def test_invalid_entry_price(self):
@@ -78,7 +81,7 @@ class PositionOnExchangeExecutorConfigTest(unittest.TestCase):
                 side=TradeType.BUY,
                 amount=Decimal("1"),
                 entry_price="invalid",  # Invalid entry_price type
-                triple_barrier_config=TripleBarrierConfig(),
+                triple_barrier_config=PositionOnExchangeTripleBarrierConfig(stop_loss_order_type=OrderType.STOP_LOSS),
             )
 
     def test_optional_fields_none(self):
@@ -99,7 +102,7 @@ class PositionOnExchangeExecutorConfigTest(unittest.TestCase):
     def create_config_with_triple_barrier(
         stop_loss: Decimal | None = None,
         take_profit: Decimal | None = None,
-        stop_loss_order_type: OrderType | None = OrderType.MARKET,
+        stop_loss_order_type: OrderType | None = OrderType.STOP_LOSS,
         trailing_stop: TrailingStop | None = None,
     ):
         return PositionOnExchangeExecutorConfig(
@@ -109,7 +112,7 @@ class PositionOnExchangeExecutorConfigTest(unittest.TestCase):
             side=TradeType.BUY,
             amount=Decimal("1"),
             entry_price=Decimal("10000"),
-            triple_barrier_config=TripleBarrierConfig(
+            triple_barrier_config=PositionOnExchangeTripleBarrierConfig(
                 stop_loss=stop_loss,
                 take_profit=take_profit,
                 stop_loss_order_type=stop_loss_order_type,
@@ -121,15 +124,26 @@ class PositionOnExchangeExecutorConfigTest(unittest.TestCase):
         config = self.create_config_with_triple_barrier(
             stop_loss=Decimal("0.05"),
             take_profit=Decimal("0.1"),
-            stop_loss_order_type=OrderType.LIMIT,
+            stop_loss_order_type=OrderType.STOP_LOSS,
             trailing_stop=TrailingStop(activation_price=Decimal("11000"), trailing_delta=Decimal("0.05")),
         )
 
         self.assertEqual(config.triple_barrier_config.stop_loss, Decimal("0.05"))
         self.assertEqual(config.triple_barrier_config.take_profit, Decimal("0.1"))
-        self.assertEqual(config.triple_barrier_config.stop_loss_order_type, OrderType.LIMIT)
+        self.assertEqual(config.triple_barrier_config.stop_loss_order_type, OrderType.STOP_LOSS)
         self.assertEqual(config.triple_barrier_config.trailing_stop.activation_price, Decimal("11000"))
         self.assertEqual(config.triple_barrier_config.trailing_stop.trailing_delta, Decimal("0.05"))
+
+    def test_triple_barrier_config_rejects_limit_stop_loss_order_type(self):
+        # PositionOnExchangeExecutorConfig registers its stop directly on the exchange, so
+        # stop_loss_order_type must be STOP_LOSS or STOP_LOSS_LIMIT. A resting LIMIT order
+        # (valid for the base client-side PositionExecutor) must be rejected here.
+        with self.assertRaises(ValidationError):
+            self.create_config_with_triple_barrier(
+                stop_loss=Decimal("0.05"),
+                take_profit=Decimal("0.1"),
+                stop_loss_order_type=OrderType.LIMIT,
+            )
 
     def test_triple_barrier_config_invalid_stop_loss(self):
         with self.assertRaises(ValidationError):
