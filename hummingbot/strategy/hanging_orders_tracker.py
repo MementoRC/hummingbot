@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from decimal import Decimal
 import logging
-from typing import Union
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.limit_order import LimitOrder
@@ -120,16 +119,16 @@ class HangingOrdersTracker:
             self.remove_order(limit_order_to_be_removed)
 
     def _did_complete_buy_order(
-        self, event_tag: int, market: ConnectorBase, event: Union[BuyOrderCompletedEvent, SellOrderCompletedEvent]
+        self, event_tag: int, market: ConnectorBase, event: BuyOrderCompletedEvent | SellOrderCompletedEvent
     ):
         self._did_complete_order(event, True)
 
     def _did_complete_sell_order(
-        self, event_tag: int, market: ConnectorBase, event: Union[BuyOrderCompletedEvent, SellOrderCompletedEvent]
+        self, event_tag: int, market: ConnectorBase, event: BuyOrderCompletedEvent | SellOrderCompletedEvent
     ):
         self._did_complete_order(event, False)
 
-    def _did_complete_order(self, event: Union[BuyOrderCompletedEvent, SellOrderCompletedEvent], is_buy: bool):
+    def _did_complete_order(self, event: BuyOrderCompletedEvent | SellOrderCompletedEvent, is_buy: bool):
         hanging_order = next(
             (
                 hanging_order

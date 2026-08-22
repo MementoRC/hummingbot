@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -49,16 +48,16 @@ class MultiGridStrikeConfig(ControllerConfigBase):
     grids: list[GridConfig] = Field(default_factory=list, json_schema_extra={"is_updatable": True})
 
     # Common grid parameters
-    min_spread_between_orders: Optional[Decimal] = Field(
+    min_spread_between_orders: Decimal | None = Field(
         default=Decimal("0.001"), json_schema_extra={"is_updatable": True}
     )
-    min_order_amount_quote: Optional[Decimal] = Field(default=Decimal("5"), json_schema_extra={"is_updatable": True})
+    min_order_amount_quote: Decimal | None = Field(default=Decimal("5"), json_schema_extra={"is_updatable": True})
 
     # Execution
     max_open_orders: int = Field(default=2, json_schema_extra={"is_updatable": True})
-    max_orders_per_batch: Optional[int] = Field(default=1, json_schema_extra={"is_updatable": True})
+    max_orders_per_batch: int | None = Field(default=1, json_schema_extra={"is_updatable": True})
     order_frequency: int = Field(default=3, json_schema_extra={"is_updatable": True})
-    activation_bounds: Optional[Decimal] = Field(default=None, json_schema_extra={"is_updatable": True})
+    activation_bounds: Decimal | None = Field(default=None, json_schema_extra={"is_updatable": True})
     keep_position: bool = Field(default=False, json_schema_extra={"is_updatable": True})
 
     # Risk Management
@@ -108,7 +107,7 @@ class MultiGridStrike(ControllerBase):
     def active_executors(self) -> list[ExecutorInfo]:
         return [executor for executor in self.executors_info if executor.is_active]
 
-    def get_executor_by_grid_id(self, grid_id: str) -> Optional[ExecutorInfo]:
+    def get_executor_by_grid_id(self, grid_id: str) -> ExecutorInfo | None:
         """Get executor associated with a specific grid"""
         executor_id = self._grid_executor_mapping.get(grid_id)
         if executor_id:

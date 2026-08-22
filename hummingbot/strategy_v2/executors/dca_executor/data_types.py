@@ -1,6 +1,6 @@
 from decimal import Decimal
 from enum import Enum
-from typing import List, Literal, Optional
+from typing import Literal
 
 from pydantic import model_validator
 
@@ -28,15 +28,15 @@ class DCAExecutorConfig(ExecutorConfigBase):
     trading_pair: str
     side: TradeType
     leverage: int = 1
-    amounts_quote: List[Decimal]
-    prices: List[Decimal]
-    take_profit: Optional[Decimal] = None
-    stop_loss: Optional[Decimal] = None
-    trailing_stop: Optional[TrailingStop] = None
-    time_limit: Optional[int] = None
+    amounts_quote: list[Decimal]
+    prices: list[Decimal]
+    take_profit: Decimal | None = None
+    stop_loss: Decimal | None = None
+    trailing_stop: TrailingStop | None = None
+    time_limit: int | None = None
     mode: DCAMode = DCAMode.MAKER
-    activation_bounds: Optional[List[Decimal]] = None
-    level_id: Optional[str] = None
+    activation_bounds: list[Decimal] | None = None
+    level_id: str | None = None
 
     @model_validator(mode="after")
     def validate_dca(self):
@@ -46,8 +46,10 @@ class DCAExecutorConfig(ExecutorConfigBase):
         require_at_least("leverage", self.leverage, 1)
         # Every level is an (amount, price) pair, so the two lists have to line up.
         if len(self.amounts_quote) != len(self.prices):
-            raise ValueError(f"amounts_quote ({len(self.amounts_quote)} levels) and prices "
-                             f"({len(self.prices)} levels) must have the same length")
+            raise ValueError(
+                f"amounts_quote ({len(self.amounts_quote)} levels) and prices "
+                f"({len(self.prices)} levels) must have the same length"
+            )
         if len(self.prices) == 0:
             raise ValueError("prices must define at least one level")
         require_all_positive("amounts_quote", self.amounts_quote)

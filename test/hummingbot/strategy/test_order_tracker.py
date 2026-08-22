@@ -1,7 +1,6 @@
 import asyncio
 from decimal import Decimal
 import time
-from typing import Union
 import unittest
 
 import pandas as pd
@@ -65,7 +64,7 @@ class OrderTrackerUnitTests(unittest.TestCase):
 
     @staticmethod
     def simulate_place_order(
-        order_tracker: OrderTracker, order: Union[LimitOrder, MarketOrder], market_info: MarketTradingPairTuple
+        order_tracker: OrderTracker, order: LimitOrder | MarketOrder, market_info: MarketTradingPairTuple
     ):
         """
         Simulates an order being successfully placed.
@@ -86,13 +85,13 @@ class OrderTrackerUnitTests(unittest.TestCase):
             )
 
     @staticmethod
-    def simulate_order_created(order_tracker: OrderTracker, order: Union[LimitOrder, MarketOrder]):
+    def simulate_order_created(order_tracker: OrderTracker, order: LimitOrder | MarketOrder):
         order_id = order.client_order_id if isinstance(order, LimitOrder) else order.order_id
         order_tracker.remove_create_order_pending(order_id)
 
     @staticmethod
     def simulate_stop_tracking_order(
-        order_tracker: OrderTracker, order: Union[LimitOrder, MarketOrder], market_info: MarketTradingPairTuple
+        order_tracker: OrderTracker, order: LimitOrder | MarketOrder, market_info: MarketTradingPairTuple
     ):
         """
         Simulates an order being cancelled or filled completely.
@@ -106,7 +105,7 @@ class OrderTrackerUnitTests(unittest.TestCase):
             order_tracker.stop_tracking_market_order(market_pair=market_info, order_id=order.order_id)
 
     @staticmethod
-    def simulate_cancel_order(order_tracker: OrderTracker, order: Union[LimitOrder, MarketOrder]):
+    def simulate_cancel_order(order_tracker: OrderTracker, order: LimitOrder | MarketOrder):
         """
         Simulates order being cancelled.
         """

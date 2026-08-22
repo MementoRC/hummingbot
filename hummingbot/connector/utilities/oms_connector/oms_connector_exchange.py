@@ -4,7 +4,7 @@ from abc import abstractmethod
 import asyncio
 from collections import defaultdict
 from decimal import Decimal
-from typing import Any, Union
+from typing import Any
 
 from bidict import bidict
 
@@ -513,7 +513,7 @@ class OMSExchange(ExchangePyBase):
         is_auth_required: bool = False,
         return_err: bool = False,
         limit_id: str | None = None,
-    ) -> Union[dict[str, Any], list[dict[str, Any]]]:
+    ) -> dict[str, Any] | list[dict[str, Any]]:
         rest_assistant = await self._web_assistants_factory.get_rest_assistant()
         url = self._url_creator.get_rest_url(path_url)
         return await rest_assistant.execute_request(

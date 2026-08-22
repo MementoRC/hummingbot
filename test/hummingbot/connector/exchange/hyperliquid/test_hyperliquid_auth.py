@@ -207,27 +207,23 @@ class HyperliquidAuthValidationTests(TestCase):
 
     def test_is_key_authorized_owner_key(self):
         # arb_wallet: the key's address IS the account -> authorised with no agent list.
-        self.assertTrue(
-            HyperliquidAuth.is_key_authorized(self.DERIVED_ADDRESS, self.DERIVED_ADDRESS, []))
+        self.assertTrue(HyperliquidAuth.is_key_authorized(self.DERIVED_ADDRESS, self.DERIVED_ADDRESS, []))
 
     def test_is_key_authorized_approved_agent(self):
         # api_wallet: the key's address is an approved agent of the (different) account.
         agents = [{"address": self.DERIVED_ADDRESS, "name": "hb", "validUntil": 0}]
-        self.assertTrue(
-            HyperliquidAuth.is_key_authorized(self.DERIVED_ADDRESS, self.UNRELATED_ADDRESS, agents))
+        self.assertTrue(HyperliquidAuth.is_key_authorized(self.DERIVED_ADDRESS, self.UNRELATED_ADDRESS, agents))
 
     def test_is_key_authorized_unapproved_agent(self):
         agents = [{"address": self.OTHER_AGENT, "name": "someone-else", "validUntil": 0}]
-        self.assertFalse(
-            HyperliquidAuth.is_key_authorized(self.DERIVED_ADDRESS, self.UNRELATED_ADDRESS, agents))
+        self.assertFalse(HyperliquidAuth.is_key_authorized(self.DERIVED_ADDRESS, self.UNRELATED_ADDRESS, agents))
 
     def test_is_key_authorized_empty_agents_non_owner(self):
         # account has no approved agents and the key is not the owner -> cannot trade.
-        self.assertFalse(
-            HyperliquidAuth.is_key_authorized(self.DERIVED_ADDRESS, self.UNRELATED_ADDRESS, []))
+        self.assertFalse(HyperliquidAuth.is_key_authorized(self.DERIVED_ADDRESS, self.UNRELATED_ADDRESS, []))
 
     def test_is_key_authorized_is_checksum_insensitive(self):
         agents = [{"address": self.DERIVED_ADDRESS.lower()}]
         self.assertTrue(
-            HyperliquidAuth.is_key_authorized(
-                self.DERIVED_ADDRESS.lower(), self.UNRELATED_ADDRESS.lower(), agents))
+            HyperliquidAuth.is_key_authorized(self.DERIVED_ADDRESS.lower(), self.UNRELATED_ADDRESS.lower(), agents)
+        )

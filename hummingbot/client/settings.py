@@ -5,7 +5,7 @@ from enum import Enum
 import importlib
 from os import DirEntry, scandir
 from os.path import exists, join
-from typing import TYPE_CHECKING, Any, Dict, NamedTuple, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, NamedTuple, cast
 
 from pydantic import SecretStr
 
@@ -401,7 +401,7 @@ class AllConnectorSettings:
 
     @staticmethod
     def _validate_trade_fee_schema(
-        exchange_name: str, trade_fee_schema: Union[TradeFeeSchema, list[float]] | None
+        exchange_name: str, trade_fee_schema: TradeFeeSchema | list[float] | None
     ) -> TradeFeeSchema:
         if not isinstance(trade_fee_schema, TradeFeeSchema):
             # backward compatibility

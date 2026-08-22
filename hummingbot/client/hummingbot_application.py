@@ -4,7 +4,7 @@ import asyncio
 from collections import deque
 import logging
 import time
-from typing import Deque, Union
+from typing import Deque
 
 from sqlalchemy.orm import Session
 
@@ -61,7 +61,7 @@ class HummingbotApplication(*commands):
         return cls._main_app
 
     def __init__(self, client_config_map: ClientConfigAdapter | None = None, headless_mode: bool = False):
-        self.client_config_map: Union[ClientConfigMap, ClientConfigAdapter] = (  # type-hint enables IDE auto-complete
+        self.client_config_map: ClientConfigMap | ClientConfigAdapter = (  # type-hint enables IDE auto-complete
             client_config_map or load_client_config_map_from_file()
         )
         self.headless_mode = headless_mode

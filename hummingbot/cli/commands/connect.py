@@ -9,7 +9,7 @@ password via ``Security.update_secure_config`` and written to ``conf/connectors/
 import asyncio
 import getpass
 import sys
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import typer
 
@@ -119,7 +119,7 @@ def _collect_key_values(fields: list[Any], cfg: "ClientConfigAdapter", keys_stdi
 
 
 def connect(
-    connector: Optional[str] = typer.Argument(None, help="Connector to add keys for. Omit to show connections."),
+    connector: str | None = typer.Argument(None, help="Connector to add keys for. Omit to show connections."),
     keys_stdin: bool = typer.Option(False, "--keys-stdin", help="Read API keys as a JSON object from stdin."),
     replace: bool = typer.Option(False, "--replace", help="Overwrite existing keys for the connector."),
     show_fields: bool = typer.Option(False, "--fields", help="List the connector's required key fields and exit."),

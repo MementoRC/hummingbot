@@ -1,6 +1,5 @@
 from decimal import Decimal
 import time
-from typing import Optional
 
 import pandas_ta as ta  # noqa: F401
 from pydantic import Field, field_validator
@@ -42,7 +41,7 @@ class DManV3ControllerConfig(DirectionalTradingControllerConfigBase):
     bb_std: float = Field(default=2.0)
     bb_long_threshold: float = Field(default=0.0)
     bb_short_threshold: float = Field(default=1.0)
-    trailing_stop: Optional[TrailingStop] = Field(
+    trailing_stop: TrailingStop | None = Field(
         default="0.015,0.005",
         json_schema_extra={
             "prompt": "Enter the trailing stop parameters (activation_price, trailing_delta) as a comma-separated list: ",
@@ -74,7 +73,7 @@ class DManV3ControllerConfig(DirectionalTradingControllerConfigBase):
         default=None,
         json_schema_extra={"prompt": "Do you want to make the target dynamic? (Yes/No) ", "prompt_on_new": True},
     )
-    activation_bounds: Optional[list[Decimal]] = Field(
+    activation_bounds: list[Decimal] | None = Field(
         default=None,
         json_schema_extra={
             "prompt": "Enter the activation bounds for the orders (e.g., 0.01 activates the next order when the price is closer than 1%): ",

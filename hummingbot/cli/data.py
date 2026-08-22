@@ -1,7 +1,6 @@
 """Read-only access to a bot's trades sqlite DB, independent of any running process."""
 
 import time
-from typing import Optional
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import joinedload, sessionmaker
@@ -11,7 +10,7 @@ from hummingbot.model.trade_fill import TradeFill
 
 
 def get_trades(
-    db_path: str, *, config_file_path: Optional[str] = None, days: Optional[float] = None, limit: Optional[int] = None
+    db_path: str, *, config_file_path: str | None = None, days: float | None = None, limit: int | None = None
 ) -> list[TradeFill]:
     """Return TradeFill rows (ascending by timestamp), detached from the session."""
     get_declarative_base()  # register every model so the TradeFill -> Order mapper resolves

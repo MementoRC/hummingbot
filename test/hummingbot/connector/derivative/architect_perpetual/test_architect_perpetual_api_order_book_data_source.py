@@ -2,7 +2,6 @@ import asyncio
 from decimal import Decimal
 import json
 import re
-from typing import Union
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses import aioresponses
@@ -176,7 +175,7 @@ class ArchitectPerpetualAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTe
         }
         return response
 
-    def funding_info_rest_data(self) -> dict[str, list[dict[str, Union[str, int]]]]:
+    def funding_info_rest_data(self) -> dict[str, list[dict[str, str | int]]]:
         resp = {
             "funding_rates": [
                 {

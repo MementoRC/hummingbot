@@ -6,7 +6,7 @@ import logging
 from os import DirEntry, scandir
 from os.path import exists, join
 import shutil
-from typing import Any, Dict, Union, cast
+from typing import Any, Dict, cast
 
 import yaml
 
@@ -115,7 +115,7 @@ def migrate_global_config() -> list[str]:
 
 
 def _migrate_global_config_modes(client_config_map: ClientConfigAdapter, data: Dict):
-    client_config_map: Union[ClientConfigAdapter, ClientConfigMap] = client_config_map  # for IDE autocomplete
+    client_config_map: ClientConfigAdapter | ClientConfigMap = client_config_map  # for IDE autocomplete
 
     kill_switch_enabled = data.pop("kill_switch_enabled")
     kill_switch_rate = data.pop("kill_switch_rate")
@@ -172,7 +172,7 @@ def _migrate_global_config_modes(client_config_map: ClientConfigAdapter, data: D
     _migrate_global_config_field(client_config_map.commands_timeout, data, "create_command_timeout")
     _migrate_global_config_field(client_config_map.commands_timeout, data, "other_commands_timeout")
 
-    color_map: Union[ClientConfigAdapter, ColorConfigMap] = client_config_map.color
+    color_map: ClientConfigAdapter | ColorConfigMap = client_config_map.color
     _migrate_global_config_field(color_map, data, "top-pane", "top_pane")
     _migrate_global_config_field(color_map, data, "bottom-pane", "bottom_pane")
     _migrate_global_config_field(color_map, data, "output-pane", "output_pane")

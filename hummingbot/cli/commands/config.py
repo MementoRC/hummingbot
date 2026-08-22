@@ -18,7 +18,7 @@ A bare ``hbot config`` shows global only when nothing is loaded, and global + st
 Global keys take precedence: a key that names a global setting is always read/written globally.
 """
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import typer
 
@@ -49,7 +49,7 @@ def _navigate(cm: "ClientConfigAdapter", key: str):
     return model, parts[-1]
 
 
-def _active_strategy() -> Optional[tuple[str, str, bool]]:
+def _active_strategy() -> tuple[str, str, bool] | None:
     """The strategy config ``config`` should show/edit — ``(file, type, running)`` — or None.
 
     A running bot's own config wins (so ``config`` reflects the live bot); otherwise the config
@@ -65,7 +65,7 @@ def _active_strategy() -> Optional[tuple[str, str, bool]]:
     return None
 
 
-def _list(cm: "ClientConfigAdapter", active: Optional[tuple[str, str, bool]], as_json: bool) -> None:
+def _list(cm: "ClientConfigAdapter", active: tuple[str, str, bool] | None, as_json: bool) -> None:
     rows = [{"key": item.config_path, "value": item.printable_value} for item in _leaf_items(cm)]
     out = render_table(rows, columns=["key", "value"], title="global settings", max_widths={"key": 55, "value": 120})
     payload: dict = {"global": {r["key"]: r["value"] for r in rows}, "strategy": None}
@@ -117,7 +117,7 @@ def _list(cm: "ClientConfigAdapter", active: Optional[tuple[str, str, bool]], as
     emit(payload, out, as_json)
 
 
-def _read_or_set_global(cm: "ClientConfigAdapter", key: str, value: Optional[str], as_json: bool) -> None:
+def _read_or_set_global(cm: "ClientConfigAdapter", key: str, value: str | None, as_json: bool) -> None:
     from hummingbot.client.config.config_helpers import ClientConfigAdapter, save_to_yml
     from hummingbot.client.settings import CLIENT_CONFIG_PATH
 
@@ -135,7 +135,7 @@ def _read_or_set_global(cm: "ClientConfigAdapter", key: str, value: Optional[str
     emit(record, render_kv(record, title="config"), as_json)
 
 
-def _read_or_set_strategy(active: tuple[str, str, bool], key: str, value: Optional[str], as_json: bool) -> None:
+def _read_or_set_strategy(active: tuple[str, str, bool], key: str, value: str | None, as_json: bool) -> None:
     from hummingbot.cli.strategy_configs import config_path, edit_config, get_value, read_yaml
 
     file, stype, running = active
@@ -176,11 +176,11 @@ def _read_or_set_strategy(active: tuple[str, str, bool], key: str, value: Option
 
 
 def config(
-    key: Optional[str] = typer.Argument(
+    key: str | None = typer.Argument(
         None,
         help="Config key: a global setting (dotted, e.g. mqtt_bridge.mqtt_host) or a loaded-strategy field. Omit to list.",
     ),
-    value: Optional[str] = typer.Argument(None, help="New value to set. Omit to read the key."),
+    value: str | None = typer.Argument(None, help="New value to set. Omit to read the key."),
     as_json: bool = json_option(),
 ) -> None:
     """View or set configuration — global client settings, plus the loaded strategy's config."""

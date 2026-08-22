@@ -7,12 +7,12 @@ by ConfigVar.
 from __future__ import annotations
 
 import inspect
-from typing import Callable, Union
+from typing import Callable
 
 # function types passed into ConfigVar
 RequiredIf = Callable[[str], bool | None]
 Validator = Callable[[str], str | None]
-Prompt = Union[Callable[[str], str | None], str | None]
+Prompt = Callable[[str], str | None] | str | None
 OnValidated = Callable
 
 

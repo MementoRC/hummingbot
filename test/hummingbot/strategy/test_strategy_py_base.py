@@ -2,7 +2,6 @@ import asyncio
 from collections import deque
 from decimal import Decimal
 import time
-from typing import Union
 import unittest
 
 from hummingbot.connector.test_support.mock_paper_exchange import MockPaperExchange
@@ -76,7 +75,7 @@ class StrategyPyBaseUnitTests(unittest.TestCase):
         self.strategy.add_markets([self.market])
 
     @staticmethod
-    def simulate_order_created(market_info: MarketTradingPairTuple, order: Union[LimitOrder, MarketOrder]):
+    def simulate_order_created(market_info: MarketTradingPairTuple, order: LimitOrder | MarketOrder):
         event_tag = MarketEvent.BuyOrderCreated if order.is_buy else MarketEvent.SellOrderCreated
         event_class = BuyOrderCreatedEvent if order.is_buy else SellOrderCreatedEvent
 
@@ -94,7 +93,7 @@ class StrategyPyBaseUnitTests(unittest.TestCase):
         )
 
     @staticmethod
-    def simulate_order_filled(market_info: MarketTradingPairTuple, order: Union[LimitOrder, MarketOrder]):
+    def simulate_order_filled(market_info: MarketTradingPairTuple, order: LimitOrder | MarketOrder):
         market_info.market.trigger_event(
             MarketEvent.OrderFilled,
             OrderFilledEvent(
@@ -110,7 +109,7 @@ class StrategyPyBaseUnitTests(unittest.TestCase):
         )
 
     @staticmethod
-    def simulate_order_failed(market_info: MarketTradingPairTuple, order: Union[LimitOrder, MarketOrder]):
+    def simulate_order_failed(market_info: MarketTradingPairTuple, order: LimitOrder | MarketOrder):
         market_info.market.trigger_event(
             MarketEvent.OrderFailure,
             MarketOrderFailureEvent(
@@ -121,7 +120,7 @@ class StrategyPyBaseUnitTests(unittest.TestCase):
         )
 
     @staticmethod
-    def simulate_cancel_order(market_info: MarketTradingPairTuple, order: Union[LimitOrder, MarketOrder]):
+    def simulate_cancel_order(market_info: MarketTradingPairTuple, order: LimitOrder | MarketOrder):
         market_info.market.trigger_event(
             MarketEvent.OrderCancelled,
             OrderCancelledEvent(
@@ -131,7 +130,7 @@ class StrategyPyBaseUnitTests(unittest.TestCase):
         )
 
     @staticmethod
-    def simulate_order_expired(market_info: MarketTradingPairTuple, order: Union[LimitOrder, MarketOrder]):
+    def simulate_order_expired(market_info: MarketTradingPairTuple, order: LimitOrder | MarketOrder):
         market_info.market.trigger_event(
             MarketEvent.OrderExpired,
             OrderExpiredEvent(
@@ -141,7 +140,7 @@ class StrategyPyBaseUnitTests(unittest.TestCase):
         )
 
     @staticmethod
-    def simulate_order_completed(market_info: MarketTradingPairTuple, order: Union[LimitOrder, MarketOrder]):
+    def simulate_order_completed(market_info: MarketTradingPairTuple, order: LimitOrder | MarketOrder):
         event_tag = MarketEvent.BuyOrderCompleted if order.is_buy else MarketEvent.SellOrderCompleted
         event_class = BuyOrderCompletedEvent if order.is_buy else SellOrderCompletedEvent
 

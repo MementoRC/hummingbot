@@ -5,7 +5,7 @@ import hmac
 import json
 import threading
 import time
-from typing import Any, Optional
+from typing import Any
 
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
 from hummingbot.core.web_assistant.auth import AuthBase
@@ -16,7 +16,7 @@ NONCE_DRIFT_RESET_MS = NONCE_DRIFT_RESET_US // 1_000
 
 
 class GeminiAuth(AuthBase):
-    def __init__(self, api_key: str, secret_key: str, time_provider: Optional[TimeSynchronizer] = None):
+    def __init__(self, api_key: str, secret_key: str, time_provider: TimeSynchronizer | None = None):
         self.api_key = api_key
         self.secret_key = secret_key
         self.time_provider = time_provider

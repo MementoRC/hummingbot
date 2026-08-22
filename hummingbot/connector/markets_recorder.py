@@ -9,7 +9,6 @@ import os.path
 from shutil import move
 import threading
 import time
-from typing import Union
 
 import pandas as pd
 from sqlalchemy.orm import Query, Session
@@ -377,7 +376,7 @@ class MarketsRecorder:
         return market_states
 
     def _did_create_order(
-        self, event_tag: int, market: ConnectorBase, evt: Union[BuyOrderCreatedEvent, SellOrderCreatedEvent]
+        self, event_tag: int, market: ConnectorBase, evt: BuyOrderCreatedEvent | SellOrderCreatedEvent
     ):
         if threading.current_thread() != threading.main_thread():
             self._ev_loop.call_soon_threadsafe(self._did_create_order, event_tag, market, evt)
@@ -539,13 +538,11 @@ class MarketsRecorder:
         self,
         event_tag: int,
         market: ConnectorBase,
-        evt: Union[
-            OrderCancelledEvent,
-            MarketOrderFailureEvent,
-            BuyOrderCompletedEvent,
-            SellOrderCompletedEvent,
-            OrderExpiredEvent,
-        ],
+        evt: OrderCancelledEvent
+        | MarketOrderFailureEvent
+        | BuyOrderCompletedEvent
+        | SellOrderCompletedEvent
+        | OrderExpiredEvent,
     ):
         if threading.current_thread() != threading.main_thread():
             self._ev_loop.call_soon_threadsafe(self._update_order_status, event_tag, market, evt)
@@ -575,7 +572,7 @@ class MarketsRecorder:
         self._update_order_status(event_tag, market, evt)
 
     def _did_complete_order(
-        self, event_tag: int, market: ConnectorBase, evt: Union[BuyOrderCompletedEvent, SellOrderCompletedEvent]
+        self, event_tag: int, market: ConnectorBase, evt: BuyOrderCompletedEvent | SellOrderCompletedEvent
     ):
         self._update_order_status(event_tag, market, evt)
 
@@ -586,7 +583,7 @@ class MarketsRecorder:
         self,
         event_tag: int,
         connector: ConnectorBase,
-        evt: Union[RangePositionLiquidityAddedEvent, RangePositionLiquidityRemovedEvent],
+        evt: RangePositionLiquidityAddedEvent | RangePositionLiquidityRemovedEvent,
     ):
         if threading.current_thread() != threading.main_thread():
             self._ev_loop.call_soon_threadsafe(self._did_update_range_position, event_tag, connector, evt)

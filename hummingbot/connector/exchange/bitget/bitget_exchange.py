@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from decimal import ROUND_UP, Decimal
-from typing import Any, Dict, Literal, Union
+from typing import Any, Dict, Literal
 
 from bidict import bidict
 
@@ -267,7 +267,7 @@ class BitgetExchange(ExchangePyBase):
         local_asset_names = set(self._account_balances.keys())
         remote_asset_names = set()
 
-        wallet_balance_response: dict[str, Union[str, list[dict[str, Any]]]] = await self._api_get(
+        wallet_balance_response: dict[str, str | list[dict[str, Any]]] = await self._api_get(
             path_url=CONSTANTS.ASSETS_ENDPOINT,
             is_auth_required=True,
         )

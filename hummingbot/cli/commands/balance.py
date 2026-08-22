@@ -8,7 +8,6 @@ Read-only — it never places orders.
 
 import asyncio
 from decimal import Decimal
-from typing import Optional
 
 import typer
 
@@ -104,7 +103,7 @@ async def _fetch_all(ccm, timeout: float, with_prices: bool = True) -> dict[str,
 
 async def _fetch_one(
     ccm, connector: str, timeout: float, with_prices: bool = True
-) -> tuple[Optional[dict[str, dict]], Optional[str]]:
+) -> tuple[dict[str, dict] | None, str | None]:
     from hummingbot.user.user_balances import UserBalances
 
     ub = UserBalances.instance()
@@ -215,7 +214,7 @@ def _json_payload(result: dict[str, dict], quote: str, units_only: bool) -> dict
 
 
 def balance(
-    connector: Optional[str] = typer.Argument(None, help="Connector to fetch. Omit for all connected connectors."),
+    connector: str | None = typer.Argument(None, help="Connector to fetch. Omit for all connected connectors."),
     units_only: bool = typer.Option(
         False, "--units-only", help="Show only token amounts — skip the price fetch (faster) and USD values/positions."
     ),

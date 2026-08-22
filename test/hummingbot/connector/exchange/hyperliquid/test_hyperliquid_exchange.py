@@ -1927,17 +1927,13 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         order = self.exchange.in_flight_orders["OID4"]
 
         url = web_utils.public_rest_url(CONSTANTS.CANCEL_ORDER_URL)
-        mock_api.post(
-            url,
-            body=json.dumps({"status": "err", "response": "Invalid nonce"})
-        )
+        mock_api.post(url, body=json.dumps({"status": "err", "response": "Invalid nonce"}))
 
         result = await self.exchange._execute_cancel(order.trading_pair, order.client_order_id)
 
         self.assertFalse(result)
         self.assertTrue(
-            any("Invalid nonce" in record.getMessage() and record.levelname == "WARNING"
-                for record in self.log_records)
+            any("Invalid nonce" in record.getMessage() and record.levelname == "WARNING" for record in self.log_records)
         )
         # A venue-level rejection is not an "order not found": the order must stay tracked.
         self.assertIn(order.client_order_id, self.exchange.in_flight_orders)
@@ -1945,17 +1941,16 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
     def test_process_cancel_result_unknown_order(self):
         cancel_result = {
             "status": "ok",
-            "response": {"type": "cancel", "data": {"statuses": [
-                {"error": "Order was never placed, already canceled, or filled."}
-            ]}},
+            "response": {
+                "type": "cancel",
+                "data": {"statuses": [{"error": "Order was never placed, already canceled, or filled."}]},
+            },
         }
 
         with self.assertRaises(IOError) as exception_context:
             self.exchange._process_cancel_result("OID1", cancel_result)
 
-        self.assertTrue(
-            self.exchange._is_order_not_found_during_cancelation_error(exception_context.exception)
-        )
+        self.assertTrue(self.exchange._is_order_not_found_during_cancelation_error(exception_context.exception))
 
 
 class HyperliquidBuilderCodeTests(TestCase):
@@ -2097,7 +2092,7 @@ class HyperliquidKeyAuthorityTests(TestCase):
     surfaces at connect via the extraAgents approved-agent lookup, mode-agnostically."""
 
     api_secret = "13e56ca9cceebf1f33065c2c5376ab38570a114bc1b003b60d838f92be9d7930"  # noqa: mock
-    owner_address = "0x836eE2b55d173245832995082a8600709c38D099"          # api_secret derives to this
+    owner_address = "0x836eE2b55d173245832995082a8600709c38D099"  # api_secret derives to this
     other_account = "0x000000000000000000000000000000000000dEaD"
     other_agent = "0x0000000000000000000000000000000000000001"
 

@@ -15,7 +15,7 @@ import inspect
 from pathlib import Path
 import re
 import shutil
-from typing import Any, Optional
+from typing import Any
 
 from ruamel.yaml import YAML
 import yaml
@@ -68,7 +68,7 @@ def matching_strategy_types(name: str) -> list[str]:
     return out
 
 
-def resolve_config_type(filename: str, explicit: Optional[str] = None) -> str:
+def resolve_config_type(filename: str, explicit: str | None = None) -> str:
     """Resolve which type a config FILE is — the single lookup shared by every filename-taking command
     (start/set/show-config/clone/update).
 
@@ -498,7 +498,7 @@ def regenerate_controller_id(path: Path) -> str:
     return new_id
 
 
-def clone_config(stype: str, src_name: str, dest_name: str, values: dict[str, Any]) -> Optional[str]:
+def clone_config(stype: str, src_name: str, dest_name: str, values: dict[str, Any]) -> str | None:
     """Copy an existing config (comments/formatting preserved) to ``dest_name``, mint a fresh id for a
     controller, then apply ``values`` (validated for controllers). Atomic: any failure removes the copy.
     Returns the controller's new id (or None). Raises FileExistsError/FileNotFoundError/KeyError/ValueError.

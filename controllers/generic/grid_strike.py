@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import Optional
 
 from pydantic import Field
 
@@ -34,16 +33,16 @@ class GridStrikeConfig(ControllerConfigBase):
 
     # Profiling
     total_amount_quote: Decimal = Field(default=Decimal("1000"), json_schema_extra={"is_updatable": True})
-    min_spread_between_orders: Optional[Decimal] = Field(
+    min_spread_between_orders: Decimal | None = Field(
         default=Decimal("0.001"), json_schema_extra={"is_updatable": True}
     )
-    min_order_amount_quote: Optional[Decimal] = Field(default=Decimal("5"), json_schema_extra={"is_updatable": True})
+    min_order_amount_quote: Decimal | None = Field(default=Decimal("5"), json_schema_extra={"is_updatable": True})
 
     # Execution
     max_open_orders: int = Field(default=2, json_schema_extra={"is_updatable": True})
-    max_orders_per_batch: Optional[int] = Field(default=1, json_schema_extra={"is_updatable": True})
+    max_orders_per_batch: int | None = Field(default=1, json_schema_extra={"is_updatable": True})
     order_frequency: int = Field(default=3, json_schema_extra={"is_updatable": True})
-    activation_bounds: Optional[Decimal] = Field(default=None, json_schema_extra={"is_updatable": True})
+    activation_bounds: Decimal | None = Field(default=None, json_schema_extra={"is_updatable": True})
     keep_position: bool = Field(default=False, json_schema_extra={"is_updatable": True})
 
     # Risk Management

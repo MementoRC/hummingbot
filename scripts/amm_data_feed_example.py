@@ -1,7 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
 import os
-from typing import Optional
 
 import pandas as pd
 from pydantic import Field
@@ -26,13 +25,13 @@ class AMMDataFeedConfig(StrategyV2ConfigBase):
         Decimal("1.0"), json_schema_extra={"prompt": "Order amount in base currency", "prompt_on_new": True}
     )
     trading_pair_1: str = Field("SOL-USDC", json_schema_extra={"prompt": "First trading pair", "prompt_on_new": True})
-    trading_pair_2: Optional[str] = Field(
+    trading_pair_2: str | None = Field(
         None, json_schema_extra={"prompt": "Second trading pair (optional)", "prompt_on_new": False}
     )
-    trading_pair_3: Optional[str] = Field(
+    trading_pair_3: str | None = Field(
         None, json_schema_extra={"prompt": "Third trading pair (optional)", "prompt_on_new": False}
     )
-    file_name: Optional[str] = Field(
+    file_name: str | None = Field(
         None,
         json_schema_extra={
             "prompt": "Output file name (without extension, defaults to connector_chain_network_timestamp)",

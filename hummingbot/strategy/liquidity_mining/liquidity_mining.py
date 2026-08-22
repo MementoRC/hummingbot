@@ -2,7 +2,6 @@ import asyncio
 from decimal import Decimal
 import logging
 from statistics import mean
-from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -42,7 +41,7 @@ class LiquidityMiningStrategy(StrategyPyBase):
 
     def init_params(
         self,
-        client_config_map: Union[ClientConfigAdapter, ClientConfigMap],
+        client_config_map: ClientConfigAdapter | ClientConfigMap,
         exchange: ExchangeBase,
         market_infos: dict[str, MarketTradingPairTuple],
         token: str,

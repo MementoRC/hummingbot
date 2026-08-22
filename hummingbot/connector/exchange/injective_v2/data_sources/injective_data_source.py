@@ -6,7 +6,7 @@ from decimal import Decimal
 from enum import Enum
 import logging
 import time
-from typing import Any, Callable, Mapping, Union
+from typing import Any, Callable, Mapping
 
 from bidict import bidict
 from google.protobuf import any_pb2
@@ -1282,7 +1282,7 @@ class InjectiveDataSource(ABC):
         order_book_update: dict[str, Any],
         block_height: int,
         block_timestamp: float,
-        market: Union[InjectiveSpotMarket, InjectiveDerivativeMarket],
+        market: InjectiveSpotMarket | InjectiveDerivativeMarket,
     ):
         trading_pair = await self.trading_pair_for_market(market_id=market.market_id)
         buy_levels = sorted(
@@ -1651,7 +1651,7 @@ class InjectiveDataSource(ABC):
         return definition
 
     def _create_trading_rules(
-        self, markets: list[Union[InjectiveSpotMarket, InjectiveDerivativeMarket]]
+        self, markets: list[InjectiveSpotMarket | InjectiveDerivativeMarket]
     ) -> list[TradingRule]:
         trading_rules = []
         for market in markets:
@@ -1678,7 +1678,7 @@ class InjectiveDataSource(ABC):
         return trading_rules
 
     async def _create_trading_fees(
-        self, markets: list[Union[InjectiveSpotMarket, InjectiveDerivativeMarket]]
+        self, markets: list[InjectiveSpotMarket | InjectiveDerivativeMarket]
     ) -> dict[str, TradeFeeSchema]:
         fees = {}
         for market in markets:

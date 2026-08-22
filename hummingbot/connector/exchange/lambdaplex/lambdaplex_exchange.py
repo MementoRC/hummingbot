@@ -1,6 +1,6 @@
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from bidict import bidict
 
@@ -38,9 +38,9 @@ class LambdaplexExchange(ExchangePyBase):
         self,
         lambdaplex_api_key: str,
         lambdaplex_private_key: str,
-        balance_asset_limit: Optional[dict[str, dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
-        trading_pairs: Optional[list[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
     ):
         self._api_key = lambdaplex_api_key
@@ -188,7 +188,7 @@ class LambdaplexExchange(ExchangePyBase):
         order_side: TradeType,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         is_maker = is_maker or (order_type is OrderType.LIMIT_MAKER)
         trading_pair = combine_to_hb_trading_pair(base=base_currency, quote=quote_currency)

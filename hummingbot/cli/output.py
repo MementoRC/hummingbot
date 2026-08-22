@@ -9,7 +9,7 @@ values. Either way, the machine contract for outcomes is the stable **exit code*
 from enum import IntEnum
 import json
 import textwrap
-from typing import Any, Optional, Sequence
+from typing import Any, Sequence
 
 import typer
 from typer.core import TyperGroup
@@ -45,7 +45,7 @@ def cell(v: Any) -> str:
     return str(v).replace("|", "\\|").replace("\n", " ")
 
 
-def _wrap_cell(value: str, width: Optional[int]) -> list[str]:
+def _wrap_cell(value: str, width: int | None) -> list[str]:
     """Split one formatted cell value into lines no wider than ``width`` (one line if it fits)."""
     if width is None or len(value) <= width:
         return [value]
@@ -54,9 +54,9 @@ def _wrap_cell(value: str, width: Optional[int]) -> list[str]:
 
 def render_table(
     rows: Sequence[dict],
-    columns: Optional[list[str]] = None,
-    title: Optional[str] = None,
-    max_widths: Optional[dict[str, int]] = None,
+    columns: list[str] | None = None,
+    title: str | None = None,
+    max_widths: dict[str, int] | None = None,
 ) -> str:
     """Render a list of records as an aligned Markdown table (token-economic format for tabular
     output).
@@ -89,7 +89,7 @@ def render_table(
     return head + "\n".join(lines)
 
 
-def render_kv(record: dict, title: Optional[str] = None) -> str:
+def render_kv(record: dict, title: str | None = None) -> str:
     """Render a single record as a Markdown key-value block."""
     head = f"## {title}\n\n" if title else ""
     if not record:

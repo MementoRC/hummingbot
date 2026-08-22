@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from decimal import ROUND_HALF_UP, Decimal
+from decimal import Decimal
 import hashlib
 import time
 from typing import Any, AsyncIterable, Dict, List, Literal

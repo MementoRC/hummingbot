@@ -7,7 +7,6 @@ One bot per install (like Hummingbot itself); for multiple bots, use multiple in
 """
 
 from pathlib import Path
-from typing import Optional
 
 import typer
 
@@ -48,7 +47,7 @@ def _version() -> str:
 
 @app.callback(invoke_without_command=True)
 def _root(
-    version: Optional[bool] = typer.Option(
+    version: bool | None = typer.Option(
         None, "--version", help="Show the hbot/Hummingbot version and exit.", is_eager=True
     ),
 ) -> None:

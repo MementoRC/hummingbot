@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import base64
 import hashlib
-from typing import Callable, Union
+from typing import Callable
 
 from bip_utils import Bip39SeedGenerator, Bip44, Bip44Coins  # type: ignore
 import ecdsa
@@ -46,7 +46,7 @@ class PublicKey:
     curve: Curve = ecdsa.SECP256k1
     hash_function: Callable = hashlib.sha256
 
-    def __init__(self, public_key: Union[bytes, "PublicKey", ecdsa.VerifyingKey]):
+    def __init__(self, public_key: bytes | "PublicKey" | ecdsa.VerifyingKey):
         """Initialize.
 
         :param public_key: butes, public key or ecdsa verifying key instance
@@ -145,7 +145,7 @@ class PrivateKey(PublicKey):
         bip44_def_ctx = Bip44.FromSeed(seed_bytes, Bip44Coins.COSMOS).DeriveDefaultPath()
         return PrivateKey(bip44_def_ctx.PrivateKey().Raw().ToBytes())
 
-    def __init__(self, private_key: Union[bytes, str] | None = None):
+    def __init__(self, private_key: bytes | str | None = None):
         """
         Initialize.
 

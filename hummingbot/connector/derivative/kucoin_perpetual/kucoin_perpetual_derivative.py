@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict, Union
+from typing import Any, Dict
 
 from bidict import ValueDuplicationError, bidict
 import pandas as pd
@@ -1023,5 +1023,5 @@ class KucoinPerpetualDerivative(PerpetualDerivativePyBase):
         return CONSTANTS.RET_CODE_ORDER_NOT_EXISTS in error or CONSTANTS.RET_CODE_ORDER_CANNOT_BE_CANCELED in error
 
     @staticmethod
-    def _format_ret_code_for_print(ret_code: Union[str, int]) -> str:
+    def _format_ret_code_for_print(ret_code: str | int) -> str:
         return f"ret_code <{ret_code}>"
