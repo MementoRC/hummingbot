@@ -1,6 +1,6 @@
 from collections import defaultdict
 from decimal import Decimal
-from typing import Dict, Optional, Union
+from typing import Dict
 
 from pydantic import Field, field_validator
 from pydantic_core.core_schema import ValidationInfo
@@ -38,8 +38,8 @@ class PMMisterConfig(ControllerConfigBase):
     max_base_pct: Decimal = Field(default=Decimal("0.7"), json_schema_extra={"is_updatable": True})
     buy_spreads: list[float] = Field(default="0.0005", json_schema_extra={"is_updatable": True})
     sell_spreads: list[float] = Field(default="0.0005", json_schema_extra={"is_updatable": True})
-    buy_amounts_pct: Union[list[Decimal], None] = Field(default="1", json_schema_extra={"is_updatable": True})
-    sell_amounts_pct: Union[list[Decimal], None] = Field(default="1", json_schema_extra={"is_updatable": True})
+    buy_amounts_pct: list[Decimal] | None = Field(default="1", json_schema_extra={"is_updatable": True})
+    sell_amounts_pct: list[Decimal] | None = Field(default="1", json_schema_extra={"is_updatable": True})
     executor_refresh_time: int = Field(default=30, json_schema_extra={"is_updatable": True})
 
     # Enhanced timing parameters
@@ -58,14 +58,12 @@ class PMMisterConfig(ControllerConfigBase):
     position_mode: PositionMode = Field(default=PositionMode.ONEWAY)
     # LONG: buys accumulate, sells reduce. SHORT: sells accumulate, buys reduce.
     position_side: TradeType = Field(default="BUY")
-    take_profit: Optional[Decimal] = Field(default=Decimal("0.0001"), gt=0, json_schema_extra={"is_updatable": True})
-    take_profit_order_type: Optional[OrderType] = Field(
+    take_profit: Decimal | None = Field(default=Decimal("0.0001"), gt=0, json_schema_extra={"is_updatable": True})
+    take_profit_order_type: OrderType | None = Field(
         default=OrderType.LIMIT_MAKER, json_schema_extra={"is_updatable": True}
     )
-    open_order_type: Optional[OrderType] = Field(
-        default=OrderType.LIMIT_MAKER, json_schema_extra={"is_updatable": True}
-    )
-    max_active_executors_by_level: Optional[int] = Field(default=4, json_schema_extra={"is_updatable": True})
+    open_order_type: OrderType | None = Field(default=OrderType.LIMIT_MAKER, json_schema_extra={"is_updatable": True})
+    max_active_executors_by_level: int | None = Field(default=4, json_schema_extra={"is_updatable": True})
     tick_mode: bool = Field(default=False, json_schema_extra={"is_updatable": True})
     position_profit_protection: bool = Field(default=False, json_schema_extra={"is_updatable": True})
     min_skew: Decimal = Field(default=Decimal("1.0"), json_schema_extra={"is_updatable": True})
@@ -230,8 +228,8 @@ class PMMisterConfig(ControllerConfigBase):
     def update_parameters(
         self,
         trade_type: TradeType,
-        new_spreads: Union[list[float], str],
-        new_amounts_pct: Optional[Union[list[int], str]] = None,
+        new_spreads: list[float] | str,
+        new_amounts_pct: list[int] | str | None = None,
     ):
         spreads_field = "buy_spreads" if trade_type == TradeType.BUY else "sell_spreads"
         amounts_pct_field = "buy_amounts_pct" if trade_type == TradeType.BUY else "sell_amounts_pct"
@@ -288,8 +286,8 @@ class PMMister(ControllerBase):
         self.max_order_history = 20
         self.processed_data = {}
         self._position_mode_verified = False
-        self._global_close_phase: Optional[str] = None  # None | "stopping" | "closing"
-        self._global_close_side: Optional[TradeType] = None  # Side of the position when TP/SL triggered
+        self._global_close_phase: str | None = None  # None | "stopping" | "closing"
+        self._global_close_side: TradeType | None = None  # Side of the position when TP/SL triggered
         self._global_close_retries: int = 0  # Count how many times PHASE 2 has created a close executor
         self._global_close_cooling_down: bool = False  # True after a successful close until processed_data confirms 0
 
@@ -394,7 +392,7 @@ class PMMister(ControllerBase):
             return self.config.target_base_pct
         return self.config.max_base_pct
 
-    def _get_exchange_position(self) -> tuple[Decimal, Optional[TradeType]]:
+    def _get_exchange_position(self) -> tuple[Decimal, TradeType | None]:
         """Read the REAL position from the exchange connector (WebSocket-updated, no orchestrator delay).
         Returns (abs_amount, side) where side is BUY for long, SELL for short, None if no position."""
         try:
@@ -575,7 +573,7 @@ class PMMister(ControllerBase):
 
         return stop_actions
 
-    def _create_close_action(self, position_amount: Decimal) -> Optional[CreateExecutorAction]:
+    def _create_close_action(self, position_amount: Decimal) -> CreateExecutorAction | None:
         """Create a close action by inferring the side from position_held. Kept for backward compat."""
         position_held = next(
             (
@@ -590,7 +588,7 @@ class PMMister(ControllerBase):
         close_side = TradeType.SELL if position_held.side == TradeType.BUY else TradeType.BUY
         return self._create_close_action_with_side(close_side, abs(position_amount))
 
-    def _create_close_action_with_side(self, side: TradeType, amount: Decimal) -> Optional[CreateExecutorAction]:
+    def _create_close_action_with_side(self, side: TradeType, amount: Decimal) -> CreateExecutorAction | None:
         if amount == Decimal("0"):
             return None
 
@@ -1674,7 +1672,7 @@ class PMMister(ControllerBase):
         return bar
 
     def _format_price_graph(
-        self, current_price: Decimal, breakeven_price: Optional[Decimal], inner_width: int
+        self, current_price: Decimal, breakeven_price: Decimal | None, inner_width: int
     ) -> list[str]:
         lines = []
 

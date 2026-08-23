@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import Optional
 
 import pandas as pd
 
@@ -110,7 +109,7 @@ class ArbitrageController(ControllerBase):
         else:
             loop.run_until_complete(fetch_gas_tokens())
 
-    def get_gas_token(self, connector_name: str) -> Optional[str]:
+    def get_gas_token(self, connector_name: str) -> str | None:
         """Get the cached gas token for a connector."""
         return self._gas_token_cache.get(connector_name)
 

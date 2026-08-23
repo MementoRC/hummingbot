@@ -1,5 +1,5 @@
 import asyncio
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.exchange.gemini import gemini_constants as CONSTANTS, gemini_web_utils as web_utils
 from hummingbot.connector.exchange.gemini.gemini_auth import GeminiAuth
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 class GeminiAPIUserStreamDataSource(UserStreamTrackerDataSource):
     HEARTBEAT_TIME_INTERVAL = 30.0
 
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self, auth: GeminiAuth, trading_pairs: list[str], connector: "GeminiExchange", api_factory: WebAssistantsFactory
@@ -104,6 +104,6 @@ class GeminiAPIUserStreamDataSource(UserStreamTrackerDataSource):
         status = ack.get("status")
         return status in (None, 200) and "error" not in ack
 
-    async def _on_user_stream_interruption(self, websocket_assistant: Optional[WSAssistant]):
+    async def _on_user_stream_interruption(self, websocket_assistant: WSAssistant | None):
         self.logger().info("User stream interrupted. Cleaning up...")
         websocket_assistant and await websocket_assistant.disconnect()

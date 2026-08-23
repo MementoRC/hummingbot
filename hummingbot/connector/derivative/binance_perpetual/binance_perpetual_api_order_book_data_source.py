@@ -2,7 +2,7 @@ import asyncio
 from collections import defaultdict
 from decimal import Decimal
 import time
-from typing import TYPE_CHECKING, Any, Mapping, Optional
+from typing import TYPE_CHECKING, Any, Mapping
 
 import hummingbot.connector.derivative.binance_perpetual.binance_perpetual_constants as CONSTANTS
 import hummingbot.connector.derivative.binance_perpetual.binance_perpetual_web_utils as web_utils
@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 
 class BinancePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
-    _bpobds_logger: Optional[HummingbotLogger] = None
+    _bpobds_logger: HummingbotLogger | None = None
     _trading_pair_symbol_map: dict[str, Mapping[str, str]] = {}
     _mapping_initialization_lock = asyncio.Lock()
     _DYNAMIC_SUBSCRIBE_ID_START = 100
@@ -45,12 +45,12 @@ class BinancePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         self._diff_messages_queue_key = CONSTANTS.DIFF_STREAM_ID
         self._funding_info_messages_queue_key = CONSTANTS.FUNDING_INFO_STREAM_ID
         self._snapshot_messages_queue_key = "order_book_snapshot"
-        self._market_ws_assistant: Optional[WSAssistant] = None
+        self._market_ws_assistant: WSAssistant | None = None
         # Last applied diff final update id (`u`) per trading pair, used to validate the `pu` chain
         # and detect order book sequence gaps. Reset on every (re)connection.
         self._last_update_id: dict[str, int] = {}
 
-    async def get_last_traded_prices(self, trading_pairs: list[str], domain: Optional[str] = None) -> dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def get_funding_info(self, trading_pair: str) -> FundingInfo:
@@ -164,8 +164,8 @@ class BinancePerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         return channel
 
     async def listen_for_subscriptions(self):
-        public_ws: Optional[WSAssistant] = None
-        market_ws: Optional[WSAssistant] = None
+        public_ws: WSAssistant | None = None
+        market_ws: WSAssistant | None = None
         while True:
             try:
                 # A fresh connection means the diff sequence restarts; drop any stale `u` tracking so the

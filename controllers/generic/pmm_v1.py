@@ -10,7 +10,6 @@ This controller replicates the legacy pure_market_making strategy with:
 """
 
 from decimal import Decimal
-from typing import Optional
 
 import numpy as np
 from pydantic import Field, field_validator
@@ -629,7 +628,7 @@ class PMMV1(ControllerBase):
 
     def _get_executor_config(
         self, level_id: str, price: Decimal, amount: Decimal, trade_type: TradeType
-    ) -> Optional[OrderExecutorConfig]:
+    ) -> OrderExecutorConfig | None:
         """Create executor config for a level (simple limit order like legacy PMM)."""
         return OrderExecutorConfig(
             timestamp=self.market_data_provider.time(),

@@ -8,7 +8,7 @@ import itertools as it
 import logging
 import re
 import time
-from typing import Any, Callable, TypeVar, Union, cast
+from typing import Any, Callable, TypeVar, cast
 
 from hummingbot.client.config.client_config_map import GatewayConfigMap
 from hummingbot.connector.budget_checker import BudgetChecker
@@ -854,7 +854,7 @@ class GatewayBase(ConnectorBase):
             "Polling for order status updates of %d orders. Transaction hashes: %s", len(tracked_orders), tx_hash_list
         )
 
-        update_results: list[Union[dict[str, Any], Exception]] = await safe_gather(
+        update_results: list[dict[str, Any] | Exception] = await safe_gather(
             *[
                 self._get_gateway_instance().get_transaction_status(self.chain, self.network, tx_hash)
                 for tx_hash in tx_hash_list

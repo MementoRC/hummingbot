@@ -4,7 +4,7 @@ import asyncio
 from collections import defaultdict
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Callable, Union
+from typing import Any, Callable
 
 from async_timeout import timeout
 
@@ -203,7 +203,7 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
             )
         )
 
-    def batch_order_create(self, orders_to_create: list[Union[MarketOrder, LimitOrder]]) -> list[LimitOrder]:
+    def batch_order_create(self, orders_to_create: list[MarketOrder | LimitOrder]) -> list[LimitOrder]:
         """
         Issues a batch order creation as a single API request for exchanges that implement this feature. The default
         implementation of this method is to send the requests discretely (one by one).
@@ -428,7 +428,7 @@ class InjectiveV2PerpetualDerivative(PerpetualDerivativePyBase):
         self._orders_queued_to_create.append(order)
         return None
 
-    async def _execute_batch_order_create(self, orders_to_create: list[Union[MarketOrder, LimitOrder]]):
+    async def _execute_batch_order_create(self, orders_to_create: list[MarketOrder | LimitOrder]):
         inflight_orders_to_create = []
         for order in orders_to_create:
             valid_order = await self._start_tracking_and_validate_order(

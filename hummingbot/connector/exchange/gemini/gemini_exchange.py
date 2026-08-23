@@ -1,6 +1,6 @@
 import asyncio
 from decimal import Decimal
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 from bidict import bidict
 
@@ -48,9 +48,9 @@ class GeminiExchange(ExchangePyBase):
         self,
         gemini_api_key: str,
         gemini_api_secret: str,
-        balance_asset_limit: Optional[dict[str, dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
-        trading_pairs: Optional[list[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
     ):
         self.api_key = gemini_api_key
@@ -60,16 +60,16 @@ class GeminiExchange(ExchangePyBase):
         # Dedicated authenticated websocket for order entry (order.place / order.cancel).
         # Requests are correlated to their {id, status, ...} acks through futures keyed
         # by request id; any failure on this socket falls back to the REST endpoints.
-        self._trade_ws: Optional[WSAssistant] = None
-        self._trade_ws_listener_task: Optional[asyncio.Task] = None
-        self._trade_ws_maintenance_task: Optional[asyncio.Task] = None
+        self._trade_ws: WSAssistant | None = None
+        self._trade_ws_listener_task: asyncio.Task | None = None
+        self._trade_ws_maintenance_task: asyncio.Task | None = None
         self._trade_ws_pending_requests: dict[str, asyncio.Future] = {}
         self._trade_ws_request_id: int = 0
         self._trade_ws_lock = asyncio.Lock()
         self._trade_ws_stopped: bool = False
         self._trade_ws_last_connect_failure: float = 0.0
         self._market_order_status_results: dict[str, dict[str, Any]] = {}
-        self._trade_history_poll_cache: Optional[dict[str, list[dict[str, Any]]]] = None
+        self._trade_history_poll_cache: dict[str, list[dict[str, Any]]] | None = None
         super().__init__(balance_asset_limit, rate_limits_share_pct)
 
     @property
@@ -194,7 +194,7 @@ class GeminiExchange(ExchangePyBase):
         order_side: TradeType,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         # Honor caller-provided is_maker when given. Otherwise treat both LIMIT and
         # LIMIT_MAKER as maker orders (PMM uses LIMIT_MAKER) so we don't misclassify
@@ -335,7 +335,7 @@ class GeminiExchange(ExchangePyBase):
         return exchange_order_id
 
     async def _should_defer_terminal_order_update(
-        self, order: InFlightOrder, terminal_state: OrderState, expected_executed_amount: Optional[Decimal] = None
+        self, order: InFlightOrder, terminal_state: OrderState, expected_executed_amount: Decimal | None = None
     ) -> bool:
         if terminal_state not in {OrderState.CANCELED, OrderState.FILLED}:
             return False
@@ -404,7 +404,7 @@ class GeminiExchange(ExchangePyBase):
         return str(exchange_order_id), transact_time
 
     async def _resolve_acked_order_exchange_id(
-        self, order_id: str, order_match: Optional[Callable[[dict[str, Any]], bool]] = None
+        self, order_id: str, order_match: Callable[[dict[str, Any]], bool] | None = None
     ) -> str:
         """Resolves the exchange order id after an order.place ack. Primary source: the
         orders@account order event on the user stream (it carries the id in "i").
@@ -446,9 +446,9 @@ class GeminiExchange(ExchangePyBase):
     async def _get_order_via_rest_by_client_id(
         self,
         order_id: str,
-        order_match: Optional[Callable[[dict[str, Any]], bool]] = None,
+        order_match: Callable[[dict[str, Any]], bool] | None = None,
         fail_on_unmatched_relevant: bool = False,
-    ) -> Optional[dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Looks an order up over REST by its client order id (supported by
         /v1/order/status as an alternative to order_id). Returns None when the
         exchange reports that no such order exists.
@@ -560,7 +560,7 @@ class GeminiExchange(ExchangePyBase):
             quantized = self.quantize_order_price(trading_pair, reference_price)
         return quantized
 
-    def _affordable_buy_limit_price(self, trading_pair: str, amount: Decimal) -> Optional[Decimal]:
+    def _affordable_buy_limit_price(self, trading_pair: str, amount: Decimal) -> Decimal | None:
         """Highest per-unit quote price the available quote balance can cover for `amount`
         base, used to keep an emulated market buy's protective limit fundable. Returns None
         when the amount or the tracked quote balance is unusable, leaving the limit uncapped.
@@ -584,7 +584,7 @@ class GeminiExchange(ExchangePyBase):
         """Resolves a positive reference price for a market order, preferring the price
         that fills `amount` through the book, then the top of book, then a caller-supplied
         price. Raises ValueError if none is usable (e.g. the order book is not yet tracked)."""
-        candidates: list[Optional[Decimal]] = []
+        candidates: list[Decimal | None] = []
         try:
             volume_query = self.get_price_for_volume(trading_pair, is_buy, amount)
             if volume_query is not None:
@@ -692,7 +692,7 @@ class GeminiExchange(ExchangePyBase):
 
     async def _reconcile_order_by_client_id(
         self, order_id: str, symbol: str, amount: Decimal, trade_type: TradeType, price: Decimal
-    ) -> Optional[dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """Returns the exact IOC order matching the failed placement, else None.
 
         Gemini allows client order ids to be reused, so finding any row with the same id is
@@ -773,7 +773,7 @@ class GeminiExchange(ExchangePyBase):
         raise GeminiWSTransportError(message)
 
     @staticmethod
-    def _extract_exchange_order_id(result: Any) -> Optional[str]:
+    def _extract_exchange_order_id(result: Any) -> str | None:
         """Per Gemini engineering the order.place ack intentionally carries no order
         payload, so this normally returns None; the probe is kept as future-proofing
         should the result ever gain order-id fields. The generic "id" key is
@@ -844,7 +844,7 @@ class GeminiExchange(ExchangePyBase):
                     raise GeminiWSTransportError(
                         "The trade websocket failed to connect recently — deferring to REST until the cooldown expires."
                     )
-                ws: Optional[WSAssistant] = None
+                ws: WSAssistant | None = None
                 try:
                     ws = await self._web_assistants_factory.get_ws_assistant()
                     # Time-boxed: this runs under the trade WS lock, and an un-bounded
@@ -899,7 +899,7 @@ class GeminiExchange(ExchangePyBase):
         finally:
             await self._reset_trade_ws(ws)
 
-    async def _reset_trade_ws(self, ws: Optional[WSAssistant]):
+    async def _reset_trade_ws(self, ws: WSAssistant | None):
         if ws is None:
             return
         async with self._trade_ws_lock:

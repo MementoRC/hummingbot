@@ -3,7 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 import logging
 import time
-from typing import Any, Union
+from typing import Any
 import unittest
 import unittest.mock
 
@@ -80,7 +80,7 @@ class StrategyBaseUnitTests(unittest.TestCase):
         self.strategy.order_tracker._set_current_timestamp(1640001112.223)
 
     @staticmethod
-    def simulate_order_filled(market_info: MarketTradingPairTuple, order: Union[LimitOrder, MarketOrder]):
+    def simulate_order_filled(market_info: MarketTradingPairTuple, order: LimitOrder | MarketOrder):
         market_info.market.trigger_event(
             MarketEvent.OrderFilled,
             OrderFilledEvent(

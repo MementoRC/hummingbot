@@ -5,12 +5,12 @@ Debug console diagnosis tools.
 """
 
 import asyncio
-from typing import Coroutine, Generator, Union
+from typing import Coroutine, Generator
 
 import pandas as pd
 
 
-def get_coro_name(coro: Union[Coroutine, Generator]) -> str:
+def get_coro_name(coro: Coroutine | Generator) -> str:
     if hasattr(coro, "__qualname__") and coro.__qualname__:
         coro_name = coro.__qualname__
     elif hasattr(coro, "__name__") and coro.__name__:
@@ -20,7 +20,7 @@ def get_coro_name(coro: Union[Coroutine, Generator]) -> str:
     return f"{coro_name}()"
 
 
-def get_wrapped_coroutine(t: asyncio.Task) -> Union[Coroutine, Generator]:
+def get_wrapped_coroutine(t: asyncio.Task) -> Coroutine | Generator:
     if "safe_wrapper" in str(t):
         return t.get_coro().cr_frame.f_locals["c"]
     else:
@@ -29,7 +29,7 @@ def get_wrapped_coroutine(t: asyncio.Task) -> Union[Coroutine, Generator]:
 
 def active_tasks() -> pd.DataFrame:
     tasks: list[asyncio.Task] = [t for t in asyncio.Task.all_tasks() if not t.done()]
-    coroutines: list[Union[Coroutine, Generator]] = [get_wrapped_coroutine(t) for t in tasks]
+    coroutines: list[Coroutine | Generator] = [get_wrapped_coroutine(t) for t in tasks]
     func_names: list[str] = [get_coro_name(c) for c in coroutines]
     retval: pd.DataFrame = pd.DataFrame(
         [{"func_name": f, "coroutine": c, "task": t} for f, c, t in zip(func_names, coroutines, tasks)],

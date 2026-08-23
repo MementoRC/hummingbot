@@ -17,7 +17,7 @@ import json
 import os
 from pathlib import Path
 import tempfile
-from typing import Any, Optional
+from typing import Any
 
 from hummingbot import data_path, prefix_path
 
@@ -113,7 +113,7 @@ def exists() -> bool:
     return _meta_file().exists()
 
 
-def read_meta() -> Optional[dict[str, Any]]:
+def read_meta() -> dict[str, Any] | None:
     if not _meta_file().exists():
         return None
     try:
@@ -133,7 +133,7 @@ def update_meta(**fields: Any) -> dict[str, Any]:
     return meta
 
 
-def read_pid() -> Optional[int]:
+def read_pid() -> int | None:
     if not _pid_file().exists():
         return None
     try:
@@ -156,7 +156,7 @@ def running() -> bool:
     return pid is not None and is_engine_pid(pid)
 
 
-def read_status() -> Optional[dict[str, Any]]:
+def read_status() -> dict[str, Any] | None:
     if not _status_file().exists():
         return None
     try:
@@ -169,11 +169,11 @@ def write_status(status: dict[str, Any]) -> None:
     _atomic_write(_status_file(), json.dumps(status, indent=2, default=str))
 
 
-def db_path() -> Optional[str]:
+def db_path() -> str | None:
     return (read_meta() or {}).get("db_path")
 
 
-def config_file_path() -> Optional[str]:
+def config_file_path() -> str | None:
     return (read_meta() or {}).get("config_file_path")
 
 
@@ -181,7 +181,7 @@ def _loaded_file() -> Path:
     return bot_dir() / "loaded.json"
 
 
-def read_loaded() -> Optional[dict[str, Any]]:
+def read_loaded() -> dict[str, Any] | None:
     """The config `hbot import` (or the last `hbot start`) loaded — ``{"file", "type"}`` — or None.
 
     This is the "currently loaded strategy" the interactive client keeps: what `hbot start` runs when
@@ -204,7 +204,7 @@ def clear_loaded() -> None:
         _loaded_file().unlink()
 
 
-def resolve_db_path() -> Optional[str]:
+def resolve_db_path() -> str | None:
     """The current bot's trades sqlite DB: the engine-recorded path, else data/<name>.sqlite."""
     p = db_path()
     if p and Path(p).exists():
@@ -213,7 +213,7 @@ def resolve_db_path() -> Optional[str]:
     return db_path_for(name) if name else None
 
 
-def db_path_for(name: str) -> Optional[str]:
+def db_path_for(name: str) -> str | None:
     """Trades DB for a named (possibly stopped) bot: data/<name>.sqlite, trying a dot-flattened variant."""
     for n in (name, name.replace(".", "_")):
         p = Path(data_path()) / f"{n}.sqlite"
@@ -222,7 +222,7 @@ def db_path_for(name: str) -> Optional[str]:
     return None
 
 
-def structured_log_for(name: str) -> Optional[Path]:
+def structured_log_for(name: str) -> Path | None:
     """Structured log for a named bot: logs/logs_<name>.log, trying a dot-flattened variant."""
     for n in (name, name.replace(".", "_")):
         p = Path(prefix_path()) / "logs" / f"logs_{n}.log"

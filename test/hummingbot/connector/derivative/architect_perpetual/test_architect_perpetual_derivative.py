@@ -4,7 +4,7 @@ import asyncio
 from decimal import Decimal
 import json
 import re
-from typing import Any, Callable, Union
+from typing import Any, Callable
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
@@ -395,7 +395,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         order: InFlightOrder,
         mock_api: aioresponses,
         callback: Callable | None = lambda *args, **kwargs: None,
-    ) -> Union[str, list[str]]:
+    ) -> str | list[str]:
         url = web_utils.private_rest_url(path_url=CONSTANTS.ORDER_STATUS_ENDPOINT, domain=self.domain)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
 

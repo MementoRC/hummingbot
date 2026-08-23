@@ -1,6 +1,5 @@
 from decimal import Decimal
 import logging
-from typing import Optional
 
 from pydantic import Field, field_validator, model_validator
 
@@ -74,13 +73,13 @@ class LPRebalancerConfig(ControllerConfigBase):
     # Price limits - controller-level limits for deciding whether to re-open
     # Sell range: [sell_price_min, sell_price_max]
     # Buy range: [buy_price_min, buy_price_max]
-    sell_price_max: Optional[Decimal] = Field(default=None, json_schema_extra={"is_updatable": True})
-    sell_price_min: Optional[Decimal] = Field(default=None, json_schema_extra={"is_updatable": True})
-    buy_price_max: Optional[Decimal] = Field(default=None, json_schema_extra={"is_updatable": True})
-    buy_price_min: Optional[Decimal] = Field(default=None, json_schema_extra={"is_updatable": True})
+    sell_price_max: Decimal | None = Field(default=None, json_schema_extra={"is_updatable": True})
+    sell_price_min: Decimal | None = Field(default=None, json_schema_extra={"is_updatable": True})
+    buy_price_max: Decimal | None = Field(default=None, json_schema_extra={"is_updatable": True})
+    buy_price_min: Decimal | None = Field(default=None, json_schema_extra={"is_updatable": True})
 
     # Connector-specific params (optional)
-    strategy_type: Optional[int] = Field(default=None, json_schema_extra={"is_updatable": True})
+    strategy_type: int | None = Field(default=None, json_schema_extra={"is_updatable": True})
 
     # Auto-swap feature: swap tokens if balance insufficient for position
     autoswap: bool = Field(
@@ -162,7 +161,7 @@ class LPRebalancer(ControllerBase):
     - Uses keep_position=True for position tracking via position_hold
     """
 
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -183,17 +182,17 @@ class LPRebalancer(ControllerBase):
         self._quote_token: str = parts[1] if len(parts) >= 2 else ""
 
         # Track the executor we created
-        self._current_executor_id: Optional[str] = None
+        self._current_executor_id: str | None = None
 
         # Track amounts from last closed position (for autoswap sizing)
-        self._last_closed_base_amount: Optional[Decimal] = None
-        self._last_closed_quote_amount: Optional[Decimal] = None
-        self._last_closed_base_fee: Optional[Decimal] = None
-        self._last_closed_quote_fee: Optional[Decimal] = None
+        self._last_closed_base_amount: Decimal | None = None
+        self._last_closed_quote_amount: Decimal | None = None
+        self._last_closed_base_fee: Decimal | None = None
+        self._last_closed_quote_fee: Decimal | None = None
 
         # Track initial balances for comparison (wallet balance at controller start)
-        self._initial_base_balance: Optional[Decimal] = None
-        self._initial_quote_balance: Optional[Decimal] = None
+        self._initial_base_balance: Decimal | None = None
+        self._initial_quote_balance: Decimal | None = None
 
         # Position hold: cumulative net position from closed LP executors
         # Tracks net change = (returned + fees) - initial_deposited
@@ -204,11 +203,11 @@ class LPRebalancer(ControllerBase):
         self._pending_balance_update: bool = False
 
         # Cached pool price (updated in update_processed_data)
-        self._pool_price: Optional[Decimal] = None
+        self._pool_price: Decimal | None = None
 
         # Order executor tracking (for autoswap feature)
-        self._swap_executor_id: Optional[str] = None
-        self._pending_swap_side: Optional[TradeType] = None  # LP side to create after swap completes
+        self._swap_executor_id: str | None = None
+        self._pending_swap_side: TradeType | None = None  # LP side to create after swap completes
 
         # Track if initial position has been created (after that, always use side 1 or 2)
         self._initial_position_created: bool = False
@@ -218,12 +217,12 @@ class LPRebalancer(ControllerBase):
             [ConnectorPair(connector_name=self.config.connector_name, trading_pair=self.config.trading_pair)]
         )
 
-    def active_executor(self) -> Optional[ExecutorInfo]:
+    def active_executor(self) -> ExecutorInfo | None:
         """Get current active LP executor (should be 0 or 1)"""
         active = [e for e in self.executors_info if e.is_active and getattr(e.config, "type", None) == "lp_executor"]
         return active[0] if active else None
 
-    def get_tracked_executor(self) -> Optional[ExecutorInfo]:
+    def get_tracked_executor(self) -> ExecutorInfo | None:
         """Get the executor we're currently tracking (by ID)"""
         if not self._current_executor_id:
             return None
@@ -243,7 +242,7 @@ class LPRebalancer(ControllerBase):
             return True
         return executor.status == RunnableStatus.TERMINATED
 
-    def get_swap_executor(self) -> Optional[ExecutorInfo]:
+    def get_swap_executor(self) -> ExecutorInfo | None:
         """Get the order executor we're tracking for autoswap"""
         if not self._swap_executor_id:
             return None
@@ -261,7 +260,7 @@ class LPRebalancer(ControllerBase):
             return True
         return swap_executor.is_done
 
-    def _check_autoswap_needed(self, side: TradeType, current_price: Decimal) -> Optional[OrderExecutorConfig]:
+    def _check_autoswap_needed(self, side: TradeType, current_price: Decimal) -> OrderExecutorConfig | None:
         """
         Check if autoswap is needed and return order config if so.
 
@@ -622,7 +621,7 @@ class LPRebalancer(ControllerBase):
         # No action needed - executor will auto-close via limit prices
         return actions
 
-    def _create_executor_config(self, side: TradeType) -> Optional[LPExecutorConfig]:
+    def _create_executor_config(self, side: TradeType) -> LPExecutorConfig | None:
         """
         Create executor config with limit prices for auto-close.
 
@@ -1131,10 +1130,10 @@ class LPRebalancer(ControllerBase):
     def _create_price_limits_visualization(
         self,
         current_price: Decimal,
-        pos_lower: Optional[Decimal] = None,
-        pos_upper: Optional[Decimal] = None,
+        pos_lower: Decimal | None = None,
+        pos_upper: Decimal | None = None,
         price_decimals: int = 6,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Create visualization of sell/buy price limits on unified scale."""
         viz_lines = []
 
@@ -1170,8 +1169,8 @@ class LPRebalancer(ControllerBase):
 
         # Helper to create a range bar on unified scale with position marker
         def make_range_bar(
-            range_min: Optional[Decimal],
-            range_max: Optional[Decimal],
+            range_min: Decimal | None,
+            range_max: Decimal | None,
             label: str,
             fill_char: str = "═",
             show_position: bool = False,

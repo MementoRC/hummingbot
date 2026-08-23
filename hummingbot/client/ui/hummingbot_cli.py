@@ -4,7 +4,7 @@ import asyncio
 from contextlib import ExitStack
 import logging
 import threading
-from typing import TYPE_CHECKING, Any, Callable, Union
+from typing import TYPE_CHECKING, Any, Callable
 
 from prompt_toolkit.application import Application
 from prompt_toolkit.clipboard.pyperclip import PyperclipClipboard
@@ -62,7 +62,7 @@ class HummingbotCLI(PubSub):
         command_tabs: dict[str, CommandTab],
     ):
         super().__init__()
-        self.client_config_map: Union[ClientConfigAdapter, ClientConfigMap] = client_config_map
+        self.client_config_map: ClientConfigAdapter | ClientConfigMap = client_config_map
         self.command_tabs = command_tabs
         self.search_field = create_search_field()
         self.input_field = create_input_field(completer=completer)

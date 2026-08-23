@@ -6,7 +6,6 @@ import signal
 import subprocess
 import sys
 import time
-from typing import Optional
 
 import typer
 
@@ -45,7 +44,7 @@ def _replace_running(timeout: float) -> None:
 
 
 def start(
-    file: Optional[str] = typer.Argument(
+    file: str | None = typer.Argument(
         None,
         help="Config file name (type detected from conf/strategies|scripts|controllers). Omit to run the config from `hbot import`.",
     ),
@@ -67,7 +66,7 @@ def start(
     password_stdin: bool = typer.Option(
         False, "--password-stdin", help="Read the keystore password from stdin (else $HBOT_PASSWORD or a prompt)."
     ),
-    auto_set_permissions: Optional[str] = typer.Option(
+    auto_set_permissions: str | None = typer.Option(
         None, "--auto-set-permissions", help="user:group to chown conf/data/logs (Docker)."
     ),
     timeout: float = typer.Option(120.0, "--timeout", help="Seconds to wait for the bot to start."),
@@ -95,14 +94,14 @@ def start(
 
 def launch(
     *,
-    file: Optional[str],
+    file: str | None,
     v1: bool = False,
     v2: bool = False,
     controller: bool = False,
     replace: bool = False,
     foreground: bool = False,
     password_stdin: bool = False,
-    auto_set_permissions: Optional[str] = None,
+    auto_set_permissions: str | None = None,
     timeout: float = 120.0,
 ) -> dict:
     """The core of ``hbot start`` — resolve, spawn, wait for readiness; returns the start record.
@@ -154,8 +153,8 @@ def launch(
 
     # Map the selected type to what the engine consumes. A controller can't run standalone, so generate
     # a v2 loader config and run that; the loader's stem becomes the bot's DB/log name.
-    config_file_name: Optional[str] = None
-    v2_conf: Optional[str] = None
+    config_file_name: str | None = None
+    v2_conf: str | None = None
     if stype == "v1-strategy":
         config_file_name = file
     elif stype == "v2-script":

@@ -1,6 +1,5 @@
-import os
 from decimal import Decimal
-from typing import List, Optional
+import os
 
 from pydantic import Field, ValidationError, field_validator
 
@@ -77,55 +76,58 @@ class ExecutorsQAConfig(StrategyV2ConfigBase):
     Note: the LP executor is not covered here because it needs a Gateway connection and a real
     pool address; use scripts/xrpl_liquidity_example.py or a controller for LP QA.
     """
+
     script_file_name: str = os.path.basename(__file__)
     executor_type: str = Field(
         default="position",
         json_schema_extra={
             "prompt": lambda mi: f"Enter the executor type to test ({', '.join(SCENARIOS.keys())}): ",
-            "prompt_on_new": True},
+            "prompt_on_new": True,
+        },
     )
     scenario: str = Field(
         default="default",
         json_schema_extra={
             "prompt": lambda mi: "Enter the scenario to run ('list' prints the available ones): ",
-            "prompt_on_new": True},
+            "prompt_on_new": True,
+        },
     )
     total_amount_quote: Decimal = Field(
         default=Decimal("100"),
         json_schema_extra={
             "prompt": lambda mi: "Enter the total amount in quote asset (e.g. 100): ",
-            "prompt_on_new": True},
+            "prompt_on_new": True,
+        },
     )
     connector_name: str = Field(
         default="binance_paper_trade",
         json_schema_extra={
             "prompt": lambda mi: "Enter the connector (e.g. binance_paper_trade): ",
-            "prompt_on_new": True},
+            "prompt_on_new": True,
+        },
     )
     trading_pair: str = Field(
         default="ETH-USDT",
-        json_schema_extra={
-            "prompt": lambda mi: "Enter the trading pair (e.g. ETH-USDT): ",
-            "prompt_on_new": True},
+        json_schema_extra={"prompt": lambda mi: "Enter the trading pair (e.g. ETH-USDT): ", "prompt_on_new": True},
     )
     side: str = Field(
         default="BUY",
-        json_schema_extra={
-            "prompt": lambda mi: "Enter the side (BUY/SELL): ",
-            "prompt_on_new": True},
+        json_schema_extra={"prompt": lambda mi: "Enter the side (BUY/SELL): ", "prompt_on_new": True},
     )
     # Second market, only used by the xemm and arbitrage executors
     connector_name_2: str = Field(
         default="kucoin_paper_trade",
         json_schema_extra={
             "prompt": lambda mi: "Enter the second connector, only used for xemm/arbitrage (e.g. kucoin_paper_trade): ",
-            "prompt_on_new": True},
+            "prompt_on_new": True,
+        },
     )
     trading_pair_2: str = Field(
         default="ETH-USDT",
         json_schema_extra={
             "prompt": lambda mi: "Enter the second trading pair, only used for xemm/arbitrage (e.g. ETH-USDT): ",
-            "prompt_on_new": True},
+            "prompt_on_new": True,
+        },
     )
 
     @field_validator("executor_type", mode="before")
@@ -183,16 +185,16 @@ class ExecutorsQA(StrategyV2Base):
 
     def mid_price(self) -> Decimal:
         return self.market_data_provider.get_price_by_type(
-            self.config.connector_name, self.config.trading_pair, PriceType.MidPrice)
+            self.config.connector_name, self.config.trading_pair, PriceType.MidPrice
+        )
 
-    def create_actions_proposal(self) -> List[CreateExecutorAction]:
+    def create_actions_proposal(self) -> list[CreateExecutorAction]:
         if self._executor_created or self._qa_finished:
             return []
         scenarios = SCENARIOS[self.config.executor_type]
         if self.config.scenario == "list" or self.config.scenario not in scenarios:
             lines = [f"  - {name}: {desc}" for name, desc in scenarios.items()]
-            self.logger().info(
-                f"Scenarios for '{self.config.executor_type}' executor:\n" + "\n".join(lines))
+            self.logger().info(f"Scenarios for '{self.config.executor_type}' executor:\n" + "\n".join(lines))
             self._qa_finished = True
             return []
         try:
@@ -203,7 +205,8 @@ class ExecutorsQA(StrategyV2Base):
             return []  # market data not ready yet, retry next tick
         self.logger().info(
             f"QA run: executor={self.config.executor_type} scenario={self.config.scenario} "
-            f"({scenarios[self.config.scenario]}) | mid price: {mid}")
+            f"({scenarios[self.config.scenario]}) | mid price: {mid}"
+        )
         try:
             executor_config = self.build_executor_config(mid)
         except (ValidationError, ValueError) as e:
@@ -215,15 +218,15 @@ class ExecutorsQA(StrategyV2Base):
             return []
         if self.config.scenario.startswith("invalid_"):
             self.logger().error(
-                "QA FAILED: an 'invalid_*' scenario config was accepted by validation, "
-                "the executor will NOT be started")
+                "QA FAILED: an 'invalid_*' scenario config was accepted by validation, the executor will NOT be started"
+            )
             self._qa_finished = True
             return []
         self._executor_created = True
         self.logger().info(f"Creating executor with config: {executor_config}")
         return [CreateExecutorAction(executor_config=executor_config)]
 
-    def stop_actions_proposal(self) -> List[StopExecutorAction]:
+    def stop_actions_proposal(self) -> list[StopExecutorAction]:
         # Executors stop themselves via their own barriers/limits; log a report once they are done.
         if self._executor_created and not self._final_report_logged:
             active = self.filter_executors(executors=self.get_all_executors(), filter_func=lambda e: e.is_active)
@@ -233,11 +236,12 @@ class ExecutorsQA(StrategyV2Base):
                     self.logger().info(
                         f"QA run finished: executor {executor.id} | status: {executor.status} | "
                         f"close type: {executor.close_type} | net pnl (quote): {executor.net_pnl_quote} | "
-                        f"filled amount (quote): {executor.filled_amount_quote}")
+                        f"filled amount (quote): {executor.filled_amount_quote}"
+                    )
                 self._final_report_logged = True
         return []
 
-    def build_executor_config(self, mid: Decimal) -> Optional[ExecutorConfigBase]:
+    def build_executor_config(self, mid: Decimal) -> ExecutorConfigBase | None:
         builder = getattr(self, f"{self.config.executor_type}_config")
         return builder(mid)
 
@@ -248,24 +252,37 @@ class ExecutorsQA(StrategyV2Base):
         if scenario == "default":
             entry_price = self.passive_price(mid, Decimal("0.001"))
             barriers = TripleBarrierConfig(
-                stop_loss=Decimal("0.02"), take_profit=Decimal("0.01"), time_limit=600,
-                open_order_type=OrderType.LIMIT, take_profit_order_type=OrderType.LIMIT)
+                stop_loss=Decimal("0.02"),
+                take_profit=Decimal("0.01"),
+                time_limit=600,
+                open_order_type=OrderType.LIMIT,
+                take_profit_order_type=OrderType.LIMIT,
+            )
         elif scenario == "market_entry_trailing":
             barriers = TripleBarrierConfig(
-                stop_loss=Decimal("0.02"), time_limit=600, open_order_type=OrderType.MARKET,
-                trailing_stop=TrailingStop(activation_price=Decimal("0.002"), trailing_delta=Decimal("0.001")))
+                stop_loss=Decimal("0.02"),
+                time_limit=600,
+                open_order_type=OrderType.MARKET,
+                trailing_stop=TrailingStop(activation_price=Decimal("0.002"), trailing_delta=Decimal("0.001")),
+            )
         elif scenario == "resting_entry_timeout":
             entry_price = self.passive_price(mid, Decimal("0.02"))
             barriers = TripleBarrierConfig(
-                stop_loss=Decimal("0.02"), take_profit=Decimal("0.01"), time_limit=60,
-                open_order_type=OrderType.LIMIT)
+                stop_loss=Decimal("0.02"), take_profit=Decimal("0.01"), time_limit=60, open_order_type=OrderType.LIMIT
+            )
         else:  # invalid_amount
             amount = Decimal("0")
             barriers = TripleBarrierConfig(stop_loss=Decimal("0.02"), take_profit=Decimal("0.01"))
         return PositionExecutorConfig(
-            timestamp=self.current_timestamp, connector_name=self.config.connector_name,
-            trading_pair=self.config.trading_pair, side=self.trade_side, amount=amount,
-            entry_price=entry_price, triple_barrier_config=barriers, leverage=1)
+            timestamp=self.current_timestamp,
+            connector_name=self.config.connector_name,
+            trading_pair=self.config.trading_pair,
+            side=self.trade_side,
+            amount=amount,
+            entry_price=entry_price,
+            triple_barrier_config=barriers,
+            leverage=1,
+        )
 
     def order_config(self, mid: Decimal) -> OrderExecutorConfig:
         scenario = self.config.scenario
@@ -286,22 +303,38 @@ class ExecutorsQA(StrategyV2Base):
         else:  # invalid_no_price
             execution_strategy = ExecutionStrategy.LIMIT
         return OrderExecutorConfig(
-            timestamp=self.current_timestamp, connector_name=self.config.connector_name,
-            trading_pair=self.config.trading_pair, side=self.trade_side, amount=amount,
-            price=price, chaser_config=chaser_config, execution_strategy=execution_strategy, leverage=1)
+            timestamp=self.current_timestamp,
+            connector_name=self.config.connector_name,
+            trading_pair=self.config.trading_pair,
+            side=self.trade_side,
+            amount=amount,
+            price=price,
+            chaser_config=chaser_config,
+            execution_strategy=execution_strategy,
+            leverage=1,
+        )
 
     def twap_config(self, mid: Decimal) -> TWAPExecutorConfig:
         scenario = self.config.scenario
         common = dict(
-            timestamp=self.current_timestamp, connector_name=self.config.connector_name,
-            trading_pair=self.config.trading_pair, side=self.trade_side,
-            total_amount_quote=self.config.total_amount_quote, leverage=1)
+            timestamp=self.current_timestamp,
+            connector_name=self.config.connector_name,
+            trading_pair=self.config.trading_pair,
+            side=self.trade_side,
+            total_amount_quote=self.config.total_amount_quote,
+            leverage=1,
+        )
         if scenario == "default":
             return TWAPExecutorConfig(total_duration=60, order_interval=15, mode=TWAPMode.TAKER, **common)
         elif scenario == "maker":
             return TWAPExecutorConfig(
-                total_duration=120, order_interval=30, mode=TWAPMode.MAKER,
-                limit_order_buffer=Decimal("0.001"), order_resubmission_time=20, **common)
+                total_duration=120,
+                order_interval=30,
+                mode=TWAPMode.MAKER,
+                limit_order_buffer=Decimal("0.001"),
+                order_resubmission_time=20,
+                **common,
+            )
         elif scenario == "single_order":
             return TWAPExecutorConfig(total_duration=10, order_interval=15, mode=TWAPMode.TAKER, **common)
         else:  # invalid_interval
@@ -312,42 +345,63 @@ class ExecutorsQA(StrategyV2Base):
         weights = [Decimal("0.2"), Decimal("0.3"), Decimal("0.5")]
         amounts_quote = [self.config.total_amount_quote * w for w in weights]
         common = dict(
-            timestamp=self.current_timestamp, connector_name=self.config.connector_name,
-            trading_pair=self.config.trading_pair, side=self.trade_side, leverage=1)
+            timestamp=self.current_timestamp,
+            connector_name=self.config.connector_name,
+            trading_pair=self.config.trading_pair,
+            side=self.trade_side,
+            leverage=1,
+        )
         if scenario == "default":
-            prices = [self.passive_price(mid, pct) for pct in
-                      (Decimal("0.001"), Decimal("0.005"), Decimal("0.01"))]
+            prices = [self.passive_price(mid, pct) for pct in (Decimal("0.001"), Decimal("0.005"), Decimal("0.01"))]
             return DCAExecutorConfig(
-                amounts_quote=amounts_quote, prices=prices, mode=DCAMode.MAKER,
-                take_profit=Decimal("0.01"), stop_loss=Decimal("0.03"), time_limit=3600, **common)
+                amounts_quote=amounts_quote,
+                prices=prices,
+                mode=DCAMode.MAKER,
+                take_profit=Decimal("0.01"),
+                stop_loss=Decimal("0.03"),
+                time_limit=3600,
+                **common,
+            )
         elif scenario == "taker":
-            prices = [self.passive_price(mid, pct) for pct in
-                      (Decimal("0.001"), Decimal("0.005"), Decimal("0.01"))]
+            prices = [self.passive_price(mid, pct) for pct in (Decimal("0.001"), Decimal("0.005"), Decimal("0.01"))]
             return DCAExecutorConfig(
-                amounts_quote=amounts_quote, prices=prices, mode=DCAMode.TAKER,
-                stop_loss=Decimal("0.03"), time_limit=3600,
+                amounts_quote=amounts_quote,
+                prices=prices,
+                mode=DCAMode.TAKER,
+                stop_loss=Decimal("0.03"),
+                time_limit=3600,
                 trailing_stop=TrailingStop(activation_price=Decimal("0.005"), trailing_delta=Decimal("0.002")),
-                **common)
+                **common,
+            )
         elif scenario == "far_levels_timeout":
-            prices = [self.passive_price(mid, pct) for pct in
-                      (Decimal("0.05"), Decimal("0.06"), Decimal("0.07"))]
+            prices = [self.passive_price(mid, pct) for pct in (Decimal("0.05"), Decimal("0.06"), Decimal("0.07"))]
             return DCAExecutorConfig(
-                amounts_quote=amounts_quote, prices=prices, mode=DCAMode.MAKER,
-                take_profit=Decimal("0.01"), stop_loss=Decimal("0.03"), time_limit=120, **common)
+                amounts_quote=amounts_quote,
+                prices=prices,
+                mode=DCAMode.MAKER,
+                take_profit=Decimal("0.01"),
+                stop_loss=Decimal("0.03"),
+                time_limit=120,
+                **common,
+            )
         else:  # invalid_levels
-            prices = [self.passive_price(mid, pct) for pct in
-                      (Decimal("0.001"), Decimal("0.005"), Decimal("0.01"))]
+            prices = [self.passive_price(mid, pct) for pct in (Decimal("0.001"), Decimal("0.005"), Decimal("0.01"))]
             return DCAExecutorConfig(amounts_quote=amounts_quote[:2], prices=prices, mode=DCAMode.MAKER, **common)
 
     def grid_config(self, mid: Decimal) -> GridExecutorConfig:
         scenario = self.config.scenario
         barriers = TripleBarrierConfig(
-            take_profit=Decimal("0.002"), open_order_type=OrderType.LIMIT,
-            take_profit_order_type=OrderType.LIMIT_MAKER)
+            take_profit=Decimal("0.002"), open_order_type=OrderType.LIMIT, take_profit_order_type=OrderType.LIMIT_MAKER
+        )
         common = dict(
-            timestamp=self.current_timestamp, connector_name=self.config.connector_name,
-            trading_pair=self.config.trading_pair, side=self.trade_side,
-            total_amount_quote=self.config.total_amount_quote, triple_barrier_config=barriers, leverage=1)
+            timestamp=self.current_timestamp,
+            connector_name=self.config.connector_name,
+            trading_pair=self.config.trading_pair,
+            side=self.trade_side,
+            total_amount_quote=self.config.total_amount_quote,
+            triple_barrier_config=barriers,
+            leverage=1,
+        )
 
         def limit_price(beyond_pct: Decimal) -> Decimal:
             # Stop-out sits beyond the losing edge of the range: below start for BUY, above end for SELL
@@ -355,45 +409,73 @@ class ExecutorsQA(StrategyV2Base):
 
         if scenario == "default":
             return GridExecutorConfig(
-                start_price=mid * Decimal("0.99"), end_price=mid * Decimal("1.01"),
-                limit_price=limit_price(Decimal("0.04")), min_order_amount_quote=Decimal("5"), **common)
+                start_price=mid * Decimal("0.99"),
+                end_price=mid * Decimal("1.01"),
+                limit_price=limit_price(Decimal("0.04")),
+                min_order_amount_quote=Decimal("5"),
+                **common,
+            )
         elif scenario == "tight_range":
             return GridExecutorConfig(
-                start_price=mid * Decimal("0.998"), end_price=mid * Decimal("1.002"),
-                limit_price=limit_price(Decimal("0.02")), min_order_amount_quote=Decimal("5"),
-                max_open_orders=2, **common)
+                start_price=mid * Decimal("0.998"),
+                end_price=mid * Decimal("1.002"),
+                limit_price=limit_price(Decimal("0.02")),
+                min_order_amount_quote=Decimal("5"),
+                max_open_orders=2,
+                **common,
+            )
         elif scenario == "wide_sparse":
             return GridExecutorConfig(
-                start_price=mid * Decimal("0.95"), end_price=mid * Decimal("1.05"),
-                limit_price=limit_price(Decimal("0.08")), min_order_amount_quote=Decimal("5"),
-                min_spread_between_orders=Decimal("0.005"), order_frequency=10, **common)
+                start_price=mid * Decimal("0.95"),
+                end_price=mid * Decimal("1.05"),
+                limit_price=limit_price(Decimal("0.08")),
+                min_order_amount_quote=Decimal("5"),
+                min_spread_between_orders=Decimal("0.005"),
+                order_frequency=10,
+                **common,
+            )
         else:  # invalid_range
             return GridExecutorConfig(
-                start_price=mid * Decimal("1.01"), end_price=mid * Decimal("0.99"),
-                limit_price=limit_price(Decimal("0.04")), **common)
+                start_price=mid * Decimal("1.01"),
+                end_price=mid * Decimal("0.99"),
+                limit_price=limit_price(Decimal("0.04")),
+                **common,
+            )
 
     def xemm_config(self, mid: Decimal) -> XEMMExecutorConfig:
         scenario = self.config.scenario
         common = dict(
             timestamp=self.current_timestamp,
-            buying_market=ConnectorPair(connector_name=self.config.connector_name,
-                                        trading_pair=self.config.trading_pair),
-            selling_market=ConnectorPair(connector_name=self.config.connector_name_2,
-                                         trading_pair=self.config.trading_pair_2),
+            buying_market=ConnectorPair(
+                connector_name=self.config.connector_name, trading_pair=self.config.trading_pair
+            ),
+            selling_market=ConnectorPair(
+                connector_name=self.config.connector_name_2, trading_pair=self.config.trading_pair_2
+            ),
             maker_side=self.trade_side,
-            order_amount=self.config.total_amount_quote / mid)
+            order_amount=self.config.total_amount_quote / mid,
+        )
         if scenario == "default":
             return XEMMExecutorConfig(
-                min_profitability=Decimal("0.001"), target_profitability=Decimal("0.002"),
-                max_profitability=Decimal("0.004"), **common)
+                min_profitability=Decimal("0.001"),
+                target_profitability=Decimal("0.002"),
+                max_profitability=Decimal("0.004"),
+                **common,
+            )
         elif scenario == "tight_band":
             return XEMMExecutorConfig(
-                min_profitability=Decimal("0.0008"), target_profitability=Decimal("0.001"),
-                max_profitability=Decimal("0.0012"), **common)
+                min_profitability=Decimal("0.0008"),
+                target_profitability=Decimal("0.001"),
+                max_profitability=Decimal("0.0012"),
+                **common,
+            )
         else:  # invalid_band
             return XEMMExecutorConfig(
-                min_profitability=Decimal("0.003"), target_profitability=Decimal("0.002"),
-                max_profitability=Decimal("0.004"), **common)
+                min_profitability=Decimal("0.003"),
+                target_profitability=Decimal("0.002"),
+                max_profitability=Decimal("0.004"),
+                **common,
+            )
 
     def arbitrage_config(self, mid: Decimal) -> ArbitrageExecutorConfig:
         scenario = self.config.scenario
@@ -402,20 +484,34 @@ class ExecutorsQA(StrategyV2Base):
         order_amount = self.config.total_amount_quote / mid
         if scenario == "default":
             return ArbitrageExecutorConfig(
-                timestamp=self.current_timestamp, buying_market=market_1, selling_market=market_2,
-                order_amount=order_amount, min_profitability=Decimal("0.002"))
+                timestamp=self.current_timestamp,
+                buying_market=market_1,
+                selling_market=market_2,
+                order_amount=order_amount,
+                min_profitability=Decimal("0.002"),
+            )
         elif scenario == "force_trade":
             return ArbitrageExecutorConfig(
-                timestamp=self.current_timestamp, buying_market=market_1, selling_market=market_2,
-                order_amount=order_amount, min_profitability=Decimal("-0.05"))
+                timestamp=self.current_timestamp,
+                buying_market=market_1,
+                selling_market=market_2,
+                order_amount=order_amount,
+                min_profitability=Decimal("-0.05"),
+            )
         else:  # invalid_same_market
             return ArbitrageExecutorConfig(
-                timestamp=self.current_timestamp, buying_market=market_1, selling_market=market_1,
-                order_amount=order_amount, min_profitability=Decimal("0.002"))
+                timestamp=self.current_timestamp,
+                buying_market=market_1,
+                selling_market=market_1,
+                order_amount=order_amount,
+                min_profitability=Decimal("0.002"),
+            )
 
     def format_status(self) -> str:
         scenario_desc = SCENARIOS[self.config.executor_type].get(self.config.scenario, "unknown scenario")
-        header = (f"\nExecutors QA | executor: {self.config.executor_type} | scenario: {self.config.scenario} "
-                  f"({scenario_desc}) | amount (quote): {self.config.total_amount_quote} | "
-                  f"side: {self.config.side}\n")
+        header = (
+            f"\nExecutors QA | executor: {self.config.executor_type} | scenario: {self.config.scenario} "
+            f"({scenario_desc}) | amount (quote): {self.config.total_amount_quote} | "
+            f"side: {self.config.side}\n"
+        )
         return header + super().format_status()

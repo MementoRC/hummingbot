@@ -15,7 +15,7 @@ import os
 from pathlib import Path
 import shutil
 import time
-from typing import Callable, Optional
+from typing import Callable
 
 from hummingbot.cli.output import ExitCode, emit, fail, json_option, render_table
 
@@ -75,7 +75,7 @@ def _keystore_row() -> dict:
     return _row("keystore", "fail", "the provided password does NOT unlock the keystore")
 
 
-def _remote_unix_time() -> Optional[float]:
+def _remote_unix_time() -> float | None:
     """Best-effort current UTC time from a public source, RTT-compensated; None if offline."""
     import json as _json
     import urllib.request

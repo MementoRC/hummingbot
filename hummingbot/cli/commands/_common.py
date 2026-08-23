@@ -3,7 +3,6 @@
 import json
 from pathlib import Path
 import sys
-from typing import Optional
 
 from hummingbot.cli import bot
 from hummingbot.cli.output import ExitCode, fail
@@ -11,7 +10,7 @@ from hummingbot.cli.output import ExitCode, fail
 _TYPE_FLAGS = (("v1-strategy", "--v1-strategy"), ("v2-script", "--v2-script"), ("controller", "--controller"))
 
 
-def one_type(v1: bool, v2: bool, controller: bool, required: bool) -> Optional[str]:
+def one_type(v1: bool, v2: bool, controller: bool, required: bool) -> str | None:
     """Collapse the --v1-strategy / --v2-script / --controller flags into a single type id (or None).
 
     Fails if more than one is set, or if ``required`` and none is set. Shared by ``strategy`` and
@@ -59,7 +58,7 @@ def read_json_object_from_stdin() -> dict:
     return parsed
 
 
-def resolve_db_for_command(name: Optional[str]) -> tuple[Path, Optional[str], bool]:
+def resolve_db_for_command(name: str | None) -> tuple[Path, str | None, bool]:
     """Resolve ``(db_path, config_filter, running)`` for the trades/history commands.
 
     With ``name`` -> a past/stopped bot's DB (no config filter, not running). Otherwise the current

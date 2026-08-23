@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from datetime import datetime, time
-from typing import Union
 
 from hummingbot.strategy.strategy_base import StrategyBase
 
@@ -61,11 +60,11 @@ class RunInTimeConditionalExecutionState(ConditionalExecutionState):
     :param end_timestamp: Specifies the moment to stop running the strategy (datetime or datetime.time)
     """
 
-    def __init__(self, start_timestamp: Union[datetime, time], end_timestamp: Union[datetime, time] = None):
+    def __init__(self, start_timestamp: datetime | time, end_timestamp: datetime | time = None):
         super().__init__()
 
-        self._start_timestamp: Union[datetime, time] = start_timestamp
-        self._end_timestamp: Union[datetime, time] = end_timestamp
+        self._start_timestamp: datetime | time = start_timestamp
+        self._end_timestamp: datetime | time = end_timestamp
 
     def __str__(self):
         if type(self._start_timestamp) is datetime:

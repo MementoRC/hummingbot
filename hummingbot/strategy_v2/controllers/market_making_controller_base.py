@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import Union
 
 from pydantic import Field, field_validator
 from pydantic_core.core_schema import ValidationInfo
@@ -46,7 +45,7 @@ class MarketMakingControllerConfigBase(ControllerConfigBase):
             "is_updatable": True,
         },
     )
-    buy_amounts_pct: Union[list[Decimal], None] = Field(
+    buy_amounts_pct: list[Decimal] | None = Field(
         default=None,
         json_schema_extra={
             "prompt": "Enter a comma-separated list of buy amounts as percentages (e.g., '50, 50'), or leave blank to distribute equally: ",
@@ -54,7 +53,7 @@ class MarketMakingControllerConfigBase(ControllerConfigBase):
             "is_updatable": True,
         },
     )
-    sell_amounts_pct: Union[list[Decimal], None] = Field(
+    sell_amounts_pct: list[Decimal] | None = Field(
         default=None,
         json_schema_extra={
             "prompt": "Enter a comma-separated list of sell amounts as percentages (e.g., '50, 50'), or leave blank to distribute equally: ",

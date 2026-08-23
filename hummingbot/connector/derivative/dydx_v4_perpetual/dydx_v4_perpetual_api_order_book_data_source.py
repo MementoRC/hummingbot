@@ -4,7 +4,7 @@ import asyncio
 from decimal import Decimal
 import sys
 import time
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any
 
 import dateutil.parser as dp
 
@@ -259,7 +259,7 @@ class DydxV4PerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
     @staticmethod
     def _get_bids_and_asks_from_snapshot(
-        snapshot: dict[str, list[dict[str, Union[str, int, float]]]],
+        snapshot: dict[str, list[dict[str, str | int | float]]],
     ) -> tuple[list[tuple[float, float]], list[tuple[float, float]]]:
         bids = [(Decimal(bid["price"]), Decimal(bid["size"])) for bid in snapshot["bids"]]
         asks = [(Decimal(ask["price"]), Decimal(ask["size"])) for ask in snapshot["asks"]]
@@ -268,7 +268,7 @@ class DydxV4PerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
     @staticmethod
     def _get_bids_and_asks_from_diff(
-        diff: dict[str, list[dict[str, Union[str, int, float]]]],
+        diff: dict[str, list[dict[str, str | int | float]]],
     ) -> tuple[list[tuple[float, float]], list[tuple[float, float]]]:
         bids = [(Decimal(bid[0]), Decimal(bid[1])) for bid in diff.get("bids", [])]
         asks = [(Decimal(ask[0]), Decimal(ask[1])) for ask in diff.get("asks", [])]

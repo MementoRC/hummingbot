@@ -35,7 +35,7 @@ class KrakenAPIOrderBookDataSource(OrderBookTrackerDataSource):
         trading_pairs: list[str],
         connector: "KrakenExchange",
         api_factory: WebAssistantsFactory,
-        # throttler: Optional[AsyncThrottler] = None
+        # throttler: AsyncThrottler | None = None
     ):
         super().__init__(trading_pairs)
         self._connector = connector

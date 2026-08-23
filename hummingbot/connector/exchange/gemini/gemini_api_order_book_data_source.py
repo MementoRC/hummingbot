@@ -1,6 +1,6 @@
 import asyncio
 import time
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.exchange.gemini import gemini_constants as CONSTANTS, gemini_web_utils as web_utils
 from hummingbot.connector.exchange.gemini.gemini_order_book import GeminiOrderBook
@@ -22,7 +22,7 @@ class GeminiAPIOrderBookDataSource(OrderBookTrackerDataSource):
     ONE_HOUR = 60 * 60
     _DYNAMIC_SUBSCRIBE_ID_START = 100
 
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
     _next_subscribe_id: int = _DYNAMIC_SUBSCRIBE_ID_START
 
     def __init__(self, trading_pairs: list[str], connector: "GeminiExchange", api_factory: WebAssistantsFactory):
@@ -37,7 +37,7 @@ class GeminiAPIOrderBookDataSource(OrderBookTrackerDataSource):
         self._dynamic_snapshot_futures: dict[str, asyncio.Future] = {}
         self._pending_dynamic_snapshots: dict[str, dict[str, Any]] = {}
 
-    async def get_last_traded_prices(self, trading_pairs: list[str], domain: Optional[str] = None) -> dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def _request_order_book_snapshot(self, trading_pair: str) -> dict[str, Any]:
@@ -164,7 +164,7 @@ class GeminiAPIOrderBookDataSource(OrderBookTrackerDataSource):
         message_queue.put_nowait(snapshot_message)
 
     async def _snapshot_message_from_depth_update(
-        self, raw_message: dict[str, Any], timestamp: Optional[float] = None
+        self, raw_message: dict[str, Any], timestamp: float | None = None
     ) -> OrderBookMessage:
         symbol = raw_message["s"]
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(symbol=symbol)
@@ -232,7 +232,7 @@ class GeminiAPIOrderBookDataSource(OrderBookTrackerDataSource):
         status = ack.get("status")
         return status in (None, 200) and "error" not in ack
 
-    async def _send_subscription_request_and_wait_for_ack(self, payload: dict[str, Any]) -> Optional[dict[str, Any]]:
+    async def _send_subscription_request_and_wait_for_ack(self, payload: dict[str, Any]) -> dict[str, Any] | None:
         request_id = str(payload["id"])
         future = asyncio.get_event_loop().create_future()
         self._subscription_ack_futures[request_id] = future
@@ -326,7 +326,7 @@ class GeminiAPIOrderBookDataSource(OrderBookTrackerDataSource):
         cls._next_subscribe_id += 1
         return current_id
 
-    async def _on_order_stream_interruption(self, websocket_assistant: Optional[WSAssistant] = None):
+    async def _on_order_stream_interruption(self, websocket_assistant: WSAssistant | None = None):
         self._snapshot_symbols.clear()
         self._last_update_ids.clear()
         await super()._on_order_stream_interruption(websocket_assistant=websocket_assistant)

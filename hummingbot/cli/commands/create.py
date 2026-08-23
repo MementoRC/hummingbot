@@ -16,7 +16,6 @@ it and ``hbot start`` with no argument runs it.
 """
 
 from pathlib import Path
-from typing import Optional
 
 import typer
 
@@ -49,7 +48,7 @@ def _resolve_strategy_type(strategy: str, v1: bool, v2: bool, controller: bool) 
     fail(f"strategy '{strategy}' not found. Available — {hint}", ExitCode.NOT_FOUND)
 
 
-def _collect_values(set_values: Optional[list[str]], values_stdin: bool) -> dict:
+def _collect_values(set_values: list[str] | None, values_stdin: bool) -> dict:
     """Merge field values from --set pairs and/or a JSON object on stdin (stdin first, --set wins)."""
     from hummingbot.cli.strategy_configs import parse_set_pairs
 
@@ -68,7 +67,7 @@ def create(
     strategy: str = typer.Argument(
         ..., help="Strategy / controller / script to create a config from (e.g. pmm_simple)."
     ),
-    set_values: Optional[list[str]] = typer.Option(
+    set_values: list[str] | None = typer.Option(
         None,
         "--set",
         help="Fill a field inline: --set key=value (repeatable). Supply the required fields here for a ready-to-run config.",
@@ -81,7 +80,7 @@ def create(
         "--with-defaults",
         help="Scaffold with template defaults and leave required fields blank (fill later via `hbot config`), instead of requiring them now.",
     ),
-    name: Optional[str] = typer.Option(
+    name: str | None = typer.Option(
         None, "--name", help="Output config file name (default: a free conf_<strategy>.yml)."
     ),
     v1: bool = typer.Option(
@@ -111,10 +110,10 @@ def create(
 def create_config(
     *,
     strategy: str,
-    set_values: Optional[list[str]] = None,
+    set_values: list[str] | None = None,
     values_stdin: bool = False,
     with_defaults: bool = False,
-    name: Optional[str] = None,
+    name: str | None = None,
     v1: bool = False,
     v2: bool = False,
     controller: bool = False,

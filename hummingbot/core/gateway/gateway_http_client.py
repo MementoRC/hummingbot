@@ -6,7 +6,7 @@ from enum import Enum
 import logging
 import re
 import ssl
-from typing import Any, Dict, Union
+from typing import Any, Dict
 
 import aiohttp
 from aiohttp import ContentTypeError
@@ -433,7 +433,7 @@ class GatewayHttpClient:
         params: dict[str, Any] = {},
         fail_silently: bool = False,
         use_body: bool = False,
-    ) -> Union[dict[str, Any], list[dict[str, Any]]] | None:
+    ) -> dict[str, Any] | list[dict[str, Any]] | None:
         """
         Sends an aiohttp request and waits for a response.
         :param method: The HTTP method, e.g. get or post
@@ -524,7 +524,7 @@ class GatewayHttpClient:
 
     async def get_network_status(
         self, chain: str = None, network: str = None, fail_silently: bool = False
-    ) -> Union[dict[str, Any], list[dict[str, Any]]]:
+    ) -> dict[str, Any] | list[dict[str, Any]]:
         req_data: dict[str, str] = {}
         req_data["network"] = network
         return await self.api_request("get", f"chains/{chain}/status", req_data, fail_silently=fail_silently)
@@ -1489,7 +1489,7 @@ class GatewayHttpClient:
 
     async def get_tokens(
         self, chain: str, network: str, search: str | None = None
-    ) -> Union[list[dict[str, Any]], dict[str, Any]]:
+    ) -> list[dict[str, Any]] | dict[str, Any]:
         """Get available tokens for a specific chain and network."""
         params = {"chain": chain, "network": network}
         if search:

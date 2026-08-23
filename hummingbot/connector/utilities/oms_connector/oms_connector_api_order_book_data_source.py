@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.utilities.oms_connector import oms_connector_constants as CONSTANTS
 from hummingbot.connector.utilities.oms_connector.oms_connector_auth import OMSConnectorAuth
@@ -42,12 +42,10 @@ class OMSConnectorAPIOrderBookDataSource(OrderBookTrackerDataSource):
     async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
-    async def _parse_trade_message(self, raw_message: list[dict[int, Union[int, float]]], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: list[dict[int, int | float]], message_queue: asyncio.Queue):
         raise NotImplementedError  # OMS connectors do not provide a public trades endpoint
 
-    async def _parse_order_book_diff_message(
-        self, raw_message: list[list[Union[int, float]]], message_queue: asyncio.Queue
-    ):
+    async def _parse_order_book_diff_message(self, raw_message: list[list[int | float]], message_queue: asyncio.Queue):
         msg_data = raw_message[CONSTANTS.MSG_DATA_FIELD]
         first_row = msg_data[0]
         ts_ms = first_row[CONSTANTS.DIFF_UPDATE_TS_FIELD]
@@ -88,7 +86,7 @@ class OMSConnectorAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
     @staticmethod
     def _get_bids_and_asks_from_snapshot(
-        snapshot: list[list[Union[int, float]]],
+        snapshot: list[list[int | float]],
     ) -> tuple[list[tuple[float, float]], list[tuple[float, float]]]:
         """OMS connectors do not guarantee that the data is sorted in any way."""
         asks = []
@@ -101,7 +99,7 @@ class OMSConnectorAPIOrderBookDataSource(OrderBookTrackerDataSource):
                 asks.append(update)
         return bids, asks
 
-    async def _request_order_book_snapshot(self, trading_pair: str) -> list[list[Union[int, float]]]:
+    async def _request_order_book_snapshot(self, trading_pair: str) -> list[list[int | float]]:
         instrument_id = await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
         params = {
             CONSTANTS.OMS_ID_FIELD: self._oms_id,

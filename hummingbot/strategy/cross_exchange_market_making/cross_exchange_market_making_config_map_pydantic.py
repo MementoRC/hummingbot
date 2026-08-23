@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from decimal import Decimal
-from typing import Dict, Union
+from typing import Dict
 
 from pydantic import ConfigDict, Field, field_validator
 
@@ -238,7 +238,7 @@ class CrossExchangeMarketMakingConfigMap(BaseTradingStrategyMakerTakerConfigMap)
         description="Adjust order price to be one tick above the top bid or below the top ask.",
         json_schema_extra={"prompt": "Do you want to enable adjust order? (Yes/No)"},
     )
-    order_refresh_mode: Union[ActiveOrderRefreshMode, PassiveOrderRefreshMode] = Field(
+    order_refresh_mode: ActiveOrderRefreshMode | PassiveOrderRefreshMode = Field(
         default=ActiveOrderRefreshMode.model_construct(),
         description="Refresh orders by cancellation or by letting them expire.",
         json_schema_extra={
@@ -287,7 +287,7 @@ class CrossExchangeMarketMakingConfigMap(BaseTradingStrategyMakerTakerConfigMap)
             "prompt": "What ratio of your total portfolio value would you like to trade on the maker and taker markets? Enter 50 for 50%"
         },
     )
-    conversion_rate_mode: Union[OracleConversionRateMode, TakerToMakerConversionRateMode] = Field(
+    conversion_rate_mode: OracleConversionRateMode | TakerToMakerConversionRateMode = Field(
         default=OracleConversionRateMode.model_construct(),
         description="Convert between different trading pairs using fixed conversion rates or using the rate oracle.",
         json_schema_extra={
@@ -329,7 +329,7 @@ class CrossExchangeMarketMakingConfigMap(BaseTradingStrategyMakerTakerConfigMap)
     # === specific validations ===
     @field_validator("order_refresh_mode", mode="before")
     @classmethod
-    def validate_order_refresh_mode(cls, v: Union[str, ActiveOrderRefreshMode, PassiveOrderRefreshMode]):
+    def validate_order_refresh_mode(cls, v: str | ActiveOrderRefreshMode | PassiveOrderRefreshMode):
         if isinstance(v, (ActiveOrderRefreshMode, PassiveOrderRefreshMode, Dict)):
             sub_model = v
         elif v not in ORDER_REFRESH_MODELS:
@@ -342,7 +342,7 @@ class CrossExchangeMarketMakingConfigMap(BaseTradingStrategyMakerTakerConfigMap)
 
     @field_validator("conversion_rate_mode", mode="before")
     @classmethod
-    def validate_conversion_rate_mode(cls, v: Union[str, OracleConversionRateMode, TakerToMakerConversionRateMode]):
+    def validate_conversion_rate_mode(cls, v: str | OracleConversionRateMode | TakerToMakerConversionRateMode):
         if isinstance(v, (OracleConversionRateMode, TakerToMakerConversionRateMode, Dict)):
             sub_model = v
         elif v not in CONVERSION_RATE_MODELS:
