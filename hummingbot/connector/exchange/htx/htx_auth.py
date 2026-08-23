@@ -25,7 +25,6 @@ class HtxAuth(AuthBase):
         return OrderedDict(sorted(dictionary.items(), key=lambda t: t[0]))
 
     async def rest_authenticate(self, request: RESTRequest) -> RESTRequest:
-
         auth_params = self.generate_auth_params_for_REST(request=request)
         request.params = auth_params
 
@@ -87,7 +86,6 @@ class HtxAuth(AuthBase):
         path_url: str,
         params: dict[str, Any],
     ) -> str:
-
         query_endpoint = path_url
         encoded_params_str = urlencode(params)
         payload = "\n".join([method.upper(), self.hostname, query_endpoint, encoded_params_str])

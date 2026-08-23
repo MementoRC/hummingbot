@@ -1,5 +1,3 @@
-from typing import List
-
 import pandas as pd
 import pandas_ta as ta  # noqa: F401
 from pydantic import Field, field_validator
@@ -14,7 +12,7 @@ class CandlesDataControllerConfig(ControllerConfigBase):
     controller_name: str = "examples.candles_data_controller"
 
     # Candles configuration - user can modify these
-    candles_config: List[CandlesConfig] = Field(
+    candles_config: list[CandlesConfig] = Field(
         default_factory=lambda: [
             CandlesConfig(connector="binance", trading_pair="ETH-USDT", interval="1m", max_records=1000),
             CandlesConfig(connector="binance", trading_pair="ETH-USDT", interval="1h", max_records=1000),
@@ -23,12 +21,12 @@ class CandlesDataControllerConfig(ControllerConfigBase):
         json_schema_extra={
             "prompt": "Enter candles configurations (format: connector.pair.interval.max_records, separated by colons): ",
             "prompt_on_new": True,
-        }
+        },
     )
 
-    @field_validator('candles_config', mode="before")
+    @field_validator("candles_config", mode="before")
     @classmethod
-    def parse_candles_config(cls, v) -> List[CandlesConfig]:
+    def parse_candles_config(cls, v) -> list[CandlesConfig]:
         # Handle string input (user provided)
         if isinstance(v, str):
             return cls.parse_candles_config_str(v)
@@ -46,26 +44,27 @@ class CandlesDataControllerConfig(ControllerConfigBase):
         return v
 
     @staticmethod
-    def parse_candles_config_str(v: str) -> List[CandlesConfig]:
+    def parse_candles_config_str(v: str) -> list[CandlesConfig]:
         configs = []
         if v.strip():
-            entries = v.split(':')
+            entries = v.split(":")
             for entry in entries:
-                parts = entry.split('.')
+                parts = entry.split(".")
                 if len(parts) != 4:
-                    raise ValueError(f"Invalid candles config format in segment '{entry}'. "
-                                     "Expected format: 'exchange.tradingpair.interval.maxrecords'")
+                    raise ValueError(
+                        f"Invalid candles config format in segment '{entry}'. "
+                        "Expected format: 'exchange.tradingpair.interval.maxrecords'"
+                    )
                 connector, trading_pair, interval, max_records_str = parts
                 try:
                     max_records = int(max_records_str)
                 except ValueError:
-                    raise ValueError(f"Invalid max_records value '{max_records_str}' in segment '{entry}'. "
-                                     "max_records should be an integer.")
+                    raise ValueError(
+                        f"Invalid max_records value '{max_records_str}' in segment '{entry}'. "
+                        "max_records should be an integer."
+                    )
                 config = CandlesConfig(
-                    connector=connector,
-                    trading_pair=trading_pair,
-                    interval=interval,
-                    max_records=max_records
+                    connector=connector, trading_pair=trading_pair, interval=interval, max_records=max_records
                 )
                 configs.append(config)
         return configs
@@ -105,7 +104,7 @@ class CandlesDataController(ControllerBase):
                     connector_name=candle_config.connector,
                     trading_pair=candle_config.trading_pair,
                     interval=candle_config.interval,
-                    max_records=50
+                    max_records=50,
                 )
                 if candles_df is not None and not candles_df.empty:
                     candles_df = candles_df.copy()
@@ -116,7 +115,9 @@ class CandlesDataController(ControllerBase):
                         candles_df.ta.bbands(length=20, std=2, append=True)
                         candles_df.ta.ema(length=14, append=True)
 
-                    candles_data[f"{candle_config.connector}_{candle_config.trading_pair}_{candle_config.interval}"] = candles_df
+                    candles_data[f"{candle_config.connector}_{candle_config.trading_pair}_{candle_config.interval}"] = (
+                        candles_df
+                    )
 
         self.processed_data = {"candles_data": candles_data, "all_candles_ready": self.all_candles_ready}
 
@@ -124,7 +125,7 @@ class CandlesDataController(ControllerBase):
         # This controller is for data monitoring only, no trading actions
         return []
 
-    def to_format_status(self) -> List[str]:
+    def to_format_status(self) -> list[str]:
         lines = []
         lines.extend(["\n" + "=" * 100])
         lines.extend(["                              CANDLES DATA CONTROLLER"])
@@ -136,7 +137,7 @@ class CandlesDataController(ControllerBase):
                     connector_name=candle_config.connector,
                     trading_pair=candle_config.trading_pair,
                     interval=candle_config.interval,
-                    max_records=50
+                    max_records=50,
                 )
 
                 if candles_df is not None and not candles_df.empty:
@@ -151,7 +152,11 @@ class CandlesDataController(ControllerBase):
                     candles_df["timestamp"] = pd.to_datetime(candles_df["timestamp"], unit="s")
 
                     # Display candles info
-                    lines.extend([f"\n[{i + 1}] {candle_config.connector.upper()} | {candle_config.trading_pair} | {candle_config.interval}"])
+                    lines.extend(
+                        [
+                            f"\n[{i + 1}] {candle_config.connector.upper()} | {candle_config.trading_pair} | {candle_config.interval}"
+                        ]
+                    )
                     lines.extend(["-" * 80])
 
                     # Show last 5 rows with basic columns (OHLC + volume)
@@ -170,7 +175,7 @@ class CandlesDataController(ControllerBase):
                     display_df = candles_df.tail(5)[display_columns].copy()
 
                     # Round numeric columns only, handle datetime columns separately
-                    numeric_columns = display_df.select_dtypes(include=['number']).columns
+                    numeric_columns = display_df.select_dtypes(include=["number"]).columns
                     display_df[numeric_columns] = display_df[numeric_columns].round(4)
                     lines.extend(["    " + line for line in display_df.to_string(index=False).split("\n")])
 
@@ -180,15 +185,19 @@ class CandlesDataController(ControllerBase):
                     current_price = f"Current Price: ${current['close']:.4f}"
 
                     # Add indicator values if available
-                    if "RSI_14" in candles_df.columns and pd.notna(current.get('RSI_14')):
+                    if "RSI_14" in candles_df.columns and pd.notna(current.get("RSI_14")):
                         current_price += f" | RSI: {current['RSI_14']:.2f}"
 
-                    if "BBP_20_2.0_2.0" in candles_df.columns and pd.notna(current.get('BBP_20_2.0_2.0')):
+                    if "BBP_20_2.0_2.0" in candles_df.columns and pd.notna(current.get("BBP_20_2.0_2.0")):
                         current_price += f" | BB%: {current['BBP_20_2.0_2.0']:.3f}"
 
                     lines.extend([f"    {current_price}"])
                 else:
-                    lines.extend([f"\n[{i + 1}] {candle_config.connector.upper()} | {candle_config.trading_pair} | {candle_config.interval}"])
+                    lines.extend(
+                        [
+                            f"\n[{i + 1}] {candle_config.connector.upper()} | {candle_config.trading_pair} | {candle_config.interval}"
+                        ]
+                    )
                     lines.extend(["    No data available yet..."])
         else:
             lines.extend(["\n⏳ Waiting for candles data to be ready..."])
@@ -196,7 +205,9 @@ class CandlesDataController(ControllerBase):
                 candles_feed = self.market_data_provider.get_candles_feed(candle_config)
                 ready = candles_feed.ready and not candles_feed.candles_df.empty
                 status = "✅" if ready else "❌"
-                lines.extend([f"    {status} {candle_config.connector}.{candle_config.trading_pair}.{candle_config.interval}"])
+                lines.extend(
+                    [f"    {status} {candle_config.connector}.{candle_config.trading_pair}.{candle_config.interval}"]
+                )
 
         lines.extend(["\n" + "=" * 100 + "\n"])
         return lines

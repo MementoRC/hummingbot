@@ -504,9 +504,7 @@ class TestLPExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             }
         }
         connector._trigger_remove_liquidity_event = MagicMock(
-            return_value=create_mock_remove_event(
-                base_amount=Decimal("1.0"), quote_amount=Decimal("100.0")
-            )
+            return_value=create_mock_remove_event(base_amount=Decimal("1.0"), quote_amount=Decimal("100.0"))
         )
 
         await executor._close_position()
@@ -1536,12 +1534,14 @@ class TestLPExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
                 "base_fee": Decimal("0"),
                 "quote_fee": Decimal("0.5"),
                 "position_rent_refunded": Decimal("0.002"),
-                "tx_fee": Decimal("0.0001")
+                "tx_fee": Decimal("0.0001"),
             }
         }
-        connector._trigger_remove_liquidity_event = MagicMock(return_value=create_mock_remove_event(
-            base_amount=Decimal("0"), quote_amount=Decimal("99.0"), base_fee=Decimal("0")
-        ))
+        connector._trigger_remove_liquidity_event = MagicMock(
+            return_value=create_mock_remove_event(
+                base_amount=Decimal("0"), quote_amount=Decimal("99.0"), base_fee=Decimal("0")
+            )
+        )
 
         await executor._close_position()
 
@@ -2008,9 +2008,7 @@ class TestLPExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         connector._clmm_add_liquidity = AsyncMock(return_value="sig-add")
         connector._lp_orders_metadata = {"order-123": {"position_address": "pos123"}}
         connector._trigger_add_liquidity_event = MagicMock(
-            return_value=create_mock_add_event(
-                base_amount=deposited_base, quote_amount=deposited_quote
-            )
+            return_value=create_mock_add_event(base_amount=deposited_base, quote_amount=deposited_quote)
         )
         await executor._create_position()
 
@@ -2042,9 +2040,12 @@ class TestLPExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
     async def test_matrix_config_hold_stop_hold_records_only_the_net(self):
         """config=True, stop=True: the hold is the round trip's net, not the deposit."""
         executor = await self._open_and_close(
-            config_keep_position=True, stop_keep_position=True,
-            deposited_base=Decimal("5.0"), withdrawn_base=Decimal("5.5"),
-            deposited_quote=Decimal("500.0"), withdrawn_quote=Decimal("450.0"),
+            config_keep_position=True,
+            stop_keep_position=True,
+            deposited_base=Decimal("5.0"),
+            withdrawn_base=Decimal("5.5"),
+            deposited_quote=Decimal("500.0"),
+            withdrawn_quote=Decimal("450.0"),
         )
 
         self.assertEqual(executor.close_type, CloseType.POSITION_HOLD)
@@ -2058,8 +2059,10 @@ class TestLPExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
     async def test_matrix_config_unwind_stop_unwind_holds_nothing_and_swaps_net(self):
         """config=False, stop=False: no hold recorded, close-out swaps the net."""
         executor = await self._open_and_close(
-            config_keep_position=False, stop_keep_position=False,
-            deposited_base=Decimal("5.0"), withdrawn_base=Decimal("5.5"),
+            config_keep_position=False,
+            stop_keep_position=False,
+            deposited_base=Decimal("5.0"),
+            withdrawn_base=Decimal("5.5"),
         )
 
         self.assertEqual(executor.close_type, CloseType.EARLY_STOP)
@@ -2076,9 +2079,12 @@ class TestLPExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         a hold for base the executor never acquired.
         """
         executor = await self._open_and_close(
-            config_keep_position=False, stop_keep_position=True,
-            deposited_base=Decimal("5.0"), withdrawn_base=Decimal("5.5"),
-            deposited_quote=Decimal("500.0"), withdrawn_quote=Decimal("450.0"),
+            config_keep_position=False,
+            stop_keep_position=True,
+            deposited_base=Decimal("5.0"),
+            withdrawn_base=Decimal("5.5"),
+            deposited_quote=Decimal("500.0"),
+            withdrawn_quote=Decimal("450.0"),
         )
 
         self.assertEqual(executor.close_type, CloseType.POSITION_HOLD)
@@ -2098,8 +2104,10 @@ class TestLPExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         hold -- a position the caller had asked to be flat out of.
         """
         executor = await self._open_and_close(
-            config_keep_position=True, stop_keep_position=False,
-            deposited_base=Decimal("5.0"), withdrawn_base=Decimal("5.5"),
+            config_keep_position=True,
+            stop_keep_position=False,
+            deposited_base=Decimal("5.0"),
+            withdrawn_base=Decimal("5.5"),
         )
 
         self.assertEqual(executor.close_type, CloseType.EARLY_STOP)
@@ -2144,9 +2152,12 @@ class TestLPExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         filled_amount_base -- the pool balance, not acquired base.
         """
         executor = await self._open_and_close(
-            config_keep_position=True, stop_keep_position=True,
-            deposited_base=Decimal("5.0"), withdrawn_base=Decimal("5.0"),
-            deposited_quote=Decimal("500.0"), withdrawn_quote=Decimal("500.0"),
+            config_keep_position=True,
+            stop_keep_position=True,
+            deposited_base=Decimal("5.0"),
+            withdrawn_base=Decimal("5.0"),
+            deposited_quote=Decimal("500.0"),
+            withdrawn_quote=Decimal("500.0"),
         )
 
         self.assertEqual(len(executor._held_position_orders), 1)
@@ -2179,7 +2190,7 @@ class TestLPExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         self.assertEqual(orders[0]["trade_type"], "BUY")
         self.assertEqual(orders[0]["executed_amount_base"], 0.5)
 
-    @patch('hummingbot.strategy_v2.executors.lp_executor.lp_executor.GatewayHttpClient')
+    @patch("hummingbot.strategy_v2.executors.lp_executor.lp_executor.GatewayHttpClient")
     async def test_closeout_resolves_swap_provider_lazily(self, mock_gateway_client):
         """A keep_position=True config unwound at runtime still finds a provider.
 
@@ -2214,9 +2225,12 @@ class TestLPExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         booking the full withdrawn balance here would double-count it.
         """
         executor = await self._open_and_close(
-            config_keep_position=False, stop_keep_position=False,
-            deposited_base=Decimal("5.0"), withdrawn_base=Decimal("5.5"),
-            deposited_quote=Decimal("500.0"), withdrawn_quote=Decimal("450.0"),
+            config_keep_position=False,
+            stop_keep_position=False,
+            deposited_base=Decimal("5.0"),
+            withdrawn_base=Decimal("5.5"),
+            deposited_quote=Decimal("500.0"),
+            withdrawn_quote=Decimal("450.0"),
         )
         self.assertEqual(executor.lp_position_state.state, LPExecutorStates.SWAPPING)
 

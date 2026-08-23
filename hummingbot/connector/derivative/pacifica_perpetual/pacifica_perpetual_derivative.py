@@ -122,7 +122,6 @@ class PacificaPerpetualDerivative(PerpetualDerivativePyBase):
         headers: dict[str, Any] | None = None,
         **kwargs,
     ) -> dict[str, Any]:
-
         if self.api_config_key:
             pf_headers = {"PF-API-KEY": self.api_config_key}
             if headers:

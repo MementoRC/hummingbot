@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import asyncio
-from typing import Coroutine, List, Optional
+from typing import Coroutine, Optional
 from weakref import ReferenceType, ref
 
 import path_util  # noqa: F401
@@ -27,8 +27,13 @@ from hummingbot.core.utils.async_utils import safe_gather
 
 
 class UIStartListener(EventListener):
-    def __init__(self, hummingbot_app: HummingbotApplication, is_script: Optional[bool] = False,
-                 script_config: Optional[dict] = None, is_quickstart: Optional[bool] = False):
+    def __init__(
+        self,
+        hummingbot_app: HummingbotApplication,
+        is_script: Optional[bool] = False,
+        script_config: Optional[dict] = None,
+        is_quickstart: Optional[bool] = False,
+    ):
         super().__init__()
         self._hb_ref: ReferenceType = ref(hummingbot_app)
         self._is_script = is_script
@@ -47,9 +52,11 @@ class UIStartListener(EventListener):
         if hb.strategy_name is not None:
             if not self._is_script:
                 write_config_to_yml(hb.strategy_config_map, hb.strategy_file_name, hb.client_config_map)
-            hb.start(log_level=hb.client_config_map.log_level,
-                     v2_conf=self._script_config if self._is_script else None,
-                     is_quickstart=self._is_quickstart)
+            hb.start(
+                log_level=hb.client_config_map.log_level,
+                v2_conf=self._script_config if self._is_script else None,
+                is_quickstart=self._is_quickstart,
+            )
 
 
 async def main_async(client_config_map: ClientConfigAdapter):
@@ -67,13 +74,15 @@ async def main_async(client_config_map: ClientConfigAdapter):
     start_listener: UIStartListener = UIStartListener(hb)
     hb.app.add_listener(HummingbotUIEvent.Start, start_listener)
 
-    tasks: List[Coroutine] = [hb.run()]
+    tasks: list[Coroutine] = [hb.run()]
     if client_config_map.debug_console:
         if not hasattr(__builtins__, "help"):
             import _sitebuiltins
+
             __builtins__["help"] = _sitebuiltins._Helper()
 
         from hummingbot.core.management.console import start_management_console
+
         management_port: int = detect_available_port(8211)
         tasks.append(start_management_console(locals(), host="localhost", port=management_port))
     await safe_gather(*tasks)

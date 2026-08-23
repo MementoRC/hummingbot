@@ -92,7 +92,6 @@ class DydxV4PerpetualUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCas
 
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
     async def test_ws_authentication_successful(self, ws_connect_mock):
-
         ws_connect_mock.return_value = self.mocking_assistant.create_websocket_mock()
         await self.data_source._connected_websocket_assistant()
 
