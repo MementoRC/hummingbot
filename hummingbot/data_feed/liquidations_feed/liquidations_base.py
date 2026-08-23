@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 import asyncio
 from dataclasses import dataclass, fields
 from enum import Enum
 import time
-from typing import Optional, Set
 
 from bidict import bidict
 import pandas as pd
@@ -44,15 +45,15 @@ class LiquidationsBase(NetworkBase):
     The class uses the WS Assistants for all the IO operations,
     """
 
-    def __init__(self, trading_pairs: Set[str], max_retention_seconds: int):
+    def __init__(self, trading_pairs: set[str], max_retention_seconds: int):
         super().__init__()
         async_throttler = AsyncThrottler(rate_limits=self.rate_limits)
         self._api_factory = WebAssistantsFactory(throttler=async_throttler)
         self._max_retention_seconds = max_retention_seconds
         self._trading_pairs = trading_pairs
         self._liquidations = {}
-        self._listen_liquidations_task: Optional[asyncio.Task] = None
-        self._cleanup_task: Optional[asyncio.Task] = None
+        self._listen_liquidations_task: asyncio.Task | None = None
+        self._cleanup_task: asyncio.Task | None = None
         self._subscribed_to_channels = False
         self._trading_pairs_map = bidict()
 
@@ -171,7 +172,7 @@ class LiquidationsBase(NetworkBase):
         Connects to the liquidations (=forceOrder) websocket endpoint and listens to the messages sent by the
         exchange.
         """
-        ws: Optional[WSAssistant] = None
+        ws: WSAssistant | None = None
         while True:
             try:
                 ws: WSAssistant = await self._connected_websocket_assistant()
@@ -218,5 +219,5 @@ class LiquidationsBase(NetworkBase):
         """
         await asyncio.sleep(delay)
 
-    async def _on_order_stream_interruption(self, websocket_assistant: Optional[WSAssistant] = None):
+    async def _on_order_stream_interruption(self, websocket_assistant: WSAssistant | None = None):
         websocket_assistant and await websocket_assistant.disconnect()

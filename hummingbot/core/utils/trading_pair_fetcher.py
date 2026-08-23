@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import logging
-from typing import Any, Awaitable, Callable, Dict, List, Optional
+from typing import Any, Awaitable, Callable
 
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
 from hummingbot.client.settings import AllConnectorSettings, ConnectorSetting
@@ -11,7 +13,7 @@ from .async_utils import safe_ensure_future
 
 class TradingPairFetcher:
     _sf_shared_instance: "TradingPairFetcher" = None
-    _tpf_logger: Optional[HummingbotLogger] = None
+    _tpf_logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -20,7 +22,7 @@ class TradingPairFetcher:
         return cls._tpf_logger
 
     @classmethod
-    def get_instance(cls, client_config_map: Optional["ClientConfigAdapter"] = None) -> "TradingPairFetcher":
+    def get_instance(cls, client_config_map: "ClientConfigAdapter" | None = None) -> "TradingPairFetcher":
         if cls._sf_shared_instance is None:
             client_config_map = client_config_map or cls._get_client_config_map()
             cls._sf_shared_instance = TradingPairFetcher(client_config_map)
@@ -28,12 +30,12 @@ class TradingPairFetcher:
 
     def __init__(self, client_config_map: ClientConfigAdapter):
         self.ready = False
-        self.trading_pairs: Dict[str, Any] = {}
+        self.trading_pairs: dict[str, Any] = {}
         self.fetch_pairs_from_all_exchanges = client_config_map.hb_config.fetch_pairs_from_all_exchanges
         self._fetch_task = safe_ensure_future(self.fetch_all(client_config_map))
 
     def _fetch_pairs_from_connector_setting(
-        self, connector_setting: ConnectorSetting, connector_name: Optional[str] = None
+        self, connector_setting: ConnectorSetting, connector_name: str | None = None
     ):
         connector_name = connector_name or connector_setting.name
         connector = connector_setting.non_trading_connector_instance_with_default_configuration()
@@ -63,7 +65,7 @@ class TradingPairFetcher:
                 )
         self.ready = True
 
-    async def call_fetch_pairs(self, fetch_fn: Callable[[], Awaitable[List[str]]], exchange_name: str):
+    async def call_fetch_pairs(self, fetch_fn: Callable[[], Awaitable[list[str]]], exchange_name: str):
         try:
             pairs = await fetch_fn
             self.trading_pairs[exchange_name] = pairs
@@ -76,7 +78,7 @@ class TradingPairFetcher:
             # In case of error just assign empty list, this is st. the bot won't stop working
             self.trading_pairs[exchange_name] = []
 
-    def _all_connector_settings(self) -> Dict[str, ConnectorSetting]:
+    def _all_connector_settings(self) -> dict[str, ConnectorSetting]:
         # Method created to enabling patching in unit tests
         return AllConnectorSettings.get_connector_settings()
 

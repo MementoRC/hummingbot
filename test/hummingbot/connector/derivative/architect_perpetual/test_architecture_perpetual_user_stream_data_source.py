@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 import json
 import re
-from typing import Optional
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
@@ -41,7 +42,7 @@ class ArchitecturePerpetualUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperT
     def setUp(self) -> None:
         super().setUp()
         self.log_records = []
-        self.listening_task: Optional[asyncio.Task] = None
+        self.listening_task: asyncio.Task | None = None
         self.mocking_assistant = NetworkMockingAssistant()
 
         self.emulated_time = 1640001112.223
@@ -133,7 +134,7 @@ class ArchitecturePerpetualUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperT
             message=json.dumps({"t": "h", "ts": 1609459200, "tn": 123456789}),
         )
 
-        self.listening_task = asyncio.get_event_loop().create_task(self.data_source.listen_for_user_stream(messages))
+        self.listening_task = asyncio.get_running_loop().create_task(self.data_source.listen_for_user_stream(messages))
 
         await self.mocking_assistant.run_until_all_aiohttp_messages_delivered(ws_connect_mock.return_value, timeout=1)
 
@@ -158,7 +159,7 @@ class ArchitecturePerpetualUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperT
             websocket_mock=ws_connect_mock.return_value, exception=IOError("test error")
         )
 
-        self.listening_task = asyncio.get_event_loop().create_task(self.data_source.listen_for_user_stream(messages))
+        self.listening_task = asyncio.get_running_loop().create_task(self.data_source.listen_for_user_stream(messages))
 
         await self.mocking_assistant.run_until_all_aiohttp_messages_delivered(ws_connect_mock.return_value)
 

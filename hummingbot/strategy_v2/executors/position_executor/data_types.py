@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import List, Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, model_validator
 
@@ -30,10 +30,10 @@ class TrailingStop(BaseModel):
 
 
 class TripleBarrierConfig(BaseModel):
-    stop_loss: Optional[Decimal] = None
-    take_profit: Optional[Decimal] = None
-    time_limit: Optional[int] = None
-    trailing_stop: Optional[TrailingStop] = None
+    stop_loss: Decimal | None = None
+    take_profit: Decimal | None = None
+    time_limit: int | None = None
+    trailing_stop: TrailingStop | None = None
     open_order_type: OrderType = OrderType.LIMIT
     take_profit_order_type: OrderType = OrderType.MARKET
     stop_loss_order_type: OrderType = OrderType.MARKET
@@ -78,12 +78,12 @@ class PositionExecutorConfig(ExecutorConfigBase):
     trading_pair: str
     connector_name: str
     side: TradeType
-    entry_price: Optional[Decimal] = None
+    entry_price: Decimal | None = None
     amount: Decimal
     triple_barrier_config: TripleBarrierConfig = TripleBarrierConfig()
     leverage: int = 1
-    activation_bounds: Optional[List[Decimal]] = None
-    level_id: Optional[str] = None
+    activation_bounds: list[Decimal] | None = None
+    level_id: str | None = None
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @model_validator(mode="after")

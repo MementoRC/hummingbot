@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import base64
 import datetime
 import hashlib
 import hmac
 import re
 import time
-from typing import Any, Dict, Optional
+from typing import Any
 from urllib.parse import urlencode
 
 import hummingbot.connector.derivative.okx_perpetual.okx_perpetual_constants as CONSTANTS
@@ -33,7 +35,7 @@ class OkxPerpetualAuth(AuthBase):
         self._passphrase: str = passphrase
         self.time_provider: TimeSynchronizer = time_provider
 
-    def _generate_signature(self, timestamp: str, method: str, path_url: str, body: Optional[str] = None) -> str:
+    def _generate_signature(self, timestamp: str, method: str, path_url: str, body: str | None = None) -> str:
         unsigned_signature = timestamp + method + path_url
         if body is not None:
             unsigned_signature += body
@@ -43,7 +45,7 @@ class OkxPerpetualAuth(AuthBase):
         ).decode()
         return signature
 
-    def authentication_headers(self, request: RESTRequest) -> Dict[str, Any]:
+    def authentication_headers(self, request: RESTRequest) -> dict[str, Any]:
         timestamp = datetime.datetime.fromtimestamp(self.time_provider.time(), datetime.UTC).isoformat(
             timespec="milliseconds"
         )
@@ -95,7 +97,7 @@ class OkxPerpetualAuth(AuthBase):
         pattern = re.compile(r"https://www.okx.com")
         return re.sub(pattern, "", url)
 
-    def get_ws_auth_args(self) -> Dict[str, str]:
+    def get_ws_auth_args(self) -> dict[str, str]:
         """
             - api_key: Unique identification for invoking API. Requires user to apply one manually.
             - passphrase: API Key password

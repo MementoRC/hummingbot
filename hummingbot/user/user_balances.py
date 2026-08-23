@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 from decimal import Decimal
 from functools import lru_cache
 import logging
-from typing import Dict, List, Optional
 
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import get_connector_class
@@ -45,7 +46,7 @@ class UserBalances:
 
     # return error message if the _update_balances fails
     @staticmethod
-    async def _update_balances(market) -> Optional[str]:
+    async def _update_balances(market) -> str | None:
         try:
             await market._update_balances()
         except Exception as e:
@@ -71,7 +72,7 @@ class UserBalances:
             UserBalances.__instance = self
         self._markets = {}
 
-    async def add_exchange(self, exchange, client_config_map: ClientConfigMap, **api_details) -> Optional[str]:
+    async def add_exchange(self, exchange, client_config_map: ClientConfigMap, **api_details) -> str | None:
         self._markets.pop(exchange, None)
         is_gateway_market = self.is_gateway_market(exchange)
         if not is_gateway_market:
@@ -91,12 +92,12 @@ class UserBalances:
                 self._markets[exchange] = market
             return err_msg
 
-    def all_balances(self, exchange) -> Dict[str, Decimal]:
+    def all_balances(self, exchange) -> dict[str, Decimal]:
         if exchange not in self._markets:
             return {}
         return self._markets[exchange].get_all_balances()
 
-    async def update_exchange_balance(self, exchange_name: str, client_config_map: ClientConfigMap) -> Optional[str]:
+    async def update_exchange_balance(self, exchange_name: str, client_config_map: ClientConfigMap) -> str | None:
         is_gateway_market = self.is_gateway_market(exchange_name)
         if is_gateway_market and exchange_name in self._markets:
             # we want to refresh gateway connectors always, since the applicable tokens change over time.
@@ -111,14 +112,14 @@ class UserBalances:
 
     # returns error message for each exchange
     async def update_exchanges(
-        self, client_config_map: ClientConfigMap, reconnect: bool = False, exchanges: Optional[List[str]] = None
-    ) -> Dict[str, Optional[str]]:
+        self, client_config_map: ClientConfigMap, reconnect: bool = False, exchanges: list[str] | None = None
+    ) -> dict[str, str | None]:
         exchanges = exchanges or []
         tasks = []
         # Update user balances
         if len(exchanges) == 0:
             exchanges = [cs.name for cs in AllConnectorSettings.get_connector_settings().values()]
-        exchanges: List[str] = [
+        exchanges: list[str] = [
             cs.name
             for cs in AllConnectorSettings.get_connector_settings().values()
             if not cs.use_ethereum_wallet and cs.name in exchanges and not cs.name.endswith("paper_trade")
@@ -132,7 +133,7 @@ class UserBalances:
         return {ex: err_msg for ex, err_msg in zip(exchanges, results)}
 
     # returns only for non-gateway connectors since balance command no longer reports gateway connector balances
-    async def all_balances_all_exchanges(self, client_config_map: ClientConfigMap) -> Dict[str, Dict[str, Decimal]]:
+    async def all_balances_all_exchanges(self, client_config_map: ClientConfigMap) -> dict[str, dict[str, Decimal]]:
         await self.update_exchanges(client_config_map)
         return {
             k: v.get_all_balances()
@@ -141,14 +142,14 @@ class UserBalances:
         }
 
     # returns only for non-gateway connectors since balance command no longer reports gateway connector balances
-    def all_available_balances_all_exchanges(self) -> Dict[str, Dict[str, Decimal]]:
+    def all_available_balances_all_exchanges(self) -> dict[str, dict[str, Decimal]]:
         return {
             k: v.available_balances
             for k, v in sorted(self._markets.items(), key=lambda x: x[0])
             if not self.is_gateway_market(k)
         }
 
-    async def balances(self, exchange, client_config_map: ClientConfigMap, *symbols) -> Dict[str, Decimal]:
+    async def balances(self, exchange, client_config_map: ClientConfigMap, *symbols) -> dict[str, Decimal]:
         if await self.update_exchange_balance(exchange, client_config_map) is None:
             results = {}
             for token, bal in self.all_balances(exchange).items():
@@ -158,11 +159,11 @@ class UserBalances:
             return results
 
     @staticmethod
-    def validate_ethereum_wallet() -> Optional[str]:
+    def validate_ethereum_wallet() -> str | None:
         return "Connector deprecated."
 
     @staticmethod
-    async def base_amount_ratio(exchange, trading_pair, balances) -> Optional[Decimal]:
+    async def base_amount_ratio(exchange, trading_pair, balances) -> Decimal | None:
         try:
             base, quote = trading_pair.split("-")
             base_amount = balances.get(base, 0)

@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import asyncio
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Dict
 
 import pandas as pd
 
@@ -116,7 +118,7 @@ class ConnectCommand:
     async def validate_n_connect_connector(
         self,  # type: HummingbotApplication
         connector_name: str,
-    ) -> Optional[str]:
+    ) -> str | None:
         await Security.wait_til_decryption_done()
         api_keys = Security.api_keys(connector_name)
         network_timeout = float(self.client_config_map.commands_timeout.other_commands_timeout)
@@ -133,7 +135,7 @@ class ConnectCommand:
             raise
         return err_msg
 
-    async def _perform_connect(self, connector_config: ClientConfigAdapter, previous_keys: Optional[Dict] = None):
+    async def _perform_connect(self, connector_config: ClientConfigAdapter, previous_keys: Dict | None = None):
         connector_name = connector_config.connector
         original_config = connector_config.full_copy()
         await self.prompt_for_model_config(connector_config)

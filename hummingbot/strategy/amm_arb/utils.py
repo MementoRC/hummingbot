@@ -1,6 +1,5 @@
 from decimal import Decimal
 from enum import Enum
-from typing import List
 
 from hummingbot.core.utils.async_utils import safe_gather
 from hummingbot.strategy.market_trading_pair_tuple import MarketTradingPairTuple
@@ -18,10 +17,10 @@ class TradeDirection(Enum):
 async def create_arb_proposals(
     market_info_1: MarketTradingPairTuple,
     market_info_2: MarketTradingPairTuple,
-    market_1_extra_flat_fees: List[TokenAmount],
-    market_2_extra_flat_fees: List[TokenAmount],
+    market_1_extra_flat_fees: list[TokenAmount],
+    market_2_extra_flat_fees: list[TokenAmount],
     order_amount: Decimal,
-) -> List[ArbProposal]:
+) -> list[ArbProposal]:
     order_amount = Decimal(str(order_amount))
     results = []
 

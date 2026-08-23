@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import asyncio
 from datetime import datetime
 from decimal import Decimal
 import math
 import time
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.exchange.dexalot import dexalot_constants as CONSTANTS, dexalot_web_utils as web_utils
 from hummingbot.core.data_type.common import TradeType
@@ -19,13 +21,13 @@ if TYPE_CHECKING:
 
 
 class DexalotAPIOrderBookDataSource(OrderBookTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
     _DYNAMIC_SUBSCRIBE_ID_START = 100
     _next_subscribe_id: int = _DYNAMIC_SUBSCRIBE_ID_START
 
     def __init__(
         self,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "DexalotExchange",
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -36,10 +38,10 @@ class DexalotAPIOrderBookDataSource(OrderBookTrackerDataSource):
         self._api_factory = api_factory
         self._snapshot_messages_queue_key = "order_book_snapshot"
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
-    async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, Any]:
+    async def _request_order_book_snapshot(self, trading_pair: str) -> dict[str, Any]:
         pass
 
     async def _subscribe_channels(self, ws: WSAssistant):
@@ -87,7 +89,7 @@ class DexalotAPIOrderBookDataSource(OrderBookTrackerDataSource):
         )
         return snapshot_msg
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(symbol=raw_message["pair"])
         for trade_data in raw_message["data"]:
             timestamp = int(datetime.strptime(trade_data["ts"], "%Y-%m-%dT%H:%M:%S.%fZ").timestamp())
@@ -107,7 +109,7 @@ class DexalotAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
             message_queue.put_nowait(trade_message)
 
-    async def _parse_order_book_snapshot_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_snapshot_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         timestamp: float = time.time()
 
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(raw_message["pair"])
@@ -149,7 +151,7 @@ class DexalotAPIOrderBookDataSource(OrderBookTrackerDataSource):
         """
         pass
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         channel = ""
         stream_name = event_message.get("type")
         if stream_name == "orderBooks":
