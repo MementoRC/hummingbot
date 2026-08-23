@@ -9,7 +9,7 @@ import functools
 import logging
 import threading
 import time
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
 import aiomqtt
 import ujson
@@ -73,7 +73,7 @@ def _make_primitive(val: Any) -> Any:
         return str(val)
 
 
-def mqtt_serialize(payload: dict[str, Any]) -> str:
+def mqtt_serialize(payload: Dict[str, Any]) -> str:
     """Serialize an MQTT payload exactly as commlib did (ujson + primitives)."""
     return ujson.dumps(_make_primitive(payload))
 
@@ -297,7 +297,7 @@ class MQTTCommands:
 
 class MQTTMarketEventForwarder:
     # Hoisted to a class attribute so it is built once, not per event (PERF-001).
-    EVENT_TYPES: dict[int, str] = {
+    EVENT_TYPES: Dict[int, str] = {
         events.MarketEvent.BuyOrderCreated.value: "BuyOrderCreated",
         events.MarketEvent.BuyOrderCompleted.value: "BuyOrderCompleted",
         events.MarketEvent.SellOrderCreated.value: "SellOrderCreated",
@@ -325,13 +325,13 @@ class MQTTMarketEventForwarder:
         self._hb_app = hb_app
         self._gateway = gateway
         self._ev_loop: asyncio.AbstractEventLoop = self._hb_app.ev_loop
-        self._markets: list[ConnectorBase] = list(self._hb_app.markets.values())
+        self._markets: List[ConnectorBase] = list(self._hb_app.markets.values())
 
         topic_prefix = TopicSpecs.PREFIX.format(namespace=self._gateway.namespace, instance_id=self._hb_app.instance_id)
         self._topic = f"{topic_prefix}{TopicSpecs.INTERNAL_EVENTS}"
 
         self._mqtt_fowarder: SourceInfoEventForwarder = SourceInfoEventForwarder(self._send_mqtt_event)
-        self._market_event_pairs: list[tuple[int, EventListener]] = [
+        self._market_event_pairs: List[Tuple[int, EventListener]] = [
             (events.MarketEvent.BuyOrderCreated, self._mqtt_fowarder),
             (events.MarketEvent.BuyOrderCompleted, self._mqtt_fowarder),
             (events.MarketEvent.SellOrderCreated, self._mqtt_fowarder),
@@ -455,7 +455,7 @@ class MQTTStatusUpdates:
 
 class MQTTGateway:
     NODE_NAME: str = "hbot.$instance_id"
-    _instance: "MQTTGateway" | None = None
+    _instance: Optional["MQTTGateway"] = None
 
     _QOS_COMMAND: int = 1
     _QOS_PUBSUB: int = 0
@@ -485,15 +485,15 @@ class MQTTGateway:
         self._reconnect_interval: float = 5.0
 
         # aiomqtt connection state (all MQTT I/O lives on hb_app.ev_loop).
-        self._client: aiomqtt.Client | None = None
+        self._client: Optional[aiomqtt.Client] = None
         self._connected: bool = False
         self._stopped: asyncio.Event = asyncio.Event()
-        self._run_task: asyncio.Task | None = None
-        self._outgoing: "asyncio.Queue[tuple[str, dict[str, Any], int]]" = asyncio.Queue()
+        self._run_task: Optional[asyncio.Task] = None
+        self._outgoing: "asyncio.Queue[Tuple[str, Dict[str, Any], int]]" = asyncio.Queue()
         # RPC handlers keyed by exact command topic.
-        self._command_table: dict[str, tuple[Any, Callable]] = {}
+        self._command_table: Dict[str, Tuple[Any, Callable]] = {}
         # Pub/Sub callbacks keyed by topic pattern (supports +/# wildcards).
-        self._sub_callbacks: dict[str, list[Callable[[str, dict[str, Any]], None]]] = {}
+        self._sub_callbacks: Dict[str, List[Callable[[str, Dict[str, Any]], None]]] = {}
 
         self._read_mqtt_params_from_conf()
         self.namespace = self._hb_app.client_config_map.mqtt_bridge.mqtt_namespace
@@ -539,7 +539,7 @@ class MQTTGateway:
     # ------------------------------------------------------------------ #
     async def _run(self):
         while not self._stopped.is_set():
-            tasks: list[asyncio.Task] = []
+            tasks: List[asyncio.Task] = []
             try:
                 async with self._create_client() as client:
                     self._client = client
@@ -625,7 +625,7 @@ class MQTTGateway:
     # ------------------------------------------------------------------ #
     # RPC server
     # ------------------------------------------------------------------ #
-    def _dispatch_rpc(self, topic: str, payload: dict[str, Any]):
+    def _dispatch_rpc(self, topic: str, payload: Dict[str, Any]):
         # Runs in a thread-pool executor (not the event loop) because the
         # command handlers use call_sync(), which blocks on the loop.
         try:
@@ -644,7 +644,7 @@ class MQTTGateway:
         if reply_to:
             self.publish(reply_to, self._wrap_response(response), qos=self._QOS_COMMAND)
 
-    def _wrap_response(self, response) -> dict[str, Any]:
+    def _wrap_response(self, response) -> Dict[str, Any]:
         # Mirrors commlib RPCService reply envelope byte-for-byte.
         return {
             "header": {
@@ -663,19 +663,19 @@ class MQTTGateway:
     # ------------------------------------------------------------------ #
     # Publish / Subscribe primitives
     # ------------------------------------------------------------------ #
-    def publish(self, topic: str, payload: dict[str, Any], qos: int = 0):
+    def publish(self, topic: str, payload: Dict[str, Any], qos: int = 0):
         """Enqueue a publish from any thread; drained on the event loop."""
         try:
             self._ev_loop.call_soon_threadsafe(self._outgoing.put_nowait, (topic, payload, qos))
         except RuntimeError:  # pragma: no cover - loop already closed
             pass
 
-    def subscribe(self, topic: str, callback: Callable[[str, dict[str, Any]], None]):
+    def subscribe(self, topic: str, callback: Callable[[str, Dict[str, Any]], None]):
         self._sub_callbacks.setdefault(topic, [])
         self._sub_callbacks[topic].append(callback)
         self._schedule_subscribe(topic, self._QOS_PUBSUB)
 
-    def unsubscribe(self, topic: str, callback: Callable[[str, dict[str, Any]], None] | None = None):
+    def unsubscribe(self, topic: str, callback: Optional[Callable[[str, Dict[str, Any]], None]] = None):
         cbs = self._sub_callbacks.get(topic)
         if cbs is None:
             return
@@ -687,7 +687,7 @@ class MQTTGateway:
             self._sub_callbacks.pop(topic, None)
             self._schedule_unsubscribe(topic)
 
-    def _desired_subscriptions(self) -> dict[str, int]:
+    def _desired_subscriptions(self) -> Dict[str, int]:
         subs = {topic: self._QOS_COMMAND for topic in self._command_table}
         for topic in self._sub_callbacks:
             subs.setdefault(topic, self._QOS_PUBSUB)
@@ -899,9 +899,9 @@ class MQTTExternalEvents:
         self._topic = f"{topic_prefix}{TopicSpecs.EXTERNAL_EVENTS}"
 
         self._gateway.subscribe(self._topic, self._on_message)
-        self._listeners: dict[str, list[Callable[[ExternalEventMessage], str], None]] = {"*": []}
+        self._listeners: Dict[str, List[Callable[[ExternalEventMessage], str], None]] = {"*": []}
 
-    def _on_message(self, topic: str, payload: dict[str, Any]) -> None:
+    def _on_message(self, topic: str, payload: Dict[str, Any]) -> None:
         # Reconstruct the ExternalEventMessage so listeners keep receiving an
         # object with a `.data` attribute (commlib msg_type behaviour).
         try:
@@ -947,7 +947,7 @@ class MQTTExternalEvents:
 
 class ETopicListener:
     def __init__(
-        self, topic: str, on_message: Callable[[dict[str, Any], str], None], use_bot_prefix: bool | None = True
+        self, topic: str, on_message: Callable[[Dict[str, Any], str], None], use_bot_prefix: Optional[bool] = True
     ):
         self._gateway = MQTTGateway.main()
         if self._gateway is None:
@@ -962,7 +962,7 @@ class ETopicListener:
         self._on_message = on_message
         self._gateway.subscribe(self._topic, self._on_message_wrapper)
 
-    def _on_message_wrapper(self, topic: str, payload: dict[str, Any]):
+    def _on_message_wrapper(self, topic: str, payload: Dict[str, Any]):
         self._on_message(payload, topic)
 
     def stop(self):
@@ -971,7 +971,7 @@ class ETopicListener:
 
 class EEventQueueFactory:
     @classmethod
-    def create(cls, event_name: str, queue_size: int | None = 1000) -> deque:
+    def create(cls, event_name: str, queue_size: Optional[int] = 1000) -> deque:
         gw = MQTTGateway.main()
         queue = deque(maxlen=queue_size)
         if gw is None:
@@ -981,7 +981,7 @@ class EEventQueueFactory:
         return queue
 
     @classmethod
-    def _on_event(cls, queue: deque, msg: dict[str, Any], name):
+    def _on_event(cls, queue: deque, msg: Dict[str, Any], name):
         queue.append((name, msg))
 
 
@@ -990,7 +990,7 @@ class EEventListenerFactory:
     def create(
         cls,
         event_name: str,
-        callback: Callable[[dict[str, Any], str], None],
+        callback: Callable[[Dict[str, Any], str], None],
     ) -> None:
         gw = MQTTGateway.main()
         if gw is None:
@@ -1001,7 +1001,7 @@ class EEventListenerFactory:
     def remove(
         cls,
         event_name: str,
-        callback: Callable[[dict[str, Any], str], None],
+        callback: Callable[[Dict[str, Any], str], None],
     ) -> None:
         gw = MQTTGateway.main()
         if gw is None:
@@ -1012,7 +1012,7 @@ class EEventListenerFactory:
 class ETopicListenerFactory:
     @classmethod
     def create(
-        cls, topic: str, callback: Callable[[dict[str, Any], str], None], use_bot_prefix: bool | None = True
+        cls, topic: str, callback: Callable[[Dict[str, Any], str], None], use_bot_prefix: Optional[bool] = True
     ) -> ETopicListener:
         listener = ETopicListener(topic=topic, on_message=callback, use_bot_prefix=use_bot_prefix)
         return listener
@@ -1025,27 +1025,27 @@ class ETopicListenerFactory:
 
 class ETopicQueueFactory:
     @classmethod
-    def create(cls, topic: str, queue_size: int | None = 1000, use_bot_prefix: bool | None = True) -> deque:
+    def create(cls, topic: str, queue_size: Optional[int] = 1000, use_bot_prefix: Optional[bool] = True) -> deque:
         queue = deque(maxlen=queue_size)
         on_msg = functools.partial(cls._on_message, queue)
         _ = ETopicListener(topic=topic, on_message=on_msg, use_bot_prefix=use_bot_prefix)
         return queue
 
     @classmethod
-    def _on_message(cls, queue: deque, msg: dict[str, Any], topic: str):
+    def _on_message(cls, queue: deque, msg: Dict[str, Any], topic: str):
         queue.append((topic, msg))
 
 
 class ExternalEventFactory:
     @classmethod
-    def create_queue(cls, event_name: str, queue_size: int | None = 1000) -> deque:
+    def create_queue(cls, event_name: str, queue_size: Optional[int] = 1000) -> deque:
         return EEventQueueFactory.create(event_name, queue_size)
 
     @classmethod
     def create_async(
         cls,
         event_name: str,
-        callback: Callable[[dict[str, Any], str], None],
+        callback: Callable[[Dict[str, Any], str], None],
     ) -> None:
         return EEventListenerFactory.create(event_name, callback)
 
@@ -1053,19 +1053,19 @@ class ExternalEventFactory:
     def remove_listener(
         cls,
         event_name: str,
-        callback: Callable[[dict[str, Any], str], None],
+        callback: Callable[[Dict[str, Any], str], None],
     ) -> None:
         EEventListenerFactory.remove(event_name, callback)
 
 
 class ExternalTopicFactory:
     @classmethod
-    def create_queue(cls, topic: str, queue_size: int | None = 1000, use_bot_prefix: bool | None = True) -> deque:
+    def create_queue(cls, topic: str, queue_size: Optional[int] = 1000, use_bot_prefix: Optional[bool] = True) -> deque:
         return ETopicQueueFactory.create(topic, queue_size, use_bot_prefix)
 
     @classmethod
     def create_async(
-        cls, topic: str, callback: Callable[[dict[str, Any], str], None], use_bot_prefix: bool | None = True
+        cls, topic: str, callback: Callable[[Dict[str, Any], str], None], use_bot_prefix: Optional[bool] = True
     ) -> ETopicListener:
         return ETopicListenerFactory.create(topic, callback, use_bot_prefix)
 
@@ -1075,7 +1075,7 @@ class ExternalTopicFactory:
 
 
 class ETopicPublisher:
-    def __init__(self, topic: str, use_bot_prefix: bool | None = False):
+    def __init__(self, topic: str, use_bot_prefix: Optional[bool] = False):
         self._gateway = MQTTGateway.main()
         if self._gateway is None:
             raise Exception("MQTT Gateway not yet initialized")
@@ -1087,15 +1087,15 @@ class ETopicPublisher:
         else:
             self._topic = topic
 
-    def send(self, msg: dict[str, Any]):
+    def send(self, msg: Dict[str, Any]):
         self._gateway.publish(self._topic, msg, qos=self._gateway._QOS_PUBSUB)
 
-    def __call__(self, msg: dict[str, Any]):
+    def __call__(self, msg: Dict[str, Any]):
         self.send(msg)
 
 
 class EMTopicPublisher:
-    def __init__(self, use_bot_prefix: bool | None = False):
+    def __init__(self, use_bot_prefix: Optional[bool] = False):
         self._use_bot_prefix = use_bot_prefix
         self._gateway = MQTTGateway.main()
         if self._gateway is None:
@@ -1104,7 +1104,7 @@ class EMTopicPublisher:
             namespace=self._gateway.namespace, instance_id=self._gateway._hb_app.instance_id
         )
 
-    def send(self, topic: str, msg: dict[str, Any]):
+    def send(self, topic: str, msg: Dict[str, Any]):
         self._gateway.publish(self._make_topic(topic), msg, qos=self._gateway._QOS_PUBSUB)
 
     def _make_topic(self, topic: str):
@@ -1114,5 +1114,5 @@ class EMTopicPublisher:
             _topic = topic
         return _topic
 
-    def __call__(self, topic: str, msg: dict[str, Any]):
+    def __call__(self, topic: str, msg: Dict[str, Any]):
         self.send(topic, msg)
