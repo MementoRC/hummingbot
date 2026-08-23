@@ -1,6 +1,6 @@
 import os
-import platform
 from pathlib import Path
+import platform
 
 
 def get_system():

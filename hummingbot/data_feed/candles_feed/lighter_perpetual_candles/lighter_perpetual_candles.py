@@ -1,7 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 import logging
 import time
-from typing import List, Optional
 
 import numpy as np
 
@@ -13,7 +14,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class LighterPerpetualCandles(CandlesBase):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -22,7 +23,7 @@ class LighterPerpetualCandles(CandlesBase):
         return cls._logger
 
     def __init__(self, trading_pair: str, interval: str = "1m", max_records: int = 150):
-        self._market_id: Optional[int] = None
+        self._market_id: int | None = None
         super().__init__(trading_pair, interval, max_records)
 
     @property
@@ -82,7 +83,9 @@ class LighterPerpetualCandles(CandlesBase):
             except Exception:
                 self.logger().debug(
                     f"Could not resolve market_id for {self._trading_pair} via the connector; "
-                    f"falling back to the orderBookDetails fetch.", exc_info=True)
+                    f"falling back to the orderBookDetails fetch.",
+                    exc_info=True,
+                )
         base_symbol = self._trading_pair.split("-")[0].upper()
         rest_assistant = await self._api_factory.get_rest_assistant()
         data = await rest_assistant.execute_request(
@@ -98,9 +101,9 @@ class LighterPerpetualCandles(CandlesBase):
 
     def _get_rest_candles_params(
         self,
-        start_time: Optional[int] = None,
-        end_time: Optional[int] = None,
-        limit: Optional[int] = None,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        limit: int | None = None,
     ) -> dict:
         now_ms = int(time.time() * 1000)
         start_ms = int(start_time * 1000) if start_time is not None else now_ms - self.interval_in_seconds * 1000
@@ -124,25 +127,27 @@ class LighterPerpetualCandles(CandlesBase):
             "count_back": count_back,
         }
 
-    def _parse_rest_candles(self, data: dict, end_time: Optional[int] = None) -> List[List[float]]:
+    def _parse_rest_candles(self, data: dict, end_time: int | None = None) -> list[list[float]]:
         raw_candles = data.get("c", []) if isinstance(data, dict) else []
         result = []
         for c in raw_candles:
             ts_seconds = c["t"] / 1000.0
             if end_time is not None and ts_seconds > end_time:
                 continue
-            result.append([
-                ts_seconds,
-                float(c.get("o", 0)),
-                float(c.get("h", 0)),
-                float(c.get("l", 0)),
-                float(c.get("c", 0)),
-                float(c.get("v", 0)),
-                float(c.get("V", 0)),
-                0.0,
-                0.0,
-                0.0,
-            ])
+            result.append(
+                [
+                    ts_seconds,
+                    float(c.get("o", 0)),
+                    float(c.get("h", 0)),
+                    float(c.get("l", 0)),
+                    float(c.get("c", 0)),
+                    float(c.get("v", 0)),
+                    float(c.get("V", 0)),
+                    0.0,
+                    0.0,
+                    0.0,
+                ]
+            )
         result.sort(key=lambda x: x[0])
         return result
 
@@ -155,10 +160,20 @@ class LighterPerpetualCandles(CandlesBase):
                 candles = await self.fetch_candles(end_time=current_candle_end, limit=1)
                 if len(candles) > 0:
                     row = candles[-1]
-                    candle_row = np.array([
-                        row[0], row[1], row[2], row[3], row[4],
-                        row[5], row[6], row[7], row[8], row[9],
-                    ]).astype(float)
+                    candle_row = np.array(
+                        [
+                            row[0],
+                            row[1],
+                            row[2],
+                            row[3],
+                            row[4],
+                            row[5],
+                            row[6],
+                            row[7],
+                            row[8],
+                            row[9],
+                        ]
+                    ).astype(float)
                     if len(self._candles) == 0:
                         self._candles.append(candle_row)
                         self._ws_candle_available.set()
@@ -174,9 +189,7 @@ class LighterPerpetualCandles(CandlesBase):
             except asyncio.CancelledError:
                 raise
             except Exception:
-                self.logger().exception(
-                    "Unexpected error polling Lighter candles. Retrying in 5s..."
-                )
+                self.logger().exception("Unexpected error polling Lighter candles. Retrying in 5s...")
                 await self._sleep(5.0)
 
     def ws_subscription_payload(self):
