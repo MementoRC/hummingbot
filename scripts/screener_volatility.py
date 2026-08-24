@@ -1,12 +1,11 @@
 import os
-from typing import List
 
 import pandas as pd
 import pandas_ta as ta  # noqa: F401
 from pydantic import Field
 
 from hummingbot.client.ui.interface_utils import format_df_for_printout
-from hummingbot.connector.connector_base import ConnectorBase, Dict
+from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.common import MarketDict
 from hummingbot.data_feed.candles_feed.candles_factory import CandlesFactory
 from hummingbot.data_feed.candles_feed.data_types import CandlesConfig
@@ -15,7 +14,7 @@ from hummingbot.strategy.strategy_v2_base import StrategyV2Base, StrategyV2Confi
 
 class VolatilityScreenerConfig(StrategyV2ConfigBase):
     script_file_name: str = os.path.basename(__file__)
-    controllers_config: List[str] = []
+    controllers_config: list[str] = []
     exchange: str = Field(default="binance_perpetual")
     trading_pairs: list = Field(default=["BTC-USDT", "ETH-USDT", "BNB-USDT", "SOL-USDT", "MET-USDT"])
 
@@ -35,19 +34,25 @@ class VolatilityScreener(StrategyV2Base):
     top_n = 20
     report_interval = 60 * 60 * 6  # 6 hours
 
-    def __init__(self, connectors: Dict[str, ConnectorBase], config: VolatilityScreenerConfig):
+    def __init__(self, connectors: dict[str, ConnectorBase], config: VolatilityScreenerConfig):
         super().__init__(connectors, config)
         self.config = config
         self.last_time_reported = 0
-        combinations = [(trading_pair, interval) for trading_pair in config.trading_pairs for interval in
-                        self.intervals]
+        combinations = [
+            (trading_pair, interval) for trading_pair in config.trading_pairs for interval in self.intervals
+        ]
 
         self.candles = {f"{combinations[0]}_{combinations[1]}": None for combinations in combinations}
         # we need to initialize the candles for each trading pair
         for combination in combinations:
             candle = CandlesFactory.get_candle(
-                CandlesConfig(connector=config.exchange, trading_pair=combination[0], interval=combination[1],
-                              max_records=self.max_records))
+                CandlesConfig(
+                    connector=config.exchange,
+                    trading_pair=combination[0],
+                    interval=combination[1],
+                    max_records=self.max_records,
+                )
+            )
             candle.start()
             self.candles[f"{combination[0]}_{combination[1]}"] = candle
 
@@ -55,7 +60,8 @@ class VolatilityScreener(StrategyV2Base):
         for trading_pair, candles in self.candles.items():
             if not candles.ready:
                 self.logger().info(
-                    f"Candles not ready yet for {trading_pair}! Missing {candles._candles.maxlen - len(candles._candles)}")
+                    f"Candles not ready yet for {trading_pair}! Missing {candles._candles.maxlen - len(candles._candles)}"
+                )
         if all(candle.ready for candle in self.candles.values()):
             if self.current_timestamp - self.last_time_reported > self.report_interval:
                 self.last_time_reported = self.current_timestamp
@@ -68,8 +74,11 @@ class VolatilityScreener(StrategyV2Base):
     def get_formatted_market_analysis(self):
         volatility_metrics_df = self.get_market_analysis()
         volatility_metrics_pct_str = format_df_for_printout(
-            volatility_metrics_df[self.columns_to_show].sort_values(by=self.sort_values_by, ascending=False).head(self.top_n),
-            table_format="psql")
+            volatility_metrics_df[self.columns_to_show]
+            .sort_values(by=self.sort_values_by, ascending=False)
+            .head(self.top_n),
+            table_format="psql",
+        )
         return volatility_metrics_pct_str
 
     def format_status(self) -> str:

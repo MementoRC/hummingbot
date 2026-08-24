@@ -628,7 +628,6 @@ class BitrueExchange(ExchangePyBase):
         limit_id: str | None = None,
         **kwargs,
     ) -> dict[str, Any]:
-
         last_exception = None
         rest_assistant = await self._web_assistants_factory.get_rest_assistant()
 

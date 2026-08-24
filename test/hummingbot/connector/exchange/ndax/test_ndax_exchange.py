@@ -389,7 +389,6 @@ class NdaxExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests):
         mock_api: aioresponses,
         callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
-
         url = self.balance_url
         mock_api.get(
             re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?")), body=json.dumps(response), callback=callback

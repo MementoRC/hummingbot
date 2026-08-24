@@ -526,7 +526,6 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
     def configure_completely_filled_order_status_response(
         self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ):
-
         url_order_status = web_utils.public_rest_url(CONSTANTS.ORDER_URL)
 
         regex_url = re.compile(f"^{url_order_status}".replace(".", r"\.").replace("?", r"\?") + ".*")
@@ -541,7 +540,6 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         mock_api: aioresponses,
         callback: Callable | None = lambda *args, **kwargs: None,
     ):
-
         url_order_status = web_utils.public_rest_url(CONSTANTS.ORDER_URL)
 
         regex_url = re.compile(f"^{url_order_status}".replace(".", r"\.").replace("?", r"\?") + ".*")
@@ -1134,7 +1132,6 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         mock_api: aioresponses,
         callback: Callable | None = lambda *args, **kwargs: None,
     ) -> list[str]:
-
         url = self.trading_rules_url
         response = self.trading_rules_request_mock_response
         mock_api.post(url, body=json.dumps(response), callback=callback)
@@ -1322,7 +1319,6 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
     def _configure_balance_response(
         self, response, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
-
         url = self.balance_url
         mock_api.post(
             re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?")), body=json.dumps(response), callback=callback
@@ -1366,7 +1362,6 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         mock_api: aioresponses,
         callback: Callable | None = lambda *args, **kwargs: None,
     ) -> list[str]:
-
         url = self.trading_rules_url
         response = self.trading_rules_request_erroneous_mock_response
         mock_api.post(url, body=json.dumps(response), callback=callback)
@@ -1404,7 +1399,6 @@ class HyperliquidExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
         mock_api: aioresponses,
         callback: Callable | None = lambda *args, **kwargs: None,
     ) -> list[str]:
-
         url = self.all_symbols_url
         response = self.all_symbols_request_mock_response
         mock_api.post(url, body=json.dumps(response), callback=callback)

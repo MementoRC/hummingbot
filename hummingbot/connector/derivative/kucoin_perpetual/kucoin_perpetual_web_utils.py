@@ -139,7 +139,6 @@ async def api_request(
     limit_id: str | None = None,
     timeout: float | None = None,
 ):
-
     throttler = throttler or create_throttler()
 
     api_factory = api_factory or build_api_factory()

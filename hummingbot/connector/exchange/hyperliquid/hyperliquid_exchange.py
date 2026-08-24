@@ -404,7 +404,6 @@ class HyperliquidExchange(ExchangePyBase):
         price: Decimal,
         **kwargs,
     ) -> tuple[str, float]:
-
         symbol = await self.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
         param_order_type = {"limit": {"tif": "Gtc"}}
         if order_type is OrderType.LIMIT_MAKER:

@@ -151,7 +151,6 @@ class TradeFill(HummingbotBase):
 
     @staticmethod
     def attribute_names_for_file_export():
-
         return [
             "exchange_trade_id",  # Keep the key attribute first in the list
             "config_file_path",

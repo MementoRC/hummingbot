@@ -188,7 +188,6 @@ class BitmartExchange(ExchangePyBase):
         price: Decimal,
         **kwargs,
     ) -> tuple[str, float]:
-
         if order_type is OrderType.MARKET:
             price = await self._get_last_traded_price(trading_pair)
         notionalValue: Decimal = amount * Decimal(price)

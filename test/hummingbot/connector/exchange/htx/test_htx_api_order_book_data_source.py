@@ -220,7 +220,6 @@ class HtxAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         self.assertEqual(1, self.data_source._message_queue[CONSTANTS.ORDERBOOK_CHANNEL_SUFFIX].qsize())
 
     async def test_listen_for_trades_logs_exception(self):
-
         trade_message = {"ch": f"market.{self.ex_trading_pair}.trade.detail", "err": "INCOMPLETE MESSAGE"}
         mock_queue = AsyncMock()
         mock_queue.get.side_effect = [trade_message, asyncio.CancelledError()]
@@ -246,7 +245,6 @@ class HtxAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         self.assertEqual(137005445109359286410323766, msg.trade_id)
 
     async def test_listen_for_order_book_diffs_logs_exception(self):
-
         orderbook_message = {"ch": f"market.{self.ex_trading_pair}.depth.step0", "err": "INCOMPLETE MESSAGE"}
         mock_queue = AsyncMock()
         mock_queue.get.side_effect = [orderbook_message, asyncio.CancelledError()]
