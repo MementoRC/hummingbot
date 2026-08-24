@@ -22,7 +22,7 @@ class Trade(namedtuple("_Trade", "trading_pair, side, price, amount, order_type,
 
     @classmethod
     def to_pandas(cls, trades: List):
-        columns: List[str] = [
+        columns: list[str] = [
             "trading_pair",
             "price",
             "quantity",

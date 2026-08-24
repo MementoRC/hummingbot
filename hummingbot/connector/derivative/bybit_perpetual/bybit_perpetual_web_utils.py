@@ -1,4 +1,6 @@
-from typing import Any, Callable, Dict, List, Optional
+from __future__ import annotations
+
+from typing import Any, Callable
 
 from hummingbot.connector.derivative.bybit_perpetual import bybit_perpetual_constants as CONSTANTS
 from hummingbot.connector.derivative.bybit_perpetual.bybit_perpetual_utils import is_linear_perpetual
@@ -20,10 +22,10 @@ class HeadersContentRESTPreProcessor(RESTPreProcessorBase):
 
 
 def build_api_factory(
-    throttler: Optional[AsyncThrottler] = None,
-    time_synchronizer: Optional[TimeSynchronizer] = None,
-    time_provider: Optional[Callable] = None,
-    auth: Optional[AuthBase] = None,
+    throttler: AsyncThrottler | None = None,
+    time_synchronizer: TimeSynchronizer | None = None,
+    time_provider: Callable | None = None,
+    auth: AuthBase | None = None,
 ) -> WebAssistantsFactory:
     throttler = throttler or create_throttler()
     time_synchronizer = time_synchronizer or TimeSynchronizer()
@@ -39,13 +41,13 @@ def build_api_factory(
     return api_factory
 
 
-def create_throttler(trading_pairs: List[str] = None) -> AsyncThrottler:
+def create_throttler(trading_pairs: list[str] = None) -> AsyncThrottler:
     throttler = AsyncThrottler(build_rate_limits(trading_pairs))
     return throttler
 
 
 async def get_current_server_time(
-    throttler: Optional[AsyncThrottler] = None, domain: str = CONSTANTS.DEFAULT_DOMAIN
+    throttler: AsyncThrottler | None = None, domain: str = CONSTANTS.DEFAULT_DOMAIN
 ) -> float:
     throttler = throttler or create_throttler()
     api_factory = build_api_factory_without_time_synchronizer_pre_processor(throttler=throttler)
@@ -66,7 +68,7 @@ async def get_current_server_time(
         raise ValueError("Failed to get server time")
 
 
-def endpoint_from_message(message: Dict[str, Any]) -> Optional[str]:
+def endpoint_from_message(message: dict[str, Any]) -> str | None:
     endpoint = None
     if "request" in message:
         message = message["request"]
@@ -78,7 +80,7 @@ def endpoint_from_message(message: Dict[str, Any]) -> Optional[str]:
     return endpoint
 
 
-def payload_from_message(message: Dict[str, Any]) -> List[Dict[str, Any]]:
+def payload_from_message(message: dict[str, Any]) -> list[dict[str, Any]]:
     payload = message
     if "data" in message:
         payload = message["data"]
@@ -91,7 +93,7 @@ def build_api_factory_without_time_synchronizer_pre_processor(throttler: AsyncTh
 
 
 def get_rest_url_for_endpoint(
-    endpoint: Dict[str, str], trading_pair: Optional[str] = None, domain: str = CONSTANTS.DEFAULT_DOMAIN
+    endpoint: dict[str, str], trading_pair: str | None = None, domain: str = CONSTANTS.DEFAULT_DOMAIN
 ):
     market = _get_rest_api_market_for_endpoint(trading_pair)
     variant = domain if domain else CONSTANTS.DEFAULT_DOMAIN
@@ -103,7 +105,7 @@ def get_pair_specific_limit_id(base_limit_id: str, trading_pair: str) -> str:
     return limit_id
 
 
-def get_rest_api_limit_id_for_endpoint(endpoint: Dict[str, str], trading_pair: Optional[str] = None) -> str:
+def get_rest_api_limit_id_for_endpoint(endpoint: dict[str, str], trading_pair: str | None = None) -> str:
     market = _get_rest_api_market_for_endpoint(trading_pair)
     limit_id = endpoint[market]
     if trading_pair is not None:
@@ -111,28 +113,28 @@ def get_rest_api_limit_id_for_endpoint(endpoint: Dict[str, str], trading_pair: O
     return limit_id
 
 
-def _wss_url(endpoint: Dict[str, str], connector_variant_label: Optional[str]) -> str:
+def _wss_url(endpoint: dict[str, str], connector_variant_label: str | None) -> str:
     variant = connector_variant_label if connector_variant_label else CONSTANTS.DEFAULT_DOMAIN
     return endpoint.get(variant)
 
 
-def wss_linear_public_url(connector_variant_label: Optional[str]) -> str:
+def wss_linear_public_url(connector_variant_label: str | None) -> str:
     return _wss_url(CONSTANTS.WSS_LINEAR_PUBLIC_URLS, connector_variant_label)
 
 
-def wss_linear_private_url(connector_variant_label: Optional[str]) -> str:
+def wss_linear_private_url(connector_variant_label: str | None) -> str:
     return _wss_url(CONSTANTS.WSS_LINEAR_PRIVATE_URLS, connector_variant_label)
 
 
-def wss_non_linear_public_url(connector_variant_label: Optional[str]) -> str:
+def wss_non_linear_public_url(connector_variant_label: str | None) -> str:
     return _wss_url(CONSTANTS.WSS_NON_LINEAR_PUBLIC_URLS, connector_variant_label)
 
 
-def wss_non_linear_private_url(connector_variant_label: Optional[str]) -> str:
+def wss_non_linear_private_url(connector_variant_label: str | None) -> str:
     return _wss_url(CONSTANTS.WSS_NON_LINEAR_PRIVATE_URLS, connector_variant_label)
 
 
-def build_rate_limits(trading_pairs: Optional[List[str]] = None) -> List[RateLimit]:
+def build_rate_limits(trading_pairs: list[str] | None = None) -> list[RateLimit]:
     trading_pairs = trading_pairs or []
     rate_limits = []
 
@@ -143,7 +145,7 @@ def build_rate_limits(trading_pairs: Optional[List[str]] = None) -> List[RateLim
     return rate_limits
 
 
-def _build_private_general_rate_limits() -> List[RateLimit]:
+def _build_private_general_rate_limits() -> list[RateLimit]:
     rate_limits = [
         RateLimit(  # same for linear and non-linear
             limit_id=CONSTANTS.GET_WALLET_BALANCE_PATH_URL[CONSTANTS.NON_LINEAR_MARKET],
@@ -173,7 +175,7 @@ def _build_private_general_rate_limits() -> List[RateLimit]:
     return rate_limits
 
 
-def _build_global_rate_limits() -> List[RateLimit]:
+def _build_global_rate_limits() -> list[RateLimit]:
     rate_limits = [
         RateLimit(limit_id=CONSTANTS.GET_LIMIT_ID, limit=CONSTANTS.GET_RATE, time_interval=1),
         RateLimit(limit_id=CONSTANTS.POST_LIMIT_ID, limit=CONSTANTS.POST_RATE, time_interval=1),
@@ -211,7 +213,7 @@ def _build_public_rate_limits():
     return public_rate_limits
 
 
-def _build_private_rate_limits(trading_pairs: List[str]) -> List[RateLimit]:
+def _build_private_rate_limits(trading_pairs: list[str]) -> list[RateLimit]:
     rate_limits = []
 
     rate_limits.extend(_build_private_pair_specific_rate_limits(trading_pairs))
@@ -220,7 +222,7 @@ def _build_private_rate_limits(trading_pairs: List[str]) -> List[RateLimit]:
     return rate_limits
 
 
-def _build_private_pair_specific_rate_limits(trading_pairs: List[str]) -> List[RateLimit]:
+def _build_private_pair_specific_rate_limits(trading_pairs: list[str]) -> list[RateLimit]:
     rate_limits = []
 
     for trading_pair in trading_pairs:
@@ -233,7 +235,7 @@ def _build_private_pair_specific_rate_limits(trading_pairs: List[str]) -> List[R
     return rate_limits
 
 
-def _get_rest_api_market_for_endpoint(trading_pair: Optional[str] = None) -> str:
+def _get_rest_api_market_for_endpoint(trading_pair: str | None = None) -> str:
     # The default selection should be linear because general requests such as setting position mode
     # exists only for linear market and is without a trading pair
     if trading_pair is None or is_linear_perpetual(trading_pair):
@@ -243,7 +245,7 @@ def _get_rest_api_market_for_endpoint(trading_pair: Optional[str] = None) -> str
     return market
 
 
-def _build_private_pair_specific_non_linear_rate_limits(trading_pair: str) -> List[RateLimit]:
+def _build_private_pair_specific_non_linear_rate_limits(trading_pair: str) -> list[RateLimit]:
     pair_specific_non_linear_private_bucket_100_limit_id = get_pair_specific_limit_id(
         base_limit_id=CONSTANTS.NON_LINEAR_PRIVATE_BUCKET_100_LIMIT_ID, trading_pair=trading_pair
     )
@@ -350,7 +352,7 @@ def _build_private_pair_specific_non_linear_rate_limits(trading_pair: str) -> Li
     return rate_limits
 
 
-def _build_private_pair_specific_linear_rate_limits(trading_pair: str) -> List[RateLimit]:
+def _build_private_pair_specific_linear_rate_limits(trading_pair: str) -> list[RateLimit]:
     pair_specific_linear_private_bucket_100_limit_id = get_pair_specific_limit_id(
         base_limit_id=CONSTANTS.LINEAR_PRIVATE_BUCKET_100_LIMIT_ID, trading_pair=trading_pair
     )

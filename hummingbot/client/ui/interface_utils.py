@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
-from typing import Any, List, Optional, Set, Tuple
+from typing import Any
 
 import pandas as pd
 import psutil
@@ -67,13 +69,13 @@ async def start_trade_monitor(trade_monitor):
             if hb.trading_core._strategy_running and hb.trading_core.strategy is not None:
                 if all(market.ready for market in hb.trading_core.markets.values()):
                     with hb.trading_core.trade_fill_db.get_new_session() as session:
-                        trades: List[TradeFill] = hb._get_trades_from_session(
+                        trades: list[TradeFill] = hb._get_trades_from_session(
                             int(hb.init_time * 1e3), session=session, config_file_path=hb.strategy_file_name
                         )
                         if len(trades) > 0:
                             return_pcts = []
                             pnls = []
-                            market_info: Set[Tuple[str, str]] = set((t.market, t.symbol) for t in trades)
+                            market_info: set[tuple[str, str]] = set((t.market, t.symbol) for t in trades)
                             for market, symbol in market_info:
                                 cur_trades = [t for t in trades if t.market == market and t.symbol == symbol]
                                 cur_balances = await hb.trading_core.get_current_balances(market)
@@ -98,7 +100,7 @@ async def start_trade_monitor(trade_monitor):
 
 
 def format_df_for_printout(
-    df: pd.DataFrame, table_format: ClientConfigEnum, max_col_width: Optional[int] = None, index: bool = False
+    df: pd.DataFrame, table_format: ClientConfigEnum, max_col_width: int | None = None, index: bool = False
 ) -> str:
     if max_col_width is not None:  # in anticipation of the next release of tabulate which will include maxcolwidth
         max_col_width = max(max_col_width, 4)

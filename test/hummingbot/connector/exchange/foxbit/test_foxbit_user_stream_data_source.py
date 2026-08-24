@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 import json
-from typing import Any, Awaitable, Dict, Optional
+from typing import Any, Awaitable
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -39,7 +41,7 @@ class FoxbitUserStreamDataSourceUnitTests(unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()
         self.log_records = []
-        self.listening_task: Optional[asyncio.Task] = None
+        self.listening_task: asyncio.Task | None = None
         self.mocking_assistant = NetworkMockingAssistant()
 
         self.throttler = AsyncThrottler(rate_limits=CONSTANTS.RATE_LIMITS)
@@ -102,7 +104,7 @@ class FoxbitUserStreamDataSourceUnitTests(unittest.TestCase):
         ret = self.ev_loop.run_until_complete(asyncio.wait_for(coroutine, timeout))
         return ret
 
-    def _error_response(self) -> Dict[str, Any]:
+    def _error_response(self) -> dict[str, Any]:
         resp = {"code": "ERROR CODE", "msg": "ERROR MESSAGE"}
 
         return resp

@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from decimal import Decimal
 import typing
-from typing import Any, Dict, List, Optional, Type
+from typing import Any
 
 from hummingbot.connector.utils import combine_to_hb_trading_pair, split_hb_trading_pair
 from hummingbot.core.data_type.common import PositionAction, TradeType
@@ -23,14 +25,14 @@ class TokenAmount:
     def __iter__(self):
         return iter((self.token, self.amount))
 
-    def to_json(self) -> Dict[str, Any]:
+    def to_json(self) -> dict[str, Any]:
         return {
             "token": self.token,
             "amount": str(self.amount),
         }
 
     @classmethod
-    def from_json(cls, data: Dict[str, Any]):
+    def from_json(cls, data: dict[str, Any]):
         instance = TokenAmount(token=data["token"], amount=Decimal(data["amount"]))
         return instance
 
@@ -47,12 +49,12 @@ class TradeFeeSchema:
     costs, and `buy_percent_fee_deducted_from_returns` cannot be set to `True`.
     """
 
-    percent_fee_token: Optional[str] = None
+    percent_fee_token: str | None = None
     maker_percent_fee_decimal: Decimal = S_DECIMAL_0
     taker_percent_fee_decimal: Decimal = S_DECIMAL_0
     buy_percent_fee_deducted_from_returns: bool = False
-    maker_fixed_fees: List[TokenAmount] = field(default_factory=list)
-    taker_fixed_fees: List[TokenAmount] = field(default_factory=list)
+    maker_fixed_fees: list[TokenAmount] = field(default_factory=list)
+    taker_fixed_fees: list[TokenAmount] = field(default_factory=list)
 
     def __post_init__(self):
         self.validate_schema()
@@ -79,8 +81,8 @@ class TradeFeeBase(ABC):
     """
 
     percent: Decimal = S_DECIMAL_0
-    percent_token: Optional[str] = None  # only set when fee charged in third token (the Binance BNB case)
-    flat_fees: List[TokenAmount] = field(default_factory=list)  # list of (asset, amount) tuples
+    percent_token: str | None = None  # only set when fee charged in third token (the Binance BNB case)
+    flat_fees: list[TokenAmount] = field(default_factory=list)  # list of (asset, amount) tuples
 
     @classmethod
     @abstractmethod
@@ -100,10 +102,10 @@ class TradeFeeBase(ABC):
         fee_schema: TradeFeeSchema,
         trade_type: TradeType,
         percent: Decimal = S_DECIMAL_0,
-        percent_token: Optional[str] = None,
-        flat_fees: Optional[List[TokenAmount]] = None,
+        percent_token: str | None = None,
+        flat_fees: list[TokenAmount] | None = None,
     ) -> "TradeFeeBase":
-        fee_cls: Type[TradeFeeBase] = (
+        fee_cls: type[TradeFeeBase] = (
             AddedToCostTradeFee
             if (
                 trade_type == TradeType.BUY
@@ -119,10 +121,10 @@ class TradeFeeBase(ABC):
         fee_schema: TradeFeeSchema,
         position_action: PositionAction,
         percent: Decimal = S_DECIMAL_0,
-        percent_token: Optional[str] = None,
-        flat_fees: Optional[List[TokenAmount]] = None,
+        percent_token: str | None = None,
+        flat_fees: list[TokenAmount] | None = None,
     ) -> "TradeFeeBase":
-        fee_cls: Type[TradeFeeBase] = (
+        fee_cls: type[TradeFeeBase] = (
             AddedToCostTradeFee
             if position_action == PositionAction.OPEN or fee_schema.percent_fee_token is not None
             else DeductedFromReturnsTradeFee
@@ -130,7 +132,7 @@ class TradeFeeBase(ABC):
         return fee_cls(percent=percent, percent_token=percent_token, flat_fees=flat_fees or [])
 
     @classmethod
-    def from_json(cls, data: Dict[str, Any]):
+    def from_json(cls, data: dict[str, Any]):
         fee_class = cls.fee_class_for_type(data["fee_type"])
         instance = fee_class(
             percent=Decimal(data["percent"]),
@@ -139,7 +141,7 @@ class TradeFeeBase(ABC):
         )
         return instance
 
-    def to_json(self) -> Dict[str, any]:
+    def to_json(self) -> dict[str, any]:
         return {
             "fee_type": self.type_descriptor_for_json(),
             "percent": str(self.percent),
@@ -157,7 +159,7 @@ class TradeFeeBase(ABC):
     @abstractmethod
     def get_fee_impact_on_order_cost(
         self, order_candidate: "OrderCandidate", exchange: "ExchangeBase"
-    ) -> Optional[TokenAmount]:
+    ) -> TokenAmount | None:
         """
         WARNING: Do not use this method for sizing. Instead, use the `BudgetChecker`.
 
@@ -168,7 +170,7 @@ class TradeFeeBase(ABC):
     @abstractmethod
     def get_fee_impact_on_order_returns(
         self, order_candidate: "OrderCandidate", exchange: "ExchangeBase"
-    ) -> Optional[Decimal]:
+    ) -> Decimal | None:
         """
         WARNING: Do not use this method for sizing. Instead, use the `BudgetChecker`.
 
@@ -179,12 +181,12 @@ class TradeFeeBase(ABC):
     @staticmethod
     def _get_exchange_rate(
         trading_pair: str,
-        rate_source: Optional["RateOracle"] = None,  # noqa: F821
+        rate_source: "RateOracle" | None = None,  # noqa: F821
     ) -> Decimal:
         from hummingbot.core.rate_oracle.rate_oracle import RateOracle
 
-        local_rate_source: Optional[RateOracle] = rate_source or RateOracle.get_instance()
-        rate: Optional[Decimal] = local_rate_source.get_pair_rate(trading_pair)
+        local_rate_source: RateOracle | None = rate_source or RateOracle.get_instance()
+        rate: Decimal | None = local_rate_source.get_pair_rate(trading_pair)
         if rate is None:
             raise ValueError(
                 f"Could not find the exchange rate for {trading_pair} using the rate source "
@@ -198,7 +200,7 @@ class TradeFeeBase(ABC):
         price: Decimal,
         order_amount: Decimal,
         token: str,
-        rate_source: Optional["RateOracle"] = None,  # noqa: F821
+        rate_source: "RateOracle" | None = None,  # noqa: F821
     ) -> Decimal:
         base, quote = split_hb_trading_pair(trading_pair)
         fee_amount: Decimal = S_DECIMAL_0
@@ -252,7 +254,7 @@ class AddedToCostTradeFee(TradeFeeBase):
 
     def get_fee_impact_on_order_cost(
         self, order_candidate: "OrderCandidate", exchange: "ExchangeBase"
-    ) -> Optional[TokenAmount]:
+    ) -> TokenAmount | None:
         """
         WARNING: Do not use this method for sizing. Instead, use the `BudgetChecker`.
 
@@ -276,7 +278,7 @@ class AddedToCostTradeFee(TradeFeeBase):
 
     def get_fee_impact_on_order_returns(
         self, order_candidate: "OrderCandidate", exchange: "ExchangeBase"
-    ) -> Optional[Decimal]:
+    ) -> Decimal | None:
         """
         WARNING: Do not use this method for sizing. Instead, use the `BudgetChecker`.
 
@@ -292,7 +294,7 @@ class DeductedFromReturnsTradeFee(TradeFeeBase):
 
     def get_fee_impact_on_order_cost(
         self, order_candidate: "OrderCandidate", exchange: "ExchangeBase"
-    ) -> Optional[TokenAmount]:
+    ) -> TokenAmount | None:
         """
         WARNING: Do not use this method for sizing. Instead, use the `BudgetChecker`.
 
@@ -302,7 +304,7 @@ class DeductedFromReturnsTradeFee(TradeFeeBase):
 
     def get_fee_impact_on_order_returns(
         self, order_candidate: "OrderCandidate", exchange: "ExchangeBase"
-    ) -> Optional[Decimal]:
+    ) -> Decimal | None:
         """
         WARNING: Do not use this method for sizing. Instead, use the `BudgetChecker`.
 
@@ -316,5 +318,5 @@ class DeductedFromReturnsTradeFee(TradeFeeBase):
 class MakerTakerExchangeFeeRates:
     maker: Decimal
     taker: Decimal
-    maker_flat_fees: List[TokenAmount]
-    taker_flat_fees: List[TokenAmount]
+    maker_flat_fees: list[TokenAmount]
+    taker_flat_fees: list[TokenAmount]

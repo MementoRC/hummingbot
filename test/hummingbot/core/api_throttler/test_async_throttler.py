@@ -4,7 +4,6 @@ import logging
 import math
 import sys
 import time
-from typing import Dict, List
 import unittest
 from unittest.mock import patch
 
@@ -29,7 +28,7 @@ class AsyncThrottlerUnitTests(unittest.TestCase):
         super().setUpClass()
         cls.ev_loop: asyncio.AbstractEventLoop = asyncio.get_event_loop()
 
-        cls.rate_limits: List[RateLimit] = [
+        cls.rate_limits: list[RateLimit] = [
             RateLimit(limit_id=TEST_POOL_ID, limit=1, time_interval=5.0),
             RateLimit(
                 limit_id=TEST_PATH_URL, limit=1, time_interval=5.0, linked_limits=[LinkedLimitWeightPair(TEST_POOL_ID)]
@@ -52,7 +51,7 @@ class AsyncThrottlerUnitTests(unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()
         self.throttler = AsyncThrottler(rate_limits=self.rate_limits)
-        self._req_counters: Dict[str, int] = {limit.limit_id: 0 for limit in self.rate_limits}
+        self._req_counters: dict[str, int] = {limit.limit_id: 0 for limit in self.rate_limits}
         self.client_config_map = ClientConfigAdapter(ClientConfigMap())
 
     async def execute_requests(self, no_request: int, limit_id: str, throttler: AsyncThrottler):

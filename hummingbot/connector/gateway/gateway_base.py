@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import copy
 from decimal import Decimal
@@ -6,7 +8,7 @@ import itertools as it
 import logging
 import re
 import time
-from typing import Any, Callable, Dict, List, Optional, Set, TypeVar, Union, cast
+from typing import Any, Callable, TypeVar, Union, cast
 
 from hummingbot.client.config.client_config_map import GatewayConfigMap
 from hummingbot.connector.budget_checker import BudgetChecker
@@ -53,7 +55,7 @@ NON_RETRYABLE_ERROR_CODES = {
 RETRYABLE_ERROR_CODE = "TRANSACTION_TIMEOUT"
 
 
-def extract_error_code(error_str: str) -> Optional[str]:
+def extract_error_code(error_str: str) -> str | None:
     """Extract Gateway error code from error string.
 
     Gateway formats errors as: "Gateway error: ... [code: ERROR_CODE]"
@@ -76,33 +78,33 @@ class GatewayBase(ConnectorBase):
     _chain: str
     _network: str
     _address: str
-    _trading_pairs: List[str]
-    _tokens: Set[str]
+    _trading_pairs: list[str]
+    _tokens: set[str]
     _trading_required: bool
     _last_poll_timestamp: float
     _last_balance_poll_timestamp: float
-    _balance_polling_task: Optional[asyncio.Task]
+    _balance_polling_task: asyncio.Task | None
     _last_est_gas_cost_reported: float
-    _poll_notifier: Optional[asyncio.Event]
-    _status_polling_task: Optional[asyncio.Task]
-    _get_chain_info_task: Optional[asyncio.Task]
-    _get_gas_estimate_task: Optional[asyncio.Task]
-    _chain_info: Dict[str, Any]
-    _network_transaction_fee: Optional[TokenAmount]
+    _poll_notifier: asyncio.Event | None
+    _status_polling_task: asyncio.Task | None
+    _get_chain_info_task: asyncio.Task | None
+    _get_gas_estimate_task: asyncio.Task | None
+    _chain_info: dict[str, Any]
+    _network_transaction_fee: TokenAmount | None
     _order_tracker: ClientOrderTracker
     _native_currency: str
-    _amount_quantum_dict: Dict[str, Decimal]
+    _amount_quantum_dict: dict[str, Decimal]
 
     def __init__(
         self,
         connector_name: str,
-        chain: Optional[str] = None,
-        network: Optional[str] = None,
-        address: Optional[str] = None,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
-        trading_pairs: Optional[List[str]] = None,
+        chain: str | None = None,
+        network: str | None = None,
+        address: str | None = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
-        gateway_config: Optional["GatewayConfigMap"] = None,
+        gateway_config: "GatewayConfigMap" | None = None,
     ):
         """
         :param connector_name: name of connector on gateway (e.g., 'uniswap/amm', 'jupiter/router')
@@ -141,7 +143,7 @@ class GatewayBase(ConnectorBase):
         self._amount_quantum_dict = {}
         self._token_data = {}  # Store complete token information
         self._allowances = {}
-        self._swap_provider: Optional[str] = None  # e.g., "jupiter/router" - fetched from network config
+        self._swap_provider: str | None = None  # e.g., "jupiter/router" - fetched from network config
 
     def _ensure_registered_in_connector_settings(self) -> None:
         """Register this Gateway connector in AllConnectorSettings if it isn't already.
@@ -219,7 +221,7 @@ class GatewayBase(ConnectorBase):
         return self._network
 
     @property
-    def swap_provider(self) -> Optional[str]:
+    def swap_provider(self) -> str | None:
         """Swap provider for this network (e.g., 'jupiter/router'). Fetched from Gateway network config."""
         return self._swap_provider
 
@@ -238,7 +240,7 @@ class GatewayBase(ConnectorBase):
         """
         return self._trading_pairs
 
-    async def all_trading_pairs(self) -> List[str]:
+    async def all_trading_pairs(self) -> list[str]:
         """
         Calls the tokens endpoint on Gateway.
         """
@@ -253,13 +255,13 @@ class GatewayBase(ConnectorBase):
             return []
 
     @property
-    def gateway_orders(self) -> List[GatewayInFlightOrder]:
+    def gateway_orders(self) -> list[GatewayInFlightOrder]:
         return [
             in_flight_order for in_flight_order in self._order_tracker.active_orders.values() if in_flight_order.is_open
         ]
 
     @property
-    def limit_orders(self) -> List[LimitOrder]:
+    def limit_orders(self) -> list[LimitOrder]:
         return [in_flight_order.to_limit_order() for in_flight_order in self.gateway_orders]
 
     @property
@@ -267,7 +269,7 @@ class GatewayBase(ConnectorBase):
         return self._network_transaction_fee
 
     @property
-    def native_currency(self) -> Optional[str]:
+    def native_currency(self) -> str | None:
         """Returns the native currency symbol for this chain."""
         return self._native_currency
 
@@ -294,18 +296,18 @@ class GatewayBase(ConnectorBase):
         self._network_transaction_fee = new_fee
 
     @property
-    def in_flight_orders(self) -> Dict[str, GatewayInFlightOrder]:
+    def in_flight_orders(self) -> dict[str, GatewayInFlightOrder]:
         return self._order_tracker.active_orders
 
-    def get_order(self, client_order_id: str) -> Optional[GatewayInFlightOrder]:
+    def get_order(self, client_order_id: str) -> GatewayInFlightOrder | None:
         """Get a specific order."""
         return self._order_tracker.fetch_order(client_order_id)
 
     @property
-    def tracking_states(self) -> Dict[str, Any]:
+    def tracking_states(self) -> dict[str, Any]:
         return {key: value.to_json() for key, value in self.in_flight_orders.items()}
 
-    def restore_tracking_states(self, saved_states: Dict[str, any]):
+    def restore_tracking_states(self, saved_states: dict[str, any]):
         self._order_tracker._in_flight_orders.update(
             {key: GatewayInFlightOrder.from_json(value) for key, value in saved_states.items()}
         )
@@ -440,11 +442,11 @@ class GatewayBase(ConnectorBase):
         # Return NaN to signal that price should be fetched from gateway
         return Decimal("nan")
 
-    def get_token_info(self, token_symbol: str) -> Optional[Dict[str, Any]]:
+    def get_token_info(self, token_symbol: str) -> dict[str, Any] | None:
         """Get token information for a given symbol."""
         return self._token_data.get(token_symbol)
 
-    def get_token_by_address(self, token_address: str) -> Optional[Dict[str, Any]]:
+    def get_token_by_address(self, token_address: str) -> dict[str, Any] | None:
         """Get token information for a given address."""
         # Search through all tokens to find matching address
         for symbol, token_data in self._token_data.items():
@@ -482,7 +484,7 @@ class GatewayBase(ConnectorBase):
         Gets the gas estimates for the connector.
         """
         try:
-            response: Dict[str, Any] = await self._get_gateway_instance().estimate_gas(
+            response: dict[str, Any] = await self._get_gateway_instance().estimate_gas(
                 chain=self.chain, network=self.network
             )
 
@@ -515,7 +517,7 @@ class GatewayBase(ConnectorBase):
         return all(status.values())
 
     @property
-    def status_dict(self) -> Dict[str, bool]:
+    def status_dict(self) -> dict[str, bool]:
         has_balance = len(self._account_balances) > 0
         has_native_currency = self._native_currency is not None
         has_network_fee = self.network_transaction_fee is not None
@@ -574,7 +576,7 @@ class GatewayBase(ConnectorBase):
         token_list = list(tokens)
         if self._native_currency and self._native_currency not in tokens:
             token_list.append(self._native_currency)
-        resp_json: Dict[str, Any] = await self._get_gateway_instance().get_balances(
+        resp_json: dict[str, Any] = await self._get_gateway_instance().get_balances(
             chain=self.chain, network=self.network, address=self.address, token_symbols=token_list
         )
         for token, bal in resp_json["balances"].items():
@@ -632,7 +634,7 @@ class GatewayBase(ConnectorBase):
         """
         pass
 
-    async def cancel_all(self, timeout_seconds: float) -> List[CancellationResult]:
+    async def cancel_all(self, timeout_seconds: float) -> list[CancellationResult]:
         """
         This is intentionally left blank, because cancellation is expensive on blockchains. It's not worth it for
         Hummingbot to force cancel all orders whenever Hummingbot quits.
@@ -772,7 +774,7 @@ class GatewayBase(ConnectorBase):
     def start_tracking_order(
         self,
         order_id: str,
-        exchange_order_id: Optional[str] = None,
+        exchange_order_id: str | None = None,
         trading_pair: str = "",
         trade_type: TradeType = TradeType.BUY,
         price: Decimal = s_decimal_0,
@@ -832,14 +834,14 @@ class GatewayBase(ConnectorBase):
         )
         self._order_tracker.process_order_update(order_update)
 
-    async def update_order_status(self, tracked_orders: List[GatewayInFlightOrder]):
+    async def update_order_status(self, tracked_orders: list[GatewayInFlightOrder]):
         """
         Calls REST API to get status update for each in-flight AMM orders.
         """
         if len(tracked_orders) < 1:
             return
 
-        tx_hash_list: List[str] = [
+        tx_hash_list: list[str] = [
             tx_hash
             for tx_hash in await safe_gather(
                 *[tracked_order.get_exchange_order_id() for tracked_order in tracked_orders], return_exceptions=True
@@ -851,7 +853,7 @@ class GatewayBase(ConnectorBase):
             "Polling for order status updates of %d orders. Transaction hashes: %s", len(tracked_orders), tx_hash_list
         )
 
-        update_results: List[Union[Dict[str, Any], Exception]] = await safe_gather(
+        update_results: list[Union[dict[str, Any], Exception]] = await safe_gather(
             *[
                 self._get_gateway_instance().get_transaction_status(self.chain, self.network, tx_hash)
                 for tx_hash in tx_hash_list
@@ -975,7 +977,7 @@ class GatewayBase(ConnectorBase):
         :return: Balance for the token
         """
         try:
-            resp_json: Dict[str, Any] = await self._get_gateway_instance().get_balances(
+            resp_json: dict[str, Any] = await self._get_gateway_instance().get_balances(
                 chain=self.chain, network=self.network, address=self.address, token_symbols=[token_address]
             )
 
@@ -999,9 +1001,7 @@ class GatewayBase(ConnectorBase):
             self.logger().error(f"Error fetching balance for token address {token_address}: {str(e)}", exc_info=True)
             return s_decimal_0
 
-    async def approve_token(
-        self, token_symbol: str, spender: Optional[str] = None, amount: Optional[Decimal] = None
-    ) -> str:
+    async def approve_token(self, token_symbol: str, spender: str | None = None, amount: Decimal | None = None) -> str:
         """
         Approve tokens for spending by the connector's spender contract.
 
