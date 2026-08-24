@@ -4,7 +4,7 @@ import asyncio
 from decimal import ROUND_DOWN, Decimal
 import math
 import time
-from typing import Any, Callable, Dict, Mapping, Union, cast
+from typing import Any, Callable, Dict, Mapping, cast
 import uuid
 
 from bidict import bidict
@@ -2973,9 +2973,7 @@ class XrplExchange(ExchangePyBase):
 
         return loaded_markets
 
-    def get_currencies_from_trading_pair(
-        self, trading_pair: str
-    ) -> tuple[Union[IssuedCurrency, XRP], Union[IssuedCurrency, XRP]]:
+    def get_currencies_from_trading_pair(self, trading_pair: str) -> tuple[IssuedCurrency | XRP, IssuedCurrency | XRP]:
         # Find market in the markets list
         all_markets = self._make_xrpl_trading_pairs_request()
         market = all_markets.get(trading_pair, None)

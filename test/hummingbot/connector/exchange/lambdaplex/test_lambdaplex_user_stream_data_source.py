@@ -1,7 +1,7 @@
 import asyncio
 from decimal import Decimal
 import json
-from typing import Any, Optional
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses import aioresponses
@@ -39,7 +39,7 @@ class LambdaplexUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
     async def asyncSetUp(self) -> None:
         await super().asyncSetUp()
         self.log_records = []
-        self.listening_task: Optional[asyncio.Task] = None
+        self.listening_task: asyncio.Task | None = None
         self.mocking_assistant = NetworkMockingAssistant(self.local_event_loop)
 
         self.throttler = AsyncThrottler(rate_limits=CONSTANTS.RATE_LIMITS)

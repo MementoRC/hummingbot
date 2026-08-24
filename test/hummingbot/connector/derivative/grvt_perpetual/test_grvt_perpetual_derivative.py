@@ -4,7 +4,7 @@ import asyncio
 from decimal import Decimal
 import json
 import re
-from typing import Any, Callable, Union
+from typing import Any, Callable
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -815,7 +815,7 @@ class GrvtPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDer
         order: InFlightOrder,
         mock_api: aioresponses,
         callback: Callable | None = lambda *args, **kwargs: None,
-    ) -> Union[str, list[str]]:
+    ) -> str | list[str]:
         return self._configure_order_status(mock_api, "CANCELLED", order, Decimal("0"), order.amount, callback=callback)
 
     def configure_open_order_status_response(

@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from typing import Callable
 
 import hummingbot.connector.exchange.lambdaplex.lambdaplex_constants as CONSTANTS
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
@@ -22,10 +22,10 @@ def ws_url() -> str:
 
 
 def build_api_factory(
-    throttler: Optional[AsyncThrottler] = None,
-    time_synchronizer: Optional[TimeSynchronizer] = None,
-    time_provider: Optional[Callable] = None,
-    auth: Optional[AuthBase] = None,
+    throttler: AsyncThrottler | None = None,
+    time_synchronizer: TimeSynchronizer | None = None,
+    time_provider: Callable | None = None,
+    auth: AuthBase | None = None,
 ) -> WebAssistantsFactory:
     throttler = throttler or _create_throttler()
     time_synchronizer = time_synchronizer or TimeSynchronizer()
@@ -41,7 +41,7 @@ def build_api_factory(
 
 
 async def get_current_server_time(
-    throttler: Optional[AsyncThrottler] = None,
+    throttler: AsyncThrottler | None = None,
     domain: str = CONSTANTS.DEFAULT_DOMAIN,
 ) -> float:
     throttler = throttler or _create_throttler()

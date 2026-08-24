@@ -1,6 +1,6 @@
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from bidict import bidict
 
@@ -39,12 +39,12 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
 
     def __init__(
         self,
-        balance_asset_limit: Optional[dict[str, dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
         bitget_perpetual_api_key: str = None,
         bitget_perpetual_secret_key: str = None,
         bitget_perpetual_passphrase: str = None,
-        trading_pairs: Optional[list[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
     ) -> None:
         self.bitget_perpetual_api_key = bitget_perpetual_api_key
@@ -100,7 +100,7 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
         return CONSTANTS.PUBLIC_TIME_ENDPOINT
 
     @property
-    def trading_pairs(self) -> Optional[list[str]]:
+    def trading_pairs(self) -> list[str] | None:
         return self._trading_pairs
 
     @property
@@ -156,7 +156,7 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
 
         return collateral_token
 
-    async def _fetch_account_position_mode(self) -> Optional[PositionMode]:
+    async def _fetch_account_position_mode(self) -> PositionMode | None:
         """
         Fetches the current position mode from the Bitget exchange account.
         Uses the first trading pair to query the account info.
@@ -317,7 +317,7 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
         position_action: PositionAction,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         is_maker = is_maker or (order_type is OrderType.LIMIT_MAKER)
         trading_pair = combine_to_hb_trading_pair(base=base_currency, quote=quote_currency)

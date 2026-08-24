@@ -2,7 +2,7 @@ import asyncio
 from base64 import b64decode
 from decimal import Decimal
 import json
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 from unittest import TestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -2541,9 +2541,9 @@ class GeminiExchangeStandardTests(AbstractExchangeConnectorTests.ExchangeConnect
     # ----- mock payload helpers -----
     def _symbol_details_entry(
         self,
-        symbol: Optional[str] = None,
-        base: Optional[str] = None,
-        quote: Optional[str] = None,
+        symbol: str | None = None,
+        base: str | None = None,
+        quote: str | None = None,
         product_type: str = "spot",
     ) -> dict[str, Any]:
         return {
@@ -2821,7 +2821,7 @@ class GeminiExchangeStandardTests(AbstractExchangeConnectorTests.ExchangeConnect
 
     # ----- configure hooks (every private Gemini endpoint is POST) -----
     def configure_successful_cancelation_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.CANCEL_ORDER_PATH_URL)
         response = self._order_status_response(order, executed_amount=Decimal("0"), is_live=False, is_cancelled=True)
@@ -2829,14 +2829,14 @@ class GeminiExchangeStandardTests(AbstractExchangeConnectorTests.ExchangeConnect
         return url
 
     def configure_erroneous_cancelation_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.CANCEL_ORDER_PATH_URL)
         mock_api.post(url, status=400, callback=callback)
         return url
 
     def configure_order_not_found_error_cancelation_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.CANCEL_ORDER_PATH_URL)
         response = {
@@ -2858,7 +2858,7 @@ class GeminiExchangeStandardTests(AbstractExchangeConnectorTests.ExchangeConnect
         ]
 
     def configure_completely_filled_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> list[str]:
         url = web_utils.private_rest_url(CONSTANTS.ORDER_STATUS_PATH_URL)
         response = self._order_status_response(order, executed_amount=order.amount, is_live=False, is_cancelled=False)
@@ -2866,7 +2866,7 @@ class GeminiExchangeStandardTests(AbstractExchangeConnectorTests.ExchangeConnect
         return [url]
 
     def configure_canceled_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.ORDER_STATUS_PATH_URL)
         response = self._order_status_response(order, executed_amount=Decimal("0"), is_live=False, is_cancelled=True)
@@ -2874,7 +2874,7 @@ class GeminiExchangeStandardTests(AbstractExchangeConnectorTests.ExchangeConnect
         return url
 
     def configure_open_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> list[str]:
         url = web_utils.private_rest_url(CONSTANTS.ORDER_STATUS_PATH_URL)
         response = self._order_status_response(order, executed_amount=Decimal("0"), is_live=True, is_cancelled=False)
@@ -2882,14 +2882,14 @@ class GeminiExchangeStandardTests(AbstractExchangeConnectorTests.ExchangeConnect
         return [url]
 
     def configure_http_error_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.ORDER_STATUS_PATH_URL)
         mock_api.post(url, status=401, callback=callback)
         return url
 
     def configure_partially_filled_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.ORDER_STATUS_PATH_URL)
         response = self._order_status_response(
@@ -2899,7 +2899,7 @@ class GeminiExchangeStandardTests(AbstractExchangeConnectorTests.ExchangeConnect
         return url
 
     def configure_order_not_found_error_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> list[str]:
         url = web_utils.private_rest_url(CONSTANTS.ORDER_STATUS_PATH_URL)
         response = {
@@ -2928,7 +2928,7 @@ class GeminiExchangeStandardTests(AbstractExchangeConnectorTests.ExchangeConnect
         }
 
     def configure_partial_fill_trade_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.MY_TRADES_PATH_URL)
         response = [self._trade_fill_row(order, self.expected_partial_fill_amount, self.expected_partial_fill_price)]
@@ -2936,14 +2936,14 @@ class GeminiExchangeStandardTests(AbstractExchangeConnectorTests.ExchangeConnect
         return url
 
     def configure_erroneous_http_fill_trade_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.MY_TRADES_PATH_URL)
         mock_api.post(url, status=400, callback=callback)
         return url
 
     def configure_full_fill_trade_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = None
     ) -> str:
         callback = callback or (lambda *args, **kwargs: None)
         url = web_utils.private_rest_url(CONSTANTS.MY_TRADES_PATH_URL)
@@ -2996,7 +2996,7 @@ class GeminiExchangeStandardTests(AbstractExchangeConnectorTests.ExchangeConnect
         self,
         response: dict[str, Any],
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         # Gemini balances are POST /v1/balances (the base helper mocks GET)
         url = self.balance_url

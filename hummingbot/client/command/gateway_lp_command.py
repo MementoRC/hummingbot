@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.client.command.command_utils import GatewayCommandUtils
 from hummingbot.client.command.lp_command_utils import LPCommandUtils
@@ -73,7 +73,7 @@ class GatewayLPCommand:
 
     def _display_pool_info(
         self,
-        pool_info: Union[AMMPoolInfo, CLMMPoolInfo],
+        pool_info: AMMPoolInfo | CLMMPoolInfo,
         is_clmm: bool,
         base_token: str = None,
         quote_token: str = None,
@@ -81,12 +81,12 @@ class GatewayLPCommand:
         """Display pool information in a user-friendly format"""
         LPCommandUtils.display_pool_info(self, pool_info, is_clmm, base_token, quote_token)
 
-    def _format_position_id(self, position: Union[AMMPositionInfo, CLMMPositionInfo]) -> str:
+    def _format_position_id(self, position: AMMPositionInfo | CLMMPositionInfo) -> str:
         """Format position identifier for display"""
         return LPCommandUtils.format_position_id(position)
 
     def _calculate_removal_amounts(
-        self, position: Union[AMMPositionInfo, CLMMPositionInfo], percentage: float
+        self, position: AMMPositionInfo | CLMMPositionInfo, percentage: float
     ) -> tuple[float, float]:
         """Calculate token amounts to receive when removing liquidity"""
         return LPCommandUtils.calculate_removal_amounts(position, percentage)
@@ -114,7 +114,7 @@ class GatewayLPCommand:
     async def _display_position_details(
         self,
         dex_type: str,
-        position: Union[AMMPositionInfo, CLMMPositionInfo],
+        position: AMMPositionInfo | CLMMPositionInfo,
         is_clmm: bool,
         chain: str,
         network: str,

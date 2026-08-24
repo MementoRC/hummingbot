@@ -17,7 +17,6 @@ import os
 from pathlib import Path
 import pwd
 import subprocess
-from typing import Optional
 
 import yaml
 
@@ -72,8 +71,8 @@ async def wait_for_gateway_ready(hb: HummingbotApplication) -> None:
 async def load_and_start_strategy(
     hb: HummingbotApplication,
     *,
-    config_file_name: Optional[str] = None,
-    v2_conf: Optional[str] = None,
+    config_file_name: str | None = None,
+    v2_conf: str | None = None,
     headless: bool = False,
 ) -> bool:
     """Load a strategy/script config and (in headless mode) start it.
@@ -152,11 +151,11 @@ async def bootstrap_application(
     secrets_manager,
     *,
     strategy_file_name: str = "hummingbot",
-    override_log_level: Optional[str] = None,
+    override_log_level: str | None = None,
     headless: bool = False,
     mqtt_autostart: bool = False,
     silence_console: bool = False,
-) -> Optional[HummingbotApplication]:
+) -> HummingbotApplication | None:
     """Shared boot sequence for the legacy quickstart and the hbot engine: log in, decrypt, write the
     legacy yml files, init logging, read system configs, apply paper-trade settings, and build the
     ``HummingbotApplication``. Returns the app, or ``None`` on a bad password. The per-caller bits

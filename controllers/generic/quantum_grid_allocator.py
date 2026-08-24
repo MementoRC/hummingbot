@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import Union
 
 import pandas_ta as ta  # noqa: F401
 from pydantic import Field, field_validator
@@ -265,7 +264,7 @@ class QuantumGridAllocator(ControllerBase):
     def sl_multiplier(self):
         return 1 - self.config.tp_sl_ratio
 
-    def determine_executor_actions(self) -> list[Union[CreateExecutorAction, StopExecutorAction]]:
+    def determine_executor_actions(self) -> list[CreateExecutorAction | StopExecutorAction]:
         actions = []
         self.update_portfolio_metrics()
         active_grids_by_asset = self.get_active_grids_by_asset()

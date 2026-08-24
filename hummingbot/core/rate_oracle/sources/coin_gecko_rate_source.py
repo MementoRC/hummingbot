@@ -4,7 +4,6 @@ import asyncio
 from asyncio import Task
 from decimal import Decimal
 import functools
-from typing import Union
 
 from hummingbot.connector.utils import combine_to_hb_trading_pair
 from hummingbot.core.rate_oracle.sources.rate_source_base import RateSourceBase
@@ -150,7 +149,7 @@ class CoinGeckoRateSource(RateSourceBase):
             )
 
     async def _get_coin_gecko_prices_by_page(
-        self, vs_currency: str, page_no: int, category: Union[str, None]
+        self, vs_currency: str, page_no: int, category: str | None
     ) -> dict[str, Decimal]:
         """
         Fetches CoinGecko prices by page number.

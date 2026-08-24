@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict, Union
+from typing import Any, Dict
 
 from bidict import bidict
 
@@ -899,7 +899,7 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
         return timestamp, funding_rate, payment
 
     @staticmethod
-    def _format_ret_code_for_print(ret_code: Union[str, int]) -> str:
+    def _format_ret_code_for_print(ret_code: str | int) -> str:
         return f"ret_code <{ret_code}>"
 
     async def _api_request(

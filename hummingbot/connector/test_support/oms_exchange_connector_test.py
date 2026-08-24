@@ -6,7 +6,7 @@ import hashlib
 import hmac
 import json
 import re
-from typing import Any, Callable, Dict, Pattern, Union
+from typing import Any, Callable, Dict, Pattern
 
 from aioresponses.core import RequestCall, aioresponses
 
@@ -101,7 +101,7 @@ class OMSExchangeTests:
             return self.trading_pair, resp
 
         @property
-        def latest_prices_request_mock_response(self) -> dict[str, Union[int, float]]:
+        def latest_prices_request_mock_response(self) -> dict[str, int | float]:
             return {
                 "AskOrderCt": 0,
                 "AskQty": 1,
@@ -237,7 +237,7 @@ class OMSExchangeTests:
             ]
 
         @property
-        def order_creation_request_successful_mock_response(self) -> dict[str, Union[str, int]]:
+        def order_creation_request_successful_mock_response(self) -> dict[str, str | int]:
             return {
                 "status": "Accepted",
                 "errormsg": "",
@@ -245,17 +245,17 @@ class OMSExchangeTests:
             }
 
         @property
-        def balance_request_mock_response_for_base_and_quote(self) -> list[dict[str, Union[str, int]]]:
+        def balance_request_mock_response_for_base_and_quote(self) -> list[dict[str, str | int]]:
             return [
                 self.get_mock_balance_base(),
                 self.get_mock_balance_quote(),
             ]
 
         @property
-        def balance_request_mock_response_only_base(self) -> list[dict[str, Union[str, int]]]:
+        def balance_request_mock_response_only_base(self) -> list[dict[str, str | int]]:
             return [self.get_mock_balance_base()]
 
-        def get_mock_balance_base(self) -> dict[str, Union[str, int]]:
+        def get_mock_balance_base(self) -> dict[str, str | int]:
             return {
                 "AccountId": self.account_id,
                 "Amount": 15,
@@ -285,7 +285,7 @@ class OMSExchangeTests:
                 "TotalYearWithdraws": 0,
             }
 
-        def get_mock_balance_quote(self) -> dict[str, Union[str, int]]:
+        def get_mock_balance_quote(self) -> dict[str, str | int]:
             return {
                 "AccountId": self.account_id,
                 "Amount": 2000,
@@ -316,7 +316,7 @@ class OMSExchangeTests:
             }
 
         @property
-        def balance_event_websocket_update(self) -> dict[str, Union[str, int, float]]:
+        def balance_event_websocket_update(self) -> dict[str, str | int | float]:
             return {
                 "i": 10,
                 "m": 3,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.derivative.bybit_perpetual import (
     bybit_perpetual_constants as CONSTANTS,
@@ -313,7 +313,7 @@ class BybitPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
     @staticmethod
     def _get_bids_and_asks_from_rest_msg_data(
-        snapshot: list[dict[str, Union[str, int, float]]],
+        snapshot: list[dict[str, str | int | float]],
     ) -> tuple[list[tuple[float, float]], list[tuple[float, float]]]:
         bids = [(float(row[0]), float(row[1])) for row in snapshot["b"]]
         asks = [(float(row[0]), float(row[1])) for row in snapshot["a"]]
@@ -321,7 +321,7 @@ class BybitPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
     @staticmethod
     def _get_bids_and_asks_from_ws_msg_data(
-        snapshot: dict[str, Union[list[list[str]], str, int]],
+        snapshot: dict[str, list[list[str]] | str | int],
     ) -> tuple[list[tuple[float, float]], list[tuple[float, float]]]:
         """
         This method processes snapshot data from the websocket message and returns

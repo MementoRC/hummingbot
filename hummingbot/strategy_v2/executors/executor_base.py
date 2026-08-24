@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from decimal import Decimal
 from functools import lru_cache
-from typing import Dict, Union
+from typing import Dict
 
 from hummingbot.client.settings import AllConnectorSettings
 from hummingbot.connector.connector_base import ConnectorBase
@@ -436,7 +436,7 @@ class ExecutorBase(RunnableBase):
         return self._strategy.get_active_orders(connector_name)
 
     def process_order_completed_event(
-        self, event_tag: int, market: ConnectorBase, event: Union[BuyOrderCompletedEvent, SellOrderCompletedEvent]
+        self, event_tag: int, market: ConnectorBase, event: BuyOrderCompletedEvent | SellOrderCompletedEvent
     ):
         """
         Processes the order completed event. This method should be overridden by subclasses.
@@ -448,7 +448,7 @@ class ExecutorBase(RunnableBase):
         pass
 
     def process_order_created_event(
-        self, event_tag: int, market: ConnectorBase, event: Union[BuyOrderCreatedEvent, SellOrderCreatedEvent]
+        self, event_tag: int, market: ConnectorBase, event: BuyOrderCreatedEvent | SellOrderCreatedEvent
     ):
         """
         Processes the order created event. This method should be overridden by subclasses.

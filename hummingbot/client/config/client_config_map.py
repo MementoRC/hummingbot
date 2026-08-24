@@ -225,7 +225,7 @@ class PaperTradeConfigMap(BaseClientModel):
 
     @field_validator("paper_trade_account_balance", mode="before")
     @classmethod
-    def validate_paper_trade_account_balance(cls, v: Union[str, dict[str, float]]):
+    def validate_paper_trade_account_balance(cls, v: str | dict[str, float]):
         if isinstance(v, str):
             v = json.loads(v)
         return v
@@ -379,7 +379,7 @@ class GlobalTokenConfigMap(BaseClientModel):
 
     @field_validator("usd_equivalent_tokens", mode="before")
     @classmethod
-    def validate_usd_equivalent_tokens(cls, value: Union[str, list[str]]) -> list[str]:
+    def validate_usd_equivalent_tokens(cls, value: str | list[str]) -> list[str]:
         tokens = value.split(",") if isinstance(value, str) else value
         return [token.strip().upper() for token in tokens if token.strip()]
 
@@ -525,7 +525,7 @@ class CoinGeckoRateSourceMode(RateSourceModeBase):
         return self._build_rate_source_cls(extra_tokens=self.extra_tokens, api_key=self.api_key, api_tier=self.api_tier)
 
     @field_validator("extra_tokens", mode="before")
-    def validate_extra_tokens(cls, value: Union[str, list[str]]):
+    def validate_extra_tokens(cls, value: str | list[str]):
         extra_tokens = value.split(",") if isinstance(value, str) else value
         return extra_tokens
 
@@ -611,7 +611,7 @@ class CoinCapRateSourceMode(RateSourceModeBase):
 
     @field_validator("assets_map", mode="before")
     @classmethod
-    def validate_extra_tokens(cls, value: Union[str, dict[str, str]]):
+    def validate_extra_tokens(cls, value: str | dict[str, str]):
         if isinstance(value, str):
             value = {key: val for key, val in [v.split(":") for v in value.split(",")]}
         return value
@@ -943,7 +943,7 @@ class ClientConfigMap(BaseClientModel):
 
     @field_validator("autofill_import", mode="before")
     @classmethod
-    def validate_autofill_import(cls, v: Union[str, AutofillImportEnum]):
+    def validate_autofill_import(cls, v: str | AutofillImportEnum):
         if isinstance(v, str) and v not in AutofillImportEnum.__members__:
             raise ValueError(f"The value must be one of {', '.join(list(AutofillImportEnum))}.")
         return v

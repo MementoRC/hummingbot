@@ -3,7 +3,6 @@
 import asyncio
 from collections import defaultdict
 from decimal import Decimal
-from typing import Optional
 
 import typer
 
@@ -63,8 +62,8 @@ async def _compute(fills: list, balances: dict[str, dict[str, float]]) -> list[d
 
 
 def history(
-    name: Optional[str] = typer.Argument(None, help="Bot name to view (a past/stopped bot). Omit for the current bot."),
-    days: Optional[float] = typer.Option(None, "--days", help="Only include the last N days."),
+    name: str | None = typer.Argument(None, help="Bot name to view (a past/stopped bot). Omit for the current bot."),
+    days: float | None = typer.Option(None, "--days", help="Only include the last N days."),
 ) -> None:
     """Show profit, fees, and volume per market."""
     from hummingbot.cli.commands._common import resolve_db_for_command

@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import Optional
 
 import pandas_ta as ta  # noqa: F401
 from pydantic import Field, field_validator
@@ -35,8 +34,8 @@ class DManMakerV2Config(MarketMakingControllerConfigBase):
             "prompt_on_new": True,
         },
     )
-    top_executor_refresh_time: Optional[float] = Field(default=None, json_schema_extra={"is_updatable": True})
-    executor_activation_bounds: Optional[list[Decimal]] = Field(default=None, json_schema_extra={"is_updatable": True})
+    top_executor_refresh_time: float | None = Field(default=None, json_schema_extra={"is_updatable": True})
+    executor_activation_bounds: list[Decimal] | None = Field(default=None, json_schema_extra={"is_updatable": True})
 
     @field_validator("executor_activation_bounds", mode="before")
     @classmethod

@@ -19,7 +19,7 @@ import os
 import signal
 import sys
 import time
-from typing import Any, Optional
+from typing import Any
 
 from hummingbot.cli import bot
 from hummingbot.client.config.config_crypt import ETHKeyFileSecretManger
@@ -47,7 +47,7 @@ async def _collect_balances(hb: HummingbotApplication) -> dict[str, dict[str, fl
     return balances
 
 
-async def _format_status_text(hb: HummingbotApplication) -> Optional[str]:
+async def _format_status_text(hb: HummingbotApplication) -> str | None:
     strategy = hb.trading_core.strategy
     if strategy is None:
         return None
@@ -109,10 +109,10 @@ async def _serve(hb: HummingbotApplication, name: str) -> None:
 
 async def run_engine(
     name: str,
-    config_file_name: Optional[str],
-    v2_conf: Optional[str],
+    config_file_name: str | None,
+    v2_conf: str | None,
     password: str,
-    auto_set_permissions: Optional[str],
+    auto_set_permissions: str | None,
 ) -> int:
     client_config_map = load_client_config_map_from_file()
 

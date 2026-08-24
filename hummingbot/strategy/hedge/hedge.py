@@ -1,6 +1,6 @@
 from decimal import Decimal
 import logging
-from typing import Any, Union
+from typing import Any
 
 import pandas as pd
 
@@ -550,7 +550,7 @@ class HedgeStrategy(StrategyPyBase):
 
         def get_closing_order_candidate(
             is_buy: bool, amount: Decimal, price: Decimal
-        ) -> Union[PerpetualOrderCandidate, None]:
+        ) -> PerpetualOrderCandidate | None:
             opp_position_side = PositionSide.SHORT if is_buy else PositionSide.LONG
             opp_position_list = self.get_positions(market_pair, opp_position_side)
             # opp_position_list should only have 1 position
@@ -629,7 +629,7 @@ class HedgeStrategy(StrategyPyBase):
         return []
 
     def place_orders(
-        self, market_pair: MarketTradingPairTuple, orders: Union[list[OrderCandidate], list[PerpetualOrderCandidate]]
+        self, market_pair: MarketTradingPairTuple, orders: list[OrderCandidate] | list[PerpetualOrderCandidate]
     ) -> None:
         """
         Place an order referring the order candidates.

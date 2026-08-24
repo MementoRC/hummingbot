@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import Union
 
 import pandas as pd
 from pydantic import BaseModel, ConfigDict, field_validator
@@ -14,7 +13,7 @@ from hummingbot.strategy_v2.models.executors_info import ExecutorInfo
 
 
 class ExecutorSimulation(BaseModel):
-    config: Union[PositionExecutorConfig, DCAExecutorConfig, GridExecutorConfig, OrderExecutorConfig]
+    config: PositionExecutorConfig | DCAExecutorConfig | GridExecutorConfig | OrderExecutorConfig
     executor_simulation: pd.DataFrame
     close_type: CloseType
     model_config = ConfigDict(arbitrary_types_allowed=True)

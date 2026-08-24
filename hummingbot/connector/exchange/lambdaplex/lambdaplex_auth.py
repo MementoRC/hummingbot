@@ -1,7 +1,7 @@
 import base64
 import json
 import textwrap
-from typing import Any, Union
+from typing import Any
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -54,7 +54,7 @@ class LambdaplexAuth(AuthBase):
 
         return args
 
-    def _sign_param_pairs(self, arg_pairs: list[tuple[str, Union[str, int, float]]]) -> str:
+    def _sign_param_pairs(self, arg_pairs: list[tuple[str, str | int | float]]) -> str:
         payload_string = "&".join(f"{k}={v}" for k, v in arg_pairs)
         try:
             sig_bytes = self._pem_private_key.sign(payload_string.encode("ascii"))

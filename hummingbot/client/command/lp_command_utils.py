@@ -4,7 +4,7 @@ LP-specific utilities for gateway liquidity provision commands.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any
 
 import pandas as pd
 
@@ -91,7 +91,7 @@ class LPCommandUtils:
 
     @staticmethod
     def format_pool_info_display(
-        pool_info: Any,  # Union[AMMPoolInfo, CLMMPoolInfo]
+        pool_info: Any,  # AMMPoolInfo | CLMMPoolInfo
         base_symbol: str,
         quote_symbol: str,
     ) -> list[dict[str, str]]:
@@ -126,7 +126,7 @@ class LPCommandUtils:
 
     @staticmethod
     def format_position_info_display(
-        position: Any,  # Union[AMMPositionInfo, CLMMPositionInfo]
+        position: Any,  # AMMPositionInfo | CLMMPositionInfo
     ) -> list[dict[str, str]]:
         """
         Format position information for display.
@@ -246,7 +246,7 @@ class LPCommandUtils:
     @staticmethod
     def display_pool_info(
         app: Any,  # HummingbotApplication
-        pool_info: Union["AMMPoolInfo", "CLMMPoolInfo"],
+        pool_info: "AMMPoolInfo" | "CLMMPoolInfo",
         is_clmm: bool,
         base_token: str = None,
         quote_token: str = None,
@@ -273,7 +273,7 @@ class LPCommandUtils:
         app.notify(f"  TVL (in {quote_label}): ~{tvl_estimate:.2f}")
 
     @staticmethod
-    def format_position_id(position: Union["AMMPositionInfo", "CLMMPositionInfo"]) -> str:
+    def format_position_id(position: "AMMPositionInfo" | "CLMMPositionInfo") -> str:
         """Format position identifier for display"""
         if hasattr(position, "address"):
             # CLMM position with unique address
@@ -284,7 +284,7 @@ class LPCommandUtils:
 
     @staticmethod
     def calculate_removal_amounts(
-        position: Union["AMMPositionInfo", "CLMMPositionInfo"], percentage: float
+        position: "AMMPositionInfo" | "CLMMPositionInfo", percentage: float
     ) -> tuple[float, float]:
         """Calculate token amounts to receive when removing liquidity"""
         factor = percentage / 100.0

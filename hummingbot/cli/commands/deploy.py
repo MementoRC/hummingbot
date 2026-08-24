@@ -15,8 +15,6 @@ strategy / controller / script. Everything else (readiness wait, --replace, --fo
 password handling, exit codes) is ``hbot start``'s behavior, unchanged.
 """
 
-from typing import Optional
-
 import typer
 
 from hummingbot.cli import bot
@@ -24,7 +22,7 @@ from hummingbot.cli.commands._common import one_type
 from hummingbot.cli.output import ExitCode, emit, fail, json_option, render_kv
 
 
-def resolve_target(target: str, explicit_type: Optional[str]) -> tuple[str, str, Optional[str]]:
+def resolve_target(target: str, explicit_type: str | None) -> tuple[str, str, str | None]:
     """Resolve what ``target`` names: ``("config", filename, stype)`` for an existing config file,
     else ``("strategy", target, None)`` for a creatable strategy/controller/script.
 
@@ -57,7 +55,7 @@ def deploy(
         ...,
         help="An existing config file (conf/strategies|scripts|controllers), or a strategy / controller / script name to create one from.",
     ),
-    set_values: Optional[list[str]] = typer.Option(
+    set_values: list[str] | None = typer.Option(
         None,
         "--set",
         help="Set a field before launch: --set key=value (repeatable). Creating: fills required fields. Existing config: edits it (comment-preserving).",
@@ -65,7 +63,7 @@ def deploy(
     values_stdin: bool = typer.Option(
         False, "--values-stdin", help="Read a JSON object {field: value} from stdin and apply it (bulk fill)."
     ),
-    name: Optional[str] = typer.Option(
+    name: str | None = typer.Option(
         None, "--name", help="Config file name when creating (default: a free conf_<strategy>.yml)."
     ),
     v1: bool = typer.Option(

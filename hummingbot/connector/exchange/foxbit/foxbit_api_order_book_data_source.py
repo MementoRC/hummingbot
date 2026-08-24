@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import time
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.exchange.foxbit import (
     foxbit_constants as CONSTANTS,
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 
 
 class FoxbitAPIOrderBookDataSource(OrderBookTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
     _trading_pair_exc_id = {}
     _trading_pair_hb_dict = {}
     _ORDER_BOOK_INTERVAL = 1.0
@@ -200,7 +200,7 @@ class FoxbitAPIOrderBookDataSource(OrderBookTrackerDataSource):
                 return self._diff_messages_queue_key
         return channel
 
-    async def get_last_traded_prices(self, trading_pairs: list[str], domain: Optional[str] = None) -> dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def _load_exchange_instrument_id(self):

@@ -1,6 +1,6 @@
 import asyncio
 import time
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from hummingbot.connector.derivative.binance_perpetual.binance_perpetual_auth import BinancePerpetualAuth
 import hummingbot.connector.derivative.binance_perpetual.binance_perpetual_constants as CONSTANTS
@@ -23,7 +23,7 @@ class BinancePerpetualUserStreamDataSource(UserStreamTrackerDataSource):
     HEARTBEAT_TIME_INTERVAL = 30.0
     LISTEN_KEY_RETRY_INTERVAL = 5.0
     MAX_RETRIES = 3
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
@@ -206,7 +206,7 @@ class BinancePerpetualUserStreamDataSource(UserStreamTrackerDataSource):
         """
         pass
 
-    async def _on_user_stream_interruption(self, websocket_assistant: Optional[WSAssistant]):
+    async def _on_user_stream_interruption(self, websocket_assistant: WSAssistant | None):
         """
         Handles websocket disconnection by cleaning up resources.
 

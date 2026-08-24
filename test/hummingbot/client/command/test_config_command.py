@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import Union
 from unittest.mock import patch
 
 from pydantic import Field
@@ -153,7 +152,7 @@ class ConfigCommandTest(IsolatedAsyncioWrapperTestCase):
 
         class DummyModel(BaseClientModel):
             some_attr: int = Field(default=1)
-            nested_model: Union[NestedModelTwo, NestedModelOne] = Field(default=NestedModelOne())
+            nested_model: NestedModelTwo | NestedModelOne = Field(default=NestedModelOne())
             another_attr: Decimal = Field(default=Decimal("1.0"))
             missing_no_default: int = Field(default=...)
 

@@ -1,5 +1,5 @@
 import asyncio
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.exchange.lambdaplex import (
     lambdaplex_constants as CONSTANTS,
@@ -33,7 +33,7 @@ class LambdaplexAPIOrderBookDataSource(OrderBookTrackerDataSource):
         self._api_factory = api_factory
         self._next_message_id = 1
 
-    async def get_last_traded_prices(self, trading_pairs: list[str], domain: Optional[str] = None) -> dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         rest_assistant = await self._api_factory.get_rest_assistant()
         exchange_pairs = await safe_gather(
             *[

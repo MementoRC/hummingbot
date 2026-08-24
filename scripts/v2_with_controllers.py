@@ -1,6 +1,5 @@
 from decimal import Decimal
 import os
-from typing import Optional
 
 from hummingbot.client.hummingbot_application import HummingbotApplication
 from hummingbot.connector.connector_base import ConnectorBase
@@ -12,8 +11,8 @@ from hummingbot.strategy_v2.models.executor_actions import CreateExecutorAction,
 
 class V2WithControllersConfig(StrategyV2ConfigBase):
     script_file_name: str = os.path.basename(__file__)
-    max_global_drawdown_quote: Optional[float] = None
-    max_controller_drawdown_quote: Optional[float] = None
+    max_global_drawdown_quote: float | None = None
+    max_controller_drawdown_quote: float | None = None
 
 
 class V2WithControllers(StrategyV2Base):

@@ -5,7 +5,7 @@ import asyncio
 from decimal import Decimal
 import json
 import re
-from typing import Any, Awaitable, Callable, Union
+from typing import Any, Awaitable, Callable
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
@@ -273,7 +273,7 @@ class AbstractExchangeConnectorTests:
             order: InFlightOrder,
             mock_api: aioresponses,
             callback: Callable | None = lambda *args, **kwargs: None,
-        ) -> Union[str, list[str]]:
+        ) -> str | list[str]:
             """
             :return: the URL configured
             """
@@ -1839,7 +1839,7 @@ class AbstractExchangeConnectorTests:
                 )
             }
 
-        def _all_executed_requests(self, api_mock: aioresponses, url: Union[str, re.Pattern]) -> list[RequestCall]:
+        def _all_executed_requests(self, api_mock: aioresponses, url: str | re.Pattern) -> list[RequestCall]:
             request_calls = []
             for key, value in api_mock.requests.items():
                 req_url = key[1].human_repr()

@@ -124,8 +124,9 @@ class LPExecutorConfig(ExecutorConfigBase):
         require_non_negative("base_amount", self.base_amount)
         require_non_negative("quote_amount", self.quote_amount)
         if self.base_amount == 0 and self.quote_amount == 0:
-            raise ValueError("base_amount and quote_amount cannot both be 0: "
-                             "at least one side of the position has to be funded")
+            raise ValueError(
+                "base_amount and quote_amount cannot both be 0: at least one side of the position has to be funded"
+            )
         return self
 
 
