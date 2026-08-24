@@ -1,15 +1,14 @@
-import json
-import random
-import re
 from abc import ABC, abstractmethod
 from decimal import Decimal
+import json
 from pathlib import Path
+import random
+import re
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Literal, Union
 
 from pydantic import ConfigDict, Field, SecretStr, field_validator, model_validator
 from tabulate import tabulate_formats
 
-import hummingbot.core.rate_oracle.utils as rate_oracle_utils
 from hummingbot.client.config.config_data_types import BaseClientModel, ClientConfigEnum
 from hummingbot.client.config.config_methods import using_exchange as using_exchange_pointer
 from hummingbot.client.config.config_validators import validate_bool, validate_float
@@ -27,6 +26,7 @@ from hummingbot.connector.exchange.kraken.kraken_utils import KrakenConfigMap
 from hummingbot.connector.exchange.kucoin.kucoin_utils import KuCoinConfigMap
 from hummingbot.core.rate_oracle.rate_oracle import RATE_ORACLE_SOURCES, RateOracle
 from hummingbot.core.rate_oracle.sources.rate_source_base import RateSourceBase
+import hummingbot.core.rate_oracle.utils as rate_oracle_utils
 from hummingbot.core.utils.kill_switch import ActiveKillSwitch, KillSwitch, PassThroughKillSwitch
 
 if TYPE_CHECKING:
@@ -45,7 +45,7 @@ def using_exchange(exchange: str) -> Callable:
 class MQTTBridgeConfigMap(BaseClientModel):
     mqtt_host: str = Field(
         default="localhost",
-        json_schema_extra={"prompt": lambda cm: "Set the MQTT hostname to connect to (e.g. localhost)"}
+        json_schema_extra={"prompt": lambda cm: "Set the MQTT hostname to connect to (e.g. localhost)"},
     )
     mqtt_port: int = Field(
         default=1883,
@@ -60,7 +60,7 @@ class MQTTBridgeConfigMap(BaseClientModel):
         json_schema_extra={"prompt": lambda cm: "Set the password for connecting to the MQTT broker"},
     )
     mqtt_namespace: str = Field(
-        default='hbot',
+        default="hbot",
         json_schema_extra={"prompt": lambda cm: "Set the MQTT namespace to connect to (e.g. hbot)"},
     )
     mqtt_ssl: bool = Field(
@@ -187,10 +187,11 @@ class ColorConfigMap(BaseClientModel):
         "gold_label",
         "silver_label",
         "bronze_label",
-        mode="before")
+        mode="before",
+    )
     @classmethod
     def validate_color(cls, v: str):
-        if not re.search(r'^#(?:[0-9a-fA-F]{2}){3}$', v):
+        if not re.search(r"^#(?:[0-9a-fA-F]{2}){3}$", v):
             raise ValueError("Invalid color code")
         return v
 
@@ -204,7 +205,7 @@ class PaperTradeConfigMap(BaseClientModel):
             GateIOConfigMap.model_config["title"],
         ],
     )
-    paper_trade_account_balance: Dict[str, float] = Field(
+    paper_trade_account_balance: dict[str, float] = Field(
         default={
             "BTC": 1,
             "USDT": 100000,
@@ -215,15 +216,16 @@ class PaperTradeConfigMap(BaseClientModel):
             "DOGE": 1000000,
             "HBOT": 10000000,
         },
-        json_schema_extra={"prompt": lambda cm: (
-            "Enter paper trade balance settings (Input must be valid json — "
-            "e.g. {\"ETH\": 10, \"USDC\": 50000})"
-        )},
+        json_schema_extra={
+            "prompt": lambda cm: (
+                'Enter paper trade balance settings (Input must be valid json — e.g. {"ETH": 10, "USDC": 50000})'
+            )
+        },
     )
 
     @field_validator("paper_trade_account_balance", mode="before")
     @classmethod
-    def validate_paper_trade_account_balance(cls, v: Union[str, Dict[str, float]]):
+    def validate_paper_trade_account_balance(cls, v: str | dict[str, float]):
         if isinstance(v, str):
             v = json.loads(v)
         return v
@@ -231,17 +233,17 @@ class PaperTradeConfigMap(BaseClientModel):
 
 class KillSwitchMode(BaseClientModel, ABC):
     @abstractmethod
-    def get_kill_switch(self, trading_core: "TradingCore") -> KillSwitch:
-        ...
+    def get_kill_switch(self, trading_core: "TradingCore") -> KillSwitch: ...
 
 
 class KillSwitchEnabledMode(KillSwitchMode):
     kill_switch_rate: Decimal = Field(
         default=Decimal("10"),
         json_schema_extra={
-            "prompt": lambda cm: "At what profit/loss rate would you like the bot to stop? "
-                                 "(e.g. -5 equals 5 percent loss)"
-        }
+            "prompt": lambda cm: (
+                "At what profit/loss rate would you like the bot to stop? (e.g. -5 equals 5 percent loss)"
+            )
+        },
     )
     model_config = ConfigDict(title="kill_switch_enabled")
 
@@ -272,17 +274,17 @@ class AutofillImportEnum(str, ClientConfigEnum):
 
 class DBMode(BaseClientModel, ABC):
     @abstractmethod
-    def get_url(self, db_path: str) -> str:
-        ...
+    def get_url(self, db_path: str) -> str: ...
 
 
 class DBSqliteMode(DBMode):
     db_engine: str = Field(
         default="sqlite",
         json_schema_extra={
-            "prompt": lambda cm: "Please enter database engine you want to use "
-                                 "(reference: https://docs.sqlalchemy.org/en/13/dialects/)"
-        }
+            "prompt": lambda cm: (
+                "Please enter database engine you want to use (reference: https://docs.sqlalchemy.org/en/13/dialects/)"
+            )
+        },
     )
     model_config = ConfigDict(title="sqlite_db_engine")
 
@@ -292,10 +294,7 @@ class DBSqliteMode(DBMode):
 
 class DBOtherMode(DBMode):
     db_engine: str = Field(
-        default=...,
-        json_schema_extra={
-            "prompt": lambda cm: "Please enter database engine you want to use "
-        }
+        default=..., json_schema_extra={"prompt": lambda cm: "Please enter database engine you want to use "}
     )
     db_host: str = Field(
         default="127.0.0.1",
@@ -361,14 +360,13 @@ class GlobalTokenConfigMap(BaseClientModel):
         default="$",
         json_schema_extra={"prompt": lambda cm: "What is your default display token symbol? (e.g. $,€)"},
     )
-    usd_equivalent_tokens: List[str] = Field(
+    usd_equivalent_tokens: list[str] = Field(
         default_factory=lambda: list(rate_oracle_utils.USD_EQUIVALENT_TOKENS),
         description="Token symbols treated as equivalent to USDT when looking up conversion rates "
-                    "(e.g. a USD balance is priced using USDT markets).",
+        "(e.g. a USD balance is priced using USDT markets).",
         json_schema_extra={
             "prompt": lambda cm: (
-                "List of comma-delimited token symbols to treat as equivalent to USDT for rate"
-                " conversions (e.g. USD)"
+                "List of comma-delimited token symbols to treat as equivalent to USDT for rate conversions (e.g. USD)"
             ),
         },
     )
@@ -381,7 +379,7 @@ class GlobalTokenConfigMap(BaseClientModel):
 
     @field_validator("usd_equivalent_tokens", mode="before")
     @classmethod
-    def validate_usd_equivalent_tokens(cls, value: Union[str, List[str]]) -> List[str]:
+    def validate_usd_equivalent_tokens(cls, value: str | list[str]) -> list[str]:
         tokens = value.split(",") if isinstance(value, str) else value
         return [token.strip().upper() for token in tokens if token.strip()]
 
@@ -399,15 +397,17 @@ class CommandsTimeoutConfigMap(BaseClientModel):
         default=Decimal("10"),
         gt=Decimal("0"),
         json_schema_extra={
-            "prompt": lambda cm: "Network timeout when fetching the minimum order amount in the create command (in seconds)"
-        }
+            "prompt": lambda cm: (
+                "Network timeout when fetching the minimum order amount in the create command (in seconds)"
+            )
+        },
     )
     other_commands_timeout: Decimal = Field(
         default=Decimal("30"),
         gt=Decimal("0"),
         json_schema_extra={
             "prompt": lambda cm: "Network timeout to apply to the other commands' API calls (in seconds)"
-        }
+        },
     )
     model_config = ConfigDict(title="commands_timeout")
 
@@ -415,24 +415,23 @@ class CommandsTimeoutConfigMap(BaseClientModel):
 class AnonymizedMetricsMode(BaseClientModel, ABC):
     @abstractmethod
     def get_collector(
-            self,
-            connector: ConnectorBase,
-            rate_provider: RateOracle,
-            instance_id: str,
-            valuation_token: str = "USDT",
-    ) -> MetricsCollector:
-        ...
+        self,
+        connector: ConnectorBase,
+        rate_provider: RateOracle,
+        instance_id: str,
+        valuation_token: str = "USDT",
+    ) -> MetricsCollector: ...
 
 
 class AnonymizedMetricsDisabledMode(AnonymizedMetricsMode):
     model_config = ConfigDict(title="anonymized_metrics_disabled")
 
     def get_collector(
-            self,
-            connector: ConnectorBase,
-            rate_provider: RateOracle,
-            instance_id: str,
-            valuation_token: str = "USDT",
+        self,
+        connector: ConnectorBase,
+        rate_provider: RateOracle,
+        instance_id: str,
+        valuation_token: str = "USDT",
     ) -> MetricsCollector:
         return DummyMetricsCollector()
 
@@ -446,11 +445,11 @@ class AnonymizedMetricsEnabledMode(AnonymizedMetricsMode):
     model_config = ConfigDict(title="anonymized_metrics_enabled")
 
     def get_collector(
-            self,
-            connector: ConnectorBase,
-            rate_provider: RateOracle,
-            instance_id: str,
-            valuation_token: str = "USDT",
+        self,
+        connector: ConnectorBase,
+        rate_provider: RateOracle,
+        instance_id: str,
+        valuation_token: str = "USDT",
     ) -> MetricsCollector:
         instance = TradeVolumeMetricCollector(
             connector=connector,
@@ -470,8 +469,7 @@ METRICS_MODES = {
 
 class RateSourceModeBase(BaseClientModel, ABC):
     @abstractmethod
-    def build_rate_source(self) -> RateSourceBase:
-        ...
+    def build_rate_source(self) -> RateSourceBase: ...
 
 
 class ExchangeRateSourceModeBase(RateSourceModeBase):
@@ -491,20 +489,22 @@ class MexcRateSourceMode(ExchangeRateSourceModeBase):
 
 class CoinGeckoRateSourceMode(RateSourceModeBase):
     name: str = Field(default="coin_gecko")
-    extra_tokens: List[str] = Field(
+    extra_tokens: list[str] = Field(
         default=[],
         json_schema_extra={
             "prompt": lambda cm: (
                 "List of comma-delimited CoinGecko token ids to always include"
                 " in CoinGecko rates query (e.g. frontier-token,pax-gold,rbtc — empty to skip)"
             ),
-        }
+        },
     )
     api_key: str = Field(
         default="",
         description="API key to use to request information from CoinGecko (if empty public API will be used)",
         json_schema_extra={
-            "prompt": lambda cm: "CoinGecko API key (optional, leave empty to use public API) NOTE: will be stored in plain text due to a bug in the way hummingbot loads the config file",
+            "prompt": lambda cm: (
+                "CoinGecko API key (optional, leave empty to use public API) NOTE: will be stored in plain text due to a bug in the way hummingbot loads the config file"
+            ),
             "prompt_on_new": True,
             "is_connect_key": True,
         },
@@ -522,20 +522,17 @@ class CoinGeckoRateSourceMode(RateSourceModeBase):
     model_config = ConfigDict(title="coin_gecko")
 
     def build_rate_source(self) -> RateSourceBase:
-        return self._build_rate_source_cls(
-            extra_tokens=self.extra_tokens,
-            api_key=self.api_key,
-            api_tier=self.api_tier
-        )
+        return self._build_rate_source_cls(extra_tokens=self.extra_tokens, api_key=self.api_key, api_tier=self.api_tier)
 
     @field_validator("extra_tokens", mode="before")
-    def validate_extra_tokens(cls, value: Union[str, List[str]]):
+    def validate_extra_tokens(cls, value: str | list[str]):
         extra_tokens = value.split(",") if isinstance(value, str) else value
         return extra_tokens
 
     @field_validator("api_tier", mode="before")
     def validate_api_tier(cls, v: str):
         from hummingbot.data_feed.coin_gecko_data_feed.coin_gecko_constants import CoinGeckoAPITier
+
         valid_tiers = [tier.name for tier in CoinGeckoAPITier]
         if v.upper() not in valid_tiers:
             return CoinGeckoAPITier.PUBLIC.name
@@ -547,8 +544,9 @@ class CoinGeckoRateSourceMode(RateSourceModeBase):
         return self
 
     @classmethod
-    def _build_rate_source_cls(cls, extra_tokens: List[str], api_key: str, api_tier: str) -> RateSourceBase:
+    def _build_rate_source_cls(cls, extra_tokens: list[str], api_key: str, api_tier: str) -> RateSourceBase:
         from hummingbot.data_feed.coin_gecko_data_feed.coin_gecko_constants import CoinGeckoAPITier
+
         try:
             api_tier_enum = CoinGeckoAPITier[api_tier.upper()]
         except KeyError:
@@ -565,10 +563,11 @@ class CoinGeckoRateSourceMode(RateSourceModeBase):
 
 class CoinCapRateSourceMode(RateSourceModeBase):
     name: str = Field(default="coin_cap")
-    assets_map: Dict[str, str] = Field(
+    assets_map: dict[str, str] = Field(
         default=",".join(
             [
-                ":".join(pair) for pair in {
+                ":".join(pair)
+                for pair in {
                     "BTC": "bitcoin",
                     "ETH": "ethereum",
                     "USDT": "tether",
@@ -590,7 +589,7 @@ class CoinCapRateSourceMode(RateSourceModeBase):
             ),
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     api_key: SecretStr = Field(
         default=SecretStr(""),
@@ -600,7 +599,7 @@ class CoinCapRateSourceMode(RateSourceModeBase):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     model_config = ConfigDict(title="coin_cap")
 
@@ -612,7 +611,7 @@ class CoinCapRateSourceMode(RateSourceModeBase):
 
     @field_validator("assets_map", mode="before")
     @classmethod
-    def validate_extra_tokens(cls, value: Union[str, Dict[str, str]]):
+    def validate_extra_tokens(cls, value: str | dict[str, str]):
         if isinstance(value, str):
             value = {key: val for key, val in [v.split(":") for v in value.split(",")]}
         return value
@@ -622,7 +621,8 @@ class CoinCapRateSourceMode(RateSourceModeBase):
     @model_validator(mode="after")
     def post_validations(self):
         RateOracle.get_instance().source = RATE_ORACLE_SOURCES["coin_cap"](
-            assets_map=self.assets_map, api_key=self.api_key.get_secret_value())
+            assets_map=self.assets_map, api_key=self.api_key.get_secret_value()
+        )
         return self
 
 
@@ -688,15 +688,19 @@ class CoinbaseAdvancedTradeRateSourceMode(ExchangeRateSourceModeBase):
     use_auth_for_public_endpoints: bool = Field(
         default=False,
         description="Use authentication for public endpoints",
-        json_schema_extra = {
-            "prompt": lambda cm: "Would you like to use authentication for public endpoints? (Yes/No) (only affects rate limiting)",
+        json_schema_extra={
+            "prompt": lambda cm: (
+                "Would you like to use authentication for public endpoints? (Yes/No) (only affects rate limiting)"
+            ),
             "prompt_on_new": True,
             "is_connect_key": True,
         },
     )
 
     def build_rate_source(self) -> RateSourceBase:
-        return RATE_ORACLE_SOURCES[self.model_config["title"]](use_auth_for_public_endpoints=self.use_auth_for_public_endpoints)
+        return RATE_ORACLE_SOURCES[self.model_config["title"]](
+            use_auth_for_public_endpoints=self.use_auth_for_public_endpoints
+        )
 
 
 class HyperliquidRateSourceMode(ExchangeRateSourceModeBase):
@@ -768,7 +772,7 @@ class ClientConfigMap(BaseClientModel):
         description="Fetch trading pairs from all exchanges if True, otherwise fetch only from connected exchanges.",
         json_schema_extra={
             "prompt": lambda cm: "Would you like to fetch trading pairs from all exchanges? (True/False)"
-        }
+        },
     )
     log_level: str = Field(default="INFO")
     debug_console: bool = Field(default=False)
@@ -778,22 +782,28 @@ class ClientConfigMap(BaseClientModel):
     )
     log_file_path: Path = Field(
         default=DEFAULT_LOG_FILE_PATH,
-        json_schema_extra={"prompt": lambda cm: "Where would you like to save your logs? (default 'logs/hummingbot_logs.log')"},
+        json_schema_extra={
+            "prompt": lambda cm: "Where would you like to save your logs? (default 'logs/hummingbot_logs.log')"
+        },
     )
     kill_switch_mode: Union[tuple(KILL_SWITCH_MODES.values())] = Field(
         default=KillSwitchDisabledMode(),
-        json_schema_extra={"prompt": lambda cm: f"Select the desired kill-switch mode ({'/'.join(list(KILL_SWITCH_MODES.keys()))})"},
+        json_schema_extra={
+            "prompt": lambda cm: f"Select the desired kill-switch mode ({'/'.join(list(KILL_SWITCH_MODES.keys()))})"
+        },
     )
     autofill_import: AutofillImportEnum = Field(
         default=AutofillImportEnum.disabled,
         description="What to auto-fill in the prompt after each import command (start/config)",
         json_schema_extra={
-            "prompt": lambda cm: f"What to auto-fill in the prompt after each import command? ({'/'.join(list(AutofillImportEnum))})"
-        }
+            "prompt": lambda cm: (
+                f"What to auto-fill in the prompt after each import command? ({'/'.join(list(AutofillImportEnum))})"
+            )
+        },
     )
     mqtt_bridge: MQTTBridgeConfigMap = Field(
         default=MQTTBridgeConfigMap(),
-        description=('MQTT Bridge configuration.'),
+        description=("MQTT Bridge configuration."),
     )
     send_error_logs: bool = Field(
         default=True,
@@ -802,62 +812,80 @@ class ClientConfigMap(BaseClientModel):
     )
     db_mode: Union[tuple(DB_MODES.values())] = Field(
         default=DBSqliteMode(),
-        description=("Advanced database options, currently supports SQLAlchemy's included dialects"
-                     "\nReference: https://docs.sqlalchemy.org/en/13/dialects/"
-                     "\nTo use an instance of SQLite DB the required configuration is \n  db_engine: sqlite"
-                     "\nTo use a DBMS the required configuration is"
-                     "\n  db_host: 127.0.0.1\n  db_port: 3306\n  db_username: username\n  db_password: password"
-                     "\n  db_name: dbname"),
+        description=(
+            "Advanced database options, currently supports SQLAlchemy's included dialects"
+            "\nReference: https://docs.sqlalchemy.org/en/13/dialects/"
+            "\nTo use an instance of SQLite DB the required configuration is \n  db_engine: sqlite"
+            "\nTo use a DBMS the required configuration is"
+            "\n  db_host: 127.0.0.1\n  db_port: 3306\n  db_username: username\n  db_password: password"
+            "\n  db_name: dbname"
+        ),
         json_schema_extra={"prompt": lambda cm: f"Select the desired db mode ({'/'.join(list(DB_MODES.keys()))})"},
     )
-    balance_asset_limit: Dict[str, Dict[str, Decimal]] = Field(
+    balance_asset_limit: dict[str, dict[str, Decimal]] = Field(
         default={exchange: {} for exchange in AllConnectorSettings.get_exchange_names()},
-        description=("Balance Limit Configurations"
-                     "\ne.g. Setting USDT and BTC limits on Binance."
-                     "\nbalance_asset_limit:"
-                     "\n  binance:"
-                     "\n    BTC: 0.1"
-                     "\n    USDT: 1000"),
-        json_schema_extra={"prompt": lambda cm: "Use the `balance limit` command e.g. balance limit [EXCHANGE] [ASSET] [AMOUNT]"},
+        description=(
+            "Balance Limit Configurations"
+            "\ne.g. Setting USDT and BTC limits on Binance."
+            "\nbalance_asset_limit:"
+            "\n  binance:"
+            "\n    BTC: 0.1"
+            "\n    USDT: 1000"
+        ),
+        json_schema_extra={
+            "prompt": lambda cm: "Use the `balance limit` command e.g. balance limit [EXCHANGE] [ASSET] [AMOUNT]"
+        },
     )
     manual_gas_price: Decimal = Field(
         default=Decimal("50"),
         description="Fixed gas price (in Gwei) for Ethereum transactions",
         gt=Decimal("0"),
-        json_schema_extra={"prompt": lambda cm: "Enter fixed gas price (in Gwei) you want to use for Ethereum transactions"},
+        json_schema_extra={
+            "prompt": lambda cm: "Enter fixed gas price (in Gwei) you want to use for Ethereum transactions"
+        },
     )
     gateway: GatewayConfigMap = Field(
         default=GatewayConfigMap(),
-        description=("Gateway API Configurations"
-                     "\ndefault host to only use localhost"
-                     "\nPort need to match the final installation port for Gateway"),
+        description=(
+            "Gateway API Configurations"
+            "\ndefault host to only use localhost"
+            "\nPort need to match the final installation port for Gateway"
+        ),
     )
 
     anonymized_metrics_mode: Union[tuple(METRICS_MODES.values())] = Field(
         default=AnonymizedMetricsEnabledMode(),
         description="Whether to enable aggregated order and trade data collection",
-        json_schema_extra={"prompt": lambda cm: f"Select the desired metrics mode ({'/'.join(list(METRICS_MODES.keys()))})"},
+        json_schema_extra={
+            "prompt": lambda cm: f"Select the desired metrics mode ({'/'.join(list(METRICS_MODES.keys()))})"
+        },
     )
     rate_oracle_source: Union[tuple(RATE_SOURCE_MODES.values())] = Field(
         default=GateIoRateSourceMode(),
         description=f"A source for rate oracle, currently {', '.join(RATE_SOURCE_MODES.keys())}",
-        json_schema_extra={"prompt": lambda cm: f"Select the desired rate oracle source ({'/'.join(RATE_SOURCE_MODES.keys())})"},
+        json_schema_extra={
+            "prompt": lambda cm: f"Select the desired rate oracle source ({'/'.join(RATE_SOURCE_MODES.keys())})"
+        },
     )
     global_token: GlobalTokenConfigMap = Field(
         default=GlobalTokenConfigMap(),
-        description="A universal token which to display tokens values in, e.g. USD,EUR,BTC"
+        description="A universal token which to display tokens values in, e.g. USD,EUR,BTC",
     )
     rate_limits_share_pct: Decimal = Field(
         default=Decimal("100"),
-        description=("Percentage of API rate limits (on any exchange and any end point) allocated to this bot instance."
-                     "\nEnter 50 to indicate 50%. E.g. if the API rate limit is 100 calls per second, and you allocate "
-                     "\n50% to this setting, the bot will have a maximum (limit) of 50 calls per second"),
+        description=(
+            "Percentage of API rate limits (on any exchange and any end point) allocated to this bot instance."
+            "\nEnter 50 to indicate 50%. E.g. if the API rate limit is 100 calls per second, and you allocate "
+            "\n50% to this setting, the bot will have a maximum (limit) of 50 calls per second"
+        ),
         gt=Decimal("0"),
         le=Decimal("100"),
-        json_schema_extra={"prompt": lambda cm: (
-            "What percentage of API rate limits do you want to allocate to this bot instance?"
-            " (Enter 50 to indicate 50%)"
-        )},
+        json_schema_extra={
+            "prompt": lambda cm: (
+                "What percentage of API rate limits do you want to allocate to this bot instance?"
+                " (Enter 50 to indicate 50%)"
+            )
+        },
     )
     commands_timeout: CommandsTimeoutConfigMap = Field(default=CommandsTimeoutConfigMap())
     tables_format: ClientConfigEnum(
@@ -867,9 +895,11 @@ class ClientConfigMap(BaseClientModel):
     ) = Field(
         default="psql",
         description="Tabulate table format style (https://github.com/astanin/python-tabulate#table-format)",
-        json_schema_extra={"prompt": lambda cm: (
-            "What tabulate formatting to apply to the tables? [https://github.com/astanin/python-tabulate#table-format]"
-        )}
+        json_schema_extra={
+            "prompt": lambda cm: (
+                "What tabulate formatting to apply to the tables? [https://github.com/astanin/python-tabulate#table-format]"
+            )
+        },
     )
     paper_trade: PaperTradeConfigMap = Field(default=PaperTradeConfigMap())
     color: ColorConfigMap = Field(default=ColorConfigMap())
@@ -877,11 +907,11 @@ class ClientConfigMap(BaseClientModel):
         default=1.0,
         ge=0.1,
         description="The tick size is the frequency with which the clock notifies the time iterators by calling the"
-                    "\nc_tick() method, that means for example that if the tick size is 1, the logic of the strategy"
-                    " \nwill run every second.",
-        json_schema_extra={"prompt": lambda cm: (
-            "What tick size (in seconds) do you want to use? (Enter 0.5 to indicate 0.5 seconds)"
-        )},
+        "\nc_tick() method, that means for example that if the tick size is 1, the logic of the strategy"
+        " \nwill run every second.",
+        json_schema_extra={
+            "prompt": lambda cm: "What tick size (in seconds) do you want to use? (Enter 0.5 to indicate 0.5 seconds)"
+        },
     )
     market_data_collection: MarketDataCollectionConfigMap = Field(default=MarketDataCollectionConfigMap())
     model_config = ConfigDict(title="client_config_map")
@@ -906,16 +936,14 @@ class ClientConfigMap(BaseClientModel):
 
         if isinstance(v, str):
             if v not in KILL_SWITCH_MODES:
-                raise ValueError(
-                    f"Invalid kill switch mode string. Choose from: {list(KILL_SWITCH_MODES.keys())}."
-                )
+                raise ValueError(f"Invalid kill switch mode string. Choose from: {list(KILL_SWITCH_MODES.keys())}.")
             return KILL_SWITCH_MODES[v].model_construct()
 
         raise ValueError(f"Unsupported type for kill switch mode: {type(v)}")
 
     @field_validator("autofill_import", mode="before")
     @classmethod
-    def validate_autofill_import(cls, v: Union[str, AutofillImportEnum]):
+    def validate_autofill_import(cls, v: str | AutofillImportEnum):
         if isinstance(v, str) and v not in AutofillImportEnum.__members__:
             raise ValueError(f"The value must be one of {', '.join(list(AutofillImportEnum))}.")
         return v
@@ -936,9 +964,7 @@ class ClientConfigMap(BaseClientModel):
         if isinstance(v, tuple(DB_MODES.values()) + (Dict,)):
             sub_model = v
         elif v not in DB_MODES:
-            raise ValueError(
-                f"Invalid DB mode, please choose a value from {list(DB_MODES.keys())}."
-            )
+            raise ValueError(f"Invalid DB mode, please choose a value from {list(DB_MODES.keys())}.")
         else:
             sub_model = DB_MODES[v].model_construct()
         return sub_model
@@ -949,9 +975,7 @@ class ClientConfigMap(BaseClientModel):
         if isinstance(v, tuple(METRICS_MODES.values()) + (Dict,)):
             sub_model = v
         elif v not in METRICS_MODES:
-            raise ValueError(
-                f"Invalid metrics mode, please choose a value from {list(METRICS_MODES.keys())}."
-            )
+            raise ValueError(f"Invalid metrics mode, please choose a value from {list(METRICS_MODES.keys())}.")
         else:
             sub_model = METRICS_MODES[v].model_construct()
         return sub_model
@@ -966,9 +990,7 @@ class ClientConfigMap(BaseClientModel):
         elif isinstance(v, str):
             sub_model = RATE_SOURCE_MODES[v].model_construct()
         elif v not in RATE_SOURCE_MODES:
-            raise ValueError(
-                f"Invalid rate source, please choose a value from {list(RATE_SOURCE_MODES.keys())}."
-            )
+            raise ValueError(f"Invalid rate source, please choose a value from {list(RATE_SOURCE_MODES.keys())}.")
         else:
             raise ValueError("Invalid rate source.")
         return sub_model

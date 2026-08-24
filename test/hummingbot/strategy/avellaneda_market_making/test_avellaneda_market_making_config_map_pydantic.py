@@ -1,9 +1,9 @@
 import asyncio
-import unittest
 from datetime import datetime, time
 from decimal import Decimal
 from pathlib import Path
 from typing import Awaitable, Callable, Dict
+import unittest
 from unittest.mock import patch
 
 import yaml
@@ -44,7 +44,7 @@ class AvellanedaMarketMakingConfigMapPydanticTest(unittest.TestCase):
         ret = self.ev_loop.run_until_complete(asyncio.wait_for(coroutine, timeout))
         return ret
 
-    def get_default_map(self) -> Dict[str, str]:
+    def get_default_map(self) -> dict[str, str]:
         config_settings = {
             "exchange": self.exchange,
             "market": self.trading_pair,
@@ -119,9 +119,7 @@ class AvellanedaMarketMakingConfigMapPydanticTest(unittest.TestCase):
         with self.assertRaises(ConfigValidationError) as e:
             self.config_map.execution_timeframe_mode = "XXX"
 
-        error_msg = (
-            "Value error, Invalid timeframe, please choose value from ['infinite', 'from_date_to_date', 'daily_between_times']"
-        )
+        error_msg = "Value error, Invalid timeframe, please choose value from ['infinite', 'from_date_to_date', 'daily_between_times']"
         self.assertEqual(error_msg, str(e.exception))
 
         self.config_map.execution_timeframe_mode = "from_date_to_date"

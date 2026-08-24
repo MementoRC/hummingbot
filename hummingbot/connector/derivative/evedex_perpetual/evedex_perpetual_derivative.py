@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 import asyncio
-import datetime
-import time
-import uuid
 from collections import defaultdict
+import datetime
 from decimal import Decimal
-from typing import Any, AsyncIterable, Dict, List, Optional, Tuple
+import time
+from typing import Any, AsyncIterable
+import uuid
 
 from bidict import bidict
 
@@ -51,14 +53,14 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
     LONG_POLL_INTERVAL = 120.0
 
     def __init__(
-            self,
-            balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
-            rate_limits_share_pct: Decimal = Decimal("100"),
-            evedex_perpetual_api_key: str = None,
-            evedex_perpetual_private_key: str = None,
-            trading_pairs: Optional[List[str]] = None,
-            trading_required: bool = True,
-            domain: str = CONSTANTS.DEFAULT_DOMAIN,
+        self,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
+        rate_limits_share_pct: Decimal = Decimal("100"),
+        evedex_perpetual_api_key: str = None,
+        evedex_perpetual_private_key: str = None,
+        trading_pairs: list[str] | None = None,
+        trading_required: bool = True,
+        domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
         self.evedex_perpetual_api_key = evedex_perpetual_api_key
         self.evedex_perpetual_private_key = evedex_perpetual_private_key
@@ -67,11 +69,11 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
         self._domain = domain
         self._position_mode = PositionMode.ONEWAY  # Evedex uses one-way mode
         self._last_trade_history_timestamp = None
-        self._auth: Optional[EvedexPerpetualAuth] = None
+        self._auth: EvedexPerpetualAuth | None = None
         self._real_time_balance_update = False  # Remove this once bybit enables available balance again through ws
-        self._balance_update_task: Optional[asyncio.Task] = None
-        self._position_update_task: Optional[asyncio.Task] = None
-        self._position_transition_order_ids: Dict[str, str] = {}
+        self._balance_update_task: asyncio.Task | None = None
+        self._position_update_task: asyncio.Task | None = None
+        self._position_transition_order_ids: dict[str, str] = {}
         super().__init__(balance_asset_limit, rate_limits_share_pct)
 
     @property
@@ -84,7 +86,7 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
             self._auth = EvedexPerpetualAuth(
                 api_key=self.evedex_perpetual_api_key,
                 time_provider=self._time_synchronizer,
-                private_key=self.evedex_perpetual_private_key or ""
+                private_key=self.evedex_perpetual_private_key or "",
             )
             self._auth.set_token_fetcher(self._fetch_access_token)
         return self._auth
@@ -95,17 +97,14 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
         Returns the token data including 'token', 'tokenId', and 'expireAt'.
         """
         try:
-            token_data = await self._api_get(
-                path_url=CONSTANTS.DX_FEED_AUTH_PATH_URL,
-                is_auth_required=True
-            )
+            token_data = await self._api_get(path_url=CONSTANTS.DX_FEED_AUTH_PATH_URL, is_auth_required=True)
             return token_data
         except Exception as e:
             self.logger().warning(f"Failed to fetch access token: {e}")
             return {}
 
     @property
-    def rate_limits_rules(self) -> List[RateLimit]:
+    def rate_limits_rules(self) -> list[RateLimit]:
         return CONSTANTS.RATE_LIMITS
 
     @property
@@ -148,7 +147,7 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
     def funding_fee_poll_interval(self) -> int:
         return 600
 
-    def supported_order_types(self) -> List[OrderType]:
+    def supported_order_types(self) -> list[OrderType]:
         """
         :return a list of OrderType supported by this connector
         """
@@ -169,15 +168,15 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
         return trading_rule.sell_order_collateral_token
 
     async def _create_order(
-            self,
-            trade_type: TradeType,
-            order_id: str,
-            trading_pair: str,
-            amount: Decimal,
-            order_type: OrderType,
-            price: Optional[Decimal] = None,
-            position_action: PositionAction = PositionAction.NIL,
-            **kwargs,
+        self,
+        trade_type: TradeType,
+        order_id: str,
+        trading_pair: str,
+        amount: Decimal,
+        order_type: OrderType,
+        price: Decimal | None = None,
+        position_action: PositionAction = PositionAction.NIL,
+        **kwargs,
     ):
         tracks_position_transition = (
             self._position_mode == PositionMode.ONEWAY and position_action == PositionAction.CLOSE
@@ -211,7 +210,7 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
         cash_quantity_quantum = self.get_order_price_quantum(trading_pair, cash_quantity)
         return (cash_quantity // cash_quantity_quantum) * cash_quantity_quantum
 
-    def _active_position_for_trading_pair(self, trading_pair: str) -> Optional[Position]:
+    def _active_position_for_trading_pair(self, trading_pair: str) -> Position | None:
         position = self._perpetual_trading.get_position(trading_pair)
         if position is not None and position.amount != Decimal("0"):
             return position
@@ -286,19 +285,25 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
         synthetic_exchange_order_id = tracked_order.exchange_order_id or f"already-closed-{order_id}"
         tracked_order.update_exchange_order_id(synthetic_exchange_order_id)
         tracked_order.executed_amount_base = tracked_order.amount
-        if tracked_order.price is not None and tracked_order.price != s_decimal_NaN and not tracked_order.price.is_nan():
+        if (
+            tracked_order.price is not None
+            and tracked_order.price != s_decimal_NaN
+            and not tracked_order.price.is_nan()
+        ):
             tracked_order.executed_amount_quote = tracked_order.amount * tracked_order.price
         else:
             tracked_order.executed_amount_quote = Decimal("0")
         tracked_order.check_filled_condition()
 
-        self._order_tracker.process_order_update(OrderUpdate(
-            trading_pair=trading_pair,
-            update_timestamp=self.current_timestamp,
-            new_state=OrderState.FILLED,
-            client_order_id=order_id,
-            exchange_order_id=synthetic_exchange_order_id,
-        ))
+        self._order_tracker.process_order_update(
+            OrderUpdate(
+                trading_pair=trading_pair,
+                update_timestamp=self.current_timestamp,
+                new_state=OrderState.FILLED,
+                client_order_id=order_id,
+                exchange_order_id=synthetic_exchange_order_id,
+            )
+        )
         self._schedule_balance_update(reason=f"already-flat position close order {order_id}")
         self._schedule_position_update(reason=f"already-flat position close order {order_id}")
         if self._position_transition_order_id(trading_pair) == order_id:
@@ -320,10 +325,10 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
                 f"Cleared Evedex position transition for {trading_pair} (close order {order_id}): {reason}."
             )
 
-    def _position_transition_order_id(self, trading_pair: str) -> Optional[str]:
+    def _position_transition_order_id(self, trading_pair: str) -> str | None:
         return self._position_transition_order_ids.get(trading_pair)
 
-    def _position_transition_order(self, trading_pair: str) -> Optional[InFlightOrder]:
+    def _position_transition_order(self, trading_pair: str) -> InFlightOrder | None:
         order_id = self._position_transition_order_id(trading_pair)
         if order_id is None:
             return None
@@ -352,9 +357,7 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
     async def _refresh_position_transition_state(self, trading_pair: str, reason: str):
         if self._position_transition_order_id(trading_pair) is None:
             return
-        self.logger().debug(
-            f"Refreshing Evedex positions while transition is pending for {trading_pair} ({reason})."
-        )
+        self.logger().debug(f"Refreshing Evedex positions while transition is pending for {trading_pair} ({reason}).")
         try:
             await self._update_positions()
         except Exception:
@@ -371,14 +374,14 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
                     reason=self._position_transition_clear_reason(trading_pair),
                 )
 
-    async def get_all_pairs_prices(self) -> List[Dict[str, str]]:
+    async def get_all_pairs_prices(self) -> list[dict[str, str]]:
         """
         Fetches prices for all trading pairs from EvedEx.
         Used by rate oracle for price discovery.
 
         :return: List of dicts with 'symbol' and 'price' keys
         """
-        results: List[Dict[str, str]] = []
+        results: list[dict[str, str]] = []
         try:
             response = await self._api_get(
                 path_url=CONSTANTS.INSTRUMENTS_PATH_URL,
@@ -389,10 +392,12 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
                 symbol = instrument.get("name")
                 price = instrument.get("markPrice")
                 if symbol and price:
-                    results.append({
-                        "symbol": symbol,
-                        "price": str(price),
-                    })
+                    results.append(
+                        {
+                            "symbol": symbol,
+                            "price": str(price),
+                        }
+                    )
         except Exception:
             self.logger().exception("Error fetching all pairs prices from EvedEx")
         return results
@@ -409,10 +414,8 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
 
     def _create_web_assistants_factory(self) -> WebAssistantsFactory:
         return web_utils.build_api_factory(
-            throttler=self._throttler,
-            time_synchronizer=self._time_synchronizer,
-            domain=self._domain,
-            auth=self._auth)
+            throttler=self._throttler, time_synchronizer=self._time_synchronizer, domain=self._domain, auth=self._auth
+        )
 
     def _create_order_book_data_source(self) -> OrderBookTrackerDataSource:
         return EvedexPerpetualAPIOrderBookDataSource(
@@ -430,15 +433,17 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
             domain=self.domain,
         )
 
-    def _get_fee(self,
-                 base_currency: str,
-                 quote_currency: str,
-                 order_type: OrderType,
-                 order_side: TradeType,
-                 position_action: PositionAction,
-                 amount: Decimal,
-                 price: Decimal = s_decimal_NaN,
-                 is_maker: Optional[bool] = None) -> TradeFeeBase:
+    def _get_fee(
+        self,
+        base_currency: str,
+        quote_currency: str,
+        order_type: OrderType,
+        order_side: TradeType,
+        position_action: PositionAction,
+        amount: Decimal,
+        price: Decimal = s_decimal_NaN,
+        is_maker: bool | None = None,
+    ) -> TradeFeeBase:
         is_maker = is_maker or False
         fee = build_trade_fee(
             self.name,
@@ -484,24 +489,21 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
         exchange_order_id = await tracked_order.get_exchange_order_id()
         path_url = CONSTANTS.CANCEL_ORDER_PATH_URL.format(orderId=exchange_order_id)
 
-        await self._api_delete(
-            path_url=path_url,
-            is_auth_required=True,
-            limit_id=CONSTANTS.CANCEL_ORDER_PATH_URL)
+        await self._api_delete(path_url=path_url, is_auth_required=True, limit_id=CONSTANTS.CANCEL_ORDER_PATH_URL)
 
         return True
 
     async def _place_order(
-            self,
-            order_id: str,
-            trading_pair: str,
-            amount: Decimal,
-            trade_type: TradeType,
-            order_type: OrderType,
-            price: Decimal,
-            position_action: PositionAction = PositionAction.NIL,
-            **kwargs,
-    ) -> Tuple[str, float]:
+        self,
+        order_id: str,
+        trading_pair: str,
+        amount: Decimal,
+        trade_type: TradeType,
+        order_type: OrderType,
+        price: Decimal,
+        position_action: PositionAction = PositionAction.NIL,
+        **kwargs,
+    ) -> tuple[str, float]:
         if self._position_mode == PositionMode.ONEWAY and position_action == PositionAction.OPEN:
             transition_order_id = self._position_transition_order_id(trading_pair)
             if transition_order_id is not None:
@@ -623,10 +625,8 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
 
         try:
             order_result = await self._api_post(
-                path_url=path_url,
-                data=api_params,
-                is_auth_required=True,
-                limit_id=limit_id)
+                path_url=path_url, data=api_params, is_auth_required=True, limit_id=limit_id
+            )
 
             exchange_order_id = str(order_result.get("id", evedex_order_id))
             transact_time = self._parse_exchange_timestamp(
@@ -646,8 +646,10 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
                 raise ValueError(f"Insufficient funds to place order for {trading_pair}: {error_description}")
 
             # Handle position close errors (Too many quantity / Unknown position)
-            if (CONSTANTS.TOO_MANY_QUANTITY_ERROR.lower() in error_description.lower() or
-                    CONSTANTS.UNKNOWN_POSITION_ERROR.lower() in error_description.lower()):
+            if (
+                CONSTANTS.TOO_MANY_QUANTITY_ERROR.lower() in error_description.lower()
+                or CONSTANTS.UNKNOWN_POSITION_ERROR.lower() in error_description.lower()
+            ):
                 self.logger().error(f"Position error detected, refreshing positions: {error_description}")
                 refresh_succeeded = False
                 try:
@@ -684,7 +686,7 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
         amount: Decimal,
         trade_type: TradeType,
         order_type: OrderType,
-        price: Optional[Decimal],
+        price: Decimal | None,
         exception: Exception,
         **kwargs,
     ):
@@ -712,7 +714,7 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
             **kwargs,
         )
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         trade_updates = []
         try:
             exchange_order_id = await order.get_exchange_order_id()
@@ -724,7 +726,8 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
                     "limit": 500,
                 },
                 is_auth_required=True,
-                limit_id=CONSTANTS.GET_ORDERS_PATH_URL)
+                limit_id=CONSTANTS.GET_ORDERS_PATH_URL,
+            )
 
             order_list = orders_response.get("list", []) if isinstance(orders_response, dict) else orders_response
             for order_data in order_list:
@@ -755,8 +758,9 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
                 trade_updates.append(trade_update)
 
         except asyncio.TimeoutError:
-            raise IOError(f"Skipped order update with order fills for {order.client_order_id} "
-                          "- waiting for exchange order id.")
+            raise IOError(
+                f"Skipped order update with order fills for {order.client_order_id} - waiting for exchange order id."
+            )
 
         return trade_updates
 
@@ -765,9 +769,8 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
         path_url = CONSTANTS.GET_ORDER_PATH_URL.format(orderId=exchange_order_id)
 
         order_update = await self._api_get(
-            path_url=path_url,
-            is_auth_required=True,
-            limit_id=CONSTANTS.GET_ORDER_PATH_URL)
+            path_url=path_url, is_auth_required=True, limit_id=CONSTANTS.GET_ORDER_PATH_URL
+        )
 
         new_state = CONSTANTS.ORDER_STATE.get(order_update.get("status", ""), tracked_order.current_state)
 
@@ -780,7 +783,7 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
         )
         return _order_update
 
-    async def _iter_user_event_queue(self) -> AsyncIterable[Dict[str, any]]:
+    async def _iter_user_event_queue(self) -> AsyncIterable[dict[str, any]]:
         while True:
             try:
                 yield await self._user_stream_tracker.user_stream.get()
@@ -808,7 +811,7 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
                 self.logger().error(f"Unexpected error in user stream listener loop: {e}", exc_info=True)
                 await self._sleep(5.0)
 
-    async def _process_user_stream_event(self, event_message: Dict[str, Any]):
+    async def _process_user_stream_event(self, event_message: dict[str, Any]):
         """
         Process user stream events from Centrifugo.
 
@@ -836,7 +839,7 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
             return tracked_order.position
         return PositionAction.OPEN if tracked_order.trade_type is TradeType.BUY else PositionAction.CLOSE
 
-    def _trade_fee_for_update(self, tracked_order: InFlightOrder, fee_list: List[Dict[str, Any]]) -> TradeFeeBase:
+    def _trade_fee_for_update(self, tracked_order: InFlightOrder, fee_list: list[dict[str, Any]]) -> TradeFeeBase:
         flat_fees = []
         for fee_item in fee_list:
             coin = str(fee_item.get("coin", "USDT")).upper()
@@ -868,7 +871,7 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
         return time.time()
 
     @staticmethod
-    def _trade_id_from_fill_data(fill_data: Dict[str, Any], exchange_order_id: str) -> str:
+    def _trade_id_from_fill_data(fill_data: dict[str, Any], exchange_order_id: str) -> str:
         filled_quantity = EvedexPerpetualDerivative._filled_amount_from_order_event(fill_data)
 
         price = fill_data.get("fillPrice", fill_data.get("filledAvgPrice", 0))
@@ -886,7 +889,7 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
         return f"{exchange_order_id}_{trade_identifier}_{filled_quantity}_{price}"
 
     @staticmethod
-    def _filled_amount_from_order_event(order_data: Dict[str, Any]) -> Decimal:
+    def _filled_amount_from_order_event(order_data: dict[str, Any]) -> Decimal:
         fill_quantity = order_data.get("fillQuantity")
         if fill_quantity is not None:
             try:
@@ -907,7 +910,7 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
         return str(status).upper() in {"FILLED", "CANCELLED", "REJECTED", "EXPIRED", "ERROR"}
 
     @staticmethod
-    def _is_ioc_or_market_order_event(order_data: Dict[str, Any], tracked_order: Optional[InFlightOrder] = None) -> bool:
+    def _is_ioc_or_market_order_event(order_data: dict[str, Any], tracked_order: InFlightOrder | None = None) -> bool:
         raw_type = str(order_data.get("type", "")).upper()
         time_in_force = str(order_data.get("timeInForce", "")).upper()
         tracked_order_is_market = tracked_order is not None and tracked_order.order_type == OrderType.MARKET
@@ -915,9 +918,9 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
 
     def _terminal_reported_executed_quantity(
         self,
-        order_data: Dict[str, Any],
-        tracked_order: Optional[InFlightOrder] = None,
-    ) -> Optional[Decimal]:
+        order_data: dict[str, Any],
+        tracked_order: InFlightOrder | None = None,
+    ) -> Decimal | None:
         if tracked_order is None or not self._is_ioc_or_market_order_event(order_data, tracked_order):
             return None
 
@@ -944,8 +947,8 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
 
     def _normalize_tracked_order_for_terminal_partial_fill(
         self,
-        tracked_order: Optional[InFlightOrder],
-        order_data: Dict[str, Any],
+        tracked_order: InFlightOrder | None,
+        order_data: dict[str, Any],
     ):
         if tracked_order is None:
             return
@@ -957,9 +960,9 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
 
     def _get_order_state_from_order_data(
         self,
-        order_data: Dict[str, Any],
-        tracked_order: Optional[InFlightOrder] = None,
-    ) -> Optional[OrderState]:
+        order_data: dict[str, Any],
+        tracked_order: InFlightOrder | None = None,
+    ) -> OrderState | None:
         status = str(order_data.get("status", "")).upper()
         if (
             status in {"CANCELLED", "EXPIRED"}
@@ -995,10 +998,10 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
             f"{previous_state.name} -> {new_state.name}."
         )
 
-    async def _process_order_fill(self, fill_data: Dict[str, Any]):
+    async def _process_order_fill(self, fill_data: dict[str, Any]):
         # Process OrderFill from orderFills-{userExchangeId} channel.
         """
-       {'id': '00239:8f0aa829617c4eca834a367cac', 'instrument': 'XRPUSD', 'user': '42520', 'side': 'SELL', 'quantity': 20, 'limitPrice': 0, 'status': 'FILLED', 'unFilledQuantity': 0, 'realizedPnL': 0.0013588, 'createdAt': '2026-03-20T02:42:54.804Z', 'updatedAt': '2026-03-20T02:42:54.804Z', 'filledAvgPrice': 1.4486, 'type': 'MARKET', 'timeInForce': 'IOC', 'cashQuantity': '0.00000000', 'rejectedReason': '', 'fee': [{'coin': 'usdt', 'quantity': 0.0130374}, {'coin': 'total', 'quantity': 0}], 'group': 'manually', 'stopPrice': None, 'triggeredAt': None, 'check': False, 'completedAt': '2026-03-20T02:42:54.964Z', 'exchangeRequestId': '72057614201194187', 'userSession': None, 'fillQuantity': 20}
+        {'id': '00239:8f0aa829617c4eca834a367cac', 'instrument': 'XRPUSD', 'user': '42520', 'side': 'SELL', 'quantity': 20, 'limitPrice': 0, 'status': 'FILLED', 'unFilledQuantity': 0, 'realizedPnL': 0.0013588, 'createdAt': '2026-03-20T02:42:54.804Z', 'updatedAt': '2026-03-20T02:42:54.804Z', 'filledAvgPrice': 1.4486, 'type': 'MARKET', 'timeInForce': 'IOC', 'cashQuantity': '0.00000000', 'rejectedReason': '', 'fee': [{'coin': 'usdt', 'quantity': 0.0130374}, {'coin': 'total', 'quantity': 0}], 'group': 'manually', 'stopPrice': None, 'triggeredAt': None, 'check': False, 'completedAt': '2026-03-20T02:42:54.964Z', 'exchangeRequestId': '72057614201194187', 'userSession': None, 'fillQuantity': 20}
         """
         order_id = str(fill_data.get("id", ""))
         tracked_order = self._order_tracker.all_fillable_orders_by_exchange_order_id.get(order_id)
@@ -1079,12 +1082,12 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
         else:
             self.logger().debug(f"Evedex position refresh already pending ({reason}).")
 
-    async def _process_order_update(self, order_data: Dict[str, Any]):
+    async def _process_order_update(self, order_data: dict[str, Any]):
         # Order.id is the EXCHANGE order ID, not the client order ID
         """Process order update from the exchange.
 
         Args:
-            order_data (Dict[str, Any]): The order data received from the exchange.
+            order_data (dict[str, Any]): The order data received from the exchange.
             {'id': '00239:9d6ea491b48b471e82a66d6e4c', 'instrument': 'XRPUSD', 'user': '42520', 'side': 'BUY', 'quantity': 20, 'limitPrice': 1.44853206, 'status': 'FILLED', 'unFilledQuantity': 0, 'realizedPnL': 0, 'createdAt': '2026-03-20T02:41:24.587Z', 'updatedAt': '2026-03-20T02:41:33.799Z', 'filledAvgPrice': 1.44853206, 'type': 'LIMIT', 'timeInForce': 'GTC', 'cashQuantity': '0.00000000', 'rejectedReason': '', 'fee': [{'coin': 'usdt', 'quantity': 0.0043456}, {'coin': 'total', 'quantity': 0.01303678854}], 'group': 'manually', 'stopPrice': None, 'triggeredAt': None, 'check': False, 'completedAt': '2026-03-20T02:41:34.067Z', 'exchangeRequestId': '72057614201035602', 'userSession': None, 'fillQuantity': 20}
         """
 
@@ -1163,7 +1166,9 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
                 f"status={order_data.get('status')}, fill_quantity={fill_quantity}."
             )
             should_refresh_balance = True
-            should_refresh_position = fill_quantity > Decimal("0") or str(order_data.get("status", "")).upper() == "FILLED"
+            should_refresh_position = (
+                fill_quantity > Decimal("0") or str(order_data.get("status", "")).upper() == "FILLED"
+            )
 
         if should_refresh_balance:
             self._schedule_balance_update(
@@ -1174,11 +1179,11 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
                 reason=f"order update for {exchange_order_id} status={order_data.get('status')}"
             )
 
-    async def _process_position_update(self, position_data: Dict[str, Any]):
+    async def _process_position_update(self, position_data: dict[str, Any]):
         positions = position_data if isinstance(position_data, list) else [position_data]
         await self._apply_position_updates(positions=positions, remove_stale=False)
 
-    async def _apply_position_updates(self, positions: List[Dict[str, Any]], remove_stale: bool):
+    async def _apply_position_updates(self, positions: list[dict[str, Any]], remove_stale: bool):
         active_position_keys = set()
 
         for position in positions:
@@ -1236,7 +1241,7 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
 
         self._reconcile_position_transitions()
 
-    async def _format_trading_rules(self, exchange_info_dict: Dict[str, Any]) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: dict[str, Any]) -> list[TradingRule]:
         """
         Queries the necessary API endpoint and initialize the TradingRule object for each trading pair being traded.
         """
@@ -1284,7 +1289,7 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
                 )
         return return_val
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         mapping = bidict()
         rules = exchange_info if isinstance(exchange_info, list) else exchange_info.get("list", [])
 
@@ -1331,7 +1336,8 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
         available_balance_info = await self._api_get(
             path_url=CONSTANTS.AVAILABLE_BALANCE_PATH_URL,
             is_auth_required=True,
-            limit_id=CONSTANTS.AVAILABLE_BALANCE_PATH_URL)
+            limit_id=CONSTANTS.AVAILABLE_BALANCE_PATH_URL,
+        )
 
         # Process funding balance
         # API returns: {"currency": "usdt", "funding": {"currency": "usdt", "balance": <num>}, "availableBalance": <num>, ...}
@@ -1346,9 +1352,7 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
         self._account_available_balances[currency] = available
 
     async def _update_positions(self):
-        positions_response = await self._api_get(
-            path_url=CONSTANTS.POSITIONS_PATH_URL,
-            is_auth_required=True)
+        positions_response = await self._api_get(path_url=CONSTANTS.POSITIONS_PATH_URL, is_auth_required=True)
 
         positions = positions_response.get("list", []) if isinstance(positions_response, dict) else positions_response
         await self._apply_position_updates(positions=positions, remove_stale=True)
@@ -1358,7 +1362,7 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
         current_tick = int(self.current_timestamp / self.UPDATE_ORDER_STATUS_MIN_INTERVAL)
 
         if current_tick > last_tick and len(self._order_tracker.active_orders) > 0:
-            trading_pairs_to_order_map: Dict[str, Dict[str, Any]] = defaultdict(lambda: {})
+            trading_pairs_to_order_map: dict[str, dict[str, Any]] = defaultdict(lambda: {})
             for order in self._order_tracker.active_orders.values():
                 trading_pairs_to_order_map[order.trading_pair][order.exchange_order_id] = order
 
@@ -1373,7 +1377,7 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
 
                     earliest_creation_ts = min(
                         (o.creation_timestamp for o in order_map.values() if o.creation_timestamp),
-                        default=self.current_timestamp
+                        default=self.current_timestamp,
                     )
                     after_ts = self._last_poll_timestamp if self._last_poll_timestamp > 0 else earliest_creation_ts
                     after_ts = max(0, after_ts - 1)
@@ -1381,22 +1385,23 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
                     if after_ts >= before_ts:
                         after_ts = max(0, before_ts - 1)
 
-                    after_iso = datetime.datetime.fromtimestamp(
-                        after_ts, tz=datetime.timezone.utc
-                    ).isoformat(timespec="seconds").replace("+00:00", "Z")
-                    before_iso = datetime.datetime.fromtimestamp(
-                        before_ts, tz=datetime.timezone.utc
-                    ).isoformat(timespec="seconds").replace("+00:00", "Z")
+                    after_iso = (
+                        datetime.datetime.fromtimestamp(after_ts, tz=datetime.timezone.utc)
+                        .isoformat(timespec="seconds")
+                        .replace("+00:00", "Z")
+                    )
+                    before_iso = (
+                        datetime.datetime.fromtimestamp(before_ts, tz=datetime.timezone.utc)
+                        .isoformat(timespec="seconds")
+                        .replace("+00:00", "Z")
+                    )
 
                     exchange_symbol = await self.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
                     fills = await self._api_get(
                         path_url=CONSTANTS.ORDER_FILLS_PATH_URL,
-                        params={
-                            "instrument": exchange_symbol,
-                            "after": after_iso,
-                            "before": before_iso
-                        },
-                        is_auth_required=True)
+                        params={"instrument": exchange_symbol, "after": after_iso, "before": before_iso},
+                        is_auth_required=True,
+                    )
 
                     fill_list = fills.get("list", []) if isinstance(fills, dict) else fills
 
@@ -1428,7 +1433,7 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
                 except Exception as e:
                     self.logger().network(
                         f"Error fetching trades update for {trading_pair}: {e}.",
-                        app_warning_msg=f"Failed to fetch trade update for {trading_pair}."
+                        app_warning_msg=f"Failed to fetch trade update for {trading_pair}.",
                     )
 
     async def _update_order_status(self):
@@ -1446,9 +1451,8 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
                     exchange_order_id = await tracked_order.get_exchange_order_id()
                     path_url = CONSTANTS.GET_ORDER_PATH_URL.format(orderId=exchange_order_id)
                     order_update = await self._api_get(
-                        path_url=path_url,
-                        is_auth_required=True,
-                        limit_id=CONSTANTS.GET_ORDER_PATH_URL)
+                        path_url=path_url, is_auth_required=True, limit_id=CONSTANTS.GET_ORDER_PATH_URL
+                    )
 
                     new_state = CONSTANTS.ORDER_STATE.get(order_update.get("status", ""), tracked_order.current_state)
 
@@ -1466,17 +1470,17 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
                         f"Error fetching status update for order {tracked_order.client_order_id}: {e}."
                     )
 
-    async def _get_position_mode(self) -> Optional[PositionMode]:
+    async def _get_position_mode(self) -> PositionMode | None:
         # Evedex uses one-way position mode
         return PositionMode.ONEWAY
 
-    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> Tuple[bool, str]:
+    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> tuple[bool, str]:
         # Evedex only supports one-way mode
         if mode == PositionMode.ONEWAY:
             return True, ""
         return False, "Evedex only supports one-way position mode"
 
-    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> Tuple[bool, str]:
+    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> tuple[bool, str]:
         symbol = await self.exchange_symbol_associated_to_pair(trading_pair)
         path_url = CONSTANTS.SET_LEVERAGE_PATH_URL.format(instrument=symbol)
 
@@ -1494,7 +1498,7 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
         except Exception as e:
             return False, f"Unable to set leverage: {str(e)}"
 
-    async def _fetch_last_fee_payment(self, trading_pair: str) -> Tuple[int, Decimal, Decimal]:
+    async def _fetch_last_fee_payment(self, trading_pair: str) -> tuple[int, Decimal, Decimal]:
         """
         Fetches the last funding fee payment for a trading pair.
         """
@@ -1503,9 +1507,8 @@ class EvedexPerpetualDerivative(PerpetualDerivativePyBase):
 
             # Get funding info from user endpoint
             funding_response = await self._api_get(
-                path_url=CONSTANTS.POSITIONS_PATH_URL,
-                is_auth_required=True,
-                limit_id=CONSTANTS.POSITIONS_PATH_URL)
+                path_url=CONSTANTS.POSITIONS_PATH_URL, is_auth_required=True, limit_id=CONSTANTS.POSITIONS_PATH_URL
+            )
 
             # Initialize default values
             timestamp = 0

@@ -1,7 +1,6 @@
 import asyncio
-import unittest
 from decimal import Decimal
-from typing import List
+import unittest
 
 from hummingbot.connector.gateway.gateway_base import GatewayBase
 from hummingbot.core.data_type.common import OrderType, TradeType
@@ -49,7 +48,7 @@ class GatewayBaseEventOrderingTest(unittest.TestCase):
         self.connector = MockGatewayConnector()
         self.connector._set_current_timestamp(1640000000.0)
         self._initialize_event_loggers()
-        self.events_received: List[str] = []
+        self.events_received: list[str] = []
 
     def _initialize_event_loggers(self):
         """Set up event loggers to track event order."""
@@ -218,6 +217,7 @@ class GatewayBaseEventOrderingTest(unittest.TestCase):
             events_order.append("OrderFilled")
 
         from hummingbot.core.event.event_forwarder import SourceInfoEventForwarder
+
         created_forwarder = SourceInfoEventForwarder(on_buy_created)
         filled_forwarder = SourceInfoEventForwarder(on_order_filled)
 
@@ -327,7 +327,7 @@ class GatewayBaseEventOrderingTest(unittest.TestCase):
         self.assertEqual(
             ["BuyOrderCreated", "BuyOrderCompleted", "OrderFilled"],
             events_order,
-            "Events must be emitted in order: OrderCreated -> OrderCompleted -> OrderFilled"
+            "Events must be emitted in order: OrderCreated -> OrderCompleted -> OrderFilled",
         )
 
 
@@ -360,6 +360,7 @@ class GatewayBaseConnectorSettingsRegistrationTest(unittest.TestCase):
 
     def tearDown(self) -> None:
         from hummingbot.client.settings import AllConnectorSettings
+
         AllConnectorSettings.get_connector_settings().pop("test_connector", None)
         super().tearDown()
 
@@ -367,12 +368,14 @@ class GatewayBaseConnectorSettingsRegistrationTest(unittest.TestCase):
         # Registration happens in start_network (after Gateway validates the name), not in
         # __init__ — so an unstarted / invalid connector never pollutes AllConnectorSettings.
         from hummingbot.client.settings import AllConnectorSettings
+
         AllConnectorSettings.get_connector_settings().pop("test_connector", None)
         MockGatewayConnector()
         self.assertNotIn("test_connector", AllConnectorSettings.get_connector_settings())
 
     def test_connector_registers_with_zero_fee_schema(self):
         from hummingbot.client.settings import AllConnectorSettings, ConnectorType
+
         all_settings = AllConnectorSettings.get_connector_settings()
         all_settings.pop("test_connector", None)
 
@@ -387,9 +390,17 @@ class GatewayBaseConnectorSettingsRegistrationTest(unittest.TestCase):
     def test_registration_makes_build_trade_fee_not_raise(self):
         # Without registration, build_trade_fee raises "does not exist in AllConnectorSettings".
         from hummingbot.core.utils.estimate_fee import build_trade_fee
+
         MockGatewayConnector()._ensure_registered_in_connector_settings()
         fee = build_trade_fee(
-            "test_connector", False, "SOL", "USDC", OrderType.MARKET, TradeType.SELL, Decimal("1"), Decimal("1"),
+            "test_connector",
+            False,
+            "SOL",
+            "USDC",
+            OrderType.MARKET,
+            TradeType.SELL,
+            Decimal("1"),
+            Decimal("1"),
         )
         self.assertEqual(Decimal("0"), fee.percent)
 

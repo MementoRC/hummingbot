@@ -1,7 +1,6 @@
-import unittest
 from datetime import date, datetime, time
 from decimal import Decimal
-from typing import Union
+import unittest
 
 from pydantic import Field, SecretStr
 
@@ -17,8 +16,7 @@ class SomeEnum(ClientConfigEnum):
 
 class DoubleNestedModel(BaseClientModel):
     double_nested_attr: datetime = Field(
-        default=datetime(2022, 1, 1, 10, 30),
-        description="Double nested attr description"
+        default=datetime(2022, 1, 1, 10, 30), description="Double nested attr description"
     )
 
 
@@ -45,7 +43,9 @@ class DummyModel(BaseClientModel):
         default=Decimal("1.0"),
         description="Some other\nmultiline description",
     )
-    non_nested_no_description: time = Field(default=time(10, 30), )
+    non_nested_no_description: time = Field(
+        default=time(10, 30),
+    )
     date_attr: date = Field(default=date(2022, 1, 2))
 
     class Config:
@@ -89,7 +89,7 @@ class BaseClientModelTest(unittest.TestCase):
 
         class DummyModel(BaseClientModel):
             some_attr: int = Field(default=1)
-            nested_model: Union[NestedModelTwo, NestedModelOne] = Field(default=NestedModelOne())
+            nested_model: NestedModelTwo | NestedModelOne = Field(default=NestedModelOne())
             another_attr: Decimal = Field(default=Decimal("1.0"))
 
             class Config:
@@ -223,14 +223,14 @@ secret_attr: """
 
         all_config_paths = list(adapter.config_paths())
         expected_config_paths = [
-            'some_attr',
-            'nested_model',
-            'nested_model.nested_attr',
-            'nested_model.double_nested_model',
-            'nested_model.double_nested_model.double_nested_attr',
-            'another_attr',
-            'non_nested_no_description',
-            'date_attr',
+            "some_attr",
+            "nested_model",
+            "nested_model.nested_attr",
+            "nested_model.double_nested_model",
+            "nested_model.double_nested_model.double_nested_attr",
+            "another_attr",
+            "non_nested_no_description",
+            "date_attr",
         ]
 
         self.assertEqual(expected_config_paths, all_config_paths)

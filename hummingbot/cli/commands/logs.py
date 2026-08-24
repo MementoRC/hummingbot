@@ -1,7 +1,7 @@
 """``hbot logs`` — tail the bot's log (one bot per install)."""
-import time
+
 from pathlib import Path
-from typing import Optional
+import time
 
 import typer
 
@@ -9,16 +9,14 @@ from hummingbot.cli import bot
 from hummingbot.cli.output import ExitCode, echo, emit, fail, json_option
 
 
-def _resolve_log_file(name: Optional[str]) -> Optional[Path]:
+def _resolve_log_file(name: str | None) -> Path | None:
     if name:
         log = bot.structured_log_for(name)
         if log is None:
-            fail(f"no log found for '{name}' (available: {', '.join(bot.list_bots()) or 'none'})",
-                 ExitCode.NOT_FOUND)
+            fail(f"no log found for '{name}' (available: {', '.join(bot.list_bots()) or 'none'})", ExitCode.NOT_FOUND)
         return log
     if not bot.exists():
-        fail("no bot has been started (pass a name to view a past bot)",
-             ExitCode.NOT_FOUND)
+        fail("no bot has been started (pass a name to view a past bot)", ExitCode.NOT_FOUND)
     if bot.structured_log_file().exists():
         return bot.structured_log_file()
     if bot.log_file().exists():
@@ -27,7 +25,7 @@ def _resolve_log_file(name: Optional[str]) -> Optional[Path]:
 
 
 def logs(
-    name: Optional[str] = typer.Argument(None, help="Bot name to view (a past/stopped bot). Omit for the current bot."),
+    name: str | None = typer.Argument(None, help="Bot name to view (a past/stopped bot). Omit for the current bot."),
     lines: int = typer.Option(200, "--lines", "-n", help="Number of trailing lines to show."),
     follow: bool = typer.Option(False, "--follow", "-f", help="Stream new lines until interrupted (Ctrl-C)."),
     as_json: bool = json_option(),

@@ -1,4 +1,4 @@
-from typing import List, Optional
+from __future__ import annotations
 
 from hummingbot.core.api_throttler.async_throttler_base import AsyncThrottlerBase
 from hummingbot.core.web_assistant.auth import AuthBase
@@ -25,12 +25,12 @@ class WebAssistantsFactory:
     def __init__(
         self,
         throttler: AsyncThrottlerBase,
-        rest_pre_processors: Optional[List[RESTPreProcessorBase]] = None,
-        rest_post_processors: Optional[List[RESTPostProcessorBase]] = None,
-        ws_pre_processors: Optional[List[WSPreProcessorBase]] = None,
-        ws_post_processors: Optional[List[WSPostProcessorBase]] = None,
-        auth: Optional[AuthBase] = None,
-        connections_factory: Optional[ConnectionsFactory] = None,
+        rest_pre_processors: list[RESTPreProcessorBase] | None = None,
+        rest_post_processors: list[RESTPostProcessorBase] | None = None,
+        ws_pre_processors: list[WSPreProcessorBase] | None = None,
+        ws_post_processors: list[WSPostProcessorBase] | None = None,
+        auth: AuthBase | None = None,
+        connections_factory: ConnectionsFactory | None = None,
     ):
         self._connections_factory = connections_factory or ConnectionsFactory()
         self._rest_pre_processors = rest_pre_processors or []
@@ -45,7 +45,7 @@ class WebAssistantsFactory:
         return self._throttler
 
     @property
-    def auth(self) -> Optional[AuthBase]:
+    def auth(self) -> AuthBase | None:
         return self._auth
 
     async def get_rest_assistant(self) -> RESTAssistant:
@@ -55,15 +55,13 @@ class WebAssistantsFactory:
             throttler=self._throttler,
             rest_pre_processors=self._rest_pre_processors,
             rest_post_processors=self._rest_post_processors,
-            auth=self._auth
+            auth=self._auth,
         )
         return assistant
 
     async def get_ws_assistant(self) -> WSAssistant:
         connection = await self._connections_factory.get_ws_connection()
-        assistant = WSAssistant(
-            connection, self._ws_pre_processors, self._ws_post_processors, self._auth
-        )
+        assistant = WSAssistant(connection, self._ws_pre_processors, self._ws_post_processors, self._auth)
         return assistant
 
     async def close(self) -> None:

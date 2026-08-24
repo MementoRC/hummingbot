@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
+from contextlib import ExitStack
 import logging
 import threading
-from contextlib import ExitStack
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable
 
 from prompt_toolkit.application import Application
 from prompt_toolkit.clipboard.pyperclip import PyperclipClipboard
@@ -42,22 +44,25 @@ if TYPE_CHECKING:
 # Monkey patching here as _handle_exception gets the UI hanged into Press ENTER screen mode
 def _handle_exception_patch(self, loop, context):
     if "exception" in context:
-        logging.getLogger(__name__).error(f"Unhandled error in prompt_toolkit: {context.get('exception')}",
-                                          exc_info=True)
+        logging.getLogger(__name__).error(
+            f"Unhandled error in prompt_toolkit: {context.get('exception')}", exc_info=True
+        )
 
 
 Application._handle_exception = _handle_exception_patch
 
 
 class HummingbotCLI(PubSub):
-    def __init__(self,
-                 client_config_map: ClientConfigAdapter,
-                 input_handler: Callable,
-                 bindings: KeyBindings,
-                 completer: Completer,
-                 command_tabs: Dict[str, CommandTab]):
+    def __init__(
+        self,
+        client_config_map: ClientConfigAdapter,
+        input_handler: Callable,
+        bindings: KeyBindings,
+        completer: Completer,
+        command_tabs: dict[str, CommandTab],
+    ):
         super().__init__()
-        self.client_config_map: Union[ClientConfigAdapter, ClientConfigMap] = client_config_map
+        self.client_config_map: ClientConfigAdapter | ClientConfigMap = client_config_map
         self.command_tabs = command_tabs
         self.search_field = create_search_field()
         self.input_field = create_input_field(completer=completer)
@@ -69,11 +74,18 @@ class HummingbotCLI(PubSub):
         self.timer = create_timer()
         self.process_usage = create_process_monitor()
         self.trade_monitor = create_trade_monitor()
-        self.layout, self.layout_components = generate_layout(self.input_field, self.output_field, self.log_field,
-                                                              self.right_pane_toggle, self.log_field_button,
-                                                              self.search_field, self.timer,
-                                                              self.process_usage, self.trade_monitor,
-                                                              self.command_tabs)
+        self.layout, self.layout_components = generate_layout(
+            self.input_field,
+            self.output_field,
+            self.log_field,
+            self.right_pane_toggle,
+            self.log_field_button,
+            self.search_field,
+            self.timer,
+            self.process_usage,
+            self.trade_monitor,
+            self.command_tabs,
+        )
         # add self.to_stop_config to know if cancel is triggered
         self.to_stop_config: bool = False
 
@@ -81,7 +93,7 @@ class HummingbotCLI(PubSub):
         self.bindings = bindings
         self.input_handler = input_handler
         self.input_field.accept_handler = self.accept
-        self.app: Optional[Application] = None
+        self.app: Application | None = None
 
         # settings
         self.prompt_text = ">>> "
@@ -126,9 +138,11 @@ class HummingbotCLI(PubSub):
 
         try:
             if self.hide_input:
-                output = ''
+                output = ""
             else:
-                output = '\n>>>  {}'.format(self.input_field.text,)
+                output = "\n>>>  {}".format(
+                    self.input_field.text,
+                )
                 self.input_field.buffer.append_to_history()
         except BaseException as e:
             output = str(e)
@@ -182,10 +196,10 @@ class HummingbotCLI(PubSub):
     def toggle_right_pane(self):
         if self.layout_components["pane_right"].filter():
             self.layout_components["pane_right"].filter = lambda: False
-            self.layout_components["item_top_toggle"].text = '< Ctrl+T'
+            self.layout_components["item_top_toggle"].text = "< Ctrl+T"
         else:
             self.layout_components["pane_right"].filter = lambda: True
-            self.layout_components["item_top_toggle"].text = '> Ctrl+T'
+            self.layout_components["item_top_toggle"].text = "> Ctrl+T"
 
     def log_button_clicked(self):
         for tab in self.command_tabs.values():
@@ -202,10 +216,18 @@ class HummingbotCLI(PubSub):
         self.app.exit()
 
     def redraw_app(self):
-        self.layout, self.layout_components = generate_layout(self.input_field, self.output_field, self.log_field,
-                                                              self.right_pane_toggle, self.log_field_button,
-                                                              self.search_field, self.timer,
-                                                              self.process_usage, self.trade_monitor, self.command_tabs)
+        self.layout, self.layout_components = generate_layout(
+            self.input_field,
+            self.output_field,
+            self.log_field,
+            self.right_pane_toggle,
+            self.log_field_button,
+            self.search_field,
+            self.timer,
+            self.process_usage,
+            self.trade_monitor,
+            self.command_tabs,
+        )
         self.app.layout = self.layout
         self.app.invalidate()
 
@@ -246,7 +268,7 @@ class HummingbotCLI(PubSub):
             self.command_tabs[command_name].task = None
         self.redraw_app()
 
-    def handle_tab_command(self, hummingbot: "HummingbotApplication", command_name: str, kwargs: Dict[str, Any]):
+    def handle_tab_command(self, hummingbot: "HummingbotApplication", command_name: str, kwargs: dict[str, Any]):
         if command_name not in self.command_tabs:
             return
         cmd_tab = self.command_tabs[command_name]
@@ -258,20 +280,18 @@ class HummingbotCLI(PubSub):
             kwargs.pop("close")
         if cmd_tab.button is None:
             cmd_tab.button = create_tab_button(command_name, lambda: self.tab_button_clicked(command_name))
-            cmd_tab.close_button = create_tab_button("x", lambda: self.close_buton_clicked(command_name), 1, '', ' ')
+            cmd_tab.close_button = create_tab_button("x", lambda: self.close_buton_clicked(command_name), 1, "", " ")
             cmd_tab.output_field = create_live_field()
             cmd_tab.tab_index = max(t.tab_index for t in self.command_tabs.values()) + 1
         self.tab_button_clicked(command_name)
         self.display_tab_output(cmd_tab, hummingbot, kwargs)
 
-    def display_tab_output(self,
-                           command_tab: CommandTab,
-                           hummingbot: "HummingbotApplication",
-                           kwargs: Dict[Any, Any]):
+    def display_tab_output(self, command_tab: CommandTab, hummingbot: "HummingbotApplication", kwargs: dict[Any, Any]):
         if command_tab.task is not None and not command_tab.task.done():
             return
         if threading.current_thread() != threading.main_thread():
             hummingbot.ev_loop.call_soon_threadsafe(self.display_tab_output, command_tab, hummingbot, kwargs)
             return
-        command_tab.task = safe_ensure_future(command_tab.tab_class.display(command_tab.output_field, hummingbot,
-                                                                            **kwargs))
+        command_tab.task = safe_ensure_future(
+            command_tab.tab_class.display(command_tab.output_field, hummingbot, **kwargs)
+        )

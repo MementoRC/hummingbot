@@ -1,6 +1,5 @@
 from decimal import Decimal
 from math import exp, log
-from typing import List
 
 
 class Distributions:
@@ -9,7 +8,7 @@ class Distributions:
     """
 
     @classmethod
-    def linear(cls, n_levels: int, start: float = 0.0, end: float = 1.0) -> List[Decimal]:
+    def linear(cls, n_levels: int, start: float = 0.0, end: float = 1.0) -> list[Decimal]:
         """
         Generate a linear sequence of spreads.
 
@@ -19,15 +18,18 @@ class Distributions:
         - end: The ending value of the sequence.
 
         Returns:
-        List[Decimal]: A list containing the generated linear sequence.
+        list[Decimal]: A list containing the generated linear sequence.
         """
         if n_levels == 1:
             return [Decimal(start)]
 
-        return [Decimal(start) + (Decimal(end) - Decimal(start)) * Decimal(i) / (Decimal(n_levels) - 1) for i in range(n_levels)]
+        return [
+            Decimal(start) + (Decimal(end) - Decimal(start)) * Decimal(i) / (Decimal(n_levels) - 1)
+            for i in range(n_levels)
+        ]
 
     @classmethod
-    def fibonacci(cls, n_levels: int, start: float = 0.01) -> List[Decimal]:
+    def fibonacci(cls, n_levels: int, start: float = 0.01) -> list[Decimal]:
         """
         Generate a Fibonacci sequence of spreads represented as percentages.
 
@@ -43,7 +45,7 @@ class Distributions:
           represented as a percentage. Default is 1%.
 
         Returns:
-        List[Decimal]: A list containing the generated Fibonacci sequence of spreads, represented as percentages.
+        list[Decimal]: A list containing the generated Fibonacci sequence of spreads, represented as percentages.
 
         Example:
         If initial_value=0.01 and n_levels=5, the sequence would represent: [1%, 2%, 3%, 5%, 8%]
@@ -58,8 +60,9 @@ class Distributions:
         return fib_sequence[:n_levels]
 
     @classmethod
-    def logarithmic(cls, n_levels: int, base: float = exp(1), scaling_factor: float = 1.0,
-                    start: float = 0.4) -> List[Decimal]:
+    def logarithmic(
+        cls, n_levels: int, base: float = exp(1), scaling_factor: float = 1.0, start: float = 0.4
+    ) -> list[Decimal]:
         """
         Generate a logarithmic sequence of spreads.
 
@@ -70,13 +73,13 @@ class Distributions:
         - initial_value: Initial value for translation.
 
         Returns:
-        List[Decimal]: A list containing the generated logarithmic sequence.
+        list[Decimal]: A list containing the generated logarithmic sequence.
         """
         translation = Decimal(start) - Decimal(scaling_factor) * Decimal(log(2, base))
         return [Decimal(scaling_factor) * Decimal(log(i + 2, base)) + translation for i in range(n_levels)]
 
     @classmethod
-    def arithmetic(cls, n_levels: int, start: float, step: float) -> List[Decimal]:
+    def arithmetic(cls, n_levels: int, start: float, step: float) -> list[Decimal]:
         """
         Generate an arithmetic sequence of spreads.
 
@@ -86,12 +89,12 @@ class Distributions:
         - increment: The constant value to be added in each iteration.
 
         Returns:
-        List[Decimal]: A list containing the generated arithmetic sequence.
+        list[Decimal]: A list containing the generated arithmetic sequence.
         """
         return [Decimal(start) + i * Decimal(step) for i in range(n_levels)]
 
     @classmethod
-    def geometric(cls, n_levels: int, start: float, ratio: float) -> List[Decimal]:
+    def geometric(cls, n_levels: int, start: float, ratio: float) -> list[Decimal]:
         """
         Generate a geometric sequence of spreads.
 
@@ -101,10 +104,11 @@ class Distributions:
         - ratio: The ratio to multiply the current value in each iteration. Should be greater than 1 for increasing sequence.
 
         Returns:
-        List[Decimal]: A list containing the generated geometric sequence.
+        list[Decimal]: A list containing the generated geometric sequence.
         """
         if ratio <= 1:
             raise ValueError(
-                "Ratio for modified geometric distribution should be greater than 1 for increasing spreads.")
+                "Ratio for modified geometric distribution should be greater than 1 for increasing spreads."
+            )
 
         return [Decimal(start) * Decimal(ratio) ** Decimal(i) for i in range(n_levels)]

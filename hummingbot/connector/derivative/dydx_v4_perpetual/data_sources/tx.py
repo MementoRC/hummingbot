@@ -1,9 +1,11 @@
 """Transaction."""
 
-import re
+from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, List, Optional, Union
+import re
+from typing import Any
 
 from google.protobuf.any_pb2 import Any as ProtoAny
 from v4_proto.cosmos.base.v1beta1.coin_pb2 import Coin
@@ -14,7 +16,7 @@ from v4_proto.cosmos.tx.v1beta1.tx_pb2 import AuthInfo, Fee, ModeInfo, SignDoc, 
 from hummingbot.connector.derivative.dydx_v4_perpetual.data_sources.keypairs import PublicKey
 
 
-def parse_coins(value: str) -> List[Coin]:
+def parse_coins(value: str) -> list[Coin]:
     """Parse the coins.
 
     :param value: coins
@@ -59,7 +61,7 @@ def _is_iterable(value) -> bool:
         return False
 
 
-def _wrap_in_proto_any(values: List[Any]) -> List[ProtoAny]:
+def _wrap_in_proto_any(values: list[Any]) -> list[ProtoAny]:
     any_values = []
     for value in values:
         proto_any = ProtoAny()
@@ -116,9 +118,9 @@ class Transaction:
 
     def __init__(self):
         """Init the Transactions with transaction message, state, fee and body."""
-        self._msgs: List[Any] = []
+        self._msgs: list[Any] = []
         self._state: TxState = TxState.Draft
-        self._tx_body: Optional[TxBody] = None
+        self._tx_body: TxBody | None = None
         self._tx = None
         self._fee = None
 
@@ -139,7 +141,7 @@ class Transaction:
         return self._msgs
 
     @property
-    def fee(self) -> Optional[str]:
+    def fee(self) -> str | None:
         """Get the transaction fee.
 
         :return: transaction fee
@@ -165,18 +167,16 @@ class Transaction:
         :return: transaction with message added
         """
         if self._state != TxState.Draft:
-            raise RuntimeError(
-                "The transaction is not in the draft state. No further messages may be appended"
-            )
+            raise RuntimeError("The transaction is not in the draft state. No further messages may be appended")
         self._msgs.append(msg)
         return self
 
     def seal(
-            self,
-            signing_cfgs: Union[SigningCfg, List[SigningCfg]],
-            fee: str,
-            gas_limit: int,
-            memo: Optional[str] = None,
+        self,
+        signing_cfgs: SigningCfg | list[SigningCfg],
+        fee: str,
+        gas_limit: int,
+        memo: str | None = None,
     ) -> "Transaction":
         """Seal the transaction.
 
@@ -188,7 +188,7 @@ class Transaction:
         """
         self._state = TxState.Sealed
 
-        input_signing_cfgs: List[SigningCfg] = (
+        input_signing_cfgs: list[SigningCfg] = (
             signing_cfgs if _is_iterable(signing_cfgs) else [signing_cfgs]  # type: ignore
         )
 
@@ -199,9 +199,7 @@ class Transaction:
             signer_infos.append(
                 SignerInfo(
                     public_key=_create_proto_public_key(signing_cfg.public_key),
-                    mode_info=ModeInfo(
-                        single=ModeInfo.Single(mode=SignMode.SIGN_MODE_DIRECT)
-                    ),
+                    mode_info=ModeInfo(single=ModeInfo.Single(mode=SignMode.SIGN_MODE_DIRECT)),
                     sequence=signing_cfg.sequence_num,
                 )
             )
@@ -215,19 +213,17 @@ class Transaction:
 
         self._tx_body = TxBody()
         self._tx_body.memo = memo or ""
-        self._tx_body.messages.extend(
-            _wrap_in_proto_any(self._msgs)
-        )  # pylint: disable=E1101
+        self._tx_body.messages.extend(_wrap_in_proto_any(self._msgs))  # pylint: disable=E1101
 
         self._tx = Tx(body=self._tx_body, auth_info=auth_info)
         return self
 
     def sign(
-            self,
-            signer,
-            chain_id: str,
-            account_number: int,
-            deterministic: bool = False,
+        self,
+        signer,
+        chain_id: str,
+        account_number: int,
+        deterministic: bool = False,
     ) -> "Transaction":
         """Sign the transaction.
 
@@ -239,9 +235,7 @@ class Transaction:
         :return: signed transaction
         """
         if self.state != TxState.Sealed:
-            raise RuntimeError(
-                "Transaction is not sealed. It must be sealed before signing is possible."
-            )
+            raise RuntimeError("Transaction is not sealed. It must be sealed before signing is possible.")
 
         sd = SignDoc()
         sd.body_bytes = self._tx.body.SerializeToString()

@@ -1,8 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
-
-from lighter import SignerClient
+from typing import Any
 
 from hummingbot.connector.constants import s_decimal_NaN
 from hummingbot.connector.derivative.lighter_perpetual import (
@@ -53,23 +53,21 @@ class LighterPerpetualDerivative(PerpetualDerivativePyBase):
 
     def __init__(
         self,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
         lighter_perpetual_l1_address: str = None,
         lighter_perpetual_api_key_index: int = None,
         lighter_perpetual_api_public_key: str = None,
         lighter_perpetual_api_private_key: str = None,
         lighter_perpetual_account_limit: str = "Standard",
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         domain: str = CONSTANTS.DOMAIN,
     ):
         self._l1_address = lighter_perpetual_l1_address
         self._account_index = None
         self._api_key_index = (
-            int(lighter_perpetual_api_key_index)
-            if lighter_perpetual_api_key_index not in (None, "")
-            else None
+            int(lighter_perpetual_api_key_index) if lighter_perpetual_api_key_index not in (None, "") else None
         )
         self._api_public_key = lighter_perpetual_api_public_key
         self._api_private_key = lighter_perpetual_api_private_key
@@ -85,9 +83,11 @@ class LighterPerpetualDerivative(PerpetualDerivativePyBase):
         self._account_ready_lock = asyncio.Lock()
         # Single-flight task for WS-triggered balance refresh: Lighter's account_all_assets
         # event lacks `available_balance`, so we use the event as a trigger to refresh from REST.
-        self._balance_refresh_task: Optional[asyncio.Task] = None
+        self._balance_refresh_task: asyncio.Task | None = None
         self._real_time_balance_update = False
-        self._signer_client = self._create_signer_client() if trading_required and self._account_index is not None else None
+        self._signer_client = (
+            self._create_signer_client() if trading_required and self._account_index is not None else None
+        )
         super().__init__(balance_asset_limit, rate_limits_share_pct)
 
     @property
@@ -99,13 +99,15 @@ class LighterPerpetualDerivative(PerpetualDerivativePyBase):
         return self._domain
 
     @property
-    def authenticator(self) -> Optional[LighterAuth]:
+    def authenticator(self) -> LighterAuth | None:
         if self._trading_required and self._signer_client is not None:
-            return LighterAuth(self._signer_client, api_key_index=self._api_key_index, api_public_key=self._api_public_key)
+            return LighterAuth(
+                self._signer_client, api_key_index=self._api_key_index, api_public_key=self._api_public_key
+            )
         return None
 
     @property
-    def rate_limits_rules(self) -> List[RateLimit]:
+    def rate_limits_rules(self) -> list[RateLimit]:
         return CONSTANTS.generate_account_limit(self._api_account_limit)
 
     @property
@@ -133,7 +135,7 @@ class LighterPerpetualDerivative(PerpetualDerivativePyBase):
         return CONSTANTS.PING_PATH_URL
 
     @property
-    def trading_pairs(self) -> List[str]:
+    def trading_pairs(self) -> list[str]:
         return self._trading_pairs
 
     @property
@@ -156,7 +158,7 @@ class LighterPerpetualDerivative(PerpetualDerivativePyBase):
             await self._ensure_account_ready()
         await super().start_network()
 
-    def supported_order_types(self) -> List[OrderType]:
+    def supported_order_types(self) -> list[OrderType]:
         return [OrderType.LIMIT, OrderType.LIMIT_MAKER, OrderType.MARKET]
 
     def supported_position_modes(self):
@@ -218,7 +220,7 @@ class LighterPerpetualDerivative(PerpetualDerivativePyBase):
         )
         return order_id
 
-    async def get_all_pairs_prices(self) -> List[Dict[str, str]]:
+    async def get_all_pairs_prices(self) -> list[dict[str, str]]:
         exchange_info = await self._api_get(
             path_url=CONSTANTS.EXCHANGE_INFO_PATH_URL,
             params={"filter": "all"},
@@ -291,7 +293,7 @@ class LighterPerpetualDerivative(PerpetualDerivativePyBase):
         price: Decimal,
         position_action: PositionAction = PositionAction.NIL,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         await self._ensure_account_ready()
         market = self.market_info_for_trading_pair(trading_pair)
         price = self._effective_order_price(
@@ -363,7 +365,7 @@ class LighterPerpetualDerivative(PerpetualDerivativePyBase):
         position_action: PositionAction,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: Optional[bool] = None,
+        is_maker: bool | None = None,
     ) -> TradeFeeBase:
         return build_perpetual_trade_fee(
             exchange=self.name,
@@ -403,11 +405,11 @@ class LighterPerpetualDerivative(PerpetualDerivativePyBase):
                 if trade_update is not None:
                     self._order_tracker.process_trade_update(trade_update)
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         return []
 
     @staticmethod
-    def _order_misc_updates(order_data: Dict[str, Any], state: OrderState) -> Optional[Dict[str, Any]]:
+    def _order_misc_updates(order_data: dict[str, Any], state: OrderState) -> dict[str, Any] | None:
         if state != OrderState.FAILED:
             return None
 
@@ -466,7 +468,9 @@ class LighterPerpetualDerivative(PerpetualDerivativePyBase):
             locked_balance = self._safe_decimal(asset.get("locked_balance", "0"))
             total_balance = self._safe_decimal(asset.get("margin_balance", "0"))
             self._account_balances[asset_name] = total_balance
-            self._account_available_balances[asset_name] = available if asset_name == CONSTANTS.COLLATERAL_TOKEN else total_balance - locked_balance
+            self._account_available_balances[asset_name] = (
+                available if asset_name == CONSTANTS.COLLATERAL_TOKEN else total_balance - locked_balance
+            )
             remote_asset_names.add(asset_name)
 
         for asset_name in local_asset_names.difference(remote_asset_names):
@@ -509,12 +513,12 @@ class LighterPerpetualDerivative(PerpetualDerivativePyBase):
             if position_key not in active_position_keys:
                 self._perpetual_trading.remove_position(position_key)
 
-    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> Tuple[bool, str]:
+    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> tuple[bool, str]:
         if mode is PositionMode.ONEWAY:
             return True, ""
         return False, "Lighter only supports ONEWAY position mode."
 
-    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> Tuple[bool, str]:
+    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> tuple[bool, str]:
         await self._ensure_account_ready()
         if self._signer_client is None:
             return False, "Connector is not configured for trading."
@@ -541,7 +545,7 @@ class LighterPerpetualDerivative(PerpetualDerivativePyBase):
 
         return True, ""
 
-    async def _fetch_last_fee_payment(self, trading_pair: str) -> Tuple[float, Decimal, Decimal]:
+    async def _fetch_last_fee_payment(self, trading_pair: str) -> tuple[float, Decimal, Decimal]:
         if self._markets_by_exchange_symbol == {}:
             await self._update_trading_rules()
         market = self.market_info_for_trading_pair(trading_pair)
@@ -603,14 +607,14 @@ class LighterPerpetualDerivative(PerpetualDerivativePyBase):
                 self.logger().error("Unexpected error in user stream listener loop.", exc_info=True)
                 await self._sleep(5.0)
 
-    async def _format_trading_rules(self, exchange_info_dict: Dict[str, Any]) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: dict[str, Any]) -> list[TradingRule]:
         markets = perpetual_markets_from_exchange_info(exchange_info_dict)
         self._markets_by_id = markets_by_id(markets)
         self._markets_by_trading_pair = markets_by_trading_pair(markets)
         self._markets_by_exchange_symbol = markets_by_exchange_symbol(markets)
         return [market.trading_rule(collateral_token=CONSTANTS.COLLATERAL_TOKEN) for market in markets]
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         markets = perpetual_markets_from_exchange_info(exchange_info)
         self._markets_by_id = markets_by_id(markets)
         self._markets_by_trading_pair = markets_by_trading_pair(markets)
@@ -651,6 +655,8 @@ class LighterPerpetualDerivative(PerpetualDerivativePyBase):
             raise ValueError(
                 "Lighter trading requires an L1 address or account index, plus API key index and API private key."
             )
+        from lighter import SignerClient
+
         client = None
         try:
             client = SignerClient(
@@ -662,7 +668,7 @@ class LighterPerpetualDerivative(PerpetualDerivativePyBase):
             raise IOError(f"Error creating Lighter signer client: {e}")
         return client
 
-    async def _find_order(self, tracked_order: InFlightOrder, include_inactive: bool) -> Optional[Dict[str, Any]]:
+    async def _find_order(self, tracked_order: InFlightOrder, include_inactive: bool) -> dict[str, Any] | None:
         await self._ensure_account_ready()
         market = self.market_info_for_trading_pair(tracked_order.trading_pair)
         active_orders = await self._api_get(
@@ -688,14 +694,14 @@ class LighterPerpetualDerivative(PerpetualDerivativePyBase):
         )
         return self._match_order(tracked_order=tracked_order, orders=inactive_orders.get("orders", []))
 
-    def _account_lookup_params(self) -> Dict[str, Any]:
+    def _account_lookup_params(self) -> dict[str, Any]:
         if self._account_index is not None:
             return {"by": CONSTANTS.ACCOUNT_LOOKUP_BY_INDEX, "value": self._account_index, "active_only": "true"}
         if self._l1_address is not None:
             return {"by": CONSTANTS.ACCOUNT_LOOKUP_BY_L1_ADDRESS, "value": self._l1_address, "active_only": "true"}
         raise ValueError("Lighter requires an L1 address or account index to look up account balances.")
 
-    def _set_account_index_from_account(self, account: Dict[str, Any]):
+    def _set_account_index_from_account(self, account: dict[str, Any]):
         if self._account_index is None:
             self._account_index = account_index_from_account(account)
 
@@ -719,7 +725,7 @@ class LighterPerpetualDerivative(PerpetualDerivativePyBase):
                 self._user_stream_tracker = self._create_user_stream_tracker()
 
     @staticmethod
-    def _match_order(tracked_order: InFlightOrder, orders: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    def _match_order(tracked_order: InFlightOrder, orders: list[dict[str, Any]]) -> dict[str, Any] | None:
         for order in orders:
             if str(order.get("client_order_id", "")) == tracked_order.client_order_id:
                 return order
@@ -752,9 +758,7 @@ class LighterPerpetualDerivative(PerpetualDerivativePyBase):
             new_state = order_state_from_order_data(order)
             order_update = OrderUpdate(
                 trading_pair=tracked_order.trading_pair,
-                update_timestamp=normalize_timestamp_to_seconds(
-                    order.get("updated_at", order.get("transaction_time"))
-                ),
+                update_timestamp=normalize_timestamp_to_seconds(order.get("updated_at", order.get("transaction_time"))),
                 new_state=new_state,
                 client_order_id=client_order_id,
                 exchange_order_id=str(order.get("order_id")),
@@ -804,7 +808,7 @@ class LighterPerpetualDerivative(PerpetualDerivativePyBase):
             pos_key = self._perpetual_trading.position_key(position.trading_pair, position.position_side)
             self._perpetual_trading.set_position(pos_key, position)
 
-    def _trade_update_from_trade(self, trade: Dict[str, Any]) -> Optional[TradeUpdate]:
+    def _trade_update_from_trade(self, trade: dict[str, Any]) -> TradeUpdate | None:
         details = own_trade_details(trade, account_index=self._account_index)
         if details is None:
             return None
@@ -842,7 +846,7 @@ class LighterPerpetualDerivative(PerpetualDerivativePyBase):
             is_taker=not is_maker,
         )
 
-    def _parse_position(self, raw_position: Dict[str, Any]) -> Optional[Position]:
+    def _parse_position(self, raw_position: dict[str, Any]) -> Position | None:
         market_id = raw_position.get("market_id")
         symbol = str(raw_position.get("symbol", "")).upper()
 
@@ -895,7 +899,7 @@ class LighterPerpetualDerivative(PerpetualDerivativePyBase):
         return result
 
     @staticmethod
-    def _extract_tx_code(tx_response: Any) -> Optional[int]:
+    def _extract_tx_code(tx_response: Any) -> int | None:
         if tx_response is None:
             return None
         if isinstance(tx_response, dict):

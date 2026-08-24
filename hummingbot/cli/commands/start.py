@@ -1,11 +1,11 @@
 """``hbot start`` — launch the bot detached (one bot per install)."""
+
 import os
+from pathlib import Path
 import signal
 import subprocess
 import sys
 import time
-from pathlib import Path
-from typing import Optional
 
 import typer
 
@@ -37,25 +37,38 @@ def _replace_running(timeout: float) -> None:
             bot.clear_pid()
             return
         time.sleep(0.5)
-    fail(f"--replace: the running bot (pid {pid}) did not stop within {timeout:g}s; "
-         f"run `hbot stop --force` and retry", ExitCode.TIMEOUT)
+    fail(
+        f"--replace: the running bot (pid {pid}) did not stop within {timeout:g}s; run `hbot stop --force` and retry",
+        ExitCode.TIMEOUT,
+    )
 
 
 def start(
-    file: Optional[str] = typer.Argument(
-        None, help="Config file name (type detected from conf/strategies|scripts|controllers). Omit to run the config from `hbot import`."),
-    v1: bool = typer.Option(False, "--v1-strategy", help="Force V1 strategy type (only needed if the name collides across types)."),
-    v2: bool = typer.Option(False, "--v2-script", help="Force V2 script type (only needed if the name collides across types)."),
+    file: str | None = typer.Argument(
+        None,
+        help="Config file name (type detected from conf/strategies|scripts|controllers). Omit to run the config from `hbot import`.",
+    ),
+    v1: bool = typer.Option(
+        False, "--v1-strategy", help="Force V1 strategy type (only needed if the name collides across types)."
+    ),
+    v2: bool = typer.Option(
+        False, "--v2-script", help="Force V2 script type (only needed if the name collides across types)."
+    ),
     controller: bool = typer.Option(
-        False, "--controller", help="Force controller type (only needed if the name collides across types)."),
+        False, "--controller", help="Force controller type (only needed if the name collides across types)."
+    ),
     replace: bool = typer.Option(
-        False, "--replace", help="If a bot is already running, stop it first, then start this one."),
+        False, "--replace", help="If a bot is already running, stop it first, then start this one."
+    ),
     foreground: bool = typer.Option(
-        False, "--foreground", help="Run the bot in the foreground (use as a container's main process)."),
+        False, "--foreground", help="Run the bot in the foreground (use as a container's main process)."
+    ),
     password_stdin: bool = typer.Option(
-        False, "--password-stdin", help="Read the keystore password from stdin (else $HBOT_PASSWORD or a prompt)."),
-    auto_set_permissions: Optional[str] = typer.Option(
-        None, "--auto-set-permissions", help="user:group to chown conf/data/logs (Docker)."),
+        False, "--password-stdin", help="Read the keystore password from stdin (else $HBOT_PASSWORD or a prompt)."
+    ),
+    auto_set_permissions: str | None = typer.Option(
+        None, "--auto-set-permissions", help="user:group to chown conf/data/logs (Docker)."
+    ),
     timeout: float = typer.Option(120.0, "--timeout", help="Seconds to wait for the bot to start."),
     as_json: bool = json_option(),
 ) -> None:
@@ -65,15 +78,32 @@ def start(
     holding the file; a --v1-strategy/--v2-script/--controller flag is only needed when a legacy name
     exists under more than one type. By default the bot runs detached (the command returns); pass
     --foreground to run it in the foreground, e.g. as a Docker container's main process."""
-    record = launch(file=file, v1=v1, v2=v2, controller=controller, replace=replace,
-                    foreground=foreground, password_stdin=password_stdin,
-                    auto_set_permissions=auto_set_permissions, timeout=timeout)
+    record = launch(
+        file=file,
+        v1=v1,
+        v2=v2,
+        controller=controller,
+        replace=replace,
+        foreground=foreground,
+        password_stdin=password_stdin,
+        auto_set_permissions=auto_set_permissions,
+        timeout=timeout,
+    )
     emit(record, render_kv(record, title="start"), as_json)
 
 
-def launch(*, file: Optional[str], v1: bool = False, v2: bool = False, controller: bool = False,
-           replace: bool = False, foreground: bool = False, password_stdin: bool = False,
-           auto_set_permissions: Optional[str] = None, timeout: float = 120.0) -> dict:
+def launch(
+    *,
+    file: str | None,
+    v1: bool = False,
+    v2: bool = False,
+    controller: bool = False,
+    replace: bool = False,
+    foreground: bool = False,
+    password_stdin: bool = False,
+    auto_set_permissions: str | None = None,
+    timeout: float = 120.0,
+) -> dict:
     """The core of ``hbot start`` — resolve, spawn, wait for readiness; returns the start record.
 
     Shared with ``hbot deploy`` (which bundles config creation + launch into one call).
@@ -93,8 +123,10 @@ def launch(*, file: Optional[str], v1: bool = False, v2: bool = False, controlle
     if file is None:
         loaded = bot.read_loaded()
         if not loaded or not loaded.get("file"):
-            fail("no config given and none imported — pass a config file or run `hbot import <file>` first",
-                 ExitCode.CONFIG_ERROR)
+            fail(
+                "no config given and none imported — pass a config file or run `hbot import <file>` first",
+                ExitCode.CONFIG_ERROR,
+            )
         file = loaded["file"]
         v1 = loaded["type"] == "v1-strategy"
         v2 = loaded["type"] == "v2-script"
@@ -112,14 +144,17 @@ def launch(*, file: Optional[str], v1: bool = False, v2: bool = False, controlle
 
     if bot.running():
         if not replace:
-            fail(f"a bot is already running (pid {bot.read_pid()}); stop it first or pass --replace "
-                 f"(one bot per install)", ExitCode.ERROR)
+            fail(
+                f"a bot is already running (pid {bot.read_pid()}); stop it first or pass --replace "
+                f"(one bot per install)",
+                ExitCode.ERROR,
+            )
         _replace_running(timeout=30.0)
 
     # Map the selected type to what the engine consumes. A controller can't run standalone, so generate
     # a v2 loader config and run that; the loader's stem becomes the bot's DB/log name.
-    config_file_name: Optional[str] = None
-    v2_conf: Optional[str] = None
+    config_file_name: str | None = None
+    v2_conf: str | None = None
     if stype == "v1-strategy":
         config_file_name = file
     elif stype == "v2-script":
@@ -140,14 +175,16 @@ def launch(*, file: Optional[str], v1: bool = False, v2: bool = False, controlle
     _, password = login(password_stdin=password_stdin)
 
     bot.bot_dir().mkdir(parents=True, exist_ok=True)
-    bot.write_meta({
-        "name": name,
-        "type": stype,
-        "file": file,
-        "config": config_file_name,
-        "script_config": v2_conf,
-        "started_at": time.time(),
-    })
+    bot.write_meta(
+        {
+            "name": name,
+            "type": stype,
+            "file": file,
+            "config": config_file_name,
+            "script_config": v2_conf,
+            "started_at": time.time(),
+        }
+    )
 
     cmd = [sys.executable, "-m", "hummingbot.cli.engine", "--name", name]
     if config_file_name:
@@ -177,8 +214,14 @@ def _spawn_detached(cmd: list, env: dict, name: str, timeout: float) -> dict:
     recent log if it exits during startup / times out."""
     log_handle = open(bot.log_file(), "wb")  # fresh per run (startup/uncaught only)
     proc = subprocess.Popen(
-        cmd, cwd=prefix_path(), stdin=subprocess.DEVNULL,
-        stdout=log_handle, stderr=log_handle, start_new_session=True, env=env)
+        cmd,
+        cwd=prefix_path(),
+        stdin=subprocess.DEVNULL,
+        stdout=log_handle,
+        stderr=log_handle,
+        start_new_session=True,
+        env=env,
+    )
     log_handle.close()  # the child holds its own dup'd fd
     bot.write_pid(proc.pid)
     bot.update_meta(pid=proc.pid)
@@ -187,14 +230,15 @@ def _spawn_detached(cmd: list, env: dict, name: str, timeout: float) -> dict:
     while time.time() < deadline:
         if proc.poll() is not None:
             bot.clear_pid()
-            fail(f"bot exited during startup (rc={proc.returncode}). Recent log:\n{_log_tail()}",
-                 ExitCode.ERROR)
+            fail(f"bot exited during startup (rc={proc.returncode}). Recent log:\n{_log_tail()}", ExitCode.ERROR)
         engine = (bot.read_status() or {}).get("engine") or {}
         if engine.get("strategy_running"):
             break
         time.sleep(1.0)
     else:
-        fail(f"timed out after {timeout:g}s waiting for the bot to start (pid {proc.pid} still booting)",
-             ExitCode.TIMEOUT)
+        fail(
+            f"timed out after {timeout:g}s waiting for the bot to start (pid {proc.pid} still booting)",
+            ExitCode.TIMEOUT,
+        )
 
     return {"name": name, "pid": proc.pid, "status": "running"}

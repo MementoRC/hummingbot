@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.derivative.bybit_perpetual import (
     bybit_perpetual_constants as CONSTANTS,
@@ -24,10 +26,10 @@ if TYPE_CHECKING:
 class BybitPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
     def __init__(
         self,
-        trading_pairs: List[str],
-        connector: 'BybitPerpetualDerivative',
+        trading_pairs: list[str],
+        connector: "BybitPerpetualDerivative",
         api_factory: WebAssistantsFactory,
-        domain: str = CONSTANTS.DEFAULT_DOMAIN
+        domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
         super().__init__(trading_pairs)
         self._connector = connector
@@ -35,10 +37,10 @@ class BybitPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         self._domain = domain
         self._nonce_provider = NonceCreator.for_microseconds()
         # Store separate WebSocket assistants for linear and non-linear perpetuals
-        self._linear_ws_assistant: Optional[WSAssistant] = None
-        self._non_linear_ws_assistant: Optional[WSAssistant] = None
+        self._linear_ws_assistant: WSAssistant | None = None
+        self._non_linear_ws_assistant: WSAssistant | None = None
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def get_funding_info(self, trading_pair: str) -> FundingInfo:
@@ -49,8 +51,9 @@ class BybitPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
         rest_assistant = await self._api_factory.get_rest_assistant()
         endpoint_info = CONSTANTS.LATEST_SYMBOL_INFORMATION_ENDPOINT
-        url_info = web_utils.get_rest_url_for_endpoint(endpoint=endpoint_info, trading_pair=trading_pair,
-                                                       domain=self._domain)
+        url_info = web_utils.get_rest_url_for_endpoint(
+            endpoint=endpoint_info, trading_pair=trading_pair, domain=self._domain
+        )
         limit_id = web_utils.get_rest_api_limit_id_for_endpoint(endpoint_info)
         funding_info_response = await rest_assistant.execute_request(
             url=url_info,
@@ -86,15 +89,21 @@ class BybitPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
             tasks = []
             if linear_trading_pairs:
-                tasks.append(self._listen_for_subscriptions_on_url(
-                    url=web_utils.wss_linear_public_url(self._domain),
-                    trading_pairs=linear_trading_pairs,
-                    is_linear=True))
+                tasks.append(
+                    self._listen_for_subscriptions_on_url(
+                        url=web_utils.wss_linear_public_url(self._domain),
+                        trading_pairs=linear_trading_pairs,
+                        is_linear=True,
+                    )
+                )
             if non_linear_trading_pairs:
-                tasks.append(self._listen_for_subscriptions_on_url(
-                    url=web_utils.wss_non_linear_public_url(self._domain),
-                    trading_pairs=non_linear_trading_pairs,
-                    is_linear=False))
+                tasks.append(
+                    self._listen_for_subscriptions_on_url(
+                        url=web_utils.wss_non_linear_public_url(self._domain),
+                        trading_pairs=non_linear_trading_pairs,
+                        is_linear=False,
+                    )
+                )
 
             if tasks:
                 tasks_future = asyncio.gather(*tasks)
@@ -104,7 +113,7 @@ class BybitPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             tasks_future and tasks_future.cancel()
             raise
 
-    async def _listen_for_subscriptions_on_url(self, url: str, trading_pairs: List[str], is_linear: bool = True):
+    async def _listen_for_subscriptions_on_url(self, url: str, trading_pairs: list[str], is_linear: bool = True):
         """
         Subscribe to all required events and start the listening cycle.
         :param url: the wss url to connect to
@@ -112,7 +121,7 @@ class BybitPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         :param is_linear: True if this is for linear perpetuals, False for non-linear
         """
 
-        ws: Optional[WSAssistant] = None
+        ws: WSAssistant | None = None
         while True:
             try:
                 ws = await self._get_connected_websocket_assistant(url)
@@ -140,12 +149,10 @@ class BybitPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
     async def _get_connected_websocket_assistant(self, ws_url: str) -> WSAssistant:
         ws: WSAssistant = await self._api_factory.get_ws_assistant()
-        await ws.connect(
-            ws_url=ws_url, message_timeout=CONSTANTS.SECONDS_TO_WAIT_TO_RECEIVE_MESSAGE
-        )
+        await ws.connect(ws_url=ws_url, message_timeout=CONSTANTS.SECONDS_TO_WAIT_TO_RECEIVE_MESSAGE)
         return ws
 
-    async def _subscribe_to_channels(self, ws: WSAssistant, trading_pairs: List[str]):
+    async def _subscribe_to_channels(self, ws: WSAssistant, trading_pairs: list[str]):
         try:
             symbols = [
                 await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
@@ -189,7 +196,7 @@ class BybitPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
                 ping_request = WSJSONRequest(payload={"op": "ping"})
                 await websocket_assistant.send(ping_request)
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         channel = ""
         if "success" not in event_message:
             event_channel = event_message["topic"]
@@ -202,7 +209,7 @@ class BybitPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
                 channel = self._funding_info_messages_queue_key
         return channel
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         event_type = raw_message["type"]
 
         if event_type == "delta":
@@ -225,7 +232,7 @@ class BybitPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             )
             message_queue.put_nowait(diff_message)
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         trade_updates = raw_message["data"]
 
         for trade_data in trade_updates:
@@ -247,7 +254,7 @@ class BybitPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             )
             message_queue.put_nowait(trade_message)
 
-    async def _parse_funding_info_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_funding_info_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         event_type = raw_message["type"]
         if event_type == "delta":
             symbol = raw_message["topic"].split(".")[-1]
@@ -285,7 +292,7 @@ class BybitPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
         return snapshot_msg
 
-    async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, Any]:
+    async def _request_order_book_snapshot(self, trading_pair: str) -> dict[str, Any]:
         params = {
             "category": "linear" if web_utils.is_linear_perpetual(trading_pair) else "inverse",
             "symbol": await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair),
@@ -306,22 +313,16 @@ class BybitPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
     @staticmethod
     def _get_bids_and_asks_from_rest_msg_data(
-        snapshot: List[Dict[str, Union[str, int, float]]]
-    ) -> Tuple[List[Tuple[float, float]], List[Tuple[float, float]]]:
-        bids = [
-            (float(row[0]), float(row[1]))
-            for row in snapshot["b"]
-        ]
-        asks = [
-            (float(row[0]), float(row[1]))
-            for row in snapshot["a"]
-        ]
+        snapshot: list[dict[str, str | int | float]],
+    ) -> tuple[list[tuple[float, float]], list[tuple[float, float]]]:
+        bids = [(float(row[0]), float(row[1])) for row in snapshot["b"]]
+        asks = [(float(row[0]), float(row[1])) for row in snapshot["a"]]
         return bids, asks
 
     @staticmethod
     def _get_bids_and_asks_from_ws_msg_data(
-            snapshot: Dict[str, Union[List[List[str]], str, int]]
-    ) -> Tuple[List[Tuple[float, float]], List[Tuple[float, float]]]:
+        snapshot: dict[str, list[list[str]] | str | int],
+    ) -> tuple[list[tuple[float, float]], list[tuple[float, float]]]:
         """
         This method processes snapshot data from the websocket message and returns
         the bids and asks as lists of tuples (price, size).
@@ -435,9 +436,7 @@ class BybitPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
         if ws_assistant is None:
             ws_type = "linear (USDT-margined)" if is_linear else "non-linear (coin-margined)"
-            self.logger().warning(
-                f"Cannot unsubscribe from {trading_pair}: {ws_type} WebSocket not connected"
-            )
+            self.logger().warning(f"Cannot unsubscribe from {trading_pair}: {ws_type} WebSocket not connected")
             return False
 
         try:

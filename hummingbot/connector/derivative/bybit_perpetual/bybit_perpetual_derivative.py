@@ -1,19 +1,21 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict
 
 from bidict import bidict
 
-import hummingbot.connector.derivative.bybit_perpetual.bybit_perpetual_constants as CONSTANTS
-import hummingbot.connector.derivative.bybit_perpetual.bybit_perpetual_utils as bybit_utils
 from hummingbot.connector.derivative.bybit_perpetual import bybit_perpetual_web_utils as web_utils
 from hummingbot.connector.derivative.bybit_perpetual.bybit_perpetual_api_order_book_data_source import (
     BybitPerpetualAPIOrderBookDataSource,
 )
 from hummingbot.connector.derivative.bybit_perpetual.bybit_perpetual_auth import BybitPerpetualAuth
+import hummingbot.connector.derivative.bybit_perpetual.bybit_perpetual_constants as CONSTANTS
 from hummingbot.connector.derivative.bybit_perpetual.bybit_perpetual_user_stream_data_source import (
     BybitPerpetualUserStreamDataSource,
 )
+import hummingbot.connector.derivative.bybit_perpetual.bybit_perpetual_utils as bybit_utils
 from hummingbot.connector.derivative.position import Position
 from hummingbot.connector.perpetual_derivative_py_base import PerpetualDerivativePyBase
 from hummingbot.connector.trading_rule import TradingRule
@@ -35,20 +37,18 @@ s_decimal_0 = Decimal(0)
 
 
 class BybitPerpetualDerivative(PerpetualDerivativePyBase):
-
     web_utils = web_utils
 
     def __init__(
         self,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
         bybit_perpetual_api_key: str = None,
         bybit_perpetual_secret_key: str = None,
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
-
         self.bybit_perpetual_api_key = bybit_perpetual_api_key
         self.bybit_perpetual_secret_key = bybit_perpetual_secret_key
         self._trading_required = trading_required
@@ -65,10 +65,12 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
 
     @property
     def authenticator(self) -> BybitPerpetualAuth:
-        return BybitPerpetualAuth(self.bybit_perpetual_api_key, self.bybit_perpetual_secret_key, self._time_synchronizer)
+        return BybitPerpetualAuth(
+            self.bybit_perpetual_api_key, self.bybit_perpetual_secret_key, self._time_synchronizer
+        )
 
     @property
-    def rate_limits_rules(self) -> List[RateLimit]:
+    def rate_limits_rules(self) -> list[RateLimit]:
         return web_utils.build_rate_limits(self.trading_pairs)
 
     @property
@@ -94,7 +96,7 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
     async def _make_trading_pairs_request(self) -> Any:
         linear_exchange_info_response, non_linear_exchange_info_response = await asyncio.gather(
             self._api_get(path_url=self.trading_pairs_request_path, params={"category": "linear", "limit": 1000}),
-            self._api_get(path_url=self.trading_pairs_request_path, params={"category": "inverse", "limit": 1000})
+            self._api_get(path_url=self.trading_pairs_request_path, params={"category": "inverse", "limit": 1000}),
         )
         for exchange_info_response in [linear_exchange_info_response, non_linear_exchange_info_response]:
             self._validate_exchange_response(exchange_info_response)
@@ -106,7 +108,7 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
     async def _make_trading_rules_request(self) -> Any:
         linear_trading_rules_response, non_linear_trading_rules_response = await asyncio.gather(
             self._api_get(path_url=self.trading_rules_request_path, params={"category": "linear", "limit": 1000}),
-            self._api_get(path_url=self.trading_rules_request_path, params={"category": "inverse", "limit": 1000})
+            self._api_get(path_url=self.trading_rules_request_path, params={"category": "inverse", "limit": 1000}),
         )
         for exchange_info_response in [linear_trading_rules_response, non_linear_trading_rules_response]:
             self._validate_exchange_response(exchange_info_response)
@@ -115,9 +117,9 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
         non_linear_trading_rules = non_linear_trading_rules_response["result"]["list"]
         return linear_trading_rules + non_linear_trading_rules
 
-    def _validate_exchange_response(self, response: Dict[str, Any], before_text: str = ""):
+    def _validate_exchange_response(self, response: dict[str, Any], before_text: str = ""):
         if response["retCode"] != CONSTANTS.RET_CODE_OK:
-            formatted_ret_code = self._format_ret_code_for_print(response['retCode'])
+            formatted_ret_code = self._format_ret_code_for_print(response["retCode"])
             raise IOError(f"{before_text}{formatted_ret_code} - {response['retMsg']}")
 
     @property
@@ -140,13 +142,13 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
     def funding_fee_poll_interval(self) -> int:
         return 120
 
-    def supported_order_types(self) -> List[OrderType]:
+    def supported_order_types(self) -> list[OrderType]:
         """
         :return a list of OrderType supported by this connector
         """
         return [OrderType.LIMIT, OrderType.MARKET]
 
-    def supported_position_modes(self) -> List[PositionMode]:
+    def supported_position_modes(self) -> list[PositionMode]:
         if all(bybit_utils.is_linear_perpetual(tp) for tp in self._trading_pairs):
             return [PositionMode.ONEWAY, PositionMode.HEDGE]
         elif all(not bybit_utils.is_linear_perpetual(tp) for tp in self._trading_pairs):
@@ -174,29 +176,33 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
 
     def _is_request_exception_related_to_time_synchronizer(self, request_exception: Exception):
         error_description = str(request_exception)
-        ts_error_target_str = (f"{self._format_ret_code_for_print(ret_code=CONSTANTS.RET_CODE_INVALID_TIME)} - "
-                               f"The request time exceeds the time window range")
+        ts_error_target_str = (
+            f"{self._format_ret_code_for_print(ret_code=CONSTANTS.RET_CODE_INVALID_TIME)} - "
+            f"The request time exceeds the time window range"
+        )
         is_time_synchronizer_related = ts_error_target_str in error_description
         return is_time_synchronizer_related
 
     def _is_order_not_found_during_status_update_error(self, status_update_exception: Exception) -> bool:
         return (
-            str(CONSTANTS.RET_CODE_ORDER_NOT_EXISTS) in str(status_update_exception) or
-            str(CONSTANTS.RET_CODE_ORDER_NOT_FOUND) in str(status_update_exception) or
-            CONSTANTS.RET_MSG_ORDER_NOT_EXISTS in str(status_update_exception) or
-            CONSTANTS.RET_MSG_ORDER_NOT_FOUND in str(status_update_exception))
+            str(CONSTANTS.RET_CODE_ORDER_NOT_EXISTS) in str(status_update_exception)
+            or str(CONSTANTS.RET_CODE_ORDER_NOT_FOUND) in str(status_update_exception)
+            or CONSTANTS.RET_MSG_ORDER_NOT_EXISTS in str(status_update_exception)
+            or CONSTANTS.RET_MSG_ORDER_NOT_FOUND in str(status_update_exception)
+        )
 
     def _is_order_not_found_during_cancelation_error(self, cancelation_exception: Exception) -> bool:
         return (
-            str(CONSTANTS.RET_CODE_ORDER_NOT_EXISTS) in str(cancelation_exception) or
-            str(CONSTANTS.RET_CODE_ORDER_NOT_FOUND) in str(cancelation_exception) or
-            CONSTANTS.RET_MSG_ORDER_NOT_EXISTS in str(cancelation_exception) or
-            CONSTANTS.RET_MSG_ORDER_NOT_FOUND in str(cancelation_exception))
+            str(CONSTANTS.RET_CODE_ORDER_NOT_EXISTS) in str(cancelation_exception)
+            or str(CONSTANTS.RET_CODE_ORDER_NOT_FOUND) in str(cancelation_exception)
+            or CONSTANTS.RET_MSG_ORDER_NOT_EXISTS in str(cancelation_exception)
+            or CONSTANTS.RET_MSG_ORDER_NOT_FOUND in str(cancelation_exception)
+        )
 
     async def _place_cancel(self, order_id: str, tracked_order: InFlightOrder):
         data = {
             "category": "linear" if bybit_utils.is_linear_perpetual(tracked_order.trading_pair) else "inverse",
-            "symbol": await self.exchange_symbol_associated_to_pair(tracked_order.trading_pair)
+            "symbol": await self.exchange_symbol_associated_to_pair(tracked_order.trading_pair),
         }
         if tracked_order.exchange_order_id:
             data["orderId"] = tracked_order.exchange_order_id
@@ -221,7 +227,7 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
         price: Decimal,
         position_action: PositionAction = PositionAction.NIL,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         position_idx = self._get_position_idx(trade_type, position_action)
         data = {
             "category": "linear" if bybit_utils.is_linear_perpetual(trading_pair) else "inverse",
@@ -271,15 +277,17 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
 
         return position_idx
 
-    def _get_fee(self,
-                 base_currency: str,
-                 quote_currency: str,
-                 order_type: OrderType,
-                 order_side: TradeType,
-                 amount: Decimal,
-                 price: Decimal = s_decimal_NaN,
-                 is_maker: Optional[bool] = None,
-                 position_action: PositionAction = None) -> TradeFeeBase:
+    def _get_fee(
+        self,
+        base_currency: str,
+        quote_currency: str,
+        order_type: OrderType,
+        order_side: TradeType,
+        amount: Decimal,
+        price: Decimal = s_decimal_NaN,
+        is_maker: bool | None = None,
+        position_action: PositionAction = None,
+    ) -> TradeFeeBase:
         is_maker = is_maker or False
         fee = build_trade_fee(
             self.name,
@@ -344,18 +352,20 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
                 body_params["startTime"] = int(int(self._last_trade_history_timestamp) * 1e3)
 
             trade_history_tasks.append(
-                asyncio.create_task(self._api_get(
-                    path_url=CONSTANTS.USER_TRADE_RECORDS_PATH_URL,
-                    params=body_params,
-                    is_auth_required=True,
-                    trading_pair=trading_pair,
-                ))
+                asyncio.create_task(
+                    self._api_get(
+                        path_url=CONSTANTS.USER_TRADE_RECORDS_PATH_URL,
+                        params=body_params,
+                        is_auth_required=True,
+                        trading_pair=trading_pair,
+                    )
+                )
             )
 
-        raw_responses: List[Dict[str, Any]] = await safe_gather(*trade_history_tasks, return_exceptions=True)
+        raw_responses: list[dict[str, Any]] = await safe_gather(*trade_history_tasks, return_exceptions=True)
 
         # Initial parsing of responses. Joining all the responses
-        parsed_history_resps: List[Dict[str, Any]] = []
+        parsed_history_resps: list[dict[str, Any]] = []
         for trading_pair, resp in zip(self._trading_pairs, raw_responses):
             if not isinstance(resp, Exception):
                 self._last_trade_history_timestamp = float(resp["time"])
@@ -365,7 +375,7 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
             else:
                 self.logger().network(
                     f"Error fetching status update for {trading_pair}: {resp}.",
-                    app_warning_msg=f"Failed to fetch status update for {trading_pair}."
+                    app_warning_msg=f"Failed to fetch status update for {trading_pair}.",
                 )
 
         # Trade updates must be handled before any order status updates.
@@ -377,23 +387,23 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
         Calls REST API to get order status
         """
 
-        active_orders: List[InFlightOrder] = list(self.in_flight_orders.values())
+        active_orders: list[InFlightOrder] = list(self.in_flight_orders.values())
 
         tasks = []
         for active_order in active_orders:
             tasks.append(asyncio.create_task(self._request_order_status_data(tracked_order=active_order)))
 
-        raw_responses: List[Dict[str, Any]] = await safe_gather(*tasks, return_exceptions=True)
+        raw_responses: list[dict[str, Any]] = await safe_gather(*tasks, return_exceptions=True)
 
         # Initial parsing of responses. Removes Exceptions.
-        parsed_status_responses: List[Dict[str, Any]] = []
+        parsed_status_responses: list[dict[str, Any]] = []
         for resp, active_order in zip(raw_responses, active_orders):
             if not isinstance(resp, Exception):
                 parsed_status_responses.append(resp["result"])
             else:
                 self.logger().network(
                     f"Error fetching status update for the order {active_order.client_order_id}: {resp}.",
-                    app_warning_msg=f"Failed to fetch status update for the order {active_order.client_order_id}."
+                    app_warning_msg=f"Failed to fetch status update for the order {active_order.client_order_id}.",
                 )
                 await self._order_tracker.process_order_not_found(active_order.client_order_id)
 
@@ -404,13 +414,14 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
         """
         Calls REST API to update total and available balances
         """
-        unified_wallet_response = await self._api_get(path_url=CONSTANTS.GET_WALLET_BALANCE_PATH_URL,
-                                                      params={"accountType": "UNIFIED"},
-                                                      is_auth_required=True)
+        unified_wallet_response = await self._api_get(
+            path_url=CONSTANTS.GET_WALLET_BALANCE_PATH_URL, params={"accountType": "UNIFIED"}, is_auth_required=True
+        )
         self._validate_exchange_response(unified_wallet_response)
 
-        unified_wallet_balance = [d for d in unified_wallet_response["result"]["list"][0]["coin"] if
-                                  Decimal(d["equity"]) > 0]
+        unified_wallet_balance = [
+            d for d in unified_wallet_response["result"]["list"][0]["coin"] if Decimal(d["equity"]) > 0
+        ]
 
         self._account_available_balances.clear()
         self._account_balances.clear()
@@ -425,9 +436,9 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
             self._account_available_balances[coin] = available_balance
 
     async def _fetch_available_balance(self, coin: str):
-        available_balance_resp = await self._api_get(path_url=CONSTANTS.GET_TRANSFERABLE_AMOUNT_PATH_URL,
-                                                     params={"coinName": coin},
-                                                     is_auth_required=True)
+        available_balance_resp = await self._api_get(
+            path_url=CONSTANTS.GET_TRANSFERABLE_AMOUNT_PATH_URL, params={"coinName": coin}, is_auth_required=True
+        )
         self._validate_exchange_response(available_balance_resp)
         balance_data = available_balance_resp["result"]
         available_balance_str = balance_data.get("availableWithdrawal", "0.0")
@@ -443,20 +454,23 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
             ex_trading_pair = await self.exchange_symbol_associated_to_pair(trading_pair)
             body_params = {
                 "category": "linear" if bybit_utils.is_linear_perpetual(trading_pair) else "inverse",
-                "symbol": ex_trading_pair}
+                "symbol": ex_trading_pair,
+            }
             position_tasks.append(
-                asyncio.create_task(self._api_get(
-                    path_url=CONSTANTS.GET_POSITIONS_PATH_URL,
-                    params=body_params,
-                    is_auth_required=True,
-                    trading_pair=trading_pair,
-                ))
+                asyncio.create_task(
+                    self._api_get(
+                        path_url=CONSTANTS.GET_POSITIONS_PATH_URL,
+                        params=body_params,
+                        is_auth_required=True,
+                        trading_pair=trading_pair,
+                    )
+                )
             )
 
-        raw_responses: List[Dict[str, Any]] = await safe_gather(*position_tasks, return_exceptions=True)
+        raw_responses: list[dict[str, Any]] = await safe_gather(*position_tasks, return_exceptions=True)
 
         # Initial parsing of responses. Joining all the responses
-        parsed_resps: List[Dict[str, Any]] = []
+        parsed_resps: list[dict[str, Any]] = []
         for resp, trading_pair in zip(raw_responses, self._trading_pairs):
             if not isinstance(resp, Exception):
                 result = resp["result"]["list"]
@@ -489,7 +503,7 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
             else:
                 self._perpetual_trading.remove_position(pos_key)
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         trade_updates = []
 
         if order.exchange_order_id is not None:
@@ -507,7 +521,7 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
 
         return trade_updates
 
-    async def _request_order_fills(self, order: InFlightOrder) -> Dict[str, Any]:
+    async def _request_order_fills(self, order: InFlightOrder) -> dict[str, Any]:
         exchange_symbol = await self.exchange_symbol_associated_to_pair(trading_pair=order.trading_pair)
         body_params = {
             "category": "linear" if bybit_utils.is_linear_perpetual(order.trading_pair) else "inverse",
@@ -553,7 +567,7 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
         query_params = {
             "category": "linear" if bybit_utils.is_linear_perpetual(tracked_order.trading_pair) else "inverse",
             "symbol": exchange_symbol,
-            "orderLinkId": tracked_order.client_order_id
+            "orderLinkId": tracked_order.client_order_id,
         }
         if tracked_order.exchange_order_id is not None:
             query_params["orderId"] = tracked_order.exchange_order_id
@@ -595,7 +609,7 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
                 self.logger().exception("Unexpected error in user stream listener loop.")
                 await self._sleep(5.0)
 
-    async def _process_account_position_event(self, position_msg: Dict[str, Any]):
+    async def _process_account_position_event(self, position_msg: dict[str, Any]):
         """
         Updates position
         :param position_msg: The position event message payload
@@ -625,7 +639,7 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
         # Trigger balance update because Bybit doesn't have balance updates through the websocket
         safe_ensure_future(self._update_balances())
 
-    def _process_trade_event_message(self, trade_msg: Dict[str, Any]):
+    def _process_trade_event_message(self, trade_msg: dict[str, Any]):
         """
         Updates in-flight order and trigger order filled event for trade message received. Triggers order completed
         event if the total executed amount equals to the specified order amount.
@@ -645,10 +659,16 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
         fee_asset = tracked_order.quote_asset
         fee_amount = Decimal(trade_msg["execFee"])
         position_side = trade_msg["side"]
-        position_action = (PositionAction.OPEN
-                           if (tracked_order.trade_type is TradeType.BUY and position_side == "Buy"
-                               or tracked_order.trade_type is TradeType.SELL and position_side == "Sell")
-                           else PositionAction.CLOSE)
+        position_action = (
+            PositionAction.OPEN
+            if (
+                tracked_order.trade_type is TradeType.BUY
+                and position_side == "Buy"
+                or tracked_order.trade_type is TradeType.SELL
+                and position_side == "Sell"
+            )
+            else PositionAction.CLOSE
+        )
 
         flat_fees = [] if fee_amount == Decimal("0") else [TokenAmount(amount=fee_amount, token=fee_asset)]
 
@@ -676,7 +696,7 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
 
         return trade_update
 
-    def _process_order_event_message(self, order_msg: Dict[str, Any]):
+    def _process_order_event_message(self, order_msg: dict[str, Any]):
         """
         Updates in-flight order and triggers cancellation or failure event if needed.
         :param order_msg: The order event message payload
@@ -695,7 +715,7 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
             )
             self._order_tracker.process_order_update(new_order_update)
 
-    async def _format_trading_rules(self, instrument_info_dict: Dict[str, Any]) -> List[TradingRule]:
+    async def _format_trading_rules(self, instrument_info_dict: dict[str, Any]) -> list[TradingRule]:
         """
         Converts JSON API response into a local dictionary of trading rules.
         :param instrument_info_dict: The JSON API response.
@@ -707,11 +727,12 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
             try:
                 exchange_symbol = instrument["symbol"]
                 if exchange_symbol in symbol_map:
-                    trading_pair = combine_to_hb_trading_pair(instrument['baseCoin'], instrument['quoteCoin'])
+                    trading_pair = combine_to_hb_trading_pair(instrument["baseCoin"], instrument["quoteCoin"])
                     is_linear = bybit_utils.is_linear_perpetual(trading_pair)
                     collateral_token = instrument["quoteCoin"] if is_linear else instrument["baseCoin"]
-                    min_notional_size = (Decimal(instrument["lotSizeFilter"]["minNotionalValue"])
-                                         if is_linear else s_decimal_0)
+                    min_notional_size = (
+                        Decimal(instrument["lotSizeFilter"]["minNotionalValue"]) if is_linear else s_decimal_0
+                    )
                     trading_rules[trading_pair] = TradingRule(
                         trading_pair=trading_pair,
                         min_order_size=Decimal(instrument["lotSizeFilter"]["minOrderQty"]),
@@ -726,7 +747,7 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
                 self.logger().exception(f"Error parsing the trading pair rule: {instrument}. Skipping...")
         return list(trading_rules.values())
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         mapping = bidict()
         for symbol_data in filter(bybit_utils.is_exchange_information_valid, exchange_info):
             exchange_symbol = symbol_data["symbol"]
@@ -754,14 +775,17 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
             mapping.pop(current_exchange_symbol)
             mapping[new_exchange_symbol] = trading_pair
         else:
-            self.logger().error(f"Could not resolve the exchange symbols {new_exchange_symbol} and {current_exchange_symbol}")
+            self.logger().error(
+                f"Could not resolve the exchange symbols {new_exchange_symbol} and {current_exchange_symbol}"
+            )
             mapping.pop(current_exchange_symbol)
 
     async def _get_last_traded_price(self, trading_pair: str) -> float:
         exchange_symbol = await self.exchange_symbol_associated_to_pair(trading_pair)
         params = {
             "category": "linear" if bybit_utils.is_linear_perpetual(trading_pair) else "inverse",
-            "symbol": exchange_symbol}
+            "symbol": exchange_symbol,
+        }
 
         resp_json = await self._api_get(
             path_url=CONSTANTS.LATEST_SYMBOL_INFORMATION_ENDPOINT,
@@ -790,7 +814,7 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
                 self.logger().error(f"Failed to set position mode to {mode}: {msg}")
             self._fire_position_mode_events(mode, success=all_success, message=msg)
 
-    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> Tuple[bool, str]:
+    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> tuple[bool, str]:
         msg = ""
         success = True
 
@@ -799,10 +823,7 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
 
         if is_linear:
             exchange_symbol = await self.exchange_symbol_associated_to_pair(trading_pair)
-            data = {
-                "category": "linear",
-                "symbol": exchange_symbol,
-                "mode": api_mode}
+            data = {"category": "linear", "symbol": exchange_symbol, "mode": api_mode}
 
             response = await self._api_post(
                 path_url=CONSTANTS.SET_POSITION_MODE_URL,
@@ -823,15 +844,15 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
 
         return success, msg
 
-    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> Tuple[bool, str]:
+    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> tuple[bool, str]:
         exchange_symbol = await self.exchange_symbol_associated_to_pair(trading_pair)
         data = {
             "category": "linear" if bybit_utils.is_linear_perpetual(trading_pair) else "inverse",
             "symbol": exchange_symbol,
             "buyLeverage": str(leverage),
-            "sellLeverage": str(leverage)
+            "sellLeverage": str(leverage),
         }
-        resp: Dict[str, Any] = await self._api_post(
+        resp: dict[str, Any] = await self._api_post(
             path_url=CONSTANTS.SET_LEVERAGE_PATH_URL,
             data=data,
             is_auth_required=True,
@@ -843,12 +864,12 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
         if resp["retCode"] in [CONSTANTS.RET_CODE_OK, CONSTANTS.RET_CODE_LEVERAGE_NOT_MODIFIED]:
             success = True
         else:
-            formatted_ret_code = self._format_ret_code_for_print(resp['retCode'])
+            formatted_ret_code = self._format_ret_code_for_print(resp["retCode"])
             msg = f"{formatted_ret_code} - {resp['retMsg']}"
 
         return success, msg
 
-    async def _fetch_last_fee_payment(self, trading_pair: str) -> Tuple[int, Decimal, Decimal]:
+    async def _fetch_last_fee_payment(self, trading_pair: str) -> tuple[int, Decimal, Decimal]:
         # exchange_symbol = await self.exchange_symbol_associated_to_pair(trading_pair)
 
         params = {
@@ -856,13 +877,13 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
         }
         if bybit_utils.is_linear_perpetual(trading_pair):
             params["category"] = "linear"
-        raw_response: Dict[str, Any] = await self._api_get(
+        raw_response: dict[str, Any] = await self._api_get(
             path_url=CONSTANTS.GET_LAST_FUNDING_RATE_PATH_URL,
             params=params,
             is_auth_required=True,
-            trading_pair=trading_pair
+            trading_pair=trading_pair,
         )
-        data: Dict[str, Any] = raw_response["result"]["list"]
+        data: dict[str, Any] = raw_response["result"]["list"]
 
         if not data:
             # An empty funding fee/payment is retrieved.
@@ -878,20 +899,21 @@ class BybitPerpetualDerivative(PerpetualDerivativePyBase):
         return timestamp, funding_rate, payment
 
     @staticmethod
-    def _format_ret_code_for_print(ret_code: Union[str, int]) -> str:
+    def _format_ret_code_for_print(ret_code: str | int) -> str:
         return f"ret_code <{ret_code}>"
 
-    async def _api_request(self,
-                           path_url,
-                           method: RESTMethod = RESTMethod.GET,
-                           params: Optional[Dict[str, Any]] = None,
-                           data: Optional[Dict[str, Any]] = None,
-                           is_auth_required: bool = False,
-                           return_err: bool = False,
-                           limit_id: Optional[str] = None,
-                           trading_pair: Optional[str] = None,
-                           **kwargs) -> Dict[str, Any]:
-
+    async def _api_request(
+        self,
+        path_url,
+        method: RESTMethod = RESTMethod.GET,
+        params: dict[str, Any] | None = None,
+        data: dict[str, Any] | None = None,
+        is_auth_required: bool = False,
+        return_err: bool = False,
+        limit_id: str | None = None,
+        trading_pair: str | None = None,
+        **kwargs,
+    ) -> dict[str, Any]:
         rest_assistant = await self._web_assistants_factory.get_rest_assistant()
         if limit_id is None:
             limit_id = web_utils.get_rest_api_limit_id_for_endpoint(
