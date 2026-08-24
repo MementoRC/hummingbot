@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from decimal import Decimal
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import ConfigDict, Field, SecretStr, field_validator
 
@@ -10,7 +12,7 @@ from hummingbot.core.data_type.trade_fee import TradeFeeSchema
 DEFAULT_FEES = TradeFeeSchema(
     maker_percent_fee_decimal=Decimal("0"),
     taker_percent_fee_decimal=Decimal("0.00025"),
-    buy_percent_fee_deducted_from_returns=True
+    buy_percent_fee_deducted_from_returns=True,
 )
 
 CENTRALIZED = False
@@ -20,11 +22,11 @@ EXAMPLE_PAIR = "HYPE-USD"
 BROKER_ID = "HBOT"
 
 
-def validate_wallet_mode(value: str) -> Optional[str]:
+def validate_wallet_mode(value: str) -> str | None:
     """
     Check if the value is a valid mode
     """
-    allowed = ('arb_wallet', 'api_wallet')
+    allowed = ("arb_wallet", "api_wallet")
 
     if isinstance(value, str):
         formatted_value = value.strip().lower()
@@ -35,7 +37,7 @@ def validate_wallet_mode(value: str) -> Optional[str]:
     raise ValueError(f"Invalid wallet mode '{value}', choose from: {allowed}")
 
 
-def validate_bool(value: str) -> Optional[str]:
+def validate_bool(value: str) -> str | None:
     """
     Permissively interpret a string as a boolean
     """
@@ -64,7 +66,7 @@ class HyperliquidConfigMap(BaseConnectorConfigMap):
             "is_secure": False,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     use_vault: bool = Field(
         default="no",
@@ -73,32 +75,30 @@ class HyperliquidConfigMap(BaseConnectorConfigMap):
             "is_secure": False,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     hyperliquid_address: SecretStr = Field(
         default=...,
         json_schema_extra={
             "prompt": lambda cm: (
-                "Enter your Vault address"
-                if getattr(cm, "use_vault", False)
-                else "Enter your Arbitrum wallet address"
+                "Enter your Vault address" if getattr(cm, "use_vault", False) else "Enter your Arbitrum wallet address"
             ),
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     hyperliquid_secret_key: SecretStr = Field(
         default=...,
         json_schema_extra={
             "prompt": lambda cm: {
                 "arb_wallet": "Enter your Arbitrum wallet private key",
-                "api_wallet": "Enter your API wallet private key (from https://app.hyperliquid.xyz/API)"
+                "api_wallet": "Enter your API wallet private key (from https://app.hyperliquid.xyz/API)",
             }.get(getattr(cm, "hyperliquid_mode", "arb_wallet")),
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     model_config = ConfigDict(title="hyperliquid")
 
@@ -142,7 +142,7 @@ class HyperliquidTestnetConfigMap(BaseConnectorConfigMap):
             "is_secure": False,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     use_vault: bool = Field(
         default="no",
@@ -151,32 +151,30 @@ class HyperliquidTestnetConfigMap(BaseConnectorConfigMap):
             "is_secure": False,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     hyperliquid_testnet_address: SecretStr = Field(
         default=...,
         json_schema_extra={
             "prompt": lambda cm: (
-                "Enter your Vault address"
-                if getattr(cm, "use_vault", False)
-                else "Enter your Arbitrum wallet address"
+                "Enter your Vault address" if getattr(cm, "use_vault", False) else "Enter your Arbitrum wallet address"
             ),
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     hyperliquid_testnet_secret_key: SecretStr = Field(
         default=...,
         json_schema_extra={
             "prompt": lambda cm: {
                 "arb_wallet": "Enter your Arbitrum wallet private key",
-                "api_wallet": "Enter your API wallet private key (from https://app.hyperliquid.xyz/API)"
+                "api_wallet": "Enter your API wallet private key (from https://app.hyperliquid.xyz/API)",
             }.get(getattr(cm, "hyperliquid_mode", "arb_wallet")),
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     model_config = ConfigDict(title="hyperliquid")
 
@@ -203,6 +201,4 @@ class HyperliquidTestnetConfigMap(BaseConnectorConfigMap):
         return value
 
 
-OTHER_DOMAINS_KEYS = {
-    "hyperliquid_testnet": HyperliquidTestnetConfigMap.model_construct()
-}
+OTHER_DOMAINS_KEYS = {"hyperliquid_testnet": HyperliquidTestnetConfigMap.model_construct()}

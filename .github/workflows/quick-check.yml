@@ -1,0 +1,91 @@
+name: Quick check (diff-driven)
+
+on:
+  push:
+    branches:
+      - '_for_bleed/**'
+  pull_request:
+    branches:
+      - ci-base
+      - bleeding-edge
+      - modular
+
+jobs:
+  quick-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          submodules: true
+
+      - uses: prefix-dev/setup-pixi@v0.9.6
+        with:
+          environments: ci
+          cache: true
+          locked: false
+
+      - name: Branch hygiene check
+        run: |
+          git fetch origin ci-base --quiet
+          BASE_SHA=$(git merge-base origin/ci-base HEAD)
+          EXPECTED=$(git rev-parse origin/ci-base)
+          if [ "$BASE_SHA" != "$EXPECTED" ]; then
+            STALE_COUNT=$(git rev-list --count $BASE_SHA..origin/ci-base)
+            echo "::warning::Branch base is $STALE_COUNT commits behind origin/ci-base"
+            git log --oneline $BASE_SHA..origin/ci-base | head -10
+          else
+            echo "Branch base matches origin/ci-base."
+          fi
+
+      - name: Compute selected tests
+        id: select
+        run: |
+          set +e
+          python3 .github/test-selection/select_tests.py \
+            --mode branch \
+            --base-ref origin/ci-base \
+            --head-ref HEAD \
+            --config .github/test-selection/test-selection-map.yaml \
+            --repo . \
+            --no-history \
+            > /tmp/selected.txt
+          code=$?
+          set -e
+          if [ $code -eq 2 ]; then
+            echo "::notice::Selector requested full-suite fallback (exit 2)."
+            echo "full_suite=true" >> $GITHUB_OUTPUT
+          elif [ $code -ne 0 ]; then
+            echo "::error::select_tests.py failed with exit code $code"
+            exit $code
+          else
+            echo "full_suite=false" >> $GITHUB_OUTPUT
+          fi
+          echo "Selected $(wc -l < /tmp/selected.txt) test files:"
+          cat /tmp/selected.txt
+
+      - name: Install dev (sub-packages + editable install)
+        run: pixi run -e ci install-dev
+
+      - name: Run selected tests
+        run: |
+          IGNORES="--ignore=test/mock \
+            --ignore=test/hummingbot/connector/exchange/ndax/ \
+            --ignore=test/hummingbot/connector/derivative/dydx_v4_perpetual/ \
+            --ignore=test/hummingbot/connector/derivative/decibel_perpetual/ \
+            --ignore=test/hummingbot/data_feed/candles_feed/decibel_perpetual_candles/ \
+            --ignore=test/hummingbot/core/rate_oracle/sources/test_decibel_perpetual_rate_source.py \
+            --ignore=test/hummingbot/connector/exchange/vertex/ \
+            --ignore=test/hummingbot/connector/gateway/ \
+            --ignore=test/connector/utilities/oms_connector/ \
+            --ignore=test/hummingbot/strategy/amm_arb/ \
+            --ignore=test/hummingbot/strategy/cross_exchange_market_making/"
+          if [ "${{ steps.select.outputs.full_suite }}" = "true" ]; then
+            echo "Running full suite (fallback)."
+            pixi run -e ci pytest -v --tb=short $IGNORES
+          elif [ -s /tmp/selected.txt ]; then
+            pixi run -e ci pytest $(cat /tmp/selected.txt) -v --tb=short $IGNORES
+          else
+            echo "No tests touched by diff — quick check passes."
+          fi

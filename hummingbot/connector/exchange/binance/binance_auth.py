@@ -1,8 +1,8 @@
+from collections import OrderedDict
 import hashlib
 import hmac
 import json
-from collections import OrderedDict
-from typing import Any, Dict
+from typing import Any
 from urllib.parse import urlencode
 
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
@@ -42,8 +42,7 @@ class BinanceAuth(AuthBase):
         """
         return request  # pass-through
 
-    def add_auth_to_params(self,
-                           params: Dict[str, Any]):
+    def add_auth_to_params(self, params: dict[str, Any]):
         timestamp = int(self.time_provider.time() * 1e3)
 
         request_params = OrderedDict(params or {})
@@ -54,10 +53,10 @@ class BinanceAuth(AuthBase):
 
         return request_params
 
-    def header_for_authentication(self) -> Dict[str, str]:
+    def header_for_authentication(self) -> dict[str, str]:
         return {"X-MBX-APIKEY": self.api_key}
 
-    def generate_ws_signature(self, params: Dict[str, Any]) -> str:
+    def generate_ws_signature(self, params: dict[str, Any]) -> str:
         """Generate HMAC-SHA256 signature for WebSocket API requests.
 
         WS API signing differs from REST: params are sorted alphabetically,
@@ -71,18 +70,17 @@ class BinanceAuth(AuthBase):
             hashlib.sha256,
         ).hexdigest()
 
-    def generate_ws_subscribe_params(self) -> Dict[str, Any]:
+    def generate_ws_subscribe_params(self) -> dict[str, Any]:
         """Build the full params dict for userDataStream.subscribe.signature."""
         timestamp = int(self.time_provider.time() * 1e3)
-        params: Dict[str, Any] = {
+        params: dict[str, Any] = {
             "apiKey": self.api_key,
             "timestamp": timestamp,
         }
         params["signature"] = self.generate_ws_signature(params)
         return params
 
-    def _generate_signature(self, params: Dict[str, Any]) -> str:
-
+    def _generate_signature(self, params: dict[str, Any]) -> str:
         encoded_params_str = urlencode(params)
         digest = hmac.new(self.secret_key.encode("utf8"), encoded_params_str.encode("utf8"), hashlib.sha256).hexdigest()
         return digest

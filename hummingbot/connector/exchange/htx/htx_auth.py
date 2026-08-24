@@ -1,9 +1,9 @@
 import base64
+from collections import OrderedDict
 import datetime
 import hashlib
 import hmac
-from collections import OrderedDict
-from typing import Any, Dict
+from typing import Any
 from urllib.parse import urlencode
 
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
@@ -21,11 +21,10 @@ class HtxAuth(AuthBase):
         self.time_provider = time_provider
 
     @staticmethod
-    def keysort(dictionary: Dict[str, str]) -> Dict[str, str]:
+    def keysort(dictionary: dict[str, str]) -> dict[str, str]:
         return OrderedDict(sorted(dictionary.items(), key=lambda t: t[0]))
 
     async def rest_authenticate(self, request: RESTRequest) -> RESTRequest:
-
         auth_params = self.generate_auth_params_for_REST(request=request)
         request.params = auth_params
 
@@ -34,49 +33,59 @@ class HtxAuth(AuthBase):
     async def ws_authenticate(self, request: WSJSONRequest) -> WSJSONRequest:
         return request  # pass-through
 
-    def generate_auth_params_for_REST(self, request: RESTRequest) -> Dict[str, Any]:
-        timestamp = datetime.datetime.fromtimestamp(self.time_provider.time(), datetime.UTC).strftime("%Y-%m-%dT%H:%M:%S")
+    def generate_auth_params_for_REST(self, request: RESTRequest) -> dict[str, Any]:
+        timestamp = datetime.datetime.fromtimestamp(self.time_provider.time(), datetime.UTC).strftime(
+            "%Y-%m-%dT%H:%M:%S"
+        )
         path_url = f"/v1{request.url.split('v1')[-1]}"
         params = request.params or {}
-        params.update({
-            "AccessKeyId": self.api_key,
-            "SignatureMethod": "HmacSHA256",
-            "SignatureVersion": "2",
-            "Timestamp": timestamp
-        })
+        params.update(
+            {
+                "AccessKeyId": self.api_key,
+                "SignatureMethod": "HmacSHA256",
+                "SignatureVersion": "2",
+                "Timestamp": timestamp,
+            }
+        )
         sorted_params = self.keysort(params)
-        signature = self.generate_signature(method=request.method.value.upper(),
-                                            path_url=path_url,
-                                            params=sorted_params,
-                                            )
+        signature = self.generate_signature(
+            method=request.method.value.upper(),
+            path_url=path_url,
+            params=sorted_params,
+        )
         sorted_params["Signature"] = signature
         return sorted_params
 
-    def generate_auth_params_for_WS(self, request: WSJSONRequest) -> Dict[str, Any]:
-        timestamp = datetime.datetime.fromtimestamp(self.time_provider.time(), datetime.UTC).strftime("%Y-%m-%dT%H:%M:%S")
+    def generate_auth_params_for_WS(self, request: WSJSONRequest) -> dict[str, Any]:
+        timestamp = datetime.datetime.fromtimestamp(self.time_provider.time(), datetime.UTC).strftime(
+            "%Y-%m-%dT%H:%M:%S"
+        )
         path_url = "/ws/v2"
         params = request.payload.get("params") or {}
-        params.update({
-            "accessKey": self.api_key,
-            "signatureMethod": "HmacSHA256",
-            "signatureVersion": "2.1",
-            "timestamp": timestamp
-        })
+        params.update(
+            {
+                "accessKey": self.api_key,
+                "signatureMethod": "HmacSHA256",
+                "signatureVersion": "2.1",
+                "timestamp": timestamp,
+            }
+        )
         sorted_params = self.keysort(params)
-        signature = self.generate_signature(method="get",
-                                            path_url=path_url,
-                                            params=sorted_params,
-                                            )
+        signature = self.generate_signature(
+            method="get",
+            path_url=path_url,
+            params=sorted_params,
+        )
         sorted_params["signature"] = signature
         sorted_params["authType"] = "api"
         return sorted_params
 
-    def generate_signature(self,
-                           method: str,
-                           path_url: str,
-                           params: Dict[str, Any],
-                           ) -> str:
-
+    def generate_signature(
+        self,
+        method: str,
+        path_url: str,
+        params: dict[str, Any],
+    ) -> str:
         query_endpoint = path_url
         encoded_params_str = urlencode(params)
         payload = "\n".join([method.upper(), self.hostname, query_endpoint, encoded_params_str])

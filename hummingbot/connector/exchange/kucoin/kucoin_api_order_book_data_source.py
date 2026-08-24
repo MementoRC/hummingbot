@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.exchange.kucoin import kucoin_constants as CONSTANTS, kucoin_web_utils as web_utils
 from hummingbot.core.data_type.common import TradeType
@@ -15,17 +17,16 @@ if TYPE_CHECKING:
 
 
 class KucoinAPIOrderBookDataSource(OrderBookTrackerDataSource):
-
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
     _DYNAMIC_SUBSCRIBE_ID_START = 100
     _next_subscribe_id: int = _DYNAMIC_SUBSCRIBE_ID_START
 
     def __init__(
-            self,
-            trading_pairs: List[str],
-            connector: 'KucoinExchange',
-            api_factory: WebAssistantsFactory,
-            domain: str = CONSTANTS.DEFAULT_DOMAIN,
+        self,
+        trading_pairs: list[str],
+        connector: "KucoinExchange",
+        api_factory: WebAssistantsFactory,
+        domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
         super().__init__(trading_pairs)
         self._connector = connector
@@ -34,13 +35,11 @@ class KucoinAPIOrderBookDataSource(OrderBookTrackerDataSource):
         self._last_ws_message_sent_timestamp = 0
         self._ping_interval = 0
 
-    async def get_last_traded_prices(self,
-                                     trading_pairs: List[str],
-                                     domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBookMessage:
-        snapshot_response: Dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
+        snapshot_response: dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
         snapshot_timestamp = float(snapshot_response["data"]["time"]) * 1e-3
         update_id: int = int(snapshot_response["data"]["sequence"])
 
@@ -48,16 +47,15 @@ class KucoinAPIOrderBookDataSource(OrderBookTrackerDataSource):
             "trading_pair": trading_pair,
             "update_id": update_id,
             "bids": snapshot_response["data"]["bids"],
-            "asks": snapshot_response["data"]["asks"]
+            "asks": snapshot_response["data"]["asks"],
         }
         snapshot_msg: OrderBookMessage = OrderBookMessage(
-            OrderBookMessageType.SNAPSHOT,
-            order_book_message_content,
-            snapshot_timestamp)
+            OrderBookMessageType.SNAPSHOT, order_book_message_content, snapshot_timestamp
+        )
 
         return snapshot_msg
 
-    async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, Any]:
+    async def _request_order_book_snapshot(self, trading_pair: str) -> dict[str, Any]:
         """
         Retrieves a copy of the full order book from the exchange, for a particular trading pair.
 
@@ -65,9 +63,7 @@ class KucoinAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
         :return: the response from the exchange (JSON dictionary)
         """
-        params = {
-            "symbol": await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
-        }
+        params = {"symbol": await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair)}
 
         rest_assistant = await self._api_factory.get_rest_assistant()
         data = await rest_assistant.execute_request(
@@ -79,27 +75,25 @@ class KucoinAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
         return data
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
-        trade_data: Dict[str, Any] = raw_message["data"]
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
+        trade_data: dict[str, Any] = raw_message["data"]
         timestamp: float = int(trade_data["time"]) * 1e-9
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(symbol=trade_data["symbol"])
         message_content = {
             "trade_id": trade_data["tradeId"],
             "update_id": trade_data["sequence"],
             "trading_pair": trading_pair,
-            "trade_type": float(TradeType.BUY.value) if trade_data["side"] == "buy" else float(
-                TradeType.SELL.value),
+            "trade_type": float(TradeType.BUY.value) if trade_data["side"] == "buy" else float(TradeType.SELL.value),
             "amount": trade_data["size"],
-            "price": trade_data["price"]
+            "price": trade_data["price"],
         }
-        trade_message: Optional[OrderBookMessage] = OrderBookMessage(
-            message_type=OrderBookMessageType.TRADE,
-            content=message_content,
-            timestamp=timestamp)
+        trade_message: OrderBookMessage | None = OrderBookMessage(
+            message_type=OrderBookMessageType.TRADE, content=message_content, timestamp=timestamp
+        )
 
         message_queue.put_nowait(trade_message)
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         diff_data: [str, Any] = raw_message["data"]
         timestamp: float = self._time()
         update_id: int = diff_data["sequenceEnd"]
@@ -114,16 +108,19 @@ class KucoinAPIOrderBookDataSource(OrderBookTrackerDataSource):
             "asks": diff_data["changes"]["asks"],
         }
         diff_message: OrderBookMessage = OrderBookMessage(
-            OrderBookMessageType.DIFF,
-            order_book_message_content,
-            timestamp)
+            OrderBookMessageType.DIFF, order_book_message_content, timestamp
+        )
 
         message_queue.put_nowait(diff_message)
 
     async def _subscribe_channels(self, ws: WSAssistant):
         try:
-            symbols = ",".join([await self._connector.exchange_symbol_associated_to_pair(trading_pair=pair)
-                                for pair in self._trading_pairs])
+            symbols = ",".join(
+                [
+                    await self._connector.exchange_symbol_associated_to_pair(trading_pair=pair)
+                    for pair in self._trading_pairs
+                ]
+            )
 
             trades_payload = {
                 "id": web_utils.next_message_id(),
@@ -154,7 +151,7 @@ class KucoinAPIOrderBookDataSource(OrderBookTrackerDataSource):
             self.logger().exception("Unexpected error occurred subscribing to order book trading and delta streams...")
             raise
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         channel = ""
         if "data" in event_message and event_message.get("type") == "message":
             event_channel = event_message.get("subject")
@@ -169,8 +166,10 @@ class KucoinAPIOrderBookDataSource(OrderBookTrackerDataSource):
         while True:
             try:
                 seconds_until_next_ping = self._ping_interval - (self._time() - self._last_ws_message_sent_timestamp)
-                await asyncio.wait_for(super()._process_websocket_messages(websocket_assistant=websocket_assistant),
-                                       timeout=seconds_until_next_ping)
+                await asyncio.wait_for(
+                    super()._process_websocket_messages(websocket_assistant=websocket_assistant),
+                    timeout=seconds_until_next_ping,
+                )
             except asyncio.TimeoutError:
                 payload = {
                     "id": web_utils.next_message_id(),
@@ -205,9 +204,7 @@ class KucoinAPIOrderBookDataSource(OrderBookTrackerDataSource):
         :return: True if subscription was successful, False otherwise
         """
         if self._ws_assistant is None:
-            self.logger().warning(
-                f"Cannot subscribe to {trading_pair}: WebSocket not connected"
-            )
+            self.logger().warning(f"Cannot subscribe to {trading_pair}: WebSocket not connected")
             return False
 
         try:
@@ -254,9 +251,7 @@ class KucoinAPIOrderBookDataSource(OrderBookTrackerDataSource):
         :return: True if unsubscription was successful, False otherwise
         """
         if self._ws_assistant is None:
-            self.logger().warning(
-                f"Cannot unsubscribe from {trading_pair}: WebSocket not connected"
-            )
+            self.logger().warning(f"Cannot unsubscribe from {trading_pair}: WebSocket not connected")
             return False
 
         try:

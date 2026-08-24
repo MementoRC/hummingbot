@@ -1,9 +1,11 @@
-import asyncio
-from typing import TYPE_CHECKING, Any, Dict, Optional
+from __future__ import annotations
 
+import asyncio
+from typing import TYPE_CHECKING, Any
+
+from hummingbot.connector.derivative.evedex_perpetual.evedex_perpetual_auth import EvedexPerpetualAuth
 import hummingbot.connector.derivative.evedex_perpetual.evedex_perpetual_constants as CONSTANTS
 import hummingbot.connector.derivative.evedex_perpetual.evedex_perpetual_web_utils as web_utils
-from hummingbot.connector.derivative.evedex_perpetual.evedex_perpetual_auth import EvedexPerpetualAuth
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest
 from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
@@ -25,28 +27,29 @@ class EvedexPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
     - Order Fills: orderFills-{userExchangeId}
     - Funding: funding-{userExchangeId}
     """
+
     HEARTBEAT_TIME_INTERVAL = 25.0  # Centrifugo ping interval (send before server timeout)
     PING_TIMEOUT = 10.0  # How long to wait for pong response
 
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     _message_id: int = 0
 
     def __init__(
-            self,
-            auth: EvedexPerpetualAuth,
-            connector: 'EvedexPerpetualDerivative',
-            api_factory: WebAssistantsFactory,
-            domain: str = CONSTANTS.DEFAULT_DOMAIN,
+        self,
+        auth: EvedexPerpetualAuth,
+        connector: "EvedexPerpetualDerivative",
+        api_factory: WebAssistantsFactory,
+        domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
         super().__init__()
         self._domain = domain
         self._api_factory = api_factory
         self._auth = auth
         self._connector = connector
-        self._user_exchange_id: Optional[str] = None
-        self._ping_task: Optional[asyncio.Task] = None
-        self._ws_assistant: Optional[WSAssistant] = None
+        self._user_exchange_id: str | None = None
+        self._ping_task: asyncio.Task | None = None
+        self._ws_assistant: WSAssistant | None = None
 
     def _next_message_id(self) -> int:
         """Generate the next message ID for Centrifugo protocol."""
@@ -86,9 +89,7 @@ class EvedexPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
         """
         if self._user_exchange_id is None:
             user_info = await self._connector._api_get(
-                path_url=CONSTANTS.USER_ME_PATH_URL,
-                is_auth_required=True,
-                limit_id=CONSTANTS.USER_ME_PATH_URL
+                path_url=CONSTANTS.USER_ME_PATH_URL, is_auth_required=True, limit_id=CONSTANTS.USER_ME_PATH_URL
             )
             self._user_exchange_id = str(user_info.get("exchangeId", ""))
         return self._user_exchange_id
@@ -119,10 +120,7 @@ class EvedexPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
         await ws.connect(ws_url=url, ping_timeout=self.HEARTBEAT_TIME_INTERVAL + self.PING_TIMEOUT)
 
         # Send Centrifugo connect message (no token - auth is per-subscription)
-        connect_payload = {
-            "connect": {"name": "js"},
-            "id": self._next_message_id()
-        }
+        connect_payload = {"connect": {"name": "js"}, "id": self._next_message_id()}
         connect_request: WSJSONRequest = WSJSONRequest(payload=connect_payload)
         await ws.send(connect_request)
 
@@ -154,12 +152,8 @@ class EvedexPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
 
             # Subscribe to heartbeat channel (public, no auth required)
             heartbeat_payload = {
-                "subscribe": {
-                    "channel": "futures-perp:heartbeat",
-                    "flag": 1,
-                    "recover": True
-                },
-                "id": self._next_message_id()
+                "subscribe": {"channel": "futures-perp:heartbeat", "flag": 1, "recover": True},
+                "id": self._next_message_id(),
             }
             subscribe_heartbeat_request: WSJSONRequest = WSJSONRequest(payload=heartbeat_payload)
             await websocket_assistant.send(subscribe_heartbeat_request)
@@ -171,9 +165,9 @@ class EvedexPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
                     "data": {"accessToken": access_token},
                     "recoverable": True,
                     "flag": 1,
-                    "recover": True
+                    "recover": True,
                 },
-                "id": self._next_message_id()
+                "id": self._next_message_id(),
             }
             subscribe_orders_request: WSJSONRequest = WSJSONRequest(payload=orders_payload)
             await websocket_assistant.send(subscribe_orders_request)
@@ -185,9 +179,9 @@ class EvedexPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
                     "data": {"accessToken": access_token},
                     "recoverable": True,
                     "flag": 1,
-                    "recover": True
+                    "recover": True,
                 },
-                "id": self._next_message_id()
+                "id": self._next_message_id(),
             }
             subscribe_positions_request: WSJSONRequest = WSJSONRequest(payload=positions_payload)
             await websocket_assistant.send(subscribe_positions_request)
@@ -199,9 +193,9 @@ class EvedexPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
                     "data": {"accessToken": access_token},
                     "recoverable": True,
                     "flag": 1,
-                    "recover": True
+                    "recover": True,
                 },
-                "id": self._next_message_id()
+                "id": self._next_message_id(),
             }
             subscribe_account_request: WSJSONRequest = WSJSONRequest(payload=account_payload)
             await websocket_assistant.send(subscribe_account_request)
@@ -213,9 +207,9 @@ class EvedexPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
                     "data": {"accessToken": access_token},
                     "recoverable": True,
                     "flag": 1,
-                    "recover": True
+                    "recover": True,
                 },
-                "id": self._next_message_id()
+                "id": self._next_message_id(),
             }
             subscribe_order_fills_request: WSJSONRequest = WSJSONRequest(payload=order_fills_payload)
             await websocket_assistant.send(subscribe_order_fills_request)
@@ -240,7 +234,7 @@ class EvedexPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
                 continue
             await self._process_event_message(event_message=data, queue=queue)
 
-    async def _on_user_stream_interruption(self, websocket_assistant: Optional[WSAssistant]):
+    async def _on_user_stream_interruption(self, websocket_assistant: WSAssistant | None):
         """
         Called when the user stream gets interrupted.
         Cleans up the ping task and connection state.
@@ -257,7 +251,7 @@ class EvedexPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
         self._ws_assistant = None
         await super()._on_user_stream_interruption(websocket_assistant=websocket_assistant)
 
-    async def _process_event_message(self, event_message: Dict[str, Any], queue: asyncio.Queue):
+    async def _process_event_message(self, event_message: dict[str, Any], queue: asyncio.Queue):
         # Handle empty pong responses from Centrifugo ping (ignore them)
         if not event_message or event_message == {}:
             self.logger().debug("Received Centrifugo pong")
@@ -278,10 +272,7 @@ class EvedexPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
                 self.logger().warning(f"WebSocket error (code {err_code}): {err_msg}")
                 # Don't raise - just log the warning and continue
                 return
-            raise IOError({
-                "label": "WSS_ERROR",
-                "message": f"Error received via websocket - {err_msg}."
-            })
+            raise IOError({"label": "WSS_ERROR", "message": f"Error received via websocket - {err_msg}."})
 
         if "push" in event_message:
             await queue.put(event_message)

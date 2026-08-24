@@ -1,8 +1,8 @@
 import asyncio
+from decimal import Decimal
 import json
 import re
-from decimal import Decimal
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable
 
 from aioresponses import aioresponses
 from aioresponses.core import RequestCall
@@ -76,7 +76,7 @@ class LambdaplexExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTe
         return response
 
     @property
-    def all_symbols_including_invalid_pair_mock_response(self) -> Tuple[str, Any]:
+    def all_symbols_including_invalid_pair_mock_response(self) -> tuple[str, Any]:
         response = self._exchange_rules_mock_response()
         return "INVALID-PAIR", response
 
@@ -110,16 +110,8 @@ class LambdaplexExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTe
     def balance_request_mock_response_for_base_and_quote(self):
         response = {
             "balances": [
-                {
-                    "asset": self.base_asset,
-                    "free": "10.0",
-                    "locked": "5.0"
-                },
-                {
-                    "asset": self.quote_asset,
-                    "free": "2000",
-                    "locked": "0.00000000"
-                },
+                {"asset": self.base_asset, "free": "10.0", "locked": "5.0"},
+                {"asset": self.quote_asset, "free": "2000", "locked": "0.00000000"},
             ],
         }
         return response
@@ -128,11 +120,7 @@ class LambdaplexExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTe
     def balance_request_mock_response_only_base(self):
         response = {
             "balances": [
-                {
-                    "asset": self.base_asset,
-                    "free": "10.0",
-                    "locked": "5.0"
-                },
+                {"asset": self.base_asset, "free": "10.0", "locked": "5.0"},
             ],
         }
         return response
@@ -282,7 +270,7 @@ class LambdaplexExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTe
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.ORDER_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -294,7 +282,7 @@ class LambdaplexExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTe
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.ORDER_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -309,7 +297,7 @@ class LambdaplexExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTe
                     "status": 400,
                     "error": "Bad Request",
                     "requestId": "9e0d5d0e-2442",
-                    "message": "Invalid symbol"
+                    "message": "Invalid symbol",
                 }
             ),
         )
@@ -319,7 +307,7 @@ class LambdaplexExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTe
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.ORDER_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -345,17 +333,11 @@ class LambdaplexExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTe
         successful_order: InFlightOrder,
         erroneous_order: InFlightOrder,
         mock_api: aioresponses,
-    ) -> List[str]:
+    ) -> list[str]:
         all_urls = []
-        url = self.configure_successful_cancelation_response(
-            order=successful_order,
-            mock_api=mock_api
-        )
+        url = self.configure_successful_cancelation_response(order=successful_order, mock_api=mock_api)
         all_urls.append(url)
-        url = self.configure_erroneous_cancelation_response(
-            order=erroneous_order,
-            mock_api=mock_api
-        )
+        url = self.configure_erroneous_cancelation_response(order=erroneous_order, mock_api=mock_api)
         all_urls.append(url)
         return all_urls
 
@@ -363,8 +345,8 @@ class LambdaplexExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTe
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
         url = web_utils.private_rest_url(CONSTANTS.ORDER_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
         response = self._order_status_request_completely_filled_mock_response(order=order)
@@ -375,8 +357,8 @@ class LambdaplexExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTe
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> Union[str, List[str]]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> str | list[str]:
         url = web_utils.private_rest_url(CONSTANTS.ORDER_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
         response = self._order_status_request_canceled_mock_response(order=order)
@@ -387,8 +369,8 @@ class LambdaplexExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTe
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
         url = web_utils.private_rest_url(CONSTANTS.ORDER_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
         response = self._order_status_request_open_mock_response(order=order)
@@ -399,7 +381,7 @@ class LambdaplexExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTe
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.ORDER_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -410,7 +392,7 @@ class LambdaplexExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTe
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.ORDER_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -422,8 +404,8 @@ class LambdaplexExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTe
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
         url = web_utils.private_rest_url(CONSTANTS.ORDER_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
         response = {
@@ -432,7 +414,7 @@ class LambdaplexExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTe
             "status": 404,
             "error": "Not Found",
             "requestId": "d6c6d48b-2431",
-            "message": None
+            "message": None,
         }
         mock_api.get(regex_url, body=json.dumps(response), status=404, callback=callback)
         return [url]
@@ -441,7 +423,7 @@ class LambdaplexExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTe
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.private_rest_url(path_url=CONSTANTS.MY_TRADES_PATH_URL)
         regex_url = re.compile(url + r"\?.*")
@@ -453,7 +435,7 @@ class LambdaplexExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTe
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.private_rest_url(path_url=CONSTANTS.MY_TRADES_PATH_URL)
         regex_url = re.compile(url + r"\?.*")
@@ -464,7 +446,7 @@ class LambdaplexExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTe
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = None,
+        callback: Callable | None = None,
     ) -> str:
         url = web_utils.private_rest_url(path_url=CONSTANTS.MY_TRADES_PATH_URL)
         regex_url = re.compile(url + r"\?.*")
@@ -540,7 +522,7 @@ class LambdaplexExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTe
             "O": 1499405658657,
             "Z": "0.00000000",
             "Y": "0.00000000",
-            "Q": "0.00000000"
+            "Q": "0.00000000",
         }
         return response
 
@@ -577,7 +559,7 @@ class LambdaplexExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTe
             "O": 1499405658657,
             "Z": "10050.00000000",
             "Y": "10050.00000000",
-            "Q": "10000.00000000"
+            "Q": "10000.00000000",
         }
         return update
 
@@ -587,8 +569,8 @@ class LambdaplexExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTe
     def configure_user_fees_response(
         self,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
         url = self.user_fee_url
         response = {
             "maker": "0.1",
@@ -632,29 +614,27 @@ class LambdaplexExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTe
                             "filterType": "PRICE_FILTER",
                             "minPrice": "0.01000000",
                             "maxPrice": "100000.00000000",
-                            "tickSize": "0.01000000"
+                            "tickSize": "0.01000000",
                         },
                         {
                             "filterType": "LOT_SIZE",
                             "minQty": "0.00001000",
                             "maxQty": "9000.00000000",
-                            "stepSize": "0.00001000"
+                            "stepSize": "0.00001000",
                         },
                         {
                             "filterType": "MIN_NOTIONAL",
                             "minNotional": "10.00",
                             "applyToMarket": True,
-                            "avgPriceMins": 5
-                        }
-                    ]
+                            "avgPriceMins": 5,
+                        },
+                    ],
                 }
             ]
         }
         return response
 
-    def _order_cancelation_request_successful_mock_response(
-        self, order: InFlightOrder
-    ) -> Dict[str, Any]:
+    def _order_cancelation_request_successful_mock_response(self, order: InFlightOrder) -> dict[str, Any]:
         exchange_order_id = order.exchange_order_id or self.expected_exchange_order_id
         return {
             "symbol": self.exchange_trading_pair,
@@ -901,9 +881,4 @@ class LambdaplexExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTe
         self.assertEqual(self.exchange.current_timestamp, cancel_event.timestamp)
         self.assertEqual(order.client_order_id, cancel_event.order_id)
 
-        self.assertTrue(
-            self.is_logged(
-                "INFO",
-                f"Successfully canceled order {order.client_order_id}."
-            )
-        )
+        self.assertTrue(self.is_logged("INFO", f"Successfully canceled order {order.client_order_id}."))

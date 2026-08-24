@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import List
 
 import pandas_ta as ta  # noqa: F401
 from pydantic import Field
@@ -70,11 +69,12 @@ class AILivestreamController(DirectionalTradingControllerBase):
             entry_price=price,
             amount=amount,
             triple_barrier_config=self.config.triple_barrier_config.new_instance_with_adjusted_volatility(
-                volatility_factor=self.processed_data["features"].get("target_pct", 0.01)),
+                volatility_factor=self.processed_data["features"].get("target_pct", 0.01)
+            ),
             leverage=self.config.leverage,
         )
 
-    def to_format_status(self) -> List[str]:
+    def to_format_status(self) -> list[str]:
         lines = []
         features = self.processed_data.get("features", {})
         lines.append(f"Signal: {self.processed_data.get('signal', 'N/A')}")

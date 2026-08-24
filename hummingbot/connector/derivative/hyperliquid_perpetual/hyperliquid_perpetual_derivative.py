@@ -1,11 +1,13 @@
+from __future__ import annotations
+
 import asyncio
+from decimal import Decimal
 import hashlib
 import time
-from decimal import ROUND_HALF_UP, Decimal
-from typing import Any, AsyncIterable, Dict, List, Literal, Optional, Tuple
+from typing import Any, AsyncIterable, Dict, List, Literal
 
-import eth_account
 from bidict import bidict
+import eth_account
 from eth_utils import to_checksum_address
 
 from hummingbot.connector.constants import s_decimal_NaN
@@ -44,17 +46,17 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
     LONG_POLL_INTERVAL = 12.0
 
     def __init__(
-            self,
-            balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
-            rate_limits_share_pct: Decimal = Decimal("100"),
-            hyperliquid_perpetual_secret_key: str = None,
-            hyperliquid_perpetual_address: str = None,
-            use_vault: bool = False,
-            hyperliquid_perpetual_mode: Literal["arb_wallet", "api_wallet"] = "arb_wallet",
-            trading_pairs: Optional[List[str]] = None,
-            trading_required: bool = True,
-            domain: str = CONSTANTS.DOMAIN,
-            enable_hip3_markets: bool = True,
+        self,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
+        rate_limits_share_pct: Decimal = Decimal("100"),
+        hyperliquid_perpetual_secret_key: str = None,
+        hyperliquid_perpetual_address: str = None,
+        use_vault: bool = False,
+        hyperliquid_perpetual_mode: Literal["arb_wallet", "api_wallet"] = "arb_wallet",
+        trading_pairs: list[str] | None = None,
+        trading_required: bool = True,
+        domain: str = CONSTANTS.DOMAIN,
+        enable_hip3_markets: bool = True,
     ):
         self.hyperliquid_perpetual_address = hyperliquid_perpetual_address
         self.hyperliquid_perpetual_secret_key = hyperliquid_perpetual_secret_key
@@ -66,17 +68,14 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
         self._enable_hip3_markets = enable_hip3_markets
         self._position_mode = None
         self._last_trade_history_timestamp = None
-        self.coin_to_asset: Dict[str, int] = {}  # Maps coin name to asset ID for ALL markets
+        self.coin_to_asset: dict[str, int] = {}  # Maps coin name to asset ID for ALL markets
         self._exchange_info_dex_to_symbol = bidict({})
-        self._dex_markets: List[Dict] = []  # Store HIP-3 DEX market info separately
-        self._is_hip3_market: Dict[str, bool] = {}  # Track which coins are HIP-3
-        self._user_abstraction_mode: Optional[str] = None
-        # Builder code (HGP-87). Fee starts at 0 and is resolved once per session
-        # (_ensure_builder_fee_resolved), at start_network or on the first order.
+        self._dex_markets: list[Dict] = []  # Store HIP-3 DEX market info separately
+        self._is_hip3_market: dict[str, bool] = {}  # Track which coins are HIP-3
+        self._user_abstraction_mode: str | None = None
+        # Builder code (HGP-87). Fee starts at 0 and is resolved at startup (_initialize_builder_fee).
         self._builder_address: str = CONSTANTS.FOUNDATION_BUILDER_ADDRESS.lower()
         self._builder_fee_tenths_bps: int = 0
-        self._builder_fee_resolved: bool = False
-        self._builder_fee_lock: asyncio.Lock = asyncio.Lock()
         self._key_authority_verified: bool = False
         super().__init__(balance_asset_limit, rate_limits_share_pct)
 
@@ -86,7 +85,7 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
         return self._domain
 
     @property
-    def authenticator(self) -> Optional[HyperliquidPerpetualAuth]:
+    def authenticator(self) -> HyperliquidPerpetualAuth | None:
         if self._trading_required or self.hyperliquid_perpetual_secret_key:
             return HyperliquidPerpetualAuth(
                 self.hyperliquid_perpetual_address,
@@ -97,7 +96,7 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
         return None
 
     @property
-    def rate_limits_rules(self) -> List[RateLimit]:
+    def rate_limits_rules(self) -> list[RateLimit]:
         return CONSTANTS.RATE_LIMITS
 
     @property
@@ -146,14 +145,9 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
     async def start_network(self):
         await super().start_network()
         if self._trading_required:
-            await self._ensure_builder_fee_resolved()
+            await self._initialize_builder_fee()
 
-    async def stop_network(self):
-        await super().stop_network()
-        # Re-resolve the builder fee on the next session so mid-session approval changes are picked up.
-        self._builder_fee_resolved = False
-
-    def supported_order_types(self) -> List[OrderType]:
+    def supported_order_types(self) -> list[OrderType]:
         """
         :return a list of OrderType supported by this connector
         """
@@ -177,18 +171,18 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
         return False
 
     def _create_web_assistants_factory(self) -> WebAssistantsFactory:
-        return web_utils.build_api_factory(
-            throttler=self._throttler,
-            auth=self._auth)
+        return web_utils.build_api_factory(throttler=self._throttler, auth=self._auth)
 
     async def _make_trading_rules_request(self) -> Any:
-        exchange_info = await self._api_post(path_url=self.trading_rules_request_path,
-                                             data={"type": CONSTANTS.ASSET_CONTEXT_TYPE})
+        exchange_info = await self._api_post(
+            path_url=self.trading_rules_request_path, data={"type": CONSTANTS.ASSET_CONTEXT_TYPE}
+        )
         return exchange_info
 
     async def _make_trading_pairs_request(self) -> Any:
-        exchange_info = await self._api_post(path_url=self.trading_pairs_request_path,
-                                             data={"type": CONSTANTS.ASSET_CONTEXT_TYPE})
+        exchange_info = await self._api_post(
+            path_url=self.trading_pairs_request_path, data={"type": CONSTANTS.ASSET_CONTEXT_TYPE}
+        )
         return exchange_info
 
     def _is_order_not_found_during_status_update_error(self, status_update_exception: Exception) -> bool:
@@ -199,29 +193,10 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
 
     def quantize_order_price(self, trading_pair: str, price: Decimal) -> Decimal:
         """
-        Align price to Hyperliquid's limitPx rules: at most 5 significant figures
-        and at most ``MAX_DECIMALS - szDecimals`` decimal places.
-
-        Rounding to 6 decimals satisfies neither on its own. ARB-USD carries
-        szDecimals=1, so it accepts 5 decimals, but a market order priced at
-        BestBid * 1.05 quantizes to 0.094605 and the exchange rejects it with
-        "Order has invalid price." Rounding to min_price_increment fixes that:
-        the increment is derived from the markPx decimals, which for perpetuals
-        is never finer than szDecimals allows.
+        Applies trading rule to quantize order price.
         """
-        # HL allows at most 5 significant figures on limitPx
-        price = Decimal(str(float(f"{price:.5g}")))
-        trading_rule = self._trading_rules.get(trading_pair)
-        if trading_rule is not None and trading_rule.min_price_increment:
-            tick = trading_rule.min_price_increment
-            quantized = (price / tick).quantize(Decimal("1"), rounding=ROUND_HALF_UP) * tick
-            # Multiplying back by the tick inflates the scale (10000 -> 10000.0000).
-            # Strip the padding, without letting normalize() pick exponent form (1E+4).
-            quantized = quantized.normalize()
-            if quantized.as_tuple().exponent > 0:
-                quantized = quantized.quantize(Decimal("1"))
-            return quantized
-        return price
+        d_price = Decimal(round(float(f"{price:.5g}"), 6))
+        return d_price
 
     @staticmethod
     def _is_all_perp_metas_response(exchange_info_dex: Any) -> bool:
@@ -229,19 +204,13 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
             return False
         first_non_null = next((entry for entry in exchange_info_dex if entry is not None), None)
         return (
-            (
-                isinstance(first_non_null, list)
-                and len(first_non_null) >= 1
-                and isinstance(first_non_null[0], dict)
-                and "universe" in first_non_null[0]
-            )
-            or (
-                isinstance(first_non_null, dict)
-                and "universe" in first_non_null
-            )
-        )
+            isinstance(first_non_null, list)
+            and len(first_non_null) >= 1
+            and isinstance(first_non_null[0], dict)
+            and "universe" in first_non_null[0]
+        ) or (isinstance(first_non_null, dict) and "universe" in first_non_null)
 
-    def _infer_hip3_dex_name(self, perp_meta_list: List[Dict[str, Any]]) -> Optional[str]:
+    def _infer_hip3_dex_name(self, perp_meta_list: list[dict[str, Any]]) -> str | None:
         dex_names = set()
         for perp_meta in perp_meta_list:
             if not isinstance(perp_meta, dict):
@@ -255,8 +224,8 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
             return None
         return next(iter(dex_names)) if dex_names else None
 
-    def _parse_all_perp_metas_response(self, all_perp_metas: List[Any]) -> List[Dict[str, Any]]:
-        dex_markets: List[Dict[str, Any]] = []
+    def _parse_all_perp_metas_response(self, all_perp_metas: list[Any]) -> list[dict[str, Any]]:
+        dex_markets: list[dict[str, Any]] = []
 
         for dex_entry in all_perp_metas:
             if isinstance(dex_entry, dict):
@@ -290,13 +259,13 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
         return dex_markets
 
     @staticmethod
-    def _has_complete_asset_ctxs(dex_info: Dict[str, Any]) -> bool:
+    def _has_complete_asset_ctxs(dex_info: dict[str, Any]) -> bool:
         perp_meta_list = dex_info.get("perpMeta", []) or []
         asset_ctx_list = dex_info.get("assetCtxs", []) or []
         return len(perp_meta_list) > 0 and len(perp_meta_list) == len(asset_ctx_list)
 
     @staticmethod
-    def _extract_asset_ctxs_from_meta_and_ctxs_response(response: Any) -> Optional[List[Dict[str, Any]]]:
+    def _extract_asset_ctxs_from_meta_and_ctxs_response(response: Any) -> list[dict[str, Any]] | None:
         if (
             isinstance(response, list)
             and len(response) >= 2
@@ -307,8 +276,8 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
             return response[1]
         return None
 
-    async def _hydrate_dex_markets_asset_ctxs(self, dex_markets: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        hydrated_markets: List[Dict[str, Any]] = []
+    async def _hydrate_dex_markets_asset_ctxs(self, dex_markets: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        hydrated_markets: list[dict[str, Any]] = []
 
         for dex_info in dex_markets:
             if not isinstance(dex_info, dict):
@@ -348,7 +317,7 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
 
         return hydrated_markets
 
-    def _iter_hip3_merged_markets(self, dex_markets: Optional[List[Dict[str, Any]]] = None):
+    def _iter_hip3_merged_markets(self, dex_markets: list[dict[str, Any]] | None = None):
         source_dex_markets = dex_markets if dex_markets is not None else (self._dex_markets or [])
         for dex_info in source_dex_markets:
             if not isinstance(dex_info, dict):
@@ -394,8 +363,9 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
         return []
 
     async def _update_trading_rules(self):
-        exchange_info = await self._api_post(path_url=self.trading_rules_request_path,
-                                             data={"type": CONSTANTS.ASSET_CONTEXT_TYPE})
+        exchange_info = await self._api_post(
+            path_url=self.trading_rules_request_path, data={"type": CONSTANTS.ASSET_CONTEXT_TYPE}
+        )
 
         # Only fetch HIP-3/DEX markets if enabled
         exchange_info_dex = []
@@ -415,8 +385,8 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
     async def _initialize_trading_pair_symbol_map(self):
         try:
             exchange_info = await self._api_post(
-                path_url=self.trading_pairs_request_path,
-                data={"type": CONSTANTS.ASSET_CONTEXT_TYPE})
+                path_url=self.trading_pairs_request_path, data={"type": CONSTANTS.ASSET_CONTEXT_TYPE}
+            )
 
             # Only fetch HIP-3/DEX markets if enabled
             exchange_info_dex = []
@@ -447,8 +417,8 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
             domain=self.domain,
         )
 
-    async def get_all_pairs_prices(self) -> List[Dict[str, str]]:
-        res: List[Dict[str, str]] = []
+    async def get_all_pairs_prices(self) -> list[dict[str, str]]:
+        res: list[dict[str, str]] = []
 
         # ===== Fetch main perp info =====
         exchange_info = await self._api_post(
@@ -465,19 +435,23 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
         # Merge perpetual markets
         for meta, ctx in zip(perp_asset_ctxs, perp_universe):
             merged = {**meta, **ctx}
-            res.append({
-                "symbol": merged.get("name"),
-                "price": merged.get("markPx"),
-            })
+            res.append(
+                {
+                    "symbol": merged.get("name"),
+                    "price": merged.get("markPx"),
+                }
+            )
 
         # ===== Fetch DEX / HIP-3 markets (only if enabled) =====
         if self._enable_hip3_markets:
             dex_markets = await self._fetch_and_cache_hip3_market_data()
             for market in self._iter_hip3_merged_markets(dex_markets=dex_markets):
-                res.append({
-                    "symbol": market.get("name"),
-                    "price": market.get("markPx"),
-                })
+                res.append(
+                    {
+                        "symbol": market.get("name"),
+                        "price": market.get("markPx"),
+                    }
+                )
 
         return res
 
@@ -495,15 +469,17 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
     async def _update_lost_orders_status(self):
         await self._update_lost_orders()
 
-    def _get_fee(self,
-                 base_currency: str,
-                 quote_currency: str,
-                 order_type: OrderType,
-                 order_side: TradeType,
-                 position_action: PositionAction,
-                 amount: Decimal,
-                 price: Decimal = s_decimal_NaN,
-                 is_maker: Optional[bool] = None) -> TradeFeeBase:
+    def _get_fee(
+        self,
+        base_currency: str,
+        quote_currency: str,
+        order_type: OrderType,
+        order_side: TradeType,
+        position_action: PositionAction,
+        amount: Decimal,
+        price: Decimal = s_decimal_NaN,
+        is_maker: bool | None = None,
+    ) -> TradeFeeBase:
         is_maker = is_maker or False
         fee = build_trade_fee(
             self.name,
@@ -529,19 +505,15 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
 
         api_params = {
             "type": "cancel",
-            "cancels": {
-                "asset": self.coin_to_asset[coin],
-                "cloid": order_id
-            },
+            "cancels": {"asset": self.coin_to_asset[coin], "cloid": order_id},
         }
         cancel_result = await self._api_post(
-            path_url=CONSTANTS.CANCEL_ORDER_URL,
-            data=api_params,
-            is_auth_required=True)
+            path_url=CONSTANTS.CANCEL_ORDER_URL, data=api_params, is_auth_required=True
+        )
 
         return self._process_cancel_result(order_id, cancel_result)
 
-    def _process_cancel_result(self, order_id: str, cancel_result: Dict[str, Any]) -> bool:
+    def _process_cancel_result(self, order_id: str, cancel_result: dict[str, Any]) -> bool:
         """
         Interprets the ``/exchange`` cancel response.
 
@@ -558,30 +530,28 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
         """
         response = cancel_result.get("response")
         if cancel_result.get("status") == "err" or not isinstance(response, dict):
-            self.logger().warning(f"Hyperliquid Perpetuals rejected the cancelation of order {order_id}. "
-                                  f"Raw response: {cancel_result}")
+            self.logger().warning(
+                f"Hyperliquid Perpetuals rejected the cancelation of order {order_id}. Raw response: {cancel_result}"
+            )
             raise IOError(f"Error cancelling order {order_id}: {response}")
 
         statuses = response.get("data", {}).get("statuses") or []
         status = statuses[0] if statuses else None
         if isinstance(status, dict) and "error" in status:
-            self.logger().debug(f"Hyperliquid Perpetuals did not cancel order {order_id}. "
-                                f"Raw response: {cancel_result}")
+            self.logger().debug(
+                f"Hyperliquid Perpetuals did not cancel order {order_id}. Raw response: {cancel_result}"
+            )
             raise IOError(f"Error cancelling order {order_id}: {status['error']}")
         if status != "success":
-            self.logger().warning(f"Unexpected cancelation status for order {order_id}. "
-                                  f"Raw response: {cancel_result}")
+            self.logger().warning(f"Unexpected cancelation status for order {order_id}. Raw response: {cancel_result}")
             return False
         return True
 
     # === Orders placing ===
 
-    def buy(self,
-            trading_pair: str,
-            amount: Decimal,
-            order_type=OrderType.LIMIT,
-            price: Decimal = s_decimal_NaN,
-            **kwargs) -> str:
+    def buy(
+        self, trading_pair: str, amount: Decimal, order_type=OrderType.LIMIT, price: Decimal = s_decimal_NaN, **kwargs
+    ) -> str:
         """
         Creates a promise to create a buy order using the parameters
 
@@ -596,31 +566,38 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
             is_buy=True,
             trading_pair=trading_pair,
             hbot_order_id_prefix=self.client_order_id_prefix,
-            max_id_len=self.client_order_id_max_length
+            max_id_len=self.client_order_id_max_length,
         )
         md5 = hashlib.md5()
-        md5.update(order_id.encode('utf-8'))
+        md5.update(order_id.encode("utf-8"))
         hex_order_id = f"0x{md5.hexdigest()}"
         if order_type is OrderType.MARKET:
             reference_price = self.get_mid_price(trading_pair) if price.is_nan() else price
-            price = self.quantize_order_price(trading_pair, reference_price * Decimal(1 + CONSTANTS.MARKET_ORDER_SLIPPAGE))
+            price = self.quantize_order_price(
+                trading_pair, reference_price * Decimal(1 + CONSTANTS.MARKET_ORDER_SLIPPAGE)
+            )
 
-        safe_ensure_future(self._create_order(
-            trade_type=TradeType.BUY,
-            order_id=hex_order_id,
-            trading_pair=trading_pair,
-            amount=amount,
-            order_type=order_type,
-            price=price,
-            **kwargs))
+        safe_ensure_future(
+            self._create_order(
+                trade_type=TradeType.BUY,
+                order_id=hex_order_id,
+                trading_pair=trading_pair,
+                amount=amount,
+                order_type=order_type,
+                price=price,
+                **kwargs,
+            )
+        )
         return hex_order_id
 
-    def sell(self,
-             trading_pair: str,
-             amount: Decimal,
-             order_type: OrderType = OrderType.LIMIT,
-             price: Decimal = s_decimal_NaN,
-             **kwargs) -> str:
+    def sell(
+        self,
+        trading_pair: str,
+        amount: Decimal,
+        order_type: OrderType = OrderType.LIMIT,
+        price: Decimal = s_decimal_NaN,
+        **kwargs,
+    ) -> str:
         """
         Creates a promise to create a sell order using the parameters.
         :param trading_pair: the token pair to operate with
@@ -633,37 +610,41 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
             is_buy=False,
             trading_pair=trading_pair,
             hbot_order_id_prefix=self.client_order_id_prefix,
-            max_id_len=self.client_order_id_max_length
+            max_id_len=self.client_order_id_max_length,
         )
         md5 = hashlib.md5()
-        md5.update(order_id.encode('utf-8'))
+        md5.update(order_id.encode("utf-8"))
         hex_order_id = f"0x{md5.hexdigest()}"
         if order_type is OrderType.MARKET:
             reference_price = self.get_mid_price(trading_pair) if price.is_nan() else price
-            price = self.quantize_order_price(trading_pair, reference_price * Decimal(1 - CONSTANTS.MARKET_ORDER_SLIPPAGE))
+            price = self.quantize_order_price(
+                trading_pair, reference_price * Decimal(1 - CONSTANTS.MARKET_ORDER_SLIPPAGE)
+            )
 
-        safe_ensure_future(self._create_order(
-            trade_type=TradeType.SELL,
-            order_id=hex_order_id,
-            trading_pair=trading_pair,
-            amount=amount,
-            order_type=order_type,
-            price=price,
-            **kwargs))
+        safe_ensure_future(
+            self._create_order(
+                trade_type=TradeType.SELL,
+                order_id=hex_order_id,
+                trading_pair=trading_pair,
+                amount=amount,
+                order_type=order_type,
+                price=price,
+                **kwargs,
+            )
+        )
         return hex_order_id
 
     async def _place_order(
-            self,
-            order_id: str,
-            trading_pair: str,
-            amount: Decimal,
-            trade_type: TradeType,
-            order_type: OrderType,
-            price: Decimal,
-            position_action: PositionAction = PositionAction.NIL,
-            **kwargs,
-    ) -> Tuple[str, float]:
-
+        self,
+        order_id: str,
+        trading_pair: str,
+        amount: Decimal,
+        trade_type: TradeType,
+        order_type: OrderType,
+        price: Decimal,
+        position_action: PositionAction = PositionAction.NIL,
+        **kwargs,
+    ) -> tuple[str, float]:
         coin = await self.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
         param_order_type = {"limit": {"tif": "Gtc"}}
         if order_type is OrderType.LIMIT_MAKER:
@@ -682,22 +663,17 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
                 "reduceOnly": position_action == PositionAction.CLOSE,
                 "orderType": param_order_type,
                 "cloid": order_id,
-            }
+            },
         }
-        # Builder code (HGP-87): part of the signed action dict. Resolve the fee here too —
-        # embedders like hummingbot-api start connector tasks without calling start_network().
-        await self._ensure_builder_fee_resolved()
+        # Builder code (HGP-87): part of the signed action dict.
         builder_field = self._build_builder_field()
         if builder_field is not None:
             api_params["builder"] = builder_field
-        order_result = await self._api_post(
-            path_url=CONSTANTS.CREATE_ORDER_URL,
-            data=api_params,
-            is_auth_required=True)
+        order_result = await self._api_post(path_url=CONSTANTS.CREATE_ORDER_URL, data=api_params, is_auth_required=True)
         if order_result.get("status") == "err":
             raise IOError(f"Error submitting order {order_id}: {order_result['response']}")
         else:
-            o_order_result = order_result['response']["data"]["statuses"][0]
+            o_order_result = order_result["response"]["data"]["statuses"][0]
         if "error" in o_order_result:
             raise IOError(f"Error submitting order {order_id}: {o_order_result['error']}")
         o_data = o_order_result.get("resting") or o_order_result.get("filled")
@@ -719,48 +695,37 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
             return False
         return True
 
-    def _build_builder_field(self) -> Optional[Dict[str, Any]]:
+    def _build_builder_field(self) -> dict[str, Any] | None:
         """The ``{"b": <address>, "f": <tenths_of_bps>}`` order field, or None when omitted. Address
         is lowercased (the venue rejects mixed-case)."""
         if not self._should_inject_builder():
             return None
         return {"b": self._builder_address.lower(), "f": self._builder_fee_tenths_bps}
 
-    async def _ensure_builder_fee_resolved(self) -> None:
-        """Resolve the builder fee once per network session, whichever path gets there first:
-        start_network on normal client startup, or the first _place_order for embedders that
-        start connector tasks without calling start_network. A failed lookup does not latch the
-        flag, so the next order retries; stop_network clears it, so a reconnect re-resolves."""
-        if self._builder_fee_resolved:
-            return
-        async with self._builder_fee_lock:
-            if self._builder_fee_resolved:
-                return
-            self._builder_fee_resolved = await self._initialize_builder_fee()
-
-    async def _initialize_builder_fee(self) -> bool:
-        """Resolve the per-order builder fee as min(on-chain approved, hardcoded fee):
-        the hardcoded fee if the user has approved this builder in Condor, 0 if not.
-        Returns False when the lookup failed (fee left at 0 until the next attempt)."""
+    async def _initialize_builder_fee(self) -> None:
+        """Resolve the per-order builder fee once at startup as min(on-chain approved, hardcoded fee):
+        the hardcoded fee if the user has approved this builder in Condor, 0 if not (or if the lookup
+        fails)."""
         if not self._should_inject_builder():
-            return True
+            return
         try:
-            approved_max_tenths_bps = int(await self._api_post(
-                path_url=CONSTANTS.EXCHANGE_INFO_URL,
-                data={
-                    "type": CONSTANTS.MAX_BUILDER_FEE_TYPE,
-                    "user": self.hyperliquid_perpetual_address,
-                    "builder": self._builder_address,
-                },
-            ))
+            approved_max_tenths_bps = int(
+                await self._api_post(
+                    path_url=CONSTANTS.EXCHANGE_INFO_URL,
+                    data={
+                        "type": CONSTANTS.MAX_BUILDER_FEE_TYPE,
+                        "user": self.hyperliquid_perpetual_address,
+                        "builder": self._builder_address,
+                    },
+                )
+            )
         except Exception:
             self.logger().exception(
-                "Could not query the approved Hyperliquid builder fee; charging 0 bps until it can be resolved."
+                "Could not query the approved Hyperliquid builder fee; charging 0 bps this session."
             )
             self._builder_fee_tenths_bps = 0
-            return False
+            return
         self._builder_fee_tenths_bps = min(approved_max_tenths_bps, CONSTANTS.FOUNDATION_BUILDER_FEE_TENTHS_BPS)
-        return True
 
     async def _update_trade_history(self):
         orders = list(self._order_tracker.all_fillable_orders.values())
@@ -773,7 +738,8 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
                     data={
                         "type": CONSTANTS.TRADES_TYPE,
                         "user": self.hyperliquid_perpetual_address,
-                    })
+                    },
+                )
             except asyncio.CancelledError:
                 raise
             except Exception as request_error:
@@ -784,7 +750,7 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
             for trade_fill in all_fills_response:
                 self._process_trade_rs_event_message(order_fill=trade_fill, all_fillable_order=all_fillable_orders)
 
-    def _process_trade_rs_event_message(self, order_fill: Dict[str, Any], all_fillable_order):
+    def _process_trade_rs_event_message(self, order_fill: dict[str, Any], all_fillable_order):
         exchange_order_id = str(order_fill.get("oid"))
         fillable_order = all_fillable_order.get(exchange_order_id)
         if fillable_order is not None:
@@ -795,7 +761,7 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
                 fee_schema=self.trade_fee_schema(),
                 position_action=position_action,
                 percent_token=fee_asset,
-                flat_fees=[TokenAmount(amount=Decimal(order_fill["fee"]), token=fee_asset)]
+                flat_fees=[TokenAmount(amount=Decimal(order_fill["fee"]), token=fee_asset)],
             )
 
             trade_update = TradeUpdate(
@@ -812,7 +778,7 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
 
             self._order_tracker.process_trade_update(trade_update)
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         # Use _update_trade_history instead
         pass
 
@@ -832,7 +798,8 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
                 f"Error fetching status update for the active order {order.client_order_id}: {request_error}.",
             )
             self.logger().debug(
-                f"Order {order.client_order_id} not found counter: {self._order_tracker._order_not_found_records.get(order.client_order_id, 0)}")
+                f"Order {order.client_order_id} not found counter: {self._order_tracker._order_not_found_records.get(order.client_order_id, 0)}"
+            )
             await self._order_tracker.process_order_not_found(order.client_order_id)
 
     async def _request_order_status(self, tracked_order: InFlightOrder) -> OrderUpdate:
@@ -849,11 +816,15 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
             data={
                 "type": CONSTANTS.ORDER_STATUS_TYPE,
                 "user": self.hyperliquid_perpetual_address,
-                "oid": int(exchange_order_id) if exchange_order_id else client_order_id
-            })
+                "oid": int(exchange_order_id) if exchange_order_id else client_order_id,
+            },
+        )
         current_state = order_update["order"]["status"]
-        _exchange_order_id = str(tracked_order.exchange_order_id) if tracked_order.exchange_order_id else str(
-            order_update["order"]["order"]["oid"])
+        _exchange_order_id = (
+            str(tracked_order.exchange_order_id)
+            if tracked_order.exchange_order_id
+            else str(order_update["order"]["order"]["oid"])
+        )
         _order_update: OrderUpdate = OrderUpdate(
             trading_pair=tracked_order.trading_pair,
             update_timestamp=order_update["order"]["order"]["timestamp"] * 1e-3,
@@ -863,7 +834,7 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
         )
         return _order_update
 
-    async def _iter_user_event_queue(self) -> AsyncIterable[Dict[str, any]]:
+    async def _iter_user_event_queue(self) -> AsyncIterable[dict[str, any]]:
         while True:
             try:
                 yield await self._user_stream_tracker.user_stream.get()
@@ -896,8 +867,7 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
                 else:
                     raise Exception(event_message)
                 if channel not in user_channels:
-                    self.logger().error(
-                        f"Unexpected message in user stream: {event_message}.", exc_info=True)
+                    self.logger().error(f"Unexpected message in user stream: {event_message}.", exc_info=True)
                     continue
                 if channel == CONSTANTS.USER_ORDERS_ENDPOINT_NAME:
                     for order_msg in results:
@@ -909,11 +879,10 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
             except asyncio.CancelledError:
                 raise
             except Exception:
-                self.logger().error(
-                    "Unexpected error in user stream listener loop.", exc_info=True)
+                self.logger().error("Unexpected error in user stream listener loop.", exc_info=True)
                 await self._sleep(5.0)
 
-    async def _process_trade_message(self, trade: Dict[str, Any], client_order_id: Optional[str] = None):
+    async def _process_trade_message(self, trade: dict[str, Any], client_order_id: str | None = None):
         """
         Updates in-flight order and trigger order filled event for trade message received. Triggers order completed
         event if the total executed amount equals to the specified order amount.
@@ -940,7 +909,7 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
                 fee_schema=self.trade_fee_schema(),
                 position_action=position_action,
                 percent_token=fee_asset,
-                flat_fees=[TokenAmount(amount=Decimal(trade["fee"]), token=fee_asset)]
+                flat_fees=[TokenAmount(amount=Decimal(trade["fee"]), token=fee_asset)],
             )
             trade_update: TradeUpdate = TradeUpdate(
                 trade_id=str(trade["tid"]),
@@ -955,7 +924,7 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
             )
             self._order_tracker.process_trade_update(trade_update)
 
-    def _process_order_message(self, order_msg: Dict[str, Any]):
+    def _process_order_message(self, order_msg: dict[str, Any]):
         """
         Updates in-flight order and triggers cancelation or failure event if needed.
 
@@ -979,7 +948,7 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
         )
         self._order_tracker.process_order_update(order_update=order_update)
 
-    async def _format_trading_rules(self, exchange_info_dict: List) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: List) -> list[TradingRule]:
         """
         Queries the necessary API endpoint and initialize the TradingRule object for each trading pair being traded.
 
@@ -989,8 +958,9 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
             Trading rules dictionary response from the exchange
         """
         # Build coin_to_asset mapping ONLY for base perpetuals (not DEX markets)
-        self.coin_to_asset = {asset_info["name"]: asset for (asset, asset_info) in
-                              enumerate(exchange_info_dict[0]["universe"])}
+        self.coin_to_asset = {
+            asset_info["name"]: asset for (asset, asset_info) in enumerate(exchange_info_dict[0]["universe"])
+        }
         self._is_hip3_market = {}
 
         # Map base perpetual markets only (indices match universe array)
@@ -1021,26 +991,28 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
             perp_meta_list = dex_info.get("perpMeta", []) or []
             for asset_index, perp_meta in enumerate(perp_meta_list):
                 if isinstance(perp_meta, dict):
-                    if ':' in perp_meta.get("name", ""):  # e.g., 'xyz:AAPL'
+                    if ":" in perp_meta.get("name", ""):  # e.g., 'xyz:AAPL'
                         coin_name = perp_meta.get("name", "")
                         # Calculate actual asset ID using offset + array position
                         asset_id = base_asset_id + asset_index
 
                         self._is_hip3_market[coin_name] = True
                         self.coin_to_asset[coin_name] = asset_id  # Store asset ID for order placement
-                        self.logger().debug(f"Mapped HIP-3 {coin_name} -> asset_id {asset_id} (base={base_asset_id}, idx={asset_index}, API name: {coin_name})")
+                        self.logger().debug(
+                            f"Mapped HIP-3 {coin_name} -> asset_id {asset_id} (base={base_asset_id}, idx={asset_index}, API name: {coin_name})"
+                        )
 
-        coin_infos: list = exchange_info_dict[0]['universe']
+        coin_infos: list = exchange_info_dict[0]["universe"]
         price_infos: list = exchange_info_dict[1]
         return_val: list = []
         min_notional_size = Decimal(str(CONSTANTS.MIN_NOTIONAL_SIZE))
         for coin_info, price_info in zip(coin_infos, price_infos):
             try:
-                ex_symbol = f'{coin_info["name"]}'
+                ex_symbol = f"{coin_info['name']}"
                 trading_pair = await self.trading_pair_associated_to_exchange_symbol(symbol=ex_symbol)
                 step_size = Decimal(str(10 ** -coin_info.get("szDecimals")))
 
-                price_size = Decimal(str(10 ** -len(price_info.get("markPx").split('.')[1])))
+                price_size = Decimal(str(10 ** -len(price_info.get("markPx").split(".")[1])))
                 min_order_size = step_size
                 collateral_token = CONSTANTS.CURRENCY
                 return_val.append(
@@ -1055,8 +1027,7 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
                     )
                 )
             except Exception:
-                self.logger().error(f"Error parsing the trading pair rule {coin_info}. Skipping.",
-                                    exc_info=True)
+                self.logger().error(f"Error parsing the trading pair rule {coin_info}. Skipping.", exc_info=True)
 
         # Process HIP-3/DEX markets derived from cached _dex_markets
         for dex_info in self._iter_hip3_merged_markets():
@@ -1067,7 +1038,7 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
                 trading_pair = await self.trading_pair_associated_to_exchange_symbol(symbol=coin_name)
 
                 step_size = Decimal(str(10 ** -dex_info.get("szDecimals")))
-                price_size = Decimal(str(10 ** -len(dex_info.get("markPx").split('.')[1])))
+                price_size = Decimal(str(10 ** -len(dex_info.get("markPx").split(".")[1])))
                 min_order_size = step_size
                 collateral_token = quote
 
@@ -1083,8 +1054,7 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
                     )
                 )
             except Exception:
-                self.logger().error(f"Error parsing HIP-3 trading pair rule {dex_info}. Skipping.",
-                                    exc_info=True)
+                self.logger().error(f"Error parsing HIP-3 trading pair rule {dex_info}. Skipping.", exc_info=True)
 
         return return_val
 
@@ -1108,15 +1078,17 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
             for _, perp_meta in enumerate(perp_meta_list):
                 if isinstance(perp_meta, dict):
                     full_symbol = perp_meta.get("name", "")  # e.g., 'xyz:AAPL'
-                    if ':' in full_symbol:
+                    if ":" in full_symbol:
                         self._is_hip3_market[full_symbol] = True
-                        deployer, base = full_symbol.split(':')
+                        deployer, base = full_symbol.split(":")
                         quote = CONSTANTS.CURRENCY
-                        symbol = f'{deployer.upper()}_{base}'
+                        symbol = f"{deployer.upper()}_{base}"
                         # quote = "USD" if deployer == "xyz" else 'USDH'
                         trading_pair = combine_to_hb_trading_pair(full_symbol, quote)
                         if trading_pair in mapping.inverse:
-                            self._resolve_trading_pair_symbols_duplicate(mapping, full_symbol, full_symbol.upper(), quote)
+                            self._resolve_trading_pair_symbols_duplicate(
+                                mapping, full_symbol, full_symbol.upper(), quote
+                            )
                         else:
                             mapping[full_symbol] = trading_pair.upper()
 
@@ -1133,9 +1105,7 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
                 exchange_symbol = f"{dex_name.lower()}:{coin}"
         else:
             try:
-                exchange_symbol = await self.exchange_symbol_associated_to_pair(
-                    trading_pair=trading_pair
-                )
+                exchange_symbol = await self.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
             except KeyError as e:
                 self.logger().error(f"Trading pair {trading_pair} not found in symbol map: {e}")
                 # Trading pair not in symbol map yet, try to extract from trading pair directly
@@ -1146,15 +1116,10 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
         is_hip3 = self._is_hip3_market.get(exchange_symbol, False) or ":" in exchange_symbol
         if is_hip3:
             # For HIP-3 markets, need to use different type with dex parameter
-            dex_name = exchange_symbol.split(':')[0]
+            dex_name = exchange_symbol.split(":")[0]
             params = {"type": "metaAndAssetCtxs", "dex": dex_name}
         try:
-            response = await safe_ensure_future(
-                self._api_post(
-                    path_url=CONSTANTS.TICKER_PRICE_CHANGE_URL,
-                    data=params
-                )
-            )
+            response = await safe_ensure_future(self._api_post(path_url=CONSTANTS.TICKER_PRICE_CHANGE_URL, data=params))
 
             universe = response[0]["universe"]
             asset_ctxs = response[1]
@@ -1165,10 +1130,7 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
         except Exception as e:
             self.logger().error(f"Error fetching last traded price for {trading_pair} ({exchange_symbol}): {e}")
 
-        raise RuntimeError(
-            f"Price not found for trading_pair={trading_pair}, "
-            f"exchange_symbol={exchange_symbol}"
-        )
+        raise RuntimeError(f"Price not found for trading_pair={trading_pair}, exchange_symbol={exchange_symbol}")
 
     def _resolve_trading_pair_symbols_duplicate(self, mapping: bidict, new_exchange_symbol: str, base: str, quote: str):
         """Resolves name conflicts provoked by futures contracts.
@@ -1186,7 +1148,8 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
             mapping[new_exchange_symbol] = trading_pair
         else:
             self.logger().error(
-                f"Could not resolve the exchange symbols {new_exchange_symbol} and {current_exchange_symbol}")
+                f"Could not resolve the exchange symbols {new_exchange_symbol} and {current_exchange_symbol}"
+            )
             mapping.pop(current_exchange_symbol)
 
     async def _verify_key_authority(self):
@@ -1250,10 +1213,10 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
         await self._verify_key_authority()
 
         quote = CONSTANTS.CURRENCY
-        account_info = await self._api_post(path_url=CONSTANTS.ACCOUNT_INFO_URL,
-                                            data={"type": CONSTANTS.USER_STATE_TYPE,
-                                                  "user": self.hyperliquid_perpetual_address},
-                                            )
+        account_info = await self._api_post(
+            path_url=CONSTANTS.ACCOUNT_INFO_URL,
+            data={"type": CONSTANTS.USER_STATE_TYPE, "user": self.hyperliquid_perpetual_address},
+        )
 
         local_asset_names = set(self._account_balances.keys()) | set(self._account_available_balances.keys())
         for asset_name in local_asset_names:
@@ -1264,14 +1227,17 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
         use_spot_balances = await self._uses_spot_balances()
 
         if use_spot_balances:
-            spot_account_info = await self._api_post(path_url=CONSTANTS.ACCOUNT_INFO_URL,
-                                                     data={"type": CONSTANTS.SPOT_USER_STATE_TYPE,
-                                                           "user": self.hyperliquid_perpetual_address},
-                                                     )
+            spot_account_info = await self._api_post(
+                path_url=CONSTANTS.ACCOUNT_INFO_URL,
+                data={"type": CONSTANTS.SPOT_USER_STATE_TYPE, "user": self.hyperliquid_perpetual_address},
+            )
 
             usdc_balance = next(
-                (balance_entry for balance_entry in spot_account_info["balances"]
-                 if balance_entry["coin"].upper() == "USDC"),
+                (
+                    balance_entry
+                    for balance_entry in spot_account_info["balances"]
+                    if balance_entry["coin"].upper() == "USDC"
+                ),
                 None,
             )
             if usdc_balance is None:
@@ -1292,7 +1258,7 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
             return True
         return False
 
-    async def _get_user_abstraction_mode(self) -> Optional[str]:
+    async def _get_user_abstraction_mode(self) -> str | None:
         try:
             abstraction_mode = await self._api_post(
                 path_url=CONSTANTS.ACCOUNT_INFO_URL,
@@ -1313,26 +1279,29 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
         all_positions = []
 
         # Fetch base perpetual positions (no dex param)
-        base_positions = await self._api_post(path_url=CONSTANTS.POSITION_INFORMATION_URL,
-                                              data={"type": CONSTANTS.USER_STATE_TYPE,
-                                                    "user": self.hyperliquid_perpetual_address}
-                                              )
+        base_positions = await self._api_post(
+            path_url=CONSTANTS.POSITION_INFORMATION_URL,
+            data={"type": CONSTANTS.USER_STATE_TYPE, "user": self.hyperliquid_perpetual_address},
+        )
         all_positions.extend(base_positions.get("assetPositions", []))
 
         # Fetch HIP-3 positions for each DEX market (only if enabled)
         if self._enable_hip3_markets:
-            for dex_info in (self._dex_markets or []):
+            for dex_info in self._dex_markets or []:
                 if dex_info is None:
                     continue
                 dex_name = dex_info.get("name", "")
                 if not dex_name:
                     continue
                 try:
-                    dex_positions = await self._api_post(path_url=CONSTANTS.POSITION_INFORMATION_URL,
-                                                         data={"type": CONSTANTS.USER_STATE_TYPE,
-                                                               "user": self.hyperliquid_perpetual_address,
-                                                               "dex": dex_name}
-                                                         )
+                    dex_positions = await self._api_post(
+                        path_url=CONSTANTS.POSITION_INFORMATION_URL,
+                        data={
+                            "type": CONSTANTS.USER_STATE_TYPE,
+                            "user": self.hyperliquid_perpetual_address,
+                            "dex": dex_name,
+                        },
+                    )
                     all_positions.extend(dex_positions.get("assetPositions", []))
                 except Exception as e:
                     self.logger().debug(f"Error fetching positions for DEX {dex_name}: {e}")
@@ -1369,7 +1338,7 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
                     unrealized_pnl=unrealized_pnl,
                     entry_price=entry_price,
                     amount=amount,
-                    leverage=leverage
+                    leverage=leverage,
                 )
                 self._perpetual_trading.set_position(pos_key, _position)
             else:
@@ -1382,10 +1351,10 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
             if key not in seen_keys:
                 self._perpetual_trading.remove_position(key)
 
-    async def _get_position_mode(self) -> Optional[PositionMode]:
+    async def _get_position_mode(self) -> PositionMode | None:
         return PositionMode.ONEWAY
 
-    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> Tuple[bool, str]:
+    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> tuple[bool, str]:
         msg = ""
         success = True
         initial_mode = await self._get_position_mode()
@@ -1394,7 +1363,7 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
             success = False
         return success, msg
 
-    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> Tuple[bool, str]:
+    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> tuple[bool, str]:
         exchange_symbol = await self.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
         if not self.coin_to_asset:
             await self._update_trading_rules()
@@ -1422,18 +1391,15 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
             "leverage": leverage,
         }
         try:
-            set_leverage = await self._api_post(
-                path_url=CONSTANTS.SET_LEVERAGE_URL,
-                data=params,
-                is_auth_required=True)
+            set_leverage = await self._api_post(path_url=CONSTANTS.SET_LEVERAGE_URL, data=params, is_auth_required=True)
             success = False
             msg = ""
             if set_leverage.get("status") == "err":
                 raise IOError(f"{set_leverage}")
-            if set_leverage["status"] == 'ok':
+            if set_leverage["status"] == "ok":
                 success = True
             else:
-                msg = 'Unable to set leverage'
+                msg = "Unable to set leverage"
             return success, msg
         except Exception as exception:
             success = False
@@ -1441,7 +1407,7 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
 
         return success, msg
 
-    async def _fetch_last_fee_payment(self, trading_pair: str) -> Tuple[int, Decimal, Decimal]:
+    async def _fetch_last_fee_payment(self, trading_pair: str) -> tuple[int, Decimal, Decimal]:
         exchange_symbol = await self.exchange_symbol_associated_to_pair(trading_pair)
 
         # HIP-3 markets may not have funding info available
@@ -1449,13 +1415,14 @@ class HyperliquidPerpetualDerivative(PerpetualDerivativePyBase):
             self.logger().debug(f"Skipping funding info fetch for HIP-3 market {exchange_symbol}")
             return 0, Decimal("-1"), Decimal("-1")
 
-        funding_info_response = await self._api_post(path_url=CONSTANTS.GET_LAST_FUNDING_RATE_PATH_URL,
-                                                     data={
-                                                         "type": "userFunding",
-                                                         "user": self.hyperliquid_perpetual_address,
-                                                         "startTime": self._last_funding_time(),
-                                                     }
-                                                     )
+        funding_info_response = await self._api_post(
+            path_url=CONSTANTS.GET_LAST_FUNDING_RATE_PATH_URL,
+            data={
+                "type": "userFunding",
+                "user": self.hyperliquid_perpetual_address,
+                "startTime": self._last_funding_time(),
+            },
+        )
         sorted_payment_response = [i for i in funding_info_response if i["delta"]["coin"] == exchange_symbol]
         if len(sorted_payment_response) < 1:
             timestamp, funding_rate, payment = 0, Decimal("-1"), Decimal("-1")

@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from decimal import Decimal
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING
 
 from hummingbot.connector.utils import split_hb_trading_pair
 from hummingbot.core.rate_oracle.sources.rate_source_base import RateSourceBase
@@ -12,14 +14,14 @@ if TYPE_CHECKING:
 class HyperliquidRateSource(RateSourceBase):
     def __init__(self):
         super().__init__()
-        self._exchange: Optional[HyperliquidExchange] = None  # delayed because of circular reference
+        self._exchange: HyperliquidExchange | None = None  # delayed because of circular reference
 
     @property
     def name(self) -> str:
         return "hyperliquid"
 
     @async_ttl_cache(ttl=30, maxsize=1)
-    async def get_prices(self, quote_token: Optional[str] = None) -> Dict[str, Decimal]:
+    async def get_prices(self, quote_token: str | None = None) -> dict[str, Decimal]:
         self._ensure_exchange()
         results = {}
         try:
@@ -48,14 +50,14 @@ class HyperliquidRateSource(RateSourceBase):
             self._exchange = self._build_hyperliquid_connector_without_private_keys()
 
     @staticmethod
-    def _build_hyperliquid_connector_without_private_keys() -> 'HyperliquidExchange':
+    def _build_hyperliquid_connector_without_private_keys() -> "HyperliquidExchange":
         from hummingbot.connector.exchange.hyperliquid.hyperliquid_exchange import HyperliquidExchange
 
         return HyperliquidExchange(
             hyperliquid_secret_key="",
             trading_pairs=[],
             use_vault=False,
-            hyperliquid_mode = "arb_wallet",
+            hyperliquid_mode="arb_wallet",
             hyperliquid_address="",
             trading_required=False,
         )

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from decimal import Decimal
-from typing import List, Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, model_validator
 
@@ -30,10 +30,10 @@ class TrailingStop(BaseModel):
 
 
 class TripleBarrierConfig(BaseModel):
-    stop_loss: Optional[Decimal] = None
-    take_profit: Optional[Decimal] = None
-    time_limit: Optional[int] = None
-    trailing_stop: Optional[TrailingStop] = None
+    stop_loss: Decimal | None = None
+    take_profit: Decimal | None = None
+    time_limit: int | None = None
+    trailing_stop: TrailingStop | None = None
     open_order_type: OrderType = OrderType.LIMIT
     take_profit_order_type: OrderType = OrderType.MARKET
     stop_loss_order_type: OrderType = OrderType.MARKET
@@ -58,7 +58,7 @@ class TripleBarrierConfig(BaseModel):
         if self.trailing_stop is not None:
             new_trailing_stop = TrailingStop(
                 activation_price=self.trailing_stop.activation_price * Decimal(volatility_factor),
-                trailing_delta=self.trailing_stop.trailing_delta * Decimal(volatility_factor)
+                trailing_delta=self.trailing_stop.trailing_delta * Decimal(volatility_factor),
             )
 
         return TripleBarrierConfig(
@@ -69,7 +69,7 @@ class TripleBarrierConfig(BaseModel):
             open_order_type=self.open_order_type,
             take_profit_order_type=self.take_profit_order_type,
             stop_loss_order_type=self.stop_loss_order_type,
-            time_limit_order_type=self.time_limit_order_type
+            time_limit_order_type=self.time_limit_order_type,
         )
 
 
@@ -78,12 +78,12 @@ class PositionExecutorConfig(ExecutorConfigBase):
     trading_pair: str
     connector_name: str
     side: TradeType
-    entry_price: Optional[Decimal] = None
+    entry_price: Decimal | None = None
     amount: Decimal
     triple_barrier_config: TripleBarrierConfig = TripleBarrierConfig()
     leverage: int = 1
-    activation_bounds: Optional[List[Decimal]] = None
-    level_id: Optional[str] = None
+    activation_bounds: list[Decimal] | None = None
+    level_id: str | None = None
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @model_validator(mode="after")

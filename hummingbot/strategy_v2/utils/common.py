@@ -1,8 +1,8 @@
+from enum import Enum
 import hashlib
 import random
 import time
-from enum import Enum
-from typing import List, Type, TypeVar
+from typing import TypeVar
 
 import base58
 
@@ -15,10 +15,10 @@ def generate_unique_id():
     return base58.b58encode(hashed_id).decode()
 
 
-E = TypeVar('E', bound=Enum)
+E = TypeVar("E", bound=Enum)
 
 
-def parse_enum_value(enum_class: Type[E], value, field_name: str = "field") -> E:
+def parse_enum_value(enum_class: type[E], value, field_name: str = "field") -> E:
     """
     Parse enum from string name or return as-is if already correct type.
 
@@ -47,9 +47,9 @@ def parse_enum_value(enum_class: Type[E], value, field_name: str = "field") -> E
     return value
 
 
-def parse_comma_separated_list(value) -> List[float]:
+def parse_comma_separated_list(value) -> list[float]:
     """
-    Parse a comma-separated string, scalar number, or list into a List[float].
+    Parse a comma-separated string, scalar number, or list into a list[float].
 
     Handles values coming from YAML configs where a single value is deserialized
     as a scalar (int/float) rather than a list.
@@ -71,7 +71,7 @@ def parse_comma_separated_list(value) -> List[float]:
     if isinstance(value, str):
         if value == "":
             return []
-        return [float(x.strip()) for x in value.split(',')]
+        return [float(x.strip()) for x in value.split(",")]
     if isinstance(value, (int, float)):
         return [float(value)]
     return value

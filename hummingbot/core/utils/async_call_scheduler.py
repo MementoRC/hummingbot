@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
+from __future__ import annotations
+
 import asyncio
 import logging
-from typing import Callable, Coroutine, NamedTuple, Optional
+from typing import Callable, Coroutine, NamedTuple
 
 from async_timeout import timeout
 
@@ -19,8 +21,8 @@ class AsyncCallSchedulerItem(NamedTuple):
 
 
 class AsyncCallScheduler:
-    _acs_shared_instance: Optional["AsyncCallScheduler"] = None
-    _acs_logger: Optional[HummingbotLogger] = None
+    _acs_shared_instance: "AsyncCallScheduler" | None = None
+    _acs_logger: HummingbotLogger | None = None
 
     @classmethod
     def shared_instance(cls):
@@ -36,7 +38,7 @@ class AsyncCallScheduler:
 
     def __init__(self, call_interval: float = 0.01):
         self._coro_queue: asyncio.Queue = asyncio.Queue()
-        self._coro_scheduler_task: Optional[asyncio.Task] = None
+        self._coro_scheduler_task: asyncio.Task | None = None
         self._call_interval: float = call_interval
         self.reset_event_loop()
 
@@ -45,7 +47,7 @@ class AsyncCallScheduler:
         return self._coro_queue
 
     @property
-    def coro_scheduler_task(self) -> Optional[asyncio.Task]:
+    def coro_scheduler_task(self) -> asyncio.Task | None:
         return self._coro_scheduler_task
 
     @property
@@ -58,12 +60,7 @@ class AsyncCallScheduler:
     def start(self):
         if self._coro_scheduler_task is not None:
             self.stop()
-        self._coro_scheduler_task = safe_ensure_future(
-            self._coro_scheduler(
-                self._coro_queue,
-                self._call_interval
-            )
-        )
+        self._coro_scheduler_task = safe_ensure_future(self._coro_scheduler(self._coro_queue, self._call_interval))
 
     def stop(self):
         if self._coro_scheduler_task is not None:
@@ -89,9 +86,7 @@ class AsyncCallScheduler:
             except Exception as e:
                 # Add exception information.
                 app_warning_msg += f" [[Got exception: {str(e)}]]"
-                self.logger().debug(app_warning_msg,
-                                    exc_info=True,
-                                    app_warning_msg=app_warning_msg)
+                self.logger().debug(app_warning_msg, exc_info=True, app_warning_msg=app_warning_msg)
                 try:
                     fut.set_exception(e)
                 except Exception:
@@ -104,21 +99,18 @@ class AsyncCallScheduler:
             except Exception:
                 self.logger().error("Scheduler sleep interrupted.", exc_info=True)
 
-    async def schedule_async_call(self,
-                                  coro: Coroutine,
-                                  timeout_seconds: float,
-                                  app_warning_msg: str = "API call error.") -> any:
+    async def schedule_async_call(
+        self, coro: Coroutine, timeout_seconds: float, app_warning_msg: str = "API call error."
+    ) -> any:
         fut: asyncio.Future = self._ev_loop.create_future()
-        self._coro_queue.put_nowait(AsyncCallSchedulerItem(fut, coro, timeout_seconds,
-                                                           app_warning_msg=app_warning_msg))
+        self._coro_queue.put_nowait(AsyncCallSchedulerItem(fut, coro, timeout_seconds, app_warning_msg=app_warning_msg))
         if self._coro_scheduler_task is None:
             self.start()
         return await fut
 
-    async def call_async(self,
-                         func: Callable, *args,
-                         timeout_seconds: float = 5.0,
-                         app_warning_msg: str = "API call error.") -> any:
+    async def call_async(
+        self, func: Callable, *args, timeout_seconds: float = 5.0, app_warning_msg: str = "API call error."
+    ) -> any:
         coro: Coroutine = self._ev_loop.run_in_executor(
             hummingbot.get_executor(),
             func,

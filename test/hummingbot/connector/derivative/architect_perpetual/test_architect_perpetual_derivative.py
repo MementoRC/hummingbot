@@ -1,13 +1,15 @@
+from __future__ import annotations
+
 import asyncio
+from decimal import Decimal
 import json
 import re
-from decimal import Decimal
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable
 from unittest.mock import AsyncMock, patch
 
-import pandas as pd
 from aioresponses import aioresponses
 from aioresponses.core import RequestCall
+import pandas as pd
 
 from hummingbot.connector.derivative.architect_perpetual import (
     architect_perpetual_constants as CONSTANTS,
@@ -114,8 +116,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
                     "funding_calendar_schedule": (
                         "All days where a valid Underlying Benchmark Price AND Contract Mark Price are published"
                     ),
-                    "trading_schedule": {
-                    },
+                    "trading_schedule": {},
                 },
                 {
                     "symbol": "OCPI-H100-PERP",
@@ -140,11 +141,9 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
                     "price_bands": "+/- 10% from prior Contract Mark Price",
                     "funding_schedule_time_description": "Daily around 4:00 P.M. NY time",
                     "funding_schedule_calendar_description": "All days where a valid Underlying Benchmark Price AND Contract Mark Price are published",
-                    "funding_schedule": {
-                    },
-                    "trading_schedule": {
-                    }
-                }
+                    "funding_schedule": {},
+                    "trading_schedule": {},
+                },
             ]
         }
         return response
@@ -171,7 +170,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         }
 
     @property
-    def all_symbols_including_invalid_pair_mock_response(self) -> Tuple[str, Any]:
+    def all_symbols_including_invalid_pair_mock_response(self) -> tuple[str, Any]:
         mock_response = self.all_symbols_request_mock_response
         return "INVALID-PAIR", mock_response
 
@@ -207,7 +206,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
                         "initial_margin_required_total": "93.360000",
                         "maintenance_margin_required": "46.680000",
                         "unrealized_pnl": "-0.2000",
-                        "liquidation_price": "-198.777568726680"
+                        "liquidation_price": "-198.777568726680",
                     }
                 },
                 "initial_margin_required_for_positions": "93.360000",
@@ -218,7 +217,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
                 "equity": "199991.248726680000",
                 "initial_margin_available": "1000",
                 "maintenance_margin_available": "199944.568726680000",
-                "balance_usd": "2000"
+                "balance_usd": "2000",
             }
         }
         return response
@@ -329,7 +328,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         self.setup_auth_token(mock_api=mock_api)
         url = web_utils.private_rest_url(path_url=CONSTANTS.CANCEL_ORDER_ENDPOINT, domain=self.domain)
@@ -343,7 +342,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         self.setup_auth_token(mock_api=mock_api)
         url = web_utils.private_rest_url(CONSTANTS.CANCEL_ORDER_ENDPOINT, domain=self.domain)
@@ -355,7 +354,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         self.setup_auth_token(mock_api=mock_api)
         url = web_utils.private_rest_url(CONSTANTS.CANCEL_ORDER_ENDPOINT, domain=self.domain)
@@ -368,30 +367,26 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         successful_order: InFlightOrder,
         erroneous_order: InFlightOrder,
         mock_api: aioresponses,
-    ) -> List[str]:
+    ) -> list[str]:
         return [
-            self.configure_successful_cancelation_response(
-                order=successful_order,
-                mock_api=mock_api
-            ),
-            self.configure_erroneous_cancelation_response(
-                order=erroneous_order,
-                mock_api=mock_api
-            )
+            self.configure_successful_cancelation_response(order=successful_order, mock_api=mock_api),
+            self.configure_erroneous_cancelation_response(order=erroneous_order, mock_api=mock_api),
         ]
 
     def configure_completely_filled_order_status_response(
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
         url = web_utils.private_rest_url(path_url=CONSTANTS.ORDER_STATUS_ENDPOINT, domain=self.domain)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
 
-        mock_api.get(regex_url, body=json.dumps(
-            self.order_status_request_completely_filled_mock_response(order=order)
-        ), callback=callback)
+        mock_api.get(
+            regex_url,
+            body=json.dumps(self.order_status_request_completely_filled_mock_response(order=order)),
+            callback=callback,
+        )
 
         return url
 
@@ -399,8 +394,8 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> Union[str, List[str]]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> str | list[str]:
         url = web_utils.private_rest_url(path_url=CONSTANTS.ORDER_STATUS_ENDPOINT, domain=self.domain)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
 
@@ -420,8 +415,8 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
         url = web_utils.private_rest_url(path_url=CONSTANTS.ORDER_STATUS_ENDPOINT, domain=self.domain)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
 
@@ -441,7 +436,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.private_rest_url(path_url=CONSTANTS.ORDER_STATUS_ENDPOINT, domain=self.domain)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
@@ -454,7 +449,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.private_rest_url(path_url=CONSTANTS.ORDER_STATUS_ENDPOINT, domain=self.domain)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
@@ -475,8 +470,8 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
         url = web_utils.private_rest_url(path_url=CONSTANTS.ORDER_STATUS_ENDPOINT, domain=self.domain)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
         mock_api.get(regex_url, body=json.dumps({"error": "no matching orders"}), callback=callback)
@@ -486,7 +481,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.private_rest_url(path_url=CONSTANTS.ORDER_FILLS_ENDPOINT, domain=self.domain)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
@@ -516,7 +511,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.private_rest_url(path_url=CONSTANTS.ORDER_FILLS_ENDPOINT, domain=self.domain)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
@@ -528,7 +523,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = None,
+        callback: Callable | None = None,
     ) -> str:
         url = web_utils.private_rest_url(path_url=CONSTANTS.ORDER_FILLS_ENDPOINT, domain=self.domain)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
@@ -557,8 +552,8 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
     def configure_trading_rules_response(
         self,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
         exchange_info_url = web_utils.public_rest_url(path_url=CONSTANTS.EXCHANGE_INFO_ENDPOINT, domain=self.domain)
         exchange_info_response = self.get_trading_rule_rest_msg()
         mock_api.get(exchange_info_url, body=json.dumps(exchange_info_response), callback=callback)
@@ -591,8 +586,8 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
     def configure_erroneous_trading_rules_response(
         self,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
         exchange_info_url = web_utils.public_rest_url(path_url=CONSTANTS.EXCHANGE_INFO_ENDPOINT, domain=self.domain)
         exchange_info_response = self.get_trading_rule_rest_msg()
         mock_api.get(exchange_info_url, body=json.dumps(exchange_info_response), callback=callback)
@@ -696,7 +691,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
                 "p": str(order.price),
                 "d": "B" if order.trade_type == TradeType.BUY else "S",
                 "agg": True,  # taker
-            }
+            },
         }
         return event
 
@@ -715,7 +710,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         return response
 
     @property
-    def expected_supported_position_modes(self) -> List[PositionMode]:
+    def expected_supported_position_modes(self) -> list[PositionMode]:
         return [PositionMode.ONEWAY]
 
     @property
@@ -785,7 +780,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         position_mode: PositionMode,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ):
         raise NotImplementedError
 
@@ -793,8 +788,8 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         position_mode: PositionMode,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> Tuple[str, str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> tuple[str, str]:
         """
         :return: A tuple of the URL and an error message if the exchange returns one on failure.
         """
@@ -804,7 +799,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         leverage: int,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ):
         additional_info = AdditionalInstrumentInfo(
             leverage=int(leverage + 1),
@@ -819,7 +814,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self,
         leverage: int,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ):
         additional_info = AdditionalInstrumentInfo(
             leverage=int(leverage),
@@ -873,8 +868,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
                     "funding_calendar_schedule": (
                         "All days where a valid Underlying Benchmark Price AND Contract Mark Price are published"
                     ),
-                    "trading_schedule": {
-                    },
+                    "trading_schedule": {},
                 },
             ]
         }
@@ -931,7 +925,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
                 "INFO",
                 f"Created {OrderType.LIMIT.name} {TradeType.BUY.name} order {order_id} for "
                 f"{Decimal('100')} to {PositionAction.OPEN.name} a {self.trading_pair} position "
-                f"at {Decimal('10000.0000')}."
+                f"at {Decimal('10000.0000')}.",
             )
         )
 
@@ -942,9 +936,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         request_sent_event = asyncio.Event()
         self.exchange._set_current_timestamp(1640780000)
         url = self.order_creation_url
-        mock_api.post(url,
-                      status=400,
-                      callback=lambda *args, **kwargs: request_sent_event.set())
+        mock_api.post(url, status=400, callback=lambda *args, **kwargs: request_sent_event.set())
 
         order_id = self.place_buy_order()
         await asyncio.wait_for(request_sent_event.wait(), timeout=1)
@@ -960,11 +952,9 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
             trade_type=TradeType.BUY,
             amount=Decimal("100"),
             creation_timestamp=self.exchange.current_timestamp,
-            price=Decimal("10000")
+            price=Decimal("10000"),
         )
-        self.validate_order_creation_request(
-            order=order_to_validate_request,
-            request_call=order_request)
+        self.validate_order_creation_request(order=order_to_validate_request, request_call=order_request)
 
         self.assertEqual(0, len(self.buy_order_created_logger.event_log))
         failure_event: MarketOrderFailureEvent = self.order_failure_logger.event_log[0]
@@ -975,7 +965,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self.assertTrue(
             self.is_logged(
                 "NETWORK",
-                f"Error submitting buy LIMIT order to {self.exchange.name_cap} for 100 {self.trading_pair} 10000.0000."
+                f"Error submitting buy LIMIT order to {self.exchange.name_cap} for 100 {self.trading_pair} 10000.0000.",
             )
         )
 
@@ -987,13 +977,9 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self.exchange._set_current_timestamp(1640780000)
 
         url = self.order_creation_url
-        mock_api.post(url,
-                      status=400,
-                      callback=lambda *args, **kwargs: request_sent_event.set())
+        mock_api.post(url, status=400, callback=lambda *args, **kwargs: request_sent_event.set())
 
-        order_id_for_invalid_order = self.place_buy_order(
-            amount=Decimal("0.0001"), price=Decimal("0.0001")
-        )
+        order_id_for_invalid_order = self.place_buy_order(amount=Decimal("0.0001"), price=Decimal("0.0001"))
         # The second order is used only to have the event triggered and avoid using timeouts for tests
         order_id = self.place_buy_order()
         await asyncio.wait_for(request_sent_event.wait(), timeout=3)
@@ -1011,17 +997,14 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self.assertTrue(
             self.is_logged(
                 "NETWORK",
-                f"Error submitting buy LIMIT order to {self.exchange.name_cap} for 100 {self.trading_pair} 10000.0000."
+                f"Error submitting buy LIMIT order to {self.exchange.name_cap} for 100 {self.trading_pair} 10000.0000.",
             )
         )
         error_message = (
             f"Order amount 0.0001 is lower than minimum order size 100 for the pair {self.trading_pair}. "
             "The order will not be created."
         )
-        misc_updates = {
-            "error_message": error_message,
-            "error_type": "ValueError"
-        }
+        misc_updates = {"error_message": error_message, "error_type": "ValueError"}
 
         expected_log = (
             f"Order {order_id_for_invalid_order} has failed. Order Update: "
@@ -1043,9 +1026,9 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         url = self.order_creation_url
         creation_response = self.order_creation_request_successful_mock_response
 
-        mock_api.post(url,
-                      body=json.dumps(creation_response),
-                      callback=lambda *args, **kwargs: request_sent_event.set())
+        mock_api.post(
+            url, body=json.dumps(creation_response), callback=lambda *args, **kwargs: request_sent_event.set()
+        )
         leverage = 5
         self.exchange._perpetual_trading.set_leverage(self.trading_pair, leverage)
         order_id = self.place_sell_order(position_action=PositionAction.CLOSE)
@@ -1054,9 +1037,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         order_request = self._all_executed_requests(mock_api, url)[0]
         self.validate_auth_credentials_present(order_request)
         self.assertIn(order_id, self.exchange.in_flight_orders)
-        self.validate_order_creation_request(
-            order=self.exchange.in_flight_orders[order_id],
-            request_call=order_request)
+        self.validate_order_creation_request(order=self.exchange.in_flight_orders[order_id], request_call=order_request)
 
         create_event: SellOrderCreatedEvent = self.sell_order_created_logger.event_log[0]
         self.assertEqual(self.exchange.current_timestamp, create_event.timestamp)
@@ -1074,7 +1055,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
                 "INFO",
                 f"Created {OrderType.LIMIT.name} {TradeType.SELL.name} order {order_id} for "
                 f"{Decimal('100')} to {PositionAction.CLOSE.name} a {self.trading_pair} position "
-                f"at {Decimal('10000.0000')}."
+                f"at {Decimal('10000.0000')}.",
             )
         )
 
@@ -1089,9 +1070,9 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
 
         creation_response = self.order_creation_request_successful_mock_response
 
-        mock_api.post(url,
-                      body=json.dumps(creation_response),
-                      callback=lambda *args, **kwargs: request_sent_event.set())
+        mock_api.post(
+            url, body=json.dumps(creation_response), callback=lambda *args, **kwargs: request_sent_event.set()
+        )
         leverage = 4
         self.exchange._perpetual_trading.set_leverage(self.trading_pair, leverage)
         order_id = self.place_buy_order(position_action=PositionAction.CLOSE)
@@ -1100,20 +1081,16 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         order_request = self._all_executed_requests(mock_api, url)[0]
         self.validate_auth_credentials_present(order_request)
         self.assertIn(order_id, self.exchange.in_flight_orders)
-        self.validate_order_creation_request(
-            order=self.exchange.in_flight_orders[order_id],
-            request_call=order_request)
+        self.validate_order_creation_request(order=self.exchange.in_flight_orders[order_id], request_call=order_request)
 
         create_event: BuyOrderCreatedEvent = self.buy_order_created_logger.event_log[0]
-        self.assertEqual(self.exchange.current_timestamp,
-                         create_event.timestamp)
+        self.assertEqual(self.exchange.current_timestamp, create_event.timestamp)
         self.assertEqual(self.trading_pair, create_event.trading_pair)
         self.assertEqual(OrderType.LIMIT, create_event.type)
         self.assertEqual(Decimal("100"), create_event.amount)
         self.assertEqual(Decimal("10000"), create_event.price)
         self.assertEqual(order_id, create_event.order_id)
-        self.assertEqual(str(self.expected_exchange_order_id),
-                         create_event.exchange_order_id)
+        self.assertEqual(str(self.expected_exchange_order_id), create_event.exchange_order_id)
         self.assertEqual(leverage, create_event.leverage)
         self.assertEqual(PositionAction.CLOSE.value, create_event.position)
 
@@ -1122,7 +1099,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
                 "INFO",
                 f"Created {OrderType.LIMIT.name} {TradeType.BUY.name} order {order_id} for "
                 f"{Decimal('100')} to {PositionAction.CLOSE.name} a {self.trading_pair} position "
-                f"at {Decimal('10000.0000')}."
+                f"at {Decimal('10000.0000')}.",
             )
         )
 
@@ -1137,9 +1114,9 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         url = self.order_creation_url
         creation_response = self.order_creation_request_successful_mock_response
 
-        mock_api.post(url,
-                      body=json.dumps(creation_response),
-                      callback=lambda *args, **kwargs: request_sent_event.set())
+        mock_api.post(
+            url, body=json.dumps(creation_response), callback=lambda *args, **kwargs: request_sent_event.set()
+        )
         leverage = 3
         self.exchange._perpetual_trading.set_leverage(self.trading_pair, leverage)
         order_id = self.place_sell_order()
@@ -1148,9 +1125,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         order_request = self._all_executed_requests(mock_api, url)[0]
         self.validate_auth_credentials_present(order_request)
         self.assertIn(order_id, self.exchange.in_flight_orders)
-        self.validate_order_creation_request(
-            order=self.exchange.in_flight_orders[order_id],
-            request_call=order_request)
+        self.validate_order_creation_request(order=self.exchange.in_flight_orders[order_id], request_call=order_request)
 
         create_event: SellOrderCreatedEvent = self.sell_order_created_logger.event_log[0]
         self.assertEqual(self.exchange.current_timestamp, create_event.timestamp)
@@ -1168,7 +1143,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
                 "INFO",
                 f"Created {OrderType.LIMIT.name} {TradeType.SELL.name} order {order_id} for "
                 f"{Decimal('100')} to {PositionAction.OPEN.name} a {self.trading_pair} position "
-                f"at {Decimal('10000.0000')}."
+                f"at {Decimal('10000.0000')}.",
             )
         )
 
@@ -1233,12 +1208,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
 
         self.assertEqual(0, len(self.buy_order_completed_logger.event_log))
         self.assertIn(order.client_order_id, self.exchange._order_tracker.all_fillable_orders)
-        self.assertFalse(
-            self.is_logged(
-                "INFO",
-                f"BUY order {order.client_order_id} completely filled."
-            )
-        )
+        self.assertFalse(self.is_logged("INFO", f"BUY order {order.client_order_id} completely filled."))
 
         request_sent_event.clear()
 
@@ -1260,12 +1230,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self.assertEqual(1, len(self.order_filled_logger.event_log))
         self.assertEqual(0, len(self.buy_order_completed_logger.event_log))
         self.assertNotIn(order.client_order_id, self.exchange._order_tracker.all_fillable_orders)
-        self.assertFalse(
-            self.is_logged(
-                "INFO",
-                f"BUY order {order.client_order_id} completely filled."
-            )
-        )
+        self.assertFalse(self.is_logged("INFO", f"BUY order {order.client_order_id} completely filled."))
 
     def test_get_buy_and_sell_collateral_tokens(self):
         self._simulate_trading_rules_initialized()
@@ -1320,7 +1285,8 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
 
     @aioresponses()
     @patch(
-        "hummingbot.connector.derivative.architect_perpetual.architect_perpetual_api_order_book_data_source.ArchitectPerpetualAPIOrderBookDataSource._sleep")
+        "hummingbot.connector.derivative.architect_perpetual.architect_perpetual_api_order_book_data_source.ArchitectPerpetualAPIOrderBookDataSource._sleep"
+    )
     @patch("asyncio.Queue.get")
     def test_listen_for_funding_info_update_initializes_funding_info(
         self, mock_api: aioresponses, mock_queue_get: AsyncMock, sleep_mock: AsyncMock
@@ -1343,9 +1309,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self.assertEqual(self.trading_pair, funding_info.trading_pair)
         self.assertEqual(self.target_funding_info_index_price, funding_info.index_price)
         self.assertEqual(self.target_funding_info_mark_price, funding_info.mark_price)
-        self.assertEqual(
-            self.target_funding_info_next_funding_utc_timestamp, funding_info.next_funding_utc_timestamp
-        )
+        self.assertEqual(self.target_funding_info_next_funding_utc_timestamp, funding_info.next_funding_utc_timestamp)
         self.assertEqual(self.target_funding_info_rate, funding_info.rate)
 
     @aioresponses()
@@ -1367,9 +1331,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         order: InFlightOrder = self.exchange.in_flight_orders[self.client_order_id_prefix + "1"]
 
         for _ in range(self.exchange._order_tracker._lost_order_count_limit + 1):
-            await (
-                self.exchange._order_tracker.process_order_not_found(client_order_id=order.client_order_id)
-            )
+            await self.exchange._order_tracker.process_order_not_found(client_order_id=order.client_order_id)
 
         self.assertNotIn(order.client_order_id, self.exchange.in_flight_orders)
 
@@ -1381,7 +1343,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
             order=order, mock_api=mock_api, callback=lambda *args, **kwargs: request_sent_event.set()
         )
 
-        await (self.exchange._update_lost_orders_status())
+        await self.exchange._update_lost_orders_status()
         # Execute one more synchronization to ensure the async task that processes the update is finished
         await asyncio.wait_for(request_sent_event.wait(), timeout=1)
         await asyncio.sleep(0.1)
@@ -1392,9 +1354,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self.assertEqual(0, len(self.buy_order_completed_logger.event_log))
         self.assertNotIn(order.client_order_id, self.exchange._order_tracker.all_fillable_orders)
 
-        self.assertFalse(
-            self.is_logged("INFO", f"BUY order {order.client_order_id} completely filled.")
-        )
+        self.assertFalse(self.is_logged("INFO", f"BUY order {order.client_order_id} completely filled."))
 
     @aioresponses()
     async def test_update_order_status_when_canceled(self, mock_api):
@@ -1413,14 +1373,12 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         )
         order = self.exchange.in_flight_orders[self.client_order_id_prefix + "1"]
 
-        urls = self.configure_canceled_order_status_response(
-            order=order,
-            mock_api=mock_api)
+        urls = self.configure_canceled_order_status_response(order=order, mock_api=mock_api)
 
-        await (self.exchange._update_order_status())
+        await self.exchange._update_order_status()
         await asyncio.sleep(0.1)
 
-        for url in (urls if isinstance(urls, list) else [urls]):
+        for url in urls if isinstance(urls, list) else [urls]:
             order_status_request = self._all_executed_requests(mock_api, url)[0]
             self.validate_auth_credentials_present(order_status_request)
             self.validate_order_status_request(order=order, request_call=order_status_request)
@@ -1430,9 +1388,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self.assertEqual(order.client_order_id, cancel_event.order_id)
         self.assertEqual(order.exchange_order_id, cancel_event.exchange_order_id)
         self.assertNotIn(order.client_order_id, self.exchange.in_flight_orders)
-        self.assertTrue(
-            self.is_logged("INFO", f"Successfully canceled order {order.client_order_id}.")
-        )
+        self.assertTrue(self.is_logged("INFO", f"Successfully canceled order {order.client_order_id}."))
 
     @aioresponses()
     async def test_update_order_status_when_order_has_not_changed(self, mock_api):
@@ -1451,15 +1407,13 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         )
         order: InFlightOrder = self.exchange.in_flight_orders[self.client_order_id_prefix + "1"]
 
-        urls = self.configure_open_order_status_response(
-            order=order,
-            mock_api=mock_api)
+        urls = self.configure_open_order_status_response(order=order, mock_api=mock_api)
 
         self.assertTrue(order.is_open)
 
-        await (self.exchange._update_order_status())
+        await self.exchange._update_order_status()
 
-        for url in (urls if isinstance(urls, list) else [urls]):
+        for url in urls if isinstance(urls, list) else [urls]:
             order_status_request = self._all_executed_requests(mock_api, url)[0]
             self.validate_auth_credentials_present(order_status_request)
             self.validate_order_status_request(order=order, request_call=order_status_request)
@@ -1474,7 +1428,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         response = self.balance_request_mock_response_for_base_and_quote
         self._configure_balance_response(response=response, mock_api=mock_api)
 
-        await (self.exchange._update_balances_and_positions())
+        await self.exchange._update_balances_and_positions()
 
         available_balances = self.exchange.available_balances
         total_balances = self.exchange.get_all_balances()
@@ -1499,18 +1453,14 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         )
         order: InFlightOrder = self.exchange.in_flight_orders[self.client_order_id_prefix + "1"]
 
-        url = self.configure_http_error_order_status_response(
-            order=order,
-            mock_api=mock_api)
+        url = self.configure_http_error_order_status_response(order=order, mock_api=mock_api)
 
-        await (self.exchange._update_order_status())
+        await self.exchange._update_order_status()
 
         if url:
             order_status_request = self._all_executed_requests(mock_api, url)[0]
             self.validate_auth_credentials_present(order_status_request)
-            self.validate_order_status_request(
-                order=order,
-                request_call=order_status_request)
+            self.validate_order_status_request(order=order, request_call=order_status_request)
 
         self.assertTrue(order.is_open)
         self.assertFalse(order.is_filled)
@@ -1525,7 +1475,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
 
         self.configure_trading_rules_response(mock_api=mock_api)
 
-        await (self.exchange._update_trading_rules())
+        await self.exchange._update_trading_rules()
 
         self.assertTrue(self.trading_pair in self.exchange.trading_rules)
         trading_rule: TradingRule = self.exchange.trading_rules[self.trading_pair]
@@ -1536,10 +1486,10 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         trading_rule_with_default_values = TradingRule(trading_pair=self.trading_pair)
 
         # The following element can't be left with the default value because that breaks quantization in Cython
-        self.assertNotEqual(trading_rule_with_default_values.min_base_amount_increment,
-                            trading_rule.min_base_amount_increment)
-        self.assertNotEqual(trading_rule_with_default_values.min_price_increment,
-                            trading_rule.min_price_increment)
+        self.assertNotEqual(
+            trading_rule_with_default_values.min_base_amount_increment, trading_rule.min_base_amount_increment
+        )
+        self.assertNotEqual(trading_rule_with_default_values.min_price_increment, trading_rule.min_price_increment)
 
     @aioresponses()
     async def test_update_trading_rules_ignores_rule_with_error(self, mock_api):
@@ -1548,12 +1498,10 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
 
         self.configure_erroneous_trading_rules_response(mock_api=mock_api)
 
-        await (self.exchange._update_trading_rules())
+        await self.exchange._update_trading_rules()
 
         self.assertEqual(0, len(self.exchange._trading_rules))
-        self.assertTrue(
-            self.is_logged("ERROR", self.expected_logged_error_for_erroneous_trading_rule)
-        )
+        self.assertTrue(self.is_logged("ERROR", self.expected_logged_error_for_erroneous_trading_rule))
 
     @aioresponses()
     def test_user_stream_update_for_order_full_fill(self, mock_api):
@@ -1619,12 +1567,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self.assertTrue(order.is_filled)
         self.assertTrue(order.is_done)
 
-        self.assertTrue(
-            self.is_logged(
-                "INFO",
-                f"BUY order {order.client_order_id} completely filled."
-            )
-        )
+        self.assertTrue(self.is_logged("INFO", f"BUY order {order.client_order_id} completely filled."))
 
     def test_user_stream_balance_update(self):
         # Architect does not update balances via WS
@@ -1681,10 +1624,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
 
         self.assertTrue(
             self.is_logged(
-                log_level="ERROR",
-                message=(
-                    f"Position mode {PositionMode.HEDGE} is not supported. Mode not set."
-                )
+                log_level="ERROR", message=(f"Position mode {PositionMode.HEDGE} is not supported. Mode not set.")
             )
         )
 
@@ -1719,7 +1659,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
 
         self.assertEqual(
             f"Invalid position action {PositionAction.NIL}. Must be one of {[PositionAction.OPEN, PositionAction.CLOSE]}",
-            str(exception_context.exception)
+            str(exception_context.exception),
         )
 
     @aioresponses()
@@ -1743,7 +1683,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
                         "initial_margin_required_total": "93.3680000",
                         "maintenance_margin_required": "46.6840000",
                         "unrealized_pnl": "-0.1000",
-                        "liquidation_price": "-198.771872026680"
+                        "liquidation_price": "-198.771872026680",
                     }
                 },
                 "initial_margin_required_for_positions": "104.1400000",
@@ -1754,7 +1694,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
                 "equity": "199991.042026680000",
                 "initial_margin_available": "199886.902026680000",
                 "maintenance_margin_available": "199938.972026680000",
-                "balance_usd": "199991.112026680000"
+                "balance_usd": "199991.112026680000",
             }
         }
 
@@ -1788,9 +1728,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
 
         mock_api.get(url, body=json.dumps(response))
 
-        latest_prices: Dict[str, float] = await (
-            self.exchange.get_last_traded_prices(trading_pairs=[self.trading_pair])
-        )
+        latest_prices: dict[str, float] = await self.exchange.get_last_traded_prices(trading_pairs=[self.trading_pair])
 
         self.assertEqual(1, len(latest_prices))
         self.assertEqual(self.expected_latest_price, latest_prices[self.trading_pair])
@@ -1812,8 +1750,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         order = self.exchange.in_flight_orders[self.client_order_id_prefix + "1"]
 
         for _ in range(self.exchange._order_tracker._lost_order_count_limit + 1):
-            await (
-                self.exchange._order_tracker.process_order_not_found(client_order_id=order.client_order_id))
+            await self.exchange._order_tracker.process_order_not_found(client_order_id=order.client_order_id)
 
         self.assertNotIn(order.client_order_id, self.exchange.in_flight_orders)
 
@@ -1831,16 +1768,14 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self.exchange._user_stream_tracker._user_stream = mock_queue
 
         if self.is_order_fill_http_update_executed_during_websocket_order_event_processing:
-            self.configure_full_fill_trade_response(
-                order=order,
-                mock_api=mock_api)
+            self.configure_full_fill_trade_response(order=order, mock_api=mock_api)
 
         try:
-            await (self.exchange._user_stream_event_listener())
+            await self.exchange._user_stream_event_listener()
         except asyncio.CancelledError:
             pass
         # Execute one more synchronization to ensure the async task that processes the update is finished
-        await (order.wait_until_completely_filled())
+        await order.wait_until_completely_filled()
         await asyncio.sleep(0.1)
 
         fill_event: OrderFilledEvent = self.order_filled_logger.event_log[0]
@@ -1881,14 +1816,11 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         order: InFlightOrder = self.exchange.in_flight_orders[self.client_order_id_prefix + "1"]
 
         urls = self.configure_completely_filled_order_status_response(
-            order=order,
-            mock_api=mock_api,
-            callback=lambda *args, **kwargs: request_sent_event.set())
+            order=order, mock_api=mock_api, callback=lambda *args, **kwargs: request_sent_event.set()
+        )
 
         if self.is_order_fill_http_update_included_in_status_update:
-            trade_url = self.configure_full_fill_trade_response(
-                order=order,
-                mock_api=mock_api)
+            trade_url = self.configure_full_fill_trade_response(order=order, mock_api=mock_api)
         else:
             # If the fill events will not be requested with the order status, we need to manually set the event
             # to allow the ClientOrderTracker to process the last status update
@@ -1897,7 +1829,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         # Execute one more synchronization to ensure the async task that processes the update is finished
         self.async_run_with_timeout(request_sent_event.wait())
 
-        for url in (urls if isinstance(urls, list) else [urls]):
+        for url in urls if isinstance(urls, list) else [urls]:
             order_status_request = self._all_executed_requests(mock_api, url)[0]
             self.validate_auth_credentials_present(order_status_request)
             self.validate_order_status_request(order=order, request_call=order_status_request)
@@ -1911,9 +1843,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
             if trade_url:
                 trades_request = self._all_executed_requests(mock_api, trade_url)[0]
                 self.validate_auth_credentials_present(trades_request)
-                self.validate_trades_request(
-                    order=order,
-                    request_call=trades_request)
+                self.validate_trades_request(order=order, request_call=trades_request)
 
             fill_event: OrderFilledEvent = self.order_filled_logger.event_log[0]
             self.assertEqual(self.exchange.current_timestamp, fill_event.timestamp)
@@ -1934,25 +1864,21 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self.assertEqual(order.quote_asset, buy_event.quote_asset)
         self.assertEqual(
             order.amount if self.is_order_fill_http_update_included_in_status_update else Decimal(0),
-            buy_event.base_asset_amount)
+            buy_event.base_asset_amount,
+        )
         self.assertEqual(
-            order.amount * order.price
-            if self.is_order_fill_http_update_included_in_status_update
-            else Decimal(0),
-            buy_event.quote_asset_amount)
+            order.amount * order.price if self.is_order_fill_http_update_included_in_status_update else Decimal(0),
+            buy_event.quote_asset_amount,
+        )
         self.assertEqual(order.order_type, buy_event.order_type)
         self.assertEqual(order.exchange_order_id, buy_event.exchange_order_id)
         self.assertNotIn(order.client_order_id, self.exchange.in_flight_orders)
-        self.assertTrue(
-            self.is_logged(
-                "INFO",
-                f"BUY order {order.client_order_id} completely filled."
-            )
-        )
+        self.assertTrue(self.is_logged("INFO", f"BUY order {order.client_order_id} completely filled."))
 
     @aioresponses()
-    async def test_update_order_status_when_filled_correctly_processed_even_when_trade_fill_update_fails(self,
-                                                                                                         mock_api):
+    async def test_update_order_status_when_filled_correctly_processed_even_when_trade_fill_update_fails(
+        self, mock_api
+    ):
         self.setup_auth_token(mock_api=mock_api)
         self.exchange._set_current_timestamp(1640780000)
 
@@ -1968,23 +1894,19 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         order: InFlightOrder = self.exchange.in_flight_orders[self.client_order_id_prefix + "1"]
 
         if self.is_order_fill_http_update_included_in_status_update:
-            trade_url = self.configure_erroneous_http_fill_trade_response(
-                order=order,
-                mock_api=mock_api)
+            trade_url = self.configure_erroneous_http_fill_trade_response(order=order, mock_api=mock_api)
 
-        urls = self.configure_completely_filled_order_status_response(
-            order=order,
-            mock_api=mock_api)
+        urls = self.configure_completely_filled_order_status_response(order=order, mock_api=mock_api)
 
         # Since the trade fill update will fail we need to manually set the event
         # to allow the ClientOrderTracker to process the last status update
         order.completely_filled_event.set()
-        await (self.exchange._update_order_status())
+        await self.exchange._update_order_status()
         # Execute one more synchronization to ensure the async task that processes the update is finished
-        await (order.wait_until_completely_filled())
+        await order.wait_until_completely_filled()
         await asyncio.sleep(0.1)
 
-        for url in (urls if isinstance(urls, list) else [urls]):
+        for url in urls if isinstance(urls, list) else [urls]:
             order_status_request = self._all_executed_requests(mock_api, url)[0]
             self.validate_auth_credentials_present(order_status_request)
             self.validate_order_status_request(order=order, request_call=order_status_request)
@@ -1996,9 +1918,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
             if trade_url:
                 trades_request = self._all_executed_requests(mock_api, trade_url)[0]
                 self.validate_auth_credentials_present(trades_request)
-                self.validate_trades_request(
-                    order=order,
-                    request_call=trades_request)
+                self.validate_trades_request(order=order, request_call=trades_request)
 
         self.assertEqual(0, len(self.order_filled_logger.event_log))
 
@@ -2012,12 +1932,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         self.assertEqual(order.order_type, buy_event.order_type)
         self.assertEqual(order.exchange_order_id, buy_event.exchange_order_id)
         self.assertNotIn(order.client_order_id, self.exchange.in_flight_orders)
-        self.assertTrue(
-            self.is_logged(
-                "INFO",
-                f"BUY order {order.client_order_id} completely filled."
-            )
-        )
+        self.assertTrue(self.is_logged("INFO", f"BUY order {order.client_order_id} completely filled."))
 
     @aioresponses()
     async def test_update_order_status_when_order_has_not_changed_and_one_partial_fill(self, mock_api):
@@ -2037,25 +1952,19 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
         order: InFlightOrder = self.exchange.in_flight_orders[self.client_order_id_prefix + "1"]
 
         if self.is_order_fill_http_update_included_in_status_update:
-            trade_url = self.configure_partial_fill_trade_response(
-                order=order,
-                mock_api=mock_api)
+            trade_url = self.configure_partial_fill_trade_response(order=order, mock_api=mock_api)
 
-        order_url = self.configure_partially_filled_order_status_response(
-            order=order,
-            mock_api=mock_api)
+        order_url = self.configure_partially_filled_order_status_response(order=order, mock_api=mock_api)
 
         self.assertTrue(order.is_open)
 
-        await (self.exchange._update_order_status())
+        await self.exchange._update_order_status()
         await asyncio.sleep(0.1)
 
         if order_url:
             order_status_request = self._all_executed_requests(mock_api, order_url)[0]
             self.validate_auth_credentials_present(order_status_request)
-            self.validate_order_status_request(
-                order=order,
-                request_call=order_status_request)
+            self.validate_order_status_request(order=order, request_call=order_status_request)
 
         self.assertTrue(order.is_open)
         self.assertEqual(OrderState.PARTIALLY_FILLED, order.current_state)
@@ -2064,9 +1973,7 @@ class ArchitectPerpetualDerivativeUnitTest(AbstractPerpetualDerivativeTests.Perp
             if trade_url:
                 trades_request = self._all_executed_requests(mock_api, trade_url)[0]
                 self.validate_auth_credentials_present(trades_request)
-                self.validate_trades_request(
-                    order=order,
-                    request_call=trades_request)
+                self.validate_trades_request(order=order, request_call=trades_request)
 
             fill_event: OrderFilledEvent = self.order_filled_logger.event_log[0]
             self.assertEqual(self.exchange.current_timestamp, fill_event.timestamp)

@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.derivative.injective_v2_perpetual import injective_constants as CONSTANTS
 from hummingbot.connector.exchange.injective_v2.data_sources.injective_data_source import InjectiveDataSource
@@ -16,10 +18,9 @@ if TYPE_CHECKING:
 
 
 class InjectiveV2PerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
-
     def __init__(
         self,
-        trading_pairs: List[str],
+        trading_pairs: list[str],
         connector: "InjectiveV2Dericative",
         data_source: InjectiveDataSource,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
@@ -38,14 +39,16 @@ class InjectiveV2PerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource
 
         return funding_info
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def listen_for_subscriptions(self):
         # Subscriptions to streams is handled by the data_source
         # Here we just make sure the data_source is listening to the streams
-        market_ids = [await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
-                      for trading_pair in self._trading_pairs]
+        market_ids = [
+            await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
+            for trading_pair in self._trading_pairs
+        ]
         await self._data_source.start(market_ids=market_ids)
 
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBookMessage:
@@ -63,7 +66,7 @@ class InjectiveV2PerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource
         # by the data source
         message_queue.put_nowait(raw_message)
 
-    async def _parse_funding_info_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_funding_info_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         # In Injective 'raw_message' is not a raw message, but the FundingInfoUpdate created
         # by the data source
         message_queue.put_nowait(raw_message)
@@ -71,9 +74,7 @@ class InjectiveV2PerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource
     def _configure_event_forwarders(self):
         event_forwarder = EventForwarder(to_function=self._process_order_book_event)
         self._forwarders.append(event_forwarder)
-        self._data_source.add_listener(
-            event_tag=OrderBookDataSourceEvent.DIFF_EVENT, listener=event_forwarder
-        )
+        self._data_source.add_listener(event_tag=OrderBookDataSourceEvent.DIFF_EVENT, listener=event_forwarder)
 
         event_forwarder = EventForwarder(to_function=self._process_public_trade_event)
         self._forwarders.append(event_forwarder)
@@ -94,14 +95,10 @@ class InjectiveV2PerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource
 
     async def subscribe_to_trading_pair(self, trading_pair: str) -> bool:
         """Dynamic subscription not supported for this connector."""
-        self.logger().warning(
-            f"Dynamic subscription not supported for {self.__class__.__name__}"
-        )
+        self.logger().warning(f"Dynamic subscription not supported for {self.__class__.__name__}")
         return False
 
     async def unsubscribe_from_trading_pair(self, trading_pair: str) -> bool:
         """Dynamic unsubscription not supported for this connector."""
-        self.logger().warning(
-            f"Dynamic unsubscription not supported for {self.__class__.__name__}"
-        )
+        self.logger().warning(f"Dynamic unsubscription not supported for {self.__class__.__name__}")
         return False

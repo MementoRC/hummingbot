@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from hummingbot.connector.exchange.lambdaplex import (
     lambdaplex_constants as CONSTANTS,
@@ -16,12 +16,12 @@ if TYPE_CHECKING:
 
 
 class LambdaplexAPIUserStreamDataSource(UserStreamTrackerDataSource):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
         auth: LambdaplexAuth,
-        connector: 'LambdaplexExchange',
+        connector: "LambdaplexExchange",
         api_factory: WebAssistantsFactory,
     ):
         super().__init__()

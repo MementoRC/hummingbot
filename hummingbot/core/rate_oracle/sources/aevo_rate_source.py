@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from decimal import Decimal
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING
 
 from hummingbot.connector.utils import split_hb_trading_pair
 from hummingbot.core.rate_oracle.sources.rate_source_base import RateSourceBase
@@ -12,14 +14,14 @@ if TYPE_CHECKING:
 class AevoRateSource(RateSourceBase):
     def __init__(self):
         super().__init__()
-        self._exchange: Optional[AevoPerpetualDerivative] = None
+        self._exchange: AevoPerpetualDerivative | None = None
 
     @property
     def name(self) -> str:
         return "aevo_perpetual"
 
     @async_ttl_cache(ttl=30, maxsize=1)
-    async def get_prices(self, quote_token: Optional[str] = None) -> Dict[str, Decimal]:
+    async def get_prices(self, quote_token: str | None = None) -> dict[str, Decimal]:
         self._ensure_exchange()
         results = {}
 
@@ -55,7 +57,7 @@ class AevoRateSource(RateSourceBase):
             self._exchange = self._build_aevo_connector_without_private_keys()
 
     @staticmethod
-    def _build_aevo_connector_without_private_keys() -> 'AevoPerpetualDerivative':
+    def _build_aevo_connector_without_private_keys() -> "AevoPerpetualDerivative":
         from hummingbot.connector.derivative.aevo_perpetual.aevo_perpetual_derivative import AevoPerpetualDerivative
 
         return AevoPerpetualDerivative(

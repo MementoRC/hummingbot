@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 import asyncio
-import functools
-import unittest
 from asyncio import Task
-from collections.abc import Set
-from typing import Any, Awaitable, Callable, Coroutine, List, Optional, TypeVar
+import functools
+from typing import Any, Awaitable, Callable, Coroutine, TypeVar
+import unittest
 
 T = TypeVar("T")
 
@@ -65,6 +66,7 @@ class IsolatedAsyncioWrapperTestCase(unittest.IsolatedAsyncioTestCase):
             ...
     ```
     """
+
     main_event_loop = None
 
     @classmethod
@@ -117,7 +119,7 @@ class IsolatedAsyncioWrapperTestCase(unittest.IsolatedAsyncioTestCase):
         return self.local_event_loop.run_until_complete(asyncio.wait_for(coroutine, timeout=timeout))
 
     @staticmethod
-    async def await_task_completion(tasks_name: Optional[str | List[str]]) -> None:
+    async def await_task_completion(tasks_name: str | list[str] | None) -> None:
         """
         Await the completion of the given task.
 
@@ -136,7 +138,7 @@ class IsolatedAsyncioWrapperTestCase(unittest.IsolatedAsyncioTestCase):
             return
         if isinstance(tasks_name, str):
             tasks_name = [tasks_name]
-        tasks: Set[Task] = asyncio.all_tasks()
+        tasks: set[Task] = asyncio.all_tasks()
         tasks = {task for task in tasks for task_name in tasks_name if task_name == get_coro_func_name(task)}
 
         if tasks:
@@ -166,8 +168,9 @@ class LocalClassEventLoopWrapperTestCase(unittest.TestCase):
     - `main_event_loop`: The reference to the main asyncio event loop.
     - `local_event_loop`: The local asyncio event loop used for each test case.
     """
-    main_event_loop: Optional[asyncio.AbstractEventLoop] = None
-    local_event_loop: Optional[asyncio.AbstractEventLoop] = None
+
+    main_event_loop: asyncio.AbstractEventLoop | None = None
+    local_event_loop: asyncio.AbstractEventLoop | None = None
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -183,7 +186,7 @@ class LocalClassEventLoopWrapperTestCase(unittest.TestCase):
     @classmethod
     def tearDownClass(cls) -> None:
         if cls.local_event_loop is not None:
-            tasks: Set[Task] = asyncio.all_tasks(cls.local_event_loop)
+            tasks: set[Task] = asyncio.all_tasks(cls.local_event_loop)
             for task in tasks:
                 task.cancel()
             cls.local_event_loop.run_until_complete(asyncio.gather(*tasks, return_exceptions=True))
@@ -230,8 +233,9 @@ class LocalTestEventLoopWrapperTestCase(unittest.TestCase):
     - `main_event_loop`: The reference to the main asyncio event loop.
     - `local_event_loop`: The local asyncio event loop used for each test case.
     """
-    main_event_loop: Optional[asyncio.AbstractEventLoop] = None
-    local_event_loop: Optional[asyncio.AbstractEventLoop] = None
+
+    main_event_loop: asyncio.AbstractEventLoop | None = None
+    local_event_loop: asyncio.AbstractEventLoop | None = None
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -249,7 +253,7 @@ class LocalTestEventLoopWrapperTestCase(unittest.TestCase):
 
     def tearDown(self) -> None:
         if self.local_event_loop is not None:
-            tasks: Set[Task] = asyncio.all_tasks(self.local_event_loop)
+            tasks: set[Task] = asyncio.all_tasks(self.local_event_loop)
             for task in tasks:
                 task.cancel()
             self.local_event_loop.run_until_complete(asyncio.gather(*tasks, return_exceptions=True))
