@@ -66,6 +66,7 @@ setuptools = ">=80.8.0"
 wheel = ">=0.37.0"
 # Core runtime
 aiohttp = ">=3.8.5"
+aiomqtt = ">=2.0.0"
 aioprocessing = ">=2.0.1"
 aioresponses = ">=0.7.4"
 aiounittest = ">=1.4.2"
