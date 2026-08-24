@@ -14,7 +14,8 @@ The target is resolved config-file-first: a name that matches an existing config
 strategy / controller / script. Everything else (readiness wait, --replace, --foreground,
 password handling, exit codes) is ``hbot start``'s behavior, unchanged.
 """
-from typing import List, Optional, Tuple
+
+from typing import Optional
 
 import typer
 
@@ -23,7 +24,7 @@ from hummingbot.cli.commands._common import one_type
 from hummingbot.cli.output import ExitCode, emit, fail, json_option, render_kv
 
 
-def resolve_target(target: str, explicit_type: Optional[str]) -> Tuple[str, str, Optional[str]]:
+def resolve_target(target: str, explicit_type: Optional[str]) -> tuple[str, str, Optional[str]]:
     """Resolve what ``target`` names: ``("config", filename, stype)`` for an existing config file,
     else ``("strategy", target, None)`` for a creatable strategy/controller/script.
 
@@ -35,6 +36,7 @@ def resolve_target(target: str, explicit_type: Optional[str]) -> Tuple[str, str,
         normalize_config_name,
         resolve_config_type,
     )
+
     fname = normalize_config_name(target)
     if matching_config_types(fname):
         try:
@@ -43,30 +45,47 @@ def resolve_target(target: str, explicit_type: Optional[str]) -> Tuple[str, str,
             fail(str(e), ExitCode.CONFIG_ERROR)
     if explicit_type or matching_strategy_types(target):
         return "strategy", target, None
-    fail(f"'{target}' is neither an existing config file nor a creatable strategy — "
-         f"run `hbot create <strategy>` for name discovery, or `hbot import <file>` for configs",
-         ExitCode.NOT_FOUND)
+    fail(
+        f"'{target}' is neither an existing config file nor a creatable strategy — "
+        f"run `hbot create <strategy>` for name discovery, or `hbot import <file>` for configs",
+        ExitCode.NOT_FOUND,
+    )
 
 
 def deploy(
     target: str = typer.Argument(
-        ..., help="An existing config file (conf/strategies|scripts|controllers), or a strategy / controller / script name to create one from."),
-    set_values: Optional[List[str]] = typer.Option(
-        None, "--set", help="Set a field before launch: --set key=value (repeatable). Creating: fills required fields. Existing config: edits it (comment-preserving)."),
+        ...,
+        help="An existing config file (conf/strategies|scripts|controllers), or a strategy / controller / script name to create one from.",
+    ),
+    set_values: Optional[list[str]] = typer.Option(
+        None,
+        "--set",
+        help="Set a field before launch: --set key=value (repeatable). Creating: fills required fields. Existing config: edits it (comment-preserving).",
+    ),
     values_stdin: bool = typer.Option(
-        False, "--values-stdin", help="Read a JSON object {field: value} from stdin and apply it (bulk fill)."),
+        False, "--values-stdin", help="Read a JSON object {field: value} from stdin and apply it (bulk fill)."
+    ),
     name: Optional[str] = typer.Option(
-        None, "--name", help="Config file name when creating (default: a free conf_<strategy>.yml)."),
-    v1: bool = typer.Option(False, "--v1-strategy", help="Force V1 strategy type (only if the name collides across types)."),
-    v2: bool = typer.Option(False, "--v2-script", help="Force V2 script type (only if the name collides across types)."),
+        None, "--name", help="Config file name when creating (default: a free conf_<strategy>.yml)."
+    ),
+    v1: bool = typer.Option(
+        False, "--v1-strategy", help="Force V1 strategy type (only if the name collides across types)."
+    ),
+    v2: bool = typer.Option(
+        False, "--v2-script", help="Force V2 script type (only if the name collides across types)."
+    ),
     controller: bool = typer.Option(
-        False, "--controller", help="Force controller type (only if the name collides across types)."),
+        False, "--controller", help="Force controller type (only if the name collides across types)."
+    ),
     replace: bool = typer.Option(
-        False, "--replace", help="If a bot is already running, stop it first, then start this one."),
+        False, "--replace", help="If a bot is already running, stop it first, then start this one."
+    ),
     foreground: bool = typer.Option(
-        False, "--foreground", help="Run the bot in the foreground (use as a container's main process)."),
+        False, "--foreground", help="Run the bot in the foreground (use as a container's main process)."
+    ),
     password_stdin: bool = typer.Option(
-        False, "--password-stdin", help="Read the keystore password from stdin (else $HBOT_PASSWORD or a prompt)."),
+        False, "--password-stdin", help="Read the keystore password from stdin (else $HBOT_PASSWORD or a prompt)."
+    ),
     timeout: float = typer.Option(120.0, "--timeout", help="Seconds to wait for the bot to start."),
     as_json: bool = json_option(),
 ) -> None:
@@ -80,12 +99,15 @@ def deploy(
 
     if kind == "config":
         if name:
-            fail("--name only applies when creating from a strategy; "
-                 f"'{resolved}' is an existing config", ExitCode.CONFIG_ERROR)
+            fail(
+                f"--name only applies when creating from a strategy; '{resolved}' is an existing config",
+                ExitCode.CONFIG_ERROR,
+            )
         # Apply --set / stdin edits to the existing file (comment-preserving; controllers validated).
         values: dict = {}
         if values_stdin:
             from hummingbot.cli.commands._common import read_json_object_from_stdin
+
             values.update(read_json_object_from_stdin())
         if set_values:
             try:
@@ -106,21 +128,42 @@ def deploy(
             except Exception as e:
                 fail(f"invalid controller config: {e}", ExitCode.CONFIG_ERROR)
         bot.write_loaded(resolved, stype)
-        config_record = {"file": resolved, "type": stype, "config": "existing",
-                         "applied": ", ".join(sorted(values)) or "-"}
+        config_record = {
+            "file": resolved,
+            "type": stype,
+            "config": "existing",
+            "applied": ", ".join(sorted(values)) or "-",
+        }
     else:
         # Strict like `create` without --with-defaults: every required field must be supplied,
         # because deploy's contract is a RUNNING bot — a scaffold can't run.
-        created = create_config(strategy=resolved, set_values=set_values, values_stdin=values_stdin,
-                                with_defaults=False, name=name, v1=v1, v2=v2, controller=controller)
-        config_record = {"file": created["file"], "type": created["type"], "config": "created",
-                         "applied": created["applied"]}
+        created = create_config(
+            strategy=resolved,
+            set_values=set_values,
+            values_stdin=values_stdin,
+            with_defaults=False,
+            name=name,
+            v1=v1,
+            v2=v2,
+            controller=controller,
+        )
+        config_record = {
+            "file": created["file"],
+            "type": created["type"],
+            "config": "created",
+            "applied": created["applied"],
+        }
 
-    started = launch(file=config_record["file"], v1=config_record["type"] == "v1-strategy",
-                     v2=config_record["type"] == "v2-script",
-                     controller=config_record["type"] == "controller",
-                     replace=replace, foreground=foreground, password_stdin=password_stdin,
-                     timeout=timeout)
+    started = launch(
+        file=config_record["file"],
+        v1=config_record["type"] == "v1-strategy",
+        v2=config_record["type"] == "v2-script",
+        controller=config_record["type"] == "controller",
+        replace=replace,
+        foreground=foreground,
+        password_stdin=password_stdin,
+        timeout=timeout,
+    )
 
     record = {**config_record, **started}
     emit(record, render_kv(record, title=f"deployed {record['file']}"), as_json)
