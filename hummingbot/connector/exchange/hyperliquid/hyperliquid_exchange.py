@@ -1,11 +1,11 @@
-from __future__ import annotations
-
 import asyncio
 from decimal import Decimal
 import hashlib
-from typing import Any, AsyncIterable, List, Literal
+from typing import Any, AsyncIterable, Dict, List, Literal, Optional, Set, Tuple
 
 from bidict import bidict
+import eth_account
+from eth_utils import to_checksum_address
 
 from hummingbot.connector.constants import s_decimal_NaN
 from hummingbot.connector.exchange.hyperliquid import (
@@ -48,13 +48,13 @@ class HyperliquidExchange(ExchangePyBase):
 
     def __init__(
         self,
-        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
+        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
         hyperliquid_secret_key: str = None,
         hyperliquid_address: str = None,
         use_vault: bool = False,
         hyperliquid_mode: Literal["arb_wallet", "api_wallet"] = "arb_wallet",
-        trading_pairs: list[str] | None = None,
+        trading_pairs: Optional[List[str]] = None,
         trading_required: bool = True,
         domain: str = CONSTANTS.DOMAIN,
     ):
@@ -67,11 +67,15 @@ class HyperliquidExchange(ExchangePyBase):
         self._domain = domain
         self._last_trade_history_timestamp = None
         self._last_trades_poll_timestamp = 1.0
-        self.coin_to_asset: dict[str, int] = {}
-        self.name_to_coin: dict[str, str] = {}
-        # Builder code (HGP-87). Fee starts at 0 and is resolved at startup (_initialize_builder_fee).
+        self.coin_to_asset: Dict[str, int] = {}
+        self.name_to_coin: Dict[str, str] = {}
+        # Builder code (HGP-87). Fee starts at 0 and is resolved once per session
+        # (_ensure_builder_fee_resolved), at start_network or on the first order.
         self._builder_address: str = CONSTANTS.FOUNDATION_BUILDER_ADDRESS.lower()
         self._builder_fee_tenths_bps: int = 0
+        self._builder_fee_resolved: bool = False
+        self._builder_fee_lock: asyncio.Lock = asyncio.Lock()
+        self._key_authority_verified: bool = False
         super().__init__(balance_asset_limit, rate_limits_share_pct)
 
     @property
@@ -80,13 +84,18 @@ class HyperliquidExchange(ExchangePyBase):
         return self._domain
 
     @property
-    def authenticator(self) -> HyperliquidAuth | None:
-        if self._trading_required:
-            return HyperliquidAuth(self.hyperliquid_address, self.hyperliquid_secret_key, self._use_vault)
+    def authenticator(self) -> Optional[HyperliquidAuth]:
+        if self._trading_required or self.hyperliquid_secret_key:
+            return HyperliquidAuth(
+                self.hyperliquid_address,
+                self.hyperliquid_secret_key,
+                self._use_vault,
+                self._connection_mode,
+            )
         return None
 
     @property
-    def rate_limits_rules(self) -> list[RateLimit]:
+    def rate_limits_rules(self) -> List[RateLimit]:
         return CONSTANTS.RATE_LIMITS
 
     @property
@@ -131,15 +140,20 @@ class HyperliquidExchange(ExchangePyBase):
     async def start_network(self):
         await super().start_network()
         if self._trading_required:
-            await self._initialize_builder_fee()
+            await self._ensure_builder_fee_resolved()
 
-    def supported_order_types(self) -> list[OrderType]:
+    async def stop_network(self):
+        await super().stop_network()
+        # Re-resolve the builder fee on the next session so mid-session approval changes are picked up.
+        self._builder_fee_resolved = False
+
+    def supported_order_types(self) -> List[OrderType]:
         """
         :return a list of OrderType supported by this connector
         """
         return [OrderType.LIMIT, OrderType.LIMIT_MAKER, OrderType.MARKET]
 
-    async def get_all_pairs_prices(self) -> list[dict[str, str]]:
+    async def get_all_pairs_prices(self) -> List[Dict[str, str]]:
         res = []
         exchange_info = await self._api_post(
             path_url=CONSTANTS.TICKER_PRICE_CHANGE_URL, data={"type": CONSTANTS.ASSET_CONTEXT_TYPE}
@@ -244,7 +258,7 @@ class HyperliquidExchange(ExchangePyBase):
         order_side: TradeType,
         amount: Decimal,
         price: Decimal = s_decimal_NaN,
-        is_maker: bool | None = None,
+        is_maker: Optional[bool] = None,
     ) -> TradeFeeBase:
         is_maker = order_type is OrderType.LIMIT_MAKER
         return DeductedFromReturnsTradeFee(percent=self.estimate_fee_pct(is_maker))
@@ -265,13 +279,39 @@ class HyperliquidExchange(ExchangePyBase):
             path_url=CONSTANTS.CANCEL_ORDER_URL, data=api_params, is_auth_required=True
         )
 
-        if cancel_result.get("status") == "err" or "error" in cancel_result["response"]["data"]["statuses"][0]:
-            self.logger().debug(f"The order {order_id} does not exist on Hyperliquid s. No cancelation needed.")
-            await self._order_tracker.process_order_not_found(order_id)
-            raise IOError(f"{cancel_result['response']}")
-        if cancel_result["status"] == "ok" and "success" in cancel_result["response"]["data"]["statuses"][0]:
-            return True
-        return False
+        return self._process_cancel_result(order_id, cancel_result)
+
+    def _process_cancel_result(self, order_id: str, cancel_result: Dict[str, Any]) -> bool:
+        """
+        Interprets the ``/exchange`` cancel response.
+
+        Two different shapes come back from Hyperliquid:
+        - the action was accepted: ``{"status": "ok", "response": {"data": {"statuses": [...]}}}``,
+          where each status is either the string ``"success"`` or ``{"error": "<message>"}``;
+        - the action was rejected before reaching the order book (bad nonce, rate limit, unknown
+          wallet, ...): ``{"status": "err", "response": "<message>"}``, where the response is a
+          plain string.
+
+        The rejected shape must not be indexed as a dict. Errors are raised as ``IOError`` so the
+        base class classifies them via ``_is_order_not_found_during_cancelation_error``, instead of
+        this method assuming every failure means the order is gone.
+        """
+        response = cancel_result.get("response")
+        if cancel_result.get("status") == "err" or not isinstance(response, dict):
+            self.logger().warning(
+                f"Hyperliquid rejected the cancelation of order {order_id}. Raw response: {cancel_result}"
+            )
+            raise IOError(f"Error cancelling order {order_id}: {response}")
+
+        statuses = response.get("data", {}).get("statuses") or []
+        status = statuses[0] if statuses else None
+        if isinstance(status, dict) and "error" in status:
+            self.logger().debug(f"Hyperliquid did not cancel order {order_id}. Raw response: {cancel_result}")
+            raise IOError(f"Error cancelling order {order_id}: {status['error']}")
+        if status != "success":
+            self.logger().warning(f"Unexpected cancelation status for order {order_id}. Raw response: {cancel_result}")
+            return False
+        return True
 
     # === Orders placing ===
 
@@ -369,7 +409,8 @@ class HyperliquidExchange(ExchangePyBase):
         order_type: OrderType,
         price: Decimal,
         **kwargs,
-    ) -> tuple[str, float]:
+    ) -> Tuple[str, float]:
+
         symbol = await self.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
         param_order_type = {"limit": {"tif": "Gtc"}}
         if order_type is OrderType.LIMIT_MAKER:
@@ -390,7 +431,9 @@ class HyperliquidExchange(ExchangePyBase):
                 "cloid": order_id,
             },
         }
-        # Builder code (HGP-87): part of the signed action dict.
+        # Builder code (HGP-87): part of the signed action dict. Resolve the fee here too —
+        # embedders like hummingbot-api start connector tasks without calling start_network().
+        await self._ensure_builder_fee_resolved()
         builder_field = self._build_builder_field()
         if builder_field is not None:
             api_params["builder"] = builder_field
@@ -420,19 +463,31 @@ class HyperliquidExchange(ExchangePyBase):
             return False
         return True
 
-    def _build_builder_field(self) -> dict[str, Any] | None:
+    def _build_builder_field(self) -> Optional[Dict[str, Any]]:
         """The ``{"b": <address>, "f": <tenths_of_bps>}`` order field, or None when omitted. Address
         is lowercased (the venue rejects mixed-case)."""
         if not self._should_inject_builder():
             return None
         return {"b": self._builder_address.lower(), "f": self._builder_fee_tenths_bps}
 
-    async def _initialize_builder_fee(self) -> None:
-        """Resolve the per-order builder fee once at startup as min(on-chain approved, hardcoded fee):
-        the hardcoded fee if the user has approved this builder in Condor, 0 if not (or if the lookup
-        fails)."""
-        if not self._should_inject_builder():
+    async def _ensure_builder_fee_resolved(self) -> None:
+        """Resolve the builder fee once per network session, whichever path gets there first:
+        start_network on normal client startup, or the first _place_order for embedders that
+        start connector tasks without calling start_network. A failed lookup does not latch the
+        flag, so the next order retries; stop_network clears it, so a reconnect re-resolves."""
+        if self._builder_fee_resolved:
             return
+        async with self._builder_fee_lock:
+            if self._builder_fee_resolved:
+                return
+            self._builder_fee_resolved = await self._initialize_builder_fee()
+
+    async def _initialize_builder_fee(self) -> bool:
+        """Resolve the per-order builder fee as min(on-chain approved, hardcoded fee):
+        the hardcoded fee if the user has approved this builder in Condor, 0 if not.
+        Returns False when the lookup failed (fee left at 0 until the next attempt)."""
+        if not self._should_inject_builder():
+            return True
         try:
             approved_max_tenths_bps = int(
                 await self._api_post(
@@ -446,11 +501,12 @@ class HyperliquidExchange(ExchangePyBase):
             )
         except Exception:
             self.logger().exception(
-                "Could not query the approved Hyperliquid builder fee; charging 0 bps this session."
+                "Could not query the approved Hyperliquid builder fee; charging 0 bps until it can be resolved."
             )
             self._builder_fee_tenths_bps = 0
-            return
+            return False
         self._builder_fee_tenths_bps = min(approved_max_tenths_bps, CONSTANTS.FOUNDATION_BUILDER_FEE_TENTHS_BPS)
+        return True
 
     async def _update_trade_history(self):
         orders = list(self._order_tracker.all_fillable_orders.values())
@@ -475,7 +531,7 @@ class HyperliquidExchange(ExchangePyBase):
             for trade_fill in all_fills_response:
                 self._process_trade_rs_event_message(order_fill=trade_fill, all_fillable_order=all_fillable_orders)
 
-    def _process_trade_rs_event_message(self, order_fill: dict[str, Any], all_fillable_order):
+    def _process_trade_rs_event_message(self, order_fill: Dict[str, Any], all_fillable_order):
         exchange_order_id = str(order_fill.get("oid"))
         fillable_order = all_fillable_order.get(exchange_order_id)
         if fillable_order is not None:
@@ -502,7 +558,7 @@ class HyperliquidExchange(ExchangePyBase):
 
             self._order_tracker.process_trade_update(trade_update)
 
-    async def _iter_user_event_queue(self) -> AsyncIterable[dict[str, any]]:
+    async def _iter_user_event_queue(self) -> AsyncIterable[Dict[str, any]]:
         while True:
             try:
                 yield await self._user_stream_tracker.user_stream.get()
@@ -551,7 +607,7 @@ class HyperliquidExchange(ExchangePyBase):
                 self.logger().error("Unexpected error in user stream listener loop.", exc_info=True)
                 await self._sleep(5.0)
 
-    async def _process_trade_message(self, trade: dict[str, Any], client_order_id: str | None = None):
+    async def _process_trade_message(self, trade: Dict[str, Any], client_order_id: Optional[str] = None):
         """
         Updates in-flight order and trigger order filled event for a trade message received. Triggers order completedim
         event if the total executed amount equals to the specified order amount.
@@ -583,7 +639,7 @@ class HyperliquidExchange(ExchangePyBase):
                 )
                 self._order_tracker.process_trade_update(trade_update)
 
-    def _process_order_message(self, order_msg: dict[str, Any]):
+    def _process_order_message(self, order_msg: Dict[str, Any]):
         """
         Updates in-flight order and triggers cancelation or failure event if needed.
 
@@ -606,7 +662,7 @@ class HyperliquidExchange(ExchangePyBase):
         )
         self._order_tracker.process_order_update(order_update=order_update)
 
-    async def _format_trading_rules(self, exchange_info_dict: List) -> list[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: List) -> List[TradingRule]:
         """
         Queries the necessary API endpoint and initialize the TradingRule object for each trading pair being traded.
 
@@ -714,7 +770,7 @@ class HyperliquidExchange(ExchangePyBase):
             mapping.pop(current_exchange_symbol)
 
     @staticmethod
-    def _is_valid_spot_entry(exchange_info: List, spot_info: dict[str, Any]) -> bool:
+    def _is_valid_spot_entry(exchange_info: List, spot_info: Dict[str, Any]) -> bool:
         tokens = exchange_info[0].get("tokens", [])
         pair_tokens = spot_info.get("tokens", [])
 
@@ -731,14 +787,14 @@ class HyperliquidExchange(ExchangePyBase):
 
         return True
 
-    async def _tradable_assets(self) -> set[str]:
+    async def _tradable_assets(self) -> Set[str]:
         """
         Returns the set of token names (upper-cased) that belong to a USDC trading pair currently
         present in the symbol map. These are the only tokens whose balance we can still price, so
         the balances endpoint response is filtered against this set to skip delisted tokens.
         """
         symbol_map = await self.trading_pair_symbol_map()
-        tradable_assets: set[str] = set()
+        tradable_assets: Set[str] = set()
         for trading_pair in symbol_map.values():
             base, quote = split_hb_trading_pair(trading_pair)
             if quote.upper() == CONSTANTS.CURRENCY:
@@ -746,10 +802,65 @@ class HyperliquidExchange(ExchangePyBase):
                 tradable_assets.add(quote.upper())
         return tradable_assets
 
+    async def _verify_key_authority(self):
+        """Surface a wrong-but-well-formed private key at connect time (#7866). Runs once.
+
+        The exchange cannot catch this itself: its balance query is an unauthenticated ``/info`` request
+        keyed by address, so it succeeds for any address. So we check explicitly whether the key may trade
+        for the account:
+          - arb_wallet: the key derives to the account address (offline, no network call).
+          - api_wallet: the key's address is an APPROVED AGENT of the account (one ``extraAgents`` lookup).
+        Vault mode is skipped here (the vault's agent set is out of scope for this check) and validated at
+        first authenticated request, as documented. Network/response errors do not block connect -- a truly
+        wrong key still fails at the first signed request; this only makes the common case explicit.
+        """
+        if self._key_authority_verified or not self.hyperliquid_secret_key or self._use_vault:
+            self._key_authority_verified = True
+            return
+        try:
+            derived = eth_account.Account.from_key(self.hyperliquid_secret_key).address
+        except Exception as exc:
+            raise ValueError(f"Invalid Hyperliquid private key format: {exc}") from exc
+        account = self.hyperliquid_address
+        # owner key (arb_wallet): authorised offline, no network call
+        if HyperliquidAuth.is_key_authorized(derived, account, []):
+            self._key_authority_verified = True
+            return
+        # otherwise the key must be an approved agent of the account
+        try:
+            agents = await self._api_post(
+                path_url=CONSTANTS.ACCOUNT_INFO_URL,
+                data={"type": CONSTANTS.EXTRA_AGENTS_TYPE, "user": account},
+            )
+        except Exception:
+            self.logger().warning(
+                "Could not verify Hyperliquid API/agent wallet authorization at connect "
+                "(extraAgents query failed); a wrong agent key will surface at the first signed request.",
+                exc_info=True,
+            )
+            return
+        if not isinstance(agents, list):
+            self.logger().warning(
+                "Could not verify Hyperliquid API/agent wallet authorization at connect "
+                "(unexpected extraAgents response); a wrong agent key will surface at the first signed request."
+            )
+            return
+        if not HyperliquidAuth.is_key_authorized(derived, account, agents):
+            raise ValueError(
+                f"The supplied private key is not a valid API wallet key for account {account}: "
+                f"its address {to_checksum_address(derived)} is not in the account's approved API (agent) "
+                "wallet list and is not the account owner. Approve this API wallet at "
+                "https://app.hyperliquid.xyz/API, verify you supplied the correct API wallet key, "
+                "or use the account owner's key with the arb_wallet connection mode."
+            )
+        self._key_authority_verified = True
+
     async def _update_balances(self):
         """
         Calls the REST API to update total and available balances.
         """
+        await self._verify_key_authority()
+
         local_asset_names = set(self._account_balances.keys())
         remote_asset_names = set()
 
@@ -890,7 +1001,7 @@ class HyperliquidExchange(ExchangePyBase):
                         )
                         self.logger().info(f"Recreating missing trade in TradeFill: {trade}")
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
         trade_updates = []
 
         if order.exchange_order_id is not None:
