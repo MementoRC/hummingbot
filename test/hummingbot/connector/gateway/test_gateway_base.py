@@ -1,7 +1,6 @@
 import asyncio
-import unittest
 from decimal import Decimal
-from typing import List
+import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from hummingbot.connector.gateway.gateway_base import TX_DATA_UNAVAILABLE, GatewayBase, RetryAction
@@ -50,7 +49,7 @@ class GatewayBaseEventOrderingTest(unittest.TestCase):
         self.connector = MockGatewayConnector()
         self.connector._set_current_timestamp(1640000000.0)
         self._initialize_event_loggers()
-        self.events_received: List[str] = []
+        self.events_received: list[str] = []
 
     def _initialize_event_loggers(self):
         """Set up event loggers to track event order."""
@@ -219,6 +218,7 @@ class GatewayBaseEventOrderingTest(unittest.TestCase):
             events_order.append("OrderFilled")
 
         from hummingbot.core.event.event_forwarder import SourceInfoEventForwarder
+
         created_forwarder = SourceInfoEventForwarder(on_buy_created)
         filled_forwarder = SourceInfoEventForwarder(on_order_filled)
 
@@ -328,7 +328,7 @@ class GatewayBaseEventOrderingTest(unittest.TestCase):
         self.assertEqual(
             ["BuyOrderCreated", "BuyOrderCompleted", "OrderFilled"],
             events_order,
-            "Events must be emitted in order: OrderCreated -> OrderCompleted -> OrderFilled"
+            "Events must be emitted in order: OrderCreated -> OrderCompleted -> OrderFilled",
         )
 
 
@@ -361,6 +361,7 @@ class GatewayBaseConnectorSettingsRegistrationTest(unittest.TestCase):
 
     def tearDown(self) -> None:
         from hummingbot.client.settings import AllConnectorSettings
+
         AllConnectorSettings.get_connector_settings().pop("test_connector", None)
         super().tearDown()
 
@@ -368,12 +369,14 @@ class GatewayBaseConnectorSettingsRegistrationTest(unittest.TestCase):
         # Registration happens in start_network (after Gateway validates the name), not in
         # __init__ — so an unstarted / invalid connector never pollutes AllConnectorSettings.
         from hummingbot.client.settings import AllConnectorSettings
+
         AllConnectorSettings.get_connector_settings().pop("test_connector", None)
         MockGatewayConnector()
         self.assertNotIn("test_connector", AllConnectorSettings.get_connector_settings())
 
     def test_connector_registers_with_zero_fee_schema(self):
         from hummingbot.client.settings import AllConnectorSettings, ConnectorType
+
         all_settings = AllConnectorSettings.get_connector_settings()
         all_settings.pop("test_connector", None)
 
@@ -388,9 +391,17 @@ class GatewayBaseConnectorSettingsRegistrationTest(unittest.TestCase):
     def test_registration_makes_build_trade_fee_not_raise(self):
         # Without registration, build_trade_fee raises "does not exist in AllConnectorSettings".
         from hummingbot.core.utils.estimate_fee import build_trade_fee
+
         MockGatewayConnector()._ensure_registered_in_connector_settings()
         fee = build_trade_fee(
-            "test_connector", False, "SOL", "USDC", OrderType.MARKET, TradeType.SELL, Decimal("1"), Decimal("1"),
+            "test_connector",
+            False,
+            "SOL",
+            "USDC",
+            OrderType.MARKET,
+            TradeType.SELL,
+            Decimal("1"),
+            Decimal("1"),
         )
         self.assertEqual(Decimal("0"), fee.percent)
 
@@ -478,8 +489,7 @@ class GatewayBaseResubmitReconciliationTest(unittest.TestCase):
 
     def test_pending_polls_to_confirmed_without_resubmitting(self):
         self._patch_poll([0, 1])
-        result = asyncio.run(self.connector._execute_with_retry(
-            self._pending_operation, "test swap", max_retries=10))
+        result = asyncio.run(self.connector._execute_with_retry(self._pending_operation, "test swap", max_retries=10))
         self.assertEqual(1, result["status"])
         self.assertEqual("sig-1", result["signature"])
         self.assertEqual(1, self.submissions)  # never re-submitted
@@ -497,8 +507,9 @@ class GatewayBaseResubmitReconciliationTest(unittest.TestCase):
             self.submissions += 1
             return {"signature": f"sig-{self.submissions}", "status": 1}
 
-        result = asyncio.run(self.connector._execute_with_retry(
-            operation, "test swap", max_retries=10, retry_delay=0.0))
+        result = asyncio.run(
+            self.connector._execute_with_retry(operation, "test swap", max_retries=10, retry_delay=0.0)
+        )
         self.assertEqual(1, result["status"])
         self.assertEqual(2, self.submissions)
 
@@ -507,8 +518,9 @@ class GatewayBaseResubmitReconciliationTest(unittest.TestCase):
         # has not seen it YET", and the transaction is still landable until its
         # blockhash expires. Ruling on a streak alone re-submitted a live transaction.
         self._patch_poll([-2, -2, -2, -2, 1])
-        result = asyncio.run(self.connector._execute_with_retry(
-            self._pending_operation, "test swap", max_retries=10, retry_delay=0.0))
+        result = asyncio.run(
+            self.connector._execute_with_retry(self._pending_operation, "test swap", max_retries=10, retry_delay=0.0)
+        )
         self.assertEqual(1, result["status"])
         self.assertEqual("sig-1", result["signature"])
         self.assertEqual(1, self.submissions)  # never re-submitted
@@ -518,8 +530,11 @@ class GatewayBaseResubmitReconciliationTest(unittest.TestCase):
         # become a re-submission. TX_UNRESOLVED classifies non-retryable.
         self._patch_poll([0])
         with self.assertRaises(Exception) as ctx:
-            asyncio.run(self.connector._execute_with_retry(
-                self._pending_operation, "test swap", max_retries=10, retry_delay=0.0))
+            asyncio.run(
+                self.connector._execute_with_retry(
+                    self._pending_operation, "test swap", max_retries=10, retry_delay=0.0
+                )
+            )
         self.assertIn("TX_UNRESOLVED", str(ctx.exception))
         self.assertEqual(1, self.submissions)
 
@@ -539,8 +554,11 @@ class GatewayBaseResubmitReconciliationTest(unittest.TestCase):
         """
         self._patch_poll([-2, -2, -2, 0])
         with self.assertRaises(Exception) as ctx:
-            asyncio.run(self.connector._execute_with_retry(
-                self._pending_operation, "test swap", max_retries=10, retry_delay=0.0))
+            asyncio.run(
+                self.connector._execute_with_retry(
+                    self._pending_operation, "test swap", max_retries=10, retry_delay=0.0
+                )
+            )
         self.assertIn("TX_UNRESOLVED", str(ctx.exception))
         self.assertEqual(1, self.submissions)  # never re-submitted
 
@@ -555,16 +573,18 @@ class GatewayBaseResubmitReconciliationTest(unittest.TestCase):
         gateway.get_transaction_status = failing_poll
         self.connector._get_gateway_instance = MagicMock(return_value=gateway)
         with self.assertRaises(Exception) as ctx:
-            asyncio.run(self.connector._execute_with_retry(
-                self._pending_operation, "test swap", max_retries=10, retry_delay=0.0))
+            asyncio.run(
+                self.connector._execute_with_retry(
+                    self._pending_operation, "test swap", max_retries=10, retry_delay=0.0
+                )
+            )
         self.assertIn("TX_UNRESOLVED", str(ctx.exception))
         self.assertEqual(1, self.submissions)
 
     def test_pending_landed_but_failed_raises_typed(self):
         self._patch_poll([-1])
         with self.assertRaises(Exception) as ctx:
-            asyncio.run(self.connector._execute_with_retry(
-                self._pending_operation, "test swap", max_retries=10))
+            asyncio.run(self.connector._execute_with_retry(self._pending_operation, "test swap", max_retries=10))
         self.assertIn("TX_NOT_CONFIRMED", str(ctx.exception))
         self.assertEqual(1, self.submissions)
 
@@ -577,10 +597,12 @@ class GatewayBaseResubmitReconciliationTest(unittest.TestCase):
             self.submissions += 1
             raise Exception(
                 "Transaction timeout-sig was not confirmed before its blockhash expired. "
-                "It most likely did not land [code: TRANSACTION_TIMEOUT]")
+                "It most likely did not land [code: TRANSACTION_TIMEOUT]"
+            )
 
-        result = asyncio.run(self.connector._execute_with_retry(
-            operation, "test swap", max_retries=10, retry_delay=0.0))
+        result = asyncio.run(
+            self.connector._execute_with_retry(operation, "test swap", max_retries=10, retry_delay=0.0)
+        )
         self.assertEqual(1, result["status"])
         self.assertEqual("timeout-sig", result["signature"])
         self.assertEqual(1, self.submissions)
@@ -596,8 +618,9 @@ class GatewayBaseResubmitReconciliationTest(unittest.TestCase):
         # normal confirmation whose amounts merely happen to be absent — callers read
         # those keys with .get(key, 0) and would book real fees/amounts as zero.
         self._patch_poll([1])
-        result = asyncio.run(self.connector._execute_with_retry(
-            self._pending_operation, "close position", max_retries=10))
+        result = asyncio.run(
+            self.connector._execute_with_retry(self._pending_operation, "close position", max_retries=10)
+        )
         self.assertEqual(1, result["status"])
         self.assertTrue(result[TX_DATA_UNAVAILABLE])
         self.assertNotIn("data", result)
@@ -609,10 +632,12 @@ class GatewayBaseResubmitReconciliationTest(unittest.TestCase):
             self.submissions += 1
             raise Exception(
                 "Transaction timeout-sig was not confirmed before its blockhash expired. "
-                "It most likely did not land [code: TRANSACTION_TIMEOUT]")
+                "It most likely did not land [code: TRANSACTION_TIMEOUT]"
+            )
 
-        result = asyncio.run(self.connector._execute_with_retry(
-            operation, "close position", max_retries=10, retry_delay=0.0))
+        result = asyncio.run(
+            self.connector._execute_with_retry(operation, "close position", max_retries=10, retry_delay=0.0)
+        )
         self.assertTrue(result[TX_DATA_UNAVAILABLE])
         self.assertNotIn("data", result)
 
@@ -662,11 +687,13 @@ class GatewayBaseNotFoundPollingTest(unittest.TestCase):
 
     def _poll_with_status(self, tx_status: int):
         gateway_mock = MagicMock()
-        gateway_mock.get_transaction_status = AsyncMock(return_value={
-            "signature": self.tx_hash,
-            "txStatus": tx_status,
-            "fee": 0,
-        })
+        gateway_mock.get_transaction_status = AsyncMock(
+            return_value={
+                "signature": self.tx_hash,
+                "txStatus": tx_status,
+                "fee": 0,
+            }
+        )
         order = self.connector._order_tracker.fetch_tracked_order(self.order_id)
         with patch.object(MockGatewayConnector, "_get_gateway_instance", return_value=gateway_mock):
             self.async_run_with_timeout(self.connector.update_order_status([order]))
@@ -678,17 +705,13 @@ class GatewayBaseNotFoundPollingTest(unittest.TestCase):
         self.assertIn(self.order_id, self.connector._order_tracker.active_orders)
 
     def test_not_found_after_deadline_counts_toward_lost_order_limit(self):
-        self.connector._set_current_timestamp(
-            self.start_timestamp + self.connector.TX_NOT_FOUND_DEADLINE + 1.0
-        )
+        self.connector._set_current_timestamp(self.start_timestamp + self.connector.TX_NOT_FOUND_DEADLINE + 1.0)
         self._poll_with_status(-2)
         self.assertEqual(1, self.connector._order_tracker._order_not_found_records[self.order_id])
         self.assertIn(self.order_id, self.connector._order_tracker.active_orders)
 
     def test_not_found_past_limit_marks_order_lost(self):
-        self.connector._set_current_timestamp(
-            self.start_timestamp + self.connector.TX_NOT_FOUND_DEADLINE + 1.0
-        )
+        self.connector._set_current_timestamp(self.start_timestamp + self.connector.TX_NOT_FOUND_DEADLINE + 1.0)
         for _ in range(self.connector._order_tracker.lost_order_count_limit + 1):
             self._poll_with_status(-2)
         self.assertNotIn(self.order_id, self.connector._order_tracker.active_orders)
@@ -697,9 +720,7 @@ class GatewayBaseNotFoundPollingTest(unittest.TestCase):
     def test_pending_after_deadline_keeps_waiting(self):
         # PENDING means the chain has seen the transaction - it can still confirm,
         # so age alone must not fail it.
-        self.connector._set_current_timestamp(
-            self.start_timestamp + self.connector.TX_NOT_FOUND_DEADLINE + 1000.0
-        )
+        self.connector._set_current_timestamp(self.start_timestamp + self.connector.TX_NOT_FOUND_DEADLINE + 1000.0)
         self._poll_with_status(0)
         self.assertEqual(0, self.connector._order_tracker._order_not_found_records[self.order_id])
         self.assertIn(self.order_id, self.connector._order_tracker.active_orders)

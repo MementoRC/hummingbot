@@ -1,7 +1,7 @@
-import json
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Any, Dict, List
+import json
+from typing import Any
 
 from eth_account.messages import encode_defunct
 from web3 import Web3
@@ -22,7 +22,9 @@ class DerivePerpetualAuth(AuthBase):
     Auth class required by DerivePerpetual API
     """
 
-    def __init__(self, wallet_address: str, session_private_key: str, subacct_id: int, trading_required: bool, domain: str):
+    def __init__(
+        self, wallet_address: str, session_private_key: str, subacct_id: int, trading_required: bool, domain: str
+    ):
         self._wallet_address: str = wallet_address
         self._session_private_key: str = session_private_key
         self._subacct_id: int = subacct_id
@@ -58,23 +60,25 @@ class DerivePerpetualAuth(AuthBase):
 
         return request
 
-    def get_ws_auth_payload(self) -> List[Dict[str, Any]]:
+    def get_ws_auth_payload(self) -> list[dict[str, Any]]:
         payload = {}
         timestamp = str(self.utc_now_ms())
-        signature = to_0x_hex(self._w3.eth.account.sign_message(
-            encode_defunct(text=timestamp), private_key=self._session_private_key
-        ).signature)
+        signature = to_0x_hex(
+            self._w3.eth.account.sign_message(
+                encode_defunct(text=timestamp), private_key=self._session_private_key
+            ).signature
+        )
         """
         This method is intended to configure a websocket request to be authenticated. Dexalot does not use this
         functionality
         """
-        payload["accept"] = 'application/json'
+        payload["accept"] = "application/json"
         payload["wallet"] = self._wallet_address
         payload["timestamp"] = timestamp
         payload["signature"] = signature
         return payload
 
-    def add_auth_to_params_post(self, params: Dict[str, str], request):
+    def add_auth_to_params_post(self, params: dict[str, str], request):
         payload = {}
         data = params if params is not None else {}
 
@@ -94,8 +98,12 @@ class DerivePerpetualAuth(AuthBase):
         return json.dumps(payload) if request.method == RESTMethod.POST else payload
 
     def sign(self, params):
-        domain_seperator = CONSTANTS.DOMAIN_SEPARATOR if "testnet" not in self._domain else CONSTANTS.TESTNET_DOMAIN_SEPARATOR
-        action_typehash = CONSTANTS.ACTION_TYPEHASH if "testnet" not in self._domain else CONSTANTS.TESTNET_ACTION_TYPEHASH
+        domain_seperator = (
+            CONSTANTS.DOMAIN_SEPARATOR if "testnet" not in self._domain else CONSTANTS.TESTNET_DOMAIN_SEPARATOR
+        )
+        action_typehash = (
+            CONSTANTS.ACTION_TYPEHASH if "testnet" not in self._domain else CONSTANTS.TESTNET_ACTION_TYPEHASH
+        )
         action = SignedAction(
             subaccount_id=int(self._subacct_id),
             owner=self._wallet_address,
@@ -122,14 +130,16 @@ class DerivePerpetualAuth(AuthBase):
 
         return action.to_json()
 
-    def header_for_authentication(self) -> Dict[str, str]:
+    def header_for_authentication(self) -> dict[str, str]:
         timestamp = str(self.utc_now_ms())
-        signature = to_0x_hex(self._w3.eth.account.sign_message(
-            encode_defunct(text=timestamp), private_key=self._session_private_key
-        ).signature)
+        signature = to_0x_hex(
+            self._w3.eth.account.sign_message(
+                encode_defunct(text=timestamp), private_key=self._session_private_key
+            ).signature
+        )
         payload = {}
 
-        payload["accept"] = 'application/json'
+        payload["accept"] = "application/json"
         payload["X-LyraWallet"] = self._wallet_address
         payload["X-LyraTimestamp"] = timestamp
         payload["X-LyraSignature"] = signature

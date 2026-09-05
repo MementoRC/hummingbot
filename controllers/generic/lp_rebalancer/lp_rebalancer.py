@@ -1,6 +1,5 @@
-import logging
 from decimal import Decimal, InvalidOperation
-from typing import List, Optional
+import logging
 
 from pydantic import Field, field_validator, model_validator
 
@@ -37,9 +36,10 @@ class LPRebalancerConfig(ControllerConfigBase):
     - lp_provider: LP provider in format "dex/trading_type" (e.g., "meteora/clmm")
     - autoswap uses network's configured swapProvider (via Gateway)
     """
+
     controller_type: str = "generic"
     controller_name: str = "lp_rebalancer"
-    candles_config: List[CandlesConfig] = []
+    candles_config: list[CandlesConfig] = []
 
     # Network connector - e.g., "solana-mainnet-beta"
     connector_name: str = "solana-mainnet-beta"
@@ -60,7 +60,7 @@ class LPRebalancerConfig(ControllerConfigBase):
         default=Decimal("0.01"),
         json_schema_extra={"is_updatable": True},
         description="Offset from current price. Positive = out-of-range (single-sided). "
-                    "Negative = in-range (needs both tokens, autoswap will convert |offset|%)"
+        "Negative = in-range (needs both tokens, autoswap will convert |offset|%)",
     )
 
     # Rebalance threshold - used to set LP executor's limit prices
@@ -68,30 +68,30 @@ class LPRebalancerConfig(ControllerConfigBase):
     rebalance_threshold_pct: Decimal = Field(
         default=Decimal("1"),
         json_schema_extra={"is_updatable": True},
-        description="Price threshold % beyond position bounds that triggers auto-close (e.g., 1 = 1%)"
+        description="Price threshold % beyond position bounds that triggers auto-close (e.g., 1 = 1%)",
     )
 
     # Price limits - controller-level limits for deciding whether to re-open
     # Sell range: [sell_price_min, sell_price_max]
     # Buy range: [buy_price_min, buy_price_max]
-    sell_price_max: Optional[Decimal] = Field(default=None, json_schema_extra={"is_updatable": True})
-    sell_price_min: Optional[Decimal] = Field(default=None, json_schema_extra={"is_updatable": True})
-    buy_price_max: Optional[Decimal] = Field(default=None, json_schema_extra={"is_updatable": True})
-    buy_price_min: Optional[Decimal] = Field(default=None, json_schema_extra={"is_updatable": True})
+    sell_price_max: Decimal | None = Field(default=None, json_schema_extra={"is_updatable": True})
+    sell_price_min: Decimal | None = Field(default=None, json_schema_extra={"is_updatable": True})
+    buy_price_max: Decimal | None = Field(default=None, json_schema_extra={"is_updatable": True})
+    buy_price_min: Decimal | None = Field(default=None, json_schema_extra={"is_updatable": True})
 
     # Connector-specific params (optional)
-    strategy_type: Optional[int] = Field(default=None, json_schema_extra={"is_updatable": True})
+    strategy_type: int | None = Field(default=None, json_schema_extra={"is_updatable": True})
 
     # Auto-swap feature: swap tokens if balance insufficient for position
     autoswap: bool = Field(
         default=False,
         json_schema_extra={"is_updatable": True},
-        description="Automatically swap tokens if balance is insufficient for position. Uses network's swapProvider."
+        description="Automatically swap tokens if balance is insufficient for position. Uses network's swapProvider.",
     )
     swap_buffer_pct: Decimal = Field(
         default=Decimal("0.01"),
         json_schema_extra={"is_updatable": True},
-        description="Extra % to swap beyond deficit to account for slippage (e.g., 0.01 = 0.01%)"
+        description="Extra % to swap beyond deficit to account for slippage (e.g., 0.01 = 0.01%)",
     )
 
     @field_validator("sell_price_min", "sell_price_max", "buy_price_min", "buy_price_max", mode="before")
@@ -162,7 +162,7 @@ class LPRebalancer(ControllerBase):
     - Uses keep_position=True for position tracking via position_hold
     """
 
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -183,10 +183,10 @@ class LPRebalancer(ControllerBase):
         self._quote_token: str = parts[1] if len(parts) >= 2 else ""
 
         # Track the executor we created
-        self._current_executor_id: Optional[str] = None
+        self._current_executor_id: str | None = None
         # Set when a FAILED LP executor still reports a live on-chain position; the
         # controller halts new position creation until it is recovered manually
-        self._orphaned_position_address: Optional[str] = None
+        self._orphaned_position_address: str | None = None
 
         # Slippage tolerance carried into the next attempt after a slippage failure.
         # The executor ramps 0.05 -> 0.25 -> 1.25 -> 5 within its own lifetime, but a
@@ -194,17 +194,17 @@ class LPRebalancer(ControllerBase):
         # would start at the configured tolerance again. The ladder therefore never got
         # past its first rung and max_slippage_pct was unreachable: on a thin pool that
         # is 64 identical retries at 0.25%, each paying gas. None means "start fresh".
-        self._retry_slippage_pct: Optional[Decimal] = None
+        self._retry_slippage_pct: Decimal | None = None
 
         # Track amounts from last closed position (for autoswap sizing)
-        self._last_closed_base_amount: Optional[Decimal] = None
-        self._last_closed_quote_amount: Optional[Decimal] = None
-        self._last_closed_base_fee: Optional[Decimal] = None
-        self._last_closed_quote_fee: Optional[Decimal] = None
+        self._last_closed_base_amount: Decimal | None = None
+        self._last_closed_quote_amount: Decimal | None = None
+        self._last_closed_base_fee: Decimal | None = None
+        self._last_closed_quote_fee: Decimal | None = None
 
         # Track initial balances for comparison (wallet balance at controller start)
-        self._initial_base_balance: Optional[Decimal] = None
-        self._initial_quote_balance: Optional[Decimal] = None
+        self._initial_base_balance: Decimal | None = None
+        self._initial_quote_balance: Decimal | None = None
 
         # Position hold: cumulative net position from closed LP executors
         # Tracks net change = (returned + fees) - initial_deposited
@@ -215,30 +215,26 @@ class LPRebalancer(ControllerBase):
         self._pending_balance_update: bool = False
 
         # Cached pool price (updated in update_processed_data)
-        self._pool_price: Optional[Decimal] = None
+        self._pool_price: Decimal | None = None
 
         # Order executor tracking (for autoswap feature)
-        self._swap_executor_id: Optional[str] = None
-        self._pending_swap_side: Optional[TradeType] = None  # LP side to create after swap completes
+        self._swap_executor_id: str | None = None
+        self._pending_swap_side: TradeType | None = None  # LP side to create after swap completes
 
         # Track if initial position has been created (after that, always use side 1 or 2)
         self._initial_position_created: bool = False
 
         # Initialize rate sources
-        self.market_data_provider.initialize_rate_sources([
-            ConnectorPair(
-                connector_name=self.config.connector_name,
-                trading_pair=self.config.trading_pair
-            )
-        ])
+        self.market_data_provider.initialize_rate_sources(
+            [ConnectorPair(connector_name=self.config.connector_name, trading_pair=self.config.trading_pair)]
+        )
 
-    def active_executor(self) -> Optional[ExecutorInfo]:
+    def active_executor(self) -> ExecutorInfo | None:
         """Get current active LP executor (should be 0 or 1)"""
-        active = [e for e in self.executors_info
-                  if e.is_active and getattr(e.config, "type", None) == "lp_executor"]
+        active = [e for e in self.executors_info if e.is_active and getattr(e.config, "type", None) == "lp_executor"]
         return active[0] if active else None
 
-    def get_tracked_executor(self) -> Optional[ExecutorInfo]:
+    def get_tracked_executor(self) -> ExecutorInfo | None:
         """Get the executor we're currently tracking (by ID)"""
         if not self._current_executor_id:
             return None
@@ -250,6 +246,7 @@ class LPRebalancer(ControllerBase):
     def is_tracked_executor_terminated(self) -> bool:
         """Check if the executor we created has terminated"""
         from hummingbot.strategy_v2.models.base import RunnableStatus
+
         if not self._current_executor_id:
             return True
         executor = self.get_tracked_executor()
@@ -257,7 +254,7 @@ class LPRebalancer(ControllerBase):
             return True
         return executor.status == RunnableStatus.TERMINATED
 
-    def get_swap_executor(self) -> Optional[ExecutorInfo]:
+    def get_swap_executor(self) -> ExecutorInfo | None:
         """Get the order executor we're tracking for autoswap"""
         if not self._swap_executor_id:
             return None
@@ -275,7 +272,7 @@ class LPRebalancer(ControllerBase):
             return True
         return swap_executor.is_done
 
-    def _check_autoswap_needed(self, side: TradeType, current_price: Decimal) -> Optional[OrderExecutorConfig]:
+    def _check_autoswap_needed(self, side: TradeType, current_price: Decimal) -> OrderExecutorConfig | None:
         """
         Check if autoswap is needed and return order config if so.
 
@@ -296,12 +293,8 @@ class LPRebalancer(ControllerBase):
 
         # Get current wallet balances
         try:
-            base_balance = self.market_data_provider.get_balance(
-                self.config.connector_name, self._base_token
-            )
-            quote_balance = self.market_data_provider.get_balance(
-                self.config.connector_name, self._quote_token
-            )
+            base_balance = self.market_data_provider.get_balance(self.config.connector_name, self._base_token)
+            quote_balance = self.market_data_provider.get_balance(self.config.connector_name, self._quote_token)
         except Exception as e:
             self.logger().warning(f"Could not fetch balances for autoswap check: {e}")
             return None
@@ -323,8 +316,8 @@ class LPRebalancer(ControllerBase):
         # Add native currency buffer for rent and transaction fees when native currency is involved
         # Get native currency and buffer from connector (chain-specific values)
         connector = self.market_data_provider.get_connector(self.config.connector_name)
-        native_currency = (getattr(connector, 'native_currency', None) or "").upper()
-        native_buffer = getattr(connector, 'get_native_currency_buffer', lambda: Decimal("0.005"))()
+        native_currency = (getattr(connector, "native_currency", None) or "").upper()
+        native_buffer = getattr(connector, "get_native_currency_buffer", lambda: Decimal("0.005"))()
         if native_currency and self._base_token.upper() == native_currency:
             base_deficit += native_buffer
         if native_currency and self._quote_token.upper() == native_currency:
@@ -398,13 +391,13 @@ class LPRebalancer(ControllerBase):
         """Trigger a balance update on the connector after position changes."""
         try:
             connector = self.market_data_provider.get_connector(self.config.connector_name)
-            if hasattr(connector, 'update_balances'):
+            if hasattr(connector, "update_balances"):
                 safe_ensure_future(connector.update_balances())
                 self.logger().info("Triggered balance update after position creation")
         except Exception as e:
             self.logger().debug(f"Could not trigger balance update: {e}")
 
-    def determine_executor_actions(self) -> List[ExecutorAction]:
+    def determine_executor_actions(self) -> list[ExecutorAction]:
         """
         Decide whether to create executors.
 
@@ -474,7 +467,7 @@ class LPRebalancer(ControllerBase):
                 if swap_executor:
                     custom = swap_executor.custom_info
                     swap_side = custom.get("side")  # TradeType enum or string
-                    swap_side_str = swap_side.name if hasattr(swap_side, 'name') else str(swap_side)
+                    swap_side_str = swap_side.name if hasattr(swap_side, "name") else str(swap_side)
                     executed_amount = Decimal(str(custom.get("executed_amount_base", 0)))
                     executed_price = Decimal(str(custom.get("average_executed_price", 0)))
                     quote_amount = executed_amount * executed_price
@@ -496,17 +489,14 @@ class LPRebalancer(ControllerBase):
                 if pending_side is not None:
                     executor_config = self._create_executor_config(pending_side)
                     if executor_config:
-                        actions.append(CreateExecutorAction(
-                            controller_id=self.config.id,
-                            executor_config=executor_config
-                        ))
+                        actions.append(
+                            CreateExecutorAction(controller_id=self.config.id, executor_config=executor_config)
+                        )
                         self._initial_position_created = True
                         self._pending_balance_update = True
             else:
                 close_type = swap_executor.close_type if swap_executor else "unknown"
-                self.logger().error(
-                    f"Autoswap FAILED (close_type: {close_type}). Will retry on next cycle."
-                )
+                self.logger().error(f"Autoswap FAILED (close_type: {close_type}). Will retry on next cycle.")
 
             return actions
 
@@ -534,15 +524,18 @@ class LPRebalancer(ControllerBase):
                 # returned) or ended as an involuntary hold (close exhausted): in the
                 # latter case base/quote amounts are pool balances of a still-open
                 # position, and booking them as returned tokens would corrupt the hold.
-                if (terminated_executor.close_type == CloseType.FAILED
-                        or terminated_executor.custom_info.get("hold_reason")):
+                if terminated_executor.close_type == CloseType.FAILED or terminated_executor.custom_info.get(
+                    "hold_reason"
+                ):
                     self.logger().warning(
                         f"Executor {terminated_executor.id} ended {terminated_executor.close_type} "
                         "without returning tokens - skipping position_hold update"
                     )
                 else:
                     self._last_closed_base_amount = Decimal(str(terminated_executor.custom_info.get("base_amount", 0)))
-                    self._last_closed_quote_amount = Decimal(str(terminated_executor.custom_info.get("quote_amount", 0)))
+                    self._last_closed_quote_amount = Decimal(
+                        str(terminated_executor.custom_info.get("quote_amount", 0))
+                    )
                     self._last_closed_base_fee = Decimal(str(terminated_executor.custom_info.get("base_fee", 0)))
                     self._last_closed_quote_fee = Decimal(str(terminated_executor.custom_info.get("quote_fee", 0)))
 
@@ -649,10 +642,7 @@ class LPRebalancer(ControllerBase):
                 swap_config = self._check_autoswap_needed(side, self._pool_price)
                 if swap_config:
                     self._pending_swap_side = side
-                    actions.append(CreateExecutorAction(
-                        controller_id=self.config.id,
-                        executor_config=swap_config
-                    ))
+                    actions.append(CreateExecutorAction(controller_id=self.config.id, executor_config=swap_config))
                     return actions
                 else:
                     self.logger().info("Autoswap: no swap needed, balances sufficient")
@@ -663,10 +653,7 @@ class LPRebalancer(ControllerBase):
                 self.logger().warning("Skipping position creation - invalid bounds")
                 return actions
 
-            actions.append(CreateExecutorAction(
-                controller_id=self.config.id,
-                executor_config=executor_config
-            ))
+            actions.append(CreateExecutorAction(controller_id=self.config.id, executor_config=executor_config))
             self._initial_position_created = True
             self._pending_balance_update = True
 
@@ -688,7 +675,7 @@ class LPRebalancer(ControllerBase):
         # No action needed - executor will auto-close via limit prices
         return actions
 
-    def _create_executor_config(self, side: TradeType) -> Optional[LPExecutorConfig]:
+    def _create_executor_config(self, side: TradeType) -> LPExecutorConfig | None:
         """
         Create executor config with limit prices for auto-close.
 
@@ -703,9 +690,7 @@ class LPRebalancer(ControllerBase):
         lower_price, upper_price = self._calculate_price_bounds(side, current_price)
 
         # Check bounds against price limits - clamp if one exceeds, try opposite if both exceed
-        lower_price, upper_price, side = self._validate_and_clamp_bounds(
-            lower_price, upper_price, side, current_price
-        )
+        lower_price, upper_price, side = self._validate_and_clamp_bounds(lower_price, upper_price, side, current_price)
         if lower_price is None:
             return None
 
@@ -757,7 +742,7 @@ class LPRebalancer(ControllerBase):
         )
 
     @staticmethod
-    def _carry_slippage(terminated_executor) -> Optional[Decimal]:
+    def _carry_slippage(terminated_executor) -> Decimal | None:
         """The tolerance a dead executor had reached, if it is worth carrying.
 
         Only a value the executor actually widened to is carried; a failure that never
@@ -991,7 +976,7 @@ class LPRebalancer(ControllerBase):
         """Called every tick - fetch pool price."""
         try:
             connector = self.market_data_provider.get_connector(self.config.connector_name)
-            if hasattr(connector, 'get_pool_info_by_address'):
+            if hasattr(connector, "get_pool_info_by_address"):
                 pool_info = await connector.get_pool_info_by_address(
                     self.config.pool_address,
                     dex_name=self.lp_dex_name,
@@ -1002,7 +987,7 @@ class LPRebalancer(ControllerBase):
         except Exception as e:
             self.logger().debug(f"Could not fetch pool price: {e}")
 
-    def to_format_status(self) -> List[str]:
+    def to_format_status(self) -> list[str]:
         """Format status for display."""
         status = []
         box_width = 100
@@ -1026,8 +1011,10 @@ class LPRebalancer(ControllerBase):
         width = self.config.position_width_pct
         offset = self.config.position_offset_pct
         threshold = self.config.rebalance_threshold_pct
-        line = (f"| Config: side={side_str}, amount={amt} {self._quote_token}, "
-                f"width={width}%, offset={offset}%, threshold={threshold}%")
+        line = (
+            f"| Config: side={side_str}, amount={amt} {self._quote_token}, "
+            f"width={width}%, offset={offset}%, threshold={threshold}%"
+        )
         status.append(line + " " * (box_width - len(line) + 1) + "|")
 
         status.append("|" + " " * box_width + "|")
@@ -1071,8 +1058,10 @@ class LPRebalancer(ControllerBase):
                 lower_limit = Decimal(str(lower_price)) * (Decimal("1") - threshold_pct)
                 upper_limit = Decimal(str(upper_price)) * (Decimal("1") + threshold_pct)
 
-                line = (f"| Price: {float(self._pool_price):.{price_decimals}f}  |  Auto-close if: "
-                        f"<{float(lower_limit):.{price_decimals}f} or >{float(upper_limit):.{price_decimals}f}")
+                line = (
+                    f"| Price: {float(self._pool_price):.{price_decimals}f}  |  Auto-close if: "
+                    f"<{float(lower_limit):.{price_decimals}f} or >{float(upper_limit):.{price_decimals}f}"
+                )
                 status.append(line + " " * (box_width - len(line) + 1) + "|")
 
                 state = custom.get("state", "UNKNOWN")
@@ -1092,13 +1081,9 @@ class LPRebalancer(ControllerBase):
 
                 # Range visualization
                 range_viz = self._create_price_range_visualization(
-                    Decimal(str(lower_price)),
-                    self._pool_price,
-                    Decimal(str(upper_price)),
-                    lower_limit,
-                    upper_limit
+                    Decimal(str(lower_price)), self._pool_price, Decimal(str(upper_price)), lower_limit, upper_limit
                 )
-                for viz_line in range_viz.split('\n'):
+                for viz_line in range_viz.split("\n"):
                     line = f"| {viz_line}"
                     status.append(line + " " * (box_width - len(line) + 1) + "|")
         else:
@@ -1106,10 +1091,14 @@ class LPRebalancer(ControllerBase):
             status.append(line + " " * (box_width - len(line) + 1) + "|")
 
         # Price limits visualization
-        has_limits = any([
-            self.config.sell_price_min, self.config.sell_price_max,
-            self.config.buy_price_min, self.config.buy_price_max
-        ])
+        has_limits = any(
+            [
+                self.config.sell_price_min,
+                self.config.sell_price_max,
+                self.config.buy_price_min,
+                self.config.buy_price_max,
+            ]
+        )
         if has_limits and self._pool_price:
             pos_lower = None
             pos_upper = None
@@ -1122,20 +1111,18 @@ class LPRebalancer(ControllerBase):
                     pos_upper = Decimal(str(pos_upper))
 
             status.append("|" + " " * box_width + "|")
-            limits_viz = self._create_price_limits_visualization(
-                self._pool_price, pos_lower, pos_upper, price_decimals
-            )
+            limits_viz = self._create_price_limits_visualization(self._pool_price, pos_lower, pos_upper, price_decimals)
             if limits_viz:
-                for viz_line in limits_viz.split('\n'):
+                for viz_line in limits_viz.split("\n"):
                     line = f"| {viz_line}"
                     status.append(line + " " * (box_width - len(line) + 1) + "|")
 
         # Closed positions summary
         status.append("|" + " " * box_width + "|")
-        closed_lp = [e for e in self.executors_info
-                     if e.is_done and getattr(e.config, "type", None) == "lp_executor"]
-        closed_swaps = [e for e in self.executors_info
-                        if e.is_done and getattr(e.config, "type", None) == "order_executor"]
+        closed_lp = [e for e in self.executors_info if e.is_done and getattr(e.config, "type", None) == "lp_executor"]
+        closed_swaps = [
+            e for e in self.executors_info if e.is_done and getattr(e.config, "type", None) == "order_executor"
+        ]
 
         buy_count = len([e for e in closed_lp if getattr(e.config, "side", None) == TradeType.BUY])
         sell_count = len([e for e in closed_lp if getattr(e.config, "side", None) == TradeType.SELL])
@@ -1157,16 +1144,23 @@ class LPRebalancer(ControllerBase):
             line = f"| Swaps Executed: {len(closed_swaps)}"
             status.append(line + " " * (box_width - len(line) + 1) + "|")
 
-        line = (f"| Fees Collected: {float(total_fees_base):.6f} {self._base_token} + "
-                f"{float(total_fees_quote):.6f} {self._quote_token} = {float(total_fees_value):.6f} {self._quote_token}")
+        line = (
+            f"| Fees Collected: {float(total_fees_base):.6f} {self._base_token} + "
+            f"{float(total_fees_quote):.6f} {self._quote_token} = {float(total_fees_value):.6f} {self._quote_token}"
+        )
         status.append(line + " " * (box_width - len(line) + 1) + "|")
 
         status.append("+" + "-" * box_width + "+")
         return status
 
-    def _create_price_range_visualization(self, lower_price: Decimal, current_price: Decimal,
-                                          upper_price: Decimal, lower_limit: Decimal,
-                                          upper_limit: Decimal) -> str:
+    def _create_price_range_visualization(
+        self,
+        lower_price: Decimal,
+        current_price: Decimal,
+        upper_price: Decimal,
+        lower_limit: Decimal,
+        upper_limit: Decimal,
+    ) -> str:
         """
         Create visual representation of price range with current price marker.
 
@@ -1188,54 +1182,54 @@ class LPRebalancer(ControllerBase):
         current_pos = price_to_pos(current_price)
 
         # Build bar (R at edges for rebalance limits)
-        range_bar = ['-'] * bar_width
-        range_bar[0] = 'R'
-        range_bar[-1] = 'R'
+        range_bar = ["-"] * bar_width
+        range_bar[0] = "R"
+        range_bar[-1] = "R"
 
         # Place position limits (|)
         if 0 < lower_pos < bar_width:
-            range_bar[lower_pos] = '|'
+            range_bar[lower_pos] = "|"
         if 0 < upper_pos < bar_width:
-            range_bar[upper_pos] = '|'
+            range_bar[upper_pos] = "|"
 
         # Place current price marker (*)
         if current_pos < 0:
-            marker_line = '* ' + ''.join(range_bar)
+            marker_line = "* " + "".join(range_bar)
         elif current_pos >= bar_width:
-            marker_line = ''.join(range_bar) + ' *'
+            marker_line = "".join(range_bar) + " *"
         else:
-            range_bar[current_pos] = '*'
-            marker_line = ''.join(range_bar)
+            range_bar[current_pos] = "*"
+            marker_line = "".join(range_bar)
 
         viz_lines = []
         viz_lines.append(marker_line)
 
         # Price labels: show all four prices
-        lower_limit_str = f'{float(lower_limit):.6f}'
-        lower_str = f'{float(lower_price):.6f}'
-        upper_str = f'{float(upper_price):.6f}'
-        upper_limit_str = f'{float(upper_limit):.6f}'
+        lower_limit_str = f"{float(lower_limit):.6f}"
+        lower_str = f"{float(lower_price):.6f}"
+        upper_str = f"{float(upper_price):.6f}"
+        upper_limit_str = f"{float(upper_limit):.6f}"
 
         # Build price label line with proper spacing
         label_line = lower_limit_str
         spacing1 = max(1, lower_pos - len(lower_limit_str))
-        label_line += ' ' * spacing1 + lower_str
+        label_line += " " * spacing1 + lower_str
         spacing2 = max(1, upper_pos - lower_pos - len(lower_str))
-        label_line += ' ' * spacing2 + upper_str
+        label_line += " " * spacing2 + upper_str
         spacing3 = max(1, bar_width - upper_pos - len(upper_str))
-        label_line += ' ' * spacing3 + upper_limit_str
+        label_line += " " * spacing3 + upper_limit_str
 
         viz_lines.append(label_line)
 
-        return '\n'.join(viz_lines)
+        return "\n".join(viz_lines)
 
     def _create_price_limits_visualization(
         self,
         current_price: Decimal,
-        pos_lower: Optional[Decimal] = None,
-        pos_upper: Optional[Decimal] = None,
-        price_decimals: int = 6
-    ) -> Optional[str]:
+        pos_lower: Decimal | None = None,
+        pos_upper: Decimal | None = None,
+        price_decimals: int = 6,
+    ) -> str | None:
         """Create visualization of sell/buy price limits on unified scale."""
         viz_lines = []
 
@@ -1270,12 +1264,17 @@ class LPRebalancer(ControllerBase):
         price_idx = pos_to_idx(current_price)
 
         # Helper to create a range bar on unified scale with position marker
-        def make_range_bar(range_min: Optional[Decimal], range_max: Optional[Decimal],
-                           label: str, fill_char: str = '═', show_position: bool = False) -> str:
+        def make_range_bar(
+            range_min: Decimal | None,
+            range_max: Decimal | None,
+            label: str,
+            fill_char: str = "═",
+            show_position: bool = False,
+        ) -> str:
             if range_min is None or range_max is None:
                 return ""
 
-            bar = [' '] * bar_width
+            bar = [" "] * bar_width
             start_idx = max(0, pos_to_idx(range_min))
             end_idx = min(bar_width - 1, pos_to_idx(range_max))
 
@@ -1284,13 +1283,13 @@ class LPRebalancer(ControllerBase):
                 bar[i] = fill_char
             # Mark boundaries
             if 0 <= start_idx < bar_width:
-                bar[start_idx] = '['
+                bar[start_idx] = "["
             if 0 <= end_idx < bar_width:
-                bar[end_idx] = ']'
+                bar[end_idx] = "]"
 
             # Add position marker if requested
             if show_position and 0 <= price_idx < bar_width:
-                bar[price_idx] = '●'
+                bar[price_idx] = "●"
 
             return f"  {label}: {''.join(bar)}"
 
@@ -1316,26 +1315,36 @@ class LPRebalancer(ControllerBase):
 
         # Sell range (with position marker)
         if self.config.sell_price_min and self.config.sell_price_max:
-            viz_lines.append(make_range_bar(
-                self.config.sell_price_min, self.config.sell_price_max,
-                sell_label.ljust(max_label_len), '═', show_position=True
-            ))
+            viz_lines.append(
+                make_range_bar(
+                    self.config.sell_price_min,
+                    self.config.sell_price_max,
+                    sell_label.ljust(max_label_len),
+                    "═",
+                    show_position=True,
+                )
+            )
         else:
             viz_lines.append("  Sell: No limits set")
 
         # Buy range (with position marker)
         if self.config.buy_price_min and self.config.buy_price_max:
-            viz_lines.append(make_range_bar(
-                self.config.buy_price_min, self.config.buy_price_max,
-                buy_label.ljust(max_label_len), '─', show_position=True
-            ))
+            viz_lines.append(
+                make_range_bar(
+                    self.config.buy_price_min,
+                    self.config.buy_price_max,
+                    buy_label.ljust(max_label_len),
+                    "─",
+                    show_position=True,
+                )
+            )
         else:
             viz_lines.append("  Buy : No limits set")
 
         # Scale line (aligned with bar start)
-        min_str = f'{float(scale_min):.{price_decimals}f}'
-        max_str = f'{float(scale_max):.{price_decimals}f}'
+        min_str = f"{float(scale_min):.{price_decimals}f}"
+        max_str = f"{float(scale_max):.{price_decimals}f}"
         label_padding = max_label_len + 4  # "  " prefix + ": " suffix
         viz_lines.append(f"{' ' * label_padding}{min_str}{' ' * (bar_width - len(min_str) - len(max_str))}{max_str}")
 
-        return '\n'.join(viz_lines)
+        return "\n".join(viz_lines)

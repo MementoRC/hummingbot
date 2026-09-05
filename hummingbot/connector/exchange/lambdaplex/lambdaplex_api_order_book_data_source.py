@@ -1,5 +1,5 @@
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.exchange.lambdaplex import (
     lambdaplex_constants as CONSTANTS,
@@ -22,8 +22,8 @@ class LambdaplexAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
     def __init__(
         self,
-        trading_pairs: List[str],
-        connector: 'LambdaplexExchange',
+        trading_pairs: list[str],
+        connector: "LambdaplexExchange",
         api_factory: WebAssistantsFactory,
     ):
         super().__init__(trading_pairs)
@@ -33,7 +33,7 @@ class LambdaplexAPIOrderBookDataSource(OrderBookTrackerDataSource):
         self._api_factory = api_factory
         self._next_message_id = 1
 
-    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         rest_assistant = await self._api_factory.get_rest_assistant()
         exchange_pairs = await safe_gather(
             *[
@@ -48,14 +48,14 @@ class LambdaplexAPIOrderBookDataSource(OrderBookTrackerDataSource):
             throttler_limit_id=CONSTANTS.LAST_PRICE_MULTI_LIMIT,
         )
         response = {
-            await self._connector.trading_pair_associated_to_exchange_symbol(
-                symbol=entry["symbol"]
-            ): float(entry["price"])
+            await self._connector.trading_pair_associated_to_exchange_symbol(symbol=entry["symbol"]): float(
+                entry["price"]
+            )
             for entry in data
         }
         return response
 
-    async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, Any]:
+    async def _request_order_book_snapshot(self, trading_pair: str) -> dict[str, Any]:
         params = {
             "symbol": await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair),
             "limit": "1000",
@@ -109,7 +109,7 @@ class LambdaplexAPIOrderBookDataSource(OrderBookTrackerDataSource):
 
         return success
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         trading_pair: str = await self._connector.trading_pair_associated_to_exchange_symbol(raw_message["s"])
         ts = raw_message["E"]
         message_content = {
@@ -118,7 +118,7 @@ class LambdaplexAPIOrderBookDataSource(OrderBookTrackerDataSource):
             "trade_type": float(TradeType.SELL.value) if raw_message["m"] else float(TradeType.BUY.value),
             "update_id": ts,
             "price": raw_message["p"],
-            "amount": raw_message["q"]
+            "amount": raw_message["q"],
         }
         trade_message = OrderBookMessage(
             message_type=OrderBookMessageType.TRADE,
@@ -127,23 +127,24 @@ class LambdaplexAPIOrderBookDataSource(OrderBookTrackerDataSource):
         )
         message_queue.put_nowait(trade_message)
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         if "result" not in raw_message:
             trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(symbol=raw_message["s"])
             order_book_message = OrderBookMessage(
-                OrderBookMessageType.DIFF, {
+                OrderBookMessageType.DIFF,
+                {
                     "trading_pair": trading_pair,
                     "first_update_id": raw_message["U"],
                     "update_id": raw_message["u"],
                     "bids": raw_message["b"],
-                    "asks": raw_message["a"]
+                    "asks": raw_message["a"],
                 },
                 timestamp=self._time(),
             )
             message_queue.put_nowait(order_book_message)
 
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBookMessage:
-        snapshot: Dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
+        snapshot: dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
         snapshot_timestamp = self._time()
         snapshot_msg: OrderBookMessage = OrderBookMessage(
             message_type=OrderBookMessageType.SNAPSHOT,
@@ -171,16 +172,14 @@ class LambdaplexAPIOrderBookDataSource(OrderBookTrackerDataSource):
     async def _subscribe_to_trading_pairs(self, ws: WSAssistant, trading_pairs: list[str]):
         try:
             await self._send_sub_unsub_for_trading_pairs(ws=ws, trading_pairs=trading_pairs, subscribe=True)
-            self.logger().info(
-                f"Subscribed to public order book and trade channels for {', '.join(trading_pairs)}..."
-            )
+            self.logger().info(f"Subscribed to public order book and trade channels for {', '.join(trading_pairs)}...")
         except asyncio.CancelledError:
             raise
         except Exception:
             self.logger().error(
                 f"Unexpected error occurred subscribing to order book trading and delta streams for"
                 f" {', '.join(trading_pairs)}...",
-                exc_info=True
+                exc_info=True,
             )
             raise
 
@@ -196,7 +195,7 @@ class LambdaplexAPIOrderBookDataSource(OrderBookTrackerDataSource):
             self.logger().error(
                 f"Unexpected error occurred unsubscribing from order book trading and delta streams for"
                 f" {', '.join(trading_pairs)}.",
-                exc_info=True
+                exc_info=True,
             )
             raise
 
@@ -224,7 +223,7 @@ class LambdaplexAPIOrderBookDataSource(OrderBookTrackerDataSource):
         await ws.send(trade_request)
         await ws.send(orderbook_request)
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         channel = ""
         if "error" in event_message:
             self.logger().error(f"Error in WS stream: {event_message}")

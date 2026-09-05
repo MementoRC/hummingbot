@@ -1,7 +1,7 @@
 import asyncio
-import logging
 from decimal import Decimal
-from typing import Dict, List, Optional, Union
+import logging
+from typing import Dict
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.connector.gateway.gateway_base import GatewayBase
@@ -34,8 +34,9 @@ class OrderExecutor(ExecutorBase):
             cls._logger = logging.getLogger(__name__)
         return cls._logger
 
-    def __init__(self, strategy: StrategyV2Base, config: OrderExecutorConfig,
-                 update_interval: float = 1.0, max_retries: int = 10):
+    def __init__(
+        self, strategy: StrategyV2Base, config: OrderExecutorConfig, update_interval: float = 1.0, max_retries: int = 10
+    ):
         """
         Initialize the OrderExecutor instance.
 
@@ -44,12 +45,17 @@ class OrderExecutor(ExecutorBase):
         :param update_interval: The interval at which the OrderExecutor should be updated, defaults to 1.0.
         :param max_retries: The maximum number of retries for the OrderExecutor, defaults to 10.
         """
-        super().__init__(strategy=strategy, config=config, connectors=[config.connector_name],
-                         update_interval=update_interval, max_retries=max_retries)
+        super().__init__(
+            strategy=strategy,
+            config=config,
+            connectors=[config.connector_name],
+            update_interval=update_interval,
+            max_retries=max_retries,
+        )
         self.config: OrderExecutorConfig = config
 
         # Order tracking
-        self._order: Optional[TrackedOrder] = None
+        self._order: TrackedOrder | None = None
         self._failed_orders: list[TrackedOrder] = []
         self._canceled_orders: list[TrackedOrder] = []
         self._partial_filled_orders: list[TrackedOrder] = []
@@ -177,7 +183,7 @@ class OrderExecutor(ExecutorBase):
     def _cancel_outstanding_orders(self):
         self.cancel_order()
 
-    def _collect_held_position_orders(self) -> List[Dict]:
+    def _collect_held_position_orders(self) -> list[Dict]:
         """Snapshot residual exposure for a forced stop at the shutdown deadline.
 
         Same fills control_shutdown_process would retain: the tracked order if
@@ -216,8 +222,7 @@ class OrderExecutor(ExecutorBase):
                         f"Executor {self.config.id}: order {self._order.order_id} stuck in an "
                         "indeterminate state at shutdown; force-stopping with known fills."
                     )
-                    self._held_position_orders.extend(
-                        [order.order.to_json() for order in self._partial_filled_orders])
+                    self._held_position_orders.extend([order.order.to_json() for order in self._partial_filled_orders])
                     self.close_type = CloseType.POSITION_HOLD if self._held_position_orders else CloseType.FAILED
                     self.stop()
         else:
@@ -340,7 +345,7 @@ class OrderExecutor(ExecutorBase):
             self._strategy.cancel(
                 connector_name=self.config.connector_name,
                 trading_pair=self.config.trading_pair,
-                order_id=self._order.order_id
+                order_id=self._order.order_id,
             )
             self.logger().debug("Cancelling order")
 
@@ -354,7 +359,7 @@ class OrderExecutor(ExecutorBase):
         if self._order and self._order.order_id == order_id:
             self._order.order = in_flight_order
 
-    def process_order_created_event(self, _, market, event: Union[BuyOrderCreatedEvent, SellOrderCreatedEvent]):
+    def process_order_created_event(self, _, market, event: BuyOrderCreatedEvent | SellOrderCreatedEvent):
         """
         Process the order created event.
         """
@@ -366,7 +371,7 @@ class OrderExecutor(ExecutorBase):
         """
         self.update_tracked_order_with_order_id(event.order_id)
 
-    def process_order_completed_event(self, _, market, event: Union[BuyOrderCompletedEvent, SellOrderCompletedEvent]):
+    def process_order_completed_event(self, _, market, event: BuyOrderCompletedEvent | SellOrderCompletedEvent):
         """
         Process the order completed event.
         """
@@ -423,9 +428,7 @@ class OrderExecutor(ExecutorBase):
         if not reason or not is_slippage_failure(Exception(reason)):
             return
 
-        widened = next_slippage_pct(
-            self._slippage_pct, self.config.slippage_multiplier, self.config.max_slippage_pct
-        )
+        widened = next_slippage_pct(self._slippage_pct, self.config.slippage_multiplier, self.config.max_slippage_pct)
         if widened is None:
             self.logger().warning(
                 f"Slippage failure at {self._slippage_pct}%, which is max_slippage_pct "
@@ -484,10 +487,7 @@ class OrderExecutor(ExecutorBase):
             # nowhere on chain, so without this there is no path from an executor record
             # to what it actually did — confirming a swap meant querying the wallet's
             # recent signatures and matching by timestamp.
-            "transaction_hash": (
-                self._order.order.exchange_order_id
-                if self._order and self._order.order else None
-            ),
+            "transaction_hash": (self._order.order.exchange_order_id if self._order and self._order.order else None),
             # Who actually executed it, and from which wallet. connector_name names the
             # NETWORK (solana-mainnet-beta); the DEX comes from that network's configured
             # swapProvider and is resolved inside the connector, so this is the only place
@@ -503,11 +503,13 @@ class OrderExecutor(ExecutorBase):
         :param scale: The scale for formatting.
         :return: A list of formatted status lines.
         """
-        lines = [f"""
+        lines = [
+            f"""
 | Trading Pair: {self.config.trading_pair} | Exchange: {self.config.connector_name} | Action: {self.config.position_action}
-| Amount: {self.config.amount} | Price: {self._order.order.price if self._order and self._order.order else 'N/A'}
+| Amount: {self.config.amount} | Price: {self._order.order.price if self._order and self._order.order else "N/A"}
 | Execution Strategy: {self.config.execution_strategy} | Retries: {self._current_retries}/{self._max_retries}
-"""]
+"""
+        ]
         return lines
 
     async def validate_sufficient_balance(self):

@@ -1,8 +1,9 @@
 """
 Shared utilities for gateway commands - UI and display functions.
 """
+
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from hummingbot.connector.gateway.gateway_base import GatewayBase
@@ -30,8 +31,8 @@ class GatewayCommandUtils:
         order_id: str,
         timeout: float = 60.0,
         check_interval: float = 1.0,
-        pending_msg_delay: float = 3.0
-    ) -> Dict[str, Any]:
+        pending_msg_delay: float = 3.0,
+    ) -> dict[str, Any]:
         """
         Monitor a transaction until completion or timeout by polling order status.
 
@@ -67,7 +68,7 @@ class GatewayCommandUtils:
                     "failed": order.is_failure if order else False,
                     "cancelled": order.is_cancelled if order else False,
                     "order": order,
-                    "elapsed_time": elapsed
+                    "elapsed_time": elapsed,
                 }
 
                 # Show appropriate message
@@ -83,7 +84,7 @@ class GatewayCommandUtils:
                 return result
 
             # Special handling for PENDING_CREATE state (hardware wallet approval)
-            if order and hasattr(order, 'current_state') and str(order.current_state) == "OrderState.PENDING_CREATE":
+            if order and hasattr(order, "current_state") and str(order.current_state) == "OrderState.PENDING_CREATE":
                 if elapsed > 10 and not hardware_wallet_msg_shown:
                     app.notify("If using a hardware wallet, please approve the transaction on your device.")
                     hardware_wallet_msg_shown = True
@@ -98,12 +99,7 @@ class GatewayCommandUtils:
 
         # Timeout reached
         order = connector.get_order(order_id)
-        result = {
-            "completed": False,
-            "timeout": True,
-            "order": order,
-            "elapsed_time": elapsed
-        }
+        result = {"completed": False, "timeout": True, "order": order, "elapsed_time": elapsed}
 
         app.notify("\n⚠️  Transaction may still be pending.")
         if order and order.exchange_order_id:
@@ -114,10 +110,10 @@ class GatewayCommandUtils:
     @staticmethod
     def handle_transaction_result(
         app: Any,
-        result: Dict[str, Any],
+        result: dict[str, Any],
         success_msg: str = "Transaction completed successfully!",
         failure_msg: str = "Transaction failed. Please try again.",
-        timeout_msg: str = "Transaction timed out. Check your wallet for status."
+        timeout_msg: str = "Transaction timed out. Check your wallet for status.",
     ) -> bool:
         """
         Handle transaction result and show appropriate message.
@@ -156,10 +152,8 @@ class GatewayCommandUtils:
 
     @staticmethod
     def format_allowance_display(
-        allowances: Dict[str, Any],
-        token_data: Dict[str, Any],
-        connector_name: str = None
-    ) -> List[Dict[str, str]]:
+        allowances: dict[str, Any], token_data: dict[str, Any], connector_name: str = None
+    ) -> list[dict[str, str]]:
         """
         Format allowance data for display.
 
@@ -185,7 +179,7 @@ class GatewayCommandUtils:
                     if allowance_val == int(allowance_val):
                         formatted_allowance = f"{int(allowance_val):,}"
                     else:
-                        formatted_allowance = f"{allowance_val:,.4f}".rstrip('0').rstrip('.')
+                        formatted_allowance = f"{allowance_val:,.4f}".rstrip("0").rstrip(".")
             except (ValueError, TypeError):
                 formatted_allowance = str(allowance)
 
@@ -193,11 +187,7 @@ class GatewayCommandUtils:
             address = token_info.get("address", "Unknown")
             formatted_address = GatewayCommandUtils.format_address_display(address)
 
-            row = {
-                "Symbol": token.upper(),
-                "Address": formatted_address,
-                "Allowance": formatted_allowance
-            }
+            row = {"Symbol": token.upper(), "Address": formatted_address, "Allowance": formatted_allowance}
 
             rows.append(row)
 
@@ -207,12 +197,12 @@ class GatewayCommandUtils:
     def display_balance_impact_table(
         app: Any,  # HummingbotApplication
         wallet_address: str,
-        current_balances: Dict[str, float],
-        balance_changes: Dict[str, float],
+        current_balances: dict[str, float],
+        balance_changes: dict[str, float],
         native_token: str,
         gas_fee: float,
-        warnings: List[str],
-        title: str = "Balance Impact"
+        warnings: list[str],
+        title: str = "Balance Impact",
     ):
         """
         Display a unified balance impact table showing current and projected balances.
@@ -260,7 +250,7 @@ class GatewayCommandUtils:
     @staticmethod
     def display_transaction_fee_details(
         app: Any,  # HummingbotApplication
-        fee_info: Dict[str, Any]
+        fee_info: dict[str, Any],
     ):
         """
         Display transaction fee details from fee estimation.
@@ -301,7 +291,7 @@ class GatewayCommandUtils:
     async def prompt_for_confirmation(
         app: Any,  # HummingbotApplication
         message: str,
-        is_warning: bool = False
+        is_warning: bool = False,
     ) -> bool:
         """
         Prompt user for yes/no confirmation.
@@ -312,16 +302,14 @@ class GatewayCommandUtils:
         :return: True if confirmed, False otherwise
         """
         prefix = "⚠️  " if is_warning else ""
-        response = await app.app.prompt(
-            prompt=f"{prefix}{message} (Yes/No) >>> "
-        )
+        response = await app.app.prompt(prompt=f"{prefix}{message} (Yes/No) >>> ")
         return response.lower() in ["y", "yes"]
 
     @staticmethod
     def display_warnings(
         app: Any,  # HummingbotApplication
-        warnings: List[str],
-        title: str = "WARNINGS"
+        warnings: list[str],
+        title: str = "WARNINGS",
     ):
         """
         Display a list of warnings to the user.

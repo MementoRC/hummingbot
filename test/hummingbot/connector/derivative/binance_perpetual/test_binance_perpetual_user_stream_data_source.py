@@ -1,15 +1,14 @@
 import asyncio
 import re
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from typing import Any, Dict, Optional
+from typing import Any
 from unittest.mock import AsyncMock, patch
 
-import ujson
 from aioresponses.core import aioresponses
+import ujson
 
-import hummingbot.connector.derivative.binance_perpetual.binance_perpetual_constants as CONSTANTS
 from hummingbot.connector.derivative.binance_perpetual import binance_perpetual_web_utils as web_utils
 from hummingbot.connector.derivative.binance_perpetual.binance_perpetual_auth import BinancePerpetualAuth
+import hummingbot.connector.derivative.binance_perpetual.binance_perpetual_constants as CONSTANTS
 from hummingbot.connector.derivative.binance_perpetual.binance_perpetual_derivative import BinancePerpetualDerivative
 from hummingbot.connector.derivative.binance_perpetual.binance_perpetual_user_stream_data_source import (
     BinancePerpetualUserStreamDataSource,
@@ -17,6 +16,7 @@ from hummingbot.connector.derivative.binance_perpetual.binance_perpetual_user_st
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class BinancePerpetualUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
@@ -38,25 +38,24 @@ class BinancePerpetualUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCa
 
     async def asyncSetUp(self) -> None:
         self.log_records = []
-        self.listening_task: Optional[asyncio.Task] = None
+        self.listening_task: asyncio.Task | None = None
         self.mocking_assistant = NetworkMockingAssistant(self.local_event_loop)
 
         self.emulated_time = 1640001112.223
         self.connector = BinancePerpetualDerivative(
-            binance_perpetual_api_key="",
-            binance_perpetual_api_secret="",
-            domain=self.domain,
-            trading_pairs=[])
+            binance_perpetual_api_key="", binance_perpetual_api_secret="", domain=self.domain, trading_pairs=[]
+        )
 
-        self.auth = BinancePerpetualAuth(api_key=self.api_key,
-                                         api_secret=self.secret_key,
-                                         time_provider=self)
+        self.auth = BinancePerpetualAuth(api_key=self.api_key, api_secret=self.secret_key, time_provider=self)
         self.throttler = AsyncThrottler(rate_limits=CONSTANTS.RATE_LIMITS)
         self.time_synchronizer = TimeSynchronizer()
         self.time_synchronizer.add_time_offset_ms_sample(0)
         api_factory = web_utils.build_api_factory(auth=self.auth)
         self.data_source = BinancePerpetualUserStreamDataSource(
-            auth=self.auth, domain=self.domain, api_factory=api_factory, connector=self.connector,
+            auth=self.auth,
+            domain=self.domain,
+            api_factory=api_factory,
+            connector=self.connector,
         )
 
         self.data_source.logger().setLevel(1)
@@ -93,7 +92,7 @@ class BinancePerpetualUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCa
         resp = {"listenKey": self.listen_key}
         return ujson.dumps(resp)
 
-    def _error_response(self) -> Dict[str, Any]:
+    def _error_response(self) -> dict[str, Any]:
         resp = {"code": "ERROR CODE", "msg": "ERROR MESSAGE"}
 
         return resp
@@ -151,7 +150,9 @@ class BinancePerpetualUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCa
         self.assertEqual(0, self.data_source.last_recv_time)
 
     @aioresponses()
-    @patch("hummingbot.connector.derivative.binance_perpetual.binance_perpetual_user_stream_data_source.BinancePerpetualUserStreamDataSource._sleep")
+    @patch(
+        "hummingbot.connector.derivative.binance_perpetual.binance_perpetual_user_stream_data_source.BinancePerpetualUserStreamDataSource._sleep"
+    )
     async def test_get_listen_key_exception_raised(self, mock_api, _):
         url = web_utils.private_rest_url(path_url=CONSTANTS.BINANCE_USER_STREAM_ENDPOINT, domain=self.domain)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -207,26 +208,27 @@ class BinancePerpetualUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCa
         mock_api.post(regex_url, body=self._successful_get_listen_key_response())
 
         mock_ws.side_effect = lambda *arg, **kwars: self._create_exception_and_unlock_test_with_event(
-            Exception("TEST ERROR."))
+            Exception("TEST ERROR.")
+        )
 
         msg_queue = asyncio.Queue()
-        self.listening_task = self.local_event_loop.create_task(
-            self.data_source.listen_for_user_stream(msg_queue)
-        )
+        self.listening_task = self.local_event_loop.create_task(self.data_source.listen_for_user_stream(msg_queue))
 
         await self.resume_test_event.wait()
 
         self.assertTrue(
-            self._is_logged("ERROR",
-                            "Unexpected error while listening to user stream. Retrying after 5 seconds..."))
+            self._is_logged("ERROR", "Unexpected error while listening to user stream. Retrying after 5 seconds...")
+        )
 
     @patch(
         "hummingbot.connector.derivative.binance_perpetual.binance_perpetual_user_stream_data_source.BinancePerpetualUserStreamDataSource"
         "._ping_listen_key",
-        new_callable=AsyncMock)
+        new_callable=AsyncMock,
+    )
     async def test_manage_listen_key_task_loop_keep_alive_failed(self, mock_ping_listen_key):
-        mock_ping_listen_key.side_effect = (lambda *args, **kwargs:
-                                            self._create_return_value_and_unlock_test_with_event(False))
+        mock_ping_listen_key.side_effect = lambda *args, **kwargs: self._create_return_value_and_unlock_test_with_event(
+            False
+        )
 
         self.data_source._current_listen_key = self.listen_key
 
@@ -244,11 +246,11 @@ class BinancePerpetualUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCa
         self.assertEqual(None, self.data_source._current_listen_key)
         self.assertTrue(
             self._is_logged(
-                "ERROR",
-                f"Error occurred renewing listen key ... Failed to refresh listen key {self.listen_key}"))
+                "ERROR", f"Error occurred renewing listen key ... Failed to refresh listen key {self.listen_key}"
+            )
+        )
         # The bare `raise` previously produced a misleading RuntimeError; it must no longer appear.
-        self.assertFalse(
-            any("No active exception to re-raise" in record.getMessage() for record in self.log_records))
+        self.assertFalse(any("No active exception to re-raise" in record.getMessage() for record in self.log_records))
 
     @aioresponses()
     async def test_manage_listen_key_task_loop_keep_alive_successful(self, mock_api):
@@ -313,10 +315,13 @@ class BinancePerpetualUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCa
         await self.data_source._ensure_listen_key_task_running()
         self.assertIsNotNone(self.data_source._manage_listen_key_task)
 
-    @patch("hummingbot.connector.derivative.binance_perpetual.binance_perpetual_user_stream_data_source.safe_ensure_future")
+    @patch(
+        "hummingbot.connector.derivative.binance_perpetual.binance_perpetual_user_stream_data_source.safe_ensure_future"
+    )
     async def test_ensure_listen_key_task_running_with_running_task(self, mock_safe_ensure_future):
         # Test when task is already running - should return early (line 155)
         from unittest.mock import MagicMock
+
         mock_task = MagicMock()
         mock_task.done.return_value = False
         self.data_source._manage_listen_key_task = mock_task

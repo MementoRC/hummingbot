@@ -14,16 +14,17 @@ Provider Format:
 - Gateway HTTP client uses separate dex_name and trading_type
 - Use parse_provider() to convert between formats
 """
-import logging
+
 from decimal import Decimal
-from typing import Callable, List, Optional, Tuple
+import logging
+from typing import Callable
 
 from hummingbot.client.settings import GATEWAY_DEXS
 
 logger = logging.getLogger(__name__)
 
 
-def parse_provider(provider: str) -> Tuple[str, str]:
+def parse_provider(provider: str) -> tuple[str, str]:
     """
     Parse provider string into (dex_name, trading_type) tuple.
 
@@ -51,8 +52,7 @@ def parse_provider(provider: str) -> Tuple[str, str]:
     """
     if "/" not in provider:
         raise ValueError(
-            f"Invalid provider '{provider}' - expected 'name/type' "
-            "(e.g. 'jupiter/router', 'meteora/clmm')"
+            f"Invalid provider '{provider}' - expected 'name/type' (e.g. 'jupiter/router', 'meteora/clmm')"
         )
     parts = provider.split("/", 1)
     return parts[0], parts[1]
@@ -79,8 +79,7 @@ def validate_network_connector(
     # (API context without monitor loop - Gateway will validate at execution time)
     if not GATEWAY_DEXS:
         logger.debug(
-            f"GATEWAY_DEXS empty, skipping validation for {connector_name}. "
-            "Gateway will validate at execution time."
+            f"GATEWAY_DEXS empty, skipping validation for {connector_name}. Gateway will validate at execution time."
         )
         return True
 
@@ -89,11 +88,10 @@ def validate_network_connector(
         return True
 
     # Get network-style connectors for better error message
-    network_connectors = [c for c in GATEWAY_DEXS if '-' in c and '/' not in c]
+    network_connectors = [c for c in GATEWAY_DEXS if "-" in c and "/" not in c]
 
     on_error(
-        f"Network connector '{connector_name}' not found in Gateway. "
-        f"Available network connectors: {network_connectors}"
+        f"Network connector '{connector_name}' not found in Gateway. Available network connectors: {network_connectors}"
     )
     return False
 
@@ -102,7 +100,7 @@ def validate_and_normalize_connector(
     connector_name: str,
     required_type: str,
     on_error: Callable[[str], None],
-) -> Tuple[Optional[str], bool]:
+) -> tuple[str | None, bool]:
     """
     Validate and normalize connector name for Gateway executors.
 
@@ -128,7 +126,7 @@ def validate_and_normalize_connector(
 
     # Check if it's a network-style connector (chain-network format)
     # Network connectors don't have '/' and typically have '-' (e.g., "solana-mainnet-beta")
-    if '/' not in connector_name and '-' in connector_name:
+    if "/" not in connector_name and "-" in connector_name:
         # Network connector format - validate it exists
         if validate_network_connector(connector_name, on_error):
             return connector_name, True
@@ -139,10 +137,7 @@ def validate_and_normalize_connector(
         base, connector_type = connector_name.split("/", 1)
 
         if connector_type != required_type:
-            on_error(
-                f"Executor requires /{required_type} connector type. "
-                f"'{connector_type}' is not supported."
-            )
+            on_error(f"Executor requires /{required_type} connector type. '{connector_type}' is not supported.")
             return None, False
 
         # If GATEWAY_DEXS is empty, skip validation (API context without monitor loop)
@@ -196,7 +191,7 @@ def validate_and_normalize_connector(
     return None, False
 
 
-def get_connectors_by_type(connector_type: str) -> List[str]:
+def get_connectors_by_type(connector_type: str) -> list[str]:
     """
     Get all Gateway connectors of a specific type.
 
@@ -210,14 +205,14 @@ def get_connectors_by_type(connector_type: str) -> List[str]:
     return [c for c in GATEWAY_DEXS if type_suffix in c]
 
 
-def get_network_connectors() -> List[str]:
+def get_network_connectors() -> list[str]:
     """
     Get all network-style connectors (chain-network format).
 
     Returns:
         List of network connector names (e.g., ["solana-mainnet-beta", "ethereum-mainnet"])
     """
-    return [c for c in GATEWAY_DEXS if '-' in c and '/' not in c]
+    return [c for c in GATEWAY_DEXS if "-" in c and "/" not in c]
 
 
 # Gateway's machine-readable code for a slippage failure. It is raised from two places
@@ -246,7 +241,7 @@ def next_slippage_pct(
     current: Decimal,
     multiplier: Decimal,
     maximum: Decimal,
-) -> Optional[Decimal]:
+) -> Decimal | None:
     """The next tolerance to try after a slippage failure, or None at the ceiling.
 
     Multiplicative because impact and volatility are: a linear ramp from a tight start

@@ -1,6 +1,3 @@
-from typing import Optional
-
-
 class GatewayError(ValueError):
     """
     A non-200 response from Gateway, carrying its structured error fields.
@@ -26,10 +23,10 @@ class GatewayError(ValueError):
     def __init__(
         self,
         message: str,
-        status: Optional[int] = None,
-        code: Optional[str] = None,
-        error_type: Optional[str] = None,
-        http_error: Optional[str] = None,
+        status: int | None = None,
+        code: str | None = None,
+        error_type: str | None = None,
+        http_error: str | None = None,
     ):
         self.message = message
         self.status = status

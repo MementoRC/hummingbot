@@ -1,12 +1,12 @@
 import asyncio
 import copy
+from decimal import Decimal
+from enum import Enum
 import itertools as it
 import logging
 import re
 import time
-from decimal import Decimal
-from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Set, TypeVar, Union, cast
+from typing import Any, Callable, TypeVar, cast
 
 from hummingbot.client.config.client_config_map import GatewayConfigMap
 from hummingbot.connector.budget_checker import BudgetChecker
@@ -30,23 +30,24 @@ from hummingbot.logger import HummingbotLogger
 s_logger = None
 s_decimal_0 = Decimal("0")
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 class RetryAction(Enum):
     """Action returned by retry logic to guide caller behavior."""
-    RETRY = "RETRY"           # Timeout error, retry operation (increment counter)
-    STOP = "STOP"             # Max retries reached, stop
-    FAIL_IMMEDIATE = "FAIL"   # Non-retryable error, stop immediately
+
+    RETRY = "RETRY"  # Timeout error, retry operation (increment counter)
+    STOP = "STOP"  # Max retries reached, stop
+    FAIL_IMMEDIATE = "FAIL"  # Non-retryable error, stop immediately
 
 
 # Gateway error codes that are NOT retryable
 NON_RETRYABLE_ERROR_CODES = {
-    "SIMULATION_FAILED",      # Transaction would fail on-chain
-    "INSUFFICIENT_BALANCE",   # Not enough funds
-    "SLIPPAGE_EXCEEDED",      # Price moved beyond tolerance
-    "INVALID_PARAMS",         # Bad request parameters
-    "NO_ROUTE_FOUND",         # No swap route available for this direction
+    "SIMULATION_FAILED",  # Transaction would fail on-chain
+    "INSUFFICIENT_BALANCE",  # Not enough funds
+    "SLIPPAGE_EXCEEDED",  # Price moved beyond tolerance
+    "INVALID_PARAMS",  # Bad request parameters
+    "NO_ROUTE_FOUND",  # No swap route available for this direction
 }
 
 # Retryable error codes. TRANSACTION_TIMEOUT means a tx WAS broadcast and its
@@ -77,7 +78,7 @@ TX_DATA_UNAVAILABLE = "txDataUnavailable"
 _TIMEOUT_SIGNATURE_PATTERN = re.compile(r"Transaction (\S+) (?:was not confirmed|pending)")
 
 
-def extract_error_code(error: Exception) -> Optional[str]:
+def extract_error_code(error: Exception) -> str | None:
     """Resolve the Gateway error code for an exception.
 
     A GatewayError carries the code Gateway returned as a real attribute. Everything
@@ -87,7 +88,7 @@ def extract_error_code(error: Exception) -> Optional[str]:
     """
     if isinstance(error, GatewayError):
         return error.code
-    match = re.search(r'\[code:\s*(\w+)\]', str(error))
+    match = re.search(r"\[code:\s*(\w+)\]", str(error))
     return match.group(1) if match else None
 
 
@@ -119,33 +120,34 @@ class GatewayBase(ConnectorBase):
     _chain: str
     _network: str
     _address: str
-    _trading_pairs: List[str]
-    _tokens: Set[str]
+    _trading_pairs: list[str]
+    _tokens: set[str]
     _trading_required: bool
     _last_poll_timestamp: float
     _last_balance_poll_timestamp: float
-    _balance_polling_task: Optional[asyncio.Task]
+    _balance_polling_task: asyncio.Task | None
     _last_est_gas_cost_reported: float
-    _poll_notifier: Optional[asyncio.Event]
-    _status_polling_task: Optional[asyncio.Task]
-    _get_chain_info_task: Optional[asyncio.Task]
-    _get_gas_estimate_task: Optional[asyncio.Task]
-    _chain_info: Dict[str, Any]
-    _network_transaction_fee: Optional[TokenAmount]
+    _poll_notifier: asyncio.Event | None
+    _status_polling_task: asyncio.Task | None
+    _get_chain_info_task: asyncio.Task | None
+    _get_gas_estimate_task: asyncio.Task | None
+    _chain_info: dict[str, Any]
+    _network_transaction_fee: TokenAmount | None
     _order_tracker: ClientOrderTracker
     _native_currency: str
-    _amount_quantum_dict: Dict[str, Decimal]
+    _amount_quantum_dict: dict[str, Decimal]
 
-    def __init__(self,
-                 connector_name: str,
-                 chain: Optional[str] = None,
-                 network: Optional[str] = None,
-                 address: Optional[str] = None,
-                 balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
-                 trading_pairs: Optional[List[str]] = None,
-                 trading_required: bool = True,
-                 gateway_config: Optional["GatewayConfigMap"] = None
-                 ):
+    def __init__(
+        self,
+        connector_name: str,
+        chain: str | None = None,
+        network: str | None = None,
+        address: str | None = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
+        trading_pairs: list[str] | None = None,
+        trading_required: bool = True,
+        gateway_config: "GatewayConfigMap" | None = None,
+    ):
         """
         :param connector_name: name of connector on gateway (e.g., 'uniswap/amm', 'jupiter/router')
         :param chain: refers to a block chain, e.g. solana (auto-detected if not provided)
@@ -156,7 +158,7 @@ class GatewayBase(ConnectorBase):
         """
         self._connector_name = connector_name
         # order_id -> the reason its last failure gave. See order_failure_reason().
-        self._order_failure_reasons: Dict[str, str] = {}
+        self._order_failure_reasons: dict[str, str] = {}
         # Temporarily set chain/network/address - will be populated in start_network if not provided
         self._chain = chain
         self._network = network
@@ -185,7 +187,7 @@ class GatewayBase(ConnectorBase):
         self._amount_quantum_dict = {}
         self._token_data = {}  # Store complete token information
         self._allowances = {}
-        self._swap_provider: Optional[str] = None  # e.g., "jupiter/router" - fetched from network config
+        self._swap_provider: str | None = None  # e.g., "jupiter/router" - fetched from network config
 
     def _ensure_registered_in_connector_settings(self) -> None:
         """Register this Gateway connector in AllConnectorSettings if it isn't already.
@@ -207,6 +209,7 @@ class GatewayBase(ConnectorBase):
         """
         # Imported lazily to avoid a circular import at module load time.
         from hummingbot.client.settings import AllConnectorSettings, ConnectorSetting, ConnectorType
+
         all_settings = AllConnectorSettings.get_connector_settings()
         if self._connector_name in all_settings:
             return
@@ -263,7 +266,7 @@ class GatewayBase(ConnectorBase):
         return self._network
 
     @property
-    def swap_provider(self) -> Optional[str]:
+    def swap_provider(self) -> str | None:
         """Swap provider for this network (e.g., 'jupiter/router'). Fetched from Gateway network config."""
         return self._swap_provider
 
@@ -282,7 +285,7 @@ class GatewayBase(ConnectorBase):
         """
         return self._trading_pairs
 
-    async def all_trading_pairs(self) -> List[str]:
+    async def all_trading_pairs(self) -> list[str]:
         """
         Calls the tokens endpoint on Gateway.
         """
@@ -297,26 +300,21 @@ class GatewayBase(ConnectorBase):
             return []
 
     @property
-    def gateway_orders(self) -> List[GatewayInFlightOrder]:
+    def gateway_orders(self) -> list[GatewayInFlightOrder]:
         return [
-            in_flight_order
-            for in_flight_order in self._order_tracker.active_orders.values()
-            if in_flight_order.is_open
+            in_flight_order for in_flight_order in self._order_tracker.active_orders.values() if in_flight_order.is_open
         ]
 
     @property
-    def limit_orders(self) -> List[LimitOrder]:
-        return [
-            in_flight_order.to_limit_order()
-            for in_flight_order in self.gateway_orders
-        ]
+    def limit_orders(self) -> list[LimitOrder]:
+        return [in_flight_order.to_limit_order() for in_flight_order in self.gateway_orders]
 
     @property
     def network_transaction_fee(self) -> TokenAmount:
         return self._network_transaction_fee
 
     @property
-    def native_currency(self) -> Optional[str]:
+    def native_currency(self) -> str | None:
         """Returns the native currency symbol for this chain."""
         return self._native_currency
 
@@ -343,25 +341,21 @@ class GatewayBase(ConnectorBase):
         self._network_transaction_fee = new_fee
 
     @property
-    def in_flight_orders(self) -> Dict[str, GatewayInFlightOrder]:
+    def in_flight_orders(self) -> dict[str, GatewayInFlightOrder]:
         return self._order_tracker.active_orders
 
-    def get_order(self, client_order_id: str) -> Optional[GatewayInFlightOrder]:
+    def get_order(self, client_order_id: str) -> GatewayInFlightOrder | None:
         """Get a specific order."""
         return self._order_tracker.fetch_order(client_order_id)
 
     @property
-    def tracking_states(self) -> Dict[str, Any]:
-        return {
-            key: value.to_json()
-            for key, value in self.in_flight_orders.items()
-        }
+    def tracking_states(self) -> dict[str, Any]:
+        return {key: value.to_json() for key, value in self.in_flight_orders.items()}
 
-    def restore_tracking_states(self, saved_states: Dict[str, any]):
-        self._order_tracker._in_flight_orders.update({
-            key: GatewayInFlightOrder.from_json(value)
-            for key, value in saved_states.items()
-        })
+    def restore_tracking_states(self, saved_states: dict[str, any]):
+        self._order_tracker._in_flight_orders.update(
+            {key: GatewayInFlightOrder.from_json(value) for key, value in saved_states.items()}
+        )
 
     @staticmethod
     def create_market_order_id(side: TradeType, trading_pair: str) -> str:
@@ -370,9 +364,7 @@ class GatewayBase(ConnectorBase):
     async def start_network(self):
         # Auto-detect chain and network if not provided
         if not self._chain or not self._network:
-            chain, network, error = await self._get_gateway_instance().get_connector_chain_network(
-                self._connector_name
-            )
+            chain, network, error = await self._get_gateway_instance().get_connector_chain_network(self._connector_name)
             if error:
                 raise ValueError(f"Failed to get chain/network info: {error}")
             if not self._chain:
@@ -388,9 +380,7 @@ class GatewayBase(ConnectorBase):
 
         # Get default wallet if not provided
         if not self._wallet_address:
-            wallet_address, error = await self._get_gateway_instance().get_default_wallet(
-                self._chain
-            )
+            wallet_address, error = await self._get_gateway_instance().get_default_wallet(self._chain)
             if error:
                 raise ValueError(f"Failed to get default wallet: {error}")
             self._wallet_address = wallet_address
@@ -497,11 +487,11 @@ class GatewayBase(ConnectorBase):
         # Return NaN to signal that price should be fetched from gateway
         return Decimal("nan")
 
-    def get_token_info(self, token_symbol: str) -> Optional[Dict[str, Any]]:
+    def get_token_info(self, token_symbol: str) -> dict[str, Any] | None:
         """Get token information for a given symbol."""
         return self._token_data.get(token_symbol)
 
-    def get_token_by_address(self, token_address: str) -> Optional[Dict[str, Any]]:
+    def get_token_by_address(self, token_address: str) -> dict[str, Any] | None:
         """Get token information for a given address."""
         # Search through all tokens to find matching address
         for symbol, token_data in self._token_data.items():
@@ -526,22 +516,20 @@ class GatewayBase(ConnectorBase):
                 self._native_currency = native_currency
                 self.logger().info(f"Set native currency to: {self._native_currency} for {self.chain}-{self.network}")
             else:
-                self.logger().error(f"Failed to get native currency for {self.chain}-{self.network}, got: {native_currency}")
+                self.logger().error(
+                    f"Failed to get native currency for {self.chain}-{self.network}, got: {native_currency}"
+                )
         except asyncio.CancelledError:
             raise
         except Exception as e:
-            self.logger().network(
-                "Error fetching chain info",
-                exc_info=True,
-                app_warning_msg=str(e)
-            )
+            self.logger().network("Error fetching chain info", exc_info=True, app_warning_msg=str(e))
 
     async def get_gas_estimate(self):
         """
         Gets the gas estimates for the connector.
         """
         try:
-            response: Dict[str, Any] = await self._get_gateway_instance().estimate_gas(
+            response: dict[str, Any] = await self._get_gateway_instance().estimate_gas(
                 chain=self.chain, network=self.network
             )
 
@@ -551,22 +539,17 @@ class GatewayBase(ConnectorBase):
 
             if fee is not None and fee_asset is not None:
                 # Create a TokenAmount object for the network fee using the provided fee asset
-                self.network_transaction_fee = TokenAmount(
-                    token=fee_asset,
-                    amount=Decimal(str(fee))
-                )
+                self.network_transaction_fee = TokenAmount(token=fee_asset, amount=Decimal(str(fee)))
                 self.logger().debug(f"Set network transaction fee: {fee} {fee_asset}")
             else:
-                self.logger().warning(
-                    f"Incomplete gas estimate response: fee={fee}, feeAsset={fee_asset}"
-                )
+                self.logger().warning(f"Incomplete gas estimate response: fee={fee}, feeAsset={fee_asset}")
         except asyncio.CancelledError:
             raise
         except Exception as e:
             self.logger().network(
                 f"Error getting gas estimates for {self.connector_name} on {self.network}.",
                 exc_info=True,
-                app_warning_msg=str(e)
+                app_warning_msg=str(e),
             )
 
     @property
@@ -579,7 +562,7 @@ class GatewayBase(ConnectorBase):
         return all(status.values())
 
     @property
-    def status_dict(self) -> Dict[str, bool]:
+    def status_dict(self) -> dict[str, bool]:
         has_balance = len(self._account_balances) > 0
         has_native_currency = self._native_currency is not None
         has_network_fee = self.network_transaction_fee is not None
@@ -638,11 +621,8 @@ class GatewayBase(ConnectorBase):
         token_list = list(tokens)
         if self._native_currency and self._native_currency not in tokens:
             token_list.append(self._native_currency)
-        resp_json: Dict[str, Any] = await self._get_gateway_instance().get_balances(
-            chain=self.chain,
-            network=self.network,
-            address=self.address,
-            token_symbols=token_list
+        resp_json: dict[str, Any] = await self._get_gateway_instance().get_balances(
+            chain=self.chain, network=self.network, address=self.address, token_symbols=token_list
         )
         for token, bal in resp_json["balances"].items():
             self._account_available_balances[token] = Decimal(str(bal))
@@ -675,9 +655,7 @@ class GatewayBase(ConnectorBase):
         """
         # Auto-detect chain and network if not provided
         if not self._chain or not self._network:
-            chain, network, error = await self._get_gateway_instance().get_connector_chain_network(
-                self._connector_name
-            )
+            chain, network, error = await self._get_gateway_instance().get_connector_chain_network(self._connector_name)
             if error:
                 raise ValueError(f"Failed to get chain/network info: {error}")
             if not self._chain:
@@ -689,9 +667,7 @@ class GatewayBase(ConnectorBase):
 
         # Auto-detect wallet if not provided
         if not self._wallet_address:
-            wallet_address, error = await self._get_gateway_instance().get_default_wallet(
-                self._chain
-            )
+            wallet_address, error = await self._get_gateway_instance().get_default_wallet(self._chain)
             if error:
                 raise ValueError(f"Failed to get default wallet: {error}")
             self._wallet_address = wallet_address
@@ -703,7 +679,7 @@ class GatewayBase(ConnectorBase):
         """
         pass
 
-    async def cancel_all(self, timeout_seconds: float) -> List[CancellationResult]:
+    async def cancel_all(self, timeout_seconds: float) -> list[CancellationResult]:
         """
         This is intentionally left blank, because cancellation is expensive on blockchains. It's not worth it for
         Hummingbot to force cancel all orders whenever Hummingbot quits.
@@ -763,9 +739,7 @@ class GatewayBase(ConnectorBase):
                         # Transaction landed but failed on-chain. Typed so the caller
                         # can decide what it means for its operation; never retried
                         # here since re-submitting e.g. a swap can double-spend.
-                        self.logger().error(
-                            f"{operation_name} FAILED: Transaction {signature} not confirmed on-chain."
-                        )
+                        self.logger().error(f"{operation_name} FAILED: Transaction {signature} not confirmed on-chain.")
                         raise Exception(f"Transaction {signature} not confirmed on-chain [code: TX_NOT_CONFIRMED]")
                     elif status == 0:
                         # Transaction broadcast but unconfirmed. NEVER re-submit while
@@ -848,7 +822,7 @@ class GatewayBase(ConnectorBase):
                     await asyncio.sleep(retry_delay)
                     # Continue to next iteration
 
-    def _confirmed_without_data(self, result: Dict[str, Any], signature: str) -> Dict[str, Any]:
+    def _confirmed_without_data(self, result: dict[str, Any], signature: str) -> dict[str, Any]:
         """
         Build the CONFIRMED response for a transaction reconciled by polling its signature.
 
@@ -867,7 +841,7 @@ class GatewayBase(ConnectorBase):
         return reconciled
 
     @staticmethod
-    def _extract_timeout_signature(error_str: str) -> Optional[str]:
+    def _extract_timeout_signature(error_str: str) -> str | None:
         """Signature embedded in a Gateway TRANSACTION_TIMEOUT message, if any."""
         if "TRANSACTION_TIMEOUT" not in error_str:
             return None
@@ -900,9 +874,7 @@ class GatewayBase(ConnectorBase):
                     self._chain, self._network, signature, fail_silently=True
                 )
             except Exception as poll_error:
-                self.logger().warning(
-                    f"{operation_name}: error polling {signature}: {poll_error}; retrying poll."
-                )
+                self.logger().warning(f"{operation_name}: error polling {signature}: {poll_error}; retrying poll.")
                 continue
 
             tx_status = (poll or {}).get("txStatus")
@@ -910,9 +882,7 @@ class GatewayBase(ConnectorBase):
                 return "CONFIRMED"
             if tx_status == -1:
                 error_msg = (poll or {}).get("error") or "Transaction failed on-chain"
-                raise Exception(
-                    f"Transaction {signature} failed on-chain: {error_msg} [code: TX_NOT_CONFIRMED]"
-                )
+                raise Exception(f"Transaction {signature} failed on-chain: {error_msg} [code: TX_NOT_CONFIRMED]")
             if tx_status == -2:
                 not_found_streak += 1
             else:
@@ -956,10 +926,7 @@ class GatewayBase(ConnectorBase):
 
         # Check for non-retryable errors
         if error_code and error_code in NON_RETRYABLE_ERROR_CODES:
-            self.logger().error(
-                f"{operation_name} FAILED: {error}. "
-                f"Error code {error_code} is not retryable."
-            )
+            self.logger().error(f"{operation_name} FAILED: {error}. Error code {error_code} is not retryable.")
             return RetryAction.FAIL_IMMEDIATE
 
         # Check for retryable codes (timeout with signature reconciliation handled
@@ -968,9 +935,7 @@ class GatewayBase(ConnectorBase):
 
         if not is_timeout:
             # No error code and not a timeout - fail immediately
-            self.logger().error(
-                f"{operation_name} FAILED: {error}. Error is not retryable."
-            )
+            self.logger().error(f"{operation_name} FAILED: {error}. Error is not retryable.")
             return RetryAction.FAIL_IMMEDIATE
 
         # Timeout error - check if we can retry
@@ -983,16 +948,18 @@ class GatewayBase(ConnectorBase):
 
         return RetryAction.RETRY
 
-    def start_tracking_order(self,
-                             order_id: str,
-                             exchange_order_id: Optional[str] = None,
-                             trading_pair: str = "",
-                             trade_type: TradeType = TradeType.BUY,
-                             price: Decimal = s_decimal_0,
-                             amount: Decimal = s_decimal_0,
-                             gas_price: Decimal = s_decimal_0,
-                             is_approval: bool = False,
-                             order_type: OrderType = OrderType.AMM_SWAP):
+    def start_tracking_order(
+        self,
+        order_id: str,
+        exchange_order_id: str | None = None,
+        trading_pair: str = "",
+        trade_type: TradeType = TradeType.BUY,
+        price: Decimal = s_decimal_0,
+        amount: Decimal = s_decimal_0,
+        gas_price: Decimal = s_decimal_0,
+        is_approval: bool = False,
+        order_type: OrderType = OrderType.AMM_SWAP,
+    ):
         """
         Starts tracking an order by adding it to ClientOrderTracker and emitting OrderCreated event.
         """
@@ -1006,7 +973,7 @@ class GatewayBase(ConnectorBase):
             amount=amount,
             gas_price=gas_price,
             creation_timestamp=self.current_timestamp,
-            initial_state=OrderState.PENDING_APPROVAL if is_approval else OrderState.PENDING_CREATE
+            initial_state=OrderState.PENDING_APPROVAL if is_approval else OrderState.PENDING_CREATE,
         )
         self._order_tracker.start_tracking_order(order)
 
@@ -1027,7 +994,7 @@ class GatewayBase(ConnectorBase):
     # of the failure, so this only has to outlive that.
     MAX_REMEMBERED_FAILURES = 100
 
-    def order_failure_reason(self, order_id: str) -> Optional[str]:
+    def order_failure_reason(self, order_id: str) -> str | None:
         """Why an order failed, as Gateway explained it, or None if it is not remembered.
 
         Gateway's message carries its machine-readable code (`[code: SLIPPAGE_EXCEEDED]`),
@@ -1047,8 +1014,7 @@ class GatewayBase(ConnectorBase):
         :param error: The exception that occurred
         """
         self.logger().error(
-            f"Error {operation_name} for {trading_pair} on {self.connector_name}: {str(error)}",
-            exc_info=True
+            f"Error {operation_name} for {trading_pair} on {self.connector_name}: {str(error)}", exc_info=True
         )
         # Keep why it failed, not just that it did. The order tracker records FAILED and
         # nothing else, so an executor watching the order sees a state with no reason and
@@ -1063,39 +1029,36 @@ class GatewayBase(ConnectorBase):
             client_order_id=order_id,
             trading_pair=trading_pair,
             update_timestamp=self.current_timestamp,
-            new_state=OrderState.FAILED
+            new_state=OrderState.FAILED,
         )
         self._order_tracker.process_order_update(order_update)
 
-    async def update_order_status(self, tracked_orders: List[GatewayInFlightOrder]):
+    async def update_order_status(self, tracked_orders: list[GatewayInFlightOrder]):
         """
         Calls REST API to get status update for each in-flight AMM orders.
         """
         if len(tracked_orders) < 1:
             return
 
-        tx_hash_list: List[str] = [
-            tx_hash for tx_hash in await safe_gather(
-                *[tracked_order.get_exchange_order_id() for tracked_order in tracked_orders],
-                return_exceptions=True
+        tx_hash_list: list[str] = [
+            tx_hash
+            for tx_hash in await safe_gather(
+                *[tracked_order.get_exchange_order_id() for tracked_order in tracked_orders], return_exceptions=True
             )
             if not isinstance(tx_hash, Exception)
         ]
 
         self.logger().info(
-            "Polling for order status updates of %d orders. Transaction hashes: %s",
-            len(tracked_orders),
-            tx_hash_list
+            "Polling for order status updates of %d orders. Transaction hashes: %s", len(tracked_orders), tx_hash_list
         )
 
-        update_results: List[Union[Dict[str, Any], Exception]] = await safe_gather(*[
-            self._get_gateway_instance().get_transaction_status(
-                self.chain,
-                self.network,
-                tx_hash
-            )
-            for tx_hash in tx_hash_list
-        ], return_exceptions=True)
+        update_results: list[dict[str, Any] | Exception] = await safe_gather(
+            *[
+                self._get_gateway_instance().get_transaction_status(self.chain, self.network, tx_hash)
+                for tx_hash in tx_hash_list
+            ],
+            return_exceptions=True,
+        )
 
         for tracked_order, tx_details in zip(tracked_orders, update_results):
             if isinstance(tx_details, Exception):
@@ -1103,8 +1066,9 @@ class GatewayBase(ConnectorBase):
                 continue
 
             if "signature" not in tx_details:
-                self.logger().error(f"No signature field for transaction status of {tracked_order.client_order_id}: "
-                                    f"{tx_details}.")
+                self.logger().error(
+                    f"No signature field for transaction status of {tracked_order.client_order_id}: {tx_details}."
+                )
                 continue
 
             tx_status: int = tx_details["txStatus"]
@@ -1121,7 +1085,7 @@ class GatewayBase(ConnectorBase):
                     new_state=OrderState.FILLED,
                     misc_updates={
                         "fee_asset": self._native_currency,
-                    }
+                    },
                 )
                 self._order_tracker.process_order_update(order_update)
 
@@ -1146,13 +1110,13 @@ class GatewayBase(ConnectorBase):
             elif tx_status == TransactionStatus.FAILED.value:
                 self.logger().network(
                     f"Transaction failed for order {tracked_order.client_order_id}: {tx_details}.",
-                    app_warning_msg=f"Transaction failed for order {tracked_order.client_order_id}."
+                    app_warning_msg=f"Transaction failed for order {tracked_order.client_order_id}.",
                 )
                 order_update: OrderUpdate = OrderUpdate(
                     client_order_id=tracked_order.client_order_id,
                     trading_pair=tracked_order.trading_pair,
                     update_timestamp=self.current_timestamp,
-                    new_state=OrderState.FAILED
+                    new_state=OrderState.FAILED,
                 )
                 self._order_tracker.process_order_update(order_update)
 
@@ -1162,15 +1126,13 @@ class GatewayBase(ConnectorBase):
                     MarketTransactionFailureEvent(
                         timestamp=self.current_timestamp,
                         order_id=tracked_order.client_order_id,
-                    )
+                    ),
                 )
 
     def process_transaction_confirmation_update(self, tracked_order: GatewayInFlightOrder, fee: Decimal):
         # Handle both GatewayInFlightOrder (has fee_asset) and base InFlightOrder (doesn't)
-        fee_asset = getattr(tracked_order, 'fee_asset', None) or self._native_currency
-        trade_fee: TradeFeeBase = AddedToCostTradeFee(
-            flat_fees=[TokenAmount(fee_asset, fee)]
-        )
+        fee_asset = getattr(tracked_order, "fee_asset", None) or self._native_currency
+        trade_fee: TradeFeeBase = AddedToCostTradeFee(flat_fees=[TokenAmount(fee_asset, fee)])
 
         # Handle None values for price/amount
         fill_price = tracked_order.price or Decimal("0")
@@ -1185,7 +1147,7 @@ class GatewayBase(ConnectorBase):
             fill_price=fill_price,
             fill_base_amount=fill_amount,
             fill_quote_amount=fill_amount * fill_price,
-            fee=trade_fee
+            fee=trade_fee,
         )
 
         self._order_tracker.process_trade_update(trade_update)
@@ -1211,7 +1173,7 @@ class GatewayBase(ConnectorBase):
             misc_updates={
                 "gas_cost": Decimal(str(fee or 0)),
                 "gas_price_token": self._native_currency,
-            }
+            },
         )
         self._order_tracker.process_order_update(order_update)
 
@@ -1227,11 +1189,8 @@ class GatewayBase(ConnectorBase):
         :return: Balance for the token
         """
         try:
-            resp_json: Dict[str, Any] = await self._get_gateway_instance().get_balances(
-                chain=self.chain,
-                network=self.network,
-                address=self.address,
-                token_symbols=[token_address]
+            resp_json: dict[str, Any] = await self._get_gateway_instance().get_balances(
+                chain=self.chain, network=self.network, address=self.address, token_symbols=[token_address]
             )
 
             if "balances" in resp_json:
@@ -1254,7 +1213,7 @@ class GatewayBase(ConnectorBase):
             self.logger().error(f"Error fetching balance for token address {token_address}: {str(e)}", exc_info=True)
             return s_decimal_0
 
-    async def approve_token(self, token_symbol: str, spender: Optional[str] = None, amount: Optional[Decimal] = None) -> str:
+    async def approve_token(self, token_symbol: str, spender: str | None = None, amount: Decimal | None = None) -> str:
         """
         Approve tokens for spending by the connector's spender contract.
 
@@ -1273,7 +1232,7 @@ class GatewayBase(ConnectorBase):
                 address=self.address,
                 token=token_symbol,
                 spender=spender or self._connector_name,
-                amount=str(amount) if amount else None
+                amount=str(amount) if amount else None,
             )
 
             if "signature" not in approve_result:
@@ -1293,7 +1252,7 @@ class GatewayBase(ConnectorBase):
                 # and data carries a total `fee`, never a per-unit gasPrice. Reading one
                 # produced Decimal(0) on every approval — the same value the parameter
                 # already defaults to, but dressed up as something Gateway had reported.
-                is_approval=True
+                is_approval=True,
             )
 
             # Update order with transaction hash
@@ -1301,7 +1260,7 @@ class GatewayBase(ConnectorBase):
                 order_id=order_id,
                 trading_pair=f"{token_symbol}-APPROVAL",
                 transaction_hash=transaction_hash,
-                transaction_result=approve_result
+                transaction_result=approve_result,
             )
 
             self.logger().info(f"Token approval submitted. Order ID: {order_id}, Transaction: {transaction_hash}")

@@ -1,6 +1,6 @@
 from decimal import Decimal
 from enum import Enum
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import model_validator
 
@@ -33,8 +33,8 @@ class TWAPExecutorConfig(ExecutorConfigBase):
     mode: TWAPMode = TWAPMode.TAKER
 
     # MAKER mode specific parameters
-    limit_order_buffer: Optional[Decimal] = None
-    order_resubmission_time: Optional[int] = None
+    limit_order_buffer: Decimal | None = None
+    order_resubmission_time: int | None = None
 
     @model_validator(mode="after")
     def validate_twap(self):

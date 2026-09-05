@@ -1,6 +1,6 @@
 from decimal import Decimal
 from enum import Enum
-from typing import Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, model_validator
 
@@ -41,11 +41,11 @@ class OrderExecutorConfig(ExecutorConfigBase):
     side: TradeType
     amount: Decimal
     position_action: PositionAction = PositionAction.OPEN
-    price: Optional[Decimal] = None  # Required for LIMIT and LIMIT_MAKER
-    chaser_config: Optional[LimitChaserConfig] = None  # Required for LIMIT_CHASER
+    price: Decimal | None = None  # Required for LIMIT and LIMIT_MAKER
+    chaser_config: LimitChaserConfig | None = None  # Required for LIMIT_CHASER
     execution_strategy: ExecutionStrategy
     leverage: int = 1
-    level_id: Optional[str] = None
+    level_id: str | None = None
 
     # Slippage, and how far this executor may widen it across retries. Gateway swaps
     # only: a CEX order has a price and a book, and nothing to be tolerant about. On a

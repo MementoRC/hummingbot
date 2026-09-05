@@ -1,7 +1,7 @@
 import base64
 import json
 import textwrap
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -44,7 +44,7 @@ class LambdaplexAuth(AuthBase):
 
         return request
 
-    def _add_auth_to_args(self, args: Dict[str, Any]) -> Dict[str, Any]:
+    def _add_auth_to_args(self, args: dict[str, Any]) -> dict[str, Any]:
         args["recvWindow"] = CONSTANTS.RECEIVE_WINDOW
         args["timestamp"] = int(self._time_provider.time() * 1e3)
 
@@ -54,7 +54,7 @@ class LambdaplexAuth(AuthBase):
 
         return args
 
-    def _sign_param_pairs(self, arg_pairs: List[Tuple[str, Union[str, int, float]]]) -> str:
+    def _sign_param_pairs(self, arg_pairs: list[tuple[str, str | int | float]]) -> str:
         payload_string = "&".join(f"{k}={v}" for k, v in arg_pairs)
         try:
             sig_bytes = self._pem_private_key.sign(payload_string.encode("ascii"))
@@ -94,9 +94,12 @@ class LambdaplexAuth(AuthBase):
 
         # Case 2: looks like base64-encoded key (no headers)
         # Remove any stray header/footer lines if partially included
-        key_b64 = key_str.replace("-----BEGIN PRIVATE KEY-----", "").replace(
-            "-----END PRIVATE KEY-----", ""
-        ).replace("\n", "").strip()
+        key_b64 = (
+            key_str.replace("-----BEGIN PRIVATE KEY-----", "")
+            .replace("-----END PRIVATE KEY-----", "")
+            .replace("\n", "")
+            .strip()
+        )
 
         # Validate that it’s valid base64
         try:

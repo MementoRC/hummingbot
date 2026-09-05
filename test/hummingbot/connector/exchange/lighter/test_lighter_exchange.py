@@ -10,11 +10,11 @@ serves with authenticated GET requests) is left to the base class.
 """
 
 import asyncio
+from decimal import Decimal
 import json
 import re
-from decimal import Decimal
 from types import SimpleNamespace
-from typing import Callable, List, Optional
+from typing import Callable
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses import aioresponses
@@ -49,7 +49,6 @@ class MockSignerClient:
 
 
 class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests):
-
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
@@ -112,8 +111,14 @@ class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
     def inactive_orders_url(self):
         return web_utils.public_rest_url(CONSTANTS.ACCOUNT_INACTIVE_ORDERS_PATH_URL)
 
-    def _market_detail(self, symbol: str, market_id: int, status: str = "active", hidden: bool = False,
-                       last_trade_price: str = "9999.9") -> dict:
+    def _market_detail(
+        self,
+        symbol: str,
+        market_id: int,
+        status: str = "active",
+        hidden: bool = False,
+        last_trade_price: str = "9999.9",
+    ) -> dict:
         return {
             "symbol": symbol,
             "market_id": market_id,
@@ -136,7 +141,9 @@ class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
     def latest_prices_request_mock_response(self):
         return {
             "spot_order_book_details": [
-                self._market_detail(self.exchange_symbol, self.market_id, last_trade_price=str(self.expected_latest_price))
+                self._market_detail(
+                    self.exchange_symbol, self.market_id, last_trade_price=str(self.expected_latest_price)
+                )
             ]
         }
 
@@ -178,7 +185,7 @@ class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         # Orders go through the signer client; not used by the overridden creation tests.
         return {"code": 200}
 
-    def _account_balance_response(self, assets: List[dict]) -> dict:
+    def _account_balance_response(self, assets: list[dict]) -> dict:
         return {"accounts": [{"index": self.account_index, "assets": assets}]}
 
     @property
@@ -192,9 +199,7 @@ class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
 
     @property
     def balance_request_mock_response_only_base(self):
-        return self._account_balance_response(
-            [{"symbol": self.base_asset, "balance": "15", "locked_balance": "5"}]
-        )
+        return self._account_balance_response([{"symbol": self.base_asset, "balance": "15", "locked_balance": "5"}])
 
     @property
     def balance_event_websocket_update(self):
@@ -358,45 +363,47 @@ class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return url
 
     def configure_completely_filled_order_status_response(
-            self, order: InFlightOrder, mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None) -> List[str]:
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
+    ) -> list[str]:
         active = self._mock_active_orders(mock_api, [])
         inactive = self._mock_inactive_orders(mock_api, [self._order_data(order, "filled")], callback=callback)
         return [active, inactive]
 
     def configure_canceled_order_status_response(
-            self, order: InFlightOrder, mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None) -> List[str]:
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
+    ) -> list[str]:
         active = self._mock_active_orders(mock_api, [])
         inactive = self._mock_inactive_orders(mock_api, [self._order_data(order, "canceled")], callback=callback)
         return [active, inactive]
 
     def configure_open_order_status_response(
-            self, order: InFlightOrder, mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None) -> str:
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
+    ) -> str:
         return self._mock_active_orders(mock_api, [self._order_data(order, "open")], callback=callback)
 
     def configure_partially_filled_order_status_response(
-            self, order: InFlightOrder, mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None) -> str:
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
+    ) -> str:
         return self._mock_active_orders(
-            mock_api, [self._order_data(order, "open", filled_base_amount="0.5")], callback=callback)
+            mock_api, [self._order_data(order, "open", filled_base_amount="0.5")], callback=callback
+        )
 
     def configure_http_error_order_status_response(
-            self, order: InFlightOrder, mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None) -> str:
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
+    ) -> str:
         url = self.active_orders_url
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
         mock_api.get(regex_url, status=500, callback=callback)
         return url
 
     def configure_order_not_found_error_order_status_response(
-            self, order: InFlightOrder, mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None) -> List[str]:
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
+    ) -> list[str]:
         # The order is absent from both active and inactive lists. Advance the clock past the
         # post-creation grace window so the connector treats the absence as a hard "not found".
         self.exchange._set_current_timestamp(
-            self.exchange.current_timestamp + CONSTANTS.ORDER_NOT_FOUND_GRACE_PERIOD + 1)
+            self.exchange.current_timestamp + CONSTANTS.ORDER_NOT_FOUND_GRACE_PERIOD + 1
+        )
         active = self._mock_active_orders(mock_api, [])
         inactive = self._mock_inactive_orders(mock_api, [], callback=callback)
         return [active, inactive]
@@ -419,16 +426,16 @@ class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         }
 
     def configure_full_fill_trade_response(
-            self, order: InFlightOrder, mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None) -> str:
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
+    ) -> str:
         url = web_utils.public_rest_url(CONSTANTS.TRADES_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
         mock_api.get(regex_url, body=json.dumps({"trades": [self._trade_data(order)]}), callback=callback)
         return url
 
     def configure_partial_fill_trade_response(
-            self, order: InFlightOrder, mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None) -> str:
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
+    ) -> str:
         url = web_utils.public_rest_url(CONSTANTS.TRADES_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
         trade = self._trade_data(order)
@@ -437,8 +444,8 @@ class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return url
 
     def configure_erroneous_http_fill_trade_response(
-            self, order: InFlightOrder, mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None) -> str:
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
+    ) -> str:
         url = web_utils.public_rest_url(CONSTANTS.TRADES_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
         mock_api.get(regex_url, status=400, callback=callback)
@@ -448,27 +455,27 @@ class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
     # Cancelation configuration (find via REST GET, cancel via signer)
     # ----------------------------------------------------------------------------------
     def configure_successful_cancelation_response(
-            self, order: InFlightOrder, mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None) -> str:
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
+    ) -> str:
         self.exchange._signer_client.cancel_order = AsyncMock(return_value=(None, {"code": 200}, None))
         return self._mock_active_orders(mock_api, [self._order_data(order, "open")], callback=callback)
 
     def configure_erroneous_cancelation_response(
-            self, order: InFlightOrder, mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None) -> str:
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
+    ) -> str:
         self.exchange._signer_client.cancel_order = AsyncMock(return_value=(None, {"code": 200}, "boom"))
         return self._mock_active_orders(mock_api, [self._order_data(order, "open")], callback=callback)
 
     def configure_order_not_found_error_cancelation_response(
-            self, order: InFlightOrder, mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None) -> List[str]:
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
+    ) -> list[str]:
         active = self._mock_active_orders(mock_api, [])
         inactive = self._mock_inactive_orders(mock_api, [], callback=callback)
         return [active, inactive]
 
     def configure_one_successful_one_erroneous_cancel_all_response(
-            self, successful_order: InFlightOrder, erroneous_order: InFlightOrder,
-            mock_api: aioresponses) -> List[str]:
+        self, successful_order: InFlightOrder, erroneous_order: InFlightOrder, mock_api: aioresponses
+    ) -> list[str]:
         # Both orders are found through the same active-orders endpoint; the signer mock decides
         # which one fails based on its on-chain order index.
         active = self._mock_active_orders(
@@ -558,8 +565,7 @@ class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
 
         self.exchange._signer_client.create_order.assert_awaited_once()
         call_kwargs = self.exchange._signer_client.create_order.await_args.kwargs
-        self.assertEqual(
-            self.exchange._signer_client.ORDER_TIME_IN_FORCE_POST_ONLY, call_kwargs["time_in_force"])
+        self.assertEqual(self.exchange._signer_client.ORDER_TIME_IN_FORCE_POST_ONLY, call_kwargs["time_in_force"])
 
     async def test_create_market_order_uses_signer_market_order(self, *_):
         self._simulate_trading_rules_initialized()
@@ -631,8 +637,8 @@ class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
 
         with aioresponses() as mock_api:
             url = self.configure_successful_cancelation_response(
-                order=order, mock_api=mock_api,
-                callback=lambda *args, **kwargs: request_sent_event.set())
+                order=order, mock_api=mock_api, callback=lambda *args, **kwargs: request_sent_event.set()
+            )
             self.exchange.cancel(trading_pair=order.trading_pair, client_order_id=order.client_order_id)
             await request_sent_event.wait()
             await asyncio.sleep(0.1)
@@ -642,13 +648,13 @@ class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
             self.validate_order_cancelation_request(order=order, request_call=cancel_request)
 
         self.exchange._signer_client.cancel_order.assert_awaited_once_with(
-            market_index=self.market_id, order_index=int(order.exchange_order_id))
+            market_index=self.market_id, order_index=int(order.exchange_order_id)
+        )
         self.assertNotIn(order.client_order_id, self.exchange.in_flight_orders)
         self.assertTrue(order.is_cancelled)
         cancel_event = self.order_cancelled_logger.event_log[0]
         self.assertEqual(order.client_order_id, cancel_event.order_id)
-        self.assertTrue(
-            self.is_logged("INFO", f"Successfully canceled order {order.client_order_id}."))
+        self.assertTrue(self.is_logged("INFO", f"Successfully canceled order {order.client_order_id}."))
 
     async def test_cancel_order_raises_failure_event_when_request_fails(self, *_):
         self._simulate_trading_rules_initialized()
@@ -668,16 +674,16 @@ class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
 
         with aioresponses() as mock_api:
             self.configure_erroneous_cancelation_response(
-                order=order, mock_api=mock_api,
-                callback=lambda *args, **kwargs: request_sent_event.set())
+                order=order, mock_api=mock_api, callback=lambda *args, **kwargs: request_sent_event.set()
+            )
             self.exchange.cancel(trading_pair=self.trading_pair, client_order_id=order.client_order_id)
             await request_sent_event.wait()
             await asyncio.sleep(0.1)
 
         self.assertEqual(0, len(self.order_cancelled_logger.event_log))
         self.assertTrue(
-            any(log.msg.startswith(f"Failed to cancel order {order.client_order_id}")
-                for log in self.log_records))
+            any(log.msg.startswith(f"Failed to cancel order {order.client_order_id}") for log in self.log_records)
+        )
 
     async def test_cancel_two_orders_with_cancel_all_and_one_fails(self, *_):
         self._simulate_trading_rules_initialized()
@@ -707,7 +713,8 @@ class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
 
         with aioresponses() as mock_api:
             self.configure_one_successful_one_erroneous_cancel_all_response(
-                successful_order=order1, erroneous_order=order2, mock_api=mock_api)
+                successful_order=order1, erroneous_order=order2, mock_api=mock_api
+            )
             cancellation_results = await self.exchange.cancel_all(10)
 
         self.assertEqual(2, len(cancellation_results))
@@ -767,8 +774,8 @@ class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         request_sent_event = asyncio.Event()
         with aioresponses() as mock_api:
             trade_url = self.configure_full_fill_trade_response(
-                order=order, mock_api=mock_api,
-                callback=lambda *args, **kwargs: request_sent_event.set())
+                order=order, mock_api=mock_api, callback=lambda *args, **kwargs: request_sent_event.set()
+            )
             await self.exchange._update_trade_history()
             await request_sent_event.wait()
             await asyncio.sleep(0.1)
@@ -819,28 +826,26 @@ class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         self.exchange._account_index = None
         self.exchange._l1_address = "0xabc"
         self.assertEqual(
-            {"by": "l1_address", "value": "0xabc", "active_only": "true"},
-            self.exchange._account_lookup_params())
+            {"by": "l1_address", "value": "0xabc", "active_only": "true"}, self.exchange._account_lookup_params()
+        )
 
     def test_account_lookup_params_uses_index_override(self):
         self.exchange._account_index = 12
-        self.assertEqual(
-            {"by": "index", "value": 12, "active_only": "true"},
-            self.exchange._account_lookup_params())
+        self.assertEqual({"by": "index", "value": 12, "active_only": "true"}, self.exchange._account_lookup_params())
 
     def test_effective_market_order_price_uses_mid_price(self):
         self.exchange.get_mid_price = MagicMock(return_value=Decimal("100"))
         self.exchange.quantize_order_price = MagicMock(side_effect=lambda trading_pair, price: price)
 
         buy_price = self.exchange._effective_order_price(
-            trading_pair=self.trading_pair, trade_type=TradeType.BUY,
-            order_type=OrderType.MARKET, price=Decimal("NaN"))
+            trading_pair=self.trading_pair, trade_type=TradeType.BUY, order_type=OrderType.MARKET, price=Decimal("NaN")
+        )
         sell_price = self.exchange._effective_order_price(
-            trading_pair=self.trading_pair, trade_type=TradeType.SELL,
-            order_type=OrderType.MARKET, price=Decimal("NaN"))
+            trading_pair=self.trading_pair, trade_type=TradeType.SELL, order_type=OrderType.MARKET, price=Decimal("NaN")
+        )
         limit_price = self.exchange._effective_order_price(
-            trading_pair=self.trading_pair, trade_type=TradeType.SELL,
-            order_type=OrderType.LIMIT, price=Decimal("99"))
+            trading_pair=self.trading_pair, trade_type=TradeType.SELL, order_type=OrderType.LIMIT, price=Decimal("99")
+        )
 
         self.assertEqual(Decimal("105"), buy_price)
         self.assertEqual(Decimal("95"), sell_price)
@@ -854,14 +859,14 @@ class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         self.exchange.quantize_order_price = MagicMock(side_effect=lambda trading_pair, price: price)
 
         sell_price = self.exchange._effective_order_price(
-            trading_pair=self.trading_pair, trade_type=TradeType.SELL,
-            order_type=OrderType.MARKET, price=Decimal("120"))
+            trading_pair=self.trading_pair, trade_type=TradeType.SELL, order_type=OrderType.MARKET, price=Decimal("120")
+        )
         buy_price = self.exchange._effective_order_price(
-            trading_pair=self.trading_pair, trade_type=TradeType.BUY,
-            order_type=OrderType.MARKET, price=Decimal("80"))
+            trading_pair=self.trading_pair, trade_type=TradeType.BUY, order_type=OrderType.MARKET, price=Decimal("80")
+        )
 
         self.assertEqual(Decimal("114.00"), sell_price)  # 120 * (1 - 0.05), NOT 120
-        self.assertEqual(Decimal("84.00"), buy_price)    # 80 * (1 + 0.05), NOT 80
+        self.assertEqual(Decimal("84.00"), buy_price)  # 80 * (1 + 0.05), NOT 80
 
     async def test_get_last_traded_price_lazily_loads_markets(self):
         # A non-trading price-feed connector starts with an empty market map (no trading-rules
@@ -872,12 +877,15 @@ class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
 
         async def _load_rules():
             self.exchange._markets_by_trading_pair = {self.trading_pair: self._market_info()}
+
         self.exchange._update_trading_rules = AsyncMock(side_effect=_load_rules)
-        self.exchange._api_get = AsyncMock(return_value={
-            "spot_order_book_details": [
-                self._market_detail(self.exchange_symbol, self.market_id, last_trade_price="2501")
-            ]
-        })
+        self.exchange._api_get = AsyncMock(
+            return_value={
+                "spot_order_book_details": [
+                    self._market_detail(self.exchange_symbol, self.market_id, last_trade_price="2501")
+                ]
+            }
+        )
 
         price = await self.exchange._get_last_traded_price(self.trading_pair)
 
@@ -892,11 +900,9 @@ class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
     def test_match_order_by_client_or_exchange_id(self):
         tracked_order = SimpleNamespace(client_order_id="cid", exchange_order_id="999")
         self.assertEqual(
-            {"client_order_id": "cid"},
-            self.exchange._match_order(tracked_order, [{"client_order_id": "cid"}]))
-        self.assertEqual(
-            {"order_id": "999"},
-            self.exchange._match_order(tracked_order, [{"order_id": "999"}]))
+            {"client_order_id": "cid"}, self.exchange._match_order(tracked_order, [{"client_order_id": "cid"}])
+        )
+        self.assertEqual({"order_id": "999"}, self.exchange._match_order(tracked_order, [{"order_id": "999"}]))
         self.assertIsNone(self.exchange._match_order(tracked_order, [{"order_id": "888"}]))
 
     def test_process_order_events_filters_invalid_payloads(self):
@@ -911,8 +917,7 @@ class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
                 "market": [
                     {},
                     {"client_order_id": "unknown", "status": "open"},
-                    {"client_order_id": "cid", "order_id": "999", "status": "open",
-                     "transaction_time": "1000000"},
+                    {"client_order_id": "cid", "order_id": "999", "status": "open", "transaction_time": "1000000"},
                 ],
             }
         )
@@ -944,8 +949,7 @@ class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         self.assertEqual(Decimal("90"), self.exchange._account_available_balances["USDC"])
 
     async def test_find_order_checks_active_then_inactive(self):
-        tracked_order = SimpleNamespace(
-            client_order_id="cid", exchange_order_id=None, trading_pair=self.trading_pair)
+        tracked_order = SimpleNamespace(client_order_id="cid", exchange_order_id=None, trading_pair=self.trading_pair)
         self.exchange._api_get = AsyncMock(
             side_effect=[
                 {"orders": []},
@@ -963,7 +967,8 @@ class LighterExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         self.exchange._markets_by_exchange_symbol = {}
         self.exchange._update_trading_rules = AsyncMock()
         self.exchange._api_get = AsyncMock(
-            return_value={"sub_accounts": [{"index": self.account_index, "l1_address": self.l1_address}]})
+            return_value={"sub_accounts": [{"index": self.account_index, "l1_address": self.l1_address}]}
+        )
         self.exchange._create_signer_client = MagicMock(return_value="signer")
         self.exchange._create_web_assistants_factory = MagicMock(return_value="factory")
         self.exchange._create_user_stream_tracker = MagicMock(return_value="tracker")

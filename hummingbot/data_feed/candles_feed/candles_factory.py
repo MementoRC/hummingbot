@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Dict, Optional, Type
+from typing import TYPE_CHECKING
 
 from hummingbot.data_feed.candles_feed.aevo_perpetual_candles import AevoPerpetualCandles
 from hummingbot.data_feed.candles_feed.backpack_perpetual_candles import BackpackPerpetualCandles
@@ -56,7 +56,7 @@ class CandlesFactory:
     It uses a mapping of connector names to their respective candle classes.
     """
 
-    _candles_map: Dict[str, Type[CandlesBase]] = {
+    _candles_map: dict[str, type[CandlesBase]] = {
         "aevo_perpetual": AevoPerpetualCandles,
         "backpack": BackpackSpotCandles,
         "backpack_perpetual": BackpackPerpetualCandles,
@@ -89,8 +89,7 @@ class CandlesFactory:
     }
 
     @classmethod
-    def get_candle(cls, candles_config: CandlesConfig,
-                   connector: Optional["ConnectorBase"] = None) -> CandlesBase:
+    def get_candle(cls, candles_config: CandlesConfig, connector: "ConnectorBase" | None = None) -> CandlesBase:
         """
         Returns a Candle object based on the specified configuration.
 

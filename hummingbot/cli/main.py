@@ -5,8 +5,8 @@ and returns a stable exit code (see ``hummingbot.cli.output.ExitCode``); the run
 (deploy/start/stop/status/logs/config/balance) also take ``--json`` for machine-readable output.
 One bot per install (like Hummingbot itself); for multiple bots, use multiple installs/containers.
 """
+
 from pathlib import Path
-from typing import Optional
 
 import typer
 
@@ -47,8 +47,9 @@ def _version() -> str:
 
 @app.callback(invoke_without_command=True)
 def _root(
-    version: Optional[bool] = typer.Option(
-        None, "--version", help="Show the hbot/Hummingbot version and exit.", is_eager=True),
+    version: bool | None = typer.Option(
+        None, "--version", help="Show the hbot/Hummingbot version and exit.", is_eager=True
+    ),
 ) -> None:
     if version:
         typer.echo(f"hbot {_version()}")
