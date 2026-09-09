@@ -1,34 +1,22 @@
 """
 Exceptions used in the Hummingbot codebase.
+
+Re-exported from the data-type-primitives sub-package (Phase 1 post-ADR-0001
+extraction plan, hb-data-type-primitives#10).
 """
 
+from data_type_primitives.exceptions import (
+    ArgumentParserError,
+    HummingbotBaseException,
+    InvalidController,
+    InvalidScriptModule,
+    OracleRateUnavailable,
+)
 
-class HummingbotBaseException(Exception):
-    """
-    Most errors raised in Hummingbot should inherit this class so we can
-    differentiate them from errors that come from dependencies.
-    """
-
-
-class ArgumentParserError(HummingbotBaseException):
-    """
-    Unable to parse a command (like start, stop, etc) from the hummingbot client
-    """
-
-
-class OracleRateUnavailable(HummingbotBaseException):
-    """
-    Asset value from third party is unavailable
-    """
-
-
-class InvalidScriptModule(HummingbotBaseException):
-    """
-    The file does not contain a ScriptBase subclass
-    """
-
-
-class InvalidController(HummingbotBaseException):
-    """
-    The file does not contain a ControllerBase subclass
-    """
+__all__ = [
+    "ArgumentParserError",
+    "HummingbotBaseException",
+    "InvalidController",
+    "InvalidScriptModule",
+    "OracleRateUnavailable",
+]
