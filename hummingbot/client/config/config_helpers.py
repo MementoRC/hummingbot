@@ -3,6 +3,7 @@ import inspect
 import json
 import logging
 import shutil
+import types
 from collections import OrderedDict, defaultdict
 from dataclasses import dataclass
 from datetime import date, datetime, time
@@ -10,7 +11,7 @@ from decimal import Decimal
 from os import listdir, scandir, unlink
 from os.path import isfile, join
 from pathlib import Path, PosixPath, PureWindowsPath
-from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, Generator, List, Optional, Tuple, Type, Union, get_origin
 
 import ruamel.yaml
 import yaml
@@ -245,8 +246,12 @@ class ClientConfigAdapter:
 
     @staticmethod
     def _is_union(t: Type) -> bool:
-        is_union = hasattr(t, "__origin__") and t.__origin__ == Union
-        return is_union
+        # Accept BOTH spellings: legacy `Union[A, B]` (get_origin -> typing.Union)
+        # and PEP 604 `A | B` (get_origin -> types.UnionType). The ci-base py312
+        # transform rewrites the former into the latter, so a check for only one
+        # form silently misclassifies a union as a plain submodule and makes
+        # _get_printable_value emit "" instead of the model's title.
+        return get_origin(t) in (Union, types.UnionType)
 
     def _dict_in_conf_order(self) -> Dict[str, Any]:
         conf_dict = {}
