@@ -141,14 +141,6 @@ class HummingbotApplication(*commands):
         self.trading_core.connector_manager.connectors = value
 
     @property
-    def strategy(self):
-        return self.trading_core.strategy
-
-    @strategy.setter
-    def strategy(self, value):
-        self.trading_core.strategy = value
-
-    @property
     def notifiers(self):
         return self.trading_core.notifiers
 
