@@ -12,11 +12,12 @@ The trades sqlite DB and the structured log are Hummingbot's own (``data/<name>.
 ``logs/logs_<name>.log``); we record their location in meta.json so readers don't re-derive it. For
 multiple bots, use multiple installs/containers — the same way Hummingbot itself scales.
 """
+
 import json
 import os
-import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+import tempfile
+from typing import Any
 
 from hummingbot import data_path, prefix_path
 
@@ -82,6 +83,7 @@ def is_engine_pid(pid: int) -> bool:
         return False
     try:
         import psutil
+
         cmdline = psutil.Process(pid).cmdline()
     except Exception:
         # Alive but uninspectable (e.g. AccessDenied): assume it's ours — mis-reporting a live bot
@@ -90,7 +92,7 @@ def is_engine_pid(pid: int) -> bool:
     return any("hummingbot.cli.engine" in part for part in cmdline)
 
 
-def tail_lines(path: Path, n: int) -> List[str]:
+def tail_lines(path: Path, n: int) -> list[str]:
     """Read the last ``n`` lines by seeking from the end — avoids loading the whole file."""
     if n <= 0 or not path.exists():
         return []
@@ -111,7 +113,7 @@ def exists() -> bool:
     return _meta_file().exists()
 
 
-def read_meta() -> Optional[Dict[str, Any]]:
+def read_meta() -> dict[str, Any] | None:
     if not _meta_file().exists():
         return None
     try:
@@ -120,18 +122,18 @@ def read_meta() -> Optional[Dict[str, Any]]:
         return None
 
 
-def write_meta(meta: Dict[str, Any]) -> None:
+def write_meta(meta: dict[str, Any]) -> None:
     _atomic_write(_meta_file(), json.dumps(meta, indent=2, default=str))
 
 
-def update_meta(**fields: Any) -> Dict[str, Any]:
+def update_meta(**fields: Any) -> dict[str, Any]:
     meta = read_meta() or {}
     meta.update(fields)
     write_meta(meta)
     return meta
 
 
-def read_pid() -> Optional[int]:
+def read_pid() -> int | None:
     if not _pid_file().exists():
         return None
     try:
@@ -154,7 +156,7 @@ def running() -> bool:
     return pid is not None and is_engine_pid(pid)
 
 
-def read_status() -> Optional[Dict[str, Any]]:
+def read_status() -> dict[str, Any] | None:
     if not _status_file().exists():
         return None
     try:
@@ -163,15 +165,15 @@ def read_status() -> Optional[Dict[str, Any]]:
         return None
 
 
-def write_status(status: Dict[str, Any]) -> None:
+def write_status(status: dict[str, Any]) -> None:
     _atomic_write(_status_file(), json.dumps(status, indent=2, default=str))
 
 
-def db_path() -> Optional[str]:
+def db_path() -> str | None:
     return (read_meta() or {}).get("db_path")
 
 
-def config_file_path() -> Optional[str]:
+def config_file_path() -> str | None:
     return (read_meta() or {}).get("config_file_path")
 
 
@@ -179,7 +181,7 @@ def _loaded_file() -> Path:
     return bot_dir() / "loaded.json"
 
 
-def read_loaded() -> Optional[Dict[str, Any]]:
+def read_loaded() -> dict[str, Any] | None:
     """The config `hbot import` (or the last `hbot start`) loaded — ``{"file", "type"}`` — or None.
 
     This is the "currently loaded strategy" the interactive client keeps: what `hbot start` runs when
@@ -202,7 +204,7 @@ def clear_loaded() -> None:
         _loaded_file().unlink()
 
 
-def resolve_db_path() -> Optional[str]:
+def resolve_db_path() -> str | None:
     """The current bot's trades sqlite DB: the engine-recorded path, else data/<name>.sqlite."""
     p = db_path()
     if p and Path(p).exists():
@@ -211,7 +213,7 @@ def resolve_db_path() -> Optional[str]:
     return db_path_for(name) if name else None
 
 
-def db_path_for(name: str) -> Optional[str]:
+def db_path_for(name: str) -> str | None:
     """Trades DB for a named (possibly stopped) bot: data/<name>.sqlite, trying a dot-flattened variant."""
     for n in (name, name.replace(".", "_")):
         p = Path(data_path()) / f"{n}.sqlite"
@@ -220,7 +222,7 @@ def db_path_for(name: str) -> Optional[str]:
     return None
 
 
-def structured_log_for(name: str) -> Optional[Path]:
+def structured_log_for(name: str) -> Path | None:
     """Structured log for a named bot: logs/logs_<name>.log, trying a dot-flattened variant."""
     for n in (name, name.replace(".", "_")):
         p = Path(prefix_path()) / "logs" / f"logs_{n}.log"
@@ -229,7 +231,7 @@ def structured_log_for(name: str) -> Optional[Path]:
     return None
 
 
-def list_bots() -> List[str]:
+def list_bots() -> list[str]:
     """Names of bots that have on-disk data (a trades DB and/or a structured log) — current or past."""
     names = set()
     dd = Path(data_path())
@@ -237,5 +239,5 @@ def list_bots() -> List[str]:
         names |= {p.stem for p in dd.glob("*.sqlite")}
     ld = Path(prefix_path()) / "logs"
     if ld.exists():
-        names |= {p.name[len("logs_"):-len(".log")] for p in ld.glob("logs_*.log")}
+        names |= {p.name[len("logs_") : -len(".log")] for p in ld.glob("logs_*.log")}
     return sorted(names)

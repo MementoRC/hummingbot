@@ -10,6 +10,7 @@ gracefully (cancelling open orders) and shuts down.
 Invoked as: ``python -m hummingbot.cli.engine --name <name> [--config f | --script-config c]``
 The password is passed via the ``HBOT_PASSWORD`` env var (never argv).
 """
+
 import argparse
 import asyncio
 import inspect
@@ -18,7 +19,7 @@ import os
 import signal
 import sys
 import time
-from typing import Any, Dict, Optional
+from typing import Any
 
 from hummingbot.cli import bot
 from hummingbot.client.config.config_crypt import ETHKeyFileSecretManger
@@ -34,8 +35,8 @@ from hummingbot.client.runner import (
 BALANCE_TIMEOUT = 10.0
 
 
-async def _collect_balances(hb: HummingbotApplication) -> Dict[str, Dict[str, float]]:
-    balances: Dict[str, Dict[str, float]] = {}
+async def _collect_balances(hb: HummingbotApplication) -> dict[str, dict[str, float]]:
+    balances: dict[str, dict[str, float]] = {}
     tc = hb.trading_core
     for name in list(tc.connector_manager.connectors.keys()):
         try:
@@ -46,7 +47,7 @@ async def _collect_balances(hb: HummingbotApplication) -> Dict[str, Dict[str, fl
     return balances
 
 
-async def _format_status_text(hb: HummingbotApplication) -> Optional[str]:
+async def _format_status_text(hb: HummingbotApplication) -> str | None:
     strategy = hb.trading_core.strategy
     if strategy is None:
         return None
@@ -61,7 +62,7 @@ async def _format_status_text(hb: HummingbotApplication) -> Optional[str]:
 
 
 async def _write_snapshot(hb: HummingbotApplication, name: str, *, running: bool) -> None:
-    snapshot: Dict[str, Any] = {
+    snapshot: dict[str, Any] = {
         "name": name,
         "pid": os.getpid(),
         "running": running,
@@ -86,9 +87,7 @@ async def _serve(hb: HummingbotApplication, name: str) -> None:
     stop_event = asyncio.Event()
     for sig in (signal.SIGTERM, signal.SIGINT):
         loop.add_signal_handler(sig, stop_event.set)
-    loop.add_signal_handler(
-        signal.SIGUSR1,
-        lambda: loop.create_task(_write_snapshot(hb, name, running=True)))
+    loop.add_signal_handler(signal.SIGUSR1, lambda: loop.create_task(_write_snapshot(hb, name, running=True)))
 
     # Initial snapshot so `hbot start` can detect readiness.
     await _write_snapshot(hb, name, running=True)
@@ -108,11 +107,9 @@ async def _serve(hb: HummingbotApplication, name: str) -> None:
         bot.clear_pid()
 
 
-async def run_engine(name: str,
-                     config_file_name: Optional[str],
-                     v2_conf: Optional[str],
-                     password: str,
-                     auto_set_permissions: Optional[str]) -> int:
+async def run_engine(
+    name: str, config_file_name: str | None, v2_conf: str | None, password: str, auto_set_permissions: str | None
+) -> int:
     client_config_map = load_client_config_map_from_file()
 
     if auto_set_permissions is not None:
@@ -122,14 +119,17 @@ async def run_engine(name: str,
     # the single rotating log (read by `hbot logs`); silence_console drops the stdout handlers that would
     # otherwise duplicate into the redirected, non-rotating bot.log. No MQTT (this engine isn't run_headless).
     hb = await bootstrap_application(
-        client_config_map, ETHKeyFileSecretManger(password),
-        strategy_file_name=name, override_log_level=client_config_map.log_level,
-        headless=True, silence_console=True)
+        client_config_map,
+        ETHKeyFileSecretManger(password),
+        strategy_file_name=name,
+        override_log_level=client_config_map.log_level,
+        headless=True,
+        silence_console=True,
+    )
     if hb is None:
         return 4
 
-    started = await load_and_start_strategy(
-        hb, config_file_name=config_file_name, v2_conf=v2_conf, headless=True)
+    started = await load_and_start_strategy(hb, config_file_name=config_file_name, v2_conf=v2_conf, headless=True)
     if not started:
         logging.getLogger().error("Failed to load strategy. Exiting.")
         return 1
@@ -170,7 +170,8 @@ def main() -> None:
         ev_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(ev_loop)
         rc = ev_loop.run_until_complete(
-            run_engine(args.name, args.config, args.script_config, password, args.auto_set_permissions))
+            run_engine(args.name, args.config, args.script_config, password, args.auto_set_permissions)
+        )
     except Exception:
         logging.getLogger().error("Engine crashed.", exc_info=True)
         rc = 1

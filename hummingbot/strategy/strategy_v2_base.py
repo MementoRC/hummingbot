@@ -1,15 +1,15 @@
 import asyncio
+from decimal import Decimal
 import importlib
 import inspect
 import logging
 import os
-from decimal import Decimal
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any, Callable, Dict, List, Set
 
 import numpy as np
 import pandas as pd
-import yaml
 from pydantic import BaseModel, Field, field_validator
+import yaml
 
 from hummingbot.client import settings
 from hummingbot.client.config.config_data_types import BaseClientModel
@@ -54,6 +54,7 @@ def _get_executor_orchestrator_class():
     global ExecutorOrchestrator
     if ExecutorOrchestrator is None:
         from hummingbot.strategy_v2.executors.executor_orchestrator import ExecutorOrchestrator as _cls
+
         ExecutorOrchestrator = _cls
     return ExecutorOrchestrator
 
@@ -74,13 +75,14 @@ class StrategyV2ConfigBase(BaseClientModel):
     Subclasses can define their own `candles_config` field using the
     static utility method `parse_candles_config_str()`.
     """
+
     script_file_name: str = ""
-    controllers_config: List[str] = Field(
+    controllers_config: list[str] = Field(
         default=[],
         json_schema_extra={
             "prompt": "Enter controller configurations (comma-separated file paths), leave it empty if none: ",
             "prompt_on_new": True,
-        }
+        },
     )
 
     @field_validator("controllers_config", mode="before")
@@ -90,7 +92,7 @@ class StrategyV2ConfigBase(BaseClientModel):
         if isinstance(v, str):
             if v == "":
                 return []
-            return [item.strip() for item in v.split(',') if item.strip()]
+            return [item.strip() for item in v.split(",") if item.strip()]
         if v is None:
             return []
         return v
@@ -99,11 +101,11 @@ class StrategyV2ConfigBase(BaseClientModel):
         loaded_configs = []
         for config_path in self.controllers_config:
             full_path = os.path.join(settings.CONTROLLERS_CONF_DIR_PATH, config_path)
-            with open(full_path, 'r') as file:
+            with open(full_path, "r") as file:
                 config_data = yaml.safe_load(file)
 
-            controller_type = config_data.get('controller_type')
-            controller_name = config_data.get('controller_name')
+            controller_type = config_data.get("controller_type")
+            controller_name = config_data.get("controller_name")
 
             if not controller_type or not controller_name:
                 raise ValueError(f"Missing controller_type or controller_name in {config_path}")
@@ -111,11 +113,21 @@ class StrategyV2ConfigBase(BaseClientModel):
             module_path = f"{settings.CONTROLLERS_MODULE}.{controller_type}.{controller_name}"
             module = importlib.import_module(module_path)
 
-            config_class = next((member for member_name, member in inspect.getmembers(module)
-                                 if inspect.isclass(member) and member not in [ControllerConfigBase,
-                                                                               MarketMakingControllerConfigBase,
-                                                                               DirectionalTradingControllerConfigBase]
-                                 and (issubclass(member, ControllerConfigBase))), None)
+            config_class = next(
+                (
+                    member
+                    for member_name, member in inspect.getmembers(module)
+                    if inspect.isclass(member)
+                    and member
+                    not in [
+                        ControllerConfigBase,
+                        MarketMakingControllerConfigBase,
+                        DirectionalTradingControllerConfigBase,
+                    ]
+                    and (issubclass(member, ControllerConfigBase))
+                ),
+                None,
+            )
             if not config_class:
                 raise InvalidController(f"No configuration class found in the module {controller_name}.")
 
@@ -124,40 +136,42 @@ class StrategyV2ConfigBase(BaseClientModel):
         return loaded_configs
 
     @staticmethod
-    def parse_markets_str(v: str) -> Dict[str, Set[str]]:
+    def parse_markets_str(v: str) -> dict[str, set[str]]:
         markets_dict = {}
         if v.strip():
-            exchanges = v.split(':')
+            exchanges = v.split(":")
             for exchange in exchanges:
-                parts = exchange.split('.')
+                parts = exchange.split(".")
                 if len(parts) != 2 or not parts[1]:
-                    raise ValueError(f"Invalid market format in segment '{exchange}'. "
-                                     "Expected format: 'exchange.tp1,tp2'")
+                    raise ValueError(
+                        f"Invalid market format in segment '{exchange}'. Expected format: 'exchange.tp1,tp2'"
+                    )
                 exchange_name, trading_pairs = parts
-                markets_dict[exchange_name] = set(trading_pairs.split(','))
+                markets_dict[exchange_name] = set(trading_pairs.split(","))
         return markets_dict
 
     @staticmethod
-    def parse_candles_config_str(v: str) -> List[CandlesConfig]:
+    def parse_candles_config_str(v: str) -> list[CandlesConfig]:
         configs = []
         if v.strip():
-            entries = v.split(':')
+            entries = v.split(":")
             for entry in entries:
-                parts = entry.split('.')
+                parts = entry.split(".")
                 if len(parts) != 4:
-                    raise ValueError(f"Invalid candles config format in segment '{entry}'. "
-                                     "Expected format: 'exchange.tradingpair.interval.maxrecords'")
+                    raise ValueError(
+                        f"Invalid candles config format in segment '{entry}'. "
+                        "Expected format: 'exchange.tradingpair.interval.maxrecords'"
+                    )
                 connector, trading_pair, interval, max_records_str = parts
                 try:
                     max_records = int(max_records_str)
                 except ValueError:
-                    raise ValueError(f"Invalid max_records value '{max_records_str}' in segment '{entry}'. "
-                                     "max_records should be an integer.")
+                    raise ValueError(
+                        f"Invalid max_records value '{max_records_str}' in segment '{entry}'. "
+                        "max_records should be an integer."
+                    )
                 config = CandlesConfig(
-                    connector=connector,
-                    trading_pair=trading_pair,
-                    interval=interval,
-                    max_records=max_records
+                    connector=connector, trading_pair=trading_pair, interval=interval, max_records=max_records
                 )
                 configs.append(config)
         return configs
@@ -181,8 +195,9 @@ class StrategyV2Base(StrategyPyBase):
     When config is a StrategyV2ConfigBase, controllers are loaded and orchestration runs automatically.
     When config is None or a simple BaseModel, simple scripts can still use executors and market data on demand.
     """
+
     # Class-level markets definition used by both simple scripts and V2 strategies
-    markets: Dict[str, Set[str]] = {}
+    markets: dict[str, set[str]] = {}
 
     # V2-specific class attributes
     _last_config_update_ts: float = 0
@@ -248,12 +263,10 @@ class StrategyV2Base(StrategyPyBase):
         :return: DataFrame with candle data (OHLCV)
         """
         return self.market_data_provider.get_candles_df(
-            connector_name=connector_name,
-            trading_pair=trading_pair,
-            interval=interval
+            connector_name=connector_name, trading_pair=trading_pair, interval=interval
         )
 
-    def __init__(self, connectors: Dict[str, ConnectorBase], config: Optional[BaseModel] = None):
+    def __init__(self, connectors: dict[str, ConnectorBase], config: BaseModel | None = None):
         """
         Initialize the strategy.
 
@@ -261,18 +274,18 @@ class StrategyV2Base(StrategyPyBase):
         :param config: Optional configuration. If StrategyV2ConfigBase, enables controller orchestration.
         """
         super().__init__()
-        self.connectors: Dict[str, ConnectorBase] = connectors
+        self.connectors: dict[str, ConnectorBase] = connectors
         self.ready_to_trade: bool = False
         self.add_markets(list(connectors.values()))
         self.config = config
 
         # Always initialize V2 infrastructure
-        self.controllers: Dict[str, ControllerBase] = {}
-        self.controller_reports: Dict[str, Dict] = {}
+        self.controllers: dict[str, ControllerBase] = {}
+        self.controller_reports: dict[str, Dict] = {}
         self.market_data_provider = MarketDataProvider(connectors)
         self._is_stop_triggered = False
         self.mqtt_enabled = False
-        self._pub: Optional[ETopicPublisher] = None
+        self._pub: ETopicPublisher | None = None
 
         self.actions_queue = asyncio.Queue()
         self.listen_to_executor_actions_task: asyncio.Task = asyncio.create_task(self.listen_to_executor_actions())
@@ -284,8 +297,7 @@ class StrategyV2Base(StrategyPyBase):
             self.initialize_candles()
 
         self.executor_orchestrator = _get_executor_orchestrator_class()(
-            strategy=self,
-            initial_positions_by_controller=self._collect_initial_positions()
+            strategy=self, initial_positions_by_controller=self._collect_initial_positions()
         )
 
     # -------------------------------------------------------------------------
@@ -318,7 +330,7 @@ class StrategyV2Base(StrategyPyBase):
             self.update_executors_info()
             self.update_controllers_configs()
             if self.market_data_provider.ready and not self._is_stop_triggered:
-                executor_actions: List[ExecutorAction] = self.determine_executor_actions()
+                executor_actions: list[ExecutorAction] = self.determine_executor_actions()
                 for action in executor_actions:
                     self.executor_orchestrator.execute_action(action)
 
@@ -341,13 +353,9 @@ class StrategyV2Base(StrategyPyBase):
         # executors to close. ``add_markets`` also restores the strategy event listeners
         # required to track those final orders.
         active_markets = set(self.active_markets)
-        missing_markets = [
-            connector for connector in self.connectors.values()
-            if connector not in active_markets
-        ]
+        missing_markets = [connector for connector in self.connectors.values() if connector not in active_markets]
         if missing_markets:
-            self.logger().warning(
-                "Restoring market registrations required to close active executors during shutdown.")
+            self.logger().warning("Restoring market registrations required to close active executors during shutdown.")
             self.add_markets(missing_markets)
 
         await self.executor_orchestrator.stop(self.max_executors_close_attempts)
@@ -357,13 +365,15 @@ class StrategyV2Base(StrategyPyBase):
             self._pub({controller_id: {} for controller_id in self.controllers.keys()})
             self._pub = None
 
-    def buy(self,
-            connector_name: str,
-            trading_pair: str,
-            amount: Decimal,
-            order_type: OrderType,
-            price=s_decimal_nan,
-            position_action=PositionAction.OPEN) -> str:
+    def buy(
+        self,
+        connector_name: str,
+        trading_pair: str,
+        amount: Decimal,
+        order_type: OrderType,
+        price=s_decimal_nan,
+        position_action=PositionAction.OPEN,
+    ) -> str:
         """
         A wrapper function to buy_with_specific_market.
 
@@ -380,13 +390,15 @@ class StrategyV2Base(StrategyPyBase):
         self.logger().debug(f"Creating {trading_pair} buy order: price: {price} amount: {amount}.")
         return self.buy_with_specific_market(market_pair, amount, order_type, price, position_action=position_action)
 
-    def sell(self,
-             connector_name: str,
-             trading_pair: str,
-             amount: Decimal,
-             order_type: OrderType,
-             price=s_decimal_nan,
-             position_action=PositionAction.OPEN) -> str:
+    def sell(
+        self,
+        connector_name: str,
+        trading_pair: str,
+        amount: Decimal,
+        order_type: OrderType,
+        price=s_decimal_nan,
+        position_action=PositionAction.OPEN,
+    ) -> str:
         """
         A wrapper function to sell_with_specific_market.
 
@@ -403,10 +415,7 @@ class StrategyV2Base(StrategyPyBase):
         self.logger().debug(f"Creating {trading_pair} sell order: price: {price} amount: {amount}.")
         return self.sell_with_specific_market(market_pair, amount, order_type, price, position_action=position_action)
 
-    def cancel(self,
-               connector_name: str,
-               trading_pair: str,
-               order_id: str):
+    def cancel(self, connector_name: str, trading_pair: str, order_id: str):
         """
         A wrapper function to cancel_order.
 
@@ -417,7 +426,7 @@ class StrategyV2Base(StrategyPyBase):
         market_pair = self._market_trading_pair_tuple(connector_name, trading_pair)
         self.cancel_order(market_trading_pair_tuple=market_pair, order_id=order_id)
 
-    def get_active_orders(self, connector_name: str) -> List[LimitOrder]:
+    def get_active_orders(self, connector_name: str) -> list[LimitOrder]:
         """
         Returns a list of active orders for a connector.
         :param connector_name: The name of the connector.
@@ -427,7 +436,7 @@ class StrategyV2Base(StrategyPyBase):
         connector = self.connectors[connector_name]
         return [o[1] for o in orders if o[0] == connector]
 
-    def get_assets(self, connector_name: str) -> List[str]:
+    def get_assets(self, connector_name: str) -> list[str]:
         """
         Returns a unique list of unique of token names sorted alphabetically
 
@@ -440,11 +449,11 @@ class StrategyV2Base(StrategyPyBase):
             result.update(split_hb_trading_pair(trading_pair))
         return sorted(result)
 
-    def get_market_trading_pair_tuples(self) -> List[MarketTradingPairTuple]:
+    def get_market_trading_pair_tuples(self) -> list[MarketTradingPairTuple]:
         """
         Returns a list of MarketTradingPairTuple for all connectors and trading pairs combination.
         """
-        result: List[MarketTradingPairTuple] = []
+        result: list[MarketTradingPairTuple] = []
         for name, connector in self.connectors.items():
             for trading_pair in self.markets[name]:
                 result.append(self._market_trading_pair_tuple(name, trading_pair))
@@ -454,15 +463,19 @@ class StrategyV2Base(StrategyPyBase):
         """
         Returns a data frame for all asset balances for displaying purpose.
         """
-        columns: List[str] = ["Exchange", "Asset", "Total Balance", "Available Balance"]
-        data: List[Any] = []
+        columns: list[str] = ["Exchange", "Asset", "Total Balance", "Available Balance"]
+        data: list[Any] = []
         for connector_name, connector in self.connectors.items():
             for asset in self.get_assets(connector_name):
-                data.append([connector_name,
-                             asset,
-                             float(connector.get_balance(asset)),
-                             float(connector.get_available_balance(asset))])
-        df = pd.DataFrame(data=data, columns=columns).replace(np.nan, '', regex=True)
+                data.append(
+                    [
+                        connector_name,
+                        asset,
+                        float(connector.get_balance(asset)),
+                        float(connector.get_available_balance(asset)),
+                    ]
+                )
+        df = pd.DataFrame(data=data, columns=columns).replace(np.nan, "", regex=True)
         df.sort_values(by=["Exchange", "Asset"], inplace=True)
         return df
 
@@ -474,15 +487,17 @@ class StrategyV2Base(StrategyPyBase):
         data = []
         for connector_name, connector in self.connectors.items():
             for order in self.get_active_orders(connector_name):
-                age_txt = "n/a" if order.age() <= 0. else pd.Timestamp(order.age(), unit='s').strftime('%H:%M:%S')
-                data.append([
-                    connector_name,
-                    order.trading_pair,
-                    "buy" if order.is_buy else "sell",
-                    float(order.price),
-                    float(order.quantity),
-                    age_txt
-                ])
+                age_txt = "n/a" if order.age() <= 0.0 else pd.Timestamp(order.age(), unit="s").strftime("%H:%M:%S")
+                data.append(
+                    [
+                        connector_name,
+                        order.trading_pair,
+                        "buy" if order.is_buy else "sell",
+                        float(order.price),
+                        float(order.quantity),
+                        age_txt,
+                    ]
+                )
         if not data:
             raise ValueError
         df = pd.DataFrame(data=data, columns=columns)
@@ -530,11 +545,21 @@ class StrategyV2Base(StrategyPyBase):
                     executors_df = self.executors_info_to_df(recent_executors)
                     if not executors_df.empty:
                         executors_df["age"] = self.current_timestamp - executors_df["timestamp"]
-                        executor_columns = ["type", "side", "status", "net_pnl_pct", "net_pnl_quote",
-                                            "filled_amount_quote", "is_trading", "close_type", "age"]
+                        executor_columns = [
+                            "type",
+                            "side",
+                            "status",
+                            "net_pnl_pct",
+                            "net_pnl_quote",
+                            "filled_amount_quote",
+                            "is_trading",
+                            "close_type",
+                            "age",
+                        ]
                         available_columns = [col for col in executor_columns if col in executors_df.columns]
-                        lines.append(format_df_for_printout(executors_df[available_columns],
-                                                            table_format="psql", index=False))
+                        lines.append(
+                            format_df_for_printout(executors_df[available_columns], table_format="psql", index=False)
+                        )
                 else:
                     lines.append("  No executors found.")
 
@@ -544,17 +569,19 @@ class StrategyV2Base(StrategyPyBase):
                     lines.append("\n  Positions Held:")
                     positions_data = []
                     for pos in positions:
-                        positions_data.append({
-                            "Connector": pos.connector_name,
-                            "Trading Pair": pos.trading_pair,
-                            "Side": pos.side.name,
-                            "Amount": f"{pos.amount:.4f}",
-                            "Value (Quote)": f"{pos.amount * pos.breakeven_price:.2f}",
-                            "Breakeven Price": f"{pos.breakeven_price:.6f}",
-                            "Unrealized PnL": f"{pos.unrealized_pnl_quote:+.2f}",
-                            "Realized PnL": f"{pos.realized_pnl_quote:+.2f}",
-                            "Fees": f"{pos.cum_fees_quote:.2f}"
-                        })
+                        positions_data.append(
+                            {
+                                "Connector": pos.connector_name,
+                                "Trading Pair": pos.trading_pair,
+                                "Side": pos.side.name,
+                                "Amount": f"{pos.amount:.4f}",
+                                "Value (Quote)": f"{pos.amount * pos.breakeven_price:.2f}",
+                                "Breakeven Price": f"{pos.breakeven_price:.6f}",
+                                "Unrealized PnL": f"{pos.unrealized_pnl_quote:+.2f}",
+                                "Realized PnL": f"{pos.realized_pnl_quote:+.2f}",
+                                "Fees": f"{pos.cum_fees_quote:.2f}",
+                            }
+                        )
                     positions_df = pd.DataFrame(positions_data)
                     lines.append(format_df_for_printout(positions_df, table_format="psql", index=False))
                 else:
@@ -563,14 +590,16 @@ class StrategyV2Base(StrategyPyBase):
                 # Collect performance data for summary table
                 performance_report = self.get_performance_report(controller_id)
                 if performance_report:
-                    performance_data.append({
-                        "Controller": controller_id,
-                        "Realized PnL": f"{performance_report.realized_pnl_quote:.2f}",
-                        "Unrealized PnL": f"{performance_report.unrealized_pnl_quote:.2f}",
-                        "Global PnL": f"{performance_report.global_pnl_quote:.2f}",
-                        "Global PnL %": f"{performance_report.global_pnl_pct:.2f}%",
-                        "Volume Traded": f"{performance_report.volume_traded:.2f}"
-                    })
+                    performance_data.append(
+                        {
+                            "Controller": controller_id,
+                            "Realized PnL": f"{performance_report.realized_pnl_quote:.2f}",
+                            "Unrealized PnL": f"{performance_report.unrealized_pnl_quote:.2f}",
+                            "Global PnL": f"{performance_report.global_pnl_quote:.2f}",
+                            "Global PnL %": f"{performance_report.global_pnl_pct:.2f}%",
+                            "Volume Traded": f"{performance_report.volume_traded:.2f}",
+                        }
+                    )
 
             # Performance summary table
             if performance_data:
@@ -586,14 +615,16 @@ class StrategyV2Base(StrategyPyBase):
                 global_pnl_pct = (global_total / global_volume) * 100 if global_volume > 0 else Decimal(0)
 
                 # Add global row
-                performance_data.append({
-                    "Controller": "GLOBAL TOTAL",
-                    "Realized PnL": f"{global_realized:.2f}",
-                    "Unrealized PnL": f"{global_unrealized:.2f}",
-                    "Global PnL": f"{global_total:.2f}",
-                    "Global PnL %": f"{global_pnl_pct:.2f}%",
-                    "Volume Traded": f"{global_volume:.2f}"
-                })
+                performance_data.append(
+                    {
+                        "Controller": "GLOBAL TOTAL",
+                        "Realized PnL": f"{global_realized:.2f}",
+                        "Unrealized PnL": f"{global_unrealized:.2f}",
+                        "Global PnL": f"{global_total:.2f}",
+                        "Global PnL %": f"{global_pnl_pct:.2f}%",
+                        "Volume Traded": f"{global_volume:.2f}",
+                    }
+                )
 
                 performance_df = pd.DataFrame(performance_data)
                 lines.append(format_df_for_printout(performance_df, table_format="psql", index=False))
@@ -609,9 +640,7 @@ class StrategyV2Base(StrategyPyBase):
             lines.extend(["", "*** WARNINGS ***"] + warning_lines)
         return "\n".join(lines)
 
-    def _market_trading_pair_tuple(self,
-                                   connector_name: str,
-                                   trading_pair: str) -> MarketTradingPairTuple:
+    def _market_trading_pair_tuple(self, connector_name: str, trading_pair: str) -> MarketTradingPairTuple:
         """
         Creates and returns a new MarketTradingPairTuple
 
@@ -636,6 +665,7 @@ class StrategyV2Base(StrategyPyBase):
         self.apply_initial_setting()
         # Check if MQTT is enabled at runtime
         from hummingbot.client.hummingbot_application import HummingbotApplication
+
         if HummingbotApplication.main_application()._mqtt is not None:
             self.mqtt_enabled = True
             self._pub = ETopicPublisher("performance", use_bot_prefix=True)
@@ -650,7 +680,7 @@ class StrategyV2Base(StrategyPyBase):
         """
         pass
 
-    def _collect_initial_positions(self) -> Dict[str, List]:
+    def _collect_initial_positions(self) -> dict[str, List]:
         """
         Collect initial positions from all controller configurations.
         Returns a dictionary mapping controller_id -> list of InitialPositionConfig.
@@ -662,7 +692,7 @@ class StrategyV2Base(StrategyPyBase):
         try:
             controllers_configs = self.config.load_controller_configs()
             for controller_config in controllers_configs:
-                if hasattr(controller_config, 'initial_positions') and controller_config.initial_positions:
+                if hasattr(controller_config, "initial_positions") and controller_config.initial_positions:
                     initial_positions_by_controller[controller_config.id] = controller_config.initial_positions
         except Exception as e:
             self.logger().error(f"Error collecting initial positions: {e}", exc_info=True)
@@ -683,6 +713,7 @@ class StrategyV2Base(StrategyPyBase):
             # Generate unique ID if not set to avoid race conditions
             if not config.id or config.id.strip() == "":
                 from hummingbot.strategy_v2.utils.common import generate_unique_id
+
                 config.id = generate_unique_id()
             controller = config.get_controller_class()(config, self.market_data_provider, self.actions_queue)
             self.controllers[config.id] = controller
@@ -744,7 +775,7 @@ class StrategyV2Base(StrategyPyBase):
     def is_perpetual(connector: str) -> bool:
         return "perpetual" in connector
 
-    def determine_executor_actions(self) -> List[ExecutorAction]:
+    def determine_executor_actions(self) -> list[ExecutorAction]:
         """
         Determine actions based on the provided executor handler report.
         """
@@ -754,40 +785,46 @@ class StrategyV2Base(StrategyPyBase):
         actions.extend(self.store_actions_proposal())
         return actions
 
-    def create_actions_proposal(self) -> List[CreateExecutorAction]:
+    def create_actions_proposal(self) -> list[CreateExecutorAction]:
         """
         Create actions proposal based on the current state of the executors.
         """
         raise NotImplementedError
 
-    def stop_actions_proposal(self) -> List[StopExecutorAction]:
+    def stop_actions_proposal(self) -> list[StopExecutorAction]:
         """
         Create a list of actions to stop the executors based on order refresh and early stop conditions.
         """
         raise NotImplementedError
 
-    def store_actions_proposal(self) -> List[StoreExecutorAction]:
+    def store_actions_proposal(self) -> list[StoreExecutorAction]:
         """
         Create a list of actions to store the executors that have been stopped.
         """
         potential_executors_to_store = self.filter_executors(
-            executors=self.get_all_executors(),
-            filter_func=lambda x: x.is_done)
+            executors=self.get_all_executors(), filter_func=lambda x: x.is_done
+        )
         sorted_executors = sorted(potential_executors_to_store, key=lambda x: x.timestamp, reverse=True)
         if len(sorted_executors) > self.closed_executors_buffer:
-            return [StoreExecutorAction(executor_id=executor.id, controller_id=executor.controller_id) for executor in
-                    sorted_executors[self.closed_executors_buffer:]]
+            return [
+                StoreExecutorAction(executor_id=executor.id, controller_id=executor.controller_id)
+                for executor in sorted_executors[self.closed_executors_buffer :]
+            ]
         return []
 
-    def get_executors_by_controller(self, controller_id: str) -> List[ExecutorInfo]:
+    def get_executors_by_controller(self, controller_id: str) -> list[ExecutorInfo]:
         """Get executors for a specific controller from the unified reports."""
         return self.controller_reports.get(controller_id, {}).get("executors", [])
 
-    def get_all_executors(self) -> List[ExecutorInfo]:
+    def get_all_executors(self) -> list[ExecutorInfo]:
         """Get all executors from all controllers."""
-        return [executor for executors_list in [report.get("executors", []) for report in self.controller_reports.values()] for executor in executors_list]
+        return [
+            executor
+            for executors_list in [report.get("executors", []) for report in self.controller_reports.values()]
+            for executor in executors_list
+        ]
 
-    def get_positions_by_controller(self, controller_id: str) -> List[PositionSummary]:
+    def get_positions_by_controller(self, controller_id: str) -> list[PositionSummary]:
         """Get positions for a specific controller from the unified reports."""
         return self.controller_reports.get(controller_id, {}).get("positions", [])
 
@@ -801,21 +838,23 @@ class StrategyV2Base(StrategyPyBase):
     def set_position_mode(self, connector: str, position_mode: PositionMode):
         self.connectors[connector].set_position_mode(position_mode)
 
-    def filter_executors(self, executors: List[ExecutorInfo], filter_func: Callable[[ExecutorInfo], bool]) -> List[ExecutorInfo]:
+    def filter_executors(
+        self, executors: list[ExecutorInfo], filter_func: Callable[[ExecutorInfo], bool]
+    ) -> list[ExecutorInfo]:
         return [executor for executor in executors if filter_func(executor)]
 
     @staticmethod
-    def executors_info_to_df(executors_info: List[ExecutorInfo]) -> pd.DataFrame:
+    def executors_info_to_df(executors_info: list[ExecutorInfo]) -> pd.DataFrame:
         """
         Convert a list of executor handler info to a dataframe.
         """
         df = pd.DataFrame([ei.to_dict() for ei in executors_info])
         # Convert the enum values to integers
-        df['status'] = df['status'].apply(lambda x: x.value)
+        df["status"] = df["status"].apply(lambda x: x.value)
 
         # Sort the DataFrame
-        df.sort_values(by='status', ascending=True, inplace=True)
+        df.sort_values(by="status", ascending=True, inplace=True)
 
         # Convert back to enums for display
-        df['status'] = df['status'].apply(RunnableStatus)
+        df["status"] = df["status"].apply(RunnableStatus)
         return df

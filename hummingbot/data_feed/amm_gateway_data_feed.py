@@ -1,7 +1,6 @@
 import asyncio
-import logging
 from decimal import Decimal
-from typing import Dict, Optional, Set
+import logging
 
 from pydantic import BaseModel
 
@@ -27,8 +26,8 @@ class TokenBuySellPrice(BaseModel):
 
 
 class AmmGatewayDataFeed(NetworkBase):
-    dex_logger: Optional[HummingbotLogger] = None
-    _gateway_client: Optional[GatewayHttpClient] = None
+    dex_logger: HummingbotLogger | None = None
+    _gateway_client: GatewayHttpClient | None = None
 
     @classmethod
     def get_gateway_client(cls) -> GatewayHttpClient:
@@ -45,15 +44,15 @@ class AmmGatewayDataFeed(NetworkBase):
     def __init__(
         self,
         network: str,
-        trading_pairs: Set[str],
+        trading_pairs: set[str],
         order_amount_in_base: Decimal,
         update_interval: float = 1.0,
     ) -> None:
         super().__init__()
         self._ev_loop = asyncio.get_event_loop()
-        self._price_dict: Dict[str, TokenBuySellPrice] = {}
+        self._price_dict: dict[str, TokenBuySellPrice] = {}
         self._update_interval = update_interval
-        self.fetch_data_loop_task: Optional[asyncio.Task] = None
+        self.fetch_data_loop_task: asyncio.Task | None = None
         # param required for DEX API request
         self.network = network
         self.trading_pairs = trading_pairs
@@ -74,7 +73,7 @@ class AmmGatewayDataFeed(NetworkBase):
         # Read from the network's config on the first price fetch. The lock is what makes
         # that first read single: every pair's buy and sell leg starts concurrently, so
         # without it they all miss the empty cache and read the config at once.
-        self._swap_provider: Optional[str] = None
+        self._swap_provider: str | None = None
         self._swap_provider_lock = asyncio.Lock()
 
     @classmethod
@@ -97,7 +96,7 @@ class AmmGatewayDataFeed(NetworkBase):
         return self._swap_provider or ""
 
     @property
-    def price_dict(self) -> Dict[str, TokenBuySellPrice]:
+    def price_dict(self) -> dict[str, TokenBuySellPrice]:
         return self._price_dict
 
     def is_ready(self) -> bool:
@@ -126,8 +125,7 @@ class AmmGatewayDataFeed(NetworkBase):
                 raise
             except Exception as e:
                 self.logger().error(
-                    f"Error getting data from {self.name}"
-                    f"Check network connection. Error: {e}",
+                    f"Error getting data from {self.name}Check network connection. Error: {e}",
                 )
             await self._async_sleep(self._update_interval)
 
@@ -181,7 +179,7 @@ class AmmGatewayDataFeed(NetworkBase):
                 self._swap_provider = swap_provider
         return self._swap_provider
 
-    async def _request_token_price(self, trading_pair: str, trade_type: TradeType) -> Optional[Decimal]:
+    async def _request_token_price(self, trading_pair: str, trade_type: TradeType) -> Decimal | None:
         base, quote = split_hb_trading_pair(trading_pair)
 
         try:

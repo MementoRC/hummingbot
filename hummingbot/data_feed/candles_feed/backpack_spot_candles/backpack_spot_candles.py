@@ -1,5 +1,4 @@
 import logging
-from typing import List, Optional
 
 import pandas as pd
 
@@ -10,7 +9,7 @@ from hummingbot.logger import HummingbotLogger
 
 
 class BackpackSpotCandles(CandlesBase):
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -63,8 +62,9 @@ class BackpackSpotCandles(CandlesBase):
 
     async def check_network(self) -> NetworkStatus:
         rest_assistant = await self._api_factory.get_rest_assistant()
-        await rest_assistant.execute_request(url=self.health_check_url,
-                                             throttler_limit_id=CONSTANTS.HEALTH_CHECK_ENDPOINT)
+        await rest_assistant.execute_request(
+            url=self.health_check_url, throttler_limit_id=CONSTANTS.HEALTH_CHECK_ENDPOINT
+        )
         return NetworkStatus.CONNECTED
 
     def get_exchange_trading_pair(self, trading_pair):
@@ -75,10 +75,12 @@ class BackpackSpotCandles(CandlesBase):
         """Backpack returns candle boundaries as UTC ISO-8601 strings (e.g. "2024-01-01T00:00:00")."""
         return int(pd.Timestamp(iso_timestamp, tz="UTC").timestamp())
 
-    def _get_rest_candles_params(self,
-                                 start_time: Optional[int] = None,
-                                 end_time: Optional[int] = None,
-                                 limit: Optional[int] = CONSTANTS.MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST) -> dict:
+    def _get_rest_candles_params(
+        self,
+        start_time: int | None = None,
+        end_time: int | None = None,
+        limit: int | None = CONSTANTS.MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST,
+    ) -> dict:
         # Backpack expects startTime/endTime in seconds and requires startTime to be present.
         params = {
             "symbol": self._ex_trading_pair,
@@ -90,12 +92,21 @@ class BackpackSpotCandles(CandlesBase):
             params["endTime"] = end_time
         return params
 
-    def _parse_rest_candles(self, data: list, end_time: Optional[int] = None) -> List[List[float]]:
+    def _parse_rest_candles(self, data: list, end_time: int | None = None) -> list[list[float]]:
         # Backpack does not report taker buy volumes, so those columns are filled with 0.
         return [
-            [self._iso_to_seconds(row["start"]),
-             row["open"], row["high"], row["low"], row["close"], row["volume"],
-             row["quoteVolume"], row["trades"], 0., 0.]
+            [
+                self._iso_to_seconds(row["start"]),
+                row["open"],
+                row["high"],
+                row["low"],
+                row["close"],
+                row["volume"],
+                row["quoteVolume"],
+                row["trades"],
+                0.0,
+                0.0,
+            ]
             for row in data
             if row["open"] is not None
         ]
@@ -128,6 +139,6 @@ class BackpackSpotCandles(CandlesBase):
             # TODO(backpack): request that the kline WS stream include quoteVolume like the REST API.
             candles_row_dict["quote_asset_volume"] = float(kline["v"]) * float(kline["c"])
             candles_row_dict["n_trades"] = kline["n"]
-            candles_row_dict["taker_buy_base_volume"] = 0.
-            candles_row_dict["taker_buy_quote_volume"] = 0.
+            candles_row_dict["taker_buy_base_volume"] = 0.0
+            candles_row_dict["taker_buy_quote_volume"] = 0.0
             return candles_row_dict

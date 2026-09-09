@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import os
-from typing import TYPE_CHECKING, Any, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.client.command.gateway_api_manager import begin_placeholder_mode
 from hummingbot.core.gateway.gateway_error import GatewayError
@@ -18,6 +18,7 @@ def ensure_gateway_online(func):
             self.logger().error("Gateway is offline")
             return
         return func(self, *args, **kwargs)
+
     return wrapper
 
 
@@ -25,7 +26,7 @@ class GatewayConfigCommand:
     """Commands for managing gateway configuration."""
 
     @ensure_gateway_online
-    def gateway_config(self, namespace: str = None, action: str = None, args: List[str] = None):
+    def gateway_config(self, namespace: str = None, action: str = None, args: list[str] = None):
         """
         Gateway configuration management.
         Usage:
@@ -51,8 +52,7 @@ class GatewayConfigCommand:
             # Format: gateway config <namespace>
             # Show configuration for the specified namespace
             safe_ensure_future(
-                GatewayConfigCommand._show_gateway_configuration(self, namespace=namespace),
-                loop=self.ev_loop
+                GatewayConfigCommand._show_gateway_configuration(self, namespace=namespace), loop=self.ev_loop
             )
         elif action == "update":
             if len(args) >= 2:
@@ -62,13 +62,12 @@ class GatewayConfigCommand:
                 value = " ".join(args[1:])
                 safe_ensure_future(
                     GatewayConfigCommand._update_gateway_configuration_direct(self, namespace, path, value),
-                    loop=self.ev_loop
+                    loop=self.ev_loop,
                 )
             else:
                 # Interactive mode: gateway config <namespace> update
                 safe_ensure_future(
-                    GatewayConfigCommand._update_gateway_configuration_interactive(self, namespace),
-                    loop=self.ev_loop
+                    GatewayConfigCommand._update_gateway_configuration_interactive(self, namespace), loop=self.ev_loop
                 )
         else:
             # If action is not "update", it might be a namespace typo
@@ -80,7 +79,7 @@ class GatewayConfigCommand:
 
     async def _show_gateway_configuration(
         self,  # type: HummingbotApplication
-        namespace: Optional[str] = None,
+        namespace: str | None = None,
     ):
         """Show gateway configuration for a namespace."""
         host = self.client_config_map.gateway.gateway_api_host
@@ -101,36 +100,30 @@ class GatewayConfigCommand:
         except GatewayError as e:
             self.notify(f"\nError: {e.message}")
         except Exception:
-            remote_host = ':'.join([host, port])
+            remote_host = ":".join([host, port])
             self.notify(f"\nError: Connection to Gateway {remote_host} failed")
 
     async def _update_gateway_configuration(
         self,  # type: HummingbotApplication
         namespace: str,
         key: str,
-        value: Any
+        value: Any,
     ):
         """Update a single gateway configuration value."""
         try:
-            response = await self._get_gateway_instance().update_config(
-                namespace=namespace,
-                path=key,
-                value=value
-            )
+            response = await self._get_gateway_instance().update_config(namespace=namespace, path=key, value=value)
             self.notify(response["message"])
         except GatewayError as e:
             self.notify(f"\nError: {e.message}")
         except Exception:
             self.logger().error("Gateway configuration update failed", exc_info=True)
-            self.notify(
-                "\nError: Gateway configuration update failed. See log file for more details."
-            )
+            self.notify("\nError: Gateway configuration update failed. See log file for more details.")
 
     async def _update_gateway_configuration_direct(
         self,  # type: HummingbotApplication
         namespace: str,
         path: str,
-        value: str
+        value: str,
     ):
         """Direct mode for gateway config update with validation."""
         try:
@@ -158,30 +151,21 @@ class GatewayConfigCommand:
 
             # Validate the value based on the current value type
             validated_value = await GatewayConfigCommand._validate_config_value(
-                self,
-                path,
-                value,
-                current_value,
-                namespace
+                self, path, value, current_value, namespace
             )
 
             if validated_value is None:
                 return
 
             # Update the configuration
-            await GatewayConfigCommand._update_gateway_configuration(
-                self,
-                namespace,
-                path,
-                validated_value
-            )
+            await GatewayConfigCommand._update_gateway_configuration(self, namespace, path, validated_value)
 
         except Exception as e:
             self.notify(f"Error updating configuration: {str(e)}")
 
     async def _update_gateway_configuration_interactive(
         self,  # type: HummingbotApplication
-        namespace: str
+        namespace: str,
     ):
         """Interactive mode for gateway config update with path validation."""
         try:
@@ -205,7 +189,7 @@ class GatewayConfigCommand:
             with begin_placeholder_mode(self):
                 try:
                     # Update completer's config path options
-                    if hasattr(self.app.input_field.completer, '_gateway_config_path_options'):
+                    if hasattr(self.app.input_field.completer, "_gateway_config_path_options"):
                         self.app.input_field.completer._gateway_config_path_options = config_keys
 
                     # Loop to allow retry on invalid path
@@ -214,7 +198,7 @@ class GatewayConfigCommand:
                         self.notify(f"\nAvailable configuration paths: {', '.join(config_keys)}")
                         path = await self.app.prompt(prompt="Enter configuration path (or 'exit' to cancel): ")
 
-                        if self.app.to_stop_config or not path or path.lower() == 'exit':
+                        if self.app.to_stop_config or not path or path.lower() == "exit":
                             self.notify("Configuration update cancelled")
                             return
 
@@ -237,17 +221,13 @@ class GatewayConfigCommand:
                         # Prompt for new value
                         value = await self.app.prompt(prompt="Enter new value (or 'exit' to cancel): ")
 
-                        if self.app.to_stop_config or not value or value.lower() == 'exit':
+                        if self.app.to_stop_config or not value or value.lower() == "exit":
                             self.notify("Configuration update cancelled")
                             return
 
                         # Validate the value based on the current value type
                         validated_value = await GatewayConfigCommand._validate_config_value(
-                            self,
-                            path,
-                            value,
-                            current_value,
-                            namespace
+                            self, path, value, current_value, namespace
                         )
 
                         if validated_value is None:
@@ -258,12 +238,7 @@ class GatewayConfigCommand:
                         break
 
                     # Update the configuration
-                    await GatewayConfigCommand._update_gateway_configuration(
-                        self,
-                        namespace,
-                        path,
-                        validated_value
-                    )
+                    await GatewayConfigCommand._update_gateway_configuration(self, namespace, path, validated_value)
 
                 finally:
                     self.placeholder_mode = False
@@ -278,23 +253,23 @@ class GatewayConfigCommand:
         path: str,
         value: str,
         current_value: Any,
-        namespace: str = None
-    ) -> Optional[Any]:
+        namespace: str = None,
+    ) -> Any | None:
         """
         Validate and convert the config value based on the current value type.
         Also performs special validation for path values and network values.
         """
         try:
             # Special validation for path-like configuration keys
-            path_keywords = ['path', 'dir', 'directory', 'folder', 'location']
+            path_keywords = ["path", "dir", "directory", "folder", "location"]
             is_path_config = any(keyword in path.lower() for keyword in path_keywords)
 
             # Type conversion based on current value
             if isinstance(current_value, bool):
                 # Boolean conversion
-                if value.lower() in ['true', 'yes', '1']:
+                if value.lower() in ["true", "yes", "1"]:
                     return True
-                elif value.lower() in ['false', 'no', '0']:
+                elif value.lower() in ["false", "no", "0"]:
                     return False
                 else:
                     self.notify(f"Error: Expected boolean value (true/false), got '{value}'")
@@ -328,7 +303,6 @@ class GatewayConfigCommand:
                     # Special validation for defaultNetwork - must be a valid network for the chain
                     # Await the async validation
                     available_networks = await self._get_gateway_instance().get_available_networks_for_chain(
-
                         namespace  # namespace is the chain name
                     )
 
@@ -344,9 +318,10 @@ class GatewayConfigCommand:
 
             elif isinstance(current_value, list):
                 # List conversion - try to parse as comma-separated values
-                if value.startswith('[') and value.endswith(']'):
+                if value.startswith("[") and value.endswith("]"):
                     # JSON-style list
                     import json
+
                     try:
                         return json.loads(value)
                     except json.JSONDecodeError:
@@ -354,7 +329,7 @@ class GatewayConfigCommand:
                         return None
                 else:
                     # Comma-separated values
-                    return [item.strip() for item in value.split(',')]
+                    return [item.strip() for item in value.split(",")]
 
             else:
                 # Unknown type - return as string

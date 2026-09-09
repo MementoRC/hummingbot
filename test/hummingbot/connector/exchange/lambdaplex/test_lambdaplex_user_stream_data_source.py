@@ -1,8 +1,7 @@
 import asyncio
-import json
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from typing import Any, Dict, Optional
+import json
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses import aioresponses
@@ -20,6 +19,7 @@ from hummingbot.connector.utils import combine_to_hb_trading_pair
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 from hummingbot.core.data_type.common import OrderType, TradeType
 from hummingbot.core.data_type.in_flight_order import OrderState
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class LambdaplexUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
@@ -39,7 +39,7 @@ class LambdaplexUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
     async def asyncSetUp(self) -> None:
         await super().asyncSetUp()
         self.log_records = []
-        self.listening_task: Optional[asyncio.Task] = None
+        self.listening_task: asyncio.Task | None = None
         self.mocking_assistant = NetworkMockingAssistant(self.local_event_loop)
 
         self.throttler = AsyncThrottler(rate_limits=CONSTANTS.RATE_LIMITS)
@@ -80,18 +80,11 @@ class LambdaplexUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         self.log_records.append(record)
 
     def _is_logged(self, log_level: str, message: str) -> bool:
-        return any(
-            record.levelname == log_level and record.getMessage() == message
-            for record in self.log_records
-        )
+        return any(record.levelname == log_level and record.getMessage() == message for record in self.log_records)
 
     @staticmethod
-    def _get_successful_request_response(request_id: int) -> Dict[str, Any]:
-        return {
-            "id": str(request_id),
-            "result": None,
-            "status": "200"
-        }
+    def _get_successful_request_response(request_id: int) -> dict[str, Any]:
+        return {"id": str(request_id), "result": None, "status": "200"}
 
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
     async def test_listening_process_canceled_when_cancel_exception_during_initialization(self, mock_ws: AsyncMock):
@@ -132,16 +125,12 @@ class LambdaplexUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         )
 
         msg_queue = asyncio.Queue()
-        self.listening_task = self.local_event_loop.create_task(
-            self.data_source.listen_for_user_stream(msg_queue)
-        )
+        self.listening_task = self.local_event_loop.create_task(self.data_source.listen_for_user_stream(msg_queue))
 
         await self.mocking_assistant.run_until_all_aiohttp_messages_delivered(mock_ws.return_value)
 
-        sent_messages = self.mocking_assistant.json_messages_sent_through_websocket(
-            websocket_mock=mock_ws.return_value
-        )
-        expected_login_message: Dict[str, Any] = {
+        sent_messages = self.mocking_assistant.json_messages_sent_through_websocket(websocket_mock=mock_ws.return_value)
+        expected_login_message: dict[str, Any] = {
             "id": 1,
             "method": CONSTANTS.WS_SESSION_LOGON_METHOD,
             "params": {
@@ -149,7 +138,7 @@ class LambdaplexUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
                 "recvWindow": 5000,
                 "signature": "t0JWo+U6NFKJZFt4j9IMbJ3soTZvrWbqrgNFAKp5ASY4RIgjaza8IsYJOCJgvtvCXTn3FIkKC2wyH7m0U3L3CQ==",
                 "timestamp": 1234567890000,
-            }
+            },
         }
 
         self.assertEqual(expected_login_message, sent_messages[0])
@@ -157,7 +146,7 @@ class LambdaplexUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         self.assertTrue(
             self._is_logged(
                 "ERROR",
-                f"Error authenticating the private websocket connection. Response message {error_mock_response}"
+                f"Error authenticating the private websocket connection. Response message {error_mock_response}",
             )
         )
 
@@ -166,21 +155,16 @@ class LambdaplexUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
     async def test_listen_for_user_stream_authenticates(self, mock_api, mock_ws):
         mock_ws.return_value = self.mocking_assistant.create_websocket_mock()
         self.mocking_assistant.add_websocket_aiohttp_message(
-            websocket_mock=mock_ws.return_value,
-            message=json.dumps(self._get_successful_request_response(request_id=1))
+            websocket_mock=mock_ws.return_value, message=json.dumps(self._get_successful_request_response(request_id=1))
         )
 
         msg_queue = asyncio.Queue()
-        self.listening_task = self.local_event_loop.create_task(
-            self.data_source.listen_for_user_stream(msg_queue)
-        )
+        self.listening_task = self.local_event_loop.create_task(self.data_source.listen_for_user_stream(msg_queue))
 
         await self.mocking_assistant.run_until_all_aiohttp_messages_delivered(mock_ws.return_value)
 
-        sent_messages = self.mocking_assistant.json_messages_sent_through_websocket(
-            websocket_mock=mock_ws.return_value
-        )
-        expected_login_message: Dict[str, Any] = {
+        sent_messages = self.mocking_assistant.json_messages_sent_through_websocket(websocket_mock=mock_ws.return_value)
+        expected_login_message: dict[str, Any] = {
             "id": 1,
             "method": CONSTANTS.WS_SESSION_LOGON_METHOD,
             "params": {
@@ -188,7 +172,7 @@ class LambdaplexUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
                 "recvWindow": 5000,
                 "signature": "t0JWo+U6NFKJZFt4j9IMbJ3soTZvrWbqrgNFAKp5ASY4RIgjaza8IsYJOCJgvtvCXTn3FIkKC2wyH7m0U3L3CQ==",
                 "timestamp": 1234567890000,
-            }
+            },
         }
 
         self.assertEqual(expected_login_message, sent_messages[0])
@@ -206,8 +190,7 @@ class LambdaplexUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         mock_ws.return_value = self.mocking_assistant.create_websocket_mock()
 
         self.mocking_assistant.add_websocket_aiohttp_message(
-            websocket_mock=mock_ws.return_value,
-            message=json.dumps(self._get_successful_request_response(request_id=1))
+            websocket_mock=mock_ws.return_value, message=json.dumps(self._get_successful_request_response(request_id=1))
         )
         error_mock_response = {
             "id": 2,
@@ -220,16 +203,12 @@ class LambdaplexUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         )
 
         msg_queue = asyncio.Queue()
-        self.listening_task = self.local_event_loop.create_task(
-            self.data_source.listen_for_user_stream(msg_queue)
-        )
+        self.listening_task = self.local_event_loop.create_task(self.data_source.listen_for_user_stream(msg_queue))
 
         await self.mocking_assistant.run_until_all_aiohttp_messages_delivered(mock_ws.return_value)
 
-        sent_messages = self.mocking_assistant.json_messages_sent_through_websocket(
-            websocket_mock=mock_ws.return_value
-        )
-        expected_subscription_message: Dict[str, Any] = {
+        sent_messages = self.mocking_assistant.json_messages_sent_through_websocket(websocket_mock=mock_ws.return_value)
+        expected_subscription_message: dict[str, Any] = {
             "id": 2,
             "method": CONSTANTS.WS_SESSION_SUBSCRIBE_METHOD,
         }
@@ -238,8 +217,7 @@ class LambdaplexUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         self.assertEqual(0, msg_queue.qsize())
         self.assertTrue(
             self._is_logged(
-                "ERROR",
-                f"Error subscribing to the private websocket stream. Response message {error_mock_response}"
+                "ERROR", f"Error subscribing to the private websocket stream. Response message {error_mock_response}"
             )
         )
 
@@ -248,25 +226,19 @@ class LambdaplexUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         mock_ws.return_value = self.mocking_assistant.create_websocket_mock()
 
         self.mocking_assistant.add_websocket_aiohttp_message(
-            websocket_mock=mock_ws.return_value,
-            message=json.dumps(self._get_successful_request_response(request_id=1))
+            websocket_mock=mock_ws.return_value, message=json.dumps(self._get_successful_request_response(request_id=1))
         )
         self.mocking_assistant.add_websocket_aiohttp_message(
-            websocket_mock=mock_ws.return_value,
-            message=json.dumps(self._get_successful_request_response(request_id=2))
+            websocket_mock=mock_ws.return_value, message=json.dumps(self._get_successful_request_response(request_id=2))
         )
 
         msg_queue = asyncio.Queue()
-        self.listening_task = self.local_event_loop.create_task(
-            self.data_source.listen_for_user_stream(msg_queue)
-        )
+        self.listening_task = self.local_event_loop.create_task(self.data_source.listen_for_user_stream(msg_queue))
 
         await self.mocking_assistant.run_until_all_aiohttp_messages_delivered(mock_ws.return_value)
 
-        sent_messages = self.mocking_assistant.json_messages_sent_through_websocket(
-            websocket_mock=mock_ws.return_value
-        )
-        expected_subscription_message: Dict[str, Any] = {
+        sent_messages = self.mocking_assistant.json_messages_sent_through_websocket(websocket_mock=mock_ws.return_value)
+        expected_subscription_message: dict[str, Any] = {
             "id": 2,
             "method": CONSTANTS.WS_SESSION_SUBSCRIBE_METHOD,
         }
@@ -296,7 +268,7 @@ class LambdaplexUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
             amount=Decimal("1"),
             initial_state=OrderState.OPEN,
         )
-        expected_order_event: Dict[str, Any] = {
+        expected_order_event: dict[str, Any] = {
             "e": "orderUpdate",
             "E": 1499405658658,
             "s": self.exchange_trading_pair,
@@ -335,12 +307,12 @@ class LambdaplexUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         self.mocking_assistant.add_websocket_aiohttp_message(
             websocket_mock=mock_ws.return_value, message=json.dumps(self._get_successful_request_response(request_id=2))
         )
-        self.mocking_assistant.add_websocket_aiohttp_message(websocket_mock=mock_ws.return_value, message=json.dumps(expected_order_event))
+        self.mocking_assistant.add_websocket_aiohttp_message(
+            websocket_mock=mock_ws.return_value, message=json.dumps(expected_order_event)
+        )
 
         msg_queue: asyncio.Queue = asyncio.Queue()
-        self.listening_task = self.local_event_loop.create_task(
-            self.data_source.listen_for_user_stream(msg_queue)
-        )
+        self.listening_task = self.local_event_loop.create_task(self.data_source.listen_for_user_stream(msg_queue))
 
         await self.mocking_assistant.run_until_all_aiohttp_messages_delivered(mock_ws.return_value)
 

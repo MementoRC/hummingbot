@@ -1,5 +1,5 @@
 from email.utils import parsedate_to_datetime
-from typing import Callable, Optional
+from typing import Callable
 
 import hummingbot.connector.exchange.gemini.gemini_constants as CONSTANTS
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
@@ -18,17 +18,17 @@ def private_rest_url(path_url: str, domain: str = "") -> str:
     return CONSTANTS.REST_URL + path_url
 
 
-def wss_url(snapshot: Optional[int] = None) -> str:
+def wss_url(snapshot: int | None = None) -> str:
     if snapshot is None:
         return CONSTANTS.WSS_URL
     return f"{CONSTANTS.WSS_URL}?snapshot={snapshot}"
 
 
 def build_api_factory(
-        throttler: Optional[AsyncThrottler] = None,
-        time_synchronizer: Optional[TimeSynchronizer] = None,
-        time_provider: Optional[Callable] = None,
-        auth: Optional[AuthBase] = None,
+    throttler: AsyncThrottler | None = None,
+    time_synchronizer: TimeSynchronizer | None = None,
+    time_provider: Callable | None = None,
+    auth: AuthBase | None = None,
 ) -> WebAssistantsFactory:
     throttler = throttler or create_throttler()
     time_synchronizer = time_synchronizer or TimeSynchronizer()
@@ -38,7 +38,8 @@ def build_api_factory(
         auth=auth,
         rest_pre_processors=[
             TimeSynchronizerRESTPreProcessor(synchronizer=time_synchronizer, time_provider=time_provider),
-        ])
+        ],
+    )
     return api_factory
 
 
@@ -52,8 +53,8 @@ def create_throttler() -> AsyncThrottler:
 
 
 async def get_current_server_time(
-        throttler: Optional[AsyncThrottler] = None,
-        domain: str = "",
+    throttler: AsyncThrottler | None = None,
+    domain: str = "",
 ) -> float:
     """Fetch server time (epoch milliseconds) from the Date header of a Gemini API response.
 

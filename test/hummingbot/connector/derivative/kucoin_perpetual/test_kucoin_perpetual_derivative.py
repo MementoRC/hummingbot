@@ -1,19 +1,19 @@
 import asyncio
-import json
-import re
 from copy import deepcopy
 from datetime import timezone
 from decimal import Decimal
-from typing import Any, Callable, List, Optional, Tuple
+import json
+import re
+from typing import Any, Callable
 from unittest.mock import AsyncMock, patch
 
-import pandas as pd
 from aioresponses import aioresponses
 from aioresponses.core import RequestCall
+import pandas as pd
 
 import hummingbot.connector.derivative.kucoin_perpetual.kucoin_perpetual_constants as CONSTANTS
-import hummingbot.connector.derivative.kucoin_perpetual.kucoin_perpetual_web_utils as web_utils
 from hummingbot.connector.derivative.kucoin_perpetual.kucoin_perpetual_derivative import KucoinPerpetualDerivative
+import hummingbot.connector.derivative.kucoin_perpetual.kucoin_perpetual_web_utils as web_utils
 from hummingbot.connector.derivative.position import Position
 from hummingbot.connector.test_support.perpetual_derivative_test import AbstractPerpetualDerivativeTests
 from hummingbot.connector.trading_rule import TradingRule
@@ -61,22 +61,20 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
 
     @property
     def order_creation_url(self):
-        url = web_utils.get_rest_url_for_endpoint(
-            endpoint=CONSTANTS.CREATE_ORDER_PATH_URL
-        )
+        url = web_utils.get_rest_url_for_endpoint(endpoint=CONSTANTS.CREATE_ORDER_PATH_URL)
         url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
         return url
 
     @property
     def balance_url(self):
-        url = web_utils.get_rest_url_for_endpoint(endpoint=CONSTANTS.GET_WALLET_BALANCE_PATH_URL.format(currency="USDT"))
+        url = web_utils.get_rest_url_for_endpoint(
+            endpoint=CONSTANTS.GET_WALLET_BALANCE_PATH_URL.format(currency="USDT")
+        )
         return url
 
     @property
     def funding_info_url(self):
-        url = web_utils.get_rest_url_for_endpoint(
-            endpoint=CONSTANTS.GET_CONTRACT_INFO_PATH_URL
-        )
+        url = web_utils.get_rest_url_for_endpoint(endpoint=CONSTANTS.GET_CONTRACT_INFO_PATH_URL)
         url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?") + ".*")
         return url
 
@@ -146,9 +144,9 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
                     "lowPrice": 38040,
                     "highPrice": 44948,
                     "priceChgPct": 0.1702,
-                    "priceChg": 6476
+                    "priceChg": 6476,
                 }
-            ]
+            ],
         }
         return mock_response
 
@@ -218,14 +216,14 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
                     "lowPrice": 88.88,
                     "highPrice": 102.21,
                     "priceChgPct": 0.1401,
-                    "priceChg": 12.48
+                    "priceChg": 12.48,
                 }
-            ]
+            ],
         }
         return mock_response
 
     @property
-    def all_symbols_including_invalid_pair_mock_response(self) -> Tuple[str, Any]:
+    def all_symbols_including_invalid_pair_mock_response(self) -> tuple[str, Any]:
         mock_response = {
             "code": "200000",
             "data": [
@@ -282,7 +280,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
                     "lowPrice": 38040,
                     "highPrice": 44948,
                     "priceChgPct": 0.1702,
-                    "priceChg": 6476
+                    "priceChg": 6476,
                 },
                 {
                     "symbol": self.exchange_symbol_for_tokens("INVALID", "PAIR"),
@@ -337,21 +335,15 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
                     "lowPrice": 38040,
                     "highPrice": 44948,
                     "priceChgPct": 0.1702,
-                    "priceChg": 6476
+                    "priceChg": 6476,
                 },
-            ]
+            ],
         }
         return "INVALID-PAIR", mock_response
 
     @property
     def network_status_request_successful_mock_response(self):
-        mock_response = {
-            "code": "200000",
-            "data": {
-                "status": "open",
-                "msg": "upgrade match engine"
-            }
-        }
+        mock_response = {"code": "200000", "data": {"status": "open", "msg": "upgrade match engine"}}
         return mock_response
 
     @property
@@ -376,25 +368,21 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
                     "makerFeeRate": 0.0002,
                     "takerFeeRate": 0.0006,
                 }
-            ]
+            ],
         }
         return mock_response
 
     @property
     def order_creation_request_successful_mock_response(self):
-        mock_response = {
-            "code": "200000",
-            "data": {
-                "orderId": "335fd977-e5a5-4781-b6d0-c772d5bfb95b"
-            }
-        }
+        mock_response = {"code": "200000", "data": {"orderId": "335fd977-e5a5-4781-b6d0-c772d5bfb95b"}}
         return mock_response
 
     @property
     def balance_request_mock_response_for_base_and_quote(self):
         mock_response = {
             "code": "200000",
-            "data": [{
+            "data": [
+                {
                     "accountEquity": 15,
                     "unrealisedPNL": 0,
                     "marginBalance": 15,
@@ -403,9 +391,9 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
                     "frozenFunds": 0,
                     "availableBalance": 10,
                     "currency": self.base_asset,
-            },
+                },
                 {
-                "accountEquity": 2000,
+                    "accountEquity": 2000,
                     "unrealisedPNL": 0,
                     "marginBalance": 2000,
                     "positionMargin": 0,
@@ -413,8 +401,8 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
                     "frozenFunds": 0,
                     "availableBalance": 2000,
                     "currency": self.quote_asset,
-            }
-            ]
+                },
+            ],
         }
         return mock_response
 
@@ -434,8 +422,8 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
                 "availableBalance": 10,
                 "holdBalance": 15,
                 "currency": self.base_asset,
-                "timestamp": 1553842862614
-            }
+                "timestamp": 1553842862614,
+            },
         }
         return mock_response
 
@@ -465,39 +453,39 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
                     "timePoint": self.target_funding_payment_timestamp_str,
                     "fundingRate": float(self.target_funding_payment_funding_rate),
                     "markPrice": 8058.27,
-                    "positionQty": float(self.target_funding_payment_payment_amount / self.target_funding_payment_funding_rate),
+                    "positionQty": float(
+                        self.target_funding_payment_payment_amount / self.target_funding_payment_funding_rate
+                    ),
                     "positionCost": -0.001241,
                     "funding": -0.00000464,
                     "settleCurrency": self.base_asset,
-                }]
+                }
+            ],
         }
 
     @property
-    def expected_supported_position_modes(self) -> List[PositionMode]:
+    def expected_supported_position_modes(self) -> list[PositionMode]:
         raise NotImplementedError  # test is overwritten
 
     @property
     def target_funding_info_next_funding_utc_str(self):
         datetime_str = str(
-            pd.Timestamp.fromtimestamp(
-                self.target_funding_info_next_funding_utc_timestamp, tz=timezone.utc)
+            pd.Timestamp.fromtimestamp(self.target_funding_info_next_funding_utc_timestamp, tz=timezone.utc)
         ).replace(" ", "T")  # + "Z"
         return datetime_str
 
     @property
     def target_funding_info_next_funding_utc_str_ws_updated(self):
         datetime_str = str(
-            pd.Timestamp.fromtimestamp(
-                self.target_funding_info_next_funding_utc_timestamp_ws_updated, tz=timezone.utc)
+            pd.Timestamp.fromtimestamp(self.target_funding_info_next_funding_utc_timestamp_ws_updated, tz=timezone.utc)
         ).replace(" ", "T")  # + "Z"
         return datetime_str
 
     @property
     def target_funding_payment_timestamp_str(self):
-        datetime_str = str(
-            pd.Timestamp.fromtimestamp(
-                self.target_funding_payment_timestamp, tz=timezone.utc)
-        ).replace(" ", "T")  # + "Z"
+        datetime_str = str(pd.Timestamp.fromtimestamp(self.target_funding_payment_timestamp, tz=timezone.utc)).replace(
+            " ", "T"
+        )  # + "Z"
         return datetime_str
 
     @property
@@ -562,16 +550,16 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
     @property
     def expected_fill_fee(self) -> TradeFeeBase:
         return AddedToCostTradeFee(
-            percent=Decimal('0.0002'),
+            percent=Decimal("0.0002"),
             percent_token=self.quote_asset,
         )
 
     @property
     def expected_trade_history_fill_fee(self) -> TradeFeeBase:
         return AddedToCostTradeFee(
-            percent=Decimal('0'),
+            percent=Decimal("0"),
             percent_token=self.quote_asset,
-            flat_fees=[TokenAmount(amount=Decimal('0.0002'), token=self.quote_asset)]
+            flat_fees=[TokenAmount(amount=Decimal("0.0002"), token=self.quote_asset)],
         )
 
     @property
@@ -635,7 +623,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         """
         :return: the URL configured for the cancelation
@@ -652,7 +640,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.CANCEL_ORDER_PATH_URL.format(orderid=order.exchange_order_id)
@@ -670,7 +658,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         successful_order: InFlightOrder,
         erroneous_order: InFlightOrder,
         mock_api: aioresponses,
-    ) -> List[str]:
+    ) -> list[str]:
         """
         :return: a list of all configured URLs for the cancelations
         """
@@ -682,12 +670,11 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         return all_urls
 
     def configure_completely_filled_order_status_response(
-        self,
-        order: InFlightOrder,
-        mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
-        url = web_utils.get_rest_url_for_endpoint(endpoint=CONSTANTS.QUERY_ORDER_BY_EXCHANGE_ORDER_ID_PATH_URL.format(orderid=order.exchange_order_id))
+        url = web_utils.get_rest_url_for_endpoint(
+            endpoint=CONSTANTS.QUERY_ORDER_BY_EXCHANGE_ORDER_ID_PATH_URL.format(orderid=order.exchange_order_id)
+        )
         response = self._order_status_request_completely_filled_mock_response(order=order)
         mock_api.get(url, body=json.dumps(response), callback=callback)
         return url
@@ -696,7 +683,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.QUERY_ORDER_BY_EXCHANGE_ORDER_ID_PATH_URL.format(orderid=order.exchange_order_id)
@@ -709,7 +696,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.QUERY_ORDER_BY_EXCHANGE_ORDER_ID_PATH_URL.format(orderid=order.exchange_order_id)
@@ -723,7 +710,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.QUERY_ORDER_BY_EXCHANGE_ORDER_ID_PATH_URL.format(orderid=order.exchange_order_id)
@@ -736,7 +723,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.QUERY_ORDER_BY_EXCHANGE_ORDER_ID_PATH_URL.format(orderid=order.exchange_order_id)
@@ -749,7 +736,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.QUERY_ALL_ORDER_PATH_URL, exchange_order_id=order.exchange_order_id
@@ -763,7 +750,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.GET_FILL_INFO_PATH_URL.format(orderid=order.exchange_order_id),
@@ -776,7 +763,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.GET_RECENT_FILLS_INFO_PATH_URL,
@@ -789,7 +776,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self,
         order: InFlightOrder,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.ACTIVE_ORDER_PATH_URL, exchange_order_id=order.exchange_order_id
@@ -802,15 +789,10 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self,
         position_mode: PositionMode,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ):
-        url = web_utils.get_rest_url_for_endpoint(
-            endpoint=CONSTANTS.SET_LEVERAGE_PATH_URL
-        )
-        response = {
-            "code": "200000",
-            "data": True
-        }
+        url = web_utils.get_rest_url_for_endpoint(endpoint=CONSTANTS.SET_LEVERAGE_PATH_URL)
+        response = {"code": "200000", "data": True}
         mock_api.post(url, body=json.dumps(response), callback=callback)
 
         return url
@@ -819,17 +801,12 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self,
         position_mode: PositionMode,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None
+        callback: Callable | None = lambda *args, **kwargs: None,
     ):
-        url = web_utils.get_rest_url_for_endpoint(
-            endpoint=CONSTANTS.SET_LEVERAGE_PATH_URL
-        )
+        url = web_utils.get_rest_url_for_endpoint(endpoint=CONSTANTS.SET_LEVERAGE_PATH_URL)
         error_code = "300016"
         error_msg = "Some problem"
-        response = {
-            "code": "300016",
-            "data": False
-        }
+        response = {"code": "300016", "data": False}
         mock_api.post(url, body=json.dumps(response), callback=callback)
 
         return url, f"ret_code <{error_code}> - {error_msg}"
@@ -838,8 +815,8 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self,
         leverage: PositionMode,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> Tuple[str, str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> tuple[str, str]:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.GET_RISK_LIMIT_LEVEL_PATH_URL.format(symbol=self.exchange_trading_pair)
         )
@@ -857,7 +834,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
                     "minRiskLimit": 0,
                     "maxLeverage": 1,
                     "initialMargin": 0.05,
-                    "maintainMargin": 0.025
+                    "maintainMargin": 0.025,
                 },
                 {
                     "symbol": "ADAUSDTM",
@@ -866,9 +843,9 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
                     "minRiskLimit": 500,
                     "maxLeverage": 1,
                     "initialMargin": 0.5,
-                    "maintainMargin": 0.25
-                }
-            ]
+                    "maintainMargin": 0.25,
+                },
+            ],
         }
 
         mock_api.get(regex_url, body=json.dumps(mock_response), callback=callback)
@@ -879,7 +856,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self,
         leverage: int,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
+        callback: Callable | None = lambda *args, **kwargs: None,
     ):
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.GET_RISK_LIMIT_LEVEL_PATH_URL.format(symbol=self.exchange_trading_pair)
@@ -896,7 +873,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
                     "minRiskLimit": 0,
                     "maxLeverage": 20,
                     "initialMargin": 0.05,
-                    "maintainMargin": 0.025
+                    "maintainMargin": 0.025,
                 },
                 {
                     "symbol": "ADAUSDTM",
@@ -905,9 +882,9 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
                     "minRiskLimit": 500,
                     "maxLeverage": 2,
                     "initialMargin": 0.5,
-                    "maintainMargin": 0.25
-                }
-            ]
+                    "maintainMargin": 0.25,
+                },
+            ],
         }
 
         mock_api.get(regex_url, body=json.dumps(mock_response), callback=callback)
@@ -915,11 +892,18 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         # _set_trading_pair_leverage also ensures ISOLATED margin mode; mock the symbol as already
         # ISOLATED so _set_margin_mode short-circuits without a changeMarginMode call.
         margin_mode_url = web_utils.get_rest_url_for_endpoint(
-            endpoint=CONSTANTS.GET_MARGIN_MODE_PATH_URL.format(symbol=self.exchange_trading_pair))
+            endpoint=CONSTANTS.GET_MARGIN_MODE_PATH_URL.format(symbol=self.exchange_trading_pair)
+        )
         margin_mode_regex = re.compile(f"^{margin_mode_url}".replace(".", r"\.").replace("?", r"\?"))
-        mock_api.get(margin_mode_regex, body=json.dumps(
-            {"code": "200000",
-             "data": {"symbol": self.exchange_trading_pair, "marginMode": CONSTANTS.DEFAULT_MARGIN_MODE}}))
+        mock_api.get(
+            margin_mode_regex,
+            body=json.dumps(
+                {
+                    "code": "200000",
+                    "data": {"symbol": self.exchange_trading_pair, "marginMode": CONSTANTS.DEFAULT_MARGIN_MODE},
+                }
+            ),
+        )
 
         return url
 
@@ -944,8 +928,8 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
                 "clientOid": order.client_order_id or "",
                 "orderTime": 1545914149935808589,
                 "liquidity": "maker",
-                "ts": 1545914149935808589
-            }
+                "ts": 1545914149935808589,
+            },
         }
 
     def order_event_for_canceled_order_websocket_update(self, order: InFlightOrder):
@@ -969,8 +953,8 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
                 "clientOid": order.client_order_id or "",
                 "orderTime": 1545914149935808589,
                 "liquidity": "maker",
-                "ts": 1545914149935808589
-            }
+                "ts": 1545914149935808589,
+            },
         }
 
     def order_event_for_full_fill_websocket_update(self, order: InFlightOrder):
@@ -995,8 +979,8 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
                 "clientOid": order.client_order_id or "",
                 "orderTime": 1545914149935808589,
                 "liquidity": "maker",
-                "ts": 1545914149935808589
-            }
+                "ts": 1545914149935808589,
+            },
         }
 
     def trade_event_for_full_fill_websocket_update(self, order: InFlightOrder):
@@ -1022,8 +1006,8 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
                 "clientOid": order.client_order_id or "",
                 "orderTime": 1545914149935808589,
                 "liquidity": "maker",
-                "ts": 1545914149935808589
-            }
+                "ts": 1545914149935808589,
+            },
         }
 
     def position_event_for_full_fill_websocket_update(self, order: InFlightOrder, unrealized_pnl: float):
@@ -1039,7 +1023,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
                 "symbol": self.exchange_trading_pair,
                 "crossMode": False,
                 "liquidationPrice": "489",
-                "posLoss": 0E-8,
+                "posLoss": 0e-8,
                 "avgEntryPrice": str(order.price),
                 "unrealisedPnl": unrealized_pnl,
                 "markPrice": str(order.price),
@@ -1064,14 +1048,14 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
                 "currentQty": -int(order.amount),
                 "delevPercentage": 0.52,
                 "currentComm": 0.00000271,
-                "realisedGrossCost": 0E-8,
+                "realisedGrossCost": 0e-8,
                 "isOpen": True,
-                "posCross": 1.2E-7,
+                "posCross": 1.2e-7,
                 "currentTimestamp": 1558506060394,
                 "unrealisedRoePcnt": -0.0553,
                 "unrealisedPnlPcnt": -0.0553,
                 "settleCurrency": self.quote_asset,
-            }
+            },
         }
 
     def funding_info_event_for_websocket_update(self):
@@ -1080,14 +1064,14 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
             "topic": "/contract/position:" + self.exchange_trading_pair,
             "subject": "position.settlement",
             "data": {
-                "fundingTime": 1551770400000,         # Funding time
-                "qty": 100,                           # Position size
+                "fundingTime": 1551770400000,  # Funding time
+                "qty": 100,  # Position size
                 "markPrice": self.target_funding_info_mark_price_ws_updated,  # Settlement price
-                "fundingRate": self.target_funding_info_rate_ws_updated,             # Funding rate
-                "fundingFee": -296,                   # Funding fees
-                "ts": 1547697294838004923,            # Current time (nanosecond)
-                "settleCurrency": "XBT"               # Currency used to clear and settle the trades
-            }
+                "fundingRate": self.target_funding_info_rate_ws_updated,  # Funding rate
+                "fundingFee": -296,  # Funding fees
+                "ts": 1547697294838004923,  # Current time (nanosecond)
+                "settleCurrency": "XBT",  # Currency used to clear and settle the trades
+            },
         }
 
     def test_create_order_with_invalid_position_action_raises_value_error(self):
@@ -1108,7 +1092,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
 
         self.assertEqual(
             f"Invalid position action {PositionAction.NIL}. Must be one of {[PositionAction.OPEN, PositionAction.CLOSE]}",
-            str(exception_context.exception)
+            str(exception_context.exception),
         )
 
     def test_user_stream_balance_update(self):
@@ -1184,7 +1168,9 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
     def test_time_synchronizer_related_request_error_detection(self):
         error_code = CONSTANTS.RET_CODE_AUTH_TIMESTAMP_ERROR
         response = {"code": error_code, "msg": "Invalid KC-API-TIMESTAMP"}
-        exception = IOError(f"Error executing request GET https://someurl. HTTP status is 400. Error: {json.dumps(response)}")
+        exception = IOError(
+            f"Error executing request GET https://someurl. HTTP status is 400. Error: {json.dumps(response)}"
+        )
         self.assertTrue(self.exchange._is_request_exception_related_to_time_synchronizer(exception))
 
         error_code = CONSTANTS.RET_CODE_ORDER_NOT_EXISTS
@@ -1228,7 +1214,9 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
 
         response = self.funding_info_mock_response
 
-        url = web_utils.get_rest_url_for_endpoint(endpoint=CONSTANTS.GET_CONTRACT_INFO_PATH_URL.format(symbol=self.exchange_trading_pair))
+        url = web_utils.get_rest_url_for_endpoint(
+            endpoint=CONSTANTS.GET_CONTRACT_INFO_PATH_URL.format(symbol=self.exchange_trading_pair)
+        )
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
         mock_api.get(regex_url, body=json.dumps(response))
 
@@ -1259,7 +1247,8 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         response["data"][0]["fundingFeeRate"] = 0.00005
 
         url = web_utils.get_rest_url_for_endpoint(
-            endpoint=CONSTANTS.GET_CONTRACT_INFO_PATH_URL.format(symbol=self.exchange_trading_pair))
+            endpoint=CONSTANTS.GET_CONTRACT_INFO_PATH_URL.format(symbol=self.exchange_trading_pair)
+        )
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
         mock_api.get(regex_url, body=json.dumps(response))
 
@@ -1279,13 +1268,15 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         # reads the symbol's mode from KuCoin and caches it (without changing it) so orders can send
         # a matching "marginMode" and avoid the 330005 rejection.
         get_url = web_utils.get_rest_url_for_endpoint(
-            endpoint=CONSTANTS.GET_MARGIN_MODE_PATH_URL.format(symbol=self.exchange_trading_pair))
+            endpoint=CONSTANTS.GET_MARGIN_MODE_PATH_URL.format(symbol=self.exchange_trading_pair)
+        )
         get_regex = re.compile(f"^{get_url}".replace(".", r"\.").replace("?", r"\?"))
-        mock_api.get(get_regex, body=json.dumps(
-            {"code": "200000", "data": {"symbol": self.exchange_trading_pair, "marginMode": "CROSS"}}))
+        mock_api.get(
+            get_regex,
+            body=json.dumps({"code": "200000", "data": {"symbol": self.exchange_trading_pair, "marginMode": "CROSS"}}),
+        )
 
-        self.async_run_with_timeout(
-            self.exchange._update_margin_mode(self.exchange_trading_pair, self.trading_pair))
+        self.async_run_with_timeout(self.exchange._update_margin_mode(self.exchange_trading_pair, self.trading_pair))
 
         self.assertEqual("CROSS", self.exchange._margin_modes.get(self.trading_pair))
 
@@ -1324,7 +1315,9 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         response = self.funding_info_mock_response
         mock_api.get(url, body=json.dumps(response))
 
-        url = web_utils.get_rest_url_for_endpoint(endpoint=CONSTANTS.GET_CONTRACT_INFO_PATH_URL.format(symbol=self.exchange_trading_pair))
+        url = web_utils.get_rest_url_for_endpoint(
+            endpoint=CONSTANTS.GET_CONTRACT_INFO_PATH_URL.format(symbol=self.exchange_trading_pair)
+        )
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
         funding_resp = self.get_predicted_funding_info
         mock_api.get(regex_url, body=json.dumps(funding_resp))
@@ -1335,64 +1328,56 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         mock_queue_get.side_effect = event_messages
 
         try:
-            self.async_run_with_timeout(
-                self.exchange._listen_for_funding_info())
+            self.async_run_with_timeout(self.exchange._listen_for_funding_info())
         except asyncio.CancelledError:
             pass
 
         self.assertEqual(1, self.exchange._perpetual_trading.funding_info_stream.qsize())  # rest in OB DS tests
 
     def _order_cancelation_request_successful_mock_response(self, order: InFlightOrder) -> Any:
-        return {
-            "code": "200000",
-            "data": {
-                "cancelledOrderIds": [
-                    order.exchange_order_id
-                ]
-            }
-        }
+        return {"code": "200000", "data": {"cancelledOrderIds": [order.exchange_order_id]}}
 
     def _order_status_request_completely_filled_mock_response(self, order: InFlightOrder) -> Any:
         return {
             "code": "200000",
             "data": {
-                    "id": order.exchange_order_id or "2b1d811c-8ff0-4ef0-92ed-b4ed5fd6de34",
-                    "symbol": self.exchange_trading_pair,
-                    "type": "limit",
-                    "side": order.trade_type.name.lower(),
-                    "price": str(order.price),
-                    "size": float(order.amount),
-                    "value": float(order.price + 2),
-                    "dealValue": float(order.price + 2),
-                    "dealSize": float(order.amount),
-                    "stp": "",
-                    "stop": "",
-                    "stopPriceType": "",
-                    "stopTriggered": True,
-                    "stopPrice": None,
-                    "timeInForce": "GTC",
-                    "postOnly": False,
-                    "hidden": False,
-                    "iceberg": False,
-                    "leverage": "5",
-                    "forceHold": False,
-                    "closeOrder": False,
-                    "visibleSize": "",
-                    "clientOid": order.client_order_id or "",
-                    "remark": None,
-                    "tags": None,
-                    "isActive": False,
-                    "cancelExist": False,
-                    "createdAt": 1558167872000,
-                    "updatedAt": 1558167872000,
-                    "endAt": 1558167872000,
-                    "orderTime": 1558167872000000000,
-                    "settleCurrency": order.quote_asset,
-                    "status": "done",
-                    "filledValue": float(order.price + 2),
-                    "filledSize": float(order.amount),
-                    "reduceOnly": False,
-            }
+                "id": order.exchange_order_id or "2b1d811c-8ff0-4ef0-92ed-b4ed5fd6de34",
+                "symbol": self.exchange_trading_pair,
+                "type": "limit",
+                "side": order.trade_type.name.lower(),
+                "price": str(order.price),
+                "size": float(order.amount),
+                "value": float(order.price + 2),
+                "dealValue": float(order.price + 2),
+                "dealSize": float(order.amount),
+                "stp": "",
+                "stop": "",
+                "stopPriceType": "",
+                "stopTriggered": True,
+                "stopPrice": None,
+                "timeInForce": "GTC",
+                "postOnly": False,
+                "hidden": False,
+                "iceberg": False,
+                "leverage": "5",
+                "forceHold": False,
+                "closeOrder": False,
+                "visibleSize": "",
+                "clientOid": order.client_order_id or "",
+                "remark": None,
+                "tags": None,
+                "isActive": False,
+                "cancelExist": False,
+                "createdAt": 1558167872000,
+                "updatedAt": 1558167872000,
+                "endAt": 1558167872000,
+                "orderTime": 1558167872000000000,
+                "settleCurrency": order.quote_asset,
+                "status": "done",
+                "filledValue": float(order.price + 2),
+                "filledSize": float(order.amount),
+                "reduceOnly": False,
+            },
         }
 
     def _order_status_request_canceled_mock_response(self, order: InFlightOrder) -> Any:
@@ -1445,9 +1430,10 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
                         "tradeType": "trade",  # Trade type (trade, liquidation, ADL or settlement)
                         "createdAt": 1558334496000,  # Time the order created
                         "settleCurrency": order.base_asset,  # settlement currency
-                        "tradeTime": 1558334496000000000  # trade time in nanosecond
-                    }]
-            }
+                        "tradeTime": 1558334496000000000,  # trade time in nanosecond
+                    }
+                ],
+            },
         }
 
     def _order_fills_request_full_fill_mock_response(self, order: InFlightOrder):
@@ -1455,38 +1441,40 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         return {
             "code": "200000",
             "data": {
-                    "currentPage": 1,
-                    "pageSize": 100,
-                    "totalNum": 1000,
-                    "totalPage": 10,
-                    "items": [
-                        {
-                            "symbol": self.exchange_trading_pair,  # Symbol of the contract
-                            "tradeId": self.expected_fill_trade_id,  # Trade ID
-                            "orderId": order.exchange_order_id,  # Order ID
-                            "side": order.trade_type.name.lower(),  # Transaction side
-                            "liquidity": "taker",  # Liquidity- taker or maker
-                            "forceTaker": True,  # Whether to force processing as a taker
-                            "price": str(order.price),  # Filled price
-                            "matchPrice": str(order.price),  # Filled price
-                            "size": float(self.exchange.get_quantity_of_contracts(self.trading_pair, order.amount)),   # Order amount
-                            "filledSize": float(order.amount),   # Filled amount
-                            "matchSize": float(order.amount),   # Filled amount
-                            "value": "0.001204529",  # Order value
-                            "feeRate": "0.0005",  # Floating fees
-                            "fixFee": "0.00000006",  # Fixed fees
-                            "feeCurrency": "USDT",  # Charging currency
-                            "stop": "",  # A mark to the stop order type
-                            "fee": str(self.expected_fill_fee.percent),  # Transaction fee
-                            "orderType": order.order_type.name.lower(),  # Order type
-                            "tradeType": "trade",  # Trade type (trade, liquidation, ADL or settlement)
-                            "createdAt": 1558334496000,  # Time the order created
-                            "settleCurrency": order.base_asset,  # settlement currency
-                            "tradeTime": 1558334496000000000,  # trade time in nanosecond
-                            "ts": 1558334496000000000  # trade time in nanosecond
-                        }
-                    ]
-            }
+                "currentPage": 1,
+                "pageSize": 100,
+                "totalNum": 1000,
+                "totalPage": 10,
+                "items": [
+                    {
+                        "symbol": self.exchange_trading_pair,  # Symbol of the contract
+                        "tradeId": self.expected_fill_trade_id,  # Trade ID
+                        "orderId": order.exchange_order_id,  # Order ID
+                        "side": order.trade_type.name.lower(),  # Transaction side
+                        "liquidity": "taker",  # Liquidity- taker or maker
+                        "forceTaker": True,  # Whether to force processing as a taker
+                        "price": str(order.price),  # Filled price
+                        "matchPrice": str(order.price),  # Filled price
+                        "size": float(
+                            self.exchange.get_quantity_of_contracts(self.trading_pair, order.amount)
+                        ),  # Order amount
+                        "filledSize": float(order.amount),  # Filled amount
+                        "matchSize": float(order.amount),  # Filled amount
+                        "value": "0.001204529",  # Order value
+                        "feeRate": "0.0005",  # Floating fees
+                        "fixFee": "0.00000006",  # Fixed fees
+                        "feeCurrency": "USDT",  # Charging currency
+                        "stop": "",  # A mark to the stop order type
+                        "fee": str(self.expected_fill_fee.percent),  # Transaction fee
+                        "orderType": order.order_type.name.lower(),  # Order type
+                        "tradeType": "trade",  # Trade type (trade, liquidation, ADL or settlement)
+                        "createdAt": 1558334496000,  # Time the order created
+                        "settleCurrency": order.base_asset,  # settlement currency
+                        "tradeTime": 1558334496000000000,  # trade time in nanosecond
+                        "ts": 1558334496000000000,  # trade time in nanosecond
+                    }
+                ],
+            },
         }
 
     def _simulate_trading_rules_initialized(self):
@@ -1531,8 +1519,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         pass
 
     def configure_order_not_found_error_cancelation_response(
-            self, order: InFlightOrder, mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.CANCEL_ORDER_PATH_URL.format(orderid=order.exchange_order_id)
@@ -1546,9 +1533,8 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         return url
 
     def configure_order_not_found_error_order_status_response(
-            self, order: InFlightOrder, mock_api: aioresponses,
-            callback: Optional[Callable] = lambda *args, **kwargs: None
-    ) -> List[str]:
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
+    ) -> list[str]:
         url = web_utils.get_rest_url_for_endpoint(
             endpoint=CONSTANTS.QUERY_ORDER_BY_EXCHANGE_ORDER_ID_PATH_URL.format(orderid=order.exchange_order_id)
         )
@@ -1566,9 +1552,9 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
 
         creation_response = self.order_creation_request_successful_mock_response
 
-        mock_api.post(url,
-                      body=json.dumps(creation_response),
-                      callback=lambda *args, **kwargs: request_sent_event.set())
+        mock_api.post(
+            url, body=json.dumps(creation_response), callback=lambda *args, **kwargs: request_sent_event.set()
+        )
 
         order_id = self.place_buy_limit_maker_order()
         self.async_run_with_timeout(request_sent_event.wait())
@@ -1580,7 +1566,9 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self.assertEqual(True, request_data["postOnly"])
 
     @aioresponses()
-    @patch("hummingbot.connector.derivative.kucoin_perpetual.kucoin_perpetual_derivative.KucoinPerpetualDerivative.get_price")
+    @patch(
+        "hummingbot.connector.derivative.kucoin_perpetual.kucoin_perpetual_derivative.KucoinPerpetualDerivative.get_price"
+    )
     def test_create_buy_market_order_successfully(self, mock_api, get_price_mock):
         get_price_mock.return_value = Decimal(10000)
         self._simulate_trading_rules_initialized()
@@ -1591,9 +1579,9 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
 
         creation_response = self.order_creation_request_successful_mock_response
 
-        mock_api.post(url,
-                      body=json.dumps(creation_response),
-                      callback=lambda *args, **kwargs: request_sent_event.set())
+        mock_api.post(
+            url, body=json.dumps(creation_response), callback=lambda *args, **kwargs: request_sent_event.set()
+        )
 
         order_id = self.place_buy_market_order()
         self.async_run_with_timeout(request_sent_event.wait())
@@ -1622,9 +1610,8 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         order: InFlightOrder = self.exchange.in_flight_orders["OID1"]
 
         self.configure_fill_history_trade_response(
-            order=order,
-            mock_api=mock_api,
-            callback=lambda *args, **kwargs: request_sent_event.set())
+            order=order, mock_api=mock_api, callback=lambda *args, **kwargs: request_sent_event.set()
+        )
         self.async_run_with_timeout(self.exchange._update_trade_history())
 
         self.async_run_with_timeout(request_sent_event.wait())
@@ -1649,10 +1636,10 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
 
         response = self.trading_rules_request_mock_response
         results = response
-        duplicate = deepcopy(results['data'][0])
+        duplicate = deepcopy(results["data"][0])
         duplicate["symbol"] = f"{self.exchange_trading_pair}_12345"
         duplicate["multiplier"] = str(float(duplicate["multiplier"]) + 1)
-        results['data'].append(duplicate)
+        results["data"].append(duplicate)
         mock_api.get(url, body=json.dumps(response))
 
         self.async_run_with_timeout(self.exchange.start_network())
@@ -1699,9 +1686,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self.exchange._user_stream_tracker._user_stream = mock_queue
 
         if self.is_order_fill_http_update_executed_during_websocket_order_event_processing:
-            self.configure_full_fill_trade_response(
-                order=order,
-                mock_api=mock_api)
+            self.configure_full_fill_trade_response(order=order, mock_api=mock_api)
 
         try:
             self.async_run_with_timeout(self.exchange._user_stream_event_listener())
@@ -1736,12 +1721,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self.assertTrue(order.is_filled)
         self.assertTrue(order.is_done)
 
-        self.assertTrue(
-            self.is_logged(
-                "INFO",
-                f"SELL order {order.client_order_id} completely filled."
-            )
-        )
+        self.assertTrue(self.is_logged("INFO", f"SELL order {order.client_order_id} completely filled."))
 
         self.assertEqual(1, len(self.exchange.account_positions))
 
@@ -1750,7 +1730,9 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self.assertEqual(PositionSide.SHORT, position.position_side)
         self.assertEqual(expected_unrealized_pnl, position.unrealized_pnl)
         self.assertEqual(fill_event.price, position.entry_price)
-        self.assertEqual(-fill_event.amount, (self.exchange.get_quantity_of_contracts(self.trading_pair, position.amount)))
+        self.assertEqual(
+            -fill_event.amount, (self.exchange.get_quantity_of_contracts(self.trading_pair, position.amount))
+        )
         self.assertEqual(leverage, position.leverage)
 
     @aioresponses()
@@ -1770,7 +1752,8 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
 
         for _ in range(self.exchange._order_tracker._lost_order_count_limit + 1):
             self.async_run_with_timeout(
-                self.exchange._order_tracker.process_order_not_found(client_order_id=order.client_order_id))
+                self.exchange._order_tracker.process_order_not_found(client_order_id=order.client_order_id)
+            )
 
         self.assertNotIn(order.client_order_id, self.exchange.in_flight_orders)
 
@@ -1788,9 +1771,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self.exchange._user_stream_tracker._user_stream = mock_queue
 
         if self.is_order_fill_http_update_executed_during_websocket_order_event_processing:
-            self.configure_full_fill_trade_response(
-                order=order,
-                mock_api=mock_api)
+            self.configure_full_fill_trade_response(order=order, mock_api=mock_api)
 
         try:
             self.async_run_with_timeout(self.exchange._user_stream_event_listener())
@@ -1817,7 +1798,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         self.assertTrue(order.is_failure)
 
     @aioresponses()
-    def test_fail_max_leverage(self, mock_api, callback: Optional[Callable] = lambda *args, **kwargs: None):
+    def test_fail_max_leverage(self, mock_api, callback: Callable | None = lambda *args, **kwargs: None):
         target_leverage = 10000
         request_sent_event = asyncio.Event()
         url = web_utils.get_rest_url_for_endpoint(
@@ -1835,7 +1816,7 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
                     "minRiskLimit": 0,
                     "maxLeverage": 20,
                     "initialMargin": 0.05,
-                    "maintainMargin": 0.025
+                    "maintainMargin": 0.025,
                 },
                 {
                     "symbol": "ADAUSDTM",
@@ -1844,12 +1825,14 @@ class KucoinPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
                     "minRiskLimit": 500,
                     "maxLeverage": 2,
                     "initialMargin": 0.5,
-                    "maintainMargin": 0.25
-                }
-            ]
+                    "maintainMargin": 0.25,
+                },
+            ],
         }
 
-        mock_api.get(regex_url, body=json.dumps(mock_response), callback=lambda *args, **kwargs: request_sent_event.set())
+        mock_api.get(
+            regex_url, body=json.dumps(mock_response), callback=lambda *args, **kwargs: request_sent_event.set()
+        )
         self.exchange.set_leverage(trading_pair=self.trading_pair, leverage=target_leverage)
         self.async_run_with_timeout(request_sent_event.wait())
         max_leverage = mock_response["data"][0]["maxLeverage"]

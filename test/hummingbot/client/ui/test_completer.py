@@ -1,5 +1,4 @@
 import unittest
-from typing import List
 from unittest.mock import MagicMock
 
 from prompt_toolkit.completion import CompleteEvent
@@ -32,7 +31,7 @@ class GatewayCompleterTest(unittest.TestCase):
     def tearDown(self):
         GATEWAY_CHAINS[:], GATEWAY_ETH_DEXS[:], GATEWAY_NAMESPACES[:] = self._saved
 
-    def completions(self, text: str) -> List[str]:
+    def completions(self, text: str) -> list[str]:
         document = Document(text, len(text))
         return [c.text for c in self.completer.get_completions(document, CompleteEvent())]
 
