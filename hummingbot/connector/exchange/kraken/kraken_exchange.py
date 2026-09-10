@@ -506,7 +506,7 @@ class KrakenExchange(ExchangePyBase):
                     await asyncio.sleep((10 * retry_interval) ** retry_attempt)
                     continue
 
-                elif isinstance(e, dict) and "EAPI:Invalid nonce" in e.get("error", ""):
+                elif "EAPI:Invalid nonce" in str(e):
                     self.logger().error(
                         f"Invalid nonce error from {path_url}. "
                         + "Please ensure your Kraken API key nonce window is at least 10, "
