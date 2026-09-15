@@ -108,7 +108,6 @@ coverage.xml
 .cursor/
 .agents/
 
-
 # GRVT
 /grvt
 
@@ -116,3 +115,13 @@ coverage.xml
 # developer has checked out, which is not this repo's business — and it is how a
 # `hagent` server pointing at a `harness/` directory ended up committed here.
 .mcp.json
+.serena/
+
+# Worktree artifacts (rebuild script creates .worktrees/rebase-* on failure)
+.worktrees/
+
+# Sub-package build/runtime logs
+sub-packages/logs/
+
+# Local credentials
+conf/password_verification.save
