@@ -1,6 +1,7 @@
 import asyncio
 import json
 import re
+from datetime import timezone
 from decimal import Decimal
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from typing import Any, Callable, List, Optional, Tuple
@@ -699,16 +700,16 @@ class OkxPerpetualDerivativeTests(
     @property
     def target_funding_info_next_funding_utc_str(self):
         datetime_str = str(
-            pd.Timestamp.utcfromtimestamp(
-                self.target_funding_info_next_funding_utc_timestamp)
+            pd.Timestamp.fromtimestamp(
+                self.target_funding_info_next_funding_utc_timestamp, tz=timezone.utc)
         ).replace(" ", "T") + "Z"
         return datetime_str
 
     @property
     def target_funding_info_next_funding_utc_str_ws_updated(self):
         datetime_str = str(
-            pd.Timestamp.utcfromtimestamp(
-                self.target_funding_info_next_funding_utc_timestamp_ws_updated)
+            pd.Timestamp.fromtimestamp(
+                self.target_funding_info_next_funding_utc_timestamp_ws_updated, tz=timezone.utc)
         ).replace(" ", "T") + "Z"
         return datetime_str
 
