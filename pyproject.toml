@@ -107,6 +107,7 @@ sqlalchemy = ">=1.4.49"
 ta-lib = ">=0.6.4"
 tabulate = "==0.9.0"
 tqdm = ">=4.67.1"
+typer = ">=0.9.0"
 ujson = ">=5.7.0"
 urllib3 = ">=1.26.15,<2.0"
 web3 = "*"
@@ -126,10 +127,14 @@ mypy = "*"
 pre-commit = ">=3.3.3"
 cython-lint = "*"
 
+[tool.pixi.feature.dev.pypi-dependencies]
+import-linter = ">=2.0"
+
 [tool.pixi.feature.ci.dependencies]
 bandit = "*"
 pip-audit = "*"
 types-setuptools = "*"
+pytest-xdist = ">=3,<4"
 
 [tool.pixi.environments]
 default = { features = ["dev"], solve-group = "default" }
@@ -144,6 +149,7 @@ test = { cmd = "pytest test", depends-on = ["build"] }
 test-unit = { cmd = "pytest test/hummingbot", depends-on = ["build"] }
 test-fast = "pytest --timeout=30 --tb=short -q"
 lint = "ruff check hummingbot test controllers scripts"
+lint-boundaries = "lint-imports"
 lint-cython = "cython-lint hummingbot"
 format = { cmd = "ruff format hummingbot test controllers scripts" }
 format-check = "ruff format --check hummingbot test controllers scripts"
