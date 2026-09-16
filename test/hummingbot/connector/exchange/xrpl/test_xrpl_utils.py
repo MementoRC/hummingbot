@@ -1320,15 +1320,18 @@ class TestXRPLNodePoolProactivePingLoop(IsolatedAsyncioWrapperTestCase):
             call_count += 1
             return False  # Simulate ping failure
 
-        with patch.object(pool, "_ping_connection", side_effect=mock_ping), \
-             patch.object(pool, "_reconnect", new_callable=AsyncMock), \
-             patch("hummingbot.connector.exchange.xrpl.xrpl_constants.PROACTIVE_PING_INTERVAL", 0.01):
-            # Run one iteration then stop
+        with (
+            patch.object(pool, "_ping_connection", side_effect=mock_ping),
+            patch.object(pool, "_reconnect", new_callable=AsyncMock),
+            patch("asyncio.create_task"),
+            patch("hummingbot.connector.exchange.xrpl.xrpl_constants.PROACTIVE_PING_INTERVAL", 0.01),
+        ):
+            # Run one iteration then stop; 0.1s gives comfortable margin over 0.01s interval
             async def run_one_iter():
-                await asyncio.sleep(0.02)
+                await asyncio.sleep(0.1)
                 pool._running = False
 
-            task = asyncio.create_task(pool._proactive_ping_loop())
+            task = asyncio.get_event_loop().create_task(pool._proactive_ping_loop())
             await run_one_iter()
             task.cancel()
             try:
@@ -1354,13 +1357,16 @@ class TestXRPLNodePoolProactivePingLoop(IsolatedAsyncioWrapperTestCase):
         async def mock_ping(c):
             return True
 
-        with patch.object(pool, "_ping_connection", side_effect=mock_ping), \
-             patch("hummingbot.connector.exchange.xrpl.xrpl_constants.PROACTIVE_PING_INTERVAL", 0.01):
+        with (
+            patch.object(pool, "_ping_connection", side_effect=mock_ping),
+            patch("hummingbot.connector.exchange.xrpl.xrpl_constants.PROACTIVE_PING_INTERVAL", 0.01),
+        ):
+            # Run one iteration then stop; 0.1s gives comfortable margin over 0.01s interval
             async def run_one_iter():
-                await asyncio.sleep(0.02)
+                await asyncio.sleep(0.1)
                 pool._running = False
 
-            task = asyncio.create_task(pool._proactive_ping_loop())
+            task = asyncio.get_event_loop().create_task(pool._proactive_ping_loop())
             await run_one_iter()
             task.cancel()
             try:
