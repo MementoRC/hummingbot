@@ -1,12 +1,12 @@
-import json
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
+import json
 
 from aioresponses import aioresponses
 
 from hummingbot.connector.exchange.binance import binance_constants as CONSTANTS, binance_web_utils as web_utils
 from hummingbot.connector.utils import combine_to_hb_trading_pair
 from hummingbot.core.rate_oracle.sources.binance_rate_source import BinanceRateSource
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class BinanceRateSourceTest(IsolatedAsyncioWrapperTestCase):
@@ -29,18 +29,22 @@ class BinanceRateSourceTest(IsolatedAsyncioWrapperTestCase):
                     "status": "TRADING",
                     "baseAsset": self.target_token,
                     "quoteAsset": self.global_token,
-                    "permissionSets": [[
-                        "SPOT",
-                    ]],
+                    "permissionSets": [
+                        [
+                            "SPOT",
+                        ]
+                    ],
                 },
                 {
                     "symbol": self.binance_ignored_pair,
                     "status": "PAUSED",
                     "baseAsset": "SOME",
                     "quoteAsset": "PAIR",
-                    "permissionSets": [[
-                        "SPOT",
-                    ]],
+                    "permissionSets": [
+                        [
+                            "SPOT",
+                        ]
+                    ],
                 },
             ]
         }

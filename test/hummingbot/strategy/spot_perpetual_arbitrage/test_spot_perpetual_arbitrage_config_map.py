@@ -1,5 +1,5 @@
-import unittest
 from copy import deepcopy
+import unittest
 
 from hummingbot.client.settings import AllConnectorSettings
 from hummingbot.strategy.spot_perpetual_arbitrage.spot_perpetual_arbitrage_config_map import (

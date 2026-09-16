@@ -1,12 +1,11 @@
-import unittest
 from decimal import Decimal
+import unittest
 
 from hummingbot.strategy_v2.executors.position_executor.data_types import TripleBarrierConfig
 from hummingbot.strategy_v2.utils.order_level_builder import OrderLevelBuilder
 
 
 class TestOrderLevelBuilder(unittest.TestCase):
-
     def setUp(self):
         self.builder = OrderLevelBuilder(3)
 

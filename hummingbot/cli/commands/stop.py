@@ -1,4 +1,5 @@
 """``hbot stop`` — gracefully stop the running bot (cancels open orders)."""
+
 import os
 import signal
 import time
@@ -40,8 +41,7 @@ def stop(
             time.sleep(0.5)
             killed = True
         else:
-            fail(f"the bot did not stop within {timeout:g}s (use --force to SIGKILL)",
-                 ExitCode.TIMEOUT)
+            fail(f"the bot did not stop within {timeout:g}s (use --force to SIGKILL)", ExitCode.TIMEOUT)
 
     bot.clear_pid()
     record = {"stopped": True, "killed": killed}
