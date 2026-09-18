@@ -1,6 +1,5 @@
-from __future__ import annotations
-
 from decimal import Decimal
+from typing import List, Optional, Tuple
 
 from pydantic import ConfigDict, Field, SecretStr, field_validator
 
@@ -15,8 +14,8 @@ CENTRALIZED = True
 EXAMPLE_PAIR = "ETH-USDC"
 
 DEFAULT_FEES = TradeFeeSchema(
-    maker_percent_fee_decimal=Decimal("0.2"),
-    taker_percent_fee_decimal=Decimal("0.35"),
+    maker_percent_fee_decimal=Decimal("0.0025"),
+    taker_percent_fee_decimal=Decimal("0.004"),
 )
 
 
@@ -32,14 +31,14 @@ def convert_to_exchange_symbol(symbol: str) -> str:
     return inverted_kraken_to_hb_map.get(symbol, symbol)
 
 
-def split_to_base_quote(exchange_trading_pair: str) -> tuple[str | None, str | None]:
+def split_to_base_quote(exchange_trading_pair: str) -> Tuple[Optional[str], Optional[str]]:
     base, quote = exchange_trading_pair.split("-")
     return base, quote
 
 
 def convert_from_exchange_trading_pair(
-    exchange_trading_pair: str, available_trading_pairs: tuple | None = None
-) -> str | None:
+    exchange_trading_pair: str, available_trading_pairs: Optional[Tuple] = None
+) -> Optional[str]:
     base, quote = "", ""
     if "-" in exchange_trading_pair:
         base, quote = split_to_base_quote(exchange_trading_pair)
@@ -89,7 +88,7 @@ def convert_to_exchange_trading_pair(hb_trading_pair: str, delimiter: str = "") 
     return exchange_trading_pair
 
 
-def _build_private_rate_limits(tier: KrakenAPITier = KrakenAPITier.STARTER) -> list[RateLimit]:
+def _build_private_rate_limits(tier: KrakenAPITier = KrakenAPITier.STARTER) -> List[RateLimit]:
     private_rate_limits = []
 
     PRIVATE_ENDPOINT_LIMIT, MATCHING_ENGINE_LIMIT = CONSTANTS.KRAKEN_TIER_LIMITS[tier]
@@ -162,7 +161,7 @@ def _build_private_rate_limits(tier: KrakenAPITier = KrakenAPITier.STARTER) -> l
     return private_rate_limits
 
 
-def build_rate_limits_by_tier(tier: KrakenAPITier = KrakenAPITier.STARTER) -> list[RateLimit]:
+def build_rate_limits_by_tier(tier: KrakenAPITier = KrakenAPITier.STARTER) -> List[RateLimit]:
     rate_limits = []
 
     rate_limits.extend(CONSTANTS.PUBLIC_API_LIMITS)
@@ -202,7 +201,7 @@ class KrakenConfigMap(BaseConnectorConfigMap):
 
     @field_validator("kraken_api_tier", mode="before")
     @classmethod
-    def _api_tier_validator(cls, value: str) -> str | None:
+    def _api_tier_validator(cls, value: str) -> Optional[str]:
         """
         Determines if input value is a valid API tier
         """
