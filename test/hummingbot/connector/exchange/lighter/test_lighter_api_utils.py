@@ -88,18 +88,18 @@ class LighterApiUtilsTests(TestCase):
             ],
         }
 
-        account = utils.extract_account_snapshot(
-            response, l1_address="0xe34167D92340c95A7775495d78bcc3Dc21cf11c0"
-        )
+        account = utils.extract_account_snapshot(response, l1_address="0xe34167D92340c95A7775495d78bcc3Dc21cf11c0")
 
         self.assertEqual(724450, utils.account_index_from_account(account))
 
     def test_normalize_timestamp_to_seconds_infers_unit_from_magnitude(self):
         # Lighter mixes units: wall-clock fields are ms, transaction_time is us (live-API verified).
-        self.assertAlmostEqual(1781056278.158, utils.normalize_timestamp_to_seconds("1781056278158"))       # ms
+        self.assertAlmostEqual(1781056278.158, utils.normalize_timestamp_to_seconds("1781056278158"))  # ms
         self.assertAlmostEqual(1781056278.158263, utils.normalize_timestamp_to_seconds("1781056278158263"))  # us
-        self.assertAlmostEqual(1781056278.0, utils.normalize_timestamp_to_seconds(1781056278))               # s
-        self.assertAlmostEqual(1781056278.158263, utils.normalize_timestamp_to_seconds(1781056278158263158), places=4)  # ns
+        self.assertAlmostEqual(1781056278.0, utils.normalize_timestamp_to_seconds(1781056278))  # s
+        self.assertAlmostEqual(
+            1781056278.158263, utils.normalize_timestamp_to_seconds(1781056278158263158), places=4
+        )  # ns
         self.assertEqual(0.0, utils.normalize_timestamp_to_seconds(None))
         self.assertEqual(0.0, utils.normalize_timestamp_to_seconds(0))
 

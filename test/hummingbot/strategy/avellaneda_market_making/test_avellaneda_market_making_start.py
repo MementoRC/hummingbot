@@ -1,10 +1,8 @@
 import datetime
+from decimal import Decimal
 import logging
 import unittest.mock
-from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
-import hummingbot.strategy.avellaneda_market_making.start as strategy_start
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
 from hummingbot.connector.exchange_base import ExchangeBase
 from hummingbot.connector.utils import combine_to_hb_trading_pair
@@ -14,6 +12,8 @@ from hummingbot.strategy.avellaneda_market_making.avellaneda_market_making_confi
     MultiOrderLevelModel,
     TrackHangingOrdersModel,
 )
+import hummingbot.strategy.avellaneda_market_making.start as strategy_start
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class AvellanedaStartTest(IsolatedAsyncioWrapperTestCase):
@@ -73,7 +73,7 @@ class AvellanedaStartTest(IsolatedAsyncioWrapperTestCase):
     def handle(self, record):
         self.log_records.append(record)
 
-    @unittest.mock.patch('hummingbot.strategy.avellaneda_market_making.start.HummingbotApplication')
+    @unittest.mock.patch("hummingbot.strategy.avellaneda_market_making.start.HummingbotApplication")
     async def test_parameters_strategy_creation(self, mock_hbot):
         mock_hbot.main_application().strategy_file_name = "test.yml"
         await strategy_start.start(self)

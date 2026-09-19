@@ -23,14 +23,15 @@ class LPExecutorStates(Enum):
     State machine for LP position lifecycle.
     Price direction (above/below range) is determined from custom_info, not state.
     """
-    NOT_ACTIVE = "NOT_ACTIVE"              # No position, no pending orders
-    OPENING = "OPENING"                    # add_liquidity submitted, waiting
-    IN_RANGE = "IN_RANGE"                  # Position active, price within bounds
-    OUT_OF_RANGE = "OUT_OF_RANGE"          # Position active, price outside bounds
-    CLOSING = "CLOSING"                    # remove_liquidity submitted, waiting
-    SWAPPING = "SWAPPING"                  # Close-out swap in progress (keep_position=False)
-    COMPLETE = "COMPLETE"                  # Position closed permanently
-    FAILED = "FAILED"                      # Max retries reached, manual intervention required
+
+    NOT_ACTIVE = "NOT_ACTIVE"  # No position, no pending orders
+    OPENING = "OPENING"  # add_liquidity submitted, waiting
+    IN_RANGE = "IN_RANGE"  # Position active, price within bounds
+    OUT_OF_RANGE = "OUT_OF_RANGE"  # Position active, price outside bounds
+    CLOSING = "CLOSING"  # remove_liquidity submitted, waiting
+    SWAPPING = "SWAPPING"  # Close-out swap in progress (keep_position=False)
+    COMPLETE = "COMPLETE"  # Position closed permanently
+    FAILED = "FAILED"  # Max retries reached, manual intervention required
 
 
 class LPExecutorConfig(ExecutorConfigBase):
@@ -52,6 +53,7 @@ class LPExecutorConfig(ExecutorConfigBase):
     - swap_provider: Optional swap provider for close-out swaps when keep_position=False.
       If not provided, uses the network's default swap provider.
     """
+
     type: Literal["lp_executor"] = "lp_executor"
 
     # Network connector - e.g., "solana-mainnet-beta"
@@ -153,8 +155,9 @@ class LPExecutorConfig(ExecutorConfigBase):
         require_non_negative("quote_amount", self.quote_amount)
         require_positive("position_refresh_interval", self.position_refresh_interval)
         if self.base_amount == 0 and self.quote_amount == 0:
-            raise ValueError("base_amount and quote_amount cannot both be 0: "
-                             "at least one side of the position has to be funded")
+            raise ValueError(
+                "base_amount and quote_amount cannot both be 0: at least one side of the position has to be funded"
+            )
         require_positive("slippage_pct", self.slippage_pct)
         require_positive("max_slippage_pct", self.max_slippage_pct)
         require_not_above("slippage_pct", self.slippage_pct, "max_slippage_pct", self.max_slippage_pct)
@@ -167,6 +170,7 @@ class LPExecutorConfig(ExecutorConfigBase):
 
 class LPExecutorState(BaseModel):
     """Tracks a single LP position state within executor."""
+
     position_address: Optional[str] = None
     lower_price: Decimal = Decimal("0")
     upper_price: Decimal = Decimal("0")
@@ -235,7 +239,12 @@ class LPExecutorState(BaseModel):
         """
         # If already complete, closing, swapping, failed, or opening (waiting for retry), preserve state
         # These states are managed explicitly by the executor, don't overwrite them
-        if self.state in (LPExecutorStates.COMPLETE, LPExecutorStates.CLOSING, LPExecutorStates.SWAPPING, LPExecutorStates.FAILED):
+        if self.state in (
+            LPExecutorStates.COMPLETE,
+            LPExecutorStates.CLOSING,
+            LPExecutorStates.SWAPPING,
+            LPExecutorStates.FAILED,
+        ):
             return
 
         # Preserve OPENING state when no position exists (handles max_retries case)
