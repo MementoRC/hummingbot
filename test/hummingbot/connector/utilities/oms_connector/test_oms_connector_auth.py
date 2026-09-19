@@ -1,8 +1,8 @@
 import asyncio
 import hashlib
 import hmac
-import unittest
 from typing import Any, Awaitable
+import unittest
 from unittest.mock import MagicMock, patch
 
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant

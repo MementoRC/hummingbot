@@ -1,6 +1,6 @@
-import os
 from dataclasses import dataclass
 from decimal import Decimal
+import os
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
@@ -77,6 +77,6 @@ def get_gateway_paths(client_config_map: "ClientConfigAdapter") -> GatewayPaths:
         local_logs_path=local_logs_path,
         mount_conf_path=mount_conf_path,
         mount_certs_path=mount_certs_path,
-        mount_logs_path=mount_logs_path
+        mount_logs_path=mount_logs_path,
     )
     return _default_paths

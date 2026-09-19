@@ -1,6 +1,5 @@
 import asyncio
 import json
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from typing import Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -13,6 +12,7 @@ from hummingbot.connector.test_support.network_mocking_assistant import NetworkM
 from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class GeminiAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):
@@ -33,14 +33,13 @@ class GeminiAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):
         self.mocking_assistant = NetworkMockingAssistant()
 
         self.connector = GeminiExchange(
-            gemini_api_key="",
-            gemini_api_secret="",
-            trading_pairs=[self.trading_pair],
-            trading_required=False)
+            gemini_api_key="", gemini_api_secret="", trading_pairs=[self.trading_pair], trading_required=False
+        )
         self.data_source = GeminiAPIOrderBookDataSource(
             trading_pairs=[self.trading_pair],
             connector=self.connector,
-            api_factory=self.connector._web_assistants_factory)
+            api_factory=self.connector._web_assistants_factory,
+        )
         self.data_source.logger().setLevel(1)
         self.data_source.logger().addHandler(self)
 
@@ -55,8 +54,7 @@ class GeminiAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):
         self.log_records.append(record)
 
     def _is_logged(self, log_level: str, message: str) -> bool:
-        return any(record.levelname == log_level and record.getMessage() == message
-                   for record in self.log_records)
+        return any(record.levelname == log_level and record.getMessage() == message for record in self.log_records)
 
     def _create_exception_and_unlock_test_with_event(self, exception):
         self.resume_test_event.set()
@@ -97,10 +95,14 @@ class GeminiAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):
         }
 
     def _set_symbol_map_with_extra_pair(self, trading_pair: str, exchange_symbol: str):
-        self.connector._set_trading_pair_symbol_map(bidict({
-            self.ex_trading_pair: self.trading_pair,
-            exchange_symbol: trading_pair,
-        }))
+        self.connector._set_trading_pair_symbol_map(
+            bidict(
+                {
+                    self.ex_trading_pair: self.trading_pair,
+                    exchange_symbol: trading_pair,
+                }
+            )
+        )
 
     # ------------------------------------------------------------------
     # REST snapshot
@@ -153,14 +155,13 @@ class GeminiAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):
     async def test_listen_for_subscriptions_subscribes(self, ws_connect_mock):
         ws_connect_mock.return_value = self.mocking_assistant.create_websocket_mock()
         self.mocking_assistant.add_websocket_aiohttp_message(
-            websocket_mock=ws_connect_mock.return_value,
-            message=json.dumps({"result": None, "id": 1}))
+            websocket_mock=ws_connect_mock.return_value, message=json.dumps({"result": None, "id": 1})
+        )
 
         self.listening_task = self.local_event_loop.create_task(self.data_source.listen_for_subscriptions())
         await self.mocking_assistant.run_until_all_aiohttp_messages_delivered(ws_connect_mock.return_value)
 
-        sent = self.mocking_assistant.json_messages_sent_through_websocket(
-            websocket_mock=ws_connect_mock.return_value)
+        sent = self.mocking_assistant.json_messages_sent_through_websocket(websocket_mock=ws_connect_mock.return_value)
         self.assertEqual(2, len(sent))
         self.assertEqual([CONSTANTS.WS_TRADE_STREAM.format(self.ex_trading_pair)], sent[0]["params"])
         self.assertEqual([CONSTANTS.WS_DEPTH_STREAM.format(self.ex_trading_pair)], sent[1]["params"])
@@ -179,9 +180,11 @@ class GeminiAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):
         sleep_mock.side_effect = lambda _: self._create_exception_and_unlock_test_with_event(asyncio.CancelledError())
         self.listening_task = self.local_event_loop.create_task(self.data_source.listen_for_subscriptions())
         await self.resume_test_event.wait()
-        self.assertTrue(self._is_logged(
-            "ERROR",
-            "Unexpected error occurred when listening to order book streams. Retrying in 5 seconds..."))
+        self.assertTrue(
+            self._is_logged(
+                "ERROR", "Unexpected error occurred when listening to order book streams. Retrying in 5 seconds..."
+            )
+        )
 
     async def test_subscribe_channels_raises_cancel_exception(self):
         mock_ws = MagicMock()
@@ -194,9 +197,9 @@ class GeminiAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):
         mock_ws.send = AsyncMock(side_effect=Exception("Test Error"))
         with self.assertRaises(Exception):
             await self.data_source._subscribe_channels(mock_ws)
-        self.assertTrue(self._is_logged(
-            "ERROR",
-            "Unexpected error occurred subscribing to order book trading and delta streams..."))
+        self.assertTrue(
+            self._is_logged("ERROR", "Unexpected error occurred subscribing to order book trading and delta streams...")
+        )
 
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
     async def test_connected_websocket_assistant(self, ws_connect_mock):
@@ -249,16 +252,16 @@ class GeminiAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):
     def test_channel_originating_message(self):
         snapshot_event = self._diff_event()
         self.assertEqual(
-            self.data_source._snapshot_messages_queue_key,
-            self.data_source._channel_originating_message(snapshot_event))
+            self.data_source._snapshot_messages_queue_key, self.data_source._channel_originating_message(snapshot_event)
+        )
         next_diff = self._diff_event()
         next_diff.update({"U": 111, "u": 120})
         self.assertEqual(
-            self.data_source._diff_messages_queue_key,
-            self.data_source._channel_originating_message(next_diff))
+            self.data_source._diff_messages_queue_key, self.data_source._channel_originating_message(next_diff)
+        )
         self.assertEqual(
-            self.data_source._trade_messages_queue_key,
-            self.data_source._channel_originating_message({"t": 123}))
+            self.data_source._trade_messages_queue_key, self.data_source._channel_originating_message({"t": 123})
+        )
         self.assertEqual("", self.data_source._channel_originating_message({"result": None}))
 
     def test_channel_originating_message_ignores_stale_depth_update(self):
@@ -286,7 +289,8 @@ class GeminiAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):
 
         msg_queue = asyncio.Queue()
         self.listening_task = self.local_event_loop.create_task(
-            self.data_source.listen_for_trades(self.local_event_loop, msg_queue))
+            self.data_source.listen_for_trades(self.local_event_loop, msg_queue)
+        )
 
         msg: OrderBookMessage = await msg_queue.get()
 
@@ -318,8 +322,7 @@ class GeminiAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):
         except asyncio.CancelledError:
             pass
 
-        self.assertTrue(self._is_logged(
-            "ERROR", "Unexpected error when processing public trade updates from exchange"))
+        self.assertTrue(self._is_logged("ERROR", "Unexpected error when processing public trade updates from exchange"))
 
     async def test_listen_for_order_book_diffs_successful(self):
         mock_queue = AsyncMock()
@@ -328,7 +331,8 @@ class GeminiAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):
 
         msg_queue = asyncio.Queue()
         self.listening_task = self.local_event_loop.create_task(
-            self.data_source.listen_for_order_book_diffs(self.local_event_loop, msg_queue))
+            self.data_source.listen_for_order_book_diffs(self.local_event_loop, msg_queue)
+        )
 
         msg: OrderBookMessage = await msg_queue.get()
 
@@ -360,8 +364,9 @@ class GeminiAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):
         except asyncio.CancelledError:
             pass
 
-        self.assertTrue(self._is_logged(
-            "ERROR", "Unexpected error when processing public order book updates from exchange"))
+        self.assertTrue(
+            self._is_logged("ERROR", "Unexpected error when processing public order book updates from exchange")
+        )
 
     async def test_listen_for_order_book_snapshots_successful(self):
         event = self._diff_event()
@@ -372,7 +377,8 @@ class GeminiAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):
 
         msg_queue = asyncio.Queue()
         self.listening_task = self.local_event_loop.create_task(
-            self.data_source.listen_for_order_book_snapshots(self.local_event_loop, msg_queue))
+            self.data_source.listen_for_order_book_snapshots(self.local_event_loop, msg_queue)
+        )
 
         msg: OrderBookMessage = await msg_queue.get()
 
@@ -404,8 +410,7 @@ class GeminiAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):
         except asyncio.CancelledError:
             pass
 
-        self.assertTrue(self._is_logged(
-            "ERROR", "Unexpected error when processing Gemini order book snapshots"))
+        self.assertTrue(self._is_logged("ERROR", "Unexpected error when processing Gemini order book snapshots"))
         sleep_mock.assert_called_once_with(1.0)
 
     async def test_listen_for_order_book_snapshots_does_not_fall_back_to_rest(self):
@@ -419,7 +424,8 @@ class GeminiAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):
 
         msg_queue = asyncio.Queue()
         self.listening_task = self.local_event_loop.create_task(
-            self.data_source.listen_for_order_book_snapshots(self.local_event_loop, msg_queue))
+            self.data_source.listen_for_order_book_snapshots(self.local_event_loop, msg_queue)
+        )
 
         await asyncio.sleep(0.3)
         self.data_source._request_order_book_snapshots.assert_not_called()
@@ -442,8 +448,7 @@ class GeminiAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):
         self.data_source._ws_assistant = None
         result = await self.data_source.subscribe_to_trading_pair(self.trading_pair)
         self.assertFalse(result)
-        self.assertTrue(self._is_logged(
-            "WARNING", f"Cannot subscribe to {self.trading_pair}: WebSocket not connected"))
+        self.assertTrue(self._is_logged("WARNING", f"Cannot subscribe to {self.trading_pair}: WebSocket not connected"))
 
     async def test_subscribe_to_trading_pair_successful(self):
         new_pair = "ETH-USD"
@@ -454,11 +459,13 @@ class GeminiAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):
         snapshot.update({"s": exchange_symbol, "U": 200, "u": 200})
 
         async def send(request):
-            self.data_source._channel_originating_message({
-                "id": request.payload["id"],
-                "status": 200,
-                "result": {},
-            })
+            self.data_source._channel_originating_message(
+                {
+                    "id": request.payload["id"],
+                    "status": 200,
+                    "result": {},
+                }
+            )
             self.data_source._channel_originating_message(snapshot)
 
         mock_ws.send = AsyncMock(side_effect=send)
@@ -476,11 +483,13 @@ class GeminiAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):
         mock_ws = MagicMock()
 
         async def send(request):
-            self.data_source._channel_originating_message({
-                "id": request.payload["id"],
-                "status": 400,
-                "error": {"msg": "bad stream"},
-            })
+            self.data_source._channel_originating_message(
+                {
+                    "id": request.payload["id"],
+                    "status": 400,
+                    "error": {"msg": "bad stream"},
+                }
+            )
 
         mock_ws.send = AsyncMock(side_effect=send)
         self.data_source._ws_assistant = mock_ws
@@ -497,11 +506,13 @@ class GeminiAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):
         mock_ws = MagicMock()
 
         async def send(request):
-            self.data_source._channel_originating_message({
-                "id": request.payload["id"],
-                "status": 200,
-                "result": {},
-            })
+            self.data_source._channel_originating_message(
+                {
+                    "id": request.payload["id"],
+                    "status": 200,
+                    "result": {},
+                }
+            )
 
         mock_ws.send = AsyncMock(side_effect=send)
         self.data_source._ws_assistant = mock_ws
@@ -523,18 +534,21 @@ class GeminiAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):
         self.data_source._ws_assistant = None
         result = await self.data_source.unsubscribe_from_trading_pair(self.trading_pair)
         self.assertFalse(result)
-        self.assertTrue(self._is_logged(
-            "WARNING", f"Cannot unsubscribe from {self.trading_pair}: WebSocket not connected"))
+        self.assertTrue(
+            self._is_logged("WARNING", f"Cannot unsubscribe from {self.trading_pair}: WebSocket not connected")
+        )
 
     async def test_unsubscribe_from_trading_pair_successful(self):
         mock_ws = MagicMock()
 
         async def send(request):
-            self.data_source._channel_originating_message({
-                "id": request.payload["id"],
-                "status": 200,
-                "result": {},
-            })
+            self.data_source._channel_originating_message(
+                {
+                    "id": request.payload["id"],
+                    "status": 200,
+                    "result": {},
+                }
+            )
 
         mock_ws.send = AsyncMock(side_effect=send)
         self.data_source._ws_assistant = mock_ws
@@ -547,11 +561,13 @@ class GeminiAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):
         mock_ws = MagicMock()
 
         async def send(request):
-            self.data_source._channel_originating_message({
-                "id": request.payload["id"],
-                "status": 400,
-                "error": {"msg": "bad stream"},
-            })
+            self.data_source._channel_originating_message(
+                {
+                    "id": request.payload["id"],
+                    "status": 400,
+                    "error": {"msg": "bad stream"},
+                }
+            )
 
         mock_ws.send = AsyncMock(side_effect=send)
         self.data_source._ws_assistant = mock_ws

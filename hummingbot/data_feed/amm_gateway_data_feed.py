@@ -1,6 +1,6 @@
 import asyncio
-import logging
 from decimal import Decimal
+import logging
 from typing import Dict, Optional, Set
 
 from pydantic import BaseModel
@@ -126,8 +126,7 @@ class AmmGatewayDataFeed(NetworkBase):
                 raise
             except Exception as e:
                 self.logger().error(
-                    f"Error getting data from {self.name}"
-                    f"Check network connection. Error: {e}",
+                    f"Error getting data from {self.name}Check network connection. Error: {e}",
                 )
             await self._async_sleep(self._update_interval)
 
