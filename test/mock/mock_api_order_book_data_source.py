@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 
 import asyncio
+from datetime import timezone
 import logging
 import time
-from datetime import timezone
-from typing import Any, AsyncIterable, Dict, List, Optional
+from typing import Any, AsyncIterable
 
 import aiohttp
+from aiohttp.test_utils import TestClient
 import pandas as pd
 import websockets
-from aiohttp.test_utils import TestClient
 from websockets.exceptions import ConnectionClosed
 
 from hummingbot.core.data_type.order_book import OrderBook
@@ -20,11 +20,10 @@ from hummingbot.logger import HummingbotLogger
 
 
 class MockAPIOrderBookDataSource(OrderBookTrackerDataSource):
-
     MESSAGE_TIMEOUT = 30.0
     PING_TIMEOUT = 10.0
 
-    _maobds_logger: Optional[HummingbotLogger] = None
+    _maobds_logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -32,15 +31,15 @@ class MockAPIOrderBookDataSource(OrderBookTrackerDataSource):
             cls._maobds_logger = logging.getLogger(__name__)
         return cls._maobds_logger
 
-    def __init__(self, client: TestClient, order_book_class: OrderBook, trading_pairs: Optional[List[str]] = None):
+    def __init__(self, client: TestClient, order_book_class: OrderBook, trading_pairs: list[str] | None = None):
         super().__init__()
         self._client: TestClient = client
         self._order_book_class = order_book_class
-        self._trading_pairs: Optional[List[str]] = trading_pairs
+        self._trading_pairs: list[str] | None = trading_pairs
         self._diff_messages: asyncio.Queue = asyncio.Queue()
         self._snapshot_messages: asyncio.Queue = asyncio.Queue()
 
-    async def get_trading_pairs(self) -> List[str]:
+    async def get_trading_pairs(self) -> list[str]:
         if not self._trading_pairs:
             try:
                 self._trading_pairs = await self.fetch_trading_pairs()
@@ -49,51 +48,49 @@ class MockAPIOrderBookDataSource(OrderBookTrackerDataSource):
                 self.logger().network(
                     "Error getting active exchange information.",
                     exc_info=True,
-                    app_warning_msg="Error getting active exchange information. Check network connection."
+                    app_warning_msg="Error getting active exchange information. Check network connection.",
                 )
         return self._trading_pairs
 
     @staticmethod
-    async def fetch_trading_pairs() -> List[str]:
+    async def fetch_trading_pairs() -> list[str]:
         raise NotImplementedError("Trading Pairs are required for mock data source")
 
     @staticmethod
-    async def get_snapshot(client: aiohttp.ClientSession, trading_pair: str) -> Dict[str, Any]:
+    async def get_snapshot(client: aiohttp.ClientSession, trading_pair: str) -> dict[str, Any]:
         # when type is set to "step0", the default value of "depth" is 150
         async with client.get("/mockSnapshot") as response:
             response: aiohttp.ClientResponse = response
             if response.status != 200:
-                raise IOError(f"Error fetching market snapshot for {trading_pair}. "
-                              f"HTTP status is {response.status}.")
+                raise IOError(f"Error fetching market snapshot for {trading_pair}. HTTP status is {response.status}.")
             parsed_response = await response.json()
             return parsed_response
 
-    async def get_tracking_pairs(self) -> Dict[str, OrderBookTrackerEntry]:
+    async def get_tracking_pairs(self) -> dict[str, OrderBookTrackerEntry]:
         # Get the currently active markets
-        trading_pairs: List[str] = await self.get_trading_pairs()
-        retval: Dict[str, OrderBookTrackerEntry] = {}
+        trading_pairs: list[str] = await self.get_trading_pairs()
+        retval: dict[str, OrderBookTrackerEntry] = {}
 
         number_of_pairs: int = len(trading_pairs)
         for index, trading_pair in enumerate(trading_pairs):
             try:
-                snapshot: Dict[str, Any] = await self.get_snapshot(self._client, trading_pair)
+                snapshot: dict[str, Any] = await self.get_snapshot(self._client, trading_pair)
                 snapshot_msg: OrderBookMessage = self._order_book_class.snapshot_message_from_exchange(
-                    snapshot,
-                    metadata={"trading_pair": trading_pair}
+                    snapshot, metadata={"trading_pair": trading_pair}
                 )
                 order_book: OrderBook = self.order_book_create_function()
                 order_book.apply_snapshot(snapshot_msg.bids, snapshot_msg.asks, snapshot_msg.update_id)
                 retval[trading_pair] = OrderBookTrackerEntry(trading_pair, snapshot_msg.timestamp, order_book)
-                self.logger().info(f"Initialized order book for {trading_pair}. "
-                                   f"{index + 1}/{number_of_pairs} completed.")
+                self.logger().info(
+                    f"Initialized order book for {trading_pair}. {index + 1}/{number_of_pairs} completed."
+                )
                 await asyncio.sleep(0.1)
             except Exception:
                 self.logger().error(f"Error getting snapshot for {trading_pair}. ", exc_info=True)
                 await asyncio.sleep(5)
         return retval
 
-    async def _inner_messages(self,
-                              ws: websockets.WebSocketClientProtocol) -> AsyncIterable[str]:
+    async def _inner_messages(self, ws: websockets.WebSocketClientProtocol) -> AsyncIterable[str]:
         # Terminate the recv() loop as soon as the next message timed out, so the outer loop can reconnect.
         try:
             while True:
@@ -114,10 +111,10 @@ class MockAPIOrderBookDataSource(OrderBookTrackerDataSource):
     async def listen_for_trades(self, ev_loop: asyncio.BaseEventLoop, output: asyncio.Queue):
         pass
 
-    def inject_mock_diff_message(self, msg: Dict[str, Any]):
+    def inject_mock_diff_message(self, msg: dict[str, Any]):
         self._diff_messages.put_nowait(msg)
 
-    def inject_mock_snapshot_message(self, msg: Dict[str, Any]):
+    def inject_mock_snapshot_message(self, msg: dict[str, Any]):
         self._snapshot_messages.put_nowait(msg)
 
     async def listen_for_order_book_diffs(self, ev_loop: asyncio.BaseEventLoop, output: asyncio.Queue):
@@ -129,13 +126,12 @@ class MockAPIOrderBookDataSource(OrderBookTrackerDataSource):
     async def listen_for_order_book_snapshots(self, ev_loop: asyncio.BaseEventLoop, output: asyncio.Queue):
         while True:
             try:
-                trading_pairs: List[str] = await self.get_trading_pairs()
+                trading_pairs: list[str] = await self.get_trading_pairs()
                 for trading_pair in trading_pairs:
                     try:
-                        snapshot: Dict[str, Any] = await self.get_snapshot(self._client, trading_pair)
+                        snapshot: dict[str, Any] = await self.get_snapshot(self._client, trading_pair)
                         snapshot_message: OrderBookMessage = self._order_book_class.snapshot_message_from_exchange(
-                            snapshot,
-                            metadata={"trading_pair": trading_pair}
+                            snapshot, metadata={"trading_pair": trading_pair}
                         )
                         output.put_nowait(snapshot_message)
                         self.logger().debug(f"Saved order book snapshot for {trading_pair}")

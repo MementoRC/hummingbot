@@ -4,7 +4,7 @@ import argparse
 import asyncio
 import logging
 import os
-from typing import Coroutine, List
+from typing import Coroutine
 
 import path_util  # noqa: F401
 
@@ -114,7 +114,7 @@ async def run_application(hb: HummingbotApplication, args: argparse.Namespace, c
         )
         hb.app.add_listener(HummingbotUIEvent.Start, start_listener)
 
-        tasks: List[Coroutine] = [hb.run()]
+        tasks: list[Coroutine] = [hb.run()]
         if client_config_map.debug_console:
             management_port: int = detect_available_port(8211)
             tasks.append(start_management_console(locals(), host="localhost", port=management_port))
