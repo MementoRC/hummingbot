@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
 import builtins
+from collections.abc import MutableMapping as MutableMappingABC
 import json
 import logging
 import pathlib
-from collections.abc import MutableMapping as MutableMappingABC
 from typing import Dict, Iterator, List, MutableMapping
 
 import asyncssh
@@ -47,6 +47,7 @@ class MergedNamespace(MutableMappingABC):
 
 def add_diagnosis_tools(local_vars: MutableMapping):
     from .diagnosis import active_tasks
+
     local_vars["active_tasks"] = active_tasks
 
 
@@ -59,9 +60,7 @@ def ensure_key():
     return str(path)
 
 
-async def start_management_console(local_vars: MutableMapping,
-                                   host: str = "localhost",
-                                   port: int = 8212):
+async def start_management_console(local_vars: MutableMapping, host: str = "localhost", port: int = 8212):
     add_diagnosis_tools(local_vars)
 
     async def interact(_=None):
@@ -75,9 +74,7 @@ async def start_management_console(local_vars: MutableMapping,
         await embed(return_asyncio_coroutine=True, locals=local_vars, globals=globals_dict)
 
     ssh_server = PromptToolkitSSHServer(interact=interact)
-    await asyncssh.create_server(
-        lambda: ssh_server, host, port, server_host_keys=[ensure_key()]
-    )
+    await asyncssh.create_server(lambda: ssh_server, host, port, server_host_keys=[ensure_key()])
     logging.getLogger(__name__).info(
         f"Started SSH debug console. Connect by running `ssh user@{host} -p {port}`. Exit with `CTRL + D`."
     )

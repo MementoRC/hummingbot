@@ -8,21 +8,23 @@ CANDLES_ENDPOINT = "candleSnapshot"
 
 WSS_URL = "wss://api.hyperliquid.xyz/ws"
 
-INTERVALS = bidict({
-    "1m": "1m",
-    "3m": "3m",
-    "5m": "5m",
-    "15m": "15m",
-    "30m": "30m",
-    "1h": "1h",
-    "2h": "2h",
-    "4h": "4h",
-    "6h": "6h",
-    "12h": "12h",
-    "1d": "1d",
-    "1w": "1w",
-    "1M": "1M",
-})
+INTERVALS = bidict(
+    {
+        "1m": "1m",
+        "3m": "3m",
+        "5m": "5m",
+        "15m": "15m",
+        "30m": "30m",
+        "1h": "1h",
+        "2h": "2h",
+        "4h": "4h",
+        "6h": "6h",
+        "12h": "12h",
+        "1d": "1d",
+        "1w": "1w",
+        "1M": "1M",
+    }
+)
 
 MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST = 500
 
@@ -32,8 +34,7 @@ ALL_ENDPOINTS_LIMIT = "All"
 
 RATE_LIMITS = [
     RateLimit(ALL_ENDPOINTS_LIMIT, limit=1200, time_interval=60),
-    RateLimit(REST_URL, limit=1200, time_interval=60,
-              linked_limits=[LinkedLimitWeightPair(ALL_ENDPOINTS_LIMIT, 1)])
+    RateLimit(REST_URL, limit=1200, time_interval=60, linked_limits=[LinkedLimitWeightPair(ALL_ENDPOINTS_LIMIT, 1)]),
 ]
 
 PING_TIMEOUT = 30.0

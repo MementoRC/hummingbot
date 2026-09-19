@@ -1,5 +1,5 @@
-import unittest
 from decimal import Decimal
+import unittest
 from unittest.mock import MagicMock
 
 from hummingbot.connector.gateway.gateway import Gateway

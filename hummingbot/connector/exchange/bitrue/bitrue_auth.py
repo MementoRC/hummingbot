@@ -1,7 +1,7 @@
+from collections import OrderedDict
 import hashlib
 import hmac
 import json
-from collections import OrderedDict
 from typing import Any, Dict
 from urllib.parse import urlencode
 

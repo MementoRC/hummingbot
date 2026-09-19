@@ -1,6 +1,5 @@
-import unittest
 from decimal import Decimal
-from test.mock.mock_perp_connector import MockPerpConnector
+import unittest
 
 from hummingbot.connector.derivative.perpetual_budget_checker import PerpetualBudgetChecker
 from hummingbot.connector.exchange.paper_trade.paper_trade_exchange import QuantizationParams
@@ -8,6 +7,7 @@ from hummingbot.connector.utils import combine_to_hb_trading_pair
 from hummingbot.core.data_type.common import OrderType, TradeType
 from hummingbot.core.data_type.order_candidate import PerpetualOrderCandidate
 from hummingbot.core.data_type.trade_fee import TradeFeeSchema
+from test.mock.mock_perp_connector import MockPerpConnector
 
 
 class PerpetualBudgetCheckerTest(unittest.TestCase):
@@ -72,7 +72,7 @@ class PerpetualBudgetCheckerTest(unittest.TestCase):
             order_side=TradeType.BUY,
             amount=Decimal("10"),
             price=Decimal("2"),
-            leverage=Decimal("2")
+            leverage=Decimal("2"),
         )
         populated_candidate = self.budget_checker.populate_collateral_entries(order_candidate)
 
