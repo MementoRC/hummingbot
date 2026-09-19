@@ -583,7 +583,7 @@ class ExecutorOrchestrator:
                 update_interval=self.executors_update_interval,
                 max_retries=self.executors_max_retries,
             )
-        except ValueError:
+        except ValueError as factory_error:
             # Fallback to legacy string-keyed mapping
             executor_class = self._executor_mapping.get(executor_config.type)
             if executor_class is not None:
@@ -594,7 +594,7 @@ class ExecutorOrchestrator:
                     max_retries=self.executors_max_retries,
                 )
             else:
-                raise ValueError("Unsupported executor config type")
+                raise factory_error
 
         executor.start()
         self.active_executors[controller_id].append(executor)
