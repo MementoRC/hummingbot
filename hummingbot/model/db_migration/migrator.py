@@ -1,4 +1,5 @@
 import logging
+from datetime import timezone
 from inspect import getmembers, isabstract, isclass
 from pathlib import Path
 from shutil import copyfile, move
@@ -26,7 +27,7 @@ class Migrator:
     def migrate_db_to_version(self, client_config_map: ClientConfigAdapter, db_handle, from_version, to_version):
         original_db_path = db_handle.db_path
         original_db_name = Path(original_db_path).stem
-        backup_db_path = original_db_path + '.backup_' + pd.Timestamp.utcnow().strftime("%Y%m%d-%H%M%S")
+        backup_db_path = original_db_path + '.backup_' + pd.Timestamp.now(tz=timezone.utc).strftime("%Y%m%d-%H%M%S")
         new_db_path = original_db_path + '.new'
         copyfile(original_db_path, new_db_path)
         copyfile(original_db_path, backup_db_path)
