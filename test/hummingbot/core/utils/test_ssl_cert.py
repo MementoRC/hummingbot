@@ -3,9 +3,9 @@ Unit tests for hummingbot.core.utils.ssl_cert
 """
 
 import os
+from pathlib import Path
 import tempfile
 import unittest
-from pathlib import Path
 from unittest.mock import patch
 
 from hummingbot.client.config.client_config_map import ClientConfigMap
@@ -22,7 +22,6 @@ from hummingbot.core.utils.ssl_cert import (
 
 
 class SslCertTest(unittest.TestCase):
-
     def setUp(self) -> None:
         super().setUp()
         self.client_config_map = ClientConfigAdapter(ClientConfigMap())

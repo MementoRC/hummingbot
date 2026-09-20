@@ -94,9 +94,12 @@ class LambdaplexAuth(AuthBase):
 
         # Case 2: looks like base64-encoded key (no headers)
         # Remove any stray header/footer lines if partially included
-        key_b64 = key_str.replace("-----BEGIN PRIVATE KEY-----", "").replace(
-            "-----END PRIVATE KEY-----", ""
-        ).replace("\n", "").strip()
+        key_b64 = (
+            key_str.replace("-----BEGIN PRIVATE KEY-----", "")
+            .replace("-----END PRIVATE KEY-----", "")
+            .replace("\n", "")
+            .strip()
+        )
 
         # Validate that it’s valid base64
         try:

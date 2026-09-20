@@ -1,7 +1,7 @@
 import asyncio
+from decimal import Decimal
 import signal
 import unittest
-from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from hummingbot.cli import bot, engine
@@ -22,8 +22,7 @@ def _make_hb(connectors=None):
 class CollectBalancesTest(unittest.IsolatedAsyncioTestCase):
     async def test_filters_zero_amounts_and_floats_values(self):
         hb = _make_hb({"binance": object()})
-        hb.trading_core.get_current_balances = AsyncMock(
-            return_value={"BTC": Decimal("1.5"), "DUST": Decimal("0")})
+        hb.trading_core.get_current_balances = AsyncMock(return_value={"BTC": Decimal("1.5"), "DUST": Decimal("0")})
         balances = await engine._collect_balances(hb)
         self.assertEqual(balances, {"binance": {"BTC": 1.5}})
         hb.trading_core.get_current_balances.assert_awaited_once_with("binance")
@@ -70,9 +69,11 @@ class WriteSnapshotTest(unittest.IsolatedAsyncioTestCase):
     async def test_running_snapshot_includes_engine_and_balances(self):
         hb = _make_hb()
         hb.trading_core.get_status = MagicMock(return_value={"strategy": "pmm"})
-        with patch.object(engine, "_collect_balances", new=AsyncMock(return_value={"b": {"BTC": 1.0}})), \
-                patch.object(engine, "_format_status_text", new=AsyncMock(return_value="txt")), \
-                patch.object(bot, "write_status") as write_status:
+        with (
+            patch.object(engine, "_collect_balances", new=AsyncMock(return_value={"b": {"BTC": 1.0}})),
+            patch.object(engine, "_format_status_text", new=AsyncMock(return_value="txt")),
+            patch.object(bot, "write_status") as write_status,
+        ):
             await engine._write_snapshot(hb, "mybot", running=True)
         snapshot = write_status.call_args[0][0]
         self.assertEqual(snapshot["name"], "mybot")
@@ -86,18 +87,22 @@ class WriteSnapshotTest(unittest.IsolatedAsyncioTestCase):
     async def test_get_status_failure_yields_none_engine(self):
         hb = _make_hb()
         hb.trading_core.get_status = MagicMock(side_effect=RuntimeError("dead"))
-        with patch.object(engine, "_collect_balances", new=AsyncMock(return_value={})), \
-                patch.object(engine, "_format_status_text", new=AsyncMock(return_value=None)), \
-                patch.object(bot, "write_status") as write_status:
+        with (
+            patch.object(engine, "_collect_balances", new=AsyncMock(return_value={})),
+            patch.object(engine, "_format_status_text", new=AsyncMock(return_value=None)),
+            patch.object(bot, "write_status") as write_status,
+        ):
             await engine._write_snapshot(hb, "mybot", running=True)
         self.assertIsNone(write_status.call_args[0][0]["engine"])
 
     async def test_stopped_snapshot_omits_balances(self):
         hb = _make_hb()
         hb.trading_core.get_status = MagicMock(return_value={})
-        with patch.object(engine, "_collect_balances", new=AsyncMock()) as collect, \
-                patch.object(engine, "_format_status_text", new=AsyncMock(return_value=None)), \
-                patch.object(bot, "write_status") as write_status:
+        with (
+            patch.object(engine, "_collect_balances", new=AsyncMock()) as collect,
+            patch.object(engine, "_format_status_text", new=AsyncMock(return_value=None)),
+            patch.object(bot, "write_status") as write_status,
+        ):
             await engine._write_snapshot(hb, "mybot", running=False)
         snapshot = write_status.call_args[0][0]
         self.assertNotIn("balances", snapshot)
@@ -129,9 +134,11 @@ class ServeTest(unittest.IsolatedAsyncioTestCase):
         hb.stop_loop = AsyncMock()
         hb.trading_core.shutdown = AsyncMock()
         snap = AsyncMock()
-        with patch.object(engine, "_write_snapshot", new=snap), \
-                patch.object(bot, "clear_pid") as clear_pid, \
-                patch.object(engine.asyncio, "get_event_loop", return_value=fake_loop):
+        with (
+            patch.object(engine, "_write_snapshot", new=snap),
+            patch.object(bot, "clear_pid") as clear_pid,
+            patch.object(engine.asyncio, "get_event_loop", return_value=fake_loop),
+        ):
             task = real_loop.create_task(engine._serve(hb, "mybot"))
             await self._drain(lambda: snap.await_count >= 1)
             self.assertEqual(set(handlers), {signal.SIGTERM, signal.SIGINT, signal.SIGUSR1})
@@ -157,9 +164,11 @@ class ServeTest(unittest.IsolatedAsyncioTestCase):
         hb.stop_loop = AsyncMock(side_effect=RuntimeError("stop failed"))
         hb.trading_core.shutdown = AsyncMock(side_effect=RuntimeError("shutdown failed"))
         snap = AsyncMock()
-        with patch.object(engine, "_write_snapshot", new=snap), \
-                patch.object(bot, "clear_pid") as clear_pid, \
-                patch.object(engine.asyncio, "get_event_loop", return_value=fake_loop):
+        with (
+            patch.object(engine, "_write_snapshot", new=snap),
+            patch.object(bot, "clear_pid") as clear_pid,
+            patch.object(engine.asyncio, "get_event_loop", return_value=fake_loop),
+        ):
             task = real_loop.create_task(engine._serve(hb, "mybot"))
             await self._drain(lambda: signal.SIGTERM in handlers and snap.await_count >= 1)
             handlers[signal.SIGTERM]()
@@ -183,8 +192,16 @@ class RunEngineTest(unittest.IsolatedAsyncioTestCase):
 
     async def test_bad_password_returns_4(self):
         patches = self._patches(hb=None)
-        with patches[0], patches[1], patches[2] as autofix, patches[3], patches[4] as load_start, \
-                patches[5], patches[6], patches[7]:
+        with (
+            patches[0],
+            patches[1],
+            patches[2] as autofix,
+            patches[3],
+            patches[4] as load_start,
+            patches[5],
+            patches[6],
+            patches[7],
+        ):
             rc = await engine.run_engine("mybot", None, None, "pw", None)
         self.assertEqual(rc, 4)
         autofix.assert_not_called()
@@ -193,8 +210,7 @@ class RunEngineTest(unittest.IsolatedAsyncioTestCase):
     async def test_failed_strategy_load_returns_1(self):
         hb = _make_hb()
         patches = self._patches(hb, started=False)
-        with patches[0], patches[1], patches[2], patches[3], patches[4], \
-                patches[5] as gateway, patches[6], patches[7]:
+        with patches[0], patches[1], patches[2], patches[3], patches[4], patches[5] as gateway, patches[6], patches[7]:
             rc = await engine.run_engine("mybot", "conf.yml", None, "pw", None)
         self.assertEqual(rc, 1)
         gateway.assert_not_awaited()
@@ -205,15 +221,24 @@ class RunEngineTest(unittest.IsolatedAsyncioTestCase):
         hb.trading_core._strategy_file_name = "conf_v2.yml"
         hb.trading_core.strategy_name = "pmm"
         patches = self._patches(hb)
-        with patches[0], patches[1], patches[2] as autofix, patches[3], patches[4] as load_start, \
-                patches[5] as gateway, patches[6] as serve, patches[7] as update_meta:
+        with (
+            patches[0],
+            patches[1],
+            patches[2] as autofix,
+            patches[3],
+            patches[4] as load_start,
+            patches[5] as gateway,
+            patches[6] as serve,
+            patches[7] as update_meta,
+        ):
             rc = await engine.run_engine("mybot", None, "conf_v2.yml", "pw", "501:20")
         self.assertEqual(rc, 0)
         autofix.assert_called_once_with("501:20")
         load_start.assert_awaited_once_with(hb, config_file_name=None, v2_conf="conf_v2.yml", headless=True)
         gateway.assert_awaited_once_with(hb)
         update_meta.assert_called_once_with(
-            db_path="/data/mybot.sqlite", config_file_path="conf_v2.yml", strategy_name="pmm")
+            db_path="/data/mybot.sqlite", config_file_path="conf_v2.yml", strategy_name="pmm"
+        )
         serve.assert_awaited_once_with(hb, "mybot")
 
     async def test_missing_trade_db_records_none_db_path(self):
@@ -223,8 +248,16 @@ class RunEngineTest(unittest.IsolatedAsyncioTestCase):
         hb.strategy_file_name = "conf_v1"
         hb.trading_core.strategy_name = "xemm"
         patches = self._patches(hb)
-        with patches[0], patches[1], patches[2], patches[3], patches[4], patches[5], \
-                patches[6], patches[7] as update_meta:
+        with (
+            patches[0],
+            patches[1],
+            patches[2],
+            patches[3],
+            patches[4],
+            patches[5],
+            patches[6],
+            patches[7] as update_meta,
+        ):
             rc = await engine.run_engine("mybot", "conf_v1.yml", None, "pw", None)
         self.assertEqual(rc, 0)
         update_meta.assert_called_once_with(db_path=None, config_file_path="conf_v1", strategy_name="xemm")
@@ -242,10 +275,12 @@ class MainTest(unittest.TestCase):
         else:
             loop.run_until_complete.return_value = rc
         run_engine = MagicMock(return_value=MagicMock())  # plain sentinel, not a coroutine
-        with patch.object(engine, "asyncio", fake_asyncio), \
-                patch.object(engine, "run_engine", run_engine), \
-                patch.object(engine.sys, "argv", ["engine"] + argv), \
-                patch.dict(engine.os.environ, env, clear=True):
+        with (
+            patch.object(engine, "asyncio", fake_asyncio),
+            patch.object(engine, "run_engine", run_engine),
+            patch.object(engine.sys, "argv", ["engine"] + argv),
+            patch.dict(engine.os.environ, env, clear=True),
+        ):
             with self.assertRaises(SystemExit) as ctx:
                 engine.main()
             env_after = dict(engine.os.environ)
@@ -258,24 +293,22 @@ class MainTest(unittest.TestCase):
 
     def test_password_is_scrubbed_from_env_and_passed_to_engine(self):
         code, run_engine, env_after = self._run_main(
-            ["--name", "mybot", "--config", "c.yml", "--script-config", "v2.yml",
-             "--auto-set-permissions", "501:20"],
-            env={"HBOT_PASSWORD": "s3cret", "CONFIG_PASSWORD": "legacy"})
+            ["--name", "mybot", "--config", "c.yml", "--script-config", "v2.yml", "--auto-set-permissions", "501:20"],
+            env={"HBOT_PASSWORD": "s3cret", "CONFIG_PASSWORD": "legacy"},
+        )
         self.assertEqual(code, 0)
         run_engine.assert_called_once_with("mybot", "c.yml", "v2.yml", "s3cret", "501:20")
         self.assertNotIn("HBOT_PASSWORD", env_after)
         self.assertNotIn("CONFIG_PASSWORD", env_after)
 
     def test_config_password_fallback(self):
-        code, run_engine, env_after = self._run_main(
-            ["--name", "mybot"], env={"CONFIG_PASSWORD": "legacy"})
+        code, run_engine, env_after = self._run_main(["--name", "mybot"], env={"CONFIG_PASSWORD": "legacy"})
         self.assertEqual(code, 0)
         self.assertEqual(run_engine.call_args[0][3], "legacy")
         self.assertNotIn("CONFIG_PASSWORD", env_after)
 
     def test_engine_crash_exits_1(self):
-        code, _, _ = self._run_main(
-            ["--name", "mybot"], env={"HBOT_PASSWORD": "pw"}, run_error=RuntimeError("boom"))
+        code, _, _ = self._run_main(["--name", "mybot"], env={"HBOT_PASSWORD": "pw"}, run_error=RuntimeError("boom"))
         self.assertEqual(code, 1)
 
 

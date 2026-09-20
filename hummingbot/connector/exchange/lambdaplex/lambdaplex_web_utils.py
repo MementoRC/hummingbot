@@ -35,7 +35,8 @@ def build_api_factory(
         auth=auth,
         rest_pre_processors=[
             TimeSynchronizerRESTPreProcessor(synchronizer=time_synchronizer, time_provider=time_provider),
-        ])
+        ],
+    )
     return api_factory
 
 
