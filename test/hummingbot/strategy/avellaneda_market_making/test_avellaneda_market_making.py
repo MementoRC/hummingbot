@@ -7,6 +7,7 @@ from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
 from hummingbot.client.settings import AllConnectorSettings
@@ -45,6 +46,7 @@ s_decimal_nan = Decimal("NaN")
 s_decimal_neg_one = Decimal(-1)
 
 
+@pytest.mark.timeout(120)
 class AvellanedaMarketMakingUnitTests(unittest.TestCase):
 
     start: pd.Timestamp = pd.Timestamp("2019-01-01", tz="UTC")
