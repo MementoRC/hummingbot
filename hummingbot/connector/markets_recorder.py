@@ -4,6 +4,7 @@ import logging
 import os.path
 import threading
 import time
+from datetime import timezone
 from decimal import Decimal
 from shutil import move
 from typing import Dict, List, Optional, Tuple, Union
@@ -504,7 +505,7 @@ class MarketsRecorder:
         field_data += (age,)
 
         if (os.path.exists(csv_path) and (not self._csv_matches_header(csv_path, field_names))):
-            move(csv_path, csv_path[:-4] + '_old_' + pd.Timestamp.utcnow().strftime("%Y%m%d-%H%M%S") + ".csv")
+            move(csv_path, csv_path[:-4] + '_old_' + pd.Timestamp.now(tz=timezone.utc).strftime("%Y%m%d-%H%M%S") + ".csv")
 
         if not os.path.exists(csv_path):
             df_header = pd.DataFrame([field_names])
