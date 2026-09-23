@@ -1,5 +1,3 @@
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from test.mock.mock_cli import CLIMockingAssistant
 from unittest.mock import patch
 
 import pytest
@@ -8,6 +6,8 @@ from hummingbot.client.config.client_config_map import ClientConfigMap, DBSqlite
 from hummingbot.client.config.config_helpers import ClientConfigAdapter, read_system_configs_from_yml
 from hummingbot.client.hummingbot_application import HummingbotApplication
 from hummingbot.connector.test_support.mock_paper_exchange import MockPaperExchange
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
+from test.mock.mock_cli import CLIMockingAssistant
 
 
 class TickerCommandTest(IsolatedAsyncioWrapperTestCase):
