@@ -4,12 +4,12 @@ from typing import Any, AsyncIterable, Dict, List, Optional
 
 from bidict import bidict
 
-import hummingbot.connector.exchange.htx.htx_constants as CONSTANTS
 from hummingbot.connector.constants import s_decimal_0, s_decimal_NaN
 from hummingbot.connector.exchange.htx import htx_web_utils as web_utils
 from hummingbot.connector.exchange.htx.htx_api_order_book_data_source import HtxAPIOrderBookDataSource
 from hummingbot.connector.exchange.htx.htx_api_user_stream_data_source import HtxAPIUserStreamDataSource
 from hummingbot.connector.exchange.htx.htx_auth import HtxAuth
+import hummingbot.connector.exchange.htx.htx_constants as CONSTANTS
 from hummingbot.connector.exchange.htx.htx_utils import is_exchange_information_valid
 from hummingbot.connector.exchange_py_base import ExchangePyBase
 from hummingbot.connector.trading_rule import TradingRule
@@ -24,7 +24,6 @@ from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFa
 
 
 class HtxExchange(ExchangePyBase):
-
     web_utils = web_utils
 
     def __init__(
@@ -49,9 +48,7 @@ class HtxExchange(ExchangePyBase):
 
     @property
     def authenticator(self):
-        return HtxAuth(
-            api_key=self.htx_api_key, secret_key=self.htx_secret_key, time_provider=self._time_synchronizer
-        )
+        return HtxAuth(api_key=self.htx_api_key, secret_key=self.htx_secret_key, time_provider=self._time_synchronizer)
 
     @property
     def rate_limits_rules(self):
