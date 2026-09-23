@@ -50,6 +50,7 @@ class HyperliquidPerpetualRateSourceTest(IsolatedAsyncioWrapperTestCase):
         expected_rate = Decimal("10")
 
         rate_source = HyperliquidPerpetualRateSource()
+        rate_source.get_prices.cache_clear()
         # Replace the exchange with our mock
         rate_source._exchange = self._get_mock_exchange(expected_rate)
 
@@ -62,6 +63,7 @@ class HyperliquidPerpetualRateSourceTest(IsolatedAsyncioWrapperTestCase):
     async def test_get_hyperliquid_prices_handles_unknown_symbols(self):
         """Test that unknown symbols are gracefully skipped."""
         rate_source = HyperliquidPerpetualRateSource()
+        rate_source.get_prices.cache_clear()
 
         mock_exchange = MagicMock()
 
@@ -93,6 +95,7 @@ class HyperliquidPerpetualRateSourceTest(IsolatedAsyncioWrapperTestCase):
         expected_rate = Decimal("10")
 
         rate_source = HyperliquidPerpetualRateSource()
+        rate_source.get_prices.cache_clear()
         rate_source._exchange = self._get_mock_exchange(expected_rate)
 
         prices = await rate_source.get_prices(quote_token="USD")
@@ -105,6 +108,7 @@ class HyperliquidPerpetualRateSourceTest(IsolatedAsyncioWrapperTestCase):
         expected_rate = Decimal("10")
 
         rate_source = HyperliquidPerpetualRateSource()
+        rate_source.get_prices.cache_clear()
         rate_source._exchange = self._get_mock_exchange(expected_rate)
 
         prices = await rate_source.get_prices(quote_token="BTC")  # Not USD
@@ -115,6 +119,7 @@ class HyperliquidPerpetualRateSourceTest(IsolatedAsyncioWrapperTestCase):
     async def test_get_hyperliquid_prices_with_none_price(self):
         """Test handling of None price values (lines 42-43)."""
         rate_source = HyperliquidPerpetualRateSource()
+        rate_source.get_prices.cache_clear()
 
         mock_exchange = MagicMock()
 
