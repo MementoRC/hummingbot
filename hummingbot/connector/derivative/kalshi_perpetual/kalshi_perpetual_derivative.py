@@ -1,9 +1,9 @@
 import asyncio
-import time
 from copy import copy
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-from typing import Any, AsyncIterable, Dict, List, Optional, Set, Tuple
+import time
+from typing import Any, AsyncIterable
 
 from bidict import bidict
 
@@ -47,8 +47,10 @@ class KalshiPerpetualBudgetChecker(PerpetualBudgetChecker):
         if isinstance(order_candidate, PerpetualOrderCandidate) and not order_candidate.position_close:
             notional = order_candidate.amount * order_candidate.price
             max_leverage = self._exchange.max_leverage(
-                order_candidate.trading_pair, order_candidate.order_side,
-                notional if notional.is_finite() else Decimal("0"))
+                order_candidate.trading_pair,
+                order_candidate.order_side,
+                notional if notional.is_finite() else Decimal("0"),
+            )
             if max_leverage is not None and order_candidate.leverage > max_leverage:
                 order_candidate = copy(order_candidate)
                 order_candidate.leverage = max_leverage
@@ -60,6 +62,7 @@ class KalshiPerpetualDerivative(PerpetualDerivativePyBase):
     Kalshi quotes margin markets per contract, while Hummingbot works in underlying units: prices are divided and
     sizes multiplied by each market's contract size when read from Kalshi, and the reverse when sent to it.
     """
+
     web_utils = web_utils
 
     SHORT_POLL_INTERVAL = 5.0
@@ -69,29 +72,29 @@ class KalshiPerpetualDerivative(PerpetualDerivativePyBase):
     ACCOUNT_REFRESH_MIN_INTERVAL = 1.0
 
     def __init__(
-            self,
-            balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
-            rate_limits_share_pct: Decimal = Decimal("100"),
-            kalshi_perpetual_api_key: str = None,
-            kalshi_perpetual_private_key: str = None,
-            trading_pairs: Optional[List[str]] = None,
-            trading_required: bool = True,
-            domain: str = CONSTANTS.DEFAULT_DOMAIN,
+        self,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
+        rate_limits_share_pct: Decimal = Decimal("100"),
+        kalshi_perpetual_api_key: str = None,
+        kalshi_perpetual_private_key: str = None,
+        trading_pairs: list[str] | None = None,
+        trading_required: bool = True,
+        domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
         self.kalshi_perpetual_api_key = kalshi_perpetual_api_key
         self.kalshi_perpetual_private_key = kalshi_perpetual_private_key
         self._trading_required = trading_required
         self._trading_pairs = trading_pairs
         self._domain = domain
-        self._contract_sizes: Dict[str, Decimal] = {}
-        self._tick_sizes: Dict[str, Decimal] = {}
+        self._contract_sizes: dict[str, Decimal] = {}
+        self._tick_sizes: dict[str, Decimal] = {}
         # trading pair -> side -> (notional in USD, leverage) tiers, in increasing notional
-        self._leverage_estimates: Dict[str, Dict[TradeType, List[Tuple[Decimal, Decimal]]]] = {}
+        self._leverage_estimates: dict[str, dict[TradeType, list[tuple[Decimal, Decimal]]]] = {}
         # Margin totals of the last balance response (initial_margin, maintenance_margin, resting_orders_margin)
-        self._margin_breakdown: Dict[str, Decimal] = {}
+        self._margin_breakdown: dict[str, Decimal] = {}
         # Orders the last balance response already accounts for (see get_available_balance)
-        self._orders_in_balance: Set[str] = set()
-        self._account_refresh_task: Optional[asyncio.Task] = None
+        self._orders_in_balance: set[str] = set()
+        self._account_refresh_task: asyncio.Task | None = None
         self._balance_refresh_pending = False
         self._positions_refresh_pending = False
         super().__init__(balance_asset_limit, rate_limits_share_pct)
@@ -104,7 +107,7 @@ class KalshiPerpetualDerivative(PerpetualDerivativePyBase):
         return CONSTANTS.EXCHANGE_NAME
 
     @property
-    def authenticator(self) -> Optional[KalshiPerpetualAuth]:
+    def authenticator(self) -> KalshiPerpetualAuth | None:
         # Without credentials there is no auth, and no market data either: the websocket handshake is signed.
         if not self.kalshi_perpetual_private_key:
             return None
@@ -115,7 +118,7 @@ class KalshiPerpetualDerivative(PerpetualDerivativePyBase):
         )
 
     @property
-    def rate_limits_rules(self) -> List[RateLimit]:
+    def rate_limits_rules(self) -> list[RateLimit]:
         return CONSTANTS.RATE_LIMITS
 
     @property
@@ -158,11 +161,11 @@ class KalshiPerpetualDerivative(PerpetualDerivativePyBase):
     def funding_fee_poll_interval(self) -> int:
         return CONSTANTS.FUNDING_FEE_POLL_INTERVAL
 
-    def supported_order_types(self) -> List[OrderType]:
+    def supported_order_types(self) -> list[OrderType]:
         # MARKET orders are sent as immediate-or-cancel limit orders (see _place_order)
         return [OrderType.LIMIT, OrderType.LIMIT_MAKER, OrderType.MARKET]
 
-    def supported_position_modes(self) -> List[PositionMode]:
+    def supported_position_modes(self) -> list[PositionMode]:
         return [PositionMode.ONEWAY]
 
     def get_buy_collateral_token(self, trading_pair: str) -> str:
@@ -177,8 +180,9 @@ class KalshiPerpetualDerivative(PerpetualDerivativePyBase):
         """
         return self._contract_sizes[trading_pair]
 
-    def max_leverage(self, trading_pair: str, trade_type: TradeType,
-                     notional: Decimal = Decimal("0")) -> Optional[Decimal]:
+    def max_leverage(
+        self, trading_pair: str, trade_type: TradeType, notional: Decimal = Decimal("0")
+    ) -> Decimal | None:
         """
         Kalshi's leverage (1 / initial margin rate) for a position of this side and notional in USD: the tier covering
         the notional, or the largest tier. None when Kalshi publishes no margin rate for the market.
@@ -209,9 +213,13 @@ class KalshiPerpetualDerivative(PerpetualDerivativePyBase):
         if currency != CONSTANTS.COLLATERAL_TOKEN:
             return available
         pending_margin = sum(
-            (self.estimated_order_margin(order) for order in self.in_flight_orders.values()
-             if order.client_order_id not in self._orders_in_balance and order.position is not PositionAction.CLOSE),
-            Decimal("0"))
+            (
+                self.estimated_order_margin(order)
+                for order in self.in_flight_orders.values()
+                if order.client_order_id not in self._orders_in_balance and order.position is not PositionAction.CLOSE
+            ),
+            Decimal("0"),
+        )
         return max(Decimal("0"), available - pending_margin)
 
     def _is_request_exception_related_to_time_synchronizer(self, request_exception: Exception) -> bool:
@@ -251,15 +259,17 @@ class KalshiPerpetualDerivative(PerpetualDerivativePyBase):
             self._account_refresh_task = None
         await super().stop_network()
 
-    def _get_fee(self,
-                 base_currency: str,
-                 quote_currency: str,
-                 order_type: OrderType,
-                 order_side: TradeType,
-                 position_action: PositionAction,
-                 amount: Decimal,
-                 price: Decimal = s_decimal_NaN,
-                 is_maker: Optional[bool] = None) -> TradeFeeBase:
+    def _get_fee(
+        self,
+        base_currency: str,
+        quote_currency: str,
+        order_type: OrderType,
+        order_side: TradeType,
+        position_action: PositionAction,
+        amount: Decimal,
+        price: Decimal = s_decimal_NaN,
+        is_maker: bool | None = None,
+    ) -> TradeFeeBase:
         is_maker = is_maker or False
         return build_trade_fee(
             self.name,
@@ -279,16 +289,16 @@ class KalshiPerpetualDerivative(PerpetualDerivativePyBase):
         pass
 
     async def _place_order(
-            self,
-            order_id: str,
-            trading_pair: str,
-            amount: Decimal,
-            trade_type: TradeType,
-            order_type: OrderType,
-            price: Decimal,
-            position_action: PositionAction = PositionAction.NIL,
-            **kwargs,
-    ) -> Tuple[str, float]:
+        self,
+        order_id: str,
+        trading_pair: str,
+        amount: Decimal,
+        trade_type: TradeType,
+        order_type: OrderType,
+        price: Decimal,
+        position_action: PositionAction = PositionAction.NIL,
+        **kwargs,
+    ) -> tuple[str, float]:
         time_in_force = CONSTANTS.TIME_IN_FORCE_GTC
         if order_type is OrderType.MARKET:
             # Kalshi has no market orders: an immediate-or-cancel limit order priced through the book stands in.
@@ -319,7 +329,8 @@ class KalshiPerpetualDerivative(PerpetualDerivativePyBase):
             path_url=CONSTANTS.ORDERS_PATH_URL,
             data=order,
             is_auth_required=True,
-            limit_id=CONSTANTS.CREATE_ORDER_LIMIT_ID)
+            limit_id=CONSTANTS.CREATE_ORDER_LIMIT_ID,
+        )
         return str(response["order_id"]), self.current_timestamp
 
     async def _place_order_and_process_update(self, order: InFlightOrder, **kwargs) -> str:
@@ -340,13 +351,15 @@ class KalshiPerpetualDerivative(PerpetualDerivativePyBase):
             **kwargs,
         )
         if order.is_pending_create:
-            await self._order_tracker._process_order_update(OrderUpdate(
-                client_order_id=order.client_order_id,
-                exchange_order_id=str(exchange_order_id),
-                trading_pair=order.trading_pair,
-                update_timestamp=update_timestamp,
-                new_state=OrderState.OPEN,
-            ))
+            await self._order_tracker._process_order_update(
+                OrderUpdate(
+                    client_order_id=order.client_order_id,
+                    exchange_order_id=str(exchange_order_id),
+                    trading_pair=order.trading_pair,
+                    update_timestamp=update_timestamp,
+                    new_state=OrderState.OPEN,
+                )
+            )
         # Otherwise the stream update that moved the order on already carried its exchange order id.
         return exchange_order_id
 
@@ -356,7 +369,8 @@ class KalshiPerpetualDerivative(PerpetualDerivativePyBase):
             await self._api_delete(
                 path_url=CONSTANTS.ORDER_PATH_URL.format(order_id=exchange_order_id),
                 is_auth_required=True,
-                limit_id=CONSTANTS.CANCEL_ORDER_LIMIT_ID)
+                limit_id=CONSTANTS.CANCEL_ORDER_LIMIT_ID,
+            )
         except asyncio.TimeoutError as timeout_error:
             # The base class reads a timeout as "no exchange order id yet" and counts it towards losing the order.
             raise IOError(f"The cancel request for order {order_id} timed out.") from timeout_error
@@ -369,19 +383,22 @@ class KalshiPerpetualDerivative(PerpetualDerivativePyBase):
         polls fails orders still resting on Kalshi and stops tracking them, and their later fills are ignored. Only
         Kalshi's not_found, or an order that never got its exchange order id, counts; other errors are retried.
         """
-        if (self._is_order_not_found_during_status_update_error(status_update_exception=error)
-                or (isinstance(error, asyncio.TimeoutError) and order.exchange_order_id is None)):
+        if self._is_order_not_found_during_status_update_error(status_update_exception=error) or (
+            isinstance(error, asyncio.TimeoutError) and order.exchange_order_id is None
+        ):
             await super()._handle_update_error_for_active_order(order=order, error=error)
         else:
             self.logger().warning(
-                f"Error fetching status update for the active order {order.client_order_id}: {error}.")
+                f"Error fetching status update for the active order {order.client_order_id}: {error}."
+            )
 
     async def _request_order_status(self, tracked_order: InFlightOrder) -> OrderUpdate:
         exchange_order_id = await tracked_order.get_exchange_order_id()
         response = await self._api_get(
             path_url=CONSTANTS.ORDER_PATH_URL.format(order_id=exchange_order_id),
             is_auth_required=True,
-            limit_id=CONSTANTS.GET_ORDER_LIMIT_ID)
+            limit_id=CONSTANTS.GET_ORDER_LIMIT_ID,
+        )
         order = response["order"]
         return OrderUpdate(
             trading_pair=tracked_order.trading_pair,
@@ -391,7 +408,7 @@ class KalshiPerpetualDerivative(PerpetualDerivativePyBase):
             exchange_order_id=str(order["order_id"]),
         )
 
-    async def _update_orders_fills(self, orders: List[InFlightOrder]):
+    async def _update_orders_fills(self, orders: list[InFlightOrder]):
         """
         The fills endpoint can't filter by order, so the base class's request per order downloads the same fills once
         for each tracked order, and during a network outage logs a failure with its traceback for each of them. The
@@ -414,16 +431,18 @@ class KalshiPerpetualDerivative(PerpetualDerivativePyBase):
             for trade_update in self._trade_updates_from_fills(order=order, fills=fills):
                 self._order_tracker.process_trade_update(trade_update)
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         """
         A fill has the same id over REST (fill_id) and the websocket (trade_id), as checked against live fills, so the
         order tracker drops the fills the user stream already delivered and only the missing ones are added.
         """
         if order.exchange_order_id is None:
             return []
-        return self._trade_updates_from_fills(order=order, fills=await self._request_fills(since=order.creation_timestamp))
+        return self._trade_updates_from_fills(
+            order=order, fills=await self._request_fills(since=order.creation_timestamp)
+        )
 
-    def _trade_updates_from_fills(self, order: InFlightOrder, fills: List[Dict[str, Any]]) -> List[TradeUpdate]:
+    def _trade_updates_from_fills(self, order: InFlightOrder, fills: list[dict[str, Any]]) -> list[TradeUpdate]:
         fills = [fill for fill in fills if fill["order_id"] == order.exchange_order_id]
         fills.sort(key=lambda fill: self._parse_timestamp(fill["created_time"]))
         return [
@@ -439,10 +458,10 @@ class KalshiPerpetualDerivative(PerpetualDerivativePyBase):
             for fill in fills
         ]
 
-    async def _request_fills(self, since: float) -> List[Dict[str, Any]]:
+    async def _request_fills(self, since: float) -> list[dict[str, Any]]:
         # The fills endpoint can't filter by order or market, only by time; it is paginated with a cursor.
-        fills: List[Dict[str, Any]] = []
-        params: Dict[str, Any] = {"min_ts": int(since), "limit": 1000}
+        fills: list[dict[str, Any]] = []
+        params: dict[str, Any] = {"min_ts": int(since), "limit": 1000}
         while True:
             response = await self._api_get(path_url=CONSTANTS.FILLS_PATH_URL, params=params, is_auth_required=True)
             fills.extend(response.get("fills") or [])
@@ -450,8 +469,16 @@ class KalshiPerpetualDerivative(PerpetualDerivativePyBase):
                 return fills
             params["cursor"] = response["cursor"]
 
-    def _trade_update(self, order: InFlightOrder, trade_id: str, exchange_order_id: str, fill_timestamp: float,
-                      price: str, count: str, fee_paid: str) -> TradeUpdate:
+    def _trade_update(
+        self,
+        order: InFlightOrder,
+        trade_id: str,
+        exchange_order_id: str,
+        fill_timestamp: float,
+        price: str,
+        count: str,
+        fee_paid: str,
+    ) -> TradeUpdate:
         fee_amount = Decimal(fee_paid)
         fee = TradeFeeBase.new_perpetual_fee(
             fee_schema=self.trade_fee_schema(),
@@ -478,7 +505,7 @@ class KalshiPerpetualDerivative(PerpetualDerivativePyBase):
             return OrderState.PARTIALLY_FILLED if filled_amount > 0 else OrderState.OPEN
         return OrderState.FILLED if filled_amount >= tracked_order.amount else OrderState.CANCELED
 
-    async def _iter_user_event_queue(self) -> AsyncIterable[Dict[str, Any]]:
+    async def _iter_user_event_queue(self) -> AsyncIterable[dict[str, Any]]:
         while True:
             try:
                 yield await self._user_stream_tracker.user_stream.get()
@@ -511,22 +538,25 @@ class KalshiPerpetualDerivative(PerpetualDerivativePyBase):
                 self.logger().error("Unexpected error in user stream listener loop.", exc_info=True)
                 await self._sleep(5.0)
 
-    def _process_fill_event(self, fill: Dict[str, Any]):
+    def _process_fill_event(self, fill: dict[str, Any]):
         # Any fill moves the account's position, ours or not (e.g. a liquidation)
         self._schedule_account_refresh()
-        tracked_order = (self._order_tracker.all_fillable_orders.get(fill.get("client_order_id"))
-                         or self._order_tracker.all_fillable_orders_by_exchange_order_id.get(fill["order_id"]))
+        tracked_order = self._order_tracker.all_fillable_orders.get(
+            fill.get("client_order_id")
+        ) or self._order_tracker.all_fillable_orders_by_exchange_order_id.get(fill["order_id"])
         if tracked_order is None:  # not ours, e.g. liquidation or take-profit/stop-loss orders placed by Kalshi
             return
-        self._order_tracker.process_trade_update(self._trade_update(
-            order=tracked_order,
-            trade_id=fill["trade_id"],
-            exchange_order_id=fill["order_id"],
-            fill_timestamp=fill["ts_ms"] * 1e-3,
-            price=fill["price"],
-            count=fill["count"],
-            fee_paid=fill["fee_cost"],
-        ))
+        self._order_tracker.process_trade_update(
+            self._trade_update(
+                order=tracked_order,
+                trade_id=fill["trade_id"],
+                exchange_order_id=fill["order_id"],
+                fill_timestamp=fill["ts_ms"] * 1e-3,
+                price=fill["price"],
+                count=fill["count"],
+                fee_paid=fill["fee_cost"],
+            )
+        )
 
     def _schedule_account_refresh(self, positions: bool = True):
         """
@@ -546,7 +576,9 @@ class KalshiPerpetualDerivative(PerpetualDerivativePyBase):
             self._balance_refresh_pending = self._positions_refresh_pending = False
             started = time.monotonic()
             try:
-                await asyncio.gather(self._update_balances(), *([self._update_positions()] if refresh_positions else []))
+                await asyncio.gather(
+                    self._update_balances(), *([self._update_positions()] if refresh_positions else [])
+                )
             except asyncio.CancelledError:
                 raise
             except Exception:
@@ -557,23 +589,26 @@ class KalshiPerpetualDerivative(PerpetualDerivativePyBase):
                 )
             await self._sleep(max(0.0, started + self.ACCOUNT_REFRESH_MIN_INTERVAL - time.monotonic()))
 
-    def _process_order_event(self, order: Dict[str, Any]):
+    def _process_order_event(self, order: dict[str, Any]):
         # Any order event changes the margin of resting orders, ours or not
         self._schedule_account_refresh(positions=False)
-        tracked_order = (self._order_tracker.all_updatable_orders.get(order.get("client_order_id"))
-                         or self._order_tracker.all_updatable_orders_by_exchange_order_id.get(order["order_id"]))
+        tracked_order = self._order_tracker.all_updatable_orders.get(
+            order.get("client_order_id")
+        ) or self._order_tracker.all_updatable_orders_by_exchange_order_id.get(order["order_id"])
         if tracked_order is None:
             return
         update_timestamp_ms = order.get("last_updated_ts_ms") or order["created_ts_ms"]
-        self._order_tracker.process_order_update(OrderUpdate(
-            trading_pair=tracked_order.trading_pair,
-            update_timestamp=update_timestamp_ms * 1e-3,
-            new_state=self._order_state(tracked_order, order["fill_count"], order["remaining_count"]),
-            client_order_id=tracked_order.client_order_id,
-            exchange_order_id=str(order["order_id"]),
-        ))
+        self._order_tracker.process_order_update(
+            OrderUpdate(
+                trading_pair=tracked_order.trading_pair,
+                update_timestamp=update_timestamp_ms * 1e-3,
+                new_state=self._order_state(tracked_order, order["fill_count"], order["remaining_count"]),
+                client_order_id=tracked_order.client_order_id,
+                exchange_order_id=str(order["order_id"]),
+            )
+        )
 
-    async def _format_trading_rules(self, exchange_info_dict: Dict[str, Any]) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: dict[str, Any]) -> list[TradingRule]:
         trading_rules = []
         for market in filter(web_utils.is_exchange_information_valid, exchange_info_dict.get("markets", [])):
             try:
@@ -582,23 +617,25 @@ class KalshiPerpetualDerivative(PerpetualDerivativePyBase):
                 # Whole contracts, or hundredths of a contract when fractional trading is enabled
                 contract_step = Decimal("0.01") if market["fractional_trading_enabled"] else Decimal("1")
                 size_increment = contract_size * contract_step
-                trading_rules.append(TradingRule(
-                    trading_pair,
-                    min_order_size=size_increment,
-                    min_base_amount_increment=size_increment,
-                    min_price_increment=Decimal(market["tick_size"]) / contract_size,
-                    buy_order_collateral_token=CONSTANTS.COLLATERAL_TOKEN,
-                    sell_order_collateral_token=CONSTANTS.COLLATERAL_TOKEN,
-                ))
+                trading_rules.append(
+                    TradingRule(
+                        trading_pair,
+                        min_order_size=size_increment,
+                        min_base_amount_increment=size_increment,
+                        min_price_increment=Decimal(market["tick_size"]) / contract_size,
+                        buy_order_collateral_token=CONSTANTS.COLLATERAL_TOKEN,
+                        sell_order_collateral_token=CONSTANTS.COLLATERAL_TOKEN,
+                    )
+                )
             except Exception:
                 self.logger().error(f"Error parsing the trading pair rule {market}. Skipping...", exc_info=True)
         return trading_rules
 
-    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
+    def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: dict[str, Any]):
         mapping = bidict()
         for market in filter(web_utils.is_exchange_information_valid, exchange_info.get("markets", [])):
             ticker = market["ticker"]
-            base = ticker[len(CONSTANTS.MARKET_TICKER_PREFIX):-len(CONSTANTS.MARKET_TICKER_SUFFIX)]
+            base = ticker[len(CONSTANTS.MARKET_TICKER_PREFIX) : -len(CONSTANTS.MARKET_TICKER_SUFFIX)]
             trading_pair = combine_to_hb_trading_pair(base=base, quote=CONSTANTS.COLLATERAL_TOKEN)
             mapping[ticker] = trading_pair
             # Kept here rather than with the trading rules: the data sources need them as soon as symbols resolve.
@@ -608,42 +645,48 @@ class KalshiPerpetualDerivative(PerpetualDerivativePyBase):
         self._set_trading_pair_symbol_map(mapping)
 
     @staticmethod
-    def _parse_leverage_estimates(market: Dict[str, Any]) -> Dict[TradeType, List[Tuple[Decimal, Decimal]]]:
+    def _parse_leverage_estimates(market: dict[str, Any]) -> dict[TradeType, list[tuple[Decimal, Decimal]]]:
         # Keyed by notional in USD ("1000" ... "1000000"); leverage decreases as the position grows. Null without a
         # margin config or price data.
         tiers = {}
-        for trade_type, key in ((TradeType.BUY, "long_leverage_estimates"), (TradeType.SELL, "short_leverage_estimates")):
+        for trade_type, key in (
+            (TradeType.BUY, "long_leverage_estimates"),
+            (TradeType.SELL, "short_leverage_estimates"),
+        ):
             estimates = market.get(key) or market.get("leverage_estimates") or {}
-            tiers[trade_type] = sorted((Decimal(size), Decimal(str(leverage)))
-                                       for size, leverage in estimates.items() if leverage)
+            tiers[trade_type] = sorted(
+                (Decimal(size), Decimal(str(leverage))) for size, leverage in estimates.items() if leverage
+            )
         return tiers
 
     async def _get_last_traded_price(self, trading_pair: str) -> float:
         symbol = await self.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
         response = await self._api_get(
-            path_url=CONSTANTS.MARKET_PATH_URL.format(ticker=symbol),
-            limit_id=CONSTANTS.MARKET_PATH_URL)
+            path_url=CONSTANTS.MARKET_PATH_URL.format(ticker=symbol), limit_id=CONSTANTS.MARKET_PATH_URL
+        )
         return float(self._from_exchange_price(trading_pair, response["market"]["price"]))
 
     async def _update_balances(self):
         # Balances are in USD for the primary subaccount; available_balance is only computed on request. It includes
         # the margin of every order Kalshi acknowledged before the request.
-        acknowledged = {order.client_order_id for order in self.in_flight_orders.values()
-                        if order.exchange_order_id is not None}
+        acknowledged = {
+            order.client_order_id for order in self.in_flight_orders.values() if order.exchange_order_id is not None
+        }
         response = await self._api_get(
-            path_url=CONSTANTS.BALANCE_PATH_URL,
-            params={"compute_available_balance": "true"},
-            is_auth_required=True)
+            path_url=CONSTANTS.BALANCE_PATH_URL, params={"compute_available_balance": "true"}, is_auth_required=True
+        )
         balance = next(
-            (balance for balance in response.get("subaccount_balances", []) if balance["subaccount"] == 0), None)
+            (balance for balance in response.get("subaccount_balances", []) if balance["subaccount"] == 0), None
+        )
         self._account_balances.clear()
         self._account_available_balances.clear()
         self._margin_breakdown = {}
         if balance is not None:
             self._account_balances[CONSTANTS.COLLATERAL_TOKEN] = Decimal(balance["account_equity"])
             self._account_available_balances[CONSTANTS.COLLATERAL_TOKEN] = Decimal(balance["available_balance"])
-            self._margin_breakdown = {key: Decimal(balance[key])
-                                      for key in ("initial_margin", "maintenance_margin", "resting_orders_margin")}
+            self._margin_breakdown = {
+                key: Decimal(balance[key]) for key in ("initial_margin", "maintenance_margin", "resting_orders_margin")
+            }
         self._orders_in_balance = acknowledged
 
     def _close_would_open_position(self, trading_pair: str, trade_type: TradeType) -> bool:
@@ -653,9 +696,8 @@ class KalshiPerpetualDerivative(PerpetualDerivativePyBase):
     async def _update_positions(self):
         requested_at = self.current_timestamp
         response = await self._api_get(
-            path_url=CONSTANTS.POSITIONS_PATH_URL,
-            params={"subaccount": 0},
-            is_auth_required=True)
+            path_url=CONSTANTS.POSITIONS_PATH_URL, params={"subaccount": 0}, is_auth_required=True
+        )
         open_position_keys = set()
         for position in response.get("positions", []):
             try:
@@ -669,14 +711,17 @@ class KalshiPerpetualDerivative(PerpetualDerivativePyBase):
             position_side = PositionSide.LONG if contracts > 0 else PositionSide.SHORT
             pos_key = self._perpetual_trading.position_key(trading_pair, position_side)
             open_position_keys.add(pos_key)
-            self._perpetual_trading.set_position(pos_key, Position(
-                trading_pair=trading_pair,
-                position_side=position_side,
-                unrealized_pnl=Decimal(position["unrealized_pnl"]),
-                entry_price=self._from_exchange_price(trading_pair, position["entry_price"]),
-                amount=self._from_exchange_count(trading_pair, position["position"]),
-                leverage=Decimal(self._perpetual_trading.get_leverage(trading_pair)),
-            ))
+            self._perpetual_trading.set_position(
+                pos_key,
+                Position(
+                    trading_pair=trading_pair,
+                    position_side=position_side,
+                    unrealized_pnl=Decimal(position["unrealized_pnl"]),
+                    entry_price=self._from_exchange_price(trading_pair, position["entry_price"]),
+                    amount=self._from_exchange_count(trading_pair, position["position"]),
+                    leverage=Decimal(self._perpetual_trading.get_leverage(trading_pair)),
+                ),
+            )
         # Kalshi only lists open positions: anything no longer listed was closed.
         for pos_key in set(self._perpetual_trading.account_positions.keys()) - open_position_keys:
             self._perpetual_trading.remove_position(pos_key)
@@ -684,19 +729,22 @@ class KalshiPerpetualDerivative(PerpetualDerivativePyBase):
         # Orders placed after the request may follow a fill this response doesn't include yet, so they're checked
         # again by another refresh instead.
         for order in list(self.in_flight_orders.values()):
-            if (order.position is PositionAction.CLOSE and order.is_open
-                    and self._close_would_open_position(order.trading_pair, order.trade_type)):
+            if (
+                order.position is PositionAction.CLOSE
+                and order.is_open
+                and self._close_would_open_position(order.trading_pair, order.trade_type)
+            ):
                 if order.creation_timestamp < requested_at:
                     safe_ensure_future(self._execute_cancel(order.trading_pair, order.client_order_id))
                 else:
                     self._schedule_account_refresh()
 
-    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> Tuple[bool, str]:
+    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> tuple[bool, str]:
         if mode == PositionMode.ONEWAY:
             return True, ""
         return False, "Kalshi only supports one-way positions."
 
-    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> Tuple[bool, str]:
+    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> tuple[bool, str]:
         """
         Kalshi has no leverage setting: its leverage follows from each market's margin rates. The leverage set here only
         sizes the margin Hummingbot reserves, so it is accepted up to Kalshi's for small positions on either side (the
@@ -708,15 +756,17 @@ class KalshiPerpetualDerivative(PerpetualDerivativePyBase):
         if None in limits:
             message = f"Kalshi publishes no margin rate for {trading_pair} right now, so its leverage is unknown."
         elif leverage > int(min(limits)):
-            message = (f"Kalshi allows at most {int(min(limits))}x on {trading_pair} (1 / its initial margin rate); "
-                       f"requested {leverage}x. Lower the leverage in the configuration.")
+            message = (
+                f"Kalshi allows at most {int(min(limits))}x on {trading_pair} (1 / its initial margin rate); "
+                f"requested {leverage}x. Lower the leverage in the configuration."
+            )
         else:
             return True, ""
         # The base class only logs the failure at NETWORK level, below INFO
         self.logger().error(f"Leverage {leverage} not set for {trading_pair}: {message}")
         return False, message
 
-    async def _fetch_last_fee_payment(self, trading_pair: str) -> Tuple[float, Decimal, Decimal]:
+    async def _fetch_last_fee_payment(self, trading_pair: str) -> tuple[float, Decimal, Decimal]:
         symbol = await self.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
         today = datetime.fromtimestamp(self._time_synchronizer.time(), tz=timezone.utc).date()
         response = await self._api_get(
@@ -726,7 +776,8 @@ class KalshiPerpetualDerivative(PerpetualDerivativePyBase):
                 "start_date": (today - timedelta(days=1)).isoformat(),
                 "end_date": today.isoformat(),
             },
-            is_auth_required=True)
+            is_auth_required=True,
+        )
         payments = response.get("funding_history") or []
         if not payments:
             return 0, Decimal("-1"), Decimal("-1")
@@ -734,9 +785,7 @@ class KalshiPerpetualDerivative(PerpetualDerivativePyBase):
         amount = Decimal(last_payment["funding_amount"])  # positive = received, negative = paid
         if amount == 0:
             return 0, Decimal("-1"), Decimal("-1")
-        return (self._parse_timestamp(last_payment["funding_time"]),
-                Decimal(str(last_payment["funding_rate"])),
-                amount)
+        return (self._parse_timestamp(last_payment["funding_time"]), Decimal(str(last_payment["funding_rate"])), amount)
 
     def _to_exchange_count(self, trading_pair: str, amount: Decimal) -> str:
         return f"{(amount / self._contract_sizes[trading_pair]).quantize(Decimal('0.01')):f}"
@@ -752,5 +801,5 @@ class KalshiPerpetualDerivative(PerpetualDerivativePyBase):
         return Decimal(price) / self._contract_sizes[trading_pair]
 
     @staticmethod
-    def _parse_timestamp(value: Optional[str]) -> Optional[float]:
+    def _parse_timestamp(value: str | None) -> float | None:
         return datetime.fromisoformat(value).timestamp() if value else None

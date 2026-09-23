@@ -1,15 +1,15 @@
 import asyncio
 import json
 import re
-from test.hummingbot.data_feed.candles_feed.test_candles_base import TestCandlesBase
 from unittest.mock import AsyncMock, patch
 
-import numpy as np
 from aioresponses import aioresponses
+import numpy as np
 
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.data_feed.candles_feed.lighter_spot_candles import LighterSpotCandles, constants as CONSTANTS
+from test.hummingbot.data_feed.candles_feed.test_candles_base import TestCandlesBase
 
 PATCH_FETCH = (
     "hummingbot.data_feed.candles_feed.lighter_spot_candles.lighter_spot_candles.LighterSpotCandles.fetch_candles"

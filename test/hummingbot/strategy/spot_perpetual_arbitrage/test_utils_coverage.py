@@ -6,9 +6,9 @@ We inject a fully-mocked `data_types` module into sys.modules before importing u
 import chain succeeds, then exercise the live logic.
 """
 
+from decimal import Decimal
 import sys
 import types
-from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
