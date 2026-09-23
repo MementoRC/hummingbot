@@ -1,8 +1,8 @@
-import io
-import unittest
 from contextlib import redirect_stderr, redirect_stdout
+import io
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import unittest
 from unittest.mock import MagicMock, patch
 
 import typer
@@ -41,7 +41,7 @@ class ImportConfigTest(unittest.TestCase):
         text = out.getvalue()
         self.assertIn("imported conf_s.yml", text)
         self.assertIn("- type: v2-script", text)
-        self.assertIn("- strategy: simple_pmm.py", text)   # script_file_name fallback
+        self.assertIn("- strategy: simple_pmm.py", text)  # script_file_name fallback
         self.assertIn("- next: hbot start", text)
 
     def test_imports_a_v1_strategy_config_with_explicit_flag(self):
