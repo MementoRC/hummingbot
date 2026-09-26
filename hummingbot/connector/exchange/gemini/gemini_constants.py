@@ -159,10 +159,8 @@ def convert_timestamp_to_seconds(ts: float) -> float:
     return ts
 
 
-_PUBLIC_LINKS = [LinkedLimitWeightPair(PUBLIC_REQUEST_WEIGHT, 1),
-                 LinkedLimitWeightPair(PUBLIC_REQUESTS_PER_SECOND, 1)]
-_PRIVATE_LINKS = [LinkedLimitWeightPair(REQUEST_WEIGHT, 1),
-                  LinkedLimitWeightPair(PRIVATE_REQUESTS_PER_SECOND, 1)]
+_PUBLIC_LINKS = [LinkedLimitWeightPair(PUBLIC_REQUEST_WEIGHT, 1), LinkedLimitWeightPair(PUBLIC_REQUESTS_PER_SECOND, 1)]
+_PRIVATE_LINKS = [LinkedLimitWeightPair(REQUEST_WEIGHT, 1), LinkedLimitWeightPair(PRIVATE_REQUESTS_PER_SECOND, 1)]
 
 RATE_LIMITS = [
     # Documented budgets (see comment above the limit ids)
@@ -174,30 +172,53 @@ RATE_LIMITS = [
     RateLimit(limit_id=PUBLIC_REQUESTS_PER_SECOND, limit=2, time_interval=ONE_SECOND),
     RateLimit(limit_id=ORDERS_RATE, limit=100, time_interval=ONE_MINUTE),
     # Public REST
-    RateLimit(limit_id=SYMBOLS_PATH_URL, limit=MAX_PUBLIC_REQUEST, time_interval=ONE_MINUTE,
-              linked_limits=_PUBLIC_LINKS),
-    RateLimit(limit_id=SYMBOLS_DETAILS_ALL_PATH_URL, limit=MAX_PUBLIC_REQUEST, time_interval=ONE_MINUTE,
-              linked_limits=_PUBLIC_LINKS),
-    RateLimit(limit_id=TICKER_PATH_URL, limit=MAX_PUBLIC_REQUEST, time_interval=ONE_MINUTE,
-              linked_limits=_PUBLIC_LINKS),
-    RateLimit(limit_id=ORDER_BOOK_PATH_URL, limit=MAX_PUBLIC_REQUEST, time_interval=ONE_MINUTE,
-              linked_limits=_PUBLIC_LINKS),
+    RateLimit(
+        limit_id=SYMBOLS_PATH_URL, limit=MAX_PUBLIC_REQUEST, time_interval=ONE_MINUTE, linked_limits=_PUBLIC_LINKS
+    ),
+    RateLimit(
+        limit_id=SYMBOLS_DETAILS_ALL_PATH_URL,
+        limit=MAX_PUBLIC_REQUEST,
+        time_interval=ONE_MINUTE,
+        linked_limits=_PUBLIC_LINKS,
+    ),
+    RateLimit(
+        limit_id=TICKER_PATH_URL, limit=MAX_PUBLIC_REQUEST, time_interval=ONE_MINUTE, linked_limits=_PUBLIC_LINKS
+    ),
+    RateLimit(
+        limit_id=ORDER_BOOK_PATH_URL, limit=MAX_PUBLIC_REQUEST, time_interval=ONE_MINUTE, linked_limits=_PUBLIC_LINKS
+    ),
     # Private REST
-    RateLimit(limit_id=NEW_ORDER_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_MINUTE,
-              linked_limits=_PRIVATE_LINKS + [LinkedLimitWeightPair(ORDERS_RATE, 1)]),
-    RateLimit(limit_id=CANCEL_ORDER_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_MINUTE,
-              linked_limits=_PRIVATE_LINKS + [LinkedLimitWeightPair(ORDERS_RATE, 1)]),
-    RateLimit(limit_id=ORDER_STATUS_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_MINUTE,
-              linked_limits=_PRIVATE_LINKS),
-    RateLimit(limit_id=ACTIVE_ORDERS_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_MINUTE,
-              linked_limits=_PRIVATE_LINKS),
-    RateLimit(limit_id=MY_TRADES_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_MINUTE,
-              linked_limits=_PRIVATE_LINKS),
-    RateLimit(limit_id=BALANCES_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_MINUTE,
-              linked_limits=_PRIVATE_LINKS),
+    RateLimit(
+        limit_id=NEW_ORDER_PATH_URL,
+        limit=MAX_REQUEST,
+        time_interval=ONE_MINUTE,
+        linked_limits=_PRIVATE_LINKS + [LinkedLimitWeightPair(ORDERS_RATE, 1)],
+    ),
+    RateLimit(
+        limit_id=CANCEL_ORDER_PATH_URL,
+        limit=MAX_REQUEST,
+        time_interval=ONE_MINUTE,
+        linked_limits=_PRIVATE_LINKS + [LinkedLimitWeightPair(ORDERS_RATE, 1)],
+    ),
+    RateLimit(
+        limit_id=ORDER_STATUS_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_MINUTE, linked_limits=_PRIVATE_LINKS
+    ),
+    RateLimit(
+        limit_id=ACTIVE_ORDERS_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_MINUTE, linked_limits=_PRIVATE_LINKS
+    ),
+    RateLimit(limit_id=MY_TRADES_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_MINUTE, linked_limits=_PRIVATE_LINKS),
+    RateLimit(limit_id=BALANCES_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_MINUTE, linked_limits=_PRIVATE_LINKS),
     # WS order entry — shares the overall order budget but not the REST pacing
-    RateLimit(limit_id=WS_ORDER_PLACE_LIMIT_ID, limit=MAX_REQUEST, time_interval=ONE_MINUTE,
-              linked_limits=[LinkedLimitWeightPair(ORDERS_RATE, 1)]),
-    RateLimit(limit_id=WS_ORDER_CANCEL_LIMIT_ID, limit=MAX_REQUEST, time_interval=ONE_MINUTE,
-              linked_limits=[LinkedLimitWeightPair(ORDERS_RATE, 1)]),
+    RateLimit(
+        limit_id=WS_ORDER_PLACE_LIMIT_ID,
+        limit=MAX_REQUEST,
+        time_interval=ONE_MINUTE,
+        linked_limits=[LinkedLimitWeightPair(ORDERS_RATE, 1)],
+    ),
+    RateLimit(
+        limit_id=WS_ORDER_CANCEL_LIMIT_ID,
+        limit=MAX_REQUEST,
+        time_interval=ONE_MINUTE,
+        linked_limits=[LinkedLimitWeightPair(ORDERS_RATE, 1)],
+    ),
 ]

@@ -1,5 +1,5 @@
-import json
 from decimal import Decimal
+import json
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, patch
 
@@ -22,7 +22,9 @@ class GrvtPerpetualAuthTests(IsolatedAsyncioTestCase):
         with patch.object(self.auth, "_ensure_authenticated", AsyncMock()) as ensure_auth:
             self.auth._session_cookie = "gravity-cookie"
             self.auth._grvt_account_id = "account-header-id"
-            request = RESTRequest(method=RESTMethod.POST, url="https://example.com", data=json.dumps({}), is_auth_required=True)
+            request = RESTRequest(
+                method=RESTMethod.POST, url="https://example.com", data=json.dumps({}), is_auth_required=True
+            )
 
             authenticated = await self.auth.rest_authenticate(request)
 

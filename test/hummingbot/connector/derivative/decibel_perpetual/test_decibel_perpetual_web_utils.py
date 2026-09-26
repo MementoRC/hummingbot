@@ -1,5 +1,3 @@
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-
 import hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_constants as CONSTANTS
 from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_web_utils import (
     build_api_factory,
@@ -10,6 +8,7 @@ from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_web_uti
     public_rest_url,
     wss_url,
 )
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class TestDecibelPerpetualWebUtils(IsolatedAsyncioWrapperTestCase):
