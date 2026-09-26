@@ -66,9 +66,9 @@ class LighterPerpetualApiUtilsTests(TestCase):
 
     def test_normalize_timestamp_to_seconds_infers_unit_from_magnitude(self):
         # Lighter mixes units: wall-clock fields are ms, transaction_time is us (live-API verified).
-        self.assertAlmostEqual(1781056278.158, utils.normalize_timestamp_to_seconds("1781056278158"))       # ms
+        self.assertAlmostEqual(1781056278.158, utils.normalize_timestamp_to_seconds("1781056278158"))  # ms
         self.assertAlmostEqual(1781056278.158263, utils.normalize_timestamp_to_seconds("1781056278158263"))  # us
-        self.assertAlmostEqual(1781056278.0, utils.normalize_timestamp_to_seconds(1781056278))               # s
+        self.assertAlmostEqual(1781056278.0, utils.normalize_timestamp_to_seconds(1781056278))  # s
         self.assertEqual(0.0, utils.normalize_timestamp_to_seconds(None))
 
     def test_normalize_timestamp_milliseconds_not_parsed_as_1970(self):

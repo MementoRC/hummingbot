@@ -1,26 +1,26 @@
 import asyncio
 import base64
-import json
 from datetime import datetime, timezone
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from typing import Any, Dict, List
+import json
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 
-import hummingbot.connector.derivative.kalshi_perpetual.kalshi_perpetual_constants as CONSTANTS
-import hummingbot.connector.derivative.kalshi_perpetual.kalshi_perpetual_web_utils as web_utils
 from hummingbot.connector.derivative.kalshi_perpetual.kalshi_perpetual_api_order_book_data_source import (
     KalshiPerpetualAPIOrderBookDataSource,
 )
 from hummingbot.connector.derivative.kalshi_perpetual.kalshi_perpetual_auth import KalshiPerpetualAuth
+import hummingbot.connector.derivative.kalshi_perpetual.kalshi_perpetual_constants as CONSTANTS
+import hummingbot.connector.derivative.kalshi_perpetual.kalshi_perpetual_web_utils as web_utils
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.core.data_type.common import TradeType
 from hummingbot.core.data_type.funding_info import FundingInfo, FundingInfoUpdate
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
 from hummingbot.core.web_assistant.connections.data_types import WSResponse
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class KalshiPerpetualAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):
@@ -45,7 +45,7 @@ class KalshiPerpetualAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase)
     async def asyncSetUp(self) -> None:
         self.log_records = []
         self.listening_task = None
-        self.async_tasks: List[asyncio.Task] = []
+        self.async_tasks: list[asyncio.Task] = []
 
         # KalshiPerpetualDerivative is not built yet: the data source only needs the connector for symbol mapping,
         # contract sizes and REST calls, so a mock stands in for it.
@@ -58,7 +58,8 @@ class KalshiPerpetualAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase)
         self.time_provider = MagicMock()
         self.time_provider.time.return_value = 1703123456.789
         self.auth = KalshiPerpetualAuth(
-            api_key=self.api_key, private_key=self.private_key_pem, time_provider=self.time_provider)
+            api_key=self.api_key, private_key=self.private_key_pem, time_provider=self.time_provider
+        )
         self.data_source = KalshiPerpetualAPIOrderBookDataSource(
             trading_pairs=[self.trading_pair],
             connector=self.connector,
@@ -84,51 +85,86 @@ class KalshiPerpetualAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase)
 
     # Fixtures shaped after real Kalshi payloads (REST responses fetched live, WS messages from the AsyncAPI spec)
 
-    def _rest_order_book_response(self) -> Dict[str, Any]:
+    def _rest_order_book_response(self) -> dict[str, Any]:
         # Kalshi returns levels worst-to-best, contrary to its docs; apply_snapshot sorts them anyway.
-        return {"orderbook": {"asks": [["7.7822", "662.00"], ["7.7821", "321.00"]],
-                              "bids": [["7.7817", "642.00"], ["7.7820", "20.00"]]}}
-
-    def _snapshot_event(self, seq: int = 1, sid: int = 1) -> Dict[str, Any]:
         return {
-            "type": "orderbook_snapshot", "sid": sid, "seq": seq,
-            "msg": {"market_ticker": self.ex_trading_pair,
-                    "bid": [["7.7820", "20.00"], ["7.7817", "642.00"]],
-                    "ask": [["7.7821", "321.00"], ["7.7822", "662.00"]]},
+            "orderbook": {
+                "asks": [["7.7822", "662.00"], ["7.7821", "321.00"]],
+                "bids": [["7.7817", "642.00"], ["7.7820", "20.00"]],
+            }
         }
 
-    def _delta_event(self, seq: int = 2, price: str = "7.7820", delta: str = "-5.00", side: str = "bid",
-                     sid: int = 1) -> Dict[str, Any]:
+    def _snapshot_event(self, seq: int = 1, sid: int = 1) -> dict[str, Any]:
         return {
-            "type": "orderbook_delta", "sid": sid, "seq": seq,
-            "msg": {"market_ticker": self.ex_trading_pair, "price": price, "delta": delta, "side": side,
-                    "ts_ms": 1789038107243},
+            "type": "orderbook_snapshot",
+            "sid": sid,
+            "seq": seq,
+            "msg": {
+                "market_ticker": self.ex_trading_pair,
+                "bid": [["7.7820", "20.00"], ["7.7817", "642.00"]],
+                "ask": [["7.7821", "321.00"], ["7.7822", "662.00"]],
+            },
         }
 
-    def _trade_event(self, taker_side: str = "bid") -> Dict[str, Any]:
+    def _delta_event(
+        self, seq: int = 2, price: str = "7.7820", delta: str = "-5.00", side: str = "bid", sid: int = 1
+    ) -> dict[str, Any]:
         return {
-            "type": "trade", "sid": 2, "seq": 1,
-            "msg": {"trade_id": "4c2f7fe4-9bd2-4f6c-9b2b-8c0d3f3a1e55", "market_ticker": self.ex_trading_pair,
-                    "price": "7.7825", "count": "3.00", "taker_side": taker_side, "ts_ms": 1789038107000},
+            "type": "orderbook_delta",
+            "sid": sid,
+            "seq": seq,
+            "msg": {
+                "market_ticker": self.ex_trading_pair,
+                "price": price,
+                "delta": delta,
+                "side": side,
+                "ts_ms": 1789038107243,
+            },
         }
 
-    def _ticker_event(self) -> Dict[str, Any]:
+    def _trade_event(self, taker_side: str = "bid") -> dict[str, Any]:
         return {
-            "type": "ticker", "sid": 3,
-            "msg": {"market_ticker": self.ex_trading_pair, "price": "7.7826", "bid": "7.7823", "ask": "7.7825",
-                    "reference_price": {"price": "7.7811", "ts_ms": 1789038107000},
-                    "settlement_mark_price": {"price": "7.7837", "ts_ms": 1789038103667},
-                    "liquidation_mark_price": {"price": "7.7821", "ts_ms": 1789038107243},
-                    "funding_rate": {"rate": 0.0001340700855107, "next_funding_time_ms": 1789041600000,
-                                     "ts_ms": 1789038108000},
-                    "ts_ms": 1789038108000},
+            "type": "trade",
+            "sid": 2,
+            "seq": 1,
+            "msg": {
+                "trade_id": "4c2f7fe4-9bd2-4f6c-9b2b-8c0d3f3a1e55",
+                "market_ticker": self.ex_trading_pair,
+                "price": "7.7825",
+                "count": "3.00",
+                "taker_side": taker_side,
+                "ts_ms": 1789038107000,
+            },
         }
 
-    def _subscribed_events(self) -> List[Dict[str, Any]]:
-        return [{"id": 1, "type": "subscribed", "msg": {"channel": channel, "sid": sid}}
-                for sid, channel in enumerate(["orderbook_delta", "trade", "ticker"], start=1)]
+    def _ticker_event(self) -> dict[str, Any]:
+        return {
+            "type": "ticker",
+            "sid": 3,
+            "msg": {
+                "market_ticker": self.ex_trading_pair,
+                "price": "7.7826",
+                "bid": "7.7823",
+                "ask": "7.7825",
+                "reference_price": {"price": "7.7811", "ts_ms": 1789038107000},
+                "settlement_mark_price": {"price": "7.7837", "ts_ms": 1789038103667},
+                "liquidation_mark_price": {"price": "7.7821", "ts_ms": 1789038107243},
+                "funding_rate": {
+                    "rate": 0.0001340700855107,
+                    "next_funding_time_ms": 1789041600000,
+                    "ts_ms": 1789038108000,
+                },
+                "ts_ms": 1789038108000,
+            },
+        }
 
-    def _ws_assistant_yielding(self, messages: List[Dict[str, Any]]) -> MagicMock:
+    def _subscribed_events(self) -> list[dict[str, Any]]:
+        return [
+            {"id": 1, "type": "subscribed", "msg": {"channel": channel, "sid": sid}}
+            for sid, channel in enumerate(["orderbook_delta", "trade", "ticker"], start=1)
+        ]
+
+    def _ws_assistant_yielding(self, messages: list[dict[str, Any]]) -> MagicMock:
         async def iter_messages():
             for message in messages:
                 yield WSResponse(data=message)
@@ -137,7 +173,7 @@ class KalshiPerpetualAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase)
         ws_assistant.iter_messages = iter_messages
         return ws_assistant
 
-    async def _processed(self, messages: List[Dict[str, Any]]) -> Dict[str, List[Dict[str, Any]]]:
+    async def _processed(self, messages: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
         """Runs raw messages through the websocket read loop and returns what each queue received."""
         await self.data_source._process_websocket_messages(self._ws_assistant_yielding(messages))
         queued = {}
@@ -154,7 +190,8 @@ class KalshiPerpetualAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase)
         order_book = await self.data_source.get_new_order_book(self.trading_pair)
 
         self.connector._api_get.assert_awaited_once_with(
-            path_url="/margin/markets/KXBTCPERP/orderbook", limit_id=CONSTANTS.ORDER_BOOK_PATH_URL)
+            path_url="/margin/markets/KXBTCPERP/orderbook", limit_id=CONSTANTS.ORDER_BOOK_PATH_URL
+        )
         bids = list(order_book.bid_entries())
         asks = list(order_book.ask_entries())
         # Per-contract prices and contract counts converted to USD/BTC and BTC with the 0.0001 BTC contract size
@@ -171,13 +208,19 @@ class KalshiPerpetualAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase)
     # REST — funding info
 
     async def test_get_funding_info(self):
-        market_response = {"market": {"ticker": self.ex_trading_pair,
-                                      "reference_price": {"price": "7.7811", "ts_ms": 1789038107000}}}
-        funding_estimate = {"computed_time": "2026-09-10T11:01:48.66841Z", "funding_rate": 0.0001340700855107,
-                            "mark_price": "7.7837", "market_ticker": self.ex_trading_pair,
-                            "next_funding_time": "2026-09-10T12:00:00Z"}
+        market_response = {
+            "market": {"ticker": self.ex_trading_pair, "reference_price": {"price": "7.7811", "ts_ms": 1789038107000}}
+        }
+        funding_estimate = {
+            "computed_time": "2026-09-10T11:01:48.66841Z",
+            "funding_rate": 0.0001340700855107,
+            "mark_price": "7.7837",
+            "market_ticker": self.ex_trading_pair,
+            "next_funding_time": "2026-09-10T12:00:00Z",
+        }
         self.connector._api_get.side_effect = lambda path_url, **_: (
-            market_response if path_url == "/margin/markets/KXBTCPERP" else funding_estimate)
+            market_response if path_url == "/margin/markets/KXBTCPERP" else funding_estimate
+        )
 
         funding_info = await self.data_source.get_funding_info(self.trading_pair)
 
@@ -185,17 +228,22 @@ class KalshiPerpetualAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase)
         self.assertEqual(self.trading_pair, funding_info.trading_pair)
         self.assertEqual(Decimal("77811"), funding_info.index_price)
         self.assertEqual(Decimal("77837"), funding_info.mark_price)
-        self.assertEqual(int(datetime(2026, 9, 10, 12, tzinfo=timezone.utc).timestamp()),
-                         funding_info.next_funding_utc_timestamp)
+        self.assertEqual(
+            int(datetime(2026, 9, 10, 12, tzinfo=timezone.utc).timestamp()), funding_info.next_funding_utc_timestamp
+        )
         self.assertEqual(Decimal("0.0001340700855107"), funding_info.rate)
         self.connector._api_get.assert_any_await(
-            path_url=CONSTANTS.FUNDING_RATE_ESTIMATE_PATH_URL, params={"ticker": self.ex_trading_pair},
-            limit_id=CONSTANTS.FUNDING_RATE_ESTIMATE_PATH_URL)
+            path_url=CONSTANTS.FUNDING_RATE_ESTIMATE_PATH_URL,
+            params={"ticker": self.ex_trading_pair},
+            limit_id=CONSTANTS.FUNDING_RATE_ESTIMATE_PATH_URL,
+        )
 
     # WEBSOCKET — listen_for_subscriptions
 
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
-    async def test_listen_for_subscriptions_subscribes_to_trades_and_order_diffs_and_funding_info(self, ws_connect_mock):
+    async def test_listen_for_subscriptions_subscribes_to_trades_and_order_diffs_and_funding_info(
+        self, ws_connect_mock
+    ):
         ws_connect_mock.return_value = self.mocking_assistant.create_websocket_mock()
         for event in self._subscribed_events():
             self.mocking_assistant.add_websocket_aiohttp_message(ws_connect_mock.return_value, json.dumps(event))
@@ -219,8 +267,14 @@ class KalshiPerpetualAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase)
         sent_messages = self.mocking_assistant.json_messages_sent_through_websocket(ws_connect_mock.return_value)
         self.assertEqual(1, len(sent_messages))
         self.assertEqual(
-            {"id": 1, "cmd": "subscribe",
-             "params": {"channels": ["orderbook_delta", "trade", "ticker"], "market_tickers": [self.ex_trading_pair]}},
+            {
+                "id": 1,
+                "cmd": "subscribe",
+                "params": {
+                    "channels": ["orderbook_delta", "trade", "ticker"],
+                    "market_tickers": [self.ex_trading_pair],
+                },
+            },
             sent_messages[0],
         )
         self.assertEqual({"orderbook_delta": 1, "trade": 2, "ticker": 3}, self.data_source._channel_sids)
@@ -242,12 +296,16 @@ class KalshiPerpetualAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase)
         with self.assertRaises(asyncio.CancelledError):
             await self.data_source.listen_for_subscriptions()
 
-        self.assertTrue(self._is_logged(
-            "ERROR", "Unexpected error occurred when listening to order book streams. Retrying in 5 seconds..."))
+        self.assertTrue(
+            self._is_logged(
+                "ERROR", "Unexpected error occurred when listening to order book streams. Retrying in 5 seconds..."
+            )
+        )
 
     async def test_connected_websocket_assistant_requires_credentials(self):
         data_source = KalshiPerpetualAPIOrderBookDataSource(
-            trading_pairs=[self.trading_pair], connector=self.connector, api_factory=web_utils.build_api_factory())
+            trading_pairs=[self.trading_pair], connector=self.connector, api_factory=web_utils.build_api_factory()
+        )
 
         with self.assertRaises(ValueError):
             await data_source._connected_websocket_assistant()
@@ -269,32 +327,46 @@ class KalshiPerpetualAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase)
         self.assertTrue(self._is_logged("ERROR", "Unexpected error occurred subscribing to order book streams..."))
 
     def test_channel_originating_message(self):
-        self.assertEqual(self.data_source._snapshot_messages_queue_key,
-                         self.data_source._channel_originating_message(self._snapshot_event()))
-        self.assertEqual(self.data_source._diff_messages_queue_key,
-                         self.data_source._channel_originating_message(self._delta_event()))
-        self.assertEqual(self.data_source._trade_messages_queue_key,
-                         self.data_source._channel_originating_message(self._trade_event()))
-        self.assertEqual(self.data_source._funding_info_messages_queue_key,
-                         self.data_source._channel_originating_message(self._ticker_event()))
-        self.assertNotIn(self.data_source._channel_originating_message(self._subscribed_events()[0]),
-                         self.data_source._get_messages_queue_keys())
+        self.assertEqual(
+            self.data_source._snapshot_messages_queue_key,
+            self.data_source._channel_originating_message(self._snapshot_event()),
+        )
+        self.assertEqual(
+            self.data_source._diff_messages_queue_key,
+            self.data_source._channel_originating_message(self._delta_event()),
+        )
+        self.assertEqual(
+            self.data_source._trade_messages_queue_key,
+            self.data_source._channel_originating_message(self._trade_event()),
+        )
+        self.assertEqual(
+            self.data_source._funding_info_messages_queue_key,
+            self.data_source._channel_originating_message(self._ticker_event()),
+        )
+        self.assertNotIn(
+            self.data_source._channel_originating_message(self._subscribed_events()[0]),
+            self.data_source._get_messages_queue_keys(),
+        )
 
     async def test_process_websocket_messages_tracks_book_and_converts_deltas_to_sizes(self):
-        queued = await self._processed([
-            self._snapshot_event(seq=1),
-            self._delta_event(seq=2, price="7.7820", delta="-5.00"),   # 20 -> 15
-            self._delta_event(seq=3, price="7.7817", delta="-642.00"),  # level removed
-            self._delta_event(seq=4, price="7.7819", delta="7.00"),     # new level
-        ])
+        queued = await self._processed(
+            [
+                self._snapshot_event(seq=1),
+                self._delta_event(seq=2, price="7.7820", delta="-5.00"),  # 20 -> 15
+                self._delta_event(seq=3, price="7.7817", delta="-642.00"),  # level removed
+                self._delta_event(seq=4, price="7.7819", delta="7.00"),  # new level
+            ]
+        )
 
-        snapshot, = queued[self.data_source._snapshot_messages_queue_key]
+        (snapshot,) = queued[self.data_source._snapshot_messages_queue_key]
         deltas = queued[self.data_source._diff_messages_queue_key]
         self.assertEqual(1, snapshot["update_id"])
         self.assertEqual([2, 3, 4], [delta["update_id"] for delta in deltas])
         self.assertEqual([Decimal("15"), Decimal("0"), Decimal("7")], [delta["size"] for delta in deltas])
-        self.assertEqual({Decimal("7.7820"): Decimal("15"), Decimal("7.7819"): Decimal("7")},
-                         self.data_source._local_books[self.ex_trading_pair]["bid"])
+        self.assertEqual(
+            {Decimal("7.7820"): Decimal("15"), Decimal("7.7819"): Decimal("7")},
+            self.data_source._local_books[self.ex_trading_pair]["bid"],
+        )
 
     async def test_process_websocket_messages_sequence_gap_raises_connection_error(self):
         with self.assertRaises(ConnectionError) as context:
@@ -328,7 +400,8 @@ class KalshiPerpetualAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase)
         # A ConnectionError would reconnect without pausing, in a loop if the error persists
         self.assertNotIsInstance(context.exception, ConnectionError)
         self.assertEqual(
-            "Kalshi order book stream error: {'code': 9, 'msg': 'Authentication required'}", str(context.exception))
+            "Kalshi order book stream error: {'code': 9, 'msg': 'Authentication required'}", str(context.exception)
+        )
 
     # WEBSOCKET — listen_for_trades
 
@@ -337,7 +410,8 @@ class KalshiPerpetualAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase)
         self.data_source._message_queue[self.data_source._trade_messages_queue_key].put_nowait(self._trade_event())
 
         self.listening_task = self.local_event_loop.create_task(
-            self.data_source.listen_for_trades(self.local_event_loop, msg_queue))
+            self.data_source.listen_for_trades(self.local_event_loop, msg_queue)
+        )
         trade_message: OrderBookMessage = await msg_queue.get()
 
         self.assertEqual(OrderBookMessageType.TRADE, trade_message.type)
@@ -380,10 +454,12 @@ class KalshiPerpetualAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase)
         msg_queue: asyncio.Queue = asyncio.Queue()
         await self._processed([self._snapshot_event(seq=1)])
         await self.data_source._process_websocket_messages(
-            self._ws_assistant_yielding([self._delta_event(seq=2, price="7.7820", delta="-5.00", side="bid")]))
+            self._ws_assistant_yielding([self._delta_event(seq=2, price="7.7820", delta="-5.00", side="bid")])
+        )
 
         self.listening_task = self.local_event_loop.create_task(
-            self.data_source.listen_for_order_book_diffs(self.local_event_loop, msg_queue))
+            self.data_source.listen_for_order_book_diffs(self.local_event_loop, msg_queue)
+        )
         diff_message: OrderBookMessage = await msg_queue.get()
 
         self.assertEqual(OrderBookMessageType.DIFF, diff_message.type)
@@ -410,8 +486,9 @@ class KalshiPerpetualAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase)
         with self.assertRaises(asyncio.CancelledError):
             await self.data_source.listen_for_order_book_diffs(self.local_event_loop, asyncio.Queue())
 
-        self.assertTrue(self._is_logged(
-            "ERROR", "Unexpected error when processing public order book updates from exchange"))
+        self.assertTrue(
+            self._is_logged("ERROR", "Unexpected error when processing public order book updates from exchange")
+        )
 
     # WEBSOCKET — listen_for_order_book_snapshots
 
@@ -431,27 +508,34 @@ class KalshiPerpetualAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase)
         with self.assertRaises(asyncio.CancelledError):
             await self.data_source.listen_for_order_book_snapshots(self.local_event_loop, asyncio.Queue())
 
-        self.assertTrue(self._is_logged("ERROR", f"Unexpected error fetching order book snapshot for {self.trading_pair}."))
-        self.assertTrue(self._is_logged(
-            "ERROR", "Unexpected error when processing public order book snapshots from exchange"))
+        self.assertTrue(
+            self._is_logged("ERROR", f"Unexpected error fetching order book snapshot for {self.trading_pair}.")
+        )
+        self.assertTrue(
+            self._is_logged("ERROR", "Unexpected error when processing public order book snapshots from exchange")
+        )
 
     async def test_listen_for_order_book_snapshots_successful(self):
         msg_queue: asyncio.Queue = asyncio.Queue()
         await self._processed([self._snapshot_event(seq=1)])
         self.data_source._message_queue[self.data_source._snapshot_messages_queue_key].put_nowait(
-            {**self._snapshot_event(seq=1), "update_id": 1})
+            {**self._snapshot_event(seq=1), "update_id": 1}
+        )
 
         self.listening_task = self.local_event_loop.create_task(
-            self.data_source.listen_for_order_book_snapshots(self.local_event_loop, msg_queue))
+            self.data_source.listen_for_order_book_snapshots(self.local_event_loop, msg_queue)
+        )
         snapshot_message: OrderBookMessage = await msg_queue.get()
 
         self.assertEqual(OrderBookMessageType.SNAPSHOT, snapshot_message.type)
         self.assertEqual(self.trading_pair, snapshot_message.trading_pair)
         self.assertEqual(1, snapshot_message.update_id)
-        self.assertEqual([(77820.0, 0.002), (77817.0, 0.0642)],
-                         [(row.price, row.amount) for row in snapshot_message.bids])
-        self.assertEqual([(77821.0, 0.0321), (77822.0, 0.0662)],
-                         [(row.price, row.amount) for row in snapshot_message.asks])
+        self.assertEqual(
+            [(77820.0, 0.002), (77817.0, 0.0642)], [(row.price, row.amount) for row in snapshot_message.bids]
+        )
+        self.assertEqual(
+            [(77821.0, 0.0321), (77822.0, 0.0662)], [(row.price, row.amount) for row in snapshot_message.asks]
+        )
 
     # WEBSOCKET — listen_for_funding_info
 
@@ -465,7 +549,8 @@ class KalshiPerpetualAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase)
 
     async def test_listen_for_funding_info_logs_exception(self):
         broken_ticker = {
-            "type": "ticker", "sid": 3,
+            "type": "ticker",
+            "sid": 3,
             "msg": {"market_ticker": self.ex_trading_pair, "reference_price": {"ts_ms": 1789038107000}},
         }
         mock_queue = AsyncMock()
@@ -475,13 +560,15 @@ class KalshiPerpetualAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase)
         with self.assertRaises(asyncio.CancelledError):
             await self.data_source.listen_for_funding_info(asyncio.Queue())
 
-        self.assertTrue(self._is_logged(
-            "ERROR", "Unexpected error when processing public funding info updates from exchange"))
+        self.assertTrue(
+            self._is_logged("ERROR", "Unexpected error when processing public funding info updates from exchange")
+        )
 
     async def test_listen_for_funding_info_successful(self):
         msg_queue: asyncio.Queue = asyncio.Queue()
         self.data_source._message_queue[self.data_source._funding_info_messages_queue_key].put_nowait(
-            self._ticker_event())
+            self._ticker_event()
+        )
 
         self.listening_task = self.local_event_loop.create_task(self.data_source.listen_for_funding_info(msg_queue))
         funding_update: FundingInfoUpdate = await msg_queue.get()
@@ -527,12 +614,17 @@ class KalshiPerpetualAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase)
         self.assertTrue(result)
         sent_request = self.data_source._ws_assistant.send.call_args.args[0]
         self.assertEqual(
-            {"id": 1, "cmd": "update_subscription",
-             "params": {"sids": [1, 2, 3], "market_tickers": ["KXETHPERP"], "action": "add_markets"}},
+            {
+                "id": 1,
+                "cmd": "update_subscription",
+                "params": {"sids": [1, 2, 3], "market_tickers": ["KXETHPERP"], "action": "add_markets"},
+            },
             sent_request.payload,
         )
         self.assertIn("ETH-USD", self.data_source._trading_pairs)
-        self.assertTrue(self._is_logged("INFO", "Requested to subscribe to ETH-USD order book, trade and ticker channels"))
+        self.assertTrue(
+            self._is_logged("INFO", "Requested to subscribe to ETH-USD order book, trade and ticker channels")
+        )
 
     async def test_subscribe_to_trading_pair_websocket_not_connected(self):
         result = await self.data_source.subscribe_to_trading_pair("ETH-USD")
@@ -558,7 +650,9 @@ class KalshiPerpetualAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase)
         result = await self.data_source.unsubscribe_from_trading_pair(self.trading_pair)
 
         self.assertTrue(result)
-        self.assertEqual("delete_markets", self.data_source._ws_assistant.send.call_args.args[0].payload["params"]["action"])
+        self.assertEqual(
+            "delete_markets", self.data_source._ws_assistant.send.call_args.args[0].payload["params"]["action"]
+        )
         self.assertNotIn(self.trading_pair, self.data_source._trading_pairs)
         self.assertNotIn(self.ex_trading_pair, self.data_source._local_books)
 

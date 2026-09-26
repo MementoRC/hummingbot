@@ -1,9 +1,9 @@
 import re
-from test.hummingbot.data_feed.candles_feed.test_candles_base import TestCandlesBase
 
 from aioresponses import aioresponses
 
 from hummingbot.data_feed.candles_feed.aevo_perpetual_candles import AevoPerpetualCandles, constants as CONSTANTS
+from test.hummingbot.data_feed.candles_feed.test_candles_base import TestCandlesBase
 
 
 class TestAevoPerpetualCandles(TestCandlesBase):
@@ -95,8 +95,9 @@ class TestAevoPerpetualCandles(TestCandlesBase):
         data_mock = self.get_candles_rest_data_mock()
         mock_api.get(url=regex_url, payload=data_mock)
 
-        resp = self.run_async_with_timeout(self.data_feed.fetch_candles(start_time=self.start_time,
-                                                                        end_time=self.end_time))
+        resp = self.run_async_with_timeout(
+            self.data_feed.fetch_candles(start_time=self.start_time, end_time=self.end_time)
+        )
 
         self.assertEqual(resp.shape[0], len(self.get_fetch_candles_data_mock()))
         self.assertEqual(resp.shape[1], 10)

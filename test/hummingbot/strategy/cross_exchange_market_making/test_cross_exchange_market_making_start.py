@@ -1,7 +1,5 @@
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
-import hummingbot.strategy.cross_exchange_market_making.start as strategy_start
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
 from hummingbot.connector.exchange_base import ExchangeBase
@@ -9,18 +7,17 @@ from hummingbot.strategy.cross_exchange_market_making.cross_exchange_market_maki
     CrossExchangeMarketMakingConfigMap,
     TakerToMakerConversionRateMode,
 )
+import hummingbot.strategy.cross_exchange_market_making.start as strategy_start
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class XEMMStartTest(IsolatedAsyncioWrapperTestCase):
-
     def setUp(self) -> None:
         super().setUp()
         self.strategy = None
         self.client_config_map = ClientConfigAdapter(ClientConfigMap())
-        self.client_config_map.strategy_report_interval = 60.
-        self.markets = {
-            "binance": ExchangeBase(),
-            "kucoin": ExchangeBase()}
+        self.client_config_map.strategy_report_interval = 60.0
+        self.markets = {"binance": ExchangeBase(), "kucoin": ExchangeBase()}
         self.notifications = []
         self.log_errors = []
 

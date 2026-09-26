@@ -1,11 +1,16 @@
 import asyncio
 import concurrent.futures
+import sys
 import threading
 import unittest
+
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase, async_to_sync
+
+_PYTEST_RUNNER = "pytest" in sys.modules
 
 
 class TestIsolatedAsyncioWrapperTestCase(unittest.IsolatedAsyncioTestCase):
+    @unittest.skipIf(_PYTEST_RUNNER, "Tests unittest-runner loop management, skipped under pytest")
     def test_setUpClass_with_existing_loop(self):
         self.main_loop = asyncio.get_event_loop()
 
@@ -15,6 +20,7 @@ class TestIsolatedAsyncioWrapperTestCase(unittest.IsolatedAsyncioTestCase):
 
         self.main_loop = None
 
+    @unittest.skipIf(_PYTEST_RUNNER, "Tests unittest-runner loop management, skipped under pytest")
     def test_setUpClass_with_new_loop(self):
         self.main_loop = asyncio.get_event_loop()
         self.local_loop = asyncio.new_event_loop()
@@ -28,6 +34,7 @@ class TestIsolatedAsyncioWrapperTestCase(unittest.IsolatedAsyncioTestCase):
         asyncio.set_event_loop(self.main_loop)
         self.main_loop = None
 
+    @unittest.skipIf(_PYTEST_RUNNER, "Tests unittest-runner loop management, skipped under pytest")
     def test_setUpClass_without_existing_loop(self):
         def run_test_in_thread(future):
             asyncio.set_event_loop(None)
@@ -59,6 +66,7 @@ class TestIsolatedAsyncioWrapperTestCase(unittest.IsolatedAsyncioTestCase):
         asyncio.set_event_loop(None)
         self.main_loop = None
 
+    @unittest.skipIf(_PYTEST_RUNNER, "Tests unittest-runner loop management, skipped under pytest")
     def test_tearDownClass_without_existing_loop(self):
         # Close the main event loop if it exists
         def run_test_in_thread(future):
