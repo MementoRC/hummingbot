@@ -1,6 +1,6 @@
+from decimal import Decimal
 import os
 import time
-from decimal import Decimal
 from typing import Dict
 
 from pydantic import Field
@@ -185,7 +185,7 @@ class XRPLTriggeredLiquidity(StrategyV2Base):
                 await self.check_position_balance()
             else:
                 self.logger().info(
-                    f"Current price: {self.last_price}, Target: {self.config.target_price}, " f"Condition not met yet."
+                    f"Current price: {self.last_price}, Target: {self.config.target_price}, Condition not met yet."
                 )
                 self.position_opening = False
 

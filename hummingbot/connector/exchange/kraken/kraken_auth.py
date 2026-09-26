@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import base64
 import hashlib
 import hmac
 import json
 import time
-from typing import Any, Dict, Optional
+from typing import Any
+import urllib
 from urllib.parse import urlparse
 
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
@@ -20,17 +23,16 @@ class KrakenAuth(AuthBase):
         self.time_provider = time_provider
 
     @classmethod
-    def get_tracking_nonce(self) -> str:
-        nonce = int(time.time())
-        self._last_tracking_nonce = nonce if nonce > self._last_tracking_nonce else self._last_tracking_nonce + 1
-        return str(self._last_tracking_nonce)
+    def get_tracking_nonce(cls) -> str:
+        nonce = int(time.time() * 1000)
+        cls._last_tracking_nonce = nonce if nonce > cls._last_tracking_nonce else cls._last_tracking_nonce + 1
+        return str(cls._last_tracking_nonce)
 
     async def rest_authenticate(self, request: RESTRequest) -> RESTRequest:
-
         data = json.loads(request.data) if request.data is not None else {}
         _path = urlparse(request.url).path
 
-        auth_dict: Dict[str, Any] = self._generate_auth_dict(_path, data)
+        auth_dict: dict[str, Any] = self._generate_auth_dict(_path, data)
         request.headers = auth_dict["headers"]
         request.data = auth_dict["postDict"]
         return request
@@ -42,7 +44,7 @@ class KrakenAuth(AuthBase):
         """
         return request  # pass-through
 
-    def _generate_auth_dict(self, uri: str, data: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def _generate_auth_dict(self, uri: str, data: dict[str, str] | None = None) -> dict[str, Any]:
         """
         Generates authentication signature and returns it in a dictionary
         :return: a dictionary of request info including the request signature and post data
@@ -54,11 +56,13 @@ class KrakenAuth(AuthBase):
         # Variables (API method, nonce, and POST data)
         api_path: bytes = bytes(uri, "utf-8")
         api_nonce: str = self.get_tracking_nonce()
-        api_post: str = "nonce=" + api_nonce
+        api_post: str = f"nonce={api_nonce}"
 
         if data is not None:
             for key, value in data.items():
-                api_post += f"&{key}={value}"
+                encoded_key = urllib.parse.quote(str(key))
+                encoded_value = urllib.parse.quote(str(value))
+                api_post += f"&{encoded_key}={encoded_value}"
 
         # Cryptographic hash algorithms
         api_sha256: bytes = hashlib.sha256(bytes(api_nonce + api_post, "utf-8")).digest()
