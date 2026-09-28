@@ -13,7 +13,7 @@ import importlib
 from inspect import iscoroutinefunction
 import sys
 
-# All 14 sub-package directory names mapped to their top-level import names.
+# All 15 sub-package directory names mapped to their top-level import names.
 # Every entry is gated: the script exits non-zero if any import fails.
 SUBPACKAGE_IMPORTS = {
     "async-utils": "async_utils",
@@ -35,14 +35,14 @@ SUBPACKAGE_IMPORTS = {
 
 
 def check_subpackage_imports() -> list[str]:
-    """Smoke-test top-level import for all 14 sub-packages.
+    """Smoke-test top-level import for all 15 sub-packages.
 
     Returns a list of failure strings (empty on full success).
     """
     failures = []
 
     print("=" * 60)
-    print("Sub-package top-level import smoke test (all 14)")
+    print("Sub-package top-level import smoke test (all 15)")
     print("=" * 60)
 
     for pkg_dir, import_name in SUBPACKAGE_IMPORTS.items():
@@ -208,7 +208,7 @@ def main() -> None:
 
     all_failures: list[str] = []
 
-    # Always run the 14-sub-package smoke test first.
+    # Always run the 15-sub-package smoke test first.
     subpkg_failures = check_subpackage_imports()
     all_failures.extend(subpkg_failures)
 
