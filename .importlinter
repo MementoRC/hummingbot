@@ -1,0 +1,262 @@
+# Import boundary contracts for hummingbot sub-packages.
+#
+# Enforces: no module outside a sub-package's hb_compat/ may import hummingbot.*
+#
+# Pinned tool: import-linter (see pyproject.toml dev deps).
+# Run with: pixi run lint-boundaries
+#
+# Replaces the earlier tach.toml attempt (which failed on flat sub-package
+# layout, Cython .so files, and missing glob expansion). See
+# hummingbot_ai_docs/project_tach_mod_audit_2026_06_04.md.
+
+[importlinter]
+root_packages =
+    hummingbot
+    async_utils
+    candles_feed
+    connector_utils
+    data_type_primitives
+    event_bus
+    liquidations_feed
+    logger
+    market_connector
+    market_data
+    market_simulator
+    rate_oracle
+    remote_iface
+    strategy_framework
+    user_stream_tracker
+    web_assistant
+
+# ---------------------------------------------------------------------------
+# Strict sub-packages (whole package must not import hummingbot)
+# ---------------------------------------------------------------------------
+
+[importlinter:contract:async-utils-boundary]
+name = async_utils must not import hummingbot
+type = forbidden
+source_modules =
+    async_utils
+forbidden_modules =
+    hummingbot
+
+[importlinter:contract:connector-utils-boundary]
+name = connector_utils must not import hummingbot
+type = forbidden
+source_modules =
+    connector_utils
+forbidden_modules =
+    hummingbot
+
+[importlinter:contract:data-type-primitives-boundary]
+name = data_type_primitives must not import hummingbot
+type = forbidden
+source_modules =
+    data_type_primitives
+forbidden_modules =
+    hummingbot
+
+[importlinter:contract:event-bus-boundary]
+name = event_bus must not import hummingbot
+type = forbidden
+source_modules =
+    event_bus
+forbidden_modules =
+    hummingbot
+
+[importlinter:contract:market-data-no-hummingbot]
+name = market_data source modules must not import hummingbot
+type = forbidden
+source_modules =
+    market_data.live_market_data
+forbidden_modules =
+    hummingbot
+# live_market_data reaches hummingbot only indirectly, via market_data/hb_compat/common.py
+# (the boundary-exempt shim). allow_indirect_imports permits that hop while still catching
+# any DIRECT hummingbot import in live_market_data. (ADR 0001 Group A1)
+allow_indirect_imports = true
+
+[importlinter:contract:web-assistant-boundary]
+name = web_assistant must not import hummingbot
+type = forbidden
+source_modules =
+    web_assistant
+forbidden_modules =
+    hummingbot
+
+# ---------------------------------------------------------------------------
+# Carve-out sub-packages (only hb_compat/ may import hummingbot)
+# ---------------------------------------------------------------------------
+
+[importlinter:contract:candles-feed-hb-isolation]
+name = candles-feed non-hb_compat modules must not import hummingbot
+type = forbidden
+source_modules =
+    candles_feed.adapters
+    candles_feed.core
+    candles_feed.integration
+    candles_feed.mocking_resources
+    candles_feed.monitoring
+    candles_feed.utils
+forbidden_modules =
+    hummingbot
+# hummingbot_network_client_adapter now lives in candles_feed/hb_compat/ (boundary-exempt);
+# core/integration reach it (and thus hummingbot) only indirectly. allow_indirect permits that
+# hop while still catching any DIRECT hummingbot import in the non-hb_compat modules. (ADR 0001 A2)
+allow_indirect_imports = true
+
+[importlinter:contract:liquidations-feed-boundary]
+name = liquidations_feed source modules must not import hummingbot
+type = forbidden
+source_modules =
+    liquidations_feed.adapters
+    liquidations_feed.core
+forbidden_modules =
+    hummingbot
+
+[importlinter:contract:market-connector-boundary]
+name = market_connector source modules must not import hummingbot
+type = forbidden
+source_modules =
+    market_connector.auth
+    market_connector.contracts
+    market_connector.exchanges
+    market_connector.rate_limits
+    market_connector.symbols
+    market_connector.testing
+    market_connector.transport
+    market_connector.ws_models
+forbidden_modules =
+    hummingbot
+
+[importlinter:contract:market-connector-live-market-access]
+name = market_connector.live_market_access must not directly import hummingbot
+type = forbidden
+source_modules =
+    market_connector.live_market_access
+forbidden_modules =
+    hummingbot
+# live_market_access reaches hummingbot only indirectly via market_connector/hb_compat/common.py.
+# allow_indirect permits that hop while catching any DIRECT hummingbot import. (ADR 0001 Group A3)
+allow_indirect_imports = true
+
+[importlinter:contract:market-simulator-boundary]
+name = market_simulator source modules must not import hummingbot
+type = forbidden
+source_modules =
+    market_simulator.core
+    market_simulator.metrics
+    market_simulator.protocols
+    market_simulator.replay
+    market_simulator.simulator
+forbidden_modules =
+    hummingbot
+
+[importlinter:contract:rate-oracle-boundary]
+name = rate_oracle source modules must not import hummingbot
+type = forbidden
+source_modules =
+    rate_oracle.core
+    rate_oracle.sources
+forbidden_modules =
+    hummingbot
+
+[importlinter:contract:remote-iface-boundary]
+name = remote_iface source modules must not import hummingbot
+type = forbidden
+source_modules =
+    remote_iface._commlib
+    remote_iface.external
+    remote_iface.gateway
+    remote_iface.protocols
+forbidden_modules =
+    hummingbot
+
+[importlinter:contract:strategy-framework-boundary]
+name = strategy_framework source modules must not import hummingbot
+type = forbidden
+source_modules =
+    strategy_framework.building_blocks
+    strategy_framework.config
+    strategy_framework.executors
+    strategy_framework.mixins
+    strategy_framework.orchestrator
+    strategy_framework.primitives
+    strategy_framework.protocols
+    strategy_framework.testing
+forbidden_modules =
+    hummingbot
+
+# ---------------------------------------------------------------------------
+# ADR 0001 — sub-package dependency layering
+# ---------------------------------------------------------------------------
+# Findings A & B resolved 2026-07-14 (see adr-0001-sub-package-dependency-layering.md
+# section 1a and spec-adr0001-layers-refinement.md). strategy_framework.primitives is
+# a zero-dep value-type subpackage classified L0; it is listed directly as an L0
+# member while the parent strategy_framework package is intentionally omitted
+# (import-linter cannot split a parent and its own submodule across layers). The
+# L2->L3 (hummingbot) boundary is NOT enforced here — it stays with the per-package
+# `forbidden` contracts above (hb_compat carve-outs).
+
+# user_stream_tracker sits ABOVE the L2 row rather than inside it: it consumes
+# web_assistant (WSAssistant) plus the L0 leaves async_utils/logger, all strictly
+# downward. Modelled as its own layer instead of an ignore_imports carve-out so the
+# contract still ENFORCES the direction. If web_assistant later gains several more
+# consumers, promote web_assistant to its own lower layer instead (hb-user-stream-tracker#1).
+
+[importlinter:contract:adr-0001-layers]
+name = ADR 0001 sub-package layering (downward-only)
+type = layers
+layers =
+    user_stream_tracker
+    candles_feed | liquidations_feed | rate_oracle | market_data | market_connector | market_simulator | web_assistant | remote_iface
+    strategy_framework.primitives | data_type_primitives | event_bus | logger | async_utils | connector_utils
+# hb_compat isolation shim: logger is a real pinned dep of async_utils (hb-async-utils#14).
+#
+# Recipe-1 re-export shims: hummingbot/core/data_type/user_stream_tracker{,_data_source}.py
+# are 3-line re-exports over the extracted sub-package. Because this contract deliberately
+# does NOT model hummingbot (see note above), import-linter walks straight THROUGH it, so
+# every L2 hb_compat module that touches hummingbot appears to import user_stream_tracker
+# upward (observed: candles_feed via a 7-hop api_throttler chain, market_simulator directly).
+# Those are not real L2->L2 edges - the coupling is mediated by L3. Ignoring the two shim
+# edges removes the false traversal while still ENFORCING user_stream_tracker's own downward
+# direction onto web_assistant/async_utils/logger, which is why it was layered in the first
+# place. Expect an equivalent pair for any future shim of an above-L2 package.
+ignore_imports =
+    async_utils.hb_compat.common -> logger
+    hummingbot.core.data_type.user_stream_tracker -> user_stream_tracker.tracker
+    hummingbot.core.data_type.user_stream_tracker_data_source -> user_stream_tracker.data_source
+
+[importlinter:contract:adr-0001-l0-leaf-independence]
+name = ADR 0001 L0 leaf independence
+type = independence
+modules =
+    data_type_primitives
+    event_bus
+    logger
+    async_utils
+    connector_utils
+    strategy_framework.primitives
+# hb_compat isolation shim: logger is a real pinned dep of async_utils (hb-async-utils#14).
+ignore_imports =
+    async_utils.hb_compat.common -> logger
+
+# ADR-0001 Group D: strategy_framework (L2) may depend downward on L0 leaves
+# (event_bus, data_type_primitives, logger, async_utils, connector_utils) but must
+# NOT import L2 sibling packages. Motivated by the strategy_framework.hb_compat ->
+# event_bus edge landed via hb-strategy-framework PR #34.
+
+[importlinter:contract:adr-0001-strategy-framework-downward-only]
+name = adr-0001-strategy-framework-downward-only
+type = forbidden
+source_modules =
+    strategy_framework
+forbidden_modules =
+    candles_feed
+    liquidations_feed
+    rate_oracle
+    market_data
+    market_connector
+    market_simulator
+    web_assistant
+    remote_iface
