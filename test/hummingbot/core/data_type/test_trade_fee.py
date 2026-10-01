@@ -15,7 +15,6 @@ from hummingbot.core.data_type.trade_fee import (
 
 class TradeFeeTests(TestCase):
     def test_added_to_cost_spot_fee_created_for_buy_and_fee_not_deducted_from_return(self):
-
         schema = TradeFeeSchema(
             percent_fee_token="HBOT",
             maker_percent_fee_decimal=Decimal("1"),
@@ -37,7 +36,6 @@ class TradeFeeTests(TestCase):
         self.assertEqual([TokenAmount(token="COINALPHA", amount=Decimal("20"))], fee.flat_fees)
 
     def test_deducted_from_return_spot_fee_created_for_buy_and_fee_deducted_from_return(self):
-
         schema = TradeFeeSchema(
             maker_percent_fee_decimal=Decimal("1"),
             taker_percent_fee_decimal=Decimal("1"),
@@ -58,7 +56,6 @@ class TradeFeeTests(TestCase):
         self.assertEqual([TokenAmount(token="COINALPHA", amount=Decimal("20"))], fee.flat_fees)
 
     def test_deducted_from_return_spot_fee_created_for_sell(self):
-
         schema = TradeFeeSchema(
             percent_fee_token="HBOT",
             maker_percent_fee_decimal=Decimal("1"),
@@ -93,7 +90,6 @@ class TradeFeeTests(TestCase):
         self.assertEqual(DeductedFromReturnsTradeFee, type(fee))
 
     def test_added_to_cost_perpetual_fee_created_when_opening_positions(self):
-
         schema = TradeFeeSchema(
             maker_percent_fee_decimal=Decimal("1"),
             taker_percent_fee_decimal=Decimal("1"),
@@ -126,7 +122,6 @@ class TradeFeeTests(TestCase):
         self.assertEqual(AddedToCostTradeFee, type(fee))
 
     def test_added_to_cost_perpetual_fee_created_when_closing_position_but_schema_has_percent_fee_token(self):
-
         schema = TradeFeeSchema(
             percent_fee_token="HBOT",
             maker_percent_fee_decimal=Decimal("1"),
@@ -148,7 +143,6 @@ class TradeFeeTests(TestCase):
         self.assertEqual([TokenAmount(token="COINALPHA", amount=Decimal("20"))], fee.flat_fees)
 
     def test_deducted_from_returns_perpetual_fee_created_when_closing_position_and_no_percent_fee_token(self):
-
         schema = TradeFeeSchema(
             maker_percent_fee_decimal=Decimal("1"),
             taker_percent_fee_decimal=Decimal("1"),

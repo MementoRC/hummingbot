@@ -71,7 +71,6 @@ class RESTAssistant:
         timeout: Optional[float] = None,
         headers: Optional[Dict[str, Any]] = None,
     ) -> RESTResponse:
-
         headers = headers or {}
 
         local_headers = {

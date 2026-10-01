@@ -70,7 +70,6 @@ class StartCommand(GatewayChainApiManager):
         v2_conf: Optional[str] = None,
         is_quickstart: Optional[bool] = False,
     ):
-
         if self._in_start_check or (
             self.trading_core.strategy_task is not None and not self.trading_core.strategy_task.done()
         ):
