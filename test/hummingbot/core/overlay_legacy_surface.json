@@ -1,0 +1,71 @@
+{
+  "_source": "origin/development dbffc3bed577a181277104816398399ad6705e42, top-level defined names + __all__",
+  "hummingbot.core.api_throttler.async_request_context_base": [
+    "AsyncRequestContextBase",
+    "MAX_CAPACITY_REACHED_WARNING_INTERVAL",
+    "arc_logger"
+  ],
+  "hummingbot.core.api_throttler.async_throttler": [
+    "AsyncRequestContext",
+    "AsyncThrottler"
+  ],
+  "hummingbot.core.api_throttler.async_throttler_base": [
+    "AsyncThrottlerBase"
+  ],
+  "hummingbot.core.api_throttler.data_types": [
+    "DEFAULT_PATH",
+    "DEFAULT_WEIGHT",
+    "LinkedLimitWeightPair",
+    "Limit",
+    "RateLimit",
+    "RequestPath",
+    "RequestWeight",
+    "Seconds",
+    "TaskLog"
+  ],
+  "hummingbot.core.web_assistant.auth": [
+    "AuthBase"
+  ],
+  "hummingbot.core.web_assistant.connections.connections_factory": [
+    "ConnectionsFactory",
+    "ConnectionsFactoryT"
+  ],
+  "hummingbot.core.web_assistant.connections.data_types": [
+    "EndpointRESTRequest",
+    "RESTMethod",
+    "RESTRequest",
+    "RESTResponse",
+    "WSBinaryRequest",
+    "WSJSONRequest",
+    "WSPlainTextRequest",
+    "WSRequest",
+    "WSResponse"
+  ],
+  "hummingbot.core.web_assistant.connections.rest_connection": [
+    "RESTConnection"
+  ],
+  "hummingbot.core.web_assistant.connections.ws_connection": [
+    "WSConnection"
+  ],
+  "hummingbot.core.web_assistant.rest_assistant": [
+    "RESTAssistant"
+  ],
+  "hummingbot.core.web_assistant.rest_post_processors": [
+    "RESTPostProcessorBase"
+  ],
+  "hummingbot.core.web_assistant.rest_pre_processors": [
+    "RESTPreProcessorBase"
+  ],
+  "hummingbot.core.web_assistant.web_assistants_factory": [
+    "WebAssistantsFactory"
+  ],
+  "hummingbot.core.web_assistant.ws_assistant": [
+    "WSAssistant"
+  ],
+  "hummingbot.core.web_assistant.ws_post_processors": [
+    "WSPostProcessorBase"
+  ],
+  "hummingbot.core.web_assistant.ws_pre_processors": [
+    "WSPreProcessorBase"
+  ]
+}
