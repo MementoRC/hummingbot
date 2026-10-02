@@ -55,7 +55,6 @@ def main():
         "Brotli>=1.2.0",
         "cachetools>=5.3.1",
         "cryptography>=41.0.2",
-        "decibel-python-sdk==0.2.1",
         "eth-account>=0.13.0",
         "injective-py>=1.13",
         "msgpack-python",
