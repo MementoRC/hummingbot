@@ -1,45 +1,31 @@
 # Set the base image
-FROM continuumio/miniconda3:latest AS builder
+FROM debian:bookworm-slim AS builder
 
 # Install system dependencies
 RUN apt-get update && \
-    apt-get install -y sudo libusb-1.0 gcc g++ python3-dev && \
+    apt-get install -y sudo libusb-1.0 gcc g++ python3-dev curl && \
     rm -rf /var/lib/apt/lists/*
+
+# Install pixi (from official installer)
+RUN curl -fsSL https://pixi.sh/install.sh | bash && \
+    cp /root/.pixi/bin/pixi /usr/local/bin/pixi
 
 WORKDIR /home/hummingbot
 
-# Create conda environment
-COPY setup/environment.yml /tmp/environment.yml
-RUN conda env create -f /tmp/environment.yml && \
-    conda clean -afy && \
-    rm /tmp/environment.yml
+# Copy project files
+COPY . /home/hummingbot
 
-# Copy remaining files
-COPY bin/ bin/
-COPY hummingbot/ hummingbot/
-COPY scripts/ scripts/
-COPY controllers/ controllers/
-COPY scripts/ scripts-copy/
-COPY setup.py .
-COPY LICENSE .
-COPY README.md .
+# Install dependencies via pixi
+RUN pixi install && pixi run install-dev
 
-# activate hummingbot env when entering the CT
-SHELL [ "/bin/bash", "-lc" ]
-RUN echo "conda activate hummingbot" >> ~/.bashrc
-
-COPY setup/pip_packages.txt /tmp/pip_packages.txt
-RUN python3 -m pip install --no-deps -r /tmp/pip_packages.txt && \
-    rm /tmp/pip_packages.txt
-
-
-RUN python3 setup.py build_ext --inplace -j 8 && \
+# Build Cython extensions
+RUN pixi run python setup.py build_ext --inplace -j 8 && \
     rm -rf build/ && \
     find . -type f -name "*.cpp" -delete
 
 
 # Build final image using artifacts from builder
-FROM continuumio/miniconda3:latest AS release
+FROM debian:bookworm-slim AS release
 
 # Dockerfile author / maintainer
 LABEL maintainer="Fede Cardoso @dardonacci <federico@hummingbot.org>"
@@ -70,19 +56,9 @@ RUN mkdir -p /home/hummingbot/conf /home/hummingbot/conf/connectors /home/hummin
 WORKDIR /home/hummingbot
 
 # Copy all build artifacts from builder image
-COPY --from=builder /opt/conda/ /opt/conda/
-COPY --from=builder /home/ /home/
-
-# Put the hummingbot env on PATH so non-login shells (e.g. `docker exec … hbot`) find the env's python
-# + console scripts without `conda activate`, and expose the `hbot` CLI there (mirrors make install).
-# This lets the image run as a single-bot container: `docker run … hbot start <config>`,
-# `docker exec … hbot status`.
-ENV PATH=/opt/conda/envs/hummingbot/bin:$PATH
-RUN ln -sf /home/hummingbot/bin/hbot /opt/conda/envs/hummingbot/bin/hbot
-
-# Setting bash as default shell because we have .bashrc with customized PATH (setting SHELL affects RUN, CMD and ENTRYPOINT, but not manual commands e.g. `docker run image COMMAND`!)
-SHELL [ "/bin/bash", "-lc" ]
+COPY --from=builder /root/.pixi /root/.pixi
+COPY --from=builder /usr/local/bin/pixi /usr/local/bin/pixi
+COPY --from=builder /home/hummingbot /home/hummingbot
 
 # Set the default command to run when starting the container
-
-CMD conda activate hummingbot && ./bin/hummingbot_quickstart.py 2>> ./logs/errors.log
+CMD pixi run python ./bin/hummingbot_quickstart.py 2>> ./logs/errors.log

@@ -1,9 +1,9 @@
+from contextlib import redirect_stdout
 import io
 import json
-import unittest
-from contextlib import redirect_stdout
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import unittest
 from unittest.mock import patch
 
 import typer
@@ -46,8 +46,7 @@ class ConfigRunTest(unittest.TestCase):
 
     def setUp(self) -> None:
         self.cm = ClientConfigAdapter(ClientConfigMap())
-        patch("hummingbot.client.config.config_helpers.load_client_config_map_from_file",
-              return_value=self.cm).start()
+        patch("hummingbot.client.config.config_helpers.load_client_config_map_from_file", return_value=self.cm).start()
         self.save_to_yml = patch("hummingbot.client.config.config_helpers.save_to_yml").start()
         self.running = patch("hummingbot.cli.bot.running", return_value=False).start()
         self.read_meta = patch("hummingbot.cli.bot.read_meta", return_value=None).start()
@@ -124,9 +123,17 @@ class ConfigRunTest(unittest.TestCase):
         payload = json.loads(self._run(as_json=True))
         self.assertIn("mqtt_bridge.mqtt_port", payload["global"])
         # Schema stays stable: fields/live_fields always present, running always visible.
-        self.assertEqual(payload["strategy"],
-                         {"file": "conf_x.yml", "type": "v2-script", "state": "missing",
-                          "running": False, "fields": {}, "live_fields": []})
+        self.assertEqual(
+            payload["strategy"],
+            {
+                "file": "conf_x.yml",
+                "type": "v2-script",
+                "state": "missing",
+                "running": False,
+                "fields": {},
+                "live_fields": [],
+            },
+        )
 
     def test_list_with_missing_config_but_running_bot_warns(self):
         # A bot can still be RUNNING from a deleted config — that must stay visible.
@@ -215,6 +222,7 @@ class ConfigRunTest(unittest.TestCase):
         from typer.testing import CliRunner
 
         from hummingbot.cli.main import app
+
         path = self._strategy("order_refresh_tolerance_pct: '0'\n")
         result = CliRunner().invoke(app, ["config", "order_refresh_tolerance_pct", "-1"])
         self.assertEqual(result.exit_code, 0, result.output)

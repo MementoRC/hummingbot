@@ -13,13 +13,14 @@ volume that paid them.
 
     volume = fees_earned_in_quote / fee_rate
 """
+
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import MagicMock
 
 from hummingbot.core.data_type.common import TradeType
 from hummingbot.strategy_v2.executors.lp_executor.data_types import LPExecutorConfig
 from hummingbot.strategy_v2.executors.lp_executor.lp_executor import LPExecutor
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 # The Orca SOL-USDC pool the live LP tests run against: feeRate 400 hundredths of a bip,
 # which Gateway reports as feePct 0.04 -- a PERCENT, not a fraction (see GW-2).
@@ -50,8 +51,9 @@ class TestVolumeIsDerivedFromFees(IsolatedAsyncioWrapperTestCase):
         self.strategy = MagicMock()
         self.strategy.current_timestamp = 1234567890
 
-    def an_executor(self, fee_pct=ORCA_FEE_PCT, price="100", base_fee="0", quote_fee="0",
-                    initial_base="1.0", initial_quote="100") -> LPExecutor:
+    def an_executor(
+        self, fee_pct=ORCA_FEE_PCT, price="100", base_fee="0", quote_fee="0", initial_base="1.0", initial_quote="100"
+    ) -> LPExecutor:
         executor = LPExecutor(self.strategy, a_config(), update_interval=1.0)
         # `fee_pct="unfetched"` stands for _pool_info still being None — pool info has
         # not been requested yet. Any other value means it HAS been fetched and this is

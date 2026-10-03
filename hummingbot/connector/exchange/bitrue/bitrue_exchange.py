@@ -533,8 +533,7 @@ class BitrueExchange(ExchangePyBase):
                 self.logger().network(
                     "Unexpected error while fetching rate limits.",
                     exc_info=True,
-                    app_warning_msg=f"Could not fetch new rate limits from {self.name_cap}"
-                    " Check network connection.",
+                    app_warning_msg=f"Could not fetch new rate limits from {self.name_cap} Check network connection.",
                 )
                 await self._sleep(0.5)
 

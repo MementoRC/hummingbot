@@ -1,5 +1,5 @@
-import unittest
 from decimal import Decimal
+import unittest
 
 from hummingbot.connector.exchange_base import ExchangeBase
 from hummingbot.connector.gateway.gateway_in_flight_order import GatewayInFlightOrder
