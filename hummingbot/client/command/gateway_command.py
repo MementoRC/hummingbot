@@ -287,7 +287,6 @@ class GatewayCommand(GatewayChainApiManager):
         self,  # type: HummingbotApplication
         from_client_password: bool = False,
     ):
-
         certs_path: str = get_gateway_paths(self.client_config_map).local_certs_path.as_posix()
 
         if not from_client_password:

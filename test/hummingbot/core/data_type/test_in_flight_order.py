@@ -565,7 +565,6 @@ class InFlightOrderPyUnitTests(unittest.TestCase):
         self.assertEqual(0, len(order.order_fills))
 
     def test_update_with_trade_update_trade_update_with_trade_fee_percent(self):
-
         order: InFlightOrder = InFlightOrder(
             client_order_id=self.client_order_id,
             trading_pair=self.trading_pair,

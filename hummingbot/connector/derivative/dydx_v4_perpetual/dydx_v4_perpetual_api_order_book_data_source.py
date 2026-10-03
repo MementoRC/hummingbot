@@ -259,7 +259,6 @@ class DydxV4PerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
     def _get_bids_and_asks_from_snapshot(
         snapshot: Dict[str, List[Dict[str, Union[str, int, float]]]],
     ) -> Tuple[List[Tuple[float, float]], List[Tuple[float, float]]]:
-
         bids = [(Decimal(bid["price"]), Decimal(bid["size"])) for bid in snapshot["bids"]]
         asks = [(Decimal(ask["price"]), Decimal(ask["size"])) for ask in snapshot["asks"]]
 
@@ -269,7 +268,6 @@ class DydxV4PerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
     def _get_bids_and_asks_from_diff(
         diff: Dict[str, List[Dict[str, Union[str, int, float]]]],
     ) -> Tuple[List[Tuple[float, float]], List[Tuple[float, float]]]:
-
         bids = [(Decimal(bid[0]), Decimal(bid[1])) for bid in diff.get("bids", [])]
         asks = [(Decimal(ask[0]), Decimal(ask[1])) for ask in diff.get("asks", [])]
 
