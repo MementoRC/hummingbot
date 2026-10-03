@@ -451,7 +451,6 @@ class DydxV4PerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         mock_api: aioresponses,
         callback: Optional[Callable] = lambda *args, **kwargs: None,
     ) -> List[str]:
-
         url = self.all_symbols_url
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
 
