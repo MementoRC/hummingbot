@@ -1,5 +1,5 @@
-import unittest
 from typing import List
+import unittest
 from unittest.mock import MagicMock
 
 from prompt_toolkit.completion import CompleteEvent
