@@ -6,6 +6,7 @@ Usage:
     conda run -n hummingbot python scripts/backtest_grid_strike.py --days 3 --chart
     conda run -n hummingbot python scripts/backtest_grid_strike.py --chart --output backtest_grid.html
 """
+
 import argparse
 import asyncio
 import os
@@ -18,6 +19,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 # Patch broken optional dependency (injective proto mismatch)
 try:
     from pyinjective.proto.injective.stream.v2 import query_pb2
+
     if not hasattr(query_pb2, "OrderFailuresFilter"):
         query_pb2.OrderFailuresFilter = type("OrderFailuresFilter", (), {})
 except ImportError:
@@ -27,10 +29,18 @@ from hummingbot.strategy_v2.backtesting.backtesting_engine_base import Backtesti
 from hummingbot.strategy_v2.backtesting.backtesting_result import BacktestingResult  # noqa: E402
 
 
-def build_config(connector: str, trading_pair: str, total_amount_quote: int,
-                 start_price: float, end_price: float, limit_price: float,
-                 side: str, take_profit: float, max_open_orders: int,
-                 leverage: int):
+def build_config(
+    connector: str,
+    trading_pair: str,
+    total_amount_quote: int,
+    start_price: float,
+    end_price: float,
+    limit_price: float,
+    side: str,
+    take_profit: float,
+    max_open_orders: int,
+    leverage: int,
+):
     config_data = {
         "id": "backtest_grid_strike",
         "controller_name": "grid_strike",
@@ -55,9 +65,7 @@ def build_config(connector: str, trading_pair: str, total_amount_quote: int,
             "take_profit_order_type": 3,  # OrderType.LIMIT_MAKER
         },
     }
-    return BacktestingEngineBase.get_controller_config_instance_from_dict(
-        config_data, controllers_module="controllers"
-    )
+    return BacktestingEngineBase.get_controller_config_instance_from_dict(config_data, controllers_module="controllers")
 
 
 async def fetch_recent_price(connector: str, trading_pair: str, start: int, end: int) -> float:
@@ -75,11 +83,23 @@ async def fetch_recent_price(connector: str, trading_pair: str, start: int, end:
     return float(df.iloc[0]["close"])
 
 
-async def main(days: float, show_chart: bool, output_path: str | None,
-               connector: str, trading_pair: str, total_amount_quote: int,
-               resolution: str, start_price: float | None, end_price: float | None,
-               limit_price: float | None, side: str, take_profit: float,
-               max_open_orders: int, leverage: int, grid_range: float):
+async def main(
+    days: float,
+    show_chart: bool,
+    output_path: str | None,
+    connector: str,
+    trading_pair: str,
+    total_amount_quote: int,
+    resolution: str,
+    start_price: float | None,
+    end_price: float | None,
+    limit_price: float | None,
+    side: str,
+    take_profit: float,
+    max_open_orders: int,
+    leverage: int,
+    grid_range: float,
+):
     end_ts = int(time.time())
     start_ts = end_ts - int(days * 24 * 3600)
 
@@ -98,16 +118,27 @@ async def main(days: float, show_chart: bool, output_path: str | None,
         else:
             limit_price = round(end_price * 1.01, 6)
 
-    config = build_config(connector, trading_pair, total_amount_quote,
-                          start_price, end_price, limit_price,
-                          side, take_profit, max_open_orders, leverage)
+    config = build_config(
+        connector,
+        trading_pair,
+        total_amount_quote,
+        start_price,
+        end_price,
+        limit_price,
+        side,
+        take_profit,
+        max_open_orders,
+        leverage,
+    )
     engine = BacktestingEngineBase()
 
     print(f"Running backtest: grid_strike | {connector} {trading_pair} | {days}d | {resolution} ...")
     print(f"  Grid: {start_price} -> {end_price} | Limit: {limit_price} | Side: {side} | TP: {take_profit}")
     t0 = time.perf_counter()
     result = await engine.run_backtesting(
-        config, start_ts, end_ts,
+        config,
+        start_ts,
+        end_ts,
         backtesting_resolution=resolution,
         trade_cost=0.0002,
     )
@@ -168,9 +199,22 @@ if __name__ == "__main__":
     parser.add_argument("--output", type=str, default=None, help="Save chart to HTML file instead of showing")
     args = parser.parse_args()
 
-    asyncio.run(main(
-        args.days, args.chart, args.output, args.connector, args.trading_pair,
-        args.amount, args.resolution, args.start_price, args.end_price,
-        args.limit_price, args.side, args.take_profit, args.max_open_orders,
-        args.leverage, args.grid_range,
-    ))
+    asyncio.run(
+        main(
+            args.days,
+            args.chart,
+            args.output,
+            args.connector,
+            args.trading_pair,
+            args.amount,
+            args.resolution,
+            args.start_price,
+            args.end_price,
+            args.limit_price,
+            args.side,
+            args.take_profit,
+            args.max_open_orders,
+            args.leverage,
+            args.grid_range,
+        )
+    )
