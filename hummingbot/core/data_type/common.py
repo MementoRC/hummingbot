@@ -1,6 +1,6 @@
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Callable, Generic, NamedTuple, TypeVar
+from typing import Any, Callable, Generic, NamedTuple, Set, TypeVar
 
 from pydantic_core import core_schema
 
@@ -75,7 +75,7 @@ _KT = TypeVar("_KT")
 _VT = TypeVar("_VT")
 
 
-class GroupedSetDict(dict[_KT, set[_VT]]):
+class GroupedSetDict(dict[_KT, Set[_VT]]):
     def add_or_update(self, key: _KT, *args: _VT) -> "GroupedSetDict":
         if key in self:
             self[key].update(args)
@@ -101,7 +101,7 @@ class GroupedSetDict(dict[_KT, set[_VT]]):
         )
 
 
-MarketDict = GroupedSetDict[str, set[str]]
+MarketDict = GroupedSetDict[str, Set[str]]
 
 
 # TODO? : Allow pulling the hash for _KT via a lambda so that things like type can be a key?
