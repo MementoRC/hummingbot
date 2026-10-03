@@ -1,7 +1,7 @@
 import asyncio
 import json
 import re
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses import aioresponses
 import numpy as np
@@ -168,6 +168,53 @@ class TestLighterSpotCandles(TestCandlesBase):
         with self.assertRaises(ValueError):
             self.data_feed._get_rest_candles_params(start_time=1748954400, end_time=1748954400)
 
+    @aioresponses()
+    async def test_fetch_candles_with_zero_limit_requests_valid_range(self, mock_api):
+        # get_historical_candles passes limit=0 when start and end round to the same interval
+        # multiple; the request window must still satisfy start_timestamp < end_timestamp.
+        regex_url = re.compile(f"^{self.data_feed.candles_url}".replace(".", r"\.").replace("?", r"\?"))
+        mock_api.get(url=regex_url, body=json.dumps(self.get_candles_rest_data_mock()))
+        await self.data_feed.fetch_candles(start_time=1748954400, end_time=1748954400, limit=0)
+        request_calls = next(iter(mock_api.requests.values()))
+        params = request_calls[0].kwargs["params"]
+        self.assertLess(params["start_timestamp"], params["end_timestamp"])
+
+    @aioresponses()
+    async def test_get_historical_candles_with_sub_interval_range(self, mock_api):
+        # Regression for #8327: a range shorter than one interval rounds to start == end,
+        # which used to produce an invalid zero-width candles request.
+        from hummingbot.data_feed.candles_feed.data_types import HistoricalCandlesConfig
+
+        regex_url = re.compile(f"^{self.data_feed.candles_url}".replace(".", r"\.").replace("?", r"\?"))
+        mock_api.get(
+            url=regex_url,
+            body=json.dumps(
+                {
+                    "c": [
+                        {
+                            "t": 1748954400000,
+                            "o": 1.4175,
+                            "h": 1.4220,
+                            "l": 1.4150,
+                            "c": 1.4200,
+                            "v": 900.0,
+                            "V": 1278.0,
+                        }
+                    ]
+                }
+            ),
+        )
+        config = HistoricalCandlesConfig(
+            connector_name="lighter",
+            trading_pair=self.trading_pair,
+            interval=self.interval,
+            start_time=1748954400,
+            end_time=1748954430,
+        )
+        candles_df = await self.data_feed.get_historical_candles(config)
+        self.assertEqual(len(candles_df), 1)
+        self.assertEqual(candles_df["timestamp"].iloc[0], 1748954400)
+
     # ---- initialize_exchange_data tests ----
 
     @aioresponses()
@@ -213,10 +260,24 @@ class TestLighterSpotCandles(TestCandlesBase):
         self.assertEqual(self.data_feed._market_id, 1)
 
     async def test_initialize_exchange_data_skips_if_already_set(self):
-        # _market_id already set in setUp — no API call should be made
+        # exchange data already initialized in setUp — no API call should be made
         with patch.object(self.data_feed._api_factory, "get_rest_assistant", new_callable=AsyncMock) as mock_rest:
             await self.data_feed.initialize_exchange_data()
             mock_rest.assert_not_called()
+
+    async def test_initialize_exchange_data_reuses_connector_market_id(self):
+        # Backed by a connector: market_id comes from the connector's market map; no REST fetch.
+        self.data_feed._market_id = None
+        self.data_feed._exchange_data_initialized = False
+        connector = MagicMock()
+        connector.exchange_symbol_associated_to_pair = AsyncMock(return_value=self.ex_trading_pair)
+        connector.market_info_for_trading_pair = MagicMock(return_value=MagicMock(market_id=5))
+        connector.throttler = None
+        self.data_feed.attach_connector(connector)
+        with patch.object(self.data_feed._api_factory, "get_rest_assistant", new_callable=AsyncMock) as mock_rest:
+            await self.data_feed.initialize_exchange_data()
+            mock_rest.assert_not_called()
+        self.assertEqual(self.data_feed._market_id, 5)
 
     @aioresponses()
     async def test_initialize_exchange_data_raises_if_market_not_found(self, mock_api):
@@ -270,7 +331,6 @@ class TestLighterSpotCandles(TestCandlesBase):
                 "hummingbot.data_feed.candles_feed.lighter_spot_candles.lighter_spot_candles.safe_ensure_future"
             ) as mock_future,
         ):
-            mock_future.side_effect = lambda coro: coro.close()
             mock_fetch.return_value = candle
             mock_sleep.side_effect = asyncio.CancelledError
 
@@ -293,7 +353,6 @@ class TestLighterSpotCandles(TestCandlesBase):
     @patch(PATCH_FETCH, new_callable=AsyncMock)
     async def test_process_websocket_messages_empty_candle(self, mock_fetch, mock_sleep, mock_future):
         # Replaces WS base test: first poll with no existing candles triggers fill_historical_candles
-        mock_future.side_effect = lambda coro: coro.close()
         candle = np.array([[1748954160.0, 94000.0, 94150.0, 93850.0, 94050.0, 0.50, 47025.0, 0.0, 0.0, 0.0]])
         mock_fetch.return_value = candle
         mock_sleep.side_effect = asyncio.CancelledError
@@ -310,7 +369,6 @@ class TestLighterSpotCandles(TestCandlesBase):
     @patch(PATCH_FETCH, new_callable=AsyncMock)
     async def test_process_websocket_messages_duplicated_candle_not_included(self, mock_fetch, mock_sleep, mock_future):
         # Same timestamp on second poll → in-place update, not append
-        mock_future.side_effect = lambda coro: coro.close()
         candle = np.array([[1748954160.0, 94000.0, 94150.0, 93850.0, 94050.0, 0.50, 47025.0, 0.0, 0.0, 0.0]])
         updated_candle = np.array([[1748954160.0, 94000.0, 94200.0, 93800.0, 94100.0, 0.65, 61165.0, 0.0, 0.0, 0.0]])
         mock_fetch.side_effect = [candle, updated_candle, asyncio.CancelledError()]
@@ -330,7 +388,6 @@ class TestLighterSpotCandles(TestCandlesBase):
     @patch(PATCH_FETCH, new_callable=AsyncMock)
     async def test_process_websocket_messages_with_two_valid_messages(self, mock_fetch, mock_sleep, mock_future):
         # Second poll has a newer timestamp → appended
-        mock_future.side_effect = lambda coro: coro.close()
         candle1 = np.array([[1748954160.0, 94000.0, 94150.0, 93850.0, 94050.0, 0.50, 47025.0, 0.0, 0.0, 0.0]])
         candle2 = np.array([[1748954220.0, 94050.0, 94200.0, 94000.0, 94180.0, 0.35, 32963.0, 0.0, 0.0, 0.0]])
         mock_fetch.side_effect = [candle1, candle2, asyncio.CancelledError()]
