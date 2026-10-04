@@ -1,5 +1,5 @@
-import unittest
 from decimal import Decimal
+import unittest
 
 from hummingbot.client import FLOAT_PRINTOUT_PRECISION, format_decimal
 

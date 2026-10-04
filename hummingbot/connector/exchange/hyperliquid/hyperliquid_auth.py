@@ -1,13 +1,13 @@
+from collections import OrderedDict
 import json
 import threading
 import time
-from collections import OrderedDict
 from typing import Any
 
 import eth_account
-import msgpack
 from eth_account.messages import encode_typed_data
 from eth_utils import is_hex_address, keccak, to_checksum_address, to_hex
+import msgpack
 
 from hummingbot.connector.exchange.hyperliquid import hyperliquid_constants as CONSTANTS
 from hummingbot.connector.exchange.hyperliquid.hyperliquid_web_utils import order_spec_to_order_wire
@@ -46,8 +46,7 @@ class HyperliquidAuth(AuthBase):
 
         if not is_hex_address(api_address):
             raise ValueError(
-                f"Invalid Hyperliquid wallet/vault address {api_address!r}; "
-                "expected a 0x-prefixed 20-byte hex address."
+                f"Invalid Hyperliquid wallet/vault address {api_address!r}; expected a 0x-prefixed 20-byte hex address."
             )
 
         # In "api_wallet" mode the private key is a Hyperliquid API/agent wallet
@@ -138,12 +137,7 @@ class HyperliquidAuth(AuthBase):
         return {"source": "a" if is_mainnet else "b", "connectionId": hash_iterable}
 
     def sign_l1_action(
-        self,
-        wallet,
-        action: dict[str, Any],
-        active_pool,
-        nonce: int,
-        is_mainnet: bool
+        self, wallet, action: dict[str, Any], active_pool, nonce: int, is_mainnet: bool
     ) -> dict[str, Any]:
         """
         Signs a L1 action.
@@ -221,12 +215,7 @@ class HyperliquidAuth(AuthBase):
             "vaultAddress": self._vault_address,
         }
 
-    def _sign_order_params(
-        self,
-        params: OrderedDict,
-        base_url: str,
-        nonce_ms: int
-    ) -> dict[str, Any]:
+    def _sign_order_params(self, params: OrderedDict, base_url: str, nonce_ms: int) -> dict[str, Any]:
         order = params["orders"]
         grouping = params["grouping"]
         order_action = {
@@ -294,9 +283,7 @@ class HyperliquidAuth(AuthBase):
             "verifyingContract": "0x0000000000000000000000000000000000000000",
         }
 
-        types = {
-            primary_type: payload_types
-        }
+        types = {primary_type: payload_types}
 
         data = {
             "domain": domain,
@@ -319,8 +306,8 @@ class HyperliquidAuth(AuthBase):
         is_mainnet = CONSTANTS.BASE_URL in base_url
         action = {
             "type": "approveAgent",
-            "hyperliquidChain": 'Mainnet' if is_mainnet else 'Testnet',
-            "signatureChainId": '0xa4b1' if is_mainnet else '0x66eee',
+            "hyperliquidChain": "Mainnet" if is_mainnet else "Testnet",
+            "signatureChainId": "0xa4b1" if is_mainnet else "0x66eee",
             "agentAddress": self._api_address,
             "agentName": CONSTANTS.DEFAULT_AGENT_NAME,
             "nonce": nonce_ms,

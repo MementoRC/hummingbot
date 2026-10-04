@@ -1,11 +1,11 @@
-import json
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
+import json
 
 from aioresponses import aioresponses
 
 from hummingbot.connector.exchange.backpack import backpack_constants as CONSTANTS, backpack_web_utils as web_utils
 from hummingbot.core.rate_oracle.sources.backpack_rate_source import BackpackRateSource
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class BackpackRateSourceTest(IsolatedAsyncioWrapperTestCase):
