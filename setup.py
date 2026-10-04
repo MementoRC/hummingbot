@@ -50,7 +50,6 @@ def main():
         "Brotli>=1.2.0",
         "cachetools>=5.3.1",
         "cryptography>=41.0.2",
-        "decibel-python-sdk==0.2.1",
         "eth-account>=0.13.0",
         "injective-py>=1.13",
         "msgpack-python",
@@ -82,7 +81,7 @@ def main():
         "web3",
         "xrpl-py>=4.4.0",
         "PyYaml>=0.2.5",
-        "lighter-sdk==1.0.8",
+        "lighter-sdk==1.1.2",
     ]
 
     # --- 1. Define Flags (But don't pass them to Cython yet) ---
