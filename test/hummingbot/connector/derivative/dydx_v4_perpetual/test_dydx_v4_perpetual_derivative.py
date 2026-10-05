@@ -11,20 +11,21 @@ import pytest
 from aioresponses import aioresponses
 from aioresponses.core import RequestCall
 
-# flake8: noqa: E402
 pytest.importorskip("v4_proto")
 
-import hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_constants as CONSTANTS
-import hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_web_utils as web_utils
-from hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_derivative import DydxV4PerpetualDerivative
-from hummingbot.connector.test_support.perpetual_derivative_test import AbstractPerpetualDerivativeTests
-from hummingbot.connector.trading_rule import TradingRule
-from hummingbot.connector.utils import combine_to_hb_trading_pair
-from hummingbot.core.data_type.common import OrderType, PositionAction, PositionMode, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState
-from hummingbot.core.data_type.order_book import OrderBook
-from hummingbot.core.data_type.order_book_row import OrderBookRow
-from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee, TokenAmount, TradeFeeBase
+import hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_constants as CONSTANTS  # noqa: E402
+import hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_web_utils as web_utils  # noqa: E402
+from hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_derivative import (  # noqa: E402
+    DydxV4PerpetualDerivative,
+)
+from hummingbot.connector.test_support.perpetual_derivative_test import AbstractPerpetualDerivativeTests  # noqa: E402
+from hummingbot.connector.trading_rule import TradingRule  # noqa: E402
+from hummingbot.connector.utils import combine_to_hb_trading_pair  # noqa: E402
+from hummingbot.core.data_type.common import OrderType, PositionAction, PositionMode, TradeType  # noqa: E402
+from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState  # noqa: E402
+from hummingbot.core.data_type.order_book import OrderBook  # noqa: E402
+from hummingbot.core.data_type.order_book_row import OrderBookRow  # noqa: E402
+from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee, TokenAmount, TradeFeeBase  # noqa: E402
 
 
 class DydxV4PerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualDerivativeTests):

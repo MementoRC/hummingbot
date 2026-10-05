@@ -10,18 +10,19 @@ import ujson
 from aioresponses import aioresponses
 from bidict import bidict
 
-# flake8: noqa: E402
 pytest.importorskip("v4_proto")
 
-import hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_constants as CONSTANTS
-import hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_web_utils as web_utils
-from hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_api_order_book_data_source import (
+import hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_constants as CONSTANTS  # noqa: E402
+import hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_web_utils as web_utils  # noqa: E402
+from hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_api_order_book_data_source import (  # noqa: E402
     DydxV4PerpetualAPIOrderBookDataSource,
 )
-from hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_derivative import DydxV4PerpetualDerivative
-from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
-from hummingbot.core.data_type.order_book import OrderBook
-from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType
+from hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_derivative import (  # noqa: E402
+    DydxV4PerpetualDerivative,
+)
+from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant  # noqa: E402
+from hummingbot.core.data_type.order_book import OrderBook  # noqa: E402
+from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType  # noqa: E402
 
 
 class DydxV4PerpetualAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):

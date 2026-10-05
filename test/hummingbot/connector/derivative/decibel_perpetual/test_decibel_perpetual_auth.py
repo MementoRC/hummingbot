@@ -3,10 +3,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-# flake8: noqa: E402
 pytest.importorskip("aptos_sdk")
 
-from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_auth import DecibelPerpetualAuth
+from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_auth import DecibelPerpetualAuth  # noqa: E402
 
 
 class DummyRESTRequest:

@@ -2,11 +2,10 @@ from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCa
 
 import pytest
 
-# flake8: noqa: E402
 pytest.importorskip("decibel")
 
-import hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_constants as CONSTANTS
-from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_web_utils import (
+import hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_constants as CONSTANTS  # noqa: E402
+from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_web_utils import (  # noqa: E402
     build_api_factory,
     fullnode_url,
     get_current_server_time,
