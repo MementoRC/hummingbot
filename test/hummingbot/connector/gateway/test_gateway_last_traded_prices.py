@@ -1,5 +1,5 @@
-import unittest
 from decimal import Decimal
+import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from hummingbot.connector.gateway.gateway import Gateway
@@ -47,8 +47,10 @@ class GatewayLastTradedPricesTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_falls_back_to_a_quote_when_the_oracle_is_empty(self):
         """The oracle only holds pairs MarketDataProvider tracks; quote the rest."""
-        with patch("hummingbot.connector.gateway.gateway.RateOracle") as mock_oracle, \
-             patch.object(Gateway, "get_quote_price", new_callable=AsyncMock) as mock_quote:
+        with (
+            patch("hummingbot.connector.gateway.gateway.RateOracle") as mock_oracle,
+            patch.object(Gateway, "get_quote_price", new_callable=AsyncMock) as mock_quote,
+        ):
             mock_oracle.get_instance.return_value.get_pair_rate.return_value = None
             mock_quote.return_value = Decimal("0.000000028336")
 
@@ -58,8 +60,10 @@ class GatewayLastTradedPricesTests(unittest.IsolatedAsyncioTestCase):
         self.assertAlmostEqual(2.8336e-8, price)
 
     async def test_cached_rate_is_preferred_over_a_quote(self):
-        with patch("hummingbot.connector.gateway.gateway.RateOracle") as mock_oracle, \
-             patch.object(Gateway, "get_quote_price", new_callable=AsyncMock) as mock_quote:
+        with (
+            patch("hummingbot.connector.gateway.gateway.RateOracle") as mock_oracle,
+            patch.object(Gateway, "get_quote_price", new_callable=AsyncMock) as mock_quote,
+        ):
             mock_oracle.get_instance.return_value.get_pair_rate.return_value = Decimal("1.5")
 
             price = await self.connector._get_last_traded_price(self.PAIR)

@@ -20,11 +20,7 @@ class HyperliquidAuthTests(TestCase):
         self.connection_mode = "arb_wallet"
         self.use_vault = False
         self.trading_required = True  # noqa: mock
-        self.auth = HyperliquidAuth(
-            api_address=self.api_address,
-            api_secret=self.api_secret,
-            use_vault=self.use_vault
-        )
+        self.auth = HyperliquidAuth(api_address=self.api_address, api_secret=self.api_secret, use_vault=self.use_vault)
 
     def async_run_with_timeout(self, coroutine: Awaitable, timeout: int = 1):
         return asyncio.get_event_loop().run_until_complete(asyncio.wait_for(coroutine, timeout))
@@ -101,19 +97,16 @@ class HyperliquidAuthTests(TestCase):
         # Verify both have unique signed content despite same timestamp
         signed_payloads = [json.loads(req.data) for req in requests]
         self.assertNotEqual(
-            signed_payloads[0]["signature"], signed_payloads[1]["signature"],
-            "Signatures must differ to avoid duplicate nonce issues"
+            signed_payloads[0]["signature"],
+            signed_payloads[1]["signature"],
+            "Signatures must differ to avoid duplicate nonce issues",
         )
 
     @patch("hummingbot.connector.exchange.hyperliquid.hyperliquid_auth._NonceManager.next_ms")
     def test_approve_agent(self, ts_mock: MagicMock):
         ts_mock.return_value = 1234567890000
 
-        auth = HyperliquidAuth(
-            api_address=self.api_address,
-            api_secret=self.api_secret,
-            use_vault=self.use_vault
-        )
+        auth = HyperliquidAuth(api_address=self.api_address, api_secret=self.api_secret, use_vault=self.use_vault)
 
         result = auth.approve_agent(CONSTANTS.BASE_URL)
 
@@ -214,27 +207,23 @@ class HyperliquidAuthValidationTests(TestCase):
 
     def test_is_key_authorized_owner_key(self):
         # arb_wallet: the key's address IS the account -> authorised with no agent list.
-        self.assertTrue(
-            HyperliquidAuth.is_key_authorized(self.DERIVED_ADDRESS, self.DERIVED_ADDRESS, []))
+        self.assertTrue(HyperliquidAuth.is_key_authorized(self.DERIVED_ADDRESS, self.DERIVED_ADDRESS, []))
 
     def test_is_key_authorized_approved_agent(self):
         # api_wallet: the key's address is an approved agent of the (different) account.
         agents = [{"address": self.DERIVED_ADDRESS, "name": "hb", "validUntil": 0}]
-        self.assertTrue(
-            HyperliquidAuth.is_key_authorized(self.DERIVED_ADDRESS, self.UNRELATED_ADDRESS, agents))
+        self.assertTrue(HyperliquidAuth.is_key_authorized(self.DERIVED_ADDRESS, self.UNRELATED_ADDRESS, agents))
 
     def test_is_key_authorized_unapproved_agent(self):
         agents = [{"address": self.OTHER_AGENT, "name": "someone-else", "validUntil": 0}]
-        self.assertFalse(
-            HyperliquidAuth.is_key_authorized(self.DERIVED_ADDRESS, self.UNRELATED_ADDRESS, agents))
+        self.assertFalse(HyperliquidAuth.is_key_authorized(self.DERIVED_ADDRESS, self.UNRELATED_ADDRESS, agents))
 
     def test_is_key_authorized_empty_agents_non_owner(self):
         # account has no approved agents and the key is not the owner -> cannot trade.
-        self.assertFalse(
-            HyperliquidAuth.is_key_authorized(self.DERIVED_ADDRESS, self.UNRELATED_ADDRESS, []))
+        self.assertFalse(HyperliquidAuth.is_key_authorized(self.DERIVED_ADDRESS, self.UNRELATED_ADDRESS, []))
 
     def test_is_key_authorized_is_checksum_insensitive(self):
         agents = [{"address": self.DERIVED_ADDRESS.lower()}]
         self.assertTrue(
-            HyperliquidAuth.is_key_authorized(
-                self.DERIVED_ADDRESS.lower(), self.UNRELATED_ADDRESS.lower(), agents))
+            HyperliquidAuth.is_key_authorized(self.DERIVED_ADDRESS.lower(), self.UNRELATED_ADDRESS.lower(), agents)
+        )

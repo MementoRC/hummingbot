@@ -9,6 +9,7 @@ and agent tool logs). Resolution order:
 
 If none apply (non-interactive with no env/stdin), the command fails with a clear error.
 """
+
 import getpass
 import os
 import sys
@@ -36,8 +37,7 @@ def resolve_password(*, password_stdin: bool, confirm: bool = False) -> str:
             fail("passwords do not match", ExitCode.CONFIG_ERROR)
         return password
 
-    fail("no password provided — use --password-stdin, set $HBOT_PASSWORD, or run interactively",
-         ExitCode.CONFIG_ERROR)
+    fail("no password provided — use --password-stdin, set $HBOT_PASSWORD, or run interactively", ExitCode.CONFIG_ERROR)
 
 
 def unlock_keystore(password: str) -> None:
@@ -48,6 +48,7 @@ def unlock_keystore(password: str) -> None:
     """
     from hummingbot.client.config.config_crypt import ETHKeyFileSecretManger, store_password_verification
     from hummingbot.client.config.security import Security
+
     secrets_manager = ETHKeyFileSecretManger(password)
     if Security.new_password_required():
         store_password_verification(secrets_manager)
@@ -62,6 +63,7 @@ def login(*, password_stdin: bool = False, confirm: bool = False):
     config/security imports are deferred here so commands that don't authenticate stay fast to import.
     """
     from hummingbot.client.config.config_helpers import load_client_config_map_from_file
+
     password = resolve_password(password_stdin=password_stdin, confirm=confirm)
     client_config_map = load_client_config_map_from_file()
     unlock_keystore(password)

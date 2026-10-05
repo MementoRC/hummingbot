@@ -61,17 +61,14 @@ class BackpackRateSource(RateSourceBase):
             elif quote == quote_token:
                 reachable_quotes.add(base)
 
-        return {
-            pair: price for pair, price in all_prices.items()
-            if split_hb_trading_pair(pair)[1] in reachable_quotes
-        }
+        return {pair: price for pair, price in all_prices.items() if split_hb_trading_pair(pair)[1] in reachable_quotes}
 
     def _ensure_exchange(self):
         if self._exchange is None:
             self._exchange = self._build_backpack_connector_without_private_keys()
 
     @staticmethod
-    def _build_backpack_connector_without_private_keys() -> 'BackpackExchange':
+    def _build_backpack_connector_without_private_keys() -> "BackpackExchange":
         from hummingbot.connector.exchange.backpack.backpack_exchange import BackpackExchange
 
         return BackpackExchange(
