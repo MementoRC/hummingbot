@@ -263,8 +263,8 @@ class BinanceUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
             mock_ws.return_value, self._ws_subscribe_success_response()
         )
         # Then receive throws
-        mock_ws.return_value.receive.side_effect = (
-            lambda *args, **kwargs: self._create_exception_and_unlock_test_with_event(Exception("TEST ERROR"))
+        mock_ws.return_value.receive.side_effect = lambda *args, **kwargs: (
+            self._create_exception_and_unlock_test_with_event(Exception("TEST ERROR"))
         )
         mock_ws.close.return_value = None
 

@@ -49,13 +49,15 @@ class BacktestingDataProvider(MarketDataProvider):
         self.trading_rules = {}
         self.conn_settings = AllConnectorSettings.get_connector_settings()
         self.connectors = LazyDict[str, Optional[ConnectorBase]](
-            lambda name: self.get_connector(name)
-            if (
-                self.conn_settings[name].type in self.CONNECTOR_TYPES
-                and name not in self.EXCLUDED_CONNECTORS
-                and "testnet" not in name
+            lambda name: (
+                self.get_connector(name)
+                if (
+                    self.conn_settings[name].type in self.CONNECTOR_TYPES
+                    and name not in self.EXCLUDED_CONNECTORS
+                    and "testnet" not in name
+                )
+                else None
             )
-            else None
         )
 
     def get_connector(self, connector_name: str):

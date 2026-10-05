@@ -81,7 +81,7 @@ class DydxV4PerpetualUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCas
         "DydxV4PerpetualUserStreamDataSource._sleep"
     )
     async def test_listen_for_user_stream_raises_logs_exception(self, mock_sleep, ws_connect_mock):
-        mock_sleep.side_effect = lambda: (asyncio.get_running_loop().run_until_complete(asyncio.sleep(0.5)))
+        mock_sleep.side_effect = lambda: asyncio.get_running_loop().run_until_complete(asyncio.sleep(0.5))
         ws_connect_mock.return_value = self.mocking_assistant.create_websocket_mock()
         ws_connect_mock.return_value.receive.side_effect = lambda *_: self._create_exception_and_unlock_test_with_event(
             Exception("TEST ERROR")

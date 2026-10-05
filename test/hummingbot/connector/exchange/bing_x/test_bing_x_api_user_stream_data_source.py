@@ -162,8 +162,8 @@ class TestBingXAPIUserStreamDataSource(IsolatedAsyncioWrapperTestCase):
 
         msg_queue: asyncio.Queue = asyncio.Queue()
         mock_ws.return_value = self.mocking_assistant.create_websocket_mock()
-        mock_ws.return_value.receive.side_effect = (
-            lambda *args, **kwargs: self._create_exception_and_unlock_test_with_event(Exception("TEST ERROR"))
+        mock_ws.return_value.receive.side_effect = lambda *args, **kwargs: (
+            self._create_exception_and_unlock_test_with_event(Exception("TEST ERROR"))
         )
         mock_ws.close.return_value = None
 

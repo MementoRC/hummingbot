@@ -250,8 +250,8 @@ class BackpackPerpetualAPIUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTe
     async def test_listen_for_user_stream_iter_message_throws_exception(self, mock_ws):
         msg_queue: asyncio.Queue = asyncio.Queue()
         mock_ws.return_value = self.mocking_assistant.create_websocket_mock()
-        mock_ws.return_value.receive.side_effect = (
-            lambda *args, **kwargs: self._create_exception_and_unlock_test_with_event(Exception("TEST ERROR"))
+        mock_ws.return_value.receive.side_effect = lambda *args, **kwargs: (
+            self._create_exception_and_unlock_test_with_event(Exception("TEST ERROR"))
         )
         mock_ws.close.return_value = None
 

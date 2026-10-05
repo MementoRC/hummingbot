@@ -240,8 +240,9 @@ class KillSwitchEnabledMode(KillSwitchMode):
     kill_switch_rate: Decimal = Field(
         default=Decimal("10"),
         json_schema_extra={
-            "prompt": lambda cm: "At what profit/loss rate would you like the bot to stop? "
-            "(e.g. -5 equals 5 percent loss)"
+            "prompt": lambda cm: (
+                "At what profit/loss rate would you like the bot to stop? (e.g. -5 equals 5 percent loss)"
+            )
         },
     )
     model_config = ConfigDict(title="kill_switch_enabled")
@@ -280,8 +281,9 @@ class DBSqliteMode(DBMode):
     db_engine: str = Field(
         default="sqlite",
         json_schema_extra={
-            "prompt": lambda cm: "Please enter database engine you want to use "
-            "(reference: https://docs.sqlalchemy.org/en/13/dialects/)"
+            "prompt": lambda cm: (
+                "Please enter database engine you want to use (reference: https://docs.sqlalchemy.org/en/13/dialects/)"
+            )
         },
     )
     model_config = ConfigDict(title="sqlite_db_engine")
@@ -404,7 +406,9 @@ class CommandsTimeoutConfigMap(BaseClientModel):
         default=Decimal("10"),
         gt=Decimal("0"),
         json_schema_extra={
-            "prompt": lambda cm: "Network timeout when fetching the minimum order amount in the create command (in seconds)"
+            "prompt": lambda cm: (
+                "Network timeout when fetching the minimum order amount in the create command (in seconds)"
+            )
         },
     )
     other_commands_timeout: Decimal = Field(
@@ -507,7 +511,9 @@ class CoinGeckoRateSourceMode(RateSourceModeBase):
         default="",
         description="API key to use to request information from CoinGecko (if empty public API will be used)",
         json_schema_extra={
-            "prompt": lambda cm: "CoinGecko API key (optional, leave empty to use public API) NOTE: will be stored in plain text due to a bug in the way hummingbot loads the config file",
+            "prompt": lambda cm: (
+                "CoinGecko API key (optional, leave empty to use public API) NOTE: will be stored in plain text due to a bug in the way hummingbot loads the config file"
+            ),
             "prompt_on_new": True,
             "is_connect_key": True,
         },
@@ -692,7 +698,9 @@ class CoinbaseAdvancedTradeRateSourceMode(ExchangeRateSourceModeBase):
         default=False,
         description="Use authentication for public endpoints",
         json_schema_extra={
-            "prompt": lambda cm: "Would you like to use authentication for public endpoints? (Yes/No) (only affects rate limiting)",
+            "prompt": lambda cm: (
+                "Would you like to use authentication for public endpoints? (Yes/No) (only affects rate limiting)"
+            ),
             "prompt_on_new": True,
             "is_connect_key": True,
         },
@@ -797,7 +805,9 @@ class ClientConfigMap(BaseClientModel):
         default=AutofillImportEnum.disabled,
         description="What to auto-fill in the prompt after each import command (start/config)",
         json_schema_extra={
-            "prompt": lambda cm: f"What to auto-fill in the prompt after each import command? ({'/'.join(list(AutofillImportEnum))})"
+            "prompt": lambda cm: (
+                f"What to auto-fill in the prompt after each import command? ({'/'.join(list(AutofillImportEnum))})"
+            )
         },
     )
     mqtt_bridge: MQTTBridgeConfigMap = Field(
@@ -909,7 +919,7 @@ class ClientConfigMap(BaseClientModel):
         "\nc_tick() method, that means for example that if the tick size is 1, the logic of the strategy"
         " \nwill run every second.",
         json_schema_extra={
-            "prompt": lambda cm: ("What tick size (in seconds) do you want to use? (Enter 0.5 to indicate 0.5 seconds)")
+            "prompt": lambda cm: "What tick size (in seconds) do you want to use? (Enter 0.5 to indicate 0.5 seconds)"
         },
     )
     market_data_collection: MarketDataCollectionConfigMap = Field(default=MarketDataCollectionConfigMap())

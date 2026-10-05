@@ -282,10 +282,12 @@ class MarketMakingControllerBase(ControllerBase):
     def get_levels_to_execute(self) -> List[str]:
         working_levels = self.filter_executors(
             executors=self.executors_info,
-            filter_func=lambda x: x.is_active
-            or (
-                x.close_type == CloseType.STOP_LOSS
-                and self.market_data_provider.time() - x.close_timestamp < self.config.cooldown_time
+            filter_func=lambda x: (
+                x.is_active
+                or (
+                    x.close_type == CloseType.STOP_LOSS
+                    and self.market_data_provider.time() - x.close_timestamp < self.config.cooldown_time
+                )
             ),
         )
         working_levels_ids = [executor.custom_info["level_id"] for executor in working_levels]
@@ -303,9 +305,11 @@ class MarketMakingControllerBase(ControllerBase):
     def executors_to_refresh(self) -> List[ExecutorAction]:
         executors_to_refresh = self.filter_executors(
             executors=self.executors_info,
-            filter_func=lambda x: not x.is_trading
-            and x.is_active
-            and self.market_data_provider.time() - x.timestamp > self.config.executor_refresh_time,
+            filter_func=lambda x: (
+                not x.is_trading
+                and x.is_active
+                and self.market_data_provider.time() - x.timestamp > self.config.executor_refresh_time
+            ),
         )
 
         return [
