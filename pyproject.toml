@@ -171,6 +171,7 @@ include = ["hummingbot/**/*.py", "test/**/*.py"]
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
 ignore = ["E251", "E501", "E702"]
+external = ["mock"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["hummingbot"]
