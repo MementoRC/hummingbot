@@ -1,25 +1,25 @@
 import asyncio
 import re
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from typing import Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from aioresponses import aioresponses
+from bidict import bidict
 import dateutil.parser as dp
 import pytest
 import ujson
-from aioresponses import aioresponses
-from bidict import bidict
+
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 pytest.importorskip("v4_proto")
 
-import hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_constants as CONSTANTS  # noqa: E402
-import hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_web_utils as web_utils  # noqa: E402
 from hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_api_order_book_data_source import (  # noqa: E402
     DydxV4PerpetualAPIOrderBookDataSource,
 )
+import hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_constants as CONSTANTS  # noqa: E402
 from hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_derivative import (  # noqa: E402
     DydxV4PerpetualDerivative,
 )
+import hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_web_utils as web_utils  # noqa: E402
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant  # noqa: E402
 from hummingbot.core.data_type.order_book import OrderBook  # noqa: E402
 from hummingbot.core.data_type.order_book_message import OrderBookMessage, OrderBookMessageType  # noqa: E402
@@ -41,12 +41,12 @@ class DydxV4PerpetualAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestC
         super().setUp()
 
         self.log_records = []
-        self.async_task: Optional[asyncio.Task] = None
+        self.async_task: asyncio.Task | None = None
 
         self.connector = DydxV4PerpetualDerivative(
             dydx_v4_perpetual_secret_phrase="mirror actor skill push coach wait confirm orchard "
-                                            "lunch mobile athlete gossip awake miracle matter "
-                                            "bus reopen team ladder lazy list timber render wait",
+            "lunch mobile athlete gossip awake miracle matter "
+            "bus reopen team ladder lazy list timber render wait",
             dydx_v4_perpetual_chain_address="dydx14zzueazeh0hj67cghhf9jypslcf9sh2n5k6art",
             trading_pairs=[self.trading_pair],
             trading_required=False,
@@ -136,8 +136,8 @@ class DydxV4PerpetualAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestC
         mock_api.get(regex_url, status=400, body=ujson.dumps({}))
 
         with self.assertRaisesRegex(
-                IOError,
-                f"Error executing request GET {url}. " f"HTTP status is 400. Error: {{}}",
+            IOError,
+            f"Error executing request GET {url}. HTTP status is 400. Error: {{}}",
         ):
             await self.data_source._order_book_snapshot(self.trading_pair)
 
@@ -363,7 +363,9 @@ class DydxV4PerpetualAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestC
 
         msg_queue: asyncio.Queue = asyncio.Queue()
 
-        self.listening_task = self.local_event_loop.create_task(self.data_source.listen_for_trades(self.local_event_loop, msg_queue))
+        self.listening_task = self.local_event_loop.create_task(
+            self.data_source.listen_for_trades(self.local_event_loop, msg_queue)
+        )
 
         msg: OrderBookMessage = await msg_queue.get()
 
