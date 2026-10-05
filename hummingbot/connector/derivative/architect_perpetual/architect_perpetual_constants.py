@@ -1,5 +1,5 @@
 import sys
-from enum import Enum
+from enum import StrEnum
 
 from hummingbot.core.api_throttler.data_types import RateLimit
 from hummingbot.core.data_type.in_flight_order import OrderState
@@ -60,7 +60,7 @@ ORDER_FILLS_ENDPOINT = "/orders/order-fills"
 PRIVATE_WS_CONNECTION = "private-ws-connection"
 
 
-class WSMessageTypes(str, Enum):
+class WSMessageTypes(StrEnum):
     ORDER_BOOK_SNAPSHOT = "2"
     TRADE = "t"
 
