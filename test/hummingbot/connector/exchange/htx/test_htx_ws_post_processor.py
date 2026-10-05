@@ -1,8 +1,8 @@
 import asyncio
 import gzip
 import json
-import unittest
 from typing import Any, Awaitable, Dict
+import unittest
 
 from hummingbot.connector.utils import GZipCompressionWSPostProcessor
 from hummingbot.core.web_assistant.connections.data_types import WSResponse
@@ -31,7 +31,6 @@ class HtxWSPostProcessorTest(unittest.TestCase):
         return ret
 
     def test_post_process(self):
-
         # Only Market data is compressed by GZIP
         orderbook_message: bytes = self._compress(
             message={

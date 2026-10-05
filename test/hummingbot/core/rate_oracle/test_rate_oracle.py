@@ -1,10 +1,8 @@
 from copy import deepcopy
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from typing import Dict, Optional
 from unittest.mock import MagicMock, patch
 
-import hummingbot.core.rate_oracle.utils as rate_oracle_utils
 from hummingbot.client.config.client_config_map import ClientConfigMap
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
 from hummingbot.connector.utils import combine_to_hb_trading_pair
@@ -12,7 +10,9 @@ from hummingbot.core.data_type.common import PriceType
 from hummingbot.core.rate_oracle.rate_oracle import RateOracle
 from hummingbot.core.rate_oracle.sources.coin_gecko_rate_source import CoinGeckoRateSource
 from hummingbot.core.rate_oracle.sources.rate_source_base import RateSourceBase
+import hummingbot.core.rate_oracle.utils as rate_oracle_utils
 from hummingbot.core.rate_oracle.utils import find_rate
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class DummyRateSource(RateSourceBase):
@@ -119,7 +119,7 @@ class RateOracleTest(IsolatedAsyncioWrapperTestCase):
         # Test case 2: common denominator pair has zero price - should skip that path
         prices_with_zero_common = {
             "HBOT-USDT": Decimal("100"),
-            "GBP-USDT": Decimal("0")  # Zero price in common denominator
+            "GBP-USDT": Decimal("0"),  # Zero price in common denominator
         }
         rate = find_rate(prices_with_zero_common, "HBOT-GBP")
         # Should return None since the only route involves dividing by zero

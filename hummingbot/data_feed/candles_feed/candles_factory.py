@@ -89,8 +89,7 @@ class CandlesFactory:
     }
 
     @classmethod
-    def get_candle(cls, candles_config: CandlesConfig,
-                   connector: Optional["ConnectorBase"] = None) -> CandlesBase:
+    def get_candle(cls, candles_config: CandlesConfig, connector: Optional["ConnectorBase"] = None) -> CandlesBase:
         """
         Returns a Candle object based on the specified configuration.
 

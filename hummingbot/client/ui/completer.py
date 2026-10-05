@@ -1,10 +1,10 @@
 import importlib
 import inspect
 import os
-import re
-import sys
 from os import listdir
 from os.path import exists, isfile, join
+import re
+import sys
 from typing import List, Optional
 
 from prompt_toolkit.completion import CompleteEvent, Completer, WordCompleter
@@ -44,16 +44,26 @@ class HummingbotCompleter(Completer):
         self._command_completer = WordCompleter(self.parser.commands, ignore_case=True)
 
         # Static completers that don't need gateway
-        self._spot_exchange_completer = WordCompleter(sorted(AllConnectorSettings.get_exchange_names()), ignore_case=True)
-        self._exchange_clob_completer = WordCompleter(sorted(AllConnectorSettings.get_exchange_names()), ignore_case=True)
-        self._trading_timeframe_completer = WordCompleter(["infinite", "from_date_to_date", "daily_between_times"], ignore_case=True)
+        self._spot_exchange_completer = WordCompleter(
+            sorted(AllConnectorSettings.get_exchange_names()), ignore_case=True
+        )
+        self._exchange_clob_completer = WordCompleter(
+            sorted(AllConnectorSettings.get_exchange_names()), ignore_case=True
+        )
+        self._trading_timeframe_completer = WordCompleter(
+            ["infinite", "from_date_to_date", "daily_between_times"], ignore_case=True
+        )
         self._derivative_completer = WordCompleter(AllConnectorSettings.get_derivative_names(), ignore_case=True)
-        self._derivative_exchange_completer = WordCompleter(AllConnectorSettings.get_derivative_names(), ignore_case=True)
+        self._derivative_exchange_completer = WordCompleter(
+            AllConnectorSettings.get_derivative_names(), ignore_case=True
+        )
         self._connect_option_completer = WordCompleter(CONNECT_OPTIONS, ignore_case=True)
         self._export_completer = WordCompleter(["keys", "trades"], ignore_case=True)
         self._balance_completer = WordCompleter(["limit", "paper"], ignore_case=True)
         self._history_completer = WordCompleter(["--days", "--verbose", "--precision"], ignore_case=True)
-        self._gateway_completer = WordCompleter(["allowance", "approve", "balance", "config", "connect", "generate-certs", "list"], ignore_case=True)
+        self._gateway_completer = WordCompleter(
+            ["allowance", "approve", "balance", "config", "connect", "generate-certs", "list"], ignore_case=True
+        )
         self._gateway_chain_completer = WordCompleter(GATEWAY_CHAINS, ignore_case=True)
         self._gateway_namespace_completer = WordCompleter(GATEWAY_NAMESPACES, ignore_case=True)
         self._gateway_eth_connector_completer = WordCompleter(GATEWAY_ETH_DEXS, ignore_case=True)
@@ -86,11 +96,18 @@ class HummingbotCompleter(Completer):
                 if module is not None:
                     script_module = importlib.reload(module)
                 else:
-                    script_module = importlib.import_module(f".{script_name}",
-                                                            package=settings.SCRIPT_STRATEGIES_MODULE)
-                config_class = next((member for member_name, member in inspect.getmembers(script_module)
-                                     if inspect.isclass(member) and member not in [BaseClientModel, StrategyV2ConfigBase] and
-                                     (issubclass(member, BaseClientModel) or issubclass(member, StrategyV2ConfigBase))))
+                    script_module = importlib.import_module(
+                        f".{script_name}", package=settings.SCRIPT_STRATEGIES_MODULE
+                    )
+                config_class = next(
+                    (
+                        member
+                        for member_name, member in inspect.getmembers(script_module)
+                        if inspect.isclass(member)
+                        and member not in [BaseClientModel, StrategyV2ConfigBase]
+                        and (issubclass(member, BaseClientModel) or issubclass(member, StrategyV2ConfigBase))
+                    )
+                )
                 if config_class:
                     strategies_with_config.append(script_name)
             except Exception:
@@ -131,7 +148,9 @@ class HummingbotCompleter(Completer):
             if exchange in self.prompt_text:
                 market = exchange
                 break
-        trading_pairs = trading_pair_fetcher.trading_pairs.get(market, []) if trading_pair_fetcher.ready and market else []
+        trading_pairs = (
+            trading_pair_fetcher.trading_pairs.get(market, []) if trading_pair_fetcher.ready and market else []
+        )
         return WordCompleter(trading_pairs, ignore_case=True, sentence=True)
 
     @property
@@ -150,7 +169,8 @@ class HummingbotCompleter(Completer):
     def _exchange_clob_amm_completer(self):
         """Dynamic completer for Exchange/AMM/CLOB"""
         connectors = AllConnectorSettings.get_exchange_names().union(
-            AllConnectorSettings.get_gateway_amm_connector_names())
+            AllConnectorSettings.get_gateway_amm_connector_names()
+        )
         return WordCompleter(sorted(connectors), ignore_case=True)
 
     @property
@@ -179,14 +199,17 @@ class HummingbotCompleter(Completer):
         return "(" in self.prompt_text and ")" in self.prompt_text and "/" in self.prompt_text
 
     def _complete_exchanges(self, document: Document) -> bool:
-        return any(x for x in ("exchange name", "name of exchange", "name of the exchange")
-                   if x in self.prompt_text.lower())
+        return any(
+            x for x in ("exchange name", "name of exchange", "name of the exchange") if x in self.prompt_text.lower()
+        )
 
     def _complete_derivatives(self, document: Document) -> bool:
         text_before_cursor: str = document.text_before_cursor
-        return "perpetual" in text_before_cursor or \
-               any(x for x in ("derivative connector", "derivative name", "name of derivative", "name of the derivative")
-                   if x in self.prompt_text.lower())
+        return "perpetual" in text_before_cursor or any(
+            x
+            for x in ("derivative connector", "derivative name", "name of derivative", "name of the derivative")
+            if x in self.prompt_text.lower()
+        )
 
     def _complete_connect_options(self, document: Document) -> bool:
         text_before_cursor: str = document.text_before_cursor
@@ -205,8 +228,7 @@ class HummingbotCompleter(Completer):
         return "spot" in self.prompt_text
 
     def _complete_trading_timeframe(self, document: Document) -> bool:
-        return any(x for x in ("trading timeframe", "execution timeframe")
-                   if x in self.prompt_text.lower())
+        return any(x for x in ("trading timeframe", "execution timeframe") if x in self.prompt_text.lower())
 
     def _complete_export_options(self, document: Document) -> bool:
         text_before_cursor: str = document.text_before_cursor
@@ -226,7 +248,7 @@ class HummingbotCompleter(Completer):
         to suggest - an unknown subcommand, or an argument that takes a free-form value
         such as a token symbol or a config value.
         """
-        args = document.text_before_cursor[len("gateway "):]
+        args = document.text_before_cursor[len("gateway ") :]
         if " " not in args:
             # the subcommand itself is still being typed
             return self._gateway_completer
@@ -253,8 +275,7 @@ class HummingbotCompleter(Completer):
 
     def _complete_paths(self, document: Document) -> bool:
         text_before_cursor: str = document.text_before_cursor
-        return (("path" in self.prompt_text and "file" in self.prompt_text) or
-                "import" in text_before_cursor)
+        return ("path" in self.prompt_text and "file" in self.prompt_text) or "import" in text_before_cursor
 
     def _complete_command(self, document: Document) -> bool:
         text_before_cursor: str = document.text_before_cursor
@@ -262,7 +283,7 @@ class HummingbotCompleter(Completer):
 
     def _complete_subcommand(self, document: Document) -> bool:
         text_before_cursor: str = document.text_before_cursor
-        index: int = text_before_cursor.index(' ')
+        index: int = text_before_cursor.index(" ")
         return text_before_cursor[0:index] in self.parser.commands
 
     def _complete_balance_limit_exchanges(self, document: Document):
@@ -402,7 +423,7 @@ class HummingbotCompleter(Completer):
         else:
             text_before_cursor: str = document.text_before_cursor
             try:
-                first_word: str = text_before_cursor[0:text_before_cursor.index(' ')]
+                first_word: str = text_before_cursor[0 : text_before_cursor.index(" ")]
             except ValueError:
                 return
             subcommand_completer: Completer = self.get_subcommand_completer(first_word)
