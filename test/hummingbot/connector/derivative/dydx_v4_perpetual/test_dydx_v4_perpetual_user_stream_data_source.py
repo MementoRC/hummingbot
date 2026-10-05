@@ -3,6 +3,11 @@ from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCa
 from typing import Optional
 from unittest.mock import AsyncMock, patch
 
+import pytest
+
+# flake8: noqa: E402
+pytest.importorskip("v4_proto")
+
 from hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_derivative import DydxV4PerpetualDerivative
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 

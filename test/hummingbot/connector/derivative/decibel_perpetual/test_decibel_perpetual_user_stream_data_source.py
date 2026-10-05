@@ -3,6 +3,11 @@ from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCa
 from unittest.mock import AsyncMock, MagicMock
 
 import aiohttp
+import pytest
+
+# flake8: noqa: E402
+pytest.importorskip("decibel")
+pytest.importorskip("aptos_sdk")
 
 from hummingbot.connector.derivative.decibel_perpetual import decibel_perpetual_constants as CONSTANTS
 from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_auth import DecibelPerpetualAuth

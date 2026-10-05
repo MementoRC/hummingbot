@@ -5,9 +5,13 @@ from typing import Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import dateutil.parser as dp
+import pytest
 import ujson
 from aioresponses import aioresponses
 from bidict import bidict
+
+# flake8: noqa: E402
+pytest.importorskip("v4_proto")
 
 import hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_constants as CONSTANTS
 import hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_web_utils as web_utils

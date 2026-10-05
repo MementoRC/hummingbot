@@ -7,8 +7,12 @@ from test.hummingbot.connector.derivative.dydx_v4_perpetual.programmable_v4_clie
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from unittest.mock import AsyncMock, patch
 
+import pytest
 from aioresponses import aioresponses
 from aioresponses.core import RequestCall
+
+# flake8: noqa: E402
+pytest.importorskip("v4_proto")
 
 import hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_constants as CONSTANTS
 import hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_web_utils as web_utils
