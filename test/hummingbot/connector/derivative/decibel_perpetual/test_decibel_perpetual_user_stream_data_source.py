@@ -2,18 +2,23 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
 import aiohttp
+import pytest
 
-from hummingbot.connector.derivative.decibel_perpetual import decibel_perpetual_constants as CONSTANTS
-from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_auth import DecibelPerpetualAuth
-from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_user_stream_data_source import (
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
+
+pytest.importorskip("decibel")
+pytest.importorskip("aptos_sdk")
+
+from hummingbot.connector.derivative.decibel_perpetual import decibel_perpetual_constants as CONSTANTS  # noqa: E402
+from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_auth import DecibelPerpetualAuth  # noqa: E402
+from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_user_stream_data_source import (  # noqa: E402
     DecibelPerpetualUserStreamDataSource,
 )
-from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
-from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
-from hummingbot.core.web_assistant.connections.rest_connection import RESTConnection
-from hummingbot.core.web_assistant.connections.ws_connection import WSConnection
-from hummingbot.core.web_assistant.ws_assistant import WSAssistant
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
+from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant  # noqa: E402
+from hummingbot.core.api_throttler.async_throttler import AsyncThrottler  # noqa: E402
+from hummingbot.core.web_assistant.connections.rest_connection import RESTConnection  # noqa: E402
+from hummingbot.core.web_assistant.connections.ws_connection import WSConnection  # noqa: E402
+from hummingbot.core.web_assistant.ws_assistant import WSAssistant  # noqa: E402
 
 
 class DecibelPerpetualUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):

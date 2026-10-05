@@ -1203,7 +1203,6 @@ class BitgetPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         mock_api: aioresponses,
         callback: Optional[Callable] = lambda *args, **kwargs: None,
     ) -> List[str]:
-
         all_urls = []
 
         url = (
@@ -1247,7 +1246,6 @@ class BitgetPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         mock_api: aioresponses,
         callback: Optional[Callable] = lambda *args, **kwargs: None,
     ) -> List[str]:
-
         all_urls = []
 
         url = (
@@ -1764,7 +1762,6 @@ class BitgetPerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         mock_api: aioresponses,
         callback: Optional[Callable] = lambda *args, **kwargs: None,
     ) -> str:
-
         return_url = super()._configure_balance_response(response=response, mock_api=mock_api, callback=callback)
 
         url = self.balance_url + f"?productType={CONSTANTS.USD_PRODUCT_TYPE}"

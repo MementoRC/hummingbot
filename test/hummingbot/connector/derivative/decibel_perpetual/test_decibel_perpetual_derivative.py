@@ -1,23 +1,30 @@
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict, Optional
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from bidict import bidict
 import pandas as pd
+import pytest
 
-from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_api_order_book_data_source import (
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
+
+pytest.importorskip("decibel")
+pytest.importorskip("aptos_sdk")
+
+from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_api_order_book_data_source import (  # noqa: E402
     DecibelPerpetualAPIOrderBookDataSource,
 )
-import hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_constants as CONSTANTS
-from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_derivative import DecibelPerpetualDerivative
-from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
-from hummingbot.core.data_type.common import OrderType, PositionAction, PositionMode, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState
-from hummingbot.core.event.event_logger import EventLogger
-from hummingbot.core.event.events import MarketEvent
-from hummingbot.core.network_iterator import NetworkStatus
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
+import hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_constants as CONSTANTS  # noqa: E402
+from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_derivative import (  # noqa: E402
+    DecibelPerpetualDerivative,
+)
+from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant  # noqa: E402
+from hummingbot.core.data_type.common import OrderType, PositionAction, PositionMode, TradeType  # noqa: E402
+from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState  # noqa: E402
+from hummingbot.core.event.event_logger import EventLogger  # noqa: E402
+from hummingbot.core.event.events import MarketEvent  # noqa: E402
+from hummingbot.core.network_iterator import NetworkStatus  # noqa: E402
 
 
 class DummyRESTRequest:
@@ -74,7 +81,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         self.exchange._order_tracker.logger().setLevel(1)
         self.exchange._order_tracker.logger().addHandler(self)
         self.mocking_assistant = NetworkMockingAssistant(self.local_event_loop)
-        self.test_task: Optional[asyncio.Task] = None
+        self.test_task: asyncio.Task | None = None
         self.resume_test_event = asyncio.Event()
         self.exchange._set_trading_pair_symbol_map(bidict({self.exchange_symbol: self.trading_pair}))
         # Also set instance-level _trading_pair_symbol_map (used by trading_pair_associated_to_exchange_symbol)
@@ -130,7 +137,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         user_taker_rate: float = 0.00034,
         fee_tier: int = 0,
         active_referral_discount: float = 0.0,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return {
             "account": "0xtest",
             "user_maker_rate": user_maker_rate,
@@ -154,7 +161,7 @@ class DecibelPerpetualDerivativeUnitTest(IsolatedAsyncioWrapperTestCase):
         px_decimals: int = 6,
         sz_decimals: int = 3,
         max_open_interest: int = 1000000000,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         return {
             "markets": [
                 {

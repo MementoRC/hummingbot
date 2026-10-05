@@ -1,5 +1,11 @@
-import hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_constants as CONSTANTS
-from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_web_utils import (
+import pytest
+
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
+
+pytest.importorskip("decibel")
+
+import hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_constants as CONSTANTS  # noqa: E402
+from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_web_utils import (  # noqa: E402
     build_api_factory,
     fullnode_url,
     get_current_server_time,
@@ -8,7 +14,6 @@ from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_web_uti
     public_rest_url,
     wss_url,
 )
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class TestDecibelPerpetualWebUtils(IsolatedAsyncioWrapperTestCase):

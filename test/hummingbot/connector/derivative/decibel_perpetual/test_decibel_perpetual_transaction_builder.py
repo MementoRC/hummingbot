@@ -1,11 +1,17 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_auth import DecibelPerpetualAuth
-import hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_constants as CONSTANTS
-from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_transaction_builder import (
+import pytest
+
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
+
+pytest.importorskip("decibel")
+pytest.importorskip("aptos_sdk")
+
+from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_auth import DecibelPerpetualAuth  # noqa: E402
+import hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_constants as CONSTANTS  # noqa: E402
+from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_transaction_builder import (  # noqa: E402
     DecibelPerpetualTransactionBuilder,
 )
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 # DecibelWriteDex is imported at module level in transaction_builder
 TX_BUILDER_MODULE = "hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_transaction_builder"

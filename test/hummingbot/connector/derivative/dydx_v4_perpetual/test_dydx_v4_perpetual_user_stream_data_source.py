@@ -1,10 +1,16 @@
 import asyncio
-from typing import Optional
 from unittest.mock import AsyncMock, patch
 
-from hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_derivative import DydxV4PerpetualDerivative
-from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
+import pytest
+
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
+
+pytest.importorskip("v4_proto")
+
+from hummingbot.connector.derivative.dydx_v4_perpetual.dydx_v4_perpetual_derivative import (  # noqa: E402
+    DydxV4PerpetualDerivative,
+)
+from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant  # noqa: E402
 
 
 class DydxV4PerpetualUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
@@ -24,7 +30,7 @@ class DydxV4PerpetualUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCas
         super().setUp()
 
         self.log_records = []
-        self.async_task: Optional[asyncio.Task] = None
+        self.async_task: asyncio.Task | None = None
 
         self.connector = DydxV4PerpetualDerivative(
             dydx_v4_perpetual_secret_phrase="mirror actor skill push coach wait confirm orchard "
@@ -91,7 +97,6 @@ class DydxV4PerpetualUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCas
 
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
     async def test_ws_authentication_successful(self, ws_connect_mock):
-
         ws_connect_mock.return_value = self.mocking_assistant.create_websocket_mock()
         await self.data_source._connected_websocket_assistant()
 
