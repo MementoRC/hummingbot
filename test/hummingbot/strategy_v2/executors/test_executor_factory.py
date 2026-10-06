@@ -502,6 +502,7 @@ class TestOrchestratorUpdateCachedPerformance(unittest.TestCase):
         from hummingbot.strategy_v2.models.executors_info import ExecutorInfo
 
         info = MagicMock(spec=ExecutorInfo)
+        info.type = "position_executor"
         info.close_type = close_type
         info.net_pnl_quote = net_pnl_quote
         info.filled_amount_quote = filled_amount_quote
