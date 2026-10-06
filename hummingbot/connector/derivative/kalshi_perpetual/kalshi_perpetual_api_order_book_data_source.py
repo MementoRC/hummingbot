@@ -1,7 +1,7 @@
 import asyncio
 from datetime import datetime
 from decimal import Decimal
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 from urllib.parse import urlparse
 
 import hummingbot.connector.derivative.kalshi_perpetual.kalshi_perpetual_constants as CONSTANTS
@@ -30,11 +30,11 @@ class KalshiPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
     """
 
     def __init__(
-            self,
-            trading_pairs: List[str],
-            connector: 'KalshiPerpetualDerivative',
-            api_factory: WebAssistantsFactory,
-            domain: str = CONSTANTS.DEFAULT_DOMAIN
+        self,
+        trading_pairs: list[str],
+        connector: "KalshiPerpetualDerivative",
+        api_factory: WebAssistantsFactory,
+        domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
         super().__init__(trading_pairs)
         self._connector = connector
@@ -48,25 +48,24 @@ class KalshiPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
         self._last_update_id = 0
         # Per connection: channel -> subscription id, order book subscription id -> last seq, and the local books
         # (market ticker -> side -> price -> contracts).
-        self._channel_sids: Dict[str, int] = {}
-        self._last_order_book_seq: Dict[int, int] = {}
-        self._local_books: Dict[str, Dict[str, Dict[Decimal, Decimal]]] = {}
+        self._channel_sids: dict[str, int] = {}
+        self._last_order_book_seq: dict[int, int] = {}
+        self._local_books: dict[str, dict[str, dict[Decimal, Decimal]]] = {}
 
-    async def get_last_traded_prices(self,
-                                     trading_pairs: List[str],
-                                     domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str], domain: str | None = None) -> dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def get_funding_info(self, trading_pair: str) -> FundingInfo:
         symbol = await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
         market_response, funding_estimate = await asyncio.gather(
             self._connector._api_get(
-                path_url=CONSTANTS.MARKET_PATH_URL.format(ticker=symbol),
-                limit_id=CONSTANTS.MARKET_PATH_URL),
+                path_url=CONSTANTS.MARKET_PATH_URL.format(ticker=symbol), limit_id=CONSTANTS.MARKET_PATH_URL
+            ),
             self._connector._api_get(
                 path_url=CONSTANTS.FUNDING_RATE_ESTIMATE_PATH_URL,
                 params={"ticker": symbol},
-                limit_id=CONSTANTS.FUNDING_RATE_ESTIMATE_PATH_URL),
+                limit_id=CONSTANTS.FUNDING_RATE_ESTIMATE_PATH_URL,
+            ),
         )
         contract_size = self._connector.get_contract_size(trading_pair)
         return FundingInfo(
@@ -77,26 +76,32 @@ class KalshiPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             rate=Decimal(str(funding_estimate["funding_rate"])),
         )
 
-    async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, Any]:
+    async def _request_order_book_snapshot(self, trading_pair: str) -> dict[str, Any]:
         symbol = await self._connector.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
         return await self._connector._api_get(
-            path_url=CONSTANTS.ORDER_BOOK_PATH_URL.format(ticker=symbol),
-            limit_id=CONSTANTS.ORDER_BOOK_PATH_URL)
+            path_url=CONSTANTS.ORDER_BOOK_PATH_URL.format(ticker=symbol), limit_id=CONSTANTS.ORDER_BOOK_PATH_URL
+        )
 
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBookMessage:
-        snapshot_response: Dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
+        snapshot_response: dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
         order_book = snapshot_response["orderbook"]
         contract_size = self._connector.get_contract_size(trading_pair)
-        return OrderBookMessage(OrderBookMessageType.SNAPSHOT, {
-            "trading_pair": trading_pair,
-            "update_id": self._next_update_id(),
-            "bids": self._to_underlying_levels(order_book.get("bids") or [], contract_size),
-            "asks": self._to_underlying_levels(order_book.get("asks") or [], contract_size),
-        }, timestamp=self._time())
+        return OrderBookMessage(
+            OrderBookMessageType.SNAPSHOT,
+            {
+                "trading_pair": trading_pair,
+                "update_id": self._next_update_id(),
+                "bids": self._to_underlying_levels(order_book.get("bids") or [], contract_size),
+                "asks": self._to_underlying_levels(order_book.get("asks") or [], contract_size),
+            },
+            timestamp=self._time(),
+        )
 
     async def _connected_websocket_assistant(self) -> WSAssistant:
         if self._api_factory.auth is None:
-            raise ValueError("Kalshi requires API credentials to stream market data: its websocket handshake is signed.")
+            raise ValueError(
+                "Kalshi requires API credentials to stream market data: its websocket handshake is signed."
+            )
         url = web_utils.wss_url(self._domain)
         headers = self._api_factory.auth.header_for_authentication(method="GET", path=urlparse(url).path)
         ws: WSAssistant = await self._api_factory.get_ws_assistant()
@@ -118,7 +123,9 @@ class KalshiPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
                 "cmd": "subscribe",
                 "params": {
                     "channels": [
-                        CONSTANTS.WS_ORDER_BOOK_CHANNEL, CONSTANTS.WS_TRADE_CHANNEL, CONSTANTS.WS_TICKER_CHANNEL,
+                        CONSTANTS.WS_ORDER_BOOK_CHANNEL,
+                        CONSTANTS.WS_TRADE_CHANNEL,
+                        CONSTANTS.WS_TICKER_CHANNEL,
                     ],
                     "market_tickers": symbols,
                 },
@@ -133,7 +140,7 @@ class KalshiPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
 
     async def _process_websocket_messages(self, websocket_assistant: WSAssistant):
         async for ws_response in websocket_assistant.iter_messages():
-            data: Dict[str, Any] = ws_response.data
+            data: dict[str, Any] = ws_response.data
             if data is None:  # data will be None when the websocket is disconnected
                 continue
             if data.get("type") in (CONSTANTS.WS_ORDER_BOOK_SNAPSHOT_MESSAGE, CONSTANTS.WS_ORDER_BOOK_DELTA_MESSAGE):
@@ -147,7 +154,7 @@ class KalshiPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
                     event_message=data, websocket_assistant=websocket_assistant
                 )
 
-    def _check_order_book_sequence(self, message: Dict[str, Any]):
+    def _check_order_book_sequence(self, message: dict[str, Any]):
         sid, seq = message["sid"], message["seq"]
         last_seq = self._last_order_book_seq.get(sid)
         if last_seq is not None and seq != last_seq + 1:
@@ -157,7 +164,7 @@ class KalshiPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             )
         self._last_order_book_seq[sid] = seq
 
-    def _apply_to_local_book(self, message: Dict[str, Any]):
+    def _apply_to_local_book(self, message: dict[str, Any]):
         msg = message["msg"]
         if message["type"] == CONSTANTS.WS_ORDER_BOOK_SNAPSHOT_MESSAGE:
             self._local_books[msg["market_ticker"]] = {
@@ -176,12 +183,12 @@ class KalshiPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             message["size"] = size
         message["update_id"] = self._next_update_id()
 
-    def _channel_originating_message(self, event_message: Dict[str, Any]) -> str:
+    def _channel_originating_message(self, event_message: dict[str, Any]) -> str:
         # Queue keys are Kalshi's message types; "subscribed" and "error" fall through to the unknown-channel handler.
         return event_message.get("type", "")
 
     async def _process_message_for_unknown_channel(
-            self, event_message: Dict[str, Any], websocket_assistant: WSAssistant
+        self, event_message: dict[str, Any], websocket_assistant: WSAssistant
     ):
         message_type = event_message.get("type")
         if message_type == CONSTANTS.WS_SUBSCRIBED_MESSAGE:
@@ -192,46 +199,58 @@ class KalshiPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             # pair. Not a ConnectionError, which would reconnect without pausing.
             raise IOError(f"Kalshi order book stream error: {event_message.get('msg')}")
 
-    async def _parse_order_book_snapshot_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_snapshot_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         msg = raw_message["msg"]
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(msg["market_ticker"])
         contract_size = self._connector.get_contract_size(trading_pair)
-        snapshot_message = OrderBookMessage(OrderBookMessageType.SNAPSHOT, {
-            "trading_pair": trading_pair,
-            "update_id": raw_message["update_id"],
-            "bids": self._to_underlying_levels(msg.get("bid") or [], contract_size),
-            "asks": self._to_underlying_levels(msg.get("ask") or [], contract_size),
-        }, timestamp=self._time())
+        snapshot_message = OrderBookMessage(
+            OrderBookMessageType.SNAPSHOT,
+            {
+                "trading_pair": trading_pair,
+                "update_id": raw_message["update_id"],
+                "bids": self._to_underlying_levels(msg.get("bid") or [], contract_size),
+                "asks": self._to_underlying_levels(msg.get("ask") or [], contract_size),
+            },
+            timestamp=self._time(),
+        )
         message_queue.put_nowait(snapshot_message)
 
-    async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_order_book_diff_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         msg = raw_message["msg"]
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(msg["market_ticker"])
         contract_size = self._connector.get_contract_size(trading_pair)
         level = [[Decimal(msg["price"]) / contract_size, raw_message["size"] * contract_size]]
-        diff_message = OrderBookMessage(OrderBookMessageType.DIFF, {
-            "trading_pair": trading_pair,
-            "update_id": raw_message["update_id"],
-            "bids": level if msg["side"] == "bid" else [],
-            "asks": level if msg["side"] == "ask" else [],
-        }, timestamp=msg["ts_ms"] * 1e-3)
+        diff_message = OrderBookMessage(
+            OrderBookMessageType.DIFF,
+            {
+                "trading_pair": trading_pair,
+                "update_id": raw_message["update_id"],
+                "bids": level if msg["side"] == "bid" else [],
+                "asks": level if msg["side"] == "ask" else [],
+            },
+            timestamp=msg["ts_ms"] * 1e-3,
+        )
         message_queue.put_nowait(diff_message)
 
-    async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_trade_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         msg = raw_message["msg"]
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(msg["market_ticker"])
         contract_size = self._connector.get_contract_size(trading_pair)
-        trade_message = OrderBookMessage(OrderBookMessageType.TRADE, {
-            "trading_pair": trading_pair,
-            "trade_type": float(TradeType.BUY.value) if msg["taker_side"] == "bid" else float(TradeType.SELL.value),
-            "trade_id": msg["trade_id"],
-            "update_id": msg["ts_ms"],
-            "price": Decimal(msg["price"]) / contract_size,
-            "amount": Decimal(msg["count"]) * contract_size,
-        }, timestamp=msg["ts_ms"] * 1e-3)
+        trade_message = OrderBookMessage(
+            OrderBookMessageType.TRADE,
+            {
+                "trading_pair": trading_pair,
+                "trade_type": float(TradeType.BUY.value) if msg["taker_side"] == "bid" else float(TradeType.SELL.value),
+                "trade_id": msg["trade_id"],
+                "update_id": msg["ts_ms"],
+                "price": Decimal(msg["price"]) / contract_size,
+                "amount": Decimal(msg["count"]) * contract_size,
+            },
+            timestamp=msg["ts_ms"] * 1e-3,
+        )
         message_queue.put_nowait(trade_message)
 
-    async def _parse_funding_info_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
+    async def _parse_funding_info_message(self, raw_message: dict[str, Any], message_queue: asyncio.Queue):
         msg = raw_message["msg"]
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(msg["market_ticker"])
         if trading_pair not in self._trading_pairs:
@@ -288,7 +307,7 @@ class KalshiPerpetualAPIOrderBookDataSource(PerpetualAPIOrderBookDataSource):
             return False
 
     @staticmethod
-    def _to_underlying_levels(levels: List[List[str]], contract_size: Decimal) -> List[List[Decimal]]:
+    def _to_underlying_levels(levels: list[list[str]], contract_size: Decimal) -> list[list[Decimal]]:
         return [[Decimal(price) / contract_size, Decimal(count) * contract_size] for price, count in levels]
 
     def _next_update_id(self) -> int:
