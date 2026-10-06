@@ -112,7 +112,8 @@ class BitmartAPIUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
             "args": [
                 "test_api_key",
                 str(int(self.time_synchronizer.time() * 1e3)),
-                "f0f176c799346a7730c9c237a09d14742971f3ab59848dde75ef1ac95b04c4e5"]  # noqa: mock
+                "f0f176c799346a7730c9c237a09d14742971f3ab59848dde75ef1ac95b04c4e5",  # noqa: mock
+            ]
         }
         self.assertEqual(expected_login, sent_messages[0])
         expected_orders_subscription = {
