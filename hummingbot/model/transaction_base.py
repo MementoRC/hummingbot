@@ -1,6 +1,6 @@
-import logging
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
+import logging
 from typing import Generator, Optional
 
 from sqlalchemy.exc import SQLAlchemyError

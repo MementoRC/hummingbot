@@ -1,8 +1,8 @@
+from abc import ABCMeta, abstractmethod
 import asyncio
+from collections import defaultdict
 import logging
 import time
-from abc import ABCMeta, abstractmethod
-from collections import defaultdict
 from typing import Any, Callable, Dict, List, Optional
 
 from hummingbot.core.data_type.order_book import OrderBook
@@ -126,8 +126,9 @@ class OrderBookTrackerDataSource(metaclass=ABCMeta):
         while True:
             try:
                 try:
-                    snapshot_event = await asyncio.wait_for(message_queue.get(),
-                                                            timeout=self.FULL_ORDER_BOOK_RESET_DELTA_SECONDS)
+                    snapshot_event = await asyncio.wait_for(
+                        message_queue.get(), timeout=self.FULL_ORDER_BOOK_RESET_DELTA_SECONDS
+                    )
                     await self._parse_order_book_snapshot_message(raw_message=snapshot_event, message_queue=output)
                 except asyncio.TimeoutError:
                     await self._request_order_book_snapshots(output=output)

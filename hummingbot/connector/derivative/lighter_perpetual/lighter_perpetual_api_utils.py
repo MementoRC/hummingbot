@@ -61,9 +61,7 @@ def perpetual_markets_from_exchange_info(exchange_info: Dict[str, Any]) -> List[
         if not web_utils.is_exchange_information_valid(raw_market):
             continue
         base_asset = str(raw_market["symbol"]).upper()
-        trading_pair = combine_to_hb_trading_pair(
-            base=base_asset, quote=CONSTANTS.PERPETUAL_QUOTE_TOKEN
-        )
+        trading_pair = combine_to_hb_trading_pair(base=base_asset, quote=CONSTANTS.PERPETUAL_QUOTE_TOKEN)
         markets.append(
             LighterMarketInfo(
                 market_id=int(raw_market["market_id"]),
