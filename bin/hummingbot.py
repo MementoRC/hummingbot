@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import asyncio
-from typing import Coroutine, List, Optional
+from typing import Coroutine
 from weakref import ReferenceType, ref
 
 import path_util  # noqa: F401
@@ -30,9 +30,9 @@ class UIStartListener(EventListener):
     def __init__(
         self,
         hummingbot_app: HummingbotApplication,
-        is_script: Optional[bool] = False,
-        script_config: Optional[dict] = None,
-        is_quickstart: Optional[bool] = False,
+        is_script: bool | None = False,
+        script_config: dict | None = None,
+        is_quickstart: bool | None = False,
     ):
         super().__init__()
         self._hb_ref: ReferenceType = ref(hummingbot_app)
@@ -74,7 +74,7 @@ async def main_async(client_config_map: ClientConfigAdapter):
     start_listener: UIStartListener = UIStartListener(hb)
     hb.app.add_listener(HummingbotUIEvent.Start, start_listener)
 
-    tasks: List[Coroutine] = [hb.run()]
+    tasks: list[Coroutine] = [hb.run()]
     if client_config_map.debug_console:
         if not hasattr(__builtins__, "help"):
             import _sitebuiltins
