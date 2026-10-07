@@ -1,7 +1,11 @@
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import MagicMock, patch
 
-from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_auth import DecibelPerpetualAuth
+import pytest
+
+pytest.importorskip("aptos_sdk")
+
+from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_auth import DecibelPerpetualAuth  # noqa: E402
 
 
 class DummyRESTRequest:
