@@ -1,5 +1,5 @@
-import unittest
 from dataclasses import dataclass
+import unittest
 
 from hummingbot.logger import log_encoder
 

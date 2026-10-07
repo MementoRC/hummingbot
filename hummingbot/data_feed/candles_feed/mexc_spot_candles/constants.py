@@ -10,17 +10,9 @@ WSS_URL = "wss://wbs-api.mexc.com/ws"
 
 KLINE_ENDPOINT_NAME = "spot@public.kline.v3.api.pb"
 
-INTERVALS = bidict({
-    "1m": "1m",
-    "5m": "5m",
-    "15m": "15m",
-    "30m": "30m",
-    "1h": "60m",
-    "4h": "4h",
-    "1d": "1d",
-    "1w": "1W",
-    "1M": "1M"
-})
+INTERVALS = bidict(
+    {"1m": "1m", "5m": "5m", "15m": "15m", "30m": "30m", "1h": "60m", "4h": "4h", "1d": "1d", "1w": "1W", "1M": "1M"}
+)
 
 WS_INTERVALS = {
     "1m": "Min1",
@@ -32,7 +24,7 @@ WS_INTERVALS = {
     "8h": "Hour8",
     "1d": "Day1",
     "1w": "Week1",
-    "1M": "Month1"
+    "1M": "Month1",
 }
 
 MAX_RESULTS_PER_CANDLESTICK_REST_REQUEST = 1000
@@ -43,7 +35,13 @@ IP_REQUEST_WEIGHT = "IP_REQUEST_WEIGHT"
 
 RATE_LIMITS = [
     RateLimit(IP_REQUEST_WEIGHT, limit=20000, time_interval=60),
-    RateLimit(CANDLES_ENDPOINT, limit=20000, time_interval=60,
-              linked_limits=[LinkedLimitWeightPair(IP_REQUEST_WEIGHT, 1)]),
-    RateLimit(HEALTH_CHECK_ENDPOINT, limit=20000, time_interval=60,
-              linked_limits=[LinkedLimitWeightPair(IP_REQUEST_WEIGHT, 1)])]
+    RateLimit(
+        CANDLES_ENDPOINT, limit=20000, time_interval=60, linked_limits=[LinkedLimitWeightPair(IP_REQUEST_WEIGHT, 1)]
+    ),
+    RateLimit(
+        HEALTH_CHECK_ENDPOINT,
+        limit=20000,
+        time_interval=60,
+        linked_limits=[LinkedLimitWeightPair(IP_REQUEST_WEIGHT, 1)],
+    ),
+]
