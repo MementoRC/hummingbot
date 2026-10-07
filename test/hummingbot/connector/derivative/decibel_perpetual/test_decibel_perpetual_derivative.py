@@ -5,19 +5,25 @@ from typing import Any, Dict, Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pandas as pd
+import pytest
 from bidict import bidict
 
-import hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_constants as CONSTANTS
-from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_api_order_book_data_source import (
+pytest.importorskip("decibel")
+pytest.importorskip("aptos_sdk")
+
+import hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_constants as CONSTANTS  # noqa: E402
+from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_api_order_book_data_source import (  # noqa: E402
     DecibelPerpetualAPIOrderBookDataSource,
 )
-from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_derivative import DecibelPerpetualDerivative
-from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
-from hummingbot.core.data_type.common import OrderType, PositionAction, PositionMode, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState
-from hummingbot.core.event.event_logger import EventLogger
-from hummingbot.core.event.events import MarketEvent
-from hummingbot.core.network_iterator import NetworkStatus
+from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_derivative import (  # noqa: E402
+    DecibelPerpetualDerivative,
+)
+from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant  # noqa: E402
+from hummingbot.core.data_type.common import OrderType, PositionAction, PositionMode, TradeType  # noqa: E402
+from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState  # noqa: E402
+from hummingbot.core.event.event_logger import EventLogger  # noqa: E402
+from hummingbot.core.event.events import MarketEvent  # noqa: E402
+from hummingbot.core.network_iterator import NetworkStatus  # noqa: E402
 
 
 class DummyRESTRequest:

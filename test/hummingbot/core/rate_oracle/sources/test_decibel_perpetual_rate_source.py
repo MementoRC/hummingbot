@@ -4,8 +4,11 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from hummingbot.connector.utils import combine_to_hb_trading_pair
-from hummingbot.core.rate_oracle.sources.decibel_perpetual_rate_source import DecibelPerpetualRateSource
+pytest.importorskip("decibel")
+pytest.importorskip("aptos_sdk")
+
+from hummingbot.connector.utils import combine_to_hb_trading_pair  # noqa: E402
+from hummingbot.core.rate_oracle.sources.decibel_perpetual_rate_source import DecibelPerpetualRateSource  # noqa: E402
 
 
 class DecibelPerpetualRateSourceTest(IsolatedAsyncioWrapperTestCase):
