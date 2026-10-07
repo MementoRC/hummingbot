@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import time
+from datetime import timezone
 from typing import Any, AsyncIterable, Dict, List, Optional
 
 import aiohttp
@@ -144,7 +145,7 @@ class MockAPIOrderBookDataSource(OrderBookTrackerDataSource):
                     except Exception:
                         self.logger().error("Unexpected error.", exc_info=True)
                         await asyncio.sleep(5.0)
-                this_hour: pd.Timestamp = pd.Timestamp.utcnow().replace(minute=0, second=0, microsecond=0)
+                this_hour: pd.Timestamp = pd.Timestamp.now(tz=timezone.utc).replace(minute=0, second=0, microsecond=0)
                 next_hour: pd.Timestamp = this_hour + pd.Timedelta(hours=1)
                 delta: float = next_hour.timestamp() - time.time()
                 await asyncio.sleep(delta)
