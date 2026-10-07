@@ -25,7 +25,7 @@ class LambdaplexConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     lambdaplex_private_key: SecretStr = Field(
         default=...,
@@ -34,7 +34,7 @@ class LambdaplexConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     model_config = ConfigDict(title=CONSTANTS.EXCHANGE_NAME)
 

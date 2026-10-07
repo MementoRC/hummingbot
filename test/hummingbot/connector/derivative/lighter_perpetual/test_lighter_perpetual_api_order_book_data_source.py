@@ -184,7 +184,9 @@ class LighterPerpetualAPIOrderBookDataSourceTests(TestCase):
 
         next_timestamp = self.data_source._next_funding_utc_timestamp()
 
-        expected_timestamp = ((1724979600 // CONSTANTS.FUNDING_INTERVAL_SECONDS) + 1) * CONSTANTS.FUNDING_INTERVAL_SECONDS
+        expected_timestamp = (
+            (1724979600 // CONSTANTS.FUNDING_INTERVAL_SECONDS) + 1
+        ) * CONSTANTS.FUNDING_INTERVAL_SECONDS
         self.assertEqual(expected_timestamp, next_timestamp)
 
     def test_channel_originating_message_routes_market_stats_to_funding_queue(self):
@@ -202,9 +204,7 @@ class LighterPerpetualAPIOrderBookDataSourceTests(TestCase):
 
         self.assertEqual(
             "snapshot",
-            self.data_source._channel_originating_message(
-                {"channel": "order_book:1", "type": "subscribed/order_book"}
-            ),
+            self.data_source._channel_originating_message({"channel": "order_book:1", "type": "subscribed/order_book"}),
         )
         self.assertEqual(
             "diff",

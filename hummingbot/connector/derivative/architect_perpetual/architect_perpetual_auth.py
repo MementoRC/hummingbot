@@ -1,5 +1,5 @@
-import time
 from asyncio import Lock
+import time
 
 from hummingbot.connector.derivative.architect_perpetual import (
     architect_perpetual_constants as CONSTANTS,
@@ -46,12 +46,9 @@ class ArchitectPerpetualAuth(AuthBase):
         return self._token
 
     async def _get_token_for_rest_request(self, request: RESTRequest) -> str:
-        if (
-            not self._token
-            or (
-                request.endpoint_url == CONSTANTS.RISK_ENDPOINT  # update during balance polling — not critical
-                and self._token_expiration_ts - 130 < self._time()  # LONG_POLL_INTERVAL = 120 seconds
-            )
+        if not self._token or (
+            request.endpoint_url == CONSTANTS.RISK_ENDPOINT  # update during balance polling — not critical
+            and self._token_expiration_ts - 130 < self._time()  # LONG_POLL_INTERVAL = 120 seconds
         ):
             await self._update_token()
         return self._token
