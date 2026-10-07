@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import json
 import re
 from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
@@ -69,8 +70,15 @@ class MexcUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         self.connector._set_trading_pair_symbol_map(bidict({self.ex_trading_pair: self.trading_pair}))
 
     def tearDown(self) -> None:
-        self.listening_task and self.listening_task.cancel()
         super().tearDown()
+
+    async def asyncTearDown(self) -> None:
+        task = getattr(self, "listening_task", None)
+        if task is not None and not task.done():
+            task.cancel()
+            with contextlib.suppress(asyncio.CancelledError, Exception):
+                await task
+        await super().asyncTearDown()
 
     def handle(self, record):
         self.log_records.append(record)
