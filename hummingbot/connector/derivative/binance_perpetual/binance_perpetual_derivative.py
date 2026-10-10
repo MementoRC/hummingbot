@@ -241,7 +241,6 @@ class BinancePerpetualDerivative(PerpetualDerivativePyBase):
         position_action: PositionAction = PositionAction.NIL,
         **kwargs,
     ) -> Tuple[str, float]:
-
         amount_str = f"{amount:f}"
         price_str = f"{price:f}"
         symbol = await self.exchange_symbol_associated_to_pair(trading_pair=trading_pair)

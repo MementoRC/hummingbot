@@ -158,7 +158,6 @@ class HedgedMarketMakingUnitTest(unittest.TestCase):
         return ret
 
     def get_mock_connector_settings(self):
-
         conf_var_connector_maker = ConfigVar(key="mock_paper_exchange", prompt="")
         conf_var_connector_maker.value = "mock_paper_exchange"
 
