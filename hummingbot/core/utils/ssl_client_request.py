@@ -3,8 +3,8 @@
 import ssl
 from typing import Optional
 
-import certifi
 from aiohttp import ClientRequest
+import certifi
 
 
 class SSLClientRequest(ClientRequest):
