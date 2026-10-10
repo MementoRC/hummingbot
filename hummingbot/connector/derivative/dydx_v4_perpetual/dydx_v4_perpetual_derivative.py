@@ -373,7 +373,6 @@ class DydxV4PerpetualDerivative(PerpetualDerivativePyBase):
         pass
 
     async def _user_stream_event_listener(self):
-
         async for event_message in self._iter_user_event_queue():
             try:
                 event: Dict[str, Any] = event_message
@@ -629,7 +628,6 @@ class DydxV4PerpetualDerivative(PerpetualDerivativePyBase):
         return trade_update
 
     async def _request_order_fills(self, order: InFlightOrder) -> Dict[str, Any]:
-
         body_params = {
             "address": self._dydx_v4_perpetual_chain_address,
             "subaccountNumber": self.subaccount_id,

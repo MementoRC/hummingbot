@@ -66,7 +66,6 @@ class AsyncThrottlerUnitTests(unittest.TestCase):
         self.assertEqual(1, self.throttler._id_to_limit_map[TEST_PATH_URL].limit)
 
     def test_init_with_rate_limits_share_pct(self):
-
         rate_share_pct: Decimal = Decimal("55")
         self.throttler = AsyncThrottler(rate_limits=self.rate_limits, limits_share_percentage=rate_share_pct)
 

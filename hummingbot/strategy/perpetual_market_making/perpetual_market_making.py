@@ -81,7 +81,6 @@ class PerpetualMarketMakingStrategy(StrategyPyBase):
         hb_app_notification: bool = False,
         order_override: Dict[str, List[str]] = {},
     ):
-
         if price_ceiling != s_decimal_neg_one and price_ceiling < price_floor:
             raise ValueError("Parameter price_ceiling cannot be lower than price_floor.")
 
@@ -530,7 +529,6 @@ class PerpetualMarketMakingStrategy(StrategyPyBase):
             self.execute_orders_proposal(proposals, PositionAction.CLOSE)
 
     def profit_taking_proposal(self, mode: PositionMode, active_positions: List) -> Proposal:
-
         market: DerivativeBase = self._market_info.market
         unwanted_exit_orders = [o for o in self.active_orders if o.client_order_id not in self._exit_orders.keys()]
         ask_price = market.get_price(self.trading_pair, True)

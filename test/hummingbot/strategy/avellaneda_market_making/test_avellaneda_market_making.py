@@ -367,7 +367,6 @@ class AvellanedaMarketMakingUnitTests(unittest.TestCase):
         price_step,
         amount_stdev,
     ):
-
         prices_bid = np.linspace(price_bid, price_bid - price_depth, math.ceil(price_depth / price_step))
         amounts_bid = np.random.normal(amount_bid, amount_stdev, len(prices_bid))
         amounts_bid[0] = amount_bid
@@ -749,7 +748,6 @@ class AvellanedaMarketMakingUnitTests(unittest.TestCase):
         self.assertEqual(expected_quantize_order_amount, self.strategy.calculate_target_inventory())
 
     def test_liquidity_estimation(self):
-
         # Simulate high liquidity
         self.simulate_high_liquidity(self.strategy)
 
@@ -1385,7 +1383,6 @@ class AvellanedaMarketMakingUnitTests(unittest.TestCase):
         self.assertTrue(self.strategy.is_within_tolerance(sell_prices, proposal_sells))
 
     def test_cancel_active_orders(self):
-
         bid_price: Decimal = Decimal("99.5")
         ask_price: Decimal = Decimal("101.5")
         proposal: Proposal = Proposal(
@@ -1672,7 +1669,6 @@ class AvellanedaMarketMakingUnitTests(unittest.TestCase):
         )
 
     def test_no_new_orders_created_until_previous_orders_cancellation_confirmed(self):
-
         refresh_time = self.strategy.order_refresh_time
 
         self.strategy.avg_vol = self.avg_vol_indicator

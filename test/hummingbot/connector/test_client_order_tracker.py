@@ -267,7 +267,6 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
         self.assertIsNone(fetched_order)
 
     def test_process_order_update_invalid_order_update(self):
-
         order_creation_update: OrderUpdate = OrderUpdate(
             # client_order_id="someClientOrderId",  # client_order_id intentionally omitted
             # exchange_order_id="someExchangeOrderId",  # client_order_id intentionally omitted
@@ -287,7 +286,6 @@ class ClientOrderTrackerUnitTest(unittest.TestCase):
         )
 
     def test_process_order_update_order_not_found(self):
-
         order_creation_update: OrderUpdate = OrderUpdate(
             client_order_id="someClientOrderId",
             exchange_order_id="someExchangeOrderId",
