@@ -1,9 +1,15 @@
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_constants as CONSTANTS
-from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_auth import DecibelPerpetualAuth
-from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_transaction_builder import (
+import pytest
+
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
+
+pytest.importorskip("decibel")
+pytest.importorskip("aptos_sdk")
+
+from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_auth import DecibelPerpetualAuth  # noqa: E402
+import hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_constants as CONSTANTS  # noqa: E402
+from hummingbot.connector.derivative.decibel_perpetual.decibel_perpetual_transaction_builder import (  # noqa: E402
     DecibelPerpetualTransactionBuilder,
 )
 
@@ -238,6 +244,7 @@ class TestDecibelPerpetualTransactionBuilder(IsolatedAsyncioWrapperTestCase):
 
         # Use PlaceOrderFailure from decibel SDK
         from decibel import PlaceOrderFailure
+
         mock_result = PlaceOrderFailure(error="Insufficient balance")
 
         mock_dex = AsyncMock()
@@ -265,6 +272,7 @@ class TestDecibelPerpetualTransactionBuilder(IsolatedAsyncioWrapperTestCase):
         mock_gas_price_manager.return_value = mock_gas_instance
 
         from decibel import PlaceOrderFailure
+
         mock_result = PlaceOrderFailure(error="Market not found", reason="Market not found")
 
         mock_dex = AsyncMock()

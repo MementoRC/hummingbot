@@ -1,11 +1,11 @@
 import asyncio
+from contextlib import redirect_stdout
+from decimal import Decimal
 import io
 import json
 import re
-import unittest
-from contextlib import redirect_stdout
-from decimal import Decimal
 from types import SimpleNamespace
+import unittest
 from unittest.mock import AsyncMock, Mock, patch
 
 import typer
@@ -23,10 +23,20 @@ def _sample():
     return {
         "kraken": {
             "assets": [
-                {"asset": "BTC", "total": Decimal("0.5"), "available": Decimal("0.4"),
-                 "value": Decimal("30000"), "allocated": "20%"},
-                {"asset": "USDT", "total": Decimal("100"), "available": Decimal("100"),
-                 "value": Decimal("100"), "allocated": "0%"},
+                {
+                    "asset": "BTC",
+                    "total": Decimal("0.5"),
+                    "available": Decimal("0.4"),
+                    "value": Decimal("30000"),
+                    "allocated": "20%",
+                },
+                {
+                    "asset": "USDT",
+                    "total": Decimal("100"),
+                    "available": Decimal("100"),
+                    "value": Decimal("100"),
+                    "allocated": "0%",
+                },
             ],
             "allocated_total": Decimal("6000"),
             "usd_total": Decimal("30100"),
@@ -37,12 +47,12 @@ def _sample():
 class BalanceRenderTest(unittest.TestCase):
     def test_render_markdown_table_totals_and_grand_total(self):
         text = _render(_sample(), "$")
-        self.assertIn("## kraken", text)                       # per-connector heading
+        self.assertIn("## kraken", text)  # per-connector heading
         self.assertIn("| asset | total | value($) | allocated |", _squash(text))  # Markdown table header
         self.assertIn("BTC", text)
-        self.assertIn("balances: $", text)                     # per-connector balances line
-        self.assertIn("allocated:", text)                      # allocated % line
-        self.assertIn("connectors total (net): $", text)       # grand total line
+        self.assertIn("balances: $", text)  # per-connector balances line
+        self.assertIn("allocated:", text)  # allocated % line
+        self.assertIn("connectors total (net): $", text)  # grand total line
 
     def test_render_empty_exchange(self):
         result = {"kraken": {"assets": [], "allocated_total": Decimal("0"), "usd_total": Decimal("0")}}
@@ -52,9 +62,9 @@ class BalanceRenderTest(unittest.TestCase):
 
     def test_render_units_only_hides_value_and_grand_total(self):
         text = _render(_sample(), "$", units_only=True)
-        self.assertIn("| asset | total | available |", _squash(text))   # units-only columns
-        self.assertNotIn("value($)", text)                     # no USD value column
-        self.assertNotIn("connectors total", text)             # no grand total when priceless
+        self.assertIn("| asset | total | available |", _squash(text))  # units-only columns
+        self.assertNotIn("value($)", text)  # no USD value column
+        self.assertNotIn("connectors total", text)  # no grand total when priceless
 
 
 class BalanceCommandTest(unittest.TestCase):
@@ -63,7 +73,8 @@ class BalanceCommandTest(unittest.TestCase):
     def setUp(self) -> None:
         self.ccm = SimpleNamespace(
             global_token=SimpleNamespace(global_token_symbol="$"),
-            commands_timeout=SimpleNamespace(other_commands_timeout=1))
+            commands_timeout=SimpleNamespace(other_commands_timeout=1),
+        )
         patch("hummingbot.cli.commands.balance.login", return_value=(self.ccm, "pw")).start()
 
         self.conn = Mock()
@@ -72,21 +83,29 @@ class BalanceCommandTest(unittest.TestCase):
         acs.get_connector_settings.return_value = {"binance_perpetual": self.conn}
 
         open_position = SimpleNamespace(
-            trading_pair="ETH-USDT", position_side=SimpleNamespace(name="LONG"),
-            amount=Decimal("2"), entry_price=Decimal("100"),
-            unrealized_pnl=Decimal("5"), leverage=Decimal("5"))
+            trading_pair="ETH-USDT",
+            position_side=SimpleNamespace(name="LONG"),
+            amount=Decimal("2"),
+            entry_price=Decimal("100"),
+            unrealized_pnl=Decimal("5"),
+            leverage=Decimal("5"),
+        )
         flat_position = SimpleNamespace(
-            trading_pair="BTC-USDT", position_side=SimpleNamespace(name="SHORT"),
-            amount=Decimal("0"), entry_price=Decimal("1"),
-            unrealized_pnl=Decimal("0"), leverage=Decimal("1"))
+            trading_pair="BTC-USDT",
+            position_side=SimpleNamespace(name="SHORT"),
+            amount=Decimal("0"),
+            entry_price=Decimal("1"),
+            unrealized_pnl=Decimal("0"),
+            leverage=Decimal("1"),
+        )
         self.market = SimpleNamespace(
-            account_positions={"open": open_position, "flat": flat_position},
-            _update_positions=AsyncMock())
+            account_positions={"open": open_position, "flat": flat_position}, _update_positions=AsyncMock()
+        )
         self.ub = SimpleNamespace(
-            all_balances_all_exchanges=AsyncMock(return_value={
-                "binance_perpetual": {"USDT": Decimal("100"), "XXX": Decimal("2"), "ZED": Decimal("0")}}),
-            all_available_balances_all_exchanges=Mock(
-                return_value={"binance_perpetual": {"USDT": Decimal("60")}}),
+            all_balances_all_exchanges=AsyncMock(
+                return_value={"binance_perpetual": {"USDT": Decimal("100"), "XXX": Decimal("2"), "ZED": Decimal("0")}}
+            ),
+            all_available_balances_all_exchanges=Mock(return_value={"binance_perpetual": {"USDT": Decimal("60")}}),
             _markets={"binance_perpetual": self.market},
             update_exchange_balance=AsyncMock(return_value=None),
             all_balances=Mock(return_value={"USDT": Decimal("100")}),
@@ -95,8 +114,8 @@ class BalanceCommandTest(unittest.TestCase):
         ub_cls.instance.return_value = self.ub
 
         self.oracle = SimpleNamespace(
-            _source=SimpleNamespace(get_prices=AsyncMock(return_value={"USDT-USD": Decimal("1")})),
-            quote_token="USD")
+            _source=SimpleNamespace(get_prices=AsyncMock(return_value={"USDT-USD": Decimal("1")})), quote_token="USD"
+        )
         self.oracle_cls = patch("hummingbot.core.rate_oracle.rate_oracle.RateOracle").start()
         self.oracle_cls.get_instance.return_value = self.oracle
         self.addCleanup(patch.stopall)
@@ -119,12 +138,12 @@ class BalanceCommandTest(unittest.TestCase):
         out = self._run()
         self.assertIn("## binance_perpetual", out)
         self.assertIn("USDT", out)
-        self.assertIn("XXX", out)                    # priceless asset still listed (value 0)
-        self.assertNotIn("ZED", out)                 # zero balance hidden on a non-gateway connector
+        self.assertIn("XXX", out)  # priceless asset still listed (value 0)
+        self.assertNotIn("ZED", out)  # zero balance hidden on a non-gateway connector
         self.assertIn("allocated:", out)
         self.assertIn("positions:", out)
-        self.assertIn("ETH-USDT", out)               # the open perp position
-        self.assertNotIn("BTC-USDT", out)            # zero-amount position filtered out
+        self.assertIn("ETH-USDT", out)  # the open perp position
+        self.assertNotIn("BTC-USDT", out)  # zero-amount position filtered out
         self.assertIn("net value: $", out)
         self.assertIn("connectors total (net): $", out)
 
@@ -137,7 +156,7 @@ class BalanceCommandTest(unittest.TestCase):
         self.assertEqual(assets["USDT"]["available"], 60.0)
         self.assertEqual(assets["USDT"]["value"], 100.0)
         self.assertEqual(entry["balances_value"], 100.0)
-        self.assertEqual(entry["allocated_value"], 40.0)       # 100 - 60 available, at rate 1
+        self.assertEqual(entry["allocated_value"], 40.0)  # 100 - 60 available, at rate 1
         self.assertEqual(len(entry["positions"]), 1)
         self.assertEqual(entry["unrealized_pnl"], 5.0)
         self.assertEqual(entry["net_value"], 105.0)
@@ -145,7 +164,7 @@ class BalanceCommandTest(unittest.TestCase):
 
     def test_units_only_skips_prices_and_positions(self):
         out = self._run(units_only=True)
-        self.oracle_cls.get_instance.assert_not_called()       # no rate-oracle fetch
+        self.oracle_cls.get_instance.assert_not_called()  # no rate-oracle fetch
         self.assertIn("| asset | total | available |", _squash(out))
         self.assertNotIn("positions:", out)
         self.assertNotIn("connectors total", out)
@@ -169,7 +188,7 @@ class BalanceCommandTest(unittest.TestCase):
 
     def test_gateway_connector_shows_zero_balances(self):
         self.conn.uses_gateway_generic_connector.return_value = True
-        self.ub._markets = {}                                  # also covers the no-market branch
+        self.ub._markets = {}  # also covers the no-market branch
         out = self._run()
         self.assertIn("ZED", out)
         self.assertNotIn("positions:", out)
@@ -184,8 +203,7 @@ class BalanceCommandTest(unittest.TestCase):
 
     def test_positions_only_connector_renders_positions_section(self):
         # all balances zero (hidden on a CEX) but an open position -> positions section only
-        self.ub.all_balances_all_exchanges = AsyncMock(
-            return_value={"binance_perpetual": {"ZED": Decimal("0")}})
+        self.ub.all_balances_all_exchanges = AsyncMock(return_value={"binance_perpetual": {"ZED": Decimal("0")}})
         out = self._run()
         self.assertIn("positions:", out)
         self.assertIn("ETH-USDT", out)
@@ -194,8 +212,7 @@ class BalanceCommandTest(unittest.TestCase):
     def test_positions_skipped_without_account_positions_or_on_update_error(self):
         self.ub._markets = {"binance_perpetual": SimpleNamespace()}  # no account_positions attr
         self.assertNotIn("positions:", self._run())
-        failing = SimpleNamespace(account_positions={},
-                                  _update_positions=AsyncMock(side_effect=RuntimeError("boom")))
+        failing = SimpleNamespace(account_positions={}, _update_positions=AsyncMock(side_effect=RuntimeError("boom")))
         self.ub._markets = {"binance_perpetual": failing}
         self.assertNotIn("positions:", self._run())
 
