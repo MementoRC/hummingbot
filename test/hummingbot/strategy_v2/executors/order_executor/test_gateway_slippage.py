@@ -8,8 +8,8 @@ retry sent the identical request.
 The reason a failure can be told apart at all is that the connector now remembers what
 Gateway said. The order tracker records FAILED and nothing else.
 """
+
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import MagicMock
 
 from hummingbot.connector.gateway.gateway import Gateway
@@ -18,6 +18,7 @@ from hummingbot.core.event.events import MarketOrderFailureEvent
 from hummingbot.strategy_v2.executors.order_executor.data_types import ExecutionStrategy, OrderExecutorConfig
 from hummingbot.strategy_v2.executors.order_executor.order_executor import OrderExecutor
 from hummingbot.strategy_v2.models.executors import TrackedOrder
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 def a_config(**overrides) -> OrderExecutorConfig:
@@ -113,9 +114,7 @@ class TestTheRampIsGatewayOnly(IsolatedAsyncioWrapperTestCase):
         executor.place_open_order()
 
         executor.place_order.assert_called_once()
-        self.assertEqual(
-            executor.place_order.call_args.kwargs["position_action"], PositionAction.OPEN
-        )
+        self.assertEqual(executor.place_order.call_args.kwargs["position_action"], PositionAction.OPEN)
 
 
 class TestConfigValidation(IsolatedAsyncioWrapperTestCase):
