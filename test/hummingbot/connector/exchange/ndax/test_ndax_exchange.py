@@ -1,7 +1,7 @@
+from decimal import Decimal
 import json
 import re
 import time
-from decimal import Decimal
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from aioresponses import aioresponses
@@ -17,7 +17,6 @@ from hummingbot.core.data_type.trade_fee import DeductedFromReturnsTradeFee, Tra
 
 
 class NdaxExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests):
-
     maxDiff = None
 
     @property

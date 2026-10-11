@@ -117,12 +117,10 @@ def require_provider(field: str, provider: Optional[str], required: bool = True)
     require_non_empty(field, provider)
     name, _, trading_type = provider.partition("/")
     if not name.strip() or not trading_type.strip():
-        raise ValueError(
-            f"{field} ({provider}) must follow the name/type format, e.g. jupiter/router or meteora/clmm")
+        raise ValueError(f"{field} ({provider}) must follow the name/type format, e.g. jupiter/router or meteora/clmm")
 
 
-def require_stop_price(side: TradeType, field: str, value: Optional[Decimal],
-                       boundaries: Sequence[NamedValue]) -> None:
+def require_stop_price(side: TradeType, field: str, value: Optional[Decimal], boundaries: Sequence[NamedValue]) -> None:
     """
     Validate that a stop-out price sits beyond the losing edge of a price range.
 
@@ -139,20 +137,23 @@ def require_stop_price(side: TradeType, field: str, value: Optional[Decimal],
         if value >= boundary:
             raise ValueError(
                 f"{field} ({value}) must be lower than {boundary_field} ({boundary}) for a BUY side: "
-                f"a long is stopped out by falling prices, so the stop has to sit below the range")
+                f"a long is stopped out by falling prices, so the stop has to sit below the range"
+            )
     else:
         boundary_field, boundary = max(boundaries, key=lambda item: item[1])
         if value <= boundary:
             raise ValueError(
                 f"{field} ({value}) must be higher than {boundary_field} ({boundary}) for a SELL side: "
-                f"a short is stopped out by rising prices, so the stop has to sit above the range")
+                f"a short is stopped out by rising prices, so the stop has to sit above the range"
+            )
 
 
 def are_tokens_interchangeable(first_token: str, second_token: str) -> bool:
     """Whether two tokens represent the same underlying asset."""
     same_token_condition = first_token == second_token
     tokens_interchangeable_condition = any(
-        {first_token, second_token} <= interchangeable_pair for interchangeable_pair in INTERCHANGEABLE_TOKENS)
+        {first_token, second_token} <= interchangeable_pair for interchangeable_pair in INTERCHANGEABLE_TOKENS
+    )
     # for now, we will consider all the stablecoins interchangeable
     stable_coins_condition = "USD" in first_token and "USD" in second_token
     return same_token_condition or tokens_interchangeable_condition or stable_coins_condition
@@ -165,5 +166,7 @@ def require_interchangeable_pairs(field: str, trading_pair: str, other_field: st
     base_asset, _ = split_hb_trading_pair(trading_pair)
     other_base_asset, _ = split_hb_trading_pair(other_trading_pair)
     if not are_tokens_interchangeable(base_asset, other_base_asset):
-        raise ValueError(f"{field} ({trading_pair}) and {other_field} ({other_trading_pair}) are not interchangeable: "
-                         f"the base assets {base_asset} and {other_base_asset} are different assets")
+        raise ValueError(
+            f"{field} ({trading_pair}) and {other_field} ({other_trading_pair}) are not interchangeable: "
+            f"the base assets {base_asset} and {other_base_asset} are different assets"
+        )
