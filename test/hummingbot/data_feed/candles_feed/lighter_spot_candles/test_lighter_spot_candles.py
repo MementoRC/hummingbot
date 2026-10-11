@@ -338,6 +338,7 @@ class TestLighterSpotCandles(TestCandlesBase):
         with patch(PATCH_FETCH, new_callable=AsyncMock) as mock_fetch, \
              patch(PATCH_SLEEP, new_callable=AsyncMock) as mock_sleep, \
              patch("hummingbot.data_feed.candles_feed.lighter_spot_candles.lighter_spot_candles.safe_ensure_future") as mock_future:
+            mock_future.side_effect = lambda coro: coro.close()
             mock_fetch.return_value = candle
             mock_sleep.side_effect = asyncio.CancelledError
 
@@ -360,6 +361,7 @@ class TestLighterSpotCandles(TestCandlesBase):
     @patch(PATCH_FETCH, new_callable=AsyncMock)
     async def test_process_websocket_messages_empty_candle(self, mock_fetch, mock_sleep, mock_future):
         # Replaces WS base test: first poll with no existing candles triggers fill_historical_candles
+        mock_future.side_effect = lambda coro: coro.close()
         candle = np.array(
             [[1748954160.0, 94000.0, 94150.0, 93850.0, 94050.0, 0.50, 47025.0, 0.0, 0.0, 0.0]]
         )
@@ -380,6 +382,7 @@ class TestLighterSpotCandles(TestCandlesBase):
         self, mock_fetch, mock_sleep, mock_future
     ):
         # Same timestamp on second poll → in-place update, not append
+        mock_future.side_effect = lambda coro: coro.close()
         candle = np.array(
             [[1748954160.0, 94000.0, 94150.0, 93850.0, 94050.0, 0.50, 47025.0, 0.0, 0.0, 0.0]]
         )
@@ -405,6 +408,7 @@ class TestLighterSpotCandles(TestCandlesBase):
         self, mock_fetch, mock_sleep, mock_future
     ):
         # Second poll has a newer timestamp → appended
+        mock_future.side_effect = lambda coro: coro.close()
         candle1 = np.array(
             [[1748954160.0, 94000.0, 94150.0, 93850.0, 94050.0, 0.50, 47025.0, 0.0, 0.0, 0.0]]
         )
