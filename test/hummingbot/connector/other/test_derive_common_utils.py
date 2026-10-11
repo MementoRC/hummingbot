@@ -28,7 +28,9 @@ def signed_action(trade_module_data):
     return SignedAction(
         subaccount_id=1,
         owner=Web3.to_checksum_address("0x3F5CE5FBFe3E9af3971dD833D26BA9b5C936F0bE"),  # noqa: mock
-        signer=Web3().eth.account.from_key("0x4c0883a69102937d6231471b5dbb6204fe512961708279ca6f297d6b50ab8148").address,  # noqa: mock
+        signer=Web3().eth.account.from_key(
+            "0x4c0883a69102937d6231471b5dbb6204fe512961708279ca6f297d6b50ab8148",  # noqa: mock
+        ).address,
         signature_expiry_sec=1700000000,
         nonce=1695836058725001,
         module_address=Web3.to_checksum_address("0x53d284357ec70cE289D6D64134DfAc8E511c8a3D"),  # noqa: mock
