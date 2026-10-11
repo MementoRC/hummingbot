@@ -1,10 +1,10 @@
 import gc
 import unittest
 import weakref
-from test.mock.mock_events import MockEvent, MockEventType
 
 from hummingbot.core.event.event_logger import EventLogger
 from hummingbot.core.pubsub import PubSub
+from test.mock.mock_events import MockEvent, MockEventType
 
 
 class PubSubTest(unittest.TestCase):
