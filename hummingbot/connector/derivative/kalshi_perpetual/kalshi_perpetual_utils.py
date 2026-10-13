@@ -30,13 +30,19 @@ class KalshiPerpetualConfigMap(BaseConnectorConfigMap):
         default=...,
         json_schema_extra={
             "prompt": "Enter your Kalshi Perpetual API key ID",
-            "is_secure": True, "is_connect_key": True, "prompt_on_new": True}
+            "is_secure": True,
+            "is_connect_key": True,
+            "prompt_on_new": True,
+        },
     )
     kalshi_perpetual_private_key: SecretStr = Field(
         default=...,
         json_schema_extra={
             "prompt": "Enter your Kalshi Perpetual RSA private key (PEM)",
-            "is_secure": True, "is_connect_key": True, "prompt_on_new": True}
+            "is_secure": True,
+            "is_connect_key": True,
+            "prompt_on_new": True,
+        },
     )
 
 
