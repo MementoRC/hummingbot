@@ -14,15 +14,15 @@ uniswap quote and every uniswap swap left this client already rejected:
 Verified against a live Gateway: the same quote succeeds with the parameter dropped and
 400s with it present.
 """
-import unittest
+
 from decimal import Decimal
+import unittest
 
 from hummingbot.core.gateway.gateway_http_client import _body, _query
 from hummingbot.core.gateway.gateway_models import ClmmPoolInfoRequest, RouterExecuteSwapRequest, RouterQuoteSwapRequest
 
 
 class TestOnlyNamedParamsAreSent(unittest.TestCase):
-
     def _router_quote(self) -> RouterQuoteSwapRequest:
         # The exact kwargs gateway_http_client.quote_swap builds a router quote from.
         return RouterQuoteSwapRequest(
@@ -68,11 +68,13 @@ class TestOnlyNamedParamsAreSent(unittest.TestCase):
     def test_pool_info_leaves_the_bin_count_to_gateway(self):
         # pool_info names no bin_count, so the generated default of 0 must not be sent
         # as though the caller had asked for zero bins.
-        query = _query(ClmmPoolInfoRequest(
-            connector="meteora",
-            chainNetwork="solana-mainnet-beta",
-            poolAddress="pool",
-        ))
+        query = _query(
+            ClmmPoolInfoRequest(
+                connector="meteora",
+                chainNetwork="solana-mainnet-beta",
+                poolAddress="pool",
+            )
+        )
         self.assertNotIn("binCount", query)
 
 

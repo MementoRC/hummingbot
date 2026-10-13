@@ -55,11 +55,7 @@ class GeminiAuth(AuthBase):
         payload_json = json.dumps(payload_dict)
         payload_b64 = base64.b64encode(payload_json.encode("utf-8"))
 
-        signature = hmac.new(
-            self.secret_key.encode("utf-8"),
-            payload_b64,
-            hashlib.sha384
-        ).hexdigest()
+        signature = hmac.new(self.secret_key.encode("utf-8"), payload_b64, hashlib.sha384).hexdigest()
 
         headers = {}
         if request.headers is not None:
@@ -84,11 +80,7 @@ class GeminiAuth(AuthBase):
         nonce = self._get_ws_nonce()
         payload_b64 = base64.b64encode(nonce.encode("utf-8")).decode("utf-8")
 
-        signature = hmac.new(
-            self.secret_key.encode("utf-8"),
-            payload_b64.encode("utf-8"),
-            hashlib.sha384
-        ).hexdigest()
+        signature = hmac.new(self.secret_key.encode("utf-8"), payload_b64.encode("utf-8"), hashlib.sha384).hexdigest()
 
         headers = request.headers or {}
         headers["X-GEMINI-APIKEY"] = self.api_key
@@ -107,11 +99,7 @@ class GeminiAuth(AuthBase):
         nonce = self._get_ws_nonce()
         payload_b64 = base64.b64encode(nonce.encode("utf-8")).decode("utf-8")
 
-        signature = hmac.new(
-            self.secret_key.encode("utf-8"),
-            payload_b64.encode("utf-8"),
-            hashlib.sha384
-        ).hexdigest()
+        signature = hmac.new(self.secret_key.encode("utf-8"), payload_b64.encode("utf-8"), hashlib.sha384).hexdigest()
 
         return {
             "X-GEMINI-APIKEY": self.api_key,

@@ -1,8 +1,8 @@
-import random
-import time
 from datetime import datetime
 from decimal import Decimal
 from http.cookies import SimpleCookie
+import random
+import time
 from typing import Any, Dict, Optional
 
 import aiohttp
@@ -106,7 +106,9 @@ class GrvtPerpetualAuth(AuthBase):
 
     async def _refresh_session(self):
         url = web_utils.edge_rest_url(CONSTANTS.AUTH_PATH_URL, domain=self._domain)
-        async with aiohttp.ClientSession(headers={"Content-Type": "application/json", "Accept-Encoding": "identity"}) as session:
+        async with aiohttp.ClientSession(
+            headers={"Content-Type": "application/json", "Accept-Encoding": "identity"}
+        ) as session:
             async with session.post(url=url, json={"api_key": self._api_key}, timeout=5) as response:
                 if response.status >= 400:
                     raise IOError(f"GRVT auth failed with status {response.status}")

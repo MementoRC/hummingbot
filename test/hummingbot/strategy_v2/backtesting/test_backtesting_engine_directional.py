@@ -5,6 +5,7 @@ Integration test for the backtesting engine driving a real directional strategy
 ``aioresponses`` so the real connector and candle-feed code paths run, but the test is
 deterministic and offline (live Binance returns HTTP 451 from restricted CI regions).
 """
+
 import math
 import re
 import time
@@ -79,17 +80,22 @@ def _klines_callback(url, **kwargs) -> CallbackResult:
         c = _price_at(t + interval_seconds)
         high = max(o, c) + 1.0
         low = min(o, c) - 1.0
-        rows.append([
-            t * 1000,                              # open time (ms)
-            f"{o:.2f}", f"{high:.2f}", f"{low:.2f}", f"{c:.2f}",
-            "10",                                  # volume
-            (t + interval_seconds) * 1000 - 1,     # close time (ms)
-            f"{10 * c:.2f}",                       # quote asset volume
-            100,                                   # number of trades
-            "5",                                   # taker buy base volume
-            f"{5 * c:.2f}",                        # taker buy quote volume
-            "0",                                   # ignore
-        ])
+        rows.append(
+            [
+                t * 1000,  # open time (ms)
+                f"{o:.2f}",
+                f"{high:.2f}",
+                f"{low:.2f}",
+                f"{c:.2f}",
+                "10",  # volume
+                (t + interval_seconds) * 1000 - 1,  # close time (ms)
+                f"{10 * c:.2f}",  # quote asset volume
+                100,  # number of trades
+                "5",  # taker buy base volume
+                f"{5 * c:.2f}",  # taker buy quote volume
+                "0",  # ignore
+            ]
+        )
         t += interval_seconds
     return CallbackResult(status=200, payload=rows)
 
@@ -156,7 +162,9 @@ class TestBacktestingEngineDirectional(unittest.IsolatedAsyncioTestCase):
 
             t0 = time.perf_counter()
             result_tl = await engine.run_backtesting(
-                config_tl, start_ts, end_ts,
+                config_tl,
+                start_ts,
+                end_ts,
                 backtesting_resolution=self.BACKTESTING_RESOLUTION,
                 trade_cost=0.0002,
             )
@@ -170,7 +178,9 @@ class TestBacktestingEngineDirectional(unittest.IsolatedAsyncioTestCase):
 
             t0 = time.perf_counter()
             result_no_tl = await engine.run_backtesting(
-                config_no_tl, start_ts, end_ts,
+                config_no_tl,
+                start_ts,
+                end_ts,
                 backtesting_resolution=self.BACKTESTING_RESOLUTION,
                 trade_cost=0.0002,
             )
@@ -193,12 +203,24 @@ class TestBacktestingEngineDirectional(unittest.IsolatedAsyncioTestCase):
 
         r = result["results"]
         expected_keys = [
-            "net_pnl", "net_pnl_quote", "total_executors",
-            "total_executors_with_position", "total_volume",
-            "total_long", "total_short", "close_types",
-            "accuracy_long", "accuracy_short", "total_positions",
-            "accuracy", "max_drawdown_usd", "max_drawdown_pct",
-            "sharpe_ratio", "profit_factor", "win_signals", "loss_signals",
+            "net_pnl",
+            "net_pnl_quote",
+            "total_executors",
+            "total_executors_with_position",
+            "total_volume",
+            "total_long",
+            "total_short",
+            "close_types",
+            "accuracy_long",
+            "accuracy_short",
+            "total_positions",
+            "accuracy",
+            "max_drawdown_usd",
+            "max_drawdown_pct",
+            "sharpe_ratio",
+            "profit_factor",
+            "win_signals",
+            "loss_signals",
             "unrealized_pnl_quote",
         ]
         for key in expected_keys:
