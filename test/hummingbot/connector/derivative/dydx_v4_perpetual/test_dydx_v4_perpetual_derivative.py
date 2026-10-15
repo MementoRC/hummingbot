@@ -1714,7 +1714,10 @@ class DydxV4PerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
             dydx_v4_perpetual_chain_address="",
             trading_required=False,
         )
-        with patch("hummingbot.connector.perpetual_derivative_py_base.PerpetualDerivativePyBase.start_network", new_callable=AsyncMock):
+        with patch(
+            "hummingbot.connector.perpetual_derivative_py_base.PerpetualDerivativePyBase.start_network",
+            new_callable=AsyncMock,
+        ):
             await connector.start_network()
         mock_update_trading_rules.assert_called_once()
         self.assertIsNone(connector._tx_client)
