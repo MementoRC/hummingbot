@@ -164,6 +164,7 @@ class DexalotExchange(ExchangePyBase):
                 return price_list
 
     def _format_evmamount_to_amount(self, trading_pair, base_evm_amount: Decimal, quote_evm_amount: Decimal) -> Tuple:
+
         base_evmdecimals = self._evm_params[trading_pair].get("base_evmdecimals")
         quote_evmdecimals = self._evm_params[trading_pair].get("quote_evmdecimals")
         base_amount = base_evm_amount * Decimal(f"1e-{base_evmdecimals}")
@@ -172,6 +173,7 @@ class DexalotExchange(ExchangePyBase):
         return base_amount, quote_amount
 
     def _format_amount_to_evmamount(self, trading_pair, base_amount: Decimal, quote_amount: Decimal) -> Tuple:
+
         base_evmdecimals = self._evm_params[trading_pair].get("base_evmdecimals")
         quote_evmdecimals = self._evm_params[trading_pair].get("quote_evmdecimals")
         base_evm_amount = base_amount * Decimal(f"1e{base_evmdecimals}")
@@ -584,6 +586,7 @@ class DexalotExchange(ExchangePyBase):
                 await self._sleep(5.0)
 
     def _create_trade_update_with_order_fill_data(self, order_fill: Dict[str, Any], order: InFlightOrder):
+
         is_maker = True if order_fill.get("addressMaker", "") == self.api_key else False
         takerSide = order_fill.get("takerSide")
         if is_maker:
@@ -620,6 +623,7 @@ class DexalotExchange(ExchangePyBase):
         return trade_update
 
     async def _process_trade_message(self, trade: Dict[str, Any], client_order_id: Optional[str] = None):
+
         exchange_order_id = (
             trade["data"].get("makerOrder", "")
             if trade["data"].get("addressMaker", "") == self.api_key

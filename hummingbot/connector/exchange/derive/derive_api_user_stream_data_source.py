@@ -29,6 +29,7 @@ class DeriveAPIUserStreamDataSource(UserStreamTrackerDataSource):
         api_factory: WebAssistantsFactory,
         domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
+
         super().__init__()
         self._domain = domain
         self._api_factory = api_factory

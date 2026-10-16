@@ -966,6 +966,7 @@ class ExchangePyBase(ExchangeBase, ABC):
         headers: Optional[Dict[str, Any]] = None,
         **kwargs,
     ) -> Dict[str, Any]:
+
         last_exception = None
         rest_assistant = await self._web_assistants_factory.get_rest_assistant()
 

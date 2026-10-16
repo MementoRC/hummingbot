@@ -416,6 +416,7 @@ class HtxExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests):
         return "100001"
 
     def create_exchange_instance(self):
+
         instance = HtxExchange(
             htx_api_key="testAPIKey",
             htx_secret_key="testSecret",

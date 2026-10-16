@@ -47,6 +47,7 @@ class BitgetPerpetualDerivative(PerpetualDerivativePyBase):
         trading_pairs: Optional[List[str]] = None,
         trading_required: bool = True,
     ) -> None:
+
         self.bitget_perpetual_api_key = bitget_perpetual_api_key
         self.bitget_perpetual_secret_key = bitget_perpetual_secret_key
         self.bitget_perpetual_passphrase = bitget_perpetual_passphrase

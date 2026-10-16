@@ -139,6 +139,7 @@ class StatusCommand:
         notify_success=True,
         live=False,
     ) -> bool:
+
         if self.trading_core.strategy is not None:
             if live:
                 await self.stop_live_update()

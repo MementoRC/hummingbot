@@ -109,6 +109,7 @@ class DeriveRateSourceTest(unittest.TestCase):
         mock_api: aioresponses,
         callback: Optional[Callable] = lambda *args, **kwargs: None,
     ) -> List[str]:
+
         url = self.trading_rules_url
         response = self.trading_rules_request_mock_response
         mock_api.post(url, body=json.dumps(response), callback=callback)
@@ -119,6 +120,7 @@ class DeriveRateSourceTest(unittest.TestCase):
         mock_api: aioresponses,
         callback: Optional[Callable] = lambda *args, **kwargs: None,
     ) -> List[str]:
+
         url = self.trading_rules_currency_url
         response = self.currency_request_mock_response
         mock_api.post(url, body=json.dumps(response), callback=callback)
@@ -129,6 +131,7 @@ class DeriveRateSourceTest(unittest.TestCase):
         mock_api: aioresponses,
         callback: Optional[Callable] = lambda *args, **kwargs: None,
     ) -> List[str]:
+
         url = self.all_symbols_url
         response = self.trading_rules_request_mock_response
         mock_api.post(url, body=json.dumps(response), callback=callback)
@@ -214,6 +217,7 @@ class DeriveRateSourceTest(unittest.TestCase):
     )
     @aioresponses()
     def test_get_prices(self, mock_prices: AsyncMock, mock_rules, mock_api):
+
         res = [{"symbol": {"instrument_name": "COINALPHA-USDC", "best_bid": "3143.16", "best_ask": "3149.46"}}]
 
         expected_rate = Decimal("3146.31")
