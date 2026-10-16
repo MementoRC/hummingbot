@@ -25,6 +25,7 @@ class ExecutorConfigBase(BaseModel):
         "twap_executor",
         "position_on_exchange_executor",
         "lp_executor",
+        "progressive_executor",
     ]
     timestamp: float | None = None
     controller_id: str = "main"
