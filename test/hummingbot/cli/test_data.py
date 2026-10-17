@@ -18,12 +18,14 @@ class DataReadTest(unittest.TestCase):
     def setUp(self) -> None:
         self._tmp = TemporaryDirectory()
         self.db_path = str(Path(self._tmp.name) / "bot.sqlite")
-        engine = create_engine(f"sqlite:///{self.db_path}")
-        SQLConnectionManager.get_declarative_base().metadata.create_all(engine)
-        self.Session = sessionmaker(bind=engine)
+        self.engine = create_engine(f"sqlite:///{self.db_path}")
+        SQLConnectionManager.get_declarative_base().metadata.create_all(self.engine)
+        self.Session = sessionmaker(bind=self.engine)
         self._seed()
 
     def tearDown(self) -> None:
+        # Release the pooled sqlite connection before the temp dir (and DB file) is removed.
+        self.engine.dispose()
         self._tmp.cleanup()
 
     def _seed(self) -> None:
