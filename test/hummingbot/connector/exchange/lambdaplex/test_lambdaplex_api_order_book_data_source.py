@@ -1,7 +1,6 @@
 import asyncio
 import json
 import re
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses.core import aioresponses
@@ -19,6 +18,7 @@ from hummingbot.connector.test_support.network_mocking_assistant import NetworkM
 from hummingbot.connector.utils import combine_to_hb_trading_pair
 from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.order_book_message import OrderBookMessage
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class LambdaplexAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
@@ -69,10 +69,7 @@ class LambdaplexAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         self.log_records.append(record)
 
     def _is_logged(self, log_level: str, message: str) -> bool:
-        return any(
-            record.levelname == log_level and record.getMessage() == message
-            for record in self.log_records
-        )
+        return any(record.levelname == log_level and record.getMessage() == message for record in self.log_records)
 
     def _create_exception_and_unlock_test_with_event(self, exception):
         self.resume_test_event.set()
@@ -81,18 +78,8 @@ class LambdaplexAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
     def _snapshot_response(self):
         resp = {
             "lastUpdateId": 1027024,
-            "bids": [
-                [
-                    "4.00000000",
-                    "431.00000000"
-                ]
-            ],
-            "asks": [
-                [
-                    "4.00000200",
-                    "12.00000000"
-                ]
-            ]
+            "bids": [["4.00000000", "431.00000000"]],
+            "asks": [["4.00000200", "12.00000000"]],
         }
         return resp
 
@@ -108,7 +95,7 @@ class LambdaplexAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
             "a": 50,
             "T": 123456785,
             "m": True,
-            "M": True
+            "M": True,
         }
         return resp
 
@@ -120,7 +107,7 @@ class LambdaplexAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
             "U": 157,
             "u": 160,
             "b": [["0.0024", "10"]],
-            "a": [["0.0026", "100"]]
+            "a": [["0.0026", "100"]],
         }
         return resp
 
@@ -162,14 +149,8 @@ class LambdaplexAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
     async def test_listen_for_subscriptions_subscribes_to_trades_and_order_diffs(self, ws_connect_mock):
         ws_connect_mock.return_value = self.mocking_assistant.create_websocket_mock()
 
-        result_subscribe_trades = {
-            "result": None,
-            "id": 1
-        }
-        result_subscribe_diffs = {
-            "result": None,
-            "id": 2
-        }
+        result_subscribe_trades = {"result": None, "id": 1}
+        result_subscribe_diffs = {"result": None, "id": 2}
 
         self.mocking_assistant.add_websocket_aiohttp_message(
             websocket_mock=ws_connect_mock.return_value,
@@ -283,8 +264,7 @@ class LambdaplexAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         except asyncio.CancelledError:
             pass
 
-        self.assertTrue(
-            self._is_logged("ERROR", "Unexpected error when processing public trade updates from exchange"))
+        self.assertTrue(self._is_logged("ERROR", "Unexpected error when processing public trade updates from exchange"))
 
     async def test_listen_for_trades_successful(self):
         mock_queue = AsyncMock()
@@ -333,7 +313,8 @@ class LambdaplexAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
             pass
 
         self.assertTrue(
-            self._is_logged("ERROR", "Unexpected error when processing public order book updates from exchange"))
+            self._is_logged("ERROR", "Unexpected error when processing public order book updates from exchange")
+        )
 
     async def test_listen_for_order_book_diffs_successful(self):
         mock_queue = AsyncMock()
@@ -383,9 +364,7 @@ class LambdaplexAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         await asyncio.wait_for(self.resume_test_event.wait(), timeout=1)
 
         self.assertTrue(
-            self._is_logged(
-                "ERROR", f"Unexpected error fetching order book snapshot for {self.trading_pair}."
-            )
+            self._is_logged("ERROR", f"Unexpected error fetching order book snapshot for {self.trading_pair}.")
         )
 
     @aioresponses()
@@ -416,9 +395,7 @@ class LambdaplexAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         result = await asyncio.wait_for(self.data_source.subscribe_to_trading_pair(new_pair), timeout=1)
 
         self.assertFalse(result)
-        self.assertTrue(
-            self._is_logged("WARNING", f"Cannot subscribe to {new_pair}: WebSocket not connected")
-        )
+        self.assertTrue(self._is_logged("WARNING", f"Cannot subscribe to {new_pair}: WebSocket not connected"))
 
     async def test_subscribe_to_trading_pair_raises_cancel_exception(self):
         """Test that CancelledError is properly raised during subscription."""
@@ -455,8 +432,7 @@ class LambdaplexAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         self.assertTrue(
             self._is_logged(
                 "ERROR",
-                f"Unexpected error occurred subscribing to order book trading and delta streams for"
-                f" {new_pair}...",
+                f"Unexpected error occurred subscribing to order book trading and delta streams for {new_pair}...",
             )
         )
 
@@ -494,10 +470,7 @@ class LambdaplexAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         self.assertIn(new_pair, self.data_source._trading_pairs)
 
         self.assertTrue(
-            self._is_logged(
-                "INFO",
-                f"Subscribed to public order book and trade channels for {new_pair}..."
-            )
+            self._is_logged("INFO", f"Subscribed to public order book and trade channels for {new_pair}...")
         )
 
     async def test_subscribe_to_already_subscribed_trading_pair_ignored(self):
@@ -510,9 +483,7 @@ class LambdaplexAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         result = await asyncio.wait_for(self.data_source.subscribe_to_trading_pair(new_pair), timeout=1)
 
         self.assertTrue(result)
-        self.assertTrue(
-            self._is_logged("WARNING", f"{new_pair} already subscribed. Ignoring request.")
-        )
+        self.assertTrue(self._is_logged("WARNING", f"{new_pair} already subscribed. Ignoring request."))
 
     async def test_unsubscribe_from_trading_pair_websocket_not_connected(self):
         """Test unsubscription fails when WebSocket is not connected."""
@@ -594,6 +565,4 @@ class LambdaplexAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         result = await asyncio.wait_for(self.data_source.unsubscribe_from_trading_pair(self.trading_pair), timeout=1)
 
         self.assertTrue(result)
-        self.assertTrue(
-            self._is_logged("WARNING", f"{self.trading_pair} not subscribed. Ignoring request.")
-        )
+        self.assertTrue(self._is_logged("WARNING", f"{self.trading_pair} not subscribed. Ignoring request."))

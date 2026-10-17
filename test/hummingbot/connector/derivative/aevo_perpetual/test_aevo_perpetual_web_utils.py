@@ -1,5 +1,5 @@
-import unittest
 from decimal import Decimal
+import unittest
 
 from hummingbot.connector.derivative.aevo_perpetual import (
     aevo_perpetual_constants as CONSTANTS,

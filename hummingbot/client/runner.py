@@ -9,13 +9,14 @@ that depends on the client — never the other way around.
 Keep this module free of host concerns (no typer, no argparse, no prompt-toolkit) — it only knows how
 to build the application and load/start a strategy.
 """
+
 import asyncio
 import grp
 import logging
 import os
+from pathlib import Path
 import pwd
 import subprocess
-from pathlib import Path
 from typing import Optional
 
 import yaml
@@ -31,7 +32,7 @@ from hummingbot.client.settings import SCRIPT_STRATEGY_CONF_DIR_PATH, STRATEGIES
 
 
 def autofix_permissions(user_group_spec: str) -> None:
-    uid, gid = [sub_str for sub_str in user_group_spec.split(':')]
+    uid, gid = [sub_str for sub_str in user_group_spec.split(":")]
 
     uid = int(uid) if uid.isnumeric() else pwd.getpwnam(uid).pw_uid
     gid = int(gid) if gid.isnumeric() else grp.getgrnam(gid).gr_gid
@@ -41,10 +42,9 @@ def autofix_permissions(user_group_spec: str) -> None:
 
     gateway_path: str = Path.home().joinpath(".hummingbot-gateway").as_posix()
     subprocess.run(
-        f"cd '{project_home}' && "
-        f"sudo chown -R {user_group_spec} conf/ data/ logs/ scripts/ {gateway_path}",
+        f"cd '{project_home}' && sudo chown -R {user_group_spec} conf/ data/ logs/ scripts/ {gateway_path}",
         capture_output=True,
-        shell=True
+        shell=True,
     )
     os.setgid(gid)
     os.setuid(uid)
@@ -64,15 +64,18 @@ async def wait_for_gateway_ready(hb: HummingbotApplication) -> None:
     except asyncio.TimeoutError:
         logging.getLogger().error(
             "TimeoutError waiting for gateway service to go online... Please ensure Gateway is configured correctly. "
-            f"Unable to start strategy {hb.trading_core.strategy_name}. ")
+            f"Unable to start strategy {hb.trading_core.strategy_name}. "
+        )
         raise
 
 
-async def load_and_start_strategy(hb: HummingbotApplication,
-                                  *,
-                                  config_file_name: Optional[str] = None,
-                                  v2_conf: Optional[str] = None,
-                                  headless: bool = False) -> bool:
+async def load_and_start_strategy(
+    hb: HummingbotApplication,
+    *,
+    config_file_name: Optional[str] = None,
+    v2_conf: Optional[str] = None,
+    headless: bool = False,
+) -> bool:
     """Load a strategy/script config and (in headless mode) start it.
 
     Mirrors the legacy quickstart flow. Returns False on any load/start failure.
@@ -110,12 +113,9 @@ async def load_and_start_strategy(hb: HummingbotApplication,
         hb.strategy_file_name = config_file_name.split(".")[0]  # Remove .yml extension
 
         try:
-            strategy_config = await load_strategy_config_map_from_file(
-                STRATEGIES_CONF_DIR_PATH / config_file_name
-            )
+            strategy_config = await load_strategy_config_map_from_file(STRATEGIES_CONF_DIR_PATH / config_file_name)
         except FileNotFoundError:
-            logging.getLogger().error(
-                f"Strategy config file not found: {STRATEGIES_CONF_DIR_PATH / config_file_name}")
+            logging.getLogger().error(f"Strategy config file not found: {STRATEGIES_CONF_DIR_PATH / config_file_name}")
             return False
         except Exception as e:
             logging.getLogger().error(f"Error loading strategy config file: {e}")
@@ -165,13 +165,18 @@ async def bootstrap_application(
     from hummingbot import init_logging
     from hummingbot.client.config.config_helpers import create_yml_files_legacy, read_system_configs_from_yml
     from hummingbot.client.config.security import Security
+
     if not Security.login(secrets_manager):
         logging.getLogger().error("Invalid password.")
         return None
     await Security.wait_til_decryption_done()
     await create_yml_files_legacy()
-    init_logging("hummingbot_logs.yml", client_config_map,
-                 override_log_level=override_log_level, strategy_file_path=strategy_file_name)
+    init_logging(
+        "hummingbot_logs.yml",
+        client_config_map,
+        override_log_level=override_log_level,
+        strategy_file_path=strategy_file_name,
+    )
     if silence_console:
         silence_console_handlers()
     await read_system_configs_from_yml()
@@ -188,10 +193,12 @@ def silence_console_handlers() -> None:
     import sys
 
     from hummingbot.logger.cli_handler import CLIHandler
+
     loggers = [logging.getLogger()] + [logging.getLogger(n) for n in list(logging.root.manager.loggerDict)]
     for lg in loggers:
         for handler in list(getattr(lg, "handlers", [])):
             if isinstance(handler, CLIHandler) or (
-                    isinstance(handler, logging.StreamHandler)
-                    and getattr(handler, "stream", None) in (sys.stdout, sys.stderr)):
+                isinstance(handler, logging.StreamHandler)
+                and getattr(handler, "stream", None) in (sys.stdout, sys.stderr)
+            ):
                 lg.removeHandler(handler)

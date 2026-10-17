@@ -1,8 +1,8 @@
-import time
-import unittest
 from decimal import Decimal
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import time
+import unittest
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -31,45 +31,49 @@ class DataReadTest(unittest.TestCase):
         now_ms = int(time.time() * 1e3)
         rows = [
             # (offset_seconds_ago, side, price, amount)
-            (10 * 86400, "BUY", 100, 1),    # 10 days ago
-            (1 * 3600, "BUY", 110, 2),      # 1 hour ago
-            (60, "SELL", 120, 1),           # 1 minute ago
+            (10 * 86400, "BUY", 100, 1),  # 10 days ago
+            (1 * 3600, "BUY", 110, 2),  # 1 hour ago
+            (60, "SELL", 120, 1),  # 1 minute ago
         ]
         with self.Session() as session:
             for i, (ago, side, price, amount) in enumerate(rows):
-                session.add(Order(
-                    id=f"o{i}",
-                    config_file_path="bot.yml",
-                    strategy="bot",
-                    market="binance",
-                    symbol="BTC-USDT",
-                    base_asset="BTC",
-                    quote_asset="USDT",
-                    creation_timestamp=now_ms - ago * 1000 - 1000,
-                    order_type="LIMIT",
-                    amount=amount,
-                    leverage=1,
-                    price=price,
-                    last_status="FILLED",
-                    last_update_timestamp=now_ms - ago * 1000,
-                ))
-                session.add(TradeFill(
-                    config_file_path="bot.yml",
-                    strategy="bot",
-                    market="binance",
-                    symbol="BTC-USDT",
-                    base_asset="BTC",
-                    quote_asset="USDT",
-                    timestamp=now_ms - ago * 1000,
-                    order_id=f"o{i}",
-                    trade_type=side,
-                    order_type="LIMIT",
-                    price=price,
-                    amount=amount,
-                    leverage=1,
-                    trade_fee=fee.to_json(),
-                    exchange_trade_id=f"e{i}",
-                ))
+                session.add(
+                    Order(
+                        id=f"o{i}",
+                        config_file_path="bot.yml",
+                        strategy="bot",
+                        market="binance",
+                        symbol="BTC-USDT",
+                        base_asset="BTC",
+                        quote_asset="USDT",
+                        creation_timestamp=now_ms - ago * 1000 - 1000,
+                        order_type="LIMIT",
+                        amount=amount,
+                        leverage=1,
+                        price=price,
+                        last_status="FILLED",
+                        last_update_timestamp=now_ms - ago * 1000,
+                    )
+                )
+                session.add(
+                    TradeFill(
+                        config_file_path="bot.yml",
+                        strategy="bot",
+                        market="binance",
+                        symbol="BTC-USDT",
+                        base_asset="BTC",
+                        quote_asset="USDT",
+                        timestamp=now_ms - ago * 1000,
+                        order_id=f"o{i}",
+                        trade_type=side,
+                        order_type="LIMIT",
+                        price=price,
+                        amount=amount,
+                        leverage=1,
+                        trade_fee=fee.to_json(),
+                        exchange_trade_id=f"e{i}",
+                    )
+                )
             session.commit()
 
     def test_get_all_trades_ascending(self):

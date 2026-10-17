@@ -21,7 +21,7 @@ class LambdaplexAPIUserStreamDataSource(UserStreamTrackerDataSource):
     def __init__(
         self,
         auth: LambdaplexAuth,
-        connector: 'LambdaplexExchange',
+        connector: "LambdaplexExchange",
         api_factory: WebAssistantsFactory,
     ):
         super().__init__()
