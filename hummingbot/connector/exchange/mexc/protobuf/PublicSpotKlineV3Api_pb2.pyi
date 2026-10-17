@@ -1,11 +1,21 @@
-from google.protobuf import descriptor as _descriptor
-from google.protobuf import message as _message
 from typing import ClassVar as _ClassVar, Optional as _Optional
+
+from google.protobuf import descriptor as _descriptor, message as _message
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class PublicSpotKlineV3Api(_message.Message):
-    __slots__ = ("interval", "windowStart", "openingPrice", "closingPrice", "highestPrice", "lowestPrice", "volume", "amount", "windowEnd")
+    __slots__ = (
+        "interval",
+        "windowStart",
+        "openingPrice",
+        "closingPrice",
+        "highestPrice",
+        "lowestPrice",
+        "volume",
+        "amount",
+        "windowEnd",
+    )
     INTERVAL_FIELD_NUMBER: _ClassVar[int]
     WINDOWSTART_FIELD_NUMBER: _ClassVar[int]
     OPENINGPRICE_FIELD_NUMBER: _ClassVar[int]
@@ -24,4 +34,15 @@ class PublicSpotKlineV3Api(_message.Message):
     volume: str
     amount: str
     windowEnd: int
-    def __init__(self, interval: _Optional[str] = ..., windowStart: _Optional[int] = ..., openingPrice: _Optional[str] = ..., closingPrice: _Optional[str] = ..., highestPrice: _Optional[str] = ..., lowestPrice: _Optional[str] = ..., volume: _Optional[str] = ..., amount: _Optional[str] = ..., windowEnd: _Optional[int] = ...) -> None: ...
+    def __init__(
+        self,
+        interval: _Optional[str] = ...,
+        windowStart: _Optional[int] = ...,
+        openingPrice: _Optional[str] = ...,
+        closingPrice: _Optional[str] = ...,
+        highestPrice: _Optional[str] = ...,
+        lowestPrice: _Optional[str] = ...,
+        volume: _Optional[str] = ...,
+        amount: _Optional[str] = ...,
+        windowEnd: _Optional[int] = ...,
+    ) -> None: ...
