@@ -1,9 +1,9 @@
 import asyncio
 import base64
+from concurrent.futures import ThreadPoolExecutor
 import hashlib
 import hmac
 import json
-from concurrent.futures import ThreadPoolExecutor
 from unittest import TestCase
 from unittest.mock import MagicMock
 
@@ -14,7 +14,6 @@ from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RES
 
 
 class GeminiAuthTests(TestCase):
-
     def setUp(self) -> None:
         self._api_key = "testApiKey"
         self._secret = "testSecret"
@@ -55,9 +54,7 @@ class GeminiAuthTests(TestCase):
         # Verify signature
         payload_b64 = configured_request.headers["X-GEMINI-PAYLOAD"]
         expected_signature = hmac.new(
-            self._secret.encode("utf-8"),
-            payload_b64.encode("utf-8"),
-            hashlib.sha384
+            self._secret.encode("utf-8"), payload_b64.encode("utf-8"), hashlib.sha384
         ).hexdigest()
         self.assertEqual(expected_signature, configured_request.headers["X-GEMINI-SIGNATURE"])
 
@@ -187,9 +184,7 @@ class GeminiAuthTests(TestCase):
         nonce = configured_request.headers["X-GEMINI-NONCE"]
         payload_b64 = base64.b64encode(nonce.encode("utf-8")).decode("utf-8")
         expected_signature = hmac.new(
-            self._secret.encode("utf-8"),
-            payload_b64.encode("utf-8"),
-            hashlib.sha384
+            self._secret.encode("utf-8"), payload_b64.encode("utf-8"), hashlib.sha384
         ).hexdigest()
         self.assertEqual(expected_signature, configured_request.headers["X-GEMINI-SIGNATURE"])
 

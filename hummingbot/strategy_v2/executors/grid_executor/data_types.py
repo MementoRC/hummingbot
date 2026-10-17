@@ -61,8 +61,12 @@ class GridExecutorConfig(ExecutorConfigBase):
         require_lower_than("start_price", self.start_price, "end_price", self.end_price)
         require_non_negative("limit_price", self.limit_price)
         if self.limit_price > 0:
-            require_stop_price(self.side, "limit_price", self.limit_price,
-                               [("start_price", self.start_price), ("end_price", self.end_price)])
+            require_stop_price(
+                self.side,
+                "limit_price",
+                self.limit_price,
+                [("start_price", self.start_price), ("end_price", self.end_price)],
+            )
         require_positive("total_amount_quote", self.total_amount_quote)
         require_positive("min_spread_between_orders", self.min_spread_between_orders)
         require_positive("min_order_amount_quote", self.min_order_amount_quote)
