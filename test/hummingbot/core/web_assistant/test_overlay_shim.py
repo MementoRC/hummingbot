@@ -1,8 +1,12 @@
 """Overlay shim parity: hummingbot.core.web_assistant must resolve to the web_assistant sub-package."""
 
 import importlib
+import json
+from pathlib import Path
 
 import pytest
+
+_SURFACE = json.loads((Path(__file__).parents[1] / "overlay_legacy_surface.json").read_text())
 
 _LEGACY = "hummingbot.core.web_assistant."
 _TARGET = "web_assistant."
@@ -36,12 +40,11 @@ def test_legacy_path_resolves_to_subpackage_module(legacy: str, target: str) -> 
 
 @pytest.mark.parametrize(("legacy", "target"), sorted(MAPPED.items()))
 def test_public_names_preserved(legacy: str, target: str) -> None:
-    # The in-tree file (still present before the shim lands) defines the contract.
-    legacy_mod = importlib.import_module(legacy)
-    target_mod = importlib.import_module(target)
-    legacy_public = {n for n in dir(legacy_mod) if not n.startswith("_")}
-    target_public = {n for n in dir(target_mod) if not n.startswith("_")}
-    assert legacy_public <= target_public, sorted(legacy_public - target_public)
+    # Once the shim is active, `legacy` IS `target`, so the contract comes from the
+    # snapshot of the legacy modules' public names taken from origin/development.
+    expected = set(_SURFACE[legacy])
+    target_public = {n for n in dir(importlib.import_module(target)) if not n.startswith("_")}
+    assert expected <= target_public, sorted(expected - target_public)
 
 
 @pytest.mark.parametrize("name", WS_CLASSES)
