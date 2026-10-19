@@ -62,6 +62,12 @@ extra_mappings:
   # Sub-package source -> sub-package tests (each sub-package owns its tests)
   - source_glob: "sub-packages/*/src/**/*.py"
     test_globs: ["sub-packages/{1}/tests/**/*.py"]
+  # Overlay pilot: web-assistant is a flat package (no src/), shadowing core/web_assistant + api_throttler
+  - source_glob: "sub-packages/web-assistant/web_assistant/**/*.py"
+    test_globs:
+      - "test/hummingbot/core/web_assistant/**/test_*.py"
+      - "test/hummingbot/core/api_throttler/**/test_*.py"
+      - "sub-packages/web-assistant/tests/**/*.py"
 
 # Cross-cutting: any change to source_glob triggers tests_globs (broad)
 # Seed minimal — grow from shadow-mode misses.
