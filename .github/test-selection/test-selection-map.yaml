@@ -80,6 +80,9 @@ cross_cutting:
     tests_globs: ["test/hummingbot/strategy_v2/**/*.py"]
   - source_glob: "hummingbot/core/data_type/common.py"
     tests_globs: ["test/hummingbot/**/*.py"]
+  # Pin bumps appear as gitlink paths, so the core contract tests always run when any sub-package pointer changes.
+  - source_glob: "sub-packages/*"
+    tests_globs: ["test/hummingbot/contracts/**/test_*.py"]
 
 # Selected/total > N% triggers exit code 2 (caller falls back to full suite)
 escape_threshold_pct: 50
