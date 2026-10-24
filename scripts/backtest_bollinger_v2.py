@@ -6,6 +6,7 @@ Usage:
     conda run -n hummingbot python scripts/backtest_bollinger_v2.py --days 3 --chart
     conda run -n hummingbot python scripts/backtest_bollinger_v2.py --chart --output backtest.html
 """
+
 import argparse
 import asyncio
 import os
@@ -18,6 +19,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 # Patch broken optional dependency (injective proto mismatch)
 try:
     from pyinjective.proto.injective.stream.v2 import query_pb2
+
     if not hasattr(query_pb2, "OrderFailuresFilter"):
         query_pb2.OrderFailuresFilter = type("OrderFailuresFilter", (), {})
 except ImportError:
@@ -27,11 +29,21 @@ from hummingbot.strategy_v2.backtesting.backtesting_engine_base import Backtesti
 from hummingbot.strategy_v2.backtesting.backtesting_result import BacktestingResult  # noqa: E402
 
 
-def build_config(connector: str, trading_pair: str, total_amount_quote: int,
-                 interval: str, bb_length: int, bb_std: float,
-                 bb_long_threshold: float, bb_short_threshold: float,
-                 leverage: int, stop_loss: float, take_profit: float,
-                 time_limit: int, cooldown_time: int):
+def build_config(
+    connector: str,
+    trading_pair: str,
+    total_amount_quote: int,
+    interval: str,
+    bb_length: int,
+    bb_std: float,
+    bb_long_threshold: float,
+    bb_short_threshold: float,
+    leverage: int,
+    stop_loss: float,
+    take_profit: float,
+    time_limit: int,
+    cooldown_time: int,
+):
     config_data = {
         "id": "backtest_bollinger_v2",
         "controller_name": "bollinger_v2",
@@ -53,31 +65,53 @@ def build_config(connector: str, trading_pair: str, total_amount_quote: int,
         "bb_long_threshold": bb_long_threshold,
         "bb_short_threshold": bb_short_threshold,
     }
-    return BacktestingEngineBase.get_controller_config_instance_from_dict(
-        config_data, controllers_module="controllers"
-    )
+    return BacktestingEngineBase.get_controller_config_instance_from_dict(config_data, controllers_module="controllers")
 
 
-async def main(days: int, show_chart: bool, output_path: str | None,
-               connector: str, trading_pair: str, total_amount_quote: int,
-               interval: str, bb_length: int, bb_std: float,
-               bb_long_threshold: float, bb_short_threshold: float,
-               leverage: int, stop_loss: float, take_profit: float,
-               time_limit: int, cooldown_time: int):
+async def main(
+    days: int,
+    show_chart: bool,
+    output_path: str | None,
+    connector: str,
+    trading_pair: str,
+    total_amount_quote: int,
+    interval: str,
+    bb_length: int,
+    bb_std: float,
+    bb_long_threshold: float,
+    bb_short_threshold: float,
+    leverage: int,
+    stop_loss: float,
+    take_profit: float,
+    time_limit: int,
+    cooldown_time: int,
+):
     end_ts = int(time.time())
     start_ts = end_ts - days * 24 * 3600
 
-    config = build_config(connector, trading_pair, total_amount_quote,
-                          interval, bb_length, bb_std,
-                          bb_long_threshold, bb_short_threshold,
-                          leverage, stop_loss, take_profit,
-                          time_limit, cooldown_time)
+    config = build_config(
+        connector,
+        trading_pair,
+        total_amount_quote,
+        interval,
+        bb_length,
+        bb_std,
+        bb_long_threshold,
+        bb_short_threshold,
+        leverage,
+        stop_loss,
+        take_profit,
+        time_limit,
+        cooldown_time,
+    )
     engine = BacktestingEngineBase()
 
     print(f"Running backtest: bollinger_v2 | {connector} {trading_pair} | {days}d ...")
     t0 = time.perf_counter()
     result = await engine.run_backtesting(
-        config, start_ts, end_ts,
+        config,
+        start_ts,
+        end_ts,
         backtesting_resolution="1m",
         trade_cost=0.0002,
     )
@@ -135,7 +169,23 @@ if __name__ == "__main__":
     parser.add_argument("--output", type=str, default=None, help="Save chart to HTML file instead of showing")
     args = parser.parse_args()
 
-    asyncio.run(main(args.days, args.chart, args.output, args.connector, args.trading_pair,
-                     args.amount, args.interval, args.bb_length, args.bb_std,
-                     args.bb_long_threshold, args.bb_short_threshold, args.leverage,
-                     args.stop_loss, args.take_profit, args.time_limit, args.cooldown_time))
+    asyncio.run(
+        main(
+            args.days,
+            args.chart,
+            args.output,
+            args.connector,
+            args.trading_pair,
+            args.amount,
+            args.interval,
+            args.bb_length,
+            args.bb_std,
+            args.bb_long_threshold,
+            args.bb_short_threshold,
+            args.leverage,
+            args.stop_loss,
+            args.take_profit,
+            args.time_limit,
+            args.cooldown_time,
+        )
+    )
