@@ -4,7 +4,7 @@ from pydantic import Field
 
 from hummingbot.client.ui.interface_utils import format_df_for_printout
 from hummingbot.core.data_type.common import MarketDict
-from hummingbot.data_feed.liquidations_feed.liquidations_factory import LiquidationsConfig, LiquidationsFactory
+from hummingbot.core.ports.liquidations import get_liquidations_feed
 from hummingbot.strategy_v2.controllers import ControllerBase, ControllerConfigBase
 from hummingbot.strategy_v2.models.executor_actions import ExecutorAction
 
@@ -27,18 +27,17 @@ class LiquidationsMonitorController(ControllerBase):
         self.config = config
 
         # Initialize liquidations feed
-        self.binance_liquidations_config = LiquidationsConfig(
+        self.binance_liquidations_feed = get_liquidations_feed(
             connector="binance",  # the source for liquidation data (currently only binance is supported)
+            trading_pairs=self.config.liquidations_trading_pairs,
             max_retention_seconds=self.config.max_retention_seconds,  # how many seconds the data should be stored
-            trading_pairs=self.config.liquidations_trading_pairs
         )
-        self.binance_liquidations_feed = LiquidationsFactory.get_liquidations_feed(self.binance_liquidations_config)
         self.binance_liquidations_feed.start()
 
     async def update_processed_data(self):
         liquidations_data = {
             "feed_ready": self.binance_liquidations_feed.ready,
-            "trading_pairs": self.config.liquidations_trading_pairs
+            "trading_pairs": self.config.liquidations_trading_pairs,
         }
 
         if self.binance_liquidations_feed.ready:
@@ -49,7 +48,9 @@ class LiquidationsMonitorController(ControllerBase):
                 # Get individual trading pair dataframes
                 liquidations_data["individual_dfs"] = {}
                 for trading_pair in self.config.liquidations_trading_pairs:
-                    liquidations_data["individual_dfs"][trading_pair] = self.binance_liquidations_feed.liquidations_df(trading_pair)
+                    liquidations_data["individual_dfs"][trading_pair] = self.binance_liquidations_feed.liquidations_df(
+                        trading_pair
+                    )
             except Exception as e:
                 self.logger().error(f"Error getting liquidations data: {e}")
                 liquidations_data["error"] = str(e)
@@ -77,7 +78,7 @@ class LiquidationsMonitorController(ControllerBase):
                 lines.append("")
 
                 # Individual trading pairs
-                for trading_pair in self.binance_liquidations_config.trading_pairs:
+                for trading_pair in self.config.liquidations_trading_pairs:
                     lines.append("Liquidations for trading pair: {}".format(trading_pair))
                     pair_df = self.binance_liquidations_feed.liquidations_df(trading_pair).tail(5)
                     lines.extend([format_df_for_printout(df=pair_df, table_format="psql")])
@@ -89,6 +90,6 @@ class LiquidationsMonitorController(ControllerBase):
 
     async def stop(self):
         """Clean shutdown of the liquidations feed"""
-        if hasattr(self, 'binance_liquidations_feed'):
+        if hasattr(self, "binance_liquidations_feed"):
             self.binance_liquidations_feed.stop()
         await super().stop()

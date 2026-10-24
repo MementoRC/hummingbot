@@ -12,6 +12,7 @@
 [importlinter]
 root_packages =
     hummingbot
+    controllers
     async_utils
     candles_feed
     connector_utils
@@ -113,6 +114,16 @@ source_modules =
     liquidations_feed.core
 forbidden_modules =
     hummingbot
+
+# Plan 2 ratchet: migrated call-site groups reach liquidations only through
+# hummingbot.core.ports.liquidations, never the in-tree legacy package (grows each K.4 step).
+[importlinter:contract:core-liquidations-feed-via-port]
+name = migrated liquidations call sites must not import the in-tree liquidations_feed
+type = forbidden
+source_modules =
+    controllers.generic.examples.liquidations_monitor_controller
+forbidden_modules =
+    hummingbot.data_feed.liquidations_feed
 
 [importlinter:contract:market-connector-boundary]
 name = market_connector source modules must not import hummingbot
