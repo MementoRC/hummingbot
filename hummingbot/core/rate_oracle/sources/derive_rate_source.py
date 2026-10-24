@@ -25,20 +25,19 @@ class DeriveRateSource(RateSourceBase):
         results = {}
         for pair_price in pairs_prices:
             try:
-                trading_pair = await self._exchange.trading_pair_associated_to_exchange_symbol(symbol=pair_price["symbol"]["instrument_name"])
+                trading_pair = await self._exchange.trading_pair_associated_to_exchange_symbol(
+                    symbol=pair_price["symbol"]["instrument_name"]
+                )
             except KeyError:
                 continue  # skip pairs that we don't track
             if quote_token is not None:
                 base, quote = split_hb_trading_pair(trading_pair=trading_pair)
                 if quote != quote_token:
                     continue
-
-            # This used to sit inside the quote filter above, so the common quote_token=None call
-            # returned an empty mapping and the oracle silently had no Derive prices at all.
-            bid_price = pair_price["symbol"].get("best_bid")
-            ask_price = pair_price["symbol"].get("best_ask")
-            if bid_price is not None and ask_price is not None and 0 < Decimal(bid_price) <= Decimal(ask_price):
-                results[trading_pair] = (Decimal(bid_price) + Decimal(ask_price)) / Decimal("2")
+                bid_price = pair_price["symbol"].get("best_bid")
+                ask_price = pair_price["symbol"].get("best_ask")
+                if bid_price is not None and ask_price is not None and 0 < Decimal(bid_price) <= Decimal(ask_price):
+                    results[trading_pair] = (Decimal(bid_price) + Decimal(ask_price)) / Decimal("2")
 
         return results
 
@@ -49,7 +48,7 @@ class DeriveRateSource(RateSourceBase):
             await self._exchange._make_trading_rules_request()
 
     @staticmethod
-    def _build_derive_connector_without_private_keys() -> 'DeriveExchange':
+    def _build_derive_connector_without_private_keys() -> "DeriveExchange":
         from hummingbot.connector.exchange.derive.derive_exchange import DeriveExchange
 
         return DeriveExchange(

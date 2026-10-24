@@ -1,5 +1,5 @@
-import asyncio
 from abc import ABC, abstractmethod
+import asyncio
 from typing import Any, Dict, List
 
 from hummingbot.core.data_type.funding_info import FundingInfo
