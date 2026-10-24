@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from hummingbot.connector.exchange.derive import derive_constants as CONSTANTS, derive_web_utils as web_utils
 from hummingbot.connector.exchange.derive.derive_auth import DeriveAuth
-from hummingbot.connector.other.derive_common_utils import describe_error
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.utils.async_utils import safe_ensure_future
 
@@ -18,18 +17,17 @@ if TYPE_CHECKING:
 
 
 class DeriveAPIUserStreamDataSource(UserStreamTrackerDataSource):
-
     LISTEN_KEY_KEEP_ALIVE_INTERVAL = 1800  # Recommended to Ping/Update listen key to keep connection alive
     WS_HEARTBEAT_TIME_INTERVAL = 30.0
     _logger: Optional[HummingbotLogger] = None
 
     def __init__(
-            self,
-            auth: DeriveAuth,
-            trading_pairs: List[str],
-            connector: 'DeriveExchange',
-            api_factory: WebAssistantsFactory,
-            domain: str = CONSTANTS.DEFAULT_DOMAIN,
+        self,
+        auth: DeriveAuth,
+        trading_pairs: List[str],
+        connector: "DeriveExchange",
+        api_factory: WebAssistantsFactory,
+        domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
 
         super().__init__()
@@ -71,14 +69,8 @@ class DeriveAPIUserStreamDataSource(UserStreamTrackerDataSource):
 
         if message["id"] == id:
             if "result" not in message:
-                # Without the exchange's own reason this is "authentication failed" repeated on
-                # every reconnect, with nothing to say the key is unregistered, expired or scoped
-                # to another wallet.
-                error = message.get("error") or {}
-                code = error.get("code")
-                reason = self._connector._session_key_hint(code) or describe_error(error)
-                self.logger().error(f"Private websocket login was refused: {reason}")
-                raise IOError(f"Private websocket connection authentication failed: {reason}")
+                self.logger().error("Error authenticating the private websocket connection")
+                raise IOError("Private websocket connection authentication failed")
 
     async def _connected_websocket_assistant(self) -> WSAssistant:
         """
@@ -102,19 +94,17 @@ class DeriveAPIUserStreamDataSource(UserStreamTrackerDataSource):
                 "method": "subscribe",
                 "params": {
                     "channels": [f"{subaccount_id}.orders"],
-                }
+                },
             }
-            subscribe_order_change_request: WSJSONRequest = WSJSONRequest(
-                payload=orders_change_payload)
+            subscribe_order_change_request: WSJSONRequest = WSJSONRequest(payload=orders_change_payload)
 
             trades_payload = {
                 "method": "subscribe",
                 "params": {
                     "channels": [f"{subaccount_id}.trades"],
-                }
+                },
             }
-            subscribe_trades_request: WSJSONRequest = WSJSONRequest(
-                payload=trades_payload)
+            subscribe_trades_request: WSJSONRequest = WSJSONRequest(payload=trades_payload)
             await self._authenticate(websocket_assistant)
             await websocket_assistant.send(subscribe_order_change_request)
             await websocket_assistant.send(subscribe_trades_request)
@@ -128,18 +118,20 @@ class DeriveAPIUserStreamDataSource(UserStreamTrackerDataSource):
 
     async def _process_event_message(self, event_message: Dict[str, Any], queue: asyncio.Queue):
         if event_message.get("error") is not None:
-            err_msg = describe_error(event_message["error"])
-            raise IOError({
-                "label": "WSS_ERROR",
-                "message": f"Error received via websocket - {err_msg}."
-            })
+            err_msg = event_message["error"]["message"]
+            raise IOError({"label": "WSS_ERROR", "message": f"Error received via websocket - {err_msg}."})
         elif event_message.get("params") is not None:
             if "channel" in event_message["params"]:
-                if CONSTANTS.USER_ORDERS_ENDPOINT_NAME in event_message["params"]["channel"] or \
-                        CONSTANTS.USEREVENT_ENDPOINT_NAME in event_message["params"]["channel"]:
+                if (
+                    CONSTANTS.USER_ORDERS_ENDPOINT_NAME in event_message["params"]["channel"]
+                    or CONSTANTS.USEREVENT_ENDPOINT_NAME in event_message["params"]["channel"]
+                ):
                     queue.put_nowait(event_message["params"])
 
-    async def _ping_thread(self, websocket_assistant: WSAssistant,):
+    async def _ping_thread(
+        self,
+        websocket_assistant: WSAssistant,
+    ):
         try:
             while True:
                 ping_request = WSJSONRequest(payload={"method": "ping"})
@@ -147,14 +139,12 @@ class DeriveAPIUserStreamDataSource(UserStreamTrackerDataSource):
                 await self._authenticate(websocket_assistant)
                 await websocket_assistant.send(ping_request)
         except Exception as e:
-            self.logger().debug(f'ping error {e}')
+            self.logger().debug(f"ping error {e}")
 
     async def _process_websocket_messages(self, websocket_assistant: WSAssistant, queue: asyncio.Queue):
         while True:
             try:
-                await super()._process_websocket_messages(
-                    websocket_assistant=websocket_assistant,
-                    queue=queue)
+                await super()._process_websocket_messages(websocket_assistant=websocket_assistant, queue=queue)
             except asyncio.TimeoutError:
                 ping_request = WSJSONRequest(payload={"method": "ping"})
                 await websocket_assistant.send(ping_request)

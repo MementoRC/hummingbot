@@ -1,6 +1,6 @@
 import asyncio
-import unittest
 from typing import Awaitable
+import unittest
 
 from prompt_toolkit.document import Document
 

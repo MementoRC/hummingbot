@@ -1,11 +1,10 @@
 import unittest
 
-import hummingbot.connector.exchange.mexc.mexc_constants as CONSTANTS
 from hummingbot.connector.exchange.mexc import mexc_web_utils as web_utils
+import hummingbot.connector.exchange.mexc.mexc_constants as CONSTANTS
 
 
 class MexcUtilTestCases(unittest.TestCase):
-
     def test_public_rest_url(self):
         path_url = "/TEST_PATH"
         domain = "com"

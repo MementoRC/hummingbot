@@ -116,3 +116,13 @@ coverage.xml
 # developer has checked out, which is not this repo's business — and it is how a
 # `hagent` server pointing at a `harness/` directory ended up committed here.
 .mcp.json
+
+# Serena AI-tooling state
+.serena/
+
+# Rust extension build artifacts (hummingbot/rust/)
+/hummingbot/rust/target/
+/hummingbot/rust/Cargo.lock
+
+# Sub-package stray logs
+/sub-packages/logs/
