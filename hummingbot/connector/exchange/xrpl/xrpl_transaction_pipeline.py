@@ -118,12 +118,19 @@ class XRPLTransactionPipeline:
 
         # Cancel pipeline task
         if self._pipeline_task is not None:
-            self._pipeline_task.cancel()
+            task = self._pipeline_task
+            # Clear the reference before awaiting to prevent double-await on retry/reuse.
+            self._pipeline_task = None
+            task.cancel()
             try:
-                await self._pipeline_task
+                await task
             except asyncio.CancelledError:
                 pass
-            self._pipeline_task = None
+            except RuntimeError as e:
+                # Python 3.12 raises "cannot reuse already awaited coroutine" when the
+                # pipeline task has already completed before we await it here.
+                if "already awaited" not in str(e):
+                    raise
 
         # Cancel pending submissions
         cancelled_count = 0
