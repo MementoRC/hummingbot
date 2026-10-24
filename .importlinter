@@ -22,6 +22,7 @@ root_packages =
     market_connector
     market_data
     market_simulator
+    rate_limit
     rate_oracle
     remote_iface
     strategy_framework
@@ -75,6 +76,14 @@ forbidden_modules =
 # (the boundary-exempt shim). allow_indirect_imports permits that hop while still catching
 # any DIRECT hummingbot import in live_market_data. (ADR 0001 Group A1)
 allow_indirect_imports = true
+
+[importlinter:contract:rate-limit-boundary]
+name = rate_limit must not import hummingbot
+type = forbidden
+source_modules =
+    rate_limit
+forbidden_modules =
+    hummingbot
 
 [importlinter:contract:web-assistant-boundary]
 name = web_assistant must not import hummingbot
@@ -210,7 +219,7 @@ type = layers
 layers =
     user_stream_tracker
     candles_feed | liquidations_feed | rate_oracle | market_data | market_connector | market_simulator | web_assistant | remote_iface
-    strategy_framework.primitives | data_type_primitives | event_bus | logger | async_utils | connector_utils
+    strategy_framework.primitives | data_type_primitives | event_bus | logger | async_utils | connector_utils | rate_limit
 # hb_compat isolation shim: logger is a real pinned dep of async_utils (hb-async-utils#14).
 #
 # Recipe-1 re-export shims: hummingbot/core/data_type/user_stream_tracker{,_data_source}.py
@@ -236,6 +245,7 @@ modules =
     logger
     async_utils
     connector_utils
+    rate_limit
     strategy_framework.primitives
 # hb_compat isolation shim: logger is a real pinned dep of async_utils (hb-async-utils#14).
 ignore_imports =
