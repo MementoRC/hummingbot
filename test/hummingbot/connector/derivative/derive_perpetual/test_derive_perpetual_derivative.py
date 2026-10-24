@@ -3,6 +3,7 @@ import json
 import logging
 import re
 import time
+from datetime import timezone
 from decimal import Decimal
 from typing import Any, Callable, Dict, List, Optional, Tuple
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -592,24 +593,24 @@ class DerivePerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
     @property
     def target_funding_info_next_funding_utc_str(self):
         datetime_str = str(
-            pd.Timestamp.utcfromtimestamp(
-                self.target_funding_info_next_funding_utc_timestamp)
+            pd.Timestamp.fromtimestamp(
+                self.target_funding_info_next_funding_utc_timestamp, tz=timezone.utc)
         ).replace(" ", "T") + "Z"
         return datetime_str
 
     @property
     def target_funding_info_next_funding_utc_str_ws_updated(self):
         datetime_str = str(
-            pd.Timestamp.utcfromtimestamp(
-                self.target_funding_info_next_funding_utc_timestamp_ws_updated)
+            pd.Timestamp.fromtimestamp(
+                self.target_funding_info_next_funding_utc_timestamp_ws_updated, tz=timezone.utc)
         ).replace(" ", "T") + "Z"
         return datetime_str
 
     @property
     def target_funding_payment_timestamp_str(self):
         datetime_str = str(
-            pd.Timestamp.utcfromtimestamp(
-                self.target_funding_payment_timestamp)
+            pd.Timestamp.fromtimestamp(
+                self.target_funding_payment_timestamp, tz=timezone.utc)
         ).replace(" ", "T") + "Z"
         return datetime_str
 
