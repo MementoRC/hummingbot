@@ -20,13 +20,8 @@ class FakeMQTTMessage:
     def __init__(self, topic: str, payload: Any, envelope: bool = True):
         self.topic = topic
         if envelope:
-            payload = {
-                'header': {
-                    'reply_to': f"test_reply/{topic}"
-                },
-                'data': payload
-            }
-        self.payload = ujson.dumps(payload).encode('utf-8')
+            payload = {"header": {"reply_to": f"test_reply/{topic}"}, "data": payload}
+        self.payload = ujson.dumps(payload).encode("utf-8")
 
 
 class FakeMQTTClient:
@@ -87,7 +82,7 @@ class FakeMQTTBroker:
 
     def _record(self, topic: str, payload: Any):
         if isinstance(payload, (bytes, bytearray)):
-            payload = payload.decode('utf-8')
+            payload = payload.decode("utf-8")
         if isinstance(payload, str):
             payload = ujson.loads(payload)
         logging.info(f"\nFakeMQTT publish on\n> {topic}\n     {payload}\n")
@@ -119,7 +114,7 @@ class FakeMQTTBroker:
     def received_msgs(self):
         return self._received_msgs
 
-    def is_msg_received(self, topic, content=None, msg_key='msg'):
+    def is_msg_received(self, topic, content=None, msg_key="msg"):
         msg_found = False
         if topic in self.received_msgs:
             if not content:

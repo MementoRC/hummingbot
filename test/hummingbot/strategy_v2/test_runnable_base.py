@@ -1,9 +1,9 @@
 import asyncio
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from test.logger_mixin_for_test import LoggerMixinForTest
 
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.runnable_base import RunnableBase
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
+from test.logger_mixin_for_test import LoggerMixinForTest
 
 
 class TestRunnableBase(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
