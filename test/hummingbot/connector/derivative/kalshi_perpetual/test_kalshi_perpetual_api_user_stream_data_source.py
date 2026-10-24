@@ -1,21 +1,21 @@
 import asyncio
 import base64
 import json
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from typing import Any, Dict, Optional
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding, rsa
 
-import hummingbot.connector.derivative.kalshi_perpetual.kalshi_perpetual_constants as CONSTANTS
-import hummingbot.connector.derivative.kalshi_perpetual.kalshi_perpetual_web_utils as web_utils
 from hummingbot.connector.derivative.kalshi_perpetual.kalshi_perpetual_api_user_stream_data_source import (
     KalshiPerpetualAPIUserStreamDataSource,
 )
 from hummingbot.connector.derivative.kalshi_perpetual.kalshi_perpetual_auth import KalshiPerpetualAuth
+import hummingbot.connector.derivative.kalshi_perpetual.kalshi_perpetual_constants as CONSTANTS
+import hummingbot.connector.derivative.kalshi_perpetual.kalshi_perpetual_web_utils as web_utils
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.core.web_assistant.ws_assistant import WSAssistant
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class KalshiPerpetualAPIUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase):
@@ -36,15 +36,17 @@ class KalshiPerpetualAPIUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase
 
     async def asyncSetUp(self) -> None:
         self.log_records = []
-        self.listening_task: Optional[asyncio.Task] = None
+        self.listening_task: asyncio.Task | None = None
         self.mocking_assistant = NetworkMockingAssistant(self.local_event_loop)
 
         self.time_provider = MagicMock()
         self.time_provider.time.return_value = 1703123456.789
         self.auth = KalshiPerpetualAuth(
-            api_key=self.api_key, private_key=self.private_key_pem, time_provider=self.time_provider)
+            api_key=self.api_key, private_key=self.private_key_pem, time_provider=self.time_provider
+        )
         self.data_source = KalshiPerpetualAPIUserStreamDataSource(
-            auth=self.auth, api_factory=web_utils.build_api_factory(auth=self.auth))
+            auth=self.auth, api_factory=web_utils.build_api_factory(auth=self.auth)
+        )
 
         self.data_source.logger().setLevel(1)
         self.data_source.logger().addHandler(self)
@@ -61,29 +63,50 @@ class KalshiPerpetualAPIUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase
 
     # Fixtures shaped after the AsyncAPI spec (per-contract prices and counts)
 
-    def _fill_event(self) -> Dict[str, Any]:
+    def _fill_event(self) -> dict[str, Any]:
         return {
-            "type": "fill", "sid": 1,
-            "msg": {"trade_id": "d91bc706-ee49-470d-82d8-11418bda6fed",
-                    "order_id": "ee587a1c-8b87-4dcf-b721-9f6f790619fa", "client_order_id": "HBOT-1",
-                    "market_ticker": "KXBTCPERP", "is_taker": True, "side": "bid", "ts_ms": 1789038107000,
-                    "price": "7.7825", "count": "3.00", "fee_cost": "0.0028", "post_position": "3.00",
-                    "order_source": "user"},
+            "type": "fill",
+            "sid": 1,
+            "msg": {
+                "trade_id": "d91bc706-ee49-470d-82d8-11418bda6fed",
+                "order_id": "ee587a1c-8b87-4dcf-b721-9f6f790619fa",
+                "client_order_id": "HBOT-1",
+                "market_ticker": "KXBTCPERP",
+                "is_taker": True,
+                "side": "bid",
+                "ts_ms": 1789038107000,
+                "price": "7.7825",
+                "count": "3.00",
+                "fee_cost": "0.0028",
+                "post_position": "3.00",
+                "order_source": "user",
+            },
         }
 
-    def _user_order_event(self) -> Dict[str, Any]:
+    def _user_order_event(self) -> dict[str, Any]:
         return {
-            "type": "user_order", "sid": 2,
-            "msg": {"order_id": "ee587a1c-8b87-4dcf-b721-9f6f790619fa",
-                    "user_id": "0c3e7a4d-6b1f-4c34-9f86-2d3c8a7a9b10", "client_order_id": "HBOT-1",
-                    "ticker": "KXBTCPERP", "side": "bid", "price": "7.7825", "fill_count": "3.00",
-                    "remaining_count": "0.00", "created_ts_ms": 1789038106000,
-                    "last_updated_ts_ms": 1789038107000, "order_source": "user"},
+            "type": "user_order",
+            "sid": 2,
+            "msg": {
+                "order_id": "ee587a1c-8b87-4dcf-b721-9f6f790619fa",
+                "user_id": "0c3e7a4d-6b1f-4c34-9f86-2d3c8a7a9b10",
+                "client_order_id": "HBOT-1",
+                "ticker": "KXBTCPERP",
+                "side": "bid",
+                "price": "7.7825",
+                "fill_count": "3.00",
+                "remaining_count": "0.00",
+                "created_ts_ms": 1789038106000,
+                "last_updated_ts_ms": 1789038107000,
+                "order_source": "user",
+            },
         }
 
     def _subscribed_events(self):
-        return [{"id": 1, "type": "subscribed", "msg": {"channel": channel, "sid": sid}}
-                for sid, channel in enumerate(["fill", "user_orders"], start=1)]
+        return [
+            {"id": 1, "type": "subscribed", "msg": {"channel": channel, "sid": sid}}
+            for sid, channel in enumerate(["fill", "user_orders"], start=1)
+        ]
 
     def test_last_recv_time(self):
         self.assertEqual(0, self.data_source.last_recv_time)
@@ -126,7 +149,8 @@ class KalshiPerpetualAPIUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase
 
         sent_messages = self.mocking_assistant.json_messages_sent_through_websocket(ws_connect_mock.return_value)
         self.assertEqual(
-            [{"id": 1, "cmd": "subscribe", "params": {"channels": ["fill", "user_orders"]}}], sent_messages)
+            [{"id": 1, "cmd": "subscribe", "params": {"channels": ["fill", "user_orders"]}}], sent_messages
+        )
         self.assertTrue(self._is_logged("INFO", "Subscribed to private fill and user order channels..."))
         ws_connect_mock.return_value.ping.assert_called()
 
@@ -156,7 +180,8 @@ class KalshiPerpetualAPIUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase
 
         self.assertEqual(0, msg_queue.qsize())
         self.assertTrue(
-            self._is_logged("ERROR", "Unexpected error while listening to user stream. Retrying after 5 seconds..."))
+            self._is_logged("ERROR", "Unexpected error while listening to user stream. Retrying after 5 seconds...")
+        )
         self.assertIsNone(self.data_source._ws_assistant)
 
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
@@ -169,7 +194,8 @@ class KalshiPerpetualAPIUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase
             await self.data_source.listen_for_user_stream(asyncio.Queue())
 
         self.assertTrue(
-            self._is_logged("ERROR", "Unexpected error while listening to user stream. Retrying after 5 seconds..."))
+            self._is_logged("ERROR", "Unexpected error while listening to user stream. Retrying after 5 seconds...")
+        )
 
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
     async def test_listen_for_user_stream_iter_message_throws_exception(self, ws_connect_mock):
@@ -181,7 +207,8 @@ class KalshiPerpetualAPIUserStreamDataSourceTests(IsolatedAsyncioWrapperTestCase
             await self.data_source.listen_for_user_stream(asyncio.Queue())
 
         self.assertTrue(
-            self._is_logged("ERROR", "Unexpected error while listening to user stream. Retrying after 5 seconds..."))
+            self._is_logged("ERROR", "Unexpected error while listening to user stream. Retrying after 5 seconds...")
+        )
         # The failed connection was dropped and a new one opened
         self.assertEqual(2, ws_connect_mock.call_count)
         self.assertIsNone(self.data_source._ws_assistant)

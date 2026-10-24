@@ -1,7 +1,7 @@
-import json
-import unittest
 from decimal import Decimal
+import json
 from pathlib import Path
+import unittest
 from unittest.mock import patch
 
 from hummingbot.connector.other.derive_common_utils import (
@@ -84,9 +84,7 @@ class DeriveSigningGoldenVectorsTests(unittest.TestCase):
         action = self._signed_action(case, module_data)
 
         self.assertEqual(case["actionHash"].lower(), "0x" + action._get_action_hash().hex().lower())
-        self.assertEqual(
-            case["typedDataHash"].lower(), "0x" + action._to_typed_data_hash().hex().lower()
-        )
+        self.assertEqual(case["typedDataHash"].lower(), "0x" + action._to_typed_data_hash().hex().lower())
         signature = action.sign(self.vectors["signerPrivateKey"])
         self.assertEqual(case["signature"].lower(), signature.lower())
 
@@ -132,9 +130,7 @@ class DeriveSigningGoldenVectorsTests(unittest.TestCase):
             is_bid=inputs["is_bid"],
         )
 
-        self.assertEqual(
-            {"limit_price": "1500.5", "amount": "2.5", "max_fee": "100"}, module_data.to_json()
-        )
+        self.assertEqual({"limit_price": "1500.5", "amount": "2.5", "max_fee": "100"}, module_data.to_json())
 
 
 class DeriveDomainSeparatorTests(unittest.TestCase):
@@ -166,9 +162,7 @@ class DeriveDomainSeparatorTests(unittest.TestCase):
 class DeriveEncodingTests(unittest.TestCase):
     def test_e18_round_trip(self):
         for value in ("1500.5", "2.5", "100", "0.000000000001", "-3.25"):
-            self.assertEqual(
-                value, big_int_to_decimal_str(decimal_to_big_int(Decimal(value))), f"for {value}"
-            )
+            self.assertEqual(value, big_int_to_decimal_str(decimal_to_big_int(Decimal(value))), f"for {value}")
 
     def test_precision_finer_than_1e_12_is_rejected_not_truncated(self):
         """v3 rejects the order rather than rounding, so signing it would waste a round trip."""
@@ -178,7 +172,7 @@ class DeriveEncodingTests(unittest.TestCase):
 
     def test_values_outside_int128_are_rejected(self):
         with self.assertRaises(ValueError):
-            decimal_to_big_int(Decimal(2 ** 127))
+            decimal_to_big_int(Decimal(2**127))
 
     def test_nonce_is_utc_nanoseconds_and_strictly_increasing(self):
         first = get_action_nonce()
@@ -195,7 +189,7 @@ class DeriveEncodingTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             get_signature_expiry_sec(60)  # under 5 minutes
         with self.assertRaises(ValueError):
-            get_signature_expiry_sec(2 ** 31 - 1)  # the v2 value
+            get_signature_expiry_sec(2**31 - 1)  # the v2 value
 
     def test_max_fee_is_never_below_what_the_exchange_suggests(self):
         """
@@ -248,10 +242,10 @@ class DeriveEncodingTests(unittest.TestCase):
         max_fee = estimate_max_fee(
             taker_fee_rate=taker, base_fee=base_fee, index_price=index, limit_price=index, amount_step=Decimal("0.1")
         )
-        over_the_orders_amount = 3 * (2 * taker * index + base_fee / Decimal("10"))    # a 10 XRP order
+        over_the_orders_amount = 3 * (2 * taker * index + base_fee / Decimal("10"))  # a 10 XRP order
 
         self.assertEqual(3 * 2 * taker * index + Decimal("0.1"), max_fee)
-        self.assertLess(over_the_orders_amount, Decimal("0.100991"))                   # under the suggestion
+        self.assertLess(over_the_orders_amount, Decimal("0.100991"))  # under the suggestion
         self.assertGreater(max_fee, Decimal("0.100991"))
 
     def test_post_only_order_is_not_charged_the_base_fee_term(self):
@@ -284,7 +278,7 @@ class DeriveEncodingTests(unittest.TestCase):
             index_price=Decimal("100"),
             limit_price=Decimal("90"),
         )
-        self.assertEqual(Decimal("0.3"), max_fee)    # 3 * 2 * 0.0005 * 100
+        self.assertEqual(Decimal("0.3"), max_fee)  # 3 * 2 * 0.0005 * 100
 
     def test_max_fee_is_rounded_up_to_signable_precision(self):
         max_fee = estimate_max_fee(
@@ -292,10 +286,10 @@ class DeriveEncodingTests(unittest.TestCase):
             base_fee=Decimal("0.01"),
             index_price=Decimal("2.5"),
             limit_price=Decimal("2.5"),
-            amount_step=Decimal("3"),            # 0.01 / 3 does not terminate
+            amount_step=Decimal("3"),  # 0.01 / 3 does not terminate
         )
         self.assertGreaterEqual(max_fee, 3 * 2 * Decimal("0.0003") * Decimal("2.5") + Decimal("0.01") / 3)
-        decimal_to_big_int(max_fee)              # would raise if finer than 1e-12
+        decimal_to_big_int(max_fee)  # would raise if finer than 1e-12
 
     def test_subaccount_id_is_normalised_to_an_integer(self):
         for configured in ("45686", 45686, " 45686 "):
