@@ -426,6 +426,7 @@ class HedgedMarketMakingUnitTest(unittest.TestCase):
         if len(self.maker_order_created_logger.event_log) == prev_maker_orders_created_len:
             self.async_run_with_timeout(self.maker_order_created_logger.wait_for(SellOrderCreatedEvent))
 
+        self.ev_loop.run_until_complete(asyncio.sleep(0.1))
         self.assertEqual(2, len(self.maker_cancel_order_logger.event_log))
         self.assertEqual(1, len(self.strategy_with_top_depth_tolerance.active_maker_bids))
         self.assertEqual(1, len(self.strategy_with_top_depth_tolerance.active_maker_asks))
@@ -483,6 +484,7 @@ class HedgedMarketMakingUnitTest(unittest.TestCase):
         if len(self.maker_order_created_logger.event_log) == prev_maker_orders_created_len:
             self.async_run_with_timeout(self.maker_order_created_logger.wait_for(SellOrderCreatedEvent))
 
+        self.ev_loop.run_until_complete(asyncio.sleep(0.1))
         self.assertEqual(2, len(self.maker_cancel_order_logger.event_log))
         self.assertEqual(1, len(self.strategy.active_maker_bids))
         self.assertEqual(1, len(self.strategy.active_maker_asks))
