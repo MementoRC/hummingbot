@@ -83,6 +83,13 @@ cross_cutting:
   # Pin bumps appear as gitlink paths, so the core contract tests always run when any sub-package pointer changes.
   - source_glob: "sub-packages/*"
     tests_globs: ["test/hummingbot/contracts/**/test_*.py"]
+  # A candles-feed pin bump also runs its hb_compat tests (importorskip("hummingbot")) against core plus the web-assistant shims.
+  - source_glob: "sub-packages/candles-feed"
+    tests_globs:
+      - "sub-packages/candles-feed/tests/unit/hb_compat/**/test_*.py"
+      - "sub-packages/candles-feed/tests/unit/test_hummingbot_integration.py"
+      - "sub-packages/candles-feed/tests/integration/test_async_throttler_integration.py"
+      - "sub-packages/candles-feed/tests/integration/test_rate_limit_backoff_integration.py"
 
 # Selected/total > N% triggers exit code 2 (caller falls back to full suite)
 escape_threshold_pct: 50
