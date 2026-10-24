@@ -14,6 +14,10 @@
 	path = sub-packages/strategy-framework
 	url = https://github.com/MementoRC/hb-strategy-framework.git
 	branch = development
+[submodule "sub-packages/rate-limit"]
+	path = sub-packages/rate-limit
+	url = https://github.com/MementoRC/hb-rate-limit.git
+	branch = development
 [submodule "sub-packages/rate-oracle"]
 	path = sub-packages/rate-oracle
 	url = https://github.com/MementoRC/hb-rate-oracle.git
