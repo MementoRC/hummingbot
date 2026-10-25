@@ -126,7 +126,7 @@ class HyperliquidAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):
                         "szDecimals": 8,
                         "weiDecimals": 8,
                         "index": 0,
-                        "tokenId": "0x6d1e7cde53ba9467b783cb7c530ce054",
+                        "tokenId": "0x6d1e7cde53ba9467b783cb7c530ce054",  # noqa: mock
                         "isCanonical": True,
                         "evmContract": None,
                         "fullName": None
@@ -136,7 +136,7 @@ class HyperliquidAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):
                         "szDecimals": 0,
                         "weiDecimals": 5,
                         "index": 1,
-                        "tokenId": "0xc1fb593aeffbeb02f85e0308e9956a90",
+                        "tokenId": "0xc1fb593aeffbeb02f85e0308e9956a90",  # noqa: mock
                         "isCanonical": True,
                         "evmContract": None,
                         "fullName": None
@@ -146,7 +146,7 @@ class HyperliquidAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):
                         "szDecimals": 0,
                         "weiDecimals": 5,
                         "index": 2,
-                        "tokenId": "0xc1fb593aeffbeb02f85e0308e9956a90",
+                        "tokenId": "0xc1fb593aeffbeb02f85e0308e9956a90",  # noqa: mock
                         "isCanonical": True,
                         "evmContract": None,
                         "fullName": None
@@ -371,7 +371,8 @@ class HyperliquidAPIOrderBookDataSourceTests(IsolatedAsyncioWrapperTestCase):
         mock_queue = AsyncMock()
         trade_event = {'channel': 'trades', 'data': [
             {'coin': 'COINALPHA/USDC', 'side': 'A', 'px': '2009.0', 'sz': '0.0079', 'time': 1701156061468,
-             'hash': '0x3e2bc327cc925903cebe0408315a98010b002fda921d23fd1468bbb5d573f902'}]}  # noqa: mock
+             'hash': '0x3e2bc327cc925903cebe0408315a98010b002fda921d23fd1468bbb5d573f902',  # noqa: mock
+             }]}
 
         mock_queue.get.side_effect = [trade_event, asyncio.CancelledError()]
         self.data_source._message_queue[self.data_source._trade_messages_queue_key] = mock_queue
