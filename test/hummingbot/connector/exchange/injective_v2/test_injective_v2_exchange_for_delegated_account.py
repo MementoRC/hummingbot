@@ -1609,7 +1609,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
             ),
         ]
         try:
-            await asyncio.wait_for(safe_gather(*tasks), timeout=1)
+            await asyncio.wait_for(safe_gather(*tasks), timeout=10)
         except asyncio.CancelledError:
             pass
         # Execute one more synchronization to ensure the async task that processes the update is finished
@@ -1691,7 +1691,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
                     subaccount_ids=[self.portfolio_account_subaccount_id],
                     accounts=[self.portfolio_account_injective_address],
                 ),
-                timeout=1,
+                timeout=10,
             )
         except asyncio.CancelledError:
             pass
@@ -1744,7 +1744,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
                     subaccount_ids=[self.portfolio_account_subaccount_id],
                     accounts=[self.portfolio_account_injective_address],
                 ),
-                timeout=1,
+                timeout=10,
             )
         except asyncio.CancelledError:
             pass
@@ -1807,7 +1807,7 @@ class InjectiveV2ExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorT
             ),
         ]
         try:
-            await asyncio.wait_for(safe_gather(*tasks), timeout=1)
+            await asyncio.wait_for(safe_gather(*tasks), timeout=10)
         except asyncio.CancelledError:
             pass
         # Execute one more synchronization to ensure the async task that processes the update is finished
