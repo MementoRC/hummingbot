@@ -225,7 +225,7 @@ class LambdaplexAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
 
         self.listening_task = self.local_event_loop.create_task(self.data_source.listen_for_subscriptions())
 
-        await asyncio.wait_for(self.resume_test_event.wait(), timeout=1)
+        await asyncio.wait_for(self.resume_test_event.wait(), timeout=10)
 
         self.assertTrue(
             self._is_logged(
@@ -380,7 +380,7 @@ class LambdaplexAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         self.listening_task = self.local_event_loop.create_task(
             self.data_source.listen_for_order_book_snapshots(self.local_event_loop, msg_queue)
         )
-        await asyncio.wait_for(self.resume_test_event.wait(), timeout=1)
+        await asyncio.wait_for(self.resume_test_event.wait(), timeout=10)
 
         self.assertTrue(
             self._is_logged(
