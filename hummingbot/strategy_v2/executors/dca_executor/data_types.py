@@ -46,8 +46,10 @@ class DCAExecutorConfig(ExecutorConfigBase):
         require_at_least("leverage", self.leverage, 1)
         # Every level is an (amount, price) pair, so the two lists have to line up.
         if len(self.amounts_quote) != len(self.prices):
-            raise ValueError(f"amounts_quote ({len(self.amounts_quote)} levels) and prices "
-                             f"({len(self.prices)} levels) must have the same length")
+            raise ValueError(
+                f"amounts_quote ({len(self.amounts_quote)} levels) and prices "
+                f"({len(self.prices)} levels) must have the same length"
+            )
         if len(self.prices) == 0:
             raise ValueError("prices must define at least one level")
         require_all_positive("amounts_quote", self.amounts_quote)
