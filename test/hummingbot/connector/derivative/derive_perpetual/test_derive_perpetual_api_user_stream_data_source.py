@@ -2,7 +2,6 @@ import asyncio
 
 # from datetime import datetime, timezone
 import json
-from typing import Optional
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from bidict import bidict
@@ -39,7 +38,7 @@ class TestDerivePerpetualAPIUserStreamDataSource(IsolatedAsyncioWrapperTestCase)
     def setUp(self) -> None:
         super().setUp()
         self.log_records = []
-        self.listening_task: Optional[asyncio.Task] = None
+        self.listening_task: asyncio.Task | None = None
 
         # Mock Web3 account creation
         self.mock_wallet = MagicMock()
@@ -92,6 +91,15 @@ class TestDerivePerpetualAPIUserStreamDataSource(IsolatedAsyncioWrapperTestCase)
     def _is_logged(self, log_level: str, message: str) -> bool:
         return any(record.levelname == log_level and record.getMessage() == message for record in self.log_records)
 
+    async def test_stream_interruption_clears_position_balance_overrides(self):
+        self.connector._position_balance_updates[self.trading_pair] = 2
+        self.connector._position_balance_update_times[self.trading_pair] = 1.0
+
+        await self.data_source._on_user_stream_interruption(None)
+
+        self.assertEqual({}, self.connector._position_balance_updates)
+        self.assertEqual({}, self.connector._position_balance_update_times)
+
     def get_ws_auth_payload(self):
         return {
             "accept": "application/json",
@@ -111,7 +119,7 @@ class TestDerivePerpetualAPIUserStreamDataSource(IsolatedAsyncioWrapperTestCase)
         "hummingbot.connector.derivative.derive_perpetual.derive_perpetual_api_user_stream_data_source.DerivePerpetualAPIUserStreamDataSource._time"
     )
     @patch("hummingbot.connector.derivative.derive_perpetual.derive_perpetual_web_utils.utc_now_ms")
-    async def test_listen_for_user_stream_subscribes_to_orders_and_balances_events(
+    async def test_listen_for_user_stream_subscribes_to_orders_trades_and_balances(
         self, mock_utc_now, mock_timestamp, mock_auth, ws_connect_mock
     ):
         mock_timestamp.return_value = 1738096054575
@@ -259,7 +267,8 @@ class TestDerivePerpetualAPIUserStreamDataSource(IsolatedAsyncioWrapperTestCase)
             websocket_mock=ws_connect_mock.return_value
         )
 
-        self.assertEqual(4, len(sent_subscription_messages))
+        # Login, then subscribe to the private order, trade, and balance channels.
+        self.assertEqual(2, len(sent_subscription_messages))
         auth_responce = self.get_ws_auth_payload()
         expected_login_subscription = {
             "method": "public/login",
@@ -267,23 +276,30 @@ class TestDerivePerpetualAPIUserStreamDataSource(IsolatedAsyncioWrapperTestCase)
             "id": str(mock_utc_now.return_value),
         }
         self.assertEqual(expected_login_subscription, sent_subscription_messages[0])
-        expected_positions_subscription = {
-            "method": "private/get_subaccount",
-            "params": {"subaccount_id": int(self.subacct_id)},
-        }
-        self.assertEqual(expected_positions_subscription, sent_subscription_messages[1])
-        expected_positions_subscription = {
-            "method": "private/get_positions",
-            "params": {"subaccount_id": int(self.subacct_id)},
-        }
-        self.assertEqual(expected_positions_subscription, sent_subscription_messages[2])
         expected_trades_subscription = {
             "method": "subscribe",
             "params": {
-                "channels": [f"{self.subacct_id}.orders", f"{self.subacct_id}.trades"],
+                "channels": [
+                    f"{self.subacct_id}.orders",
+                    f"{self.subacct_id}.trades",
+                    f"{self.subacct_id}.balances",
+                ],
             },
         }
-        self.assertEqual(expected_trades_subscription, sent_subscription_messages[3])
+        self.assertEqual(expected_trades_subscription, sent_subscription_messages[1])
+
+    async def test_balance_channel_notifications_are_forwarded(self):
+        queue = asyncio.Queue()
+        notification = {
+            "params": {
+                "channel": f"{self.subacct_id}.balances",
+                "data": {"name": self.ex_trading_pair, "new_balance": "2", "previous_balance": "1"},
+            }
+        }
+
+        await self.data_source._process_event_message(notification, queue)
+
+        self.assertEqual(notification["params"], queue.get_nowait())
 
     @patch("aiohttp.ClientSession.ws_connect", new_callable=AsyncMock)
     @patch("hummingbot.core.data_type.user_stream_tracker_data_source.UserStreamTrackerDataSource._sleep")
@@ -318,3 +334,43 @@ class TestDerivePerpetualAPIUserStreamDataSource(IsolatedAsyncioWrapperTestCase)
         self.assertTrue(
             self._is_logged("ERROR", "Unexpected error while listening to user stream. Retrying after 5 seconds...")
         )
+
+    async def test_refused_login_reports_the_exchanges_reason(self):
+        """
+        A refused login was logged as "Error authenticating the private websocket connection" on
+        every reconnect, with nothing to say whether the key was unregistered, expired or paired
+        with another wallet.
+        """
+        ws = AsyncMock()
+        self.data_source._auth = MagicMock()
+        self.data_source._auth.get_ws_auth_payload.return_value = {"wallet": "0xW", "timestamp": 1, "signature": "0xS"}
+        with patch(
+            "hummingbot.connector.derivative.derive_perpetual.derive_perpetual_api_user_stream_data_source.web_utils.utc_now_ms",
+            return_value=1700000000000,
+        ):
+            for error, expected in (
+                ({"code": 14026, "message": "Session key not found"}, "Derive session key error 14026"),
+                ({"code": 14000, "message": "Account not found"}, "Derive account error 14000"),
+                ({"code": -32603, "message": "Internal error"}, "code=-32603 Internal error"),
+                (
+                    {"code": -32603, "message": "Internal error", "data": "upstream timed out"},
+                    "code=-32603 Internal error (upstream timed out)",
+                ),
+            ):
+                ws.receive.return_value = MagicMock(data={"id": "1700000000000", "error": error})
+
+                with self.assertRaises(IOError) as context:
+                    await self.data_source._authenticate(ws)
+
+                self.assertIn(expected, str(context.exception))
+                self.assertTrue(
+                    any(record.levelname == "ERROR" and expected in record.getMessage() for record in self.log_records)
+                )
+
+            # An accepted login is silent.
+            ws.receive.return_value = MagicMock(data={"id": "1700000000000", "result": [1]})
+            await self.data_source._authenticate(ws)
+
+        sent = ws.send.call_args.args[0].payload
+        self.assertEqual("public/login", sent["method"])
+        self.assertEqual("1700000000000", sent["id"])

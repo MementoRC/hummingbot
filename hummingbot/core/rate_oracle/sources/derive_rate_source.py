@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING
 
 from hummingbot.connector.utils import split_hb_trading_pair
 from hummingbot.core.rate_oracle.sources.rate_source_base import RateSourceBase
@@ -12,14 +12,14 @@ if TYPE_CHECKING:
 class DeriveRateSource(RateSourceBase):
     def __init__(self):
         super().__init__()
-        self._exchange: Optional[DeriveExchange] = None  # delayed because of circular reference
+        self._exchange: DeriveExchange | None = None  # delayed because of circular reference
 
     @property
     def name(self) -> str:
         return "derive"
 
     @async_ttl_cache(ttl=30, maxsize=1)
-    async def get_prices(self, quote_token: Optional[str] = None) -> Dict[str, Decimal]:
+    async def get_prices(self, quote_token: str | None = None) -> dict[str, Decimal]:
         await self._ensure_exchange()
         pairs_prices = await self._exchange.get_all_pairs_prices()
         results = {}
@@ -34,10 +34,13 @@ class DeriveRateSource(RateSourceBase):
                 base, quote = split_hb_trading_pair(trading_pair=trading_pair)
                 if quote != quote_token:
                     continue
-                bid_price = pair_price["symbol"].get("best_bid")
-                ask_price = pair_price["symbol"].get("best_ask")
-                if bid_price is not None and ask_price is not None and 0 < Decimal(bid_price) <= Decimal(ask_price):
-                    results[trading_pair] = (Decimal(bid_price) + Decimal(ask_price)) / Decimal("2")
+
+            # This used to sit inside the quote filter above, so the common quote_token=None call
+            # returned an empty mapping and the oracle silently had no Derive prices at all.
+            bid_price = pair_price["symbol"].get("best_bid")
+            ask_price = pair_price["symbol"].get("best_ask")
+            if bid_price is not None and ask_price is not None and 0 < Decimal(bid_price) <= Decimal(ask_price):
+                results[trading_pair] = (Decimal(bid_price) + Decimal(ask_price)) / Decimal("2")
 
         return results
 

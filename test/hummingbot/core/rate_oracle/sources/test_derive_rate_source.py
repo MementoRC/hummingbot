@@ -2,7 +2,7 @@ import asyncio
 from decimal import Decimal
 import json
 import re
-from typing import Awaitable, Callable, List, Optional
+from typing import Awaitable, Callable
 import unittest
 from unittest.mock import AsyncMock, patch
 
@@ -107,8 +107,8 @@ class DeriveRateSourceTest(unittest.TestCase):
     def configure_trading_rules_response(
         self,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
 
         url = self.trading_rules_url
         response = self.trading_rules_request_mock_response
@@ -118,8 +118,8 @@ class DeriveRateSourceTest(unittest.TestCase):
     def configure_currency_trading_rules_response(
         self,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
 
         url = self.trading_rules_currency_url
         response = self.currency_request_mock_response
@@ -129,8 +129,8 @@ class DeriveRateSourceTest(unittest.TestCase):
     def configure_all_symbols_response(
         self,
         mock_api: aioresponses,
-        callback: Optional[Callable] = lambda *args, **kwargs: None,
-    ) -> List[str]:
+        callback: Callable | None = lambda *args, **kwargs: None,
+    ) -> list[str]:
 
         url = self.all_symbols_url
         response = self.trading_rules_request_mock_response
@@ -229,7 +229,12 @@ class DeriveRateSourceTest(unittest.TestCase):
         self.configure_trading_rules_response(mock_api=mock_api)
         mock_rules.side_effect = self.trading_rules_request_mock_response
         self.exchange._instrument_ticker = mocked_response["result"]["instruments"]
-        mock_prices.side_effect = [res]
+        mock_prices.side_effect = [res, res]
+
+        # The default oracle call includes Derive pairs even without a quote filter.
+        prices = self.async_run_with_timeout(rate_source.get_prices())
+        self.assertIn(self.trading_pair, prices)
+        self.assertEqual(expected_rate, prices[self.trading_pair])
 
         prices = self.async_run_with_timeout(rate_source.get_prices(quote_token="USDC"))
         self.assertIn(self.trading_pair, prices)
