@@ -231,10 +231,18 @@ layers =
 # edges removes the false traversal while still ENFORCING user_stream_tracker's own downward
 # direction onto web_assistant/async_utils/logger, which is why it was layered in the first
 # place. Expect an equivalent pair for any future shim of an above-L2 package.
+#
+# Likewise the Recipe-1 shim edges for hb-market-connector #27 (FundingInfo/FundingInfoUpdate,
+# CancellationResult, Position). Without them market_simulator.hb_compat appears to import
+# market_connector sideways inside the L2 row, through hummingbot (observed via
+# web_assistants_factory, exchange_py_base and trade_fee chains).
 ignore_imports =
     async_utils.hb_compat.common -> logger
     hummingbot.core.data_type.user_stream_tracker -> user_stream_tracker.tracker
     hummingbot.core.data_type.user_stream_tracker_data_source -> user_stream_tracker.data_source
+    hummingbot.core.data_type.funding_info -> market_connector.hb_compat.funding_info
+    hummingbot.core.data_type.cancellation_result -> market_connector.hb_compat.cancellation_result
+    hummingbot.connector.derivative.position -> market_connector.hb_compat.position
 
 [importlinter:contract:adr-0001-l0-leaf-independence]
 name = ADR 0001 L0 leaf independence
