@@ -152,8 +152,8 @@ def main():
     )
     if augmented_sources:
         extensions += cythonize(
-            augmented_sources,
-            exclude=released_sources,
+            [p[:-4] + ".py" for p in augmented_sources],
+            exclude=[p[:-4] + ".py" for p in released_sources],
             compiler_directives={**compiler_directives, "annotation_typing": True},
             **cython_kwargs,
         )
