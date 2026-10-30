@@ -220,8 +220,6 @@ layers =
     user_stream_tracker
     candles_feed | liquidations_feed | rate_oracle | market_data | market_connector | market_simulator | web_assistant | remote_iface
     strategy_framework.primitives | data_type_primitives | event_bus | logger | async_utils | connector_utils | rate_limit
-# hb_compat isolation shim: logger is a real pinned dep of async_utils (hb-async-utils#14).
-#
 # Recipe-1 re-export shims: hummingbot/core/data_type/user_stream_tracker{,_data_source}.py
 # are 3-line re-exports over the extracted sub-package. Because this contract deliberately
 # does NOT model hummingbot (see note above), import-linter walks straight THROUGH it, so
@@ -237,7 +235,6 @@ layers =
 # market_connector sideways inside the L2 row, through hummingbot (observed via
 # web_assistants_factory, exchange_py_base and trade_fee chains).
 ignore_imports =
-    async_utils.hb_compat.common -> logger
     hummingbot.core.data_type.user_stream_tracker -> user_stream_tracker.tracker
     hummingbot.core.data_type.user_stream_tracker_data_source -> user_stream_tracker.data_source
     hummingbot.core.data_type.funding_info -> market_connector.hb_compat.funding_info
@@ -255,9 +252,6 @@ modules =
     connector_utils
     rate_limit
     strategy_framework.primitives
-# hb_compat isolation shim: logger is a real pinned dep of async_utils (hb-async-utils#14).
-ignore_imports =
-    async_utils.hb_compat.common -> logger
 
 # ADR-0001 Group D: strategy_framework (L2) may depend downward on L0 leaves
 # (event_bus, data_type_primitives, logger, async_utils, connector_utils) but must
