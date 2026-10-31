@@ -1,24 +1,4 @@
-import dataclasses
-from decimal import Decimal
-from enum import Enum
-import logging
-from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING
-
-from .logger import HummingbotLogger
-
-NETWORK = DEBUG + 6
-
-
-def log_encoder(obj):
-    if isinstance(obj, Decimal):
-        return str(obj)
-    elif isinstance(obj, Enum):
-        return str(obj)
-    elif dataclasses.is_dataclass(obj):
-        return dataclasses.asdict(obj)
-    raise TypeError("Object of type '%s' is not JSON serializable" % type(obj).__name__)
-
+# Compat re-export: superseded by hb-logger (logger).
+from logger import CRITICAL, DEBUG, ERROR, INFO, NETWORK, WARNING, HummingbotLogger, log_encoder
 
 __all__ = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL", "NETWORK", "HummingbotLogger", "log_encoder"]
-logging.setLoggerClass(HummingbotLogger)
-logging.addLevelName(NETWORK, "NETWORK")
