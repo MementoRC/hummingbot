@@ -73,6 +73,11 @@ class HummingbotApplication(*commands):
         self.placeholder_mode = False
         self._app_warnings: Deque[ApplicationWarning] = deque()
 
+        # Wire hb-logger's callback API so HummingbotLogger.notify()/network()
+        # route to this application instance.
+        HummingbotLogger.register_notify_handler(self.notify)
+        HummingbotLogger.register_network_handler(self.add_application_warning)
+
         # MQTT management
         self._mqtt: Optional[MQTTGateway] = None
 
