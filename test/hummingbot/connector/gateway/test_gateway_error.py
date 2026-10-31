@@ -1,11 +1,11 @@
 import unittest
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from hummingbot.connector.gateway.gateway import Gateway
 from hummingbot.connector.gateway.gateway_base import GatewayBase, RetryAction, extract_error_code
 from hummingbot.core.gateway.gateway_error import GatewayError
 from hummingbot.core.gateway.gateway_http_client import GatewayHttpClient
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class GatewayErrorShapeTest(unittest.TestCase):
