@@ -1,8 +1,9 @@
 """
 Unit tests for BacktestPositionHold and position hold support in the backtesting engine.
 """
-import unittest
+
 from decimal import Decimal
+import unittest
 from unittest.mock import MagicMock
 
 from hummingbot.core.data_type.common import TradeType
@@ -13,32 +14,43 @@ from hummingbot.strategy_v2.models.executors import CloseType
 from hummingbot.strategy_v2.models.executors_info import ExecutorInfo
 
 
-def _make_executor_info(exec_id="exec_1", side=TradeType.BUY,
-                        filled_amount_quote=Decimal("1000"),
-                        cum_fees_quote=Decimal("0.6"),
-                        net_pnl_quote=Decimal("10"),
-                        close_type=CloseType.POSITION_HOLD):
+def _make_executor_info(
+    exec_id="exec_1",
+    side=TradeType.BUY,
+    filled_amount_quote=Decimal("1000"),
+    cum_fees_quote=Decimal("0.6"),
+    net_pnl_quote=Decimal("10"),
+    close_type=CloseType.POSITION_HOLD,
+):
     config = PositionExecutorConfig(
-        id=exec_id, timestamp=1000.0,
-        connector_name="binance_perpetual", trading_pair="ETH-USDT",
-        side=side, amount=Decimal("1"),
+        id=exec_id,
+        timestamp=1000.0,
+        connector_name="binance_perpetual",
+        trading_pair="ETH-USDT",
+        side=side,
+        amount=Decimal("1"),
         triple_barrier_config=TripleBarrierConfig(
-            stop_loss=Decimal("0.03"), take_profit=Decimal("0.02"), time_limit=2700),
+            stop_loss=Decimal("0.03"), take_profit=Decimal("0.02"), time_limit=2700
+        ),
     )
     return ExecutorInfo(
-        id=exec_id, timestamp=1000.0, type="position_executor",
-        status=RunnableStatus.TERMINATED, config=config,
-        net_pnl_pct=Decimal("0.01"), net_pnl_quote=net_pnl_quote,
-        cum_fees_quote=cum_fees_quote, filled_amount_quote=filled_amount_quote,
-        is_active=False, is_trading=False,
-        custom_info={"side": side, "close_price": 101.0,
-                     "current_position_average_price": 100.0, "level_id": None},
+        id=exec_id,
+        timestamp=1000.0,
+        type="position_executor",
+        status=RunnableStatus.TERMINATED,
+        config=config,
+        net_pnl_pct=Decimal("0.01"),
+        net_pnl_quote=net_pnl_quote,
+        cum_fees_quote=cum_fees_quote,
+        filled_amount_quote=filled_amount_quote,
+        is_active=False,
+        is_trading=False,
+        custom_info={"side": side, "close_price": 101.0, "current_position_average_price": 100.0, "level_id": None},
         close_type=close_type,
     )
 
 
 class TestBacktestPositionHold(unittest.TestCase):
-
     def test_initial_state(self):
         ph = BacktestPositionHold("binance_perpetual", "ETH-USDT")
         self.assertTrue(ph.is_closed)  # No amounts → net is 0 → closed
@@ -136,22 +148,22 @@ class TestBacktestPositionHold(unittest.TestCase):
 
 
 class TestSummarizeResultsWithPositionHolds(unittest.TestCase):
-
     def test_summarize_empty_with_unrealized(self):
         results = BacktestingEngineBase.summarize_results([], total_amount_quote=1000)
         self.assertEqual(results["unrealized_pnl_quote"], 0)
 
     def test_position_hold_executor_pnl_excluded(self):
         """POSITION_HOLD executor PnL should NOT be counted in net PnL."""
-        executor = _make_executor_info(
-            close_type=CloseType.POSITION_HOLD, net_pnl_quote=Decimal("10"))
+        executor = _make_executor_info(close_type=CloseType.POSITION_HOLD, net_pnl_quote=Decimal("10"))
 
         ph = BacktestPositionHold("binance_perpetual", "ETH-USDT")
         ph.add_executor(executor, Decimal("100"))
 
         results = BacktestingEngineBase.summarize_results(
-            [executor], total_amount_quote=1000,
-            position_holds=[ph], final_price=Decimal("100"),
+            [executor],
+            total_amount_quote=1000,
+            position_holds=[ph],
+            final_price=Decimal("100"),
         )
         # Executor PnL of 10 should be excluded; position at same price → 0 unrealized
         self.assertAlmostEqual(results["net_pnl_quote"], 0.0)
@@ -164,8 +176,10 @@ class TestSummarizeResultsWithPositionHolds(unittest.TestCase):
         ph.add_executor(executor, Decimal("100"))  # 10 base at 100
 
         results = BacktestingEngineBase.summarize_results(
-            [executor], total_amount_quote=1000,
-            position_holds=[ph], final_price=Decimal("110"),
+            [executor],
+            total_amount_quote=1000,
+            position_holds=[ph],
+            final_price=Decimal("110"),
         )
         # unrealized = (110 - 100) * 10 = 100
         self.assertAlmostEqual(results["unrealized_pnl_quote"], 100.0)
@@ -173,18 +187,18 @@ class TestSummarizeResultsWithPositionHolds(unittest.TestCase):
 
     def test_netted_position_realized_pnl_in_summary(self):
         """Position realized PnL from netting should be in results."""
-        buy_exec = _make_executor_info("buy_1", TradeType.BUY, Decimal("1000"),
-                                       close_type=CloseType.POSITION_HOLD)
-        sell_exec = _make_executor_info("sell_1", TradeType.SELL, Decimal("1000"),
-                                        close_type=CloseType.POSITION_HOLD)
+        buy_exec = _make_executor_info("buy_1", TradeType.BUY, Decimal("1000"), close_type=CloseType.POSITION_HOLD)
+        sell_exec = _make_executor_info("sell_1", TradeType.SELL, Decimal("1000"), close_type=CloseType.POSITION_HOLD)
 
         ph = BacktestPositionHold("binance_perpetual", "ETH-USDT")
-        ph.add_executor(buy_exec, Decimal("100"))   # 10 base at 100
-        ph.add_executor(sell_exec, Decimal("110"))   # ~9.09 base at 110
+        ph.add_executor(buy_exec, Decimal("100"))  # 10 base at 100
+        ph.add_executor(sell_exec, Decimal("110"))  # ~9.09 base at 110
 
         results = BacktestingEngineBase.summarize_results(
-            [buy_exec, sell_exec], total_amount_quote=1000,
-            position_holds=[ph], final_price=Decimal("105"),
+            [buy_exec, sell_exec],
+            total_amount_quote=1000,
+            position_holds=[ph],
+            final_price=Decimal("105"),
         )
         # realized = (110 - 100) * min(10, 9.09) = ~90.9
         self.assertGreater(results["position_realized_pnl_quote"], 0)
@@ -209,19 +223,32 @@ class TestNaturalTerminationPositionHold(unittest.TestCase):
 
     def _terminated_sim(self, close_type, filled_quote=Decimal("1000"), net_pnl=Decimal("0")):
         config = PositionExecutorConfig(
-            id="order_1", timestamp=1000.0,
-            connector_name="binance", trading_pair="WLD-FDUSD",
-            side=TradeType.BUY, amount=Decimal("1"),
+            id="order_1",
+            timestamp=1000.0,
+            connector_name="binance",
+            trading_pair="WLD-FDUSD",
+            side=TradeType.BUY,
+            amount=Decimal("1"),
             triple_barrier_config=TripleBarrierConfig(take_profit=Decimal("0.01")),
         )
         info = ExecutorInfo(
-            id="order_1", timestamp=1000.0, type="order_executor",
-            status=RunnableStatus.TERMINATED, config=config,
-            net_pnl_pct=Decimal("0"), net_pnl_quote=net_pnl,
-            cum_fees_quote=Decimal("0"), filled_amount_quote=filled_quote,
-            is_active=False, is_trading=False,
-            custom_info={"side": TradeType.BUY, "current_position_average_price": 0.5,
-                         "close_price": 0.5, "level_id": "buy_0"},
+            id="order_1",
+            timestamp=1000.0,
+            type="order_executor",
+            status=RunnableStatus.TERMINATED,
+            config=config,
+            net_pnl_pct=Decimal("0"),
+            net_pnl_quote=net_pnl,
+            cum_fees_quote=Decimal("0"),
+            filled_amount_quote=filled_quote,
+            is_active=False,
+            is_trading=False,
+            custom_info={
+                "side": TradeType.BUY,
+                "current_position_average_price": 0.5,
+                "close_price": 0.5,
+                "level_id": "buy_0",
+            },
             close_type=close_type,
         )
         sim = MagicMock()
@@ -249,9 +276,7 @@ class TestNaturalTerminationPositionHold(unittest.TestCase):
 
     def test_tp_termination_still_books_realized_pnl(self):
         engine = self._engine_with_state()
-        engine.active_executor_simulations = [
-            self._terminated_sim(CloseType.TAKE_PROFIT, net_pnl=Decimal("12"))
-        ]
+        engine.active_executor_simulations = [self._terminated_sim(CloseType.TAKE_PROFIT, net_pnl=Decimal("12"))]
 
         engine.update_executors_info(timestamp=2000.0)
 

@@ -1,7 +1,7 @@
+from collections import OrderedDict
 import hashlib
 import hmac
 import json
-from collections import OrderedDict
 from typing import Any, Dict
 from urllib.parse import urlencode
 
@@ -38,8 +38,7 @@ class BinancePerpetualAuth(AuthBase):
     async def ws_authenticate(self, request: WSRequest) -> WSRequest:
         return request  # pass-through
 
-    def add_auth_to_params(self,
-                           params: Dict[str, Any]):
+    def add_auth_to_params(self, params: Dict[str, Any]):
         timestamp = int(self._time_provider.time() * 1e3)
 
         request_params = OrderedDict(params or {})

@@ -1,10 +1,10 @@
 import asyncio
+from copy import deepcopy
+from decimal import Decimal
 import hashlib
 import re
 import time
-from copy import deepcopy
-from decimal import Decimal
-from typing import Any, AsyncIterable, Dict, List, Optional, Tuple
+from typing import Any, AsyncIterable, List
 
 from bidict import bidict
 
@@ -46,16 +46,16 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
     LONG_POLL_INTERVAL = 120.0
 
     def __init__(
-            self,
-            balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
-            rate_limits_share_pct: Decimal = Decimal("100"),
-            session_private_key: str = None,
-            subacct_id: int = None,
-            account_type: str = None,
-            derive_perpetual_wallet_address: str = None,
-            trading_pairs: Optional[List[str]] = None,
-            trading_required: bool = True,
-            domain: str = CONSTANTS.DEFAULT_DOMAIN,
+        self,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
+        rate_limits_share_pct: Decimal = Decimal("100"),
+        session_private_key: str = None,
+        subacct_id: int = None,
+        account_type: str = None,
+        derive_perpetual_wallet_address: str = None,
+        trading_pairs: list[str] | None = None,
+        trading_required: bool = True,
+        domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
         self.derive_perpetual_wallet_address = derive_perpetual_wallet_address
         self.session_private_key = session_private_key
@@ -72,9 +72,9 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
         self._instrument_ticker = []
         self._resting_close_warning_logged = False
         self._positions_poll_lock = asyncio.Lock()
-        self._position_balance_updates: Dict[str, Decimal] = {}
-        self._position_balance_update_times: Dict[str, float] = {}
-        self._positions_catch_up_task: Optional[asyncio.Task] = None
+        self._position_balance_updates: dict[str, Decimal] = {}
+        self._position_balance_update_times: dict[str, float] = {}
+        self._positions_catch_up_task: asyncio.Task | None = None
         self._positions_catch_up_polls_left = 0
         self.real_time_balance_update = False
         super().__init__(balance_asset_limit, rate_limits_share_pct)
@@ -95,10 +95,11 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
             self.session_private_key,
             self._subacct_id,
             self._trading_required,
-            self._domain)
+            self._domain,
+        )
 
     @property
-    def rate_limits_rules(self) -> List[RateLimit]:
+    def rate_limits_rules(self) -> list[RateLimit]:
         return CONSTANTS.RATE_LIMITS
 
     @property
@@ -148,7 +149,7 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
     async def _make_network_check_request(self):
         await self._api_get(path_url=self.check_network_request_path)
 
-    def supported_order_types(self) -> List[OrderType]:
+    def supported_order_types(self) -> list[OrderType]:
         """
         :return a list of OrderType supported by this connector
         """
@@ -185,9 +186,7 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
                 "page": page,
                 "page_size": CONSTANTS.INSTRUMENTS_PAGE_SIZE,
             }
-            exchange_info = await self._api_post(
-                path_url=self.trading_currencies_request_path, data=payload
-            )
+            exchange_info = await self._api_post(path_url=self.trading_currencies_request_path, data=payload)
             result = exchange_info["result"]
             info.extend(result["instruments"])
 
@@ -209,7 +208,7 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
         """
         return await self._make_trading_pairs_request()
 
-    async def get_all_pairs_prices(self) -> List[Dict[str, Any]]:
+    async def get_all_pairs_prices(self) -> list[dict[str, Any]]:
         """Fetch the best bid/ask for every perpetual instrument in one v3 request."""
         if len(self._instrument_ticker) == 0:
             await self._make_trading_pairs_request()
@@ -257,10 +256,8 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
 
     def _create_web_assistants_factory(self) -> WebAssistantsFactory:
         return web_utils.build_api_factory(
-            throttler=self._throttler,
-            time_synchronizer=self._time_synchronizer,
-            domain=self._domain,
-            auth=self._auth)
+            throttler=self._throttler, time_synchronizer=self._time_synchronizer, domain=self._domain, auth=self._auth
+        )
 
     def _create_order_book_data_source(self) -> OrderBookTrackerDataSource:
         return DerivePerpetualAPIOrderBookDataSource(
@@ -387,7 +384,7 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
 
         self._auth.session_key_expiry_sec = expiry
 
-    async def _session_key_expiry_was_stale(self, order_result: Dict[str, Any]) -> bool:
+    async def _session_key_expiry_was_stale(self, order_result: dict[str, Any]) -> bool:
         """
         True when an order was refused for outliving its session key and the key's expiry, read
         again, differs from the one the order was signed against - so signing it again succeeds.
@@ -403,7 +400,7 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
         return self._auth.session_key_expiry_sec not in (None, signed_against)
 
     @staticmethod
-    def _error_code(exception: Exception) -> Optional[int]:
+    def _error_code(exception: Exception) -> int | None:
         """
         Pulls the v3 JSON-RPC error code out of an exception raised from a response body.
 
@@ -413,7 +410,7 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
         match = re.search(r"['\"]?code['\"]?\s*[:=]\s*(-?\d+)", str(exception))
         return int(match.group(1)) if match else None
 
-    async def _session_key_entered_as_wallet_hint(self) -> Optional[str]:
+    async def _session_key_entered_as_wallet_hint(self) -> str | None:
         """
         Explains the likeliest cause of "Account not found" on a first connection. A session key
         has an address of its own, and it is easily entered where the wallet address belongs. The
@@ -445,7 +442,7 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
         )
 
     @staticmethod
-    def _session_key_hint(code: Optional[int]) -> Optional[str]:
+    def _session_key_hint(code: int | None) -> str | None:
         """
         Turns a v3 session-key or account error code into something actionable.
 
@@ -466,7 +463,7 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
 
     def _estimate_order_max_fee(
         self,
-        instrument: Dict[str, Any],
+        instrument: dict[str, Any],
         trading_pair: str,
         limit_price: Decimal,
         can_take: bool = True,
@@ -504,21 +501,23 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
         )
 
     @staticmethod
-    def _is_usable_price(price: Optional[Decimal]) -> bool:
+    def _is_usable_price(price: Decimal | None) -> bool:
         try:
             return price is not None and not Decimal(price).is_nan() and Decimal(price) > s_decimal_0
         except Exception:
             return False
 
-    def _get_fee(self,
-                 base_currency: str,
-                 quote_currency: str,
-                 order_type: OrderType,
-                 order_side: TradeType,
-                 position_action: PositionAction,
-                 amount: Decimal,
-                 price: Decimal = s_decimal_NaN,
-                 is_maker: Optional[bool] = None) -> TradeFeeBase:
+    def _get_fee(
+        self,
+        base_currency: str,
+        quote_currency: str,
+        order_type: OrderType,
+        order_side: TradeType,
+        position_action: PositionAction,
+        amount: Decimal,
+        price: Decimal = s_decimal_NaN,
+        is_maker: bool | None = None,
+    ) -> TradeFeeBase:
         is_maker = order_type is OrderType.LIMIT_MAKER
         trading_pair = combine_to_hb_trading_pair(base_currency, quote_currency)
         fee_schema = self._trading_fees.get(trading_pair)
@@ -532,7 +531,7 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
                 amount=amount,
                 price=price,
                 base_currency=base_currency.upper(),
-                quote_currency=quote_currency.upper()
+                quote_currency=quote_currency.upper(),
             )
         percent = fee_schema.maker_percent_fee_decimal if is_maker else fee_schema.taker_percent_fee_decimal
         fixed_fees = fee_schema.maker_fixed_fees if is_maker else fee_schema.taker_fixed_fees
@@ -553,6 +552,7 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
         )
 
         # === loops and sync related methods === #
+
     async def _rate_limits_polling_loop(self):
         """
         Updates the rate limits.
@@ -564,9 +564,7 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
         except asyncio.CancelledError:
             raise
         except Exception:
-            self.logger().info(
-                "Unexpected error while Updating rate limits."
-            )
+            self.logger().info("Unexpected error while Updating rate limits.")
 
     async def _update_rate_limits(self):
         await self._initialize_rate_limits()
@@ -635,15 +633,10 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
     async def _place_cancel(self, order_id: str, tracked_order: InFlightOrder):
         oid = await tracked_order.get_exchange_order_id()
         symbol = await self.exchange_symbol_associated_to_pair(trading_pair=tracked_order.trading_pair)
-        api_params = {
-            "instrument_name": symbol,
-            "order_id": oid,
-            "subaccount_id": int(self._subacct_id)
-        }
+        api_params = {"instrument_name": symbol, "order_id": oid, "subaccount_id": int(self._subacct_id)}
         cancel_result = await self._api_post(
-            path_url=CONSTANTS.CANCEL_ORDER_URL,
-            data=api_params,
-            is_auth_required=True)
+            path_url=CONSTANTS.CANCEL_ORDER_URL, data=api_params, is_auth_required=True
+        )
 
         if "error" in cancel_result:
             error = cancel_result["error"]
@@ -658,12 +651,9 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
 
     # === Orders placing ===
 
-    def buy(self,
-            trading_pair: str,
-            amount: Decimal,
-            order_type=OrderType.LIMIT,
-            price: Decimal = s_decimal_NaN,
-            **kwargs) -> str:
+    def buy(
+        self, trading_pair: str, amount: Decimal, order_type=OrderType.LIMIT, price: Decimal = s_decimal_NaN, **kwargs
+    ) -> str:
         """
         Creates a promise to create a buy order using the parameters
 
@@ -678,10 +668,10 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
             is_buy=True,
             trading_pair=trading_pair,
             hbot_order_id_prefix=self.client_order_id_prefix,
-            max_id_len=self.client_order_id_max_length
+            max_id_len=self.client_order_id_max_length,
         )
         md5 = hashlib.md5()
-        md5.update(order_id.encode('utf-8'))
+        md5.update(order_id.encode("utf-8"))
         hex_order_id = f"0x{md5.hexdigest()}"
         if order_type is OrderType.MARKET:
             # Priced at the bare mid, an IOC market buy cannot cross the spread and simply does
@@ -690,22 +680,27 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
             market_price = mid_price * (Decimal("1") + Decimal(str(CONSTANTS.MARKET_ORDER_SLIPPAGE)))
             price = self.quantize_order_price(trading_pair, market_price)
 
-        safe_ensure_future(self._create_order(
-            trade_type=TradeType.BUY,
-            order_id=hex_order_id,
-            trading_pair=trading_pair,
-            amount=amount,
-            order_type=order_type,
-            price=price,
-            **kwargs))
+        safe_ensure_future(
+            self._create_order(
+                trade_type=TradeType.BUY,
+                order_id=hex_order_id,
+                trading_pair=trading_pair,
+                amount=amount,
+                order_type=order_type,
+                price=price,
+                **kwargs,
+            )
+        )
         return hex_order_id
 
-    def sell(self,
-             trading_pair: str,
-             amount: Decimal,
-             order_type: OrderType = OrderType.LIMIT,
-             price: Decimal = s_decimal_NaN,
-             **kwargs) -> str:
+    def sell(
+        self,
+        trading_pair: str,
+        amount: Decimal,
+        order_type: OrderType = OrderType.LIMIT,
+        price: Decimal = s_decimal_NaN,
+        **kwargs,
+    ) -> str:
         """
         Creates a promise to create a sell order using the parameters.
         :param trading_pair: the token pair to operate with
@@ -718,37 +713,40 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
             is_buy=False,
             trading_pair=trading_pair,
             hbot_order_id_prefix=self.client_order_id_prefix,
-            max_id_len=self.client_order_id_max_length
+            max_id_len=self.client_order_id_max_length,
         )
         md5 = hashlib.md5()
-        md5.update(order_id.encode('utf-8'))
+        md5.update(order_id.encode("utf-8"))
         hex_order_id = f"0x{md5.hexdigest()}"
         if order_type is OrderType.MARKET:
             mid_price = self.get_mid_price(trading_pair)
             market_price = mid_price * (Decimal("1") - Decimal(str(CONSTANTS.MARKET_ORDER_SLIPPAGE)))
             price = self.quantize_order_price(trading_pair, market_price)
 
-        safe_ensure_future(self._create_order(
-            trade_type=TradeType.SELL,
-            order_id=hex_order_id,
-            trading_pair=trading_pair,
-            amount=amount,
-            order_type=order_type,
-            price=price,
-            **kwargs))
+        safe_ensure_future(
+            self._create_order(
+                trade_type=TradeType.SELL,
+                order_id=hex_order_id,
+                trading_pair=trading_pair,
+                amount=amount,
+                order_type=order_type,
+                price=price,
+                **kwargs,
+            )
+        )
         return hex_order_id
 
     async def _place_order(
-            self,
-            order_id: str,
-            trading_pair: str,
-            amount: Decimal,
-            trade_type: TradeType,
-            order_type: OrderType,
-            price: Decimal,
-            position_action: PositionAction = PositionAction.NIL,
-            **kwargs,
-    ) -> Tuple[str, float]:
+        self,
+        order_id: str,
+        trading_pair: str,
+        amount: Decimal,
+        trade_type: TradeType,
+        order_type: OrderType,
+        price: Decimal,
+        position_action: PositionAction = PositionAction.NIL,
+        **kwargs,
+    ) -> tuple[str, float]:
         """
         Creates an order on the derivative exchange using the specified parameters.
         """
@@ -811,25 +809,23 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
             "recipient_id": self._subacct_id,
         }
 
-        order_result = await self._api_post(
-            path_url = CONSTANTS.CREATE_ORDER_URL,
-            data=api_params,
-            is_auth_required=True)
+        order_result = await self._api_post(path_url=CONSTANTS.CREATE_ORDER_URL, data=api_params, is_auth_required=True)
 
         if await self._session_key_expiry_was_stale(order_result):
             # The order is signed as the request goes out, so sending it again signs it against
             # the expiry that has just been read.
             order_result = await self._api_post(
-                path_url = CONSTANTS.CREATE_ORDER_URL,
-                data=api_params,
-                is_auth_required=True)
+                path_url=CONSTANTS.CREATE_ORDER_URL, data=api_params, is_auth_required=True
+            )
 
         if "error" in order_result:
             error = order_result["error"]
             code = error.get("code")
             message = describe_error(error)
             if code == CONSTANTS.ERR_SELF_CROSSING:
-                self.logger().warning(f"Order {order_id} would have crossed one of this account's own orders: {message}")
+                self.logger().warning(
+                    f"Order {order_id} would have crossed one of this account's own orders: {message}"
+                )
             elif code == CONSTANTS.ERR_POST_ONLY_WOULD_CROSS:
                 self.logger().warning(
                     f"Post-only order {order_id} would have crossed the book and was rejected: {message}"
@@ -845,7 +841,7 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
                 message = self._session_key_hint(code) or message
             raise IOError(f"Error submitting order {order_id}: {message}")
 
-        o_data = order_result['result'].get("order")
+        o_data = order_result["result"].get("order")
         return (str(o_data["order_id"]), o_data["creation_timestamp"] * 1e-3)
 
     async def _update_trade_history(self):
@@ -856,22 +852,23 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
             try:
                 all_fills_response = await self._api_get(
                     path_url=CONSTANTS.MY_TRADES_PATH_URL,
-                    params={
-                        "subaccount_id": self._subacct_id
-                    },
+                    params={"subaccount_id": self._subacct_id},
                     is_auth_required=True,
-                    limit_id=CONSTANTS.MY_TRADES_PATH_URL)
+                    limit_id=CONSTANTS.MY_TRADES_PATH_URL,
+                )
             except asyncio.CancelledError:
                 raise
             except Exception as request_error:
                 self.logger().warning(
                     f"Failed to fetch trade updates. Error: {request_error}",
-                    exc_info = request_error,
+                    exc_info=request_error,
                 )
             for trade_fill in all_fills_response["result"]["trades"]:
-                await self._process_trade_rs_event_message(order_fill=trade_fill, all_fillable_order=all_fillable_orders)
+                await self._process_trade_rs_event_message(
+                    order_fill=trade_fill, all_fillable_order=all_fillable_orders
+                )
 
-    async def _process_trade_rs_event_message(self, order_fill: Dict[str, Any], all_fillable_order):
+    async def _process_trade_rs_event_message(self, order_fill: dict[str, Any], all_fillable_order):
         exchange_order_id = str(order_fill.get("order_id"))
         fillable_order = all_fillable_order.get(exchange_order_id)
         if fillable_order is not None:
@@ -885,7 +882,7 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
                 fee_schema=self.trade_fee_schema(),
                 position_action=position_action,
                 percent_token=fee_asset,
-                flat_fees=[TokenAmount(amount=Decimal(order_fill["trade_fee"]), token=fee_asset)]
+                flat_fees=[TokenAmount(amount=Decimal(order_fill["trade_fee"]), token=fee_asset)],
             )
 
             trade_update = TradeUpdate(
@@ -902,7 +899,7 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
 
             self._order_tracker.process_trade_update(trade_update)
 
-    async def _iter_user_event_queue(self) -> AsyncIterable[Dict[str, any]]:
+    async def _iter_user_event_queue(self) -> AsyncIterable[dict[str, any]]:
         while True:
             try:
                 yield await self._user_stream_tracker.user_stream.get()
@@ -949,8 +946,7 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
                 else:
                     raise Exception(event_message)
                 if channel not in user_channels:
-                    self.logger().error(
-                        f"Unexpected message in user stream: {event_message}.", exc_info=True)
+                    self.logger().error(f"Unexpected message in user stream: {event_message}.", exc_info=True)
                     continue
                 if channel == user_channels[0] and results is not None:
                     for order_msg in results:
@@ -970,8 +966,7 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
             except asyncio.CancelledError:
                 raise
             except Exception:
-                self.logger().error(
-                    "Unexpected error in user stream listener loop.", exc_info=True)
+                self.logger().error("Unexpected error in user stream listener loop.", exc_info=True)
                 await self._sleep(5.0)
 
     async def _process_update_positions(self, results):
@@ -996,10 +991,12 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
                             # opened, so using it reported entry prices that drift with the market.
                             entry_price = Decimal(str(asset.get("average_price")))
                             unrealized_pnl = Decimal(str(asset.get("unrealized_pnl")))
-                            position.update_position(position_side=position_side,
-                                                     unrealized_pnl=unrealized_pnl,
-                                                     entry_price=entry_price,
-                                                     amount=amount)
+                            position.update_position(
+                                position_side=position_side,
+                                unrealized_pnl=unrealized_pnl,
+                                entry_price=entry_price,
+                                amount=amount,
+                            )
                     else:
                         await self._update_positions()
             except KeyError:
@@ -1010,7 +1007,7 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
         self._account_balances[asset_name] = Decimal(balance_msg["amount"])
         self._account_available_balances[asset_name] = Decimal(balance_msg["amount"])
 
-    async def _process_balance_notification(self, balance_update: Dict[str, Any]):
+    async def _process_balance_notification(self, balance_update: dict[str, Any]):
         """Apply a v3 balances-channel update to tracked position size or collateral."""
         instrument_name = balance_update.get("name") or balance_update.get("instrument_name")
         asset_name = balance_update.get("asset_name") or instrument_name
@@ -1037,9 +1034,7 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
             self._position_balance_update_times[trading_pair] = time.monotonic()
             if amount == Decimal("0"):
                 for side in (PositionSide.LONG, PositionSide.SHORT):
-                    self._perpetual_trading.remove_position(
-                        self._perpetual_trading.position_key(trading_pair, side)
-                    )
+                    self._perpetual_trading.remove_position(self._perpetual_trading.position_key(trading_pair, side))
                 return
 
             position_side = PositionSide.LONG if amount > 0 else PositionSide.SHORT
@@ -1061,7 +1056,7 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
         self._account_balances[asset_name] = amount
         self._account_available_balances[asset_name] = amount
 
-    async def _process_trade_message(self, trade: Dict[str, Any], client_order_id: Optional[str] = None):
+    async def _process_trade_message(self, trade: dict[str, Any], client_order_id: str | None = None):
         """
         Updates in-flight order and trigger order filled event for trade message received. Triggers order completed
         event if the total executed amount equals to the specified order amount.
@@ -1092,7 +1087,7 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
                 fee_schema=self.trade_fee_schema(),
                 position_action=position_action,
                 percent_token=fee_asset,
-                flat_fees=[TokenAmount(amount=Decimal(trade["trade_fee"]), token=fee_asset)]
+                flat_fees=[TokenAmount(amount=Decimal(trade["trade_fee"]), token=fee_asset)],
             )
             trade_update: TradeUpdate = TradeUpdate(
                 trade_id=str(trade["trade_id"]),
@@ -1108,7 +1103,7 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
             self._order_tracker.process_trade_update(trade_update)
             self._schedule_positions_catch_up()
 
-    def _process_order_message(self, order_msg: Dict[str, Any]):
+    def _process_order_message(self, order_msg: dict[str, Any]):
         """
         Updates in-flight order and triggers cancelation or failure event if needed.
 
@@ -1131,7 +1126,7 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
         )
         self._order_tracker.process_order_update(order_update=order_update)
 
-    async def _format_trading_rules(self, exchange_info_dict: List) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: List) -> list[TradingRule]:
         """
         Queries the necessary API endpoint and initialize the TradingRule object for each trading pair being traded.
 
@@ -1205,8 +1200,9 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
                     )
                 )
             except Exception:
-                self.logger().error(f"Error parsing the trading pair rule {exchange_info_dict}. Skipping.",
-                                    exc_info=True)
+                self.logger().error(
+                    f"Error parsing the trading pair rule {exchange_info_dict}. Skipping.", exc_info=True
+                )
         return retval
 
     async def _update_balances(self):
@@ -1217,9 +1213,8 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
         remote_asset_names = set()
 
         account_info = await self._api_post(
-            path_url=CONSTANTS.ACCOUNTS_PATH_URL,
-            data={"subaccount_id": self._subacct_id},
-            is_auth_required=True)
+            path_url=CONSTANTS.ACCOUNTS_PATH_URL, data={"subaccount_id": self._subacct_id}, is_auth_required=True
+        )
         if "error" in account_info:
             error = account_info["error"]
             message = f"Error fetching account balances: {describe_error(error)}"
@@ -1264,11 +1259,9 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
         client_order_id = tracked_order.client_order_id
         order_update = await self._api_post(
             path_url=CONSTANTS.ORDER_STATUS_PATH_URL,
-            data={
-                "subaccount_id": self._subacct_id,
-                "order_id": oid
-            },
-            is_auth_required=True)
+            data={"subaccount_id": self._subacct_id, "order_id": oid},
+            is_auth_required=True,
+        )
         if "error" in order_update:
             error = order_update["error"]
             code = error.get("code")
@@ -1305,8 +1298,8 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
             exchange_order_id=str(result["order_id"]),
         )
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
-        trade_updates: List[TradeUpdate] = []
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
+        trade_updates: list[TradeUpdate] = []
         exchange_order_id = str(order.exchange_order_id)
         if order.exchange_order_id is not None:
             trading_pair = await self.exchange_symbol_associated_to_pair(trading_pair=order.trading_pair)
@@ -1315,10 +1308,11 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
                 params={
                     "instrument_name": trading_pair,
                     "order_id": exchange_order_id,
-                    "subaccount_id": self._subacct_id
+                    "subaccount_id": self._subacct_id,
                 },
                 is_auth_required=True,
-                limit_id=CONSTANTS.MY_TRADES_PATH_URL)
+                limit_id=CONSTANTS.MY_TRADES_PATH_URL,
+            )
 
             for trade in all_fills_response["result"]["trades"]:
                 fee_asset = order.quote_asset
@@ -1332,7 +1326,8 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
                         fee_schema=self.trade_fee_schema(),
                         position_action=position_action,
                         percent_token=fee_asset,
-                        flat_fees=[TokenAmount(amount=Decimal(trade["trade_fee"]), token=fee_asset)])
+                        flat_fees=[TokenAmount(amount=Decimal(trade["trade_fee"]), token=fee_asset)],
+                    )
                     trade_update = TradeUpdate(
                         trade_id=str(trade["trade_id"]),
                         client_order_id=order.client_order_id,
@@ -1354,25 +1349,28 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
         await self.trading_pair_symbol_map()
         exchange_symbol = await self.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
         payload = {"instrument_name": exchange_symbol}
-        response = await self._api_post(path_url=CONSTANTS.TICKER_PRICE_CHANGE_PATH_URL, data=payload, is_auth_required=False,
-                                        limit_id=CONSTANTS.TICKER_PRICE_CHANGE_PATH_URL)
+        response = await self._api_post(
+            path_url=CONSTANTS.TICKER_PRICE_CHANGE_PATH_URL,
+            data=payload,
+            is_auth_required=False,
+            limit_id=CONSTANTS.TICKER_PRICE_CHANGE_PATH_URL,
+        )
 
         # v3 slim ticker: mark price is "M".
         return float(response["result"]["M"])
 
-    async def get_last_traded_prices(self, trading_pairs: List[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: list[str] = None) -> dict[str, float]:
         if trading_pairs is None:
             trading_pairs = []
 
         symbol_map = await self.trading_pair_symbol_map()
-        exchange_symbols = await asyncio.gather(*[
-            self.exchange_symbol_associated_to_pair(trading_pair=pair) for pair in trading_pairs
-        ])
+        exchange_symbols = await asyncio.gather(
+            *[self.exchange_symbol_associated_to_pair(trading_pair=pair) for pair in trading_pairs]
+        )
         payloads = [{"instrument_name": symbol} for symbol in exchange_symbols]
-        responses = await asyncio.gather(*[
-            self._api_post(path_url=CONSTANTS.TICKER_PRICE_CHANGE_PATH_URL, data=payload)
-            for payload in payloads
-        ])
+        responses = await asyncio.gather(
+            *[self._api_post(path_url=CONSTANTS.TICKER_PRICE_CHANGE_PATH_URL, data=payload) for payload in payloads]
+        )
         last_traded_prices = {}
         # The slim ticker does not echo the instrument name back, so pair each response with the
         # symbol it was requested for.
@@ -1425,7 +1423,8 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
         self._position_balance_update_times.clear()
 
     def _get_position_balance_update(
-            self, trading_pair: str, request_started_at: Optional[float] = None) -> Optional[Decimal]:
+        self, trading_pair: str, request_started_at: float | None = None
+    ) -> Decimal | None:
         """Return a recent update, or one newer than the REST request being reconciled."""
         amount = self._position_balance_updates.get(trading_pair)
         updated_at = self._position_balance_update_times.get(trading_pair)
@@ -1451,10 +1450,12 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
         # mistaken below for one that has gone.
         previously_tracked = set(self._perpetual_trading.account_positions.keys())
         request_started_at = time.monotonic()
-        positions = await self._api_post(path_url=CONSTANTS.POSITION_INFORMATION_URL,
-                                         data={"subaccount_id": self._subacct_id},
-                                         is_auth_required=True,
-                                         limit_id=CONSTANTS.POSITION_INFORMATION_URL)
+        positions = await self._api_post(
+            path_url=CONSTANTS.POSITION_INFORMATION_URL,
+            data={"subaccount_id": self._subacct_id},
+            is_auth_required=True,
+            limit_id=CONSTANTS.POSITION_INFORMATION_URL,
+        )
         if isinstance(positions, dict) and "error" in positions:
             # Returning quietly here left the connector reporting whatever positions it last saw,
             # with nothing in the log to say the poll had failed.
@@ -1463,7 +1464,7 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
             hint = self._session_key_hint(code)
             raise IOError(f"Error fetching positions: {describe_error(error)}" + (f". {hint}" if hint else ""))
         if "result" in positions:
-            data: List[dict] = positions["result"]["positions"]
+            data: list[dict] = positions["result"]["positions"]
             reported = set()
             response_pairs = set()
             for position in data:
@@ -1498,7 +1499,8 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
                 if reported_leverage in (None, ""):
                     held = self._perpetual_trading.get_position(hb_trading_pair, position_side)
                     leverage = (
-                        held.leverage if held is not None
+                        held.leverage
+                        if held is not None
                         else Decimal(str(self._perpetual_trading.get_leverage(hb_trading_pair)))
                     )
                 else:
@@ -1511,7 +1513,7 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
                         unrealized_pnl=unrealized_pnl,
                         entry_price=entry_price,
                         amount=amount,
-                        leverage=leverage
+                        leverage=leverage,
                     )
                     # The exchange's figure stays on the position. It is a measurement - the
                     # position's size against the subaccount's margin, 0.0069 for instance - not
@@ -1542,17 +1544,17 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
             for pos_key in previously_tracked - reported:
                 self._perpetual_trading.remove_position(pos_key)
 
-    async def _get_position_mode(self) -> Optional[PositionMode]:
+    async def _get_position_mode(self) -> PositionMode | None:
         # NOTE: This is default to ONEWAY as there is nothing available on current version of Vega
         return self._position_mode
 
-    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> Tuple[bool, str]:
+    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> tuple[bool, str]:
         # NOTE: There is no setting to set leverage in derive
         msg = "ok"
         success = True
         return success, msg
 
-    def _instrument_for_trading_pair(self, trading_pair: str) -> Optional[Dict[str, Any]]:
+    def _instrument_for_trading_pair(self, trading_pair: str) -> dict[str, Any] | None:
         """Finds the cached instrument definition backing a Hummingbot trading pair."""
         try:
             base, quote = trading_pair.split("-")
@@ -1563,7 +1565,7 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
                 return instrument
         return None
 
-    def get_max_leverage(self, trading_pair: str) -> Optional[Decimal]:
+    def get_max_leverage(self, trading_pair: str) -> Decimal | None:
         """
         Returns the instrument's maximum leverage as published in its margin requirements.
         """
@@ -1574,7 +1576,7 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
         max_leverage = requirements.get("max_leverage")
         return Decimal(str(max_leverage)) if max_leverage is not None else None
 
-    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> Tuple[bool, str]:
+    async def _set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> tuple[bool, str]:
         """
         Derive margins each subaccount as a whole rather than per position, so there is no
         per-instrument leverage to set. Report that rather than a bare "ok", and surface the
@@ -1594,7 +1596,7 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
         # exchange never applied.
         return False, msg
 
-    async def _fetch_last_fee_payment(self, trading_pair: str) -> Tuple[int, Decimal, Decimal]:
+    async def _fetch_last_fee_payment(self, trading_pair: str) -> tuple[int, Decimal, Decimal]:
         symbol = await self.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
         payment_response = await self._api_post(
             path_url=CONSTANTS.GET_LAST_FUNDING_RATE_PATH_URL,
@@ -1603,16 +1605,15 @@ class DerivePerpetualDerivative(PerpetualDerivativePyBase):
                 "page_size": 100,
                 "start_timestamp": self._last_funding_time(),
                 "instrument_name": symbol,
-                "subaccount_id": self._subacct_id
+                "subaccount_id": self._subacct_id,
             },
             is_auth_required=True,
-            limit_id=CONSTANTS.GET_LAST_FUNDING_RATE_PATH_URL)
+            limit_id=CONSTANTS.GET_LAST_FUNDING_RATE_PATH_URL,
+        )
         payload = {
             "instrument_name": symbol,
         }
-        funding_info_response = await self._api_post(
-            path_url=CONSTANTS.TICKER_PRICE_CHANGE_PATH_URL,
-            data=payload)
+        funding_info_response = await self._api_post(path_url=CONSTANTS.TICKER_PRICE_CHANGE_PATH_URL, data=payload)
         if "error" in payment_response:
             error = payment_response["error"]
             raise IOError(f"Error fetching funding history: {describe_error(error)}")

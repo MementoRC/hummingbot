@@ -1,7 +1,7 @@
+from contextlib import redirect_stdout
 import io
 import json
 import unittest
-from contextlib import redirect_stdout
 from unittest.mock import patch
 
 import typer
@@ -36,9 +36,10 @@ class UpdateCommandTest(unittest.TestCase):
         def fake_git(*args):
             calls.append(args)
             for prefix, reply in replies.items():
-                if args[:len(prefix)] == prefix:
+                if args[: len(prefix)] == prefix:
                     return reply
             return ""
+
         patch.object(update_mod, "_git", side_effect=fake_git).start()
         return calls
 
@@ -57,38 +58,44 @@ class UpdateCommandTest(unittest.TestCase):
             self.assertEqual(self._fail(), ExitCode.ERROR)
 
     def test_diverged_local_branch_refuses(self):
-        self._git_script({
-            ("rev-parse", "--abbrev-ref"): "feat/x",
-            ("rev-parse", "--short", "HEAD"): "aaa1111",
-            ("rev-parse", "--short", "@{u}"): "bbb2222",
-            ("rev-list", "--count", "HEAD..@{u}"): "3",
-            ("rev-list", "--count", "@{u}..HEAD"): "2",
-        })
+        self._git_script(
+            {
+                ("rev-parse", "--abbrev-ref"): "feat/x",
+                ("rev-parse", "--short", "HEAD"): "aaa1111",
+                ("rev-parse", "--short", "@{u}"): "bbb2222",
+                ("rev-list", "--count", "HEAD..@{u}"): "3",
+                ("rev-list", "--count", "@{u}..HEAD"): "2",
+            }
+        )
         self.assertEqual(self._fail(), ExitCode.ERROR)
 
     # -- check / up-to-date --
 
     def test_check_reports_without_touching_the_tree(self):
-        calls = self._git_script({
-            ("rev-parse", "--abbrev-ref"): "master",
-            ("rev-parse", "--short", "HEAD"): "aaa1111",
-            ("rev-parse", "--short", "@{u}"): "bbb2222",
-            ("rev-list", "--count", "HEAD..@{u}"): "5",
-            ("rev-list", "--count", "@{u}..HEAD"): "0",
-        })
+        calls = self._git_script(
+            {
+                ("rev-parse", "--abbrev-ref"): "master",
+                ("rev-parse", "--short", "HEAD"): "aaa1111",
+                ("rev-parse", "--short", "@{u}"): "bbb2222",
+                ("rev-list", "--count", "HEAD..@{u}"): "5",
+                ("rev-list", "--count", "@{u}..HEAD"): "0",
+            }
+        )
         payload = json.loads(self._run(check=True, as_json=True))
         self.assertEqual(payload["behind"], 5)
         self.assertFalse(payload["up_to_date"])
         self.assertNotIn(("merge", "--ff-only", "@{u}"), calls)
 
     def test_up_to_date_is_a_no_op(self):
-        calls = self._git_script({
-            ("rev-parse", "--abbrev-ref"): "master",
-            ("rev-parse", "--short", "HEAD"): "aaa1111",
-            ("rev-parse", "--short", "@{u}"): "aaa1111",
-            ("rev-list", "--count", "HEAD..@{u}"): "0",
-            ("rev-list", "--count", "@{u}..HEAD"): "0",
-        })
+        calls = self._git_script(
+            {
+                ("rev-parse", "--abbrev-ref"): "master",
+                ("rev-parse", "--short", "HEAD"): "aaa1111",
+                ("rev-parse", "--short", "@{u}"): "aaa1111",
+                ("rev-list", "--count", "HEAD..@{u}"): "0",
+                ("rev-list", "--count", "@{u}..HEAD"): "0",
+            }
+        )
         out = self._run()
         self.assertIn("up_to_date: yes", out)
         self.assertNotIn(("merge", "--ff-only", "@{u}"), calls)
@@ -96,14 +103,16 @@ class UpdateCommandTest(unittest.TestCase):
     # -- the update itself --
 
     def test_fast_forward_without_compiled_changes_skips_rebuild(self):
-        calls = self._git_script({
-            ("rev-parse", "--abbrev-ref"): "master",
-            ("rev-parse", "--short", "HEAD"): "aaa1111",
-            ("rev-parse", "--short", "@{u}"): "bbb2222",
-            ("rev-list", "--count", "HEAD..@{u}"): "2",
-            ("rev-list", "--count", "@{u}..HEAD"): "0",
-            ("diff",): "",
-        })
+        calls = self._git_script(
+            {
+                ("rev-parse", "--abbrev-ref"): "master",
+                ("rev-parse", "--short", "HEAD"): "aaa1111",
+                ("rev-parse", "--short", "@{u}"): "bbb2222",
+                ("rev-list", "--count", "HEAD..@{u}"): "2",
+                ("rev-list", "--count", "@{u}..HEAD"): "0",
+                ("diff",): "",
+            }
+        )
         rebuild = patch.object(update_mod, "_rebuild_extensions").start()
         out = self._run()
         self.assertIn(("merge", "--ff-only", "@{u}"), calls)
@@ -111,14 +120,16 @@ class UpdateCommandTest(unittest.TestCase):
         self.assertIn("extensions_rebuilt: no", out)
 
     def test_fast_forward_with_pyx_changes_rebuilds(self):
-        self._git_script({
-            ("rev-parse", "--abbrev-ref"): "master",
-            ("rev-parse", "--short", "HEAD"): "aaa1111",
-            ("rev-parse", "--short", "@{u}"): "bbb2222",
-            ("rev-list", "--count", "HEAD..@{u}"): "1",
-            ("rev-list", "--count", "@{u}..HEAD"): "0",
-            ("diff", "--name-only", "aaa1111..HEAD", "--", "*.pyx"): "hummingbot/core/x.pyx",
-        })
+        self._git_script(
+            {
+                ("rev-parse", "--abbrev-ref"): "master",
+                ("rev-parse", "--short", "HEAD"): "aaa1111",
+                ("rev-parse", "--short", "@{u}"): "bbb2222",
+                ("rev-list", "--count", "HEAD..@{u}"): "1",
+                ("rev-list", "--count", "@{u}..HEAD"): "0",
+                ("diff", "--name-only", "aaa1111..HEAD", "--", "*.pyx"): "hummingbot/core/x.pyx",
+            }
+        )
         rebuild = patch.object(update_mod, "_rebuild_extensions").start()
         out = self._run()
         rebuild.assert_called_once()
@@ -134,11 +145,12 @@ class UpdateCommandTest(unittest.TestCase):
                 ("rev-list", "--count", "@{u}..HEAD"): "0",
             }
             for prefix, reply in table.items():
-                if args[:len(prefix)] == prefix:
+                if args[: len(prefix)] == prefix:
                     return reply
             if args[0] == "diff" and "setup/environment.yml" in args:
                 return "setup/environment.yml"
             return ""
+
         patch.object(update_mod, "_git", side_effect=fake_git).start()
         patch.object(update_mod, "_rebuild_extensions").start()
         out = self._run()

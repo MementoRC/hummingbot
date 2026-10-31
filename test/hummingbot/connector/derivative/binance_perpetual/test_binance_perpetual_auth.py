@@ -3,8 +3,8 @@ import copy
 import hashlib
 import hmac
 import json
-import unittest
 from typing import Awaitable
+import unittest
 from urllib.parse import urlencode
 
 from hummingbot.connector.derivative.binance_perpetual.binance_perpetual_auth import BinancePerpetualAuth
@@ -26,10 +26,7 @@ class BinancePerpetualAuthUnitTests(unittest.TestCase):
             "test_param": "test_input",
             "timestamp": int(self.emulated_time * 1e3),
         }
-        self.auth = BinancePerpetualAuth(
-            api_key=self.api_key,
-            api_secret=self.secret_key,
-            time_provider=self)
+        self.auth = BinancePerpetualAuth(api_key=self.api_key, api_secret=self.secret_key, time_provider=self)
 
     def _get_test_payload(self):
         return urlencode(dict(copy.deepcopy(self.test_params)))

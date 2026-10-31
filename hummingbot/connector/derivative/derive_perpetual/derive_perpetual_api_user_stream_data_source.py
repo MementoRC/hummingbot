@@ -1,5 +1,5 @@
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
 from hummingbot.connector.derivative.derive_perpetual import (
     derive_perpetual_constants as CONSTANTS,
@@ -21,27 +21,26 @@ if TYPE_CHECKING:
 
 
 class DerivePerpetualAPIUserStreamDataSource(UserStreamTrackerDataSource):
-
     LISTEN_KEY_KEEP_ALIVE_INTERVAL = 1800  # Recommended to Ping/Update listen key to keep connection alive
     WS_HEARTBEAT_TIME_INTERVAL = 30.0
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
-            self,
-            auth: DerivePerpetualAuth,
-            trading_pairs: List[str],
-            connector: 'DerivePerpetualDerivative',
-            api_factory: WebAssistantsFactory,
-            domain: str = CONSTANTS.DEFAULT_DOMAIN,
+        self,
+        auth: DerivePerpetualAuth,
+        trading_pairs: list[str],
+        connector: "DerivePerpetualDerivative",
+        api_factory: WebAssistantsFactory,
+        domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
 
         super().__init__()
         self._domain = domain
         self._api_factory = api_factory
         self._auth = auth
-        self._ws_assistants: List[WSAssistant] = []
+        self._ws_assistants: list[WSAssistant] = []
         self._connector = connector
-        self._trading_pairs: List[str] = trading_pairs
+        self._trading_pairs: list[str] = trading_pairs
 
         self.token = None
 
@@ -60,7 +59,7 @@ class DerivePerpetualAPIUserStreamDataSource(UserStreamTrackerDataSource):
         """
         Authenticates user to websocket
         """
-        auth_payload: List[str] = self._auth.get_ws_auth_payload()
+        auth_payload: list[str] = self._auth.get_ws_auth_payload()
         id = str(web_utils.utc_now_ms())
         payload = {
             "method": "public/login",
@@ -101,19 +100,20 @@ class DerivePerpetualAPIUserStreamDataSource(UserStreamTrackerDataSource):
             subscription_payloads = [
                 {
                     "method": "subscribe",
-                    "params": {"channels": [
-                        CONSTANTS.WS_ORDERS_CHANNEL.format(subaccount_id=subaccount_id),
-                        CONSTANTS.WS_TRADES_CHANNEL.format(subaccount_id=subaccount_id),
-                        CONSTANTS.WS_BALANCES_CHANNEL.format(subaccount_id=subaccount_id),
-                    ]}
+                    "params": {
+                        "channels": [
+                            CONSTANTS.WS_ORDERS_CHANNEL.format(subaccount_id=subaccount_id),
+                            CONSTANTS.WS_TRADES_CHANNEL.format(subaccount_id=subaccount_id),
+                            CONSTANTS.WS_BALANCES_CHANNEL.format(subaccount_id=subaccount_id),
+                        ]
+                    },
                 }
             ]
 
             # Send all subscription requests in parallel
-            await asyncio.gather(*[
-                websocket_assistant.send(WSJSONRequest(payload))
-                for payload in subscription_payloads
-            ])
+            await asyncio.gather(
+                *[websocket_assistant.send(WSJSONRequest(payload)) for payload in subscription_payloads]
+            )
             self.logger().info("Subscribed to private orders, trades and balances channels...")
         except asyncio.CancelledError:
             raise
@@ -121,13 +121,10 @@ class DerivePerpetualAPIUserStreamDataSource(UserStreamTrackerDataSource):
             self.logger().exception("Unexpected error occurred subscribing to user streams...")
             raise
 
-    async def _process_event_message(self, event_message: Dict[str, Any], queue: asyncio.Queue):
+    async def _process_event_message(self, event_message: dict[str, Any], queue: asyncio.Queue):
         if event_message.get("error") is not None:
             err_msg = describe_error(event_message["error"])
-            raise IOError({
-                "label": "WSS_ERROR",
-                "message": f"Error received via websocket - {err_msg}."
-            })
+            raise IOError({"label": "WSS_ERROR", "message": f"Error received via websocket - {err_msg}."})
         elif "params" in event_message or "result" in event_message:
             if "result" in event_message:
                 if "status" in event_message["result"]:
@@ -136,13 +133,18 @@ class DerivePerpetualAPIUserStreamDataSource(UserStreamTrackerDataSource):
                     return
                 queue.put_nowait(event_message)
             elif "params" in event_message and "channel" in event_message["params"]:
-                if CONSTANTS.USER_ORDERS_ENDPOINT_NAME in event_message["params"]["channel"] or \
-                        CONSTANTS.USEREVENT_ENDPOINT_NAME in event_message["params"]["channel"] or \
-                        event_message["params"]["channel"] == CONSTANTS.WS_BALANCES_CHANNEL.format(
-                            subaccount_id=self._connector._subacct_id):
+                if (
+                    CONSTANTS.USER_ORDERS_ENDPOINT_NAME in event_message["params"]["channel"]
+                    or CONSTANTS.USEREVENT_ENDPOINT_NAME in event_message["params"]["channel"]
+                    or event_message["params"]["channel"]
+                    == CONSTANTS.WS_BALANCES_CHANNEL.format(subaccount_id=self._connector._subacct_id)
+                ):
                     queue.put_nowait(event_message["params"])
 
-    async def _ping_thread(self, websocket_assistant: WSAssistant,):
+    async def _ping_thread(
+        self,
+        websocket_assistant: WSAssistant,
+    ):
         try:
             while True:
                 ping_request = WSJSONRequest(payload={"method": "ping"})
@@ -150,19 +152,17 @@ class DerivePerpetualAPIUserStreamDataSource(UserStreamTrackerDataSource):
                 await self._authenticate(websocket_assistant)
                 await websocket_assistant.send(ping_request)
         except Exception as e:
-            self.logger().debug(f'ping error {e}')
+            self.logger().debug(f"ping error {e}")
 
     async def _process_websocket_messages(self, websocket_assistant: WSAssistant, queue: asyncio.Queue):
         while True:
             try:
-                await super()._process_websocket_messages(
-                    websocket_assistant=websocket_assistant,
-                    queue=queue)
+                await super()._process_websocket_messages(websocket_assistant=websocket_assistant, queue=queue)
             except asyncio.TimeoutError:
                 ping_request = WSJSONRequest(payload={"method": "ping"})
                 await websocket_assistant.send(ping_request)
 
-    async def _on_user_stream_interruption(self, websocket_assistant: Optional[WSAssistant]):
+    async def _on_user_stream_interruption(self, websocket_assistant: WSAssistant | None):
         # Position balance notifications are newer than REST only while this stream is live.
         # Once it drops, let the next REST poll reconcile the connector's position state.
         self._connector._clear_position_balance_updates()
