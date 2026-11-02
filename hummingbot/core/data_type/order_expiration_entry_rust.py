@@ -27,10 +27,12 @@ if TYPE_CHECKING:
     import pandas as pd
 
 try:
-    from _hb_rust.order_expiration_entry import OrderExpirationEntry  # noqa: F401
+    from _hb_rust import order_expiration_entry as _oee
+
+    OrderExpirationEntry = _oee.OrderExpirationEntry
 
     _ACCELERATED = True
-except ImportError:
+except (ImportError, AttributeError):
     _ACCELERATED = False
 
     class OrderExpirationEntry:  # type: ignore[no-redef]

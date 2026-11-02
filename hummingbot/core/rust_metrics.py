@@ -11,15 +11,15 @@ from __future__ import annotations
 import numpy as np
 
 try:
-    from _hb_rust.metrics import (
-        calculate_all_metrics as _rs_calculate_all_metrics,
-        calculate_max_drawdown as _rs_calculate_max_drawdown,
-        calculate_profit_factor as _rs_calculate_profit_factor,
-        calculate_sharpe_ratio as _rs_calculate_sharpe_ratio,
-    )
+    from _hb_rust import metrics as _m
+
+    _rs_calculate_all_metrics = _m.calculate_all_metrics
+    _rs_calculate_max_drawdown = _m.calculate_max_drawdown
+    _rs_calculate_profit_factor = _m.calculate_profit_factor
+    _rs_calculate_sharpe_ratio = _m.calculate_sharpe_ratio
 
     _ACCELERATED = True
-except ImportError:
+except (ImportError, AttributeError):
     _ACCELERATED = False
 
 
