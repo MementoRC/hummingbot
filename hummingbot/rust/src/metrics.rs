@@ -100,7 +100,7 @@ fn calculate_all_metrics(
     let data: ArrayView1<f64> = pnl_series.as_array();
     let n = data.len();
     if n == 0 {
-        return Ok((0.0, 0.0, 0.0, 0.0));
+        return Ok((0.0, 0.0, 0.0, f64::INFINITY));
     }
 
     // Drawdown tracking

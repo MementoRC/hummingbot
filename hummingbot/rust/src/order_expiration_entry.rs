@@ -1,6 +1,8 @@
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList, PyType};
+use pyo3::types::{PyBool, PyDict, PyList, PyNotImplemented, PyType};
 use pyo3::Borrowed;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 
 /// Rust implementation of hummingbot.core.data_type.OrderExpirationEntry.
 ///
@@ -89,6 +91,34 @@ impl OrderExpirationEntry {
         } else {
             self.expiration_timestamp < other.expiration_timestamp
         }
+    }
+
+    /// Field-wise equality; NotImplemented for non-entry operands.
+    pub fn __eq__<'py>(
+        &self,
+        py: Python<'py>,
+        other: &Bound<'py, PyAny>,
+    ) -> PyResult<Bound<'py, PyAny>> {
+        match other.extract::<PyRef<'py, OrderExpirationEntry>>() {
+            Ok(o) => {
+                let eq = self.expiration_timestamp == o.expiration_timestamp
+                    && self.order_id == o.order_id
+                    && self.trading_pair == o.trading_pair
+                    && self.timestamp == o.timestamp;
+                Ok(PyBool::new(py, eq).to_owned().into_any())
+            }
+            Err(_) => Ok(PyNotImplemented::get(py).to_owned().into_any()),
+        }
+    }
+
+    /// Hash consistent with __eq__ (all four fields; -0.0 normalised to 0.0).
+    pub fn __hash__(&self) -> isize {
+        let mut h = DefaultHasher::new();
+        self.trading_pair.hash(&mut h);
+        self.order_id.hash(&mut h);
+        (self.timestamp + 0.0).to_bits().hash(&mut h);
+        (self.expiration_timestamp + 0.0).to_bits().hash(&mut h);
+        h.finish() as isize
     }
 
     /// Convert a list of OrderExpirationEntry objects to a pandas DataFrame.
