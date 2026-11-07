@@ -1,8 +1,3 @@
-#!/usr/bin/env python
+from market_connector.hb_compat.cancellation_result import CancellationResult  # noqa: F401
 
-from typing import NamedTuple
-
-
-class CancellationResult(NamedTuple):
-    order_id: str
-    success: bool
+__all__ = ["CancellationResult"]
