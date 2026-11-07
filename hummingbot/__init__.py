@@ -15,42 +15,9 @@ STRUCT_LOGGER_SET = False
 DEV_STRATEGY_PREFIX = "dev"
 _prefix_path = None
 
-# Logger name roots re-classed to StructLogger by logger.install() (ADR 0001, logging is an L3 concern)
-_LOGGER_RECLASS_PREFIXES = (
-    "hummingbot",
-    "controllers",
-    "async_utils",
-    "candles_feed",
-    "connector_utils",
-    "data_type_primitives",
-    "event_bus",
-    "liquidations_feed",
-    "market_connector",
-    "market_data",
-    "market_simulator",
-    "order_book",
-    "rate_limit",
-    "rate_oracle",
-    "remote_iface",
-    "strategy_framework",
-    "user_stream_tracker",
-    "web_assistant",
-)
-
-
-def _install_struct_logger():
-    try:
-        from logger import install
-    except ImportError:
-        install = None
-    if install is None:
-        logging.setLogRecordFactory(StructLogRecord)
-        logging.setLoggerClass(StructLogger)
-    else:
-        install(StructLogger, StructLogRecord, reclass_prefixes=_LOGGER_RECLASS_PREFIXES)
-
-
-_install_struct_logger()
+# Do not raise exceptions during log handling
+logging.setLogRecordFactory(StructLogRecord)
+logging.setLoggerClass(StructLogger)
 
 _shared_executor = None
 _data_path = None
@@ -179,9 +146,12 @@ def init_logging(
     import pandas as pd
     from ruamel.yaml import YAML
 
+    from hummingbot.logger.struct_logger import StructLogger, StructLogRecord
+
     global STRUCT_LOGGER_SET
     if not STRUCT_LOGGER_SET:
-        _install_struct_logger()
+        logging.setLogRecordFactory(StructLogRecord)
+        logging.setLoggerClass(StructLogger)
         STRUCT_LOGGER_SET = True
 
     # Do not raise exceptions during log handling
