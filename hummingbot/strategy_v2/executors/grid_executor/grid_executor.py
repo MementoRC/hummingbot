@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 from decimal import Decimal
 import logging
 import math
-from typing import Dict, List, Optional, Union
+from typing import Dict
 
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.core.data_type.common import OrderType, PositionAction, PriceType, TradeType
@@ -19,13 +21,17 @@ from hummingbot.core.event.events import (
 from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.executor_base import ExecutorBase
+from hummingbot.strategy_v2.executors.executor_factory import ExecutorFactory
 from hummingbot.strategy_v2.executors.grid_executor.data_types import GridExecutorConfig, GridLevel, GridLevelStates
+from hummingbot.strategy_v2.executors.mixins.balance_validation import BalanceValidationMixin
+from hummingbot.strategy_v2.executors.mixins.trailing_stop import TrailingStopMixin
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 from hummingbot.strategy_v2.utils.distributions import Distributions
 
 
-class GridExecutor(ExecutorBase):
+@ExecutorFactory.register(GridExecutorConfig)
+class GridExecutor(BalanceValidationMixin, TrailingStopMixin, ExecutorBase):
     _logger = None
 
     @classmethod
@@ -45,8 +51,14 @@ class GridExecutor(ExecutorBase):
         :param update_interval: The interval at which the PositionExecutor should be updated, defaults to 1.0.
         :param max_retries: The maximum number of retries for the PositionExecutor, defaults to 5.
         """
-        # The config validates itself on construction, see GridExecutorConfig.
         self.config: GridExecutorConfig = config
+        if (
+            config.triple_barrier_config.time_limit_order_type != OrderType.MARKET
+            or config.triple_barrier_config.stop_loss_order_type != OrderType.MARKET
+        ):
+            error = "Only market orders are supported for time_limit and stop_loss"
+            self.logger().error(error)
+            raise ValueError(error)
         super().__init__(
             strategy=strategy,
             config=config,
@@ -61,7 +73,7 @@ class GridExecutor(ExecutorBase):
         # Grid levels
         self.grid_levels = self._generate_grid_levels()
         self.levels_by_state = {state: [] for state in GridLevelStates}
-        self._close_order: Optional[TrackedOrder] = None
+        self._close_order: TrackedOrder | None = None
         self._filled_orders = []
         self._failed_orders = []
         self._canceled_orders = []
@@ -85,7 +97,7 @@ class GridExecutor(ExecutorBase):
         self.max_close_creation_timestamp = 0
         self._open_fee_in_base = False
 
-        self._trailing_stop_trigger_pct: Optional[Decimal] = None
+        self.init_trailing_stop()
 
     @property
     def is_perpetual(self) -> bool:
@@ -96,11 +108,11 @@ class GridExecutor(ExecutorBase):
         """
         return self.is_perpetual_connector(self.config.connector_name)
 
-    async def validate_sufficient_balance(self):
+    def _create_validation_order_candidate(self):
         mid_price = self.get_price(self.config.connector_name, self.config.trading_pair, PriceType.MidPrice)
         total_amount_base = self.config.total_amount_quote / mid_price
         if self.is_perpetual:
-            order_candidate = PerpetualOrderCandidate(
+            return PerpetualOrderCandidate(
                 trading_pair=self.config.trading_pair,
                 is_maker=self.config.triple_barrier_config.open_order_type.is_limit_type(),
                 order_type=self.config.triple_barrier_config.open_order_type,
@@ -109,20 +121,14 @@ class GridExecutor(ExecutorBase):
                 price=mid_price,
                 leverage=Decimal(self.config.leverage),
             )
-        else:
-            order_candidate = OrderCandidate(
-                trading_pair=self.config.trading_pair,
-                is_maker=self.config.triple_barrier_config.open_order_type.is_limit_type(),
-                order_type=self.config.triple_barrier_config.open_order_type,
-                order_side=self.config.side,
-                amount=total_amount_base,
-                price=mid_price,
-            )
-        adjusted_order_candidates = self.adjust_order_candidates(self.config.connector_name, [order_candidate])
-        if adjusted_order_candidates[0].amount == Decimal("0"):
-            self.close_type = CloseType.INSUFFICIENT_BALANCE
-            self.logger().error("Not enough budget to open position.")
-            self.stop()
+        return OrderCandidate(
+            trading_pair=self.config.trading_pair,
+            is_maker=self.config.triple_barrier_config.open_order_type.is_limit_type(),
+            order_type=self.config.triple_barrier_config.open_order_type,
+            order_side=self.config.side,
+            amount=total_amount_base,
+            price=mid_price,
+        )
 
     def _generate_grid_levels(self):
         grid_levels = []
@@ -209,7 +215,7 @@ class GridExecutor(ExecutorBase):
         return grid_levels
 
     @property
-    def end_time(self) -> Optional[float]:
+    def end_time(self) -> float | None:
         """
         Calculate the end time of the position based on the time limit
 
@@ -285,7 +291,7 @@ class GridExecutor(ExecutorBase):
         self._status = RunnableStatus.SHUTTING_DOWN
         self.close_type = CloseType.POSITION_HOLD if keep_position else CloseType.EARLY_STOP
 
-    def _collect_held_position_orders(self) -> List[Dict]:
+    def _collect_held_position_orders(self) -> list[Dict]:
         """Snapshot residual exposure for a forced stop at the shutdown deadline.
 
         Mirrors the POSITION_HOLD branch of control_shutdown_process without waiting
@@ -370,6 +376,7 @@ class GridExecutor(ExecutorBase):
                 else:
                     await self.control_close_order()
                     self._current_retries += 1
+                    self.evaluate_max_retries()
         else:
             self.cancel_open_orders()
         await self._sleep(5.0)
@@ -600,7 +607,7 @@ class GridExecutor(ExecutorBase):
                 return [level for level in not_active_levels if level.price <= activation_bounds_price]
         return not_active_levels
 
-    def _sort_levels_by_proximity(self, levels: List[GridLevel]):
+    def _sort_levels_by_proximity(self, levels: list[GridLevel]):
         return sorted(levels, key=lambda level: abs(level.price - self.mid_price))
 
     def control_triple_barrier(self):
@@ -665,24 +672,13 @@ class GridExecutor(ExecutorBase):
         return False
 
     def trailing_stop_condition(self):
-        if self.config.triple_barrier_config.trailing_stop:
-            net_pnl_pct = self.position_pnl_pct
-            if not self._trailing_stop_trigger_pct:
-                if net_pnl_pct > self.config.triple_barrier_config.trailing_stop.activation_price:
-                    self._trailing_stop_trigger_pct = (
-                        net_pnl_pct - self.config.triple_barrier_config.trailing_stop.trailing_delta
-                    )
-            else:
-                if net_pnl_pct < self._trailing_stop_trigger_pct:
-                    return True
-                if (
-                    net_pnl_pct - self.config.triple_barrier_config.trailing_stop.trailing_delta
-                    > self._trailing_stop_trigger_pct
-                ):
-                    self._trailing_stop_trigger_pct = (
-                        net_pnl_pct - self.config.triple_barrier_config.trailing_stop.trailing_delta
-                    )
-        return False
+        return self.evaluate_trailing_stop()
+
+    def _get_trailing_stop_pnl_pct(self):
+        return self.position_pnl_pct
+
+    def _get_trailing_stop_config(self):
+        return self.config.triple_barrier_config.trailing_stop
 
     def place_close_order_and_cancel_open_orders(self, close_type: CloseType, price: Decimal = Decimal("NaN")):
         """
@@ -808,7 +804,7 @@ class GridExecutor(ExecutorBase):
             if self._close_order and self._close_order.order_id == order_id:
                 self._close_order.order = in_flight_order
 
-    def process_order_created_event(self, _, market, event: Union[BuyOrderCreatedEvent, SellOrderCreatedEvent]):
+    def process_order_created_event(self, _, market, event: BuyOrderCreatedEvent | SellOrderCreatedEvent):
         """
         This method is responsible for processing the order created event. Here we will update the TrackedOrder with the
         order_id.
@@ -823,7 +819,7 @@ class GridExecutor(ExecutorBase):
         """
         self.update_tracked_orders_with_order_id(event.order_id)
 
-    def process_order_completed_event(self, _, market, event: Union[BuyOrderCompletedEvent, SellOrderCompletedEvent]):
+    def process_order_completed_event(self, _, market, event: BuyOrderCompletedEvent | SellOrderCompletedEvent):
         """
         This method is responsible for processing the order completed event. Here we will check if the id is one of the
         tracked orders and update the state
