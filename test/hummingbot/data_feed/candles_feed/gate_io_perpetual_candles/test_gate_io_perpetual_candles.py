@@ -1,13 +1,13 @@
 import asyncio
 import json
 import re
-from test.hummingbot.data_feed.candles_feed.test_candles_base import TestCandlesBase
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from aioresponses import aioresponses
 
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.data_feed.candles_feed.gate_io_perpetual_candles import GateioPerpetualCandles, constants as CONSTANTS
+from test.hummingbot.data_feed.candles_feed.test_candles_base import TestCandlesBase
 
 
 class TestGateioPerpetualCandles(TestCandlesBase):
@@ -41,47 +41,20 @@ class TestGateioPerpetualCandles(TestCandlesBase):
 
     @staticmethod
     def get_fetch_candles_data_mock():
-        return [[1685167200, '1.032', '1.032', '1.032', '1.032', 9.7151, '3580', 0, 0, 0],
-                [1685170800, '1.032', '1.032', '1.032', '1.032', 9.7151, '3580', 0, 0, 0],
-                [1685174400, '1.032', '1.032', '1.032', '1.032', 9.7151, '3580', 0, 0, 0],
-                [1685178000, '1.032', '1.032', '1.032', '1.032', 9.7151, '3580', 0, 0, 0]]
+        return [
+            [1685167200, "1.032", "1.032", "1.032", "1.032", 9.7151, "3580", 0, 0, 0],
+            [1685170800, "1.032", "1.032", "1.032", "1.032", 9.7151, "3580", 0, 0, 0],
+            [1685174400, "1.032", "1.032", "1.032", "1.032", 9.7151, "3580", 0, 0, 0],
+            [1685178000, "1.032", "1.032", "1.032", "1.032", 9.7151, "3580", 0, 0, 0],
+        ]
 
     @staticmethod
     def get_candles_rest_data_mock():
         data = [
-            {
-                "t": 1685167200,
-                "v": 97151,
-                "c": "1.032",
-                "h": "1.032",
-                "l": "1.032",
-                "o": "1.032",
-                "sum": "3580"
-            }, {
-                "t": 1685170800,
-                "v": 97151,
-                "c": "1.032",
-                "h": "1.032",
-                "l": "1.032",
-                "o": "1.032",
-                "sum": "3580"
-            }, {
-                "t": 1685174400,
-                "v": 97151,
-                "c": "1.032",
-                "h": "1.032",
-                "l": "1.032",
-                "o": "1.032",
-                "sum": "3580"
-            }, {
-                "t": 1685178000,
-                "v": 97151,
-                "c": "1.032",
-                "h": "1.032",
-                "l": "1.032",
-                "o": "1.032",
-                "sum": "3580"
-            },
+            {"t": 1685167200, "v": 97151, "c": "1.032", "h": "1.032", "l": "1.032", "o": "1.032", "sum": "3580"},
+            {"t": 1685170800, "v": 97151, "c": "1.032", "h": "1.032", "l": "1.032", "o": "1.032", "sum": "3580"},
+            {"t": 1685174400, "v": 97151, "c": "1.032", "h": "1.032", "l": "1.032", "o": "1.032", "sum": "3580"},
+            {"t": 1685178000, "v": 97151, "c": "1.032", "h": "1.032", "l": "1.032", "o": "1.032", "sum": "3580"},
         ]
         return data
 
@@ -99,16 +72,8 @@ class TestGateioPerpetualCandles(TestCandlesBase):
             "event": "update",
             "error": None,
             "result": [
-                {
-                    "t": 1545129300,
-                    "v": 27525555,
-                    "c": "95.4",
-                    "h": "96.9",
-                    "l": "89.5",
-                    "o": "94.3",
-                    "n": "1m_BTC_USD"
-                }
-            ]
+                {"t": 1545129300, "v": 27525555, "c": "95.4", "h": "96.9", "l": "89.5", "o": "94.3", "n": "1m_BTC_USD"}
+            ],
         }
         return data
 
@@ -121,16 +86,8 @@ class TestGateioPerpetualCandles(TestCandlesBase):
             "event": "update",
             "error": None,
             "result": [
-                {
-                    "t": 1545139300,
-                    "v": 27525555,
-                    "c": "95.4",
-                    "h": "96.9",
-                    "l": "89.5",
-                    "o": "94.3",
-                    "n": "1m_BTC_USD"
-                }
-            ]
+                {"t": 1545139300, "v": 27525555, "c": "95.4", "h": "96.9", "l": "89.5", "o": "94.3", "n": "1m_BTC_USD"}
+            ],
         }
         return data
 
@@ -150,9 +107,7 @@ class TestGateioPerpetualCandles(TestCandlesBase):
         connector.trading_rules = {self.trading_pair: MagicMock(min_base_amount_increment=0.0001)}
         connector.throttler = None
         self.data_feed.attach_connector(connector)
-        with patch.object(
-            self.data_feed._api_factory, "get_rest_assistant", new_callable=AsyncMock
-        ) as mock_rest:
+        with patch.object(self.data_feed._api_factory, "get_rest_assistant", new_callable=AsyncMock) as mock_rest:
             await self.data_feed.initialize_exchange_data()
             mock_rest.assert_not_called()
         self.assertEqual(self.data_feed.quanto_multiplier, 0.0001)
@@ -167,7 +122,9 @@ class TestGateioPerpetualCandles(TestCandlesBase):
         connector.trading_rules = {}
         connector.throttler = None
         self.data_feed.attach_connector(connector)
-        regex_url = re.compile(f"^{CONSTANTS.REST_URL}{CONSTANTS.CONTRACT_INFO_URL.format(contract=self.ex_trading_pair)}")
+        regex_url = re.compile(
+            f"^{CONSTANTS.REST_URL}{CONSTANTS.CONTRACT_INFO_URL.format(contract=self.ex_trading_pair)}"
+        )
         mock_api.get(url=regex_url, body=json.dumps({"quanto_multiplier": "0.0005"}))
         await self.data_feed.initialize_exchange_data()
         self.assertEqual(self.data_feed.quanto_multiplier, 0.0005)

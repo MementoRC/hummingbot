@@ -6,8 +6,9 @@ and 31.4s -- straddling the 30s this client used to hardcode, so the same quote
 succeeded or timed out depending on how the RPC felt. A caller on a slow chain now has
 a knob instead of a patch.
 """
-import unittest
+
 from decimal import Decimal
+import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from hummingbot.client.config.client_config_map import GatewayConfigMap
@@ -15,7 +16,6 @@ from hummingbot.core.gateway.gateway_http_client import GatewayHttpClient
 
 
 class TestApiTimeoutIsConfigurable(unittest.IsolatedAsyncioTestCase):
-
     def test_default_is_sixty_seconds(self):
         self.assertEqual(Decimal("60"), GatewayConfigMap().gateway_api_timeout)
 

@@ -1,9 +1,9 @@
 import unittest
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, patch
 
 from hummingbot.core.event.events import TradeType
 from hummingbot.core.gateway.gateway_http_client import GatewayHttpClient
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class GatewayHttpClientLPRouteTest(IsolatedAsyncioWrapperTestCase):
@@ -40,9 +40,16 @@ class GatewayHttpClientLPRouteTest(IsolatedAsyncioWrapperTestCase):
     async def test_clmm_open_position_uses_unified_route_and_keys(self):
         with self._capture() as mock_req:
             await self.client.clmm_open_position(
-                network="mainnet-beta", chain="solana", wallet_address="WALLET",
-                pool_address="POOL", lower_price=1.0, upper_price=2.0, dex="meteora",
-                base_token_amount=1.5, quote_token_amount=3.0, slippage_pct=1.0,
+                network="mainnet-beta",
+                chain="solana",
+                wallet_address="WALLET",
+                pool_address="POOL",
+                lower_price=1.0,
+                upper_price=2.0,
+                dex="meteora",
+                base_token_amount=1.5,
+                quote_token_amount=3.0,
+                slippage_pct=1.0,
             )
         method, path, payload = self._sent(mock_req)
         self.assertEqual("post", method)
@@ -62,8 +69,13 @@ class GatewayHttpClientLPRouteTest(IsolatedAsyncioWrapperTestCase):
         # single-sided open sends only the funded side rather than a fabricated zero.
         with self._capture() as mock_req:
             await self.client.clmm_open_position(
-                network="solana-mainnet-beta", wallet_address="WALLET", pool_address="POOL",
-                lower_price=1.0, upper_price=2.0, dex="raydium", quote_token_amount=10.0,
+                network="solana-mainnet-beta",
+                wallet_address="WALLET",
+                pool_address="POOL",
+                lower_price=1.0,
+                upper_price=2.0,
+                dex="raydium",
+                quote_token_amount=10.0,
             )
         _, _, payload = self._sent(mock_req)
         self.assertEqual(10.0, payload["quoteTokenAmount"])
@@ -72,8 +84,12 @@ class GatewayHttpClientLPRouteTest(IsolatedAsyncioWrapperTestCase):
     async def test_clmm_add_liquidity_uses_unified_route_and_keys(self):
         with self._capture() as mock_req:
             await self.client.clmm_add_liquidity(
-                network="mainnet-beta", chain="solana", wallet_address="WALLET",
-                position_address="POS", dex="orca", base_token_amount=2.0,
+                network="mainnet-beta",
+                chain="solana",
+                wallet_address="WALLET",
+                position_address="POS",
+                dex="orca",
+                base_token_amount=2.0,
             )
         method, path, payload = self._sent(mock_req)
         self.assertEqual("post", method)
@@ -88,8 +104,12 @@ class GatewayHttpClientLPRouteTest(IsolatedAsyncioWrapperTestCase):
     async def test_clmm_remove_liquidity_uses_unified_route_and_keys(self):
         with self._capture() as mock_req:
             await self.client.clmm_remove_liquidity(
-                network="mainnet-beta", chain="solana", wallet_address="WALLET",
-                position_address="POS", percentage=50.0, dex="meteora",
+                network="mainnet-beta",
+                chain="solana",
+                wallet_address="WALLET",
+                position_address="POS",
+                percentage=50.0,
+                dex="meteora",
             )
         method, path, payload = self._sent(mock_req)
         self.assertEqual("post", method)
@@ -101,8 +121,11 @@ class GatewayHttpClientLPRouteTest(IsolatedAsyncioWrapperTestCase):
     async def test_clmm_close_position_uses_unified_route_and_keys(self):
         with self._capture() as mock_req:
             await self.client.clmm_close_position(
-                network="mainnet-beta", chain="solana", wallet_address="WALLET",
-                position_address="POS", dex="meteora",
+                network="mainnet-beta",
+                chain="solana",
+                wallet_address="WALLET",
+                position_address="POS",
+                dex="meteora",
             )
         method, path, payload = self._sent(mock_req)
         self.assertEqual("post", method)
@@ -113,8 +136,11 @@ class GatewayHttpClientLPRouteTest(IsolatedAsyncioWrapperTestCase):
     async def test_clmm_collect_fees_uses_unified_route_and_keys(self):
         with self._capture() as mock_req:
             await self.client.clmm_collect_fees(
-                network="mainnet-beta", chain="solana", wallet_address="WALLET",
-                position_address="POS", dex="meteora",
+                network="mainnet-beta",
+                chain="solana",
+                wallet_address="WALLET",
+                position_address="POS",
+                dex="meteora",
             )
         method, path, payload = self._sent(mock_req)
         self.assertEqual("post", method)
@@ -126,7 +152,10 @@ class GatewayHttpClientLPRouteTest(IsolatedAsyncioWrapperTestCase):
         # The unified position-info route is keyed by the position address alone.
         with self._capture() as mock_req:
             await self.client.clmm_position_info(
-                network="mainnet-beta", chain="solana", position_address="POS", dex="meteora",
+                network="mainnet-beta",
+                chain="solana",
+                position_address="POS",
+                dex="meteora",
             )
         method, path, payload = self._sent(mock_req)
         self.assertEqual("get", method)
@@ -138,7 +167,10 @@ class GatewayHttpClientLPRouteTest(IsolatedAsyncioWrapperTestCase):
     async def test_clmm_positions_owned_uses_unified_route_and_keys(self):
         with self._capture() as mock_req:
             await self.client.clmm_positions_owned(
-                network="mainnet-beta", chain="solana", wallet_address="WALLET", dex="meteora",
+                network="mainnet-beta",
+                chain="solana",
+                wallet_address="WALLET",
+                dex="meteora",
             )
         method, path, payload = self._sent(mock_req)
         self.assertEqual("get", method)
@@ -149,8 +181,13 @@ class GatewayHttpClientLPRouteTest(IsolatedAsyncioWrapperTestCase):
     async def test_clmm_quote_position_uses_unified_route_and_keys(self):
         with self._capture() as mock_req:
             await self.client.clmm_quote_position(
-                network="mainnet-beta", chain="solana", pool_address="POOL",
-                lower_price=1.0, upper_price=2.0, dex="meteora", base_token_amount=1.0,
+                network="mainnet-beta",
+                chain="solana",
+                pool_address="POOL",
+                lower_price=1.0,
+                upper_price=2.0,
+                dex="meteora",
+                base_token_amount=1.0,
             )
         method, path, payload = self._sent(mock_req)
         self.assertEqual("get", method)
@@ -162,7 +199,10 @@ class GatewayHttpClientLPRouteTest(IsolatedAsyncioWrapperTestCase):
     async def test_pool_info_routes_per_trading_type(self):
         with self._capture() as mock_req:
             await self.client.pool_info(
-                network="mainnet-beta", chain="solana", pool_address="POOL", dex="meteora",
+                network="mainnet-beta",
+                chain="solana",
+                pool_address="POOL",
+                dex="meteora",
             )
         method, path, payload = self._sent(mock_req)
         self.assertEqual("get", method)
@@ -172,7 +212,10 @@ class GatewayHttpClientLPRouteTest(IsolatedAsyncioWrapperTestCase):
 
         with self._capture() as mock_req:
             await self.client.pool_info(
-                network="mainnet-beta", chain="solana", pool_address="POOL", dex="meteora",
+                network="mainnet-beta",
+                chain="solana",
+                pool_address="POOL",
+                dex="meteora",
                 trading_type="amm",
             )
         _, path, _ = self._sent(mock_req)
@@ -183,9 +226,14 @@ class GatewayHttpClientLPRouteTest(IsolatedAsyncioWrapperTestCase):
     async def test_amm_add_liquidity_uses_unified_route_and_keys(self):
         with self._capture() as mock_req:
             await self.client.amm_add_liquidity(
-                network="mainnet-beta", chain="solana", wallet_address="WALLET",
-                pool_address="POOL", base_token_amount=1.0, quote_token_amount=2.0,
-                dex="meteora", position_address="POS",
+                network="mainnet-beta",
+                chain="solana",
+                wallet_address="WALLET",
+                pool_address="POOL",
+                base_token_amount=1.0,
+                quote_token_amount=2.0,
+                dex="meteora",
+                position_address="POS",
             )
         method, path, payload = self._sent(mock_req)
         self.assertEqual("post", method)
@@ -203,8 +251,13 @@ class GatewayHttpClientLPRouteTest(IsolatedAsyncioWrapperTestCase):
         # the removal has to name one; omitting it 400s on Meteora's schema.
         with self._capture() as mock_req:
             await self.client.amm_remove_liquidity(
-                network="mainnet-beta", chain="solana", wallet_address="WALLET",
-                pool_address="POOL", percentage=100.0, dex="meteora", position_address="POS",
+                network="mainnet-beta",
+                chain="solana",
+                wallet_address="WALLET",
+                pool_address="POOL",
+                percentage=100.0,
+                dex="meteora",
+                position_address="POS",
             )
         method, path, payload = self._sent(mock_req)
         self.assertEqual("post", method)
@@ -218,8 +271,11 @@ class GatewayHttpClientLPRouteTest(IsolatedAsyncioWrapperTestCase):
         # Fungible-LP AMMs address a holding by pool alone.
         with self._capture() as mock_req:
             await self.client.amm_remove_liquidity(
-                network="solana-mainnet-beta", wallet_address="WALLET", pool_address="POOL",
-                percentage=100.0, dex="raydium",
+                network="solana-mainnet-beta",
+                wallet_address="WALLET",
+                pool_address="POOL",
+                percentage=100.0,
+                dex="raydium",
             )
         _, _, payload = self._sent(mock_req)
         self.assertNotIn("positionAddress", payload)
@@ -227,8 +283,11 @@ class GatewayHttpClientLPRouteTest(IsolatedAsyncioWrapperTestCase):
     async def test_amm_position_info_uses_unified_route_and_keys(self):
         with self._capture() as mock_req:
             await self.client.amm_position_info(
-                network="mainnet-beta", chain="solana", wallet_address="WALLET",
-                pool_address="POOL", dex="meteora",
+                network="mainnet-beta",
+                chain="solana",
+                wallet_address="WALLET",
+                pool_address="POOL",
+                dex="meteora",
             )
         method, path, payload = self._sent(mock_req)
         self.assertEqual("get", method)
@@ -240,8 +299,12 @@ class GatewayHttpClientLPRouteTest(IsolatedAsyncioWrapperTestCase):
     async def test_amm_quote_liquidity_uses_unified_route_and_keys(self):
         with self._capture() as mock_req:
             await self.client.amm_quote_liquidity(
-                network="mainnet-beta", chain="solana", pool_address="POOL",
-                base_token_amount=1.0, quote_token_amount=2.0, dex="raydium",
+                network="mainnet-beta",
+                chain="solana",
+                pool_address="POOL",
+                base_token_amount=1.0,
+                quote_token_amount=2.0,
+                dex="raydium",
             )
         method, path, payload = self._sent(mock_req)
         self.assertEqual("get", method)
@@ -281,9 +344,14 @@ class GatewayRequestSerializationTest(IsolatedAsyncioWrapperTestCase):
     async def test_a_body_carries_amounts_as_json_numbers(self):
         with self._capture() as mock_req:
             await self.client.amm_add_liquidity(
-                network="mainnet-beta", chain="solana", wallet_address="WALLET",
-                pool_address="POOL", base_token_amount=0.1, quote_token_amount=2.0,
-                dex="meteora", slippage_pct=1.0,
+                network="mainnet-beta",
+                chain="solana",
+                wallet_address="WALLET",
+                pool_address="POOL",
+                base_token_amount=0.1,
+                quote_token_amount=2.0,
+                dex="meteora",
+                slippage_pct=1.0,
             )
         payload = self._sent(mock_req)
         for key in ("baseTokenAmount", "quoteTokenAmount", "slippagePct"):
@@ -295,8 +363,13 @@ class GatewayRequestSerializationTest(IsolatedAsyncioWrapperTestCase):
     async def test_a_query_carries_everything_as_text(self):
         with self._capture() as mock_req:
             await self.client.clmm_quote_position(
-                network="mainnet-beta", chain="solana", pool_address="POOL",
-                lower_price=1.5, upper_price=2.5, dex="meteora", base_token_amount=0.1,
+                network="mainnet-beta",
+                chain="solana",
+                pool_address="POOL",
+                lower_price=1.5,
+                upper_price=2.5,
+                dex="meteora",
+                base_token_amount=0.1,
             )
         params = self._sent(mock_req)
         self.assertTrue(all(isinstance(v, str) for v in params.values()), params)
@@ -306,8 +379,13 @@ class GatewayRequestSerializationTest(IsolatedAsyncioWrapperTestCase):
     async def test_omitted_optionals_are_absent_rather_than_null(self):
         with self._capture() as mock_req:
             await self.client.clmm_open_position(
-                network="mainnet-beta", chain="solana", wallet_address="WALLET",
-                pool_address="POOL", lower_price=1.0, upper_price=2.0, dex="meteora",
+                network="mainnet-beta",
+                chain="solana",
+                wallet_address="WALLET",
+                pool_address="POOL",
+                lower_price=1.0,
+                upper_price=2.0,
+                dex="meteora",
                 base_token_amount=1.5,
             )
         payload = self._sent(mock_req)
@@ -320,9 +398,15 @@ class GatewayRequestSerializationTest(IsolatedAsyncioWrapperTestCase):
         # the model rather than validated against it.
         with self._capture() as mock_req:
             await self.client.clmm_open_position(
-                network="mainnet-beta", chain="solana", wallet_address="WALLET",
-                pool_address="POOL", lower_price=1.0, upper_price=2.0, dex="meteora",
-                base_token_amount=1.5, extra_params={"strategyType": 0},
+                network="mainnet-beta",
+                chain="solana",
+                wallet_address="WALLET",
+                pool_address="POOL",
+                lower_price=1.0,
+                upper_price=2.0,
+                dex="meteora",
+                base_token_amount=1.5,
+                extra_params={"strategyType": 0},
             )
         self.assertEqual(0, self._sent(mock_req)["strategyType"])
 
@@ -330,9 +414,14 @@ class GatewayRequestSerializationTest(IsolatedAsyncioWrapperTestCase):
         """A wrong type used to reach Gateway as a 404; the model map names the options."""
         with self.assertRaises(ValueError) as ctx:
             await self.client.quote_swap(
-                network="mainnet-beta", chain="solana", base_asset="SOL",
-                quote_asset="USDC", amount=1, side=TradeType.SELL,
-                dex="meteora", trading_type="nonsense",
+                network="mainnet-beta",
+                chain="solana",
+                base_asset="SOL",
+                quote_asset="USDC",
+                amount=1,
+                side=TradeType.SELL,
+                dex="meteora",
+                trading_type="nonsense",
             )
         self.assertIn("nonsense", str(ctx.exception))
 

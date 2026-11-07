@@ -1,5 +1,4 @@
 import json
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from typing import Optional
 from unittest.mock import patch
 
@@ -13,6 +12,7 @@ from hummingbot.core.web_assistant.connections.rest_connection import RESTConnec
 from hummingbot.core.web_assistant.rest_assistant import RESTAssistant
 from hummingbot.core.web_assistant.rest_post_processors import RESTPostProcessorBase
 from hummingbot.core.web_assistant.rest_pre_processors import RESTPreProcessorBase
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class RESTAssistantTest(IsolatedAsyncioWrapperTestCase):
@@ -51,11 +51,12 @@ class RESTAssistantTest(IsolatedAsyncioWrapperTestCase):
             connection=connection,
             throttler=AsyncThrottler(rate_limits=[]),
             rest_pre_processors=pre_processors,
-            rest_post_processors=post_processors)
+            rest_post_processors=post_processors,
+        )
         req = RESTRequest(method=RESTMethod.GET, url=url)
 
-        ret = await (assistant.call(req))
-        ret_json = await (ret.json())
+        ret = await assistant.call(req)
+        ret_json = await ret.json()
 
         self.assertEqual(resp, ret_json)
         self.assertTrue(pre_processor_ran)
@@ -90,12 +91,12 @@ class RESTAssistantTest(IsolatedAsyncioWrapperTestCase):
         req = RESTRequest(method=RESTMethod.GET, url=url)
         auth_req = RESTRequest(method=RESTMethod.GET, url=url, is_auth_required=True)
 
-        await (assistant.call(req))
+        await assistant.call(req)
 
         self.assertIsNotNone(call_request)
         self.assertIsNone(call_request.headers)
 
-        await (assistant.call(auth_req))
+        await assistant.call(auth_req)
 
         self.assertIsNotNone(call_request)
         self.assertIsNotNone(call_request.headers)

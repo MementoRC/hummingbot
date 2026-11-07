@@ -71,9 +71,7 @@ class LighterAPIUserStreamDataSourceTests(TestCase):
         from hummingbot.connector.exchange.lighter.lighter_auth import LighterAuth
         from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 
-        signer = SimpleNamespace(
-            create_auth_token_with_expiry=lambda deadline, api_key_index: ("tok-123", None)
-        )
+        signer = SimpleNamespace(create_auth_token_with_expiry=lambda deadline, api_key_index: ("tok-123", None))
         auth = LighterAuth(signer_client=signer, api_key_index=2)
         sent = []
         connection = SimpleNamespace(send=AsyncMock(side_effect=lambda request: sent.append(request)))
