@@ -1,8 +1,8 @@
 import json
 import os
-import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import unittest
 from unittest.mock import patch
 
 from hummingbot.cli import bot
@@ -13,8 +13,9 @@ class ControllerLoaderNameTest(unittest.TestCase):
     def test_flattens_dots_to_avoid_db_truncation(self):
         # Hummingbot derives the DB name via name.split('.')[0]; a dotted controller name would
         # collide on the first segment. The loader name must flatten dots.
-        self.assertEqual(controller_loader_name("conf_generic.lp_jit.hype_usdc.yml"),
-                         "conf_generic_lp_jit_hype_usdc.yml")
+        self.assertEqual(
+            controller_loader_name("conf_generic.lp_jit.hype_usdc.yml"), "conf_generic_lp_jit_hype_usdc.yml"
+        )
         # split('.')[0] on the loader stem returns the WHOLE name (no truncation/collision)
         stem = Path(controller_loader_name("conf_generic.lp_jit.hype_usdc.yml")).stem
         self.assertEqual(stem.split(".")[0], stem)
@@ -55,9 +56,11 @@ class BotPathsTest(unittest.TestCase):
             self.assertEqual(bot.bot_dir(), Path(d) / "bot")
 
     def test_structured_log_file_uses_meta_name(self):
-        with TemporaryDirectory() as d, \
-                patch.object(bot, "bot_dir", return_value=Path(d) / "bot"), \
-                patch.object(bot, "prefix_path", return_value=d):
+        with (
+            TemporaryDirectory() as d,
+            patch.object(bot, "bot_dir", return_value=Path(d) / "bot"),
+            patch.object(bot, "prefix_path", return_value=d),
+        ):
             # no meta -> default name
             self.assertEqual(bot.structured_log_file(), Path(d) / "logs" / "logs_hummingbot.log")
             bot.write_meta({"name": "mybot"})
@@ -105,22 +108,27 @@ class IsEnginePidTest(unittest.TestCase):
             self.assertFalse(bot.is_engine_pid(12345))
 
     def test_engine_cmdline_matches(self):
-        with patch.object(bot, "pid_alive", return_value=True), \
-                patch("psutil.Process") as proc:
+        with patch.object(bot, "pid_alive", return_value=True), patch("psutil.Process") as proc:
             proc.return_value.cmdline.return_value = [
-                "/usr/bin/python", "-m", "hummingbot.cli.engine", "--name", "test01"]
+                "/usr/bin/python",
+                "-m",
+                "hummingbot.cli.engine",
+                "--name",
+                "test01",
+            ]
             self.assertTrue(bot.is_engine_pid(123))
 
     def test_reused_pid_with_foreign_cmdline_is_not_engine(self):
         # abrupt kill / container restart: the recorded pid now belongs to a stranger
-        with patch.object(bot, "pid_alive", return_value=True), \
-                patch("psutil.Process") as proc:
+        with patch.object(bot, "pid_alive", return_value=True), patch("psutil.Process") as proc:
             proc.return_value.cmdline.return_value = ["/bin/sleep", "600"]
             self.assertFalse(bot.is_engine_pid(123))
 
     def test_uninspectable_live_pid_assumed_ours(self):
-        with patch.object(bot, "pid_alive", return_value=True), \
-                patch("psutil.Process", side_effect=Exception("denied")):
+        with (
+            patch.object(bot, "pid_alive", return_value=True),
+            patch("psutil.Process", side_effect=Exception("denied")),
+        ):
             self.assertTrue(bot.is_engine_pid(123))
 
 
@@ -226,8 +234,10 @@ class DbAndLogDiscoveryTest(unittest.TestCase):
         self.assertEqual(bot.list_bots(), ["alpha", "beta"])
 
     def test_list_bots_empty_when_dirs_missing(self):
-        with patch.object(bot, "data_path", return_value=str(self.root / "no_data")), \
-                patch.object(bot, "prefix_path", return_value=str(self.root / "no_prefix")):
+        with (
+            patch.object(bot, "data_path", return_value=str(self.root / "no_data")),
+            patch.object(bot, "prefix_path", return_value=str(self.root / "no_prefix")),
+        ):
             self.assertEqual(bot.list_bots(), [])
 
 

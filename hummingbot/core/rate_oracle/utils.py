@@ -21,7 +21,7 @@ def normalize_token_symbol(token_symbol: str) -> str:
 
 
 def find_rate(prices: Dict[str, Decimal], pair: str) -> Decimal:
-    '''
+    """
     Finds exchange rate for a given trading pair from a dictionary of prices
     For example, given prices of {"HBOT-USDT": Decimal("100"), "AAVE-USDT": Decimal("50"), "USDT-GBP": Decimal("0.75")}
     A rate for USDT-HBOT will be 1 / 100
@@ -30,7 +30,7 @@ def find_rate(prices: Dict[str, Decimal], pair: str) -> Decimal:
     A rate for HBOT-GBP will be 100 * 0.75
     :param prices: The dictionary of trading pairs and their prices
     :param pair: The trading pair
-    '''
+    """
     if pair in prices:
         return prices[pair]
     base, quote = split_hb_trading_pair(trading_pair=pair)

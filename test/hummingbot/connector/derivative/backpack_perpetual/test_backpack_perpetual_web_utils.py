@@ -4,12 +4,11 @@ import unittest
 
 from aioresponses import aioresponses
 
-import hummingbot.connector.derivative.backpack_perpetual.backpack_perpetual_constants as CONSTANTS
 from hummingbot.connector.derivative.backpack_perpetual import backpack_perpetual_web_utils as web_utils
+import hummingbot.connector.derivative.backpack_perpetual.backpack_perpetual_constants as CONSTANTS
 
 
 class BackpackPerpetualUtilTestCases(unittest.IsolatedAsyncioTestCase):
-
     def test_public_rest_url(self):
         path_url = "api/v1/test"
         domain = "exchange"

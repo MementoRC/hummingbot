@@ -59,8 +59,6 @@ class LighterPerpetualUtilsTests(TestCase):
             ],
         }
 
-        account = api_utils.extract_account_snapshot(
-            response, l1_address="0xe34167D92340c95A7775495d78bcc3Dc21cf11c0"
-        )
+        account = api_utils.extract_account_snapshot(response, l1_address="0xe34167D92340c95A7775495d78bcc3Dc21cf11c0")
 
         self.assertEqual(724450, api_utils.account_index_from_account(account))

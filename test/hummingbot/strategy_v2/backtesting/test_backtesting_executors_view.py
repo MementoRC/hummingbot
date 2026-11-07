@@ -5,8 +5,9 @@ executors (each tick copies a list that only grows), so the engine exposes a tim
 window of terminated executors instead. The ledger that ``simulate_execution`` returns — the
 one the results are summarized from — must keep every single executor regardless.
 """
-import unittest
+
 from decimal import Decimal
+import unittest
 from unittest.mock import MagicMock
 
 from hummingbot.core.data_type.common import TradeType
@@ -20,12 +21,16 @@ from hummingbot.strategy_v2.models.executors_info import ExecutorInfo
 class _FakeSimulation:
     """Minimal stand-in for an ExecutorSimulation that terminates at a fixed timestamp."""
 
-    def __init__(self, executor_id: str, start: float, close_timestamp: float,
-                 close_type: CloseType = CloseType.TAKE_PROFIT):
+    def __init__(
+        self, executor_id: str, start: float, close_timestamp: float, close_type: CloseType = CloseType.TAKE_PROFIT
+    ):
         self.config = PositionExecutorConfig(
-            id=executor_id, timestamp=start,
-            connector_name="binance", trading_pair="ETH-USDT",
-            side=TradeType.BUY, amount=Decimal("1"),
+            id=executor_id,
+            timestamp=start,
+            connector_name="binance",
+            trading_pair="ETH-USDT",
+            side=TradeType.BUY,
+            amount=Decimal("1"),
             triple_barrier_config=TripleBarrierConfig(take_profit=Decimal("0.01")),
         )
         self.close_timestamp = close_timestamp
@@ -34,12 +39,17 @@ class _FakeSimulation:
     def get_executor_info_at_timestamp(self, timestamp: float) -> ExecutorInfo:
         is_done = timestamp >= self.close_timestamp
         return ExecutorInfo(
-            id=self.config.id, timestamp=self.config.timestamp, type="position_executor",
+            id=self.config.id,
+            timestamp=self.config.timestamp,
+            type="position_executor",
             status=RunnableStatus.TERMINATED if is_done else RunnableStatus.RUNNING,
             config=self.config,
-            net_pnl_pct=Decimal("0"), net_pnl_quote=Decimal("1"),
-            cum_fees_quote=Decimal("0"), filled_amount_quote=Decimal("100"),
-            is_active=not is_done, is_trading=not is_done,
+            net_pnl_pct=Decimal("0"),
+            net_pnl_quote=Decimal("1"),
+            cum_fees_quote=Decimal("0"),
+            filled_amount_quote=Decimal("100"),
+            is_active=not is_done,
+            is_trading=not is_done,
             custom_info={"side": TradeType.BUY, "close_price": 1, "level_id": "buy_0"},
             close_timestamp=self.close_timestamp if is_done else None,
             close_type=self.close_type if is_done else None,
@@ -55,15 +65,16 @@ class TestControllerExecutorsView(unittest.TestCase):
         return engine
 
     @staticmethod
-    def _run_ticks(engine, n_ticks: int, close_type: CloseType = CloseType.TAKE_PROFIT,
-                   tick_seconds: float = 60.0):
+    def _run_ticks(engine, n_ticks: int, close_type: CloseType = CloseType.TAKE_PROFIT, tick_seconds: float = 60.0):
         """Create one executor per tick that terminates on the next tick."""
         max_view_len = 0
         for tick in range(n_ticks):
             now = 1000.0 + tick * tick_seconds
             engine.active_executor_simulations.append(
-                _FakeSimulation(f"executor_{tick}", start=now,
-                                close_timestamp=now + tick_seconds, close_type=close_type))
+                _FakeSimulation(
+                    f"executor_{tick}", start=now, close_timestamp=now + tick_seconds, close_type=close_type
+                )
+            )
             engine.update_executors_info(timestamp=now)
             engine._update_positions_from_stopped_executors()
             max_view_len = max(max_view_len, len(engine.controller.executors_info))
@@ -96,8 +107,9 @@ class TestControllerExecutorsView(unittest.TestCase):
         self.assertEqual(len(terminated), self.WINDOW / 60 + 1)
         last_timestamp = 1000.0 + 199 * 60.0
         self.assertTrue(all(e.close_timestamp >= last_timestamp - self.WINDOW for e in terminated))
-        self.assertEqual([e.id for e in terminated], sorted((e.id for e in terminated),
-                                                            key=lambda i: int(i.split("_")[1])))
+        self.assertEqual(
+            [e.id for e in terminated], sorted((e.id for e in terminated), key=lambda i: int(i.split("_")[1]))
+        )
 
     def test_position_hold_executors_stay_in_the_view(self):
         """A filled maker order terminates as POSITION_HOLD, and that is the event a market
@@ -124,8 +136,7 @@ class TestControllerExecutorsView(unittest.TestCase):
 
     def test_default_window_is_used_when_not_specified(self):
         engine = BacktestingEngineBase()
-        self.assertEqual(engine.terminated_executors_window,
-                         BacktestingEngineBase.DEFAULT_TERMINATED_EXECUTORS_WINDOW)
+        self.assertEqual(engine.terminated_executors_window, BacktestingEngineBase.DEFAULT_TERMINATED_EXECUTORS_WINDOW)
 
 
 if __name__ == "__main__":

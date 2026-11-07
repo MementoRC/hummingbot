@@ -1,7 +1,7 @@
-import json
 from datetime import datetime, timezone
 from decimal import Decimal
-from typing import Any, Dict, Optional
+import json
+from typing import Any
 
 from eth_account.messages import encode_defunct
 from web3 import Web3
@@ -25,22 +25,24 @@ class DeriveAuth(AuthBase):
     Auth class required by Derive API
     """
 
-    def __init__(self, wallet_address: str, session_private_key: str, subacct_id: int, trading_required: bool, domain: str):
+    def __init__(
+        self, wallet_address: str, session_private_key: str, subacct_id: int, trading_required: bool, domain: str
+    ):
         self._wallet_address: str = wallet_address
         self._session_private_key: str = session_private_key
         # Credentials arrive as strings, and most v3 routes refuse one where an integer is declared.
-        self._subacct_id: Optional[int] = parse_subaccount_id(subacct_id)
+        self._subacct_id: int | None = parse_subaccount_id(subacct_id)
         self._trading_required: bool = trading_required
         self._w3 = Web3()
         self._domain = domain
         # The session key's own expiry, set by the connector once it has looked the key up. None
         # until then, and for an owner wallet signing directly, which has no expiry.
-        self.session_key_expiry_sec: Optional[int] = None
+        self.session_key_expiry_sec: int | None = None
         if trading_required:
             self.session_key_wallet = Web3().eth.account.from_key(self._session_private_key)
 
     @property
-    def signer_address(self) -> Optional[str]:
+    def signer_address(self) -> str | None:
         """
         The address of the key that signs every request, or None when no usable key is configured.
         Unlike session_key_wallet it does not depend on trading being required, which `connect`
@@ -85,7 +87,7 @@ class DeriveAuth(AuthBase):
 
         return request
 
-    def get_ws_auth_payload(self) -> Dict[str, Any]:
+    def get_ws_auth_payload(self) -> dict[str, Any]:
         """
         Builds the params for the websocket ``public/login`` call.
 
@@ -93,9 +95,11 @@ class DeriveAuth(AuthBase):
         milliseconds; the v2 shape sent it as a string alongside an ``accept`` field.
         """
         timestamp = self.utc_now_ms()
-        signature = to_0x_hex(self._w3.eth.account.sign_message(
-            encode_defunct(text=str(timestamp)), private_key=self._session_private_key
-        ).signature)
+        signature = to_0x_hex(
+            self._w3.eth.account.sign_message(
+                encode_defunct(text=str(timestamp)), private_key=self._session_private_key
+            ).signature
+        )
 
         return {
             "wallet": self._wallet_address,
@@ -103,7 +107,7 @@ class DeriveAuth(AuthBase):
             "signature": signature,
         }
 
-    def add_auth_to_params_post(self, params: Dict[str, str], request):
+    def add_auth_to_params_post(self, params: dict[str, str], request):
         payload = {}
         data = params if params is not None else {}
 
@@ -127,8 +131,7 @@ class DeriveAuth(AuthBase):
         # can rest is therefore signed for as long as the API allows, so that it lives until it is
         # filled or cancelled; one that cannot rest only has to outlive the request.
         can_rest = (
-            params.get("order_type") == "limit"
-            and params.get("time_in_force") in CONSTANTS.RESTING_TIME_IN_FORCE
+            params.get("order_type") == "limit" and params.get("time_in_force") in CONSTANTS.RESTING_TIME_IN_FORCE
         )
         action = SignedAction(
             subaccount_id=self._subacct_id,
@@ -162,11 +165,13 @@ class DeriveAuth(AuthBase):
 
         return action.to_json()
 
-    def header_for_authentication(self) -> Dict[str, str]:
+    def header_for_authentication(self) -> dict[str, str]:
         timestamp = str(self.utc_now_ms())
-        signature = to_0x_hex(self._w3.eth.account.sign_message(
-            encode_defunct(text=timestamp), private_key=self._session_private_key
-        ).signature)
+        signature = to_0x_hex(
+            self._w3.eth.account.sign_message(
+                encode_defunct(text=timestamp), private_key=self._session_private_key
+            ).signature
+        )
 
         return {
             "accept": "application/json",

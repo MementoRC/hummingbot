@@ -3,12 +3,11 @@ from unittest import TestCase
 
 from pydantic import SecretStr
 
-import hummingbot.connector.derivative.kalshi_perpetual.kalshi_perpetual_utils as utils
 from hummingbot.client.settings import AllConnectorSettings, ConnectorType
+import hummingbot.connector.derivative.kalshi_perpetual.kalshi_perpetual_utils as utils
 
 
 class KalshiPerpetualUtilsTests(TestCase):
-
     def test_default_fees_are_base_tier_decimal_fractions(self):
         self.assertEqual(Decimal("0.0005"), utils.DEFAULT_FEES.maker_percent_fee_decimal)
         self.assertEqual(Decimal("0.0012"), utils.DEFAULT_FEES.taker_percent_fee_decimal)

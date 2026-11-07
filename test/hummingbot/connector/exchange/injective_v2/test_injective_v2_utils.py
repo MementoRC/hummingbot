@@ -2,10 +2,10 @@ import copy
 import io
 from unittest import TestCase
 
-import yaml
 from pydantic import ValidationError
 from pyinjective import Address, PrivateKey
 from pyinjective.core.network import Network
+import yaml
 
 from hummingbot.client.config.config_helpers import ClientConfigAdapter
 from hummingbot.connector.exchange.injective_v2 import injective_constants as CONSTANTS
@@ -24,7 +24,6 @@ from hummingbot.connector.exchange.injective_v2.injective_v2_utils import (
 
 
 class InjectiveConfigMapTests(TestCase):
-
     def test_mainnet_network_config_creation(self):
         network_config = InjectiveMainnetNetworkMode()
 
@@ -52,7 +51,7 @@ class InjectiveConfigMapTests(TestCase):
             grpc_explorer_endpoint="devnet.injective.dev:9911",
             chain_stream_endpoint="devnet.injective.dev:9999",
             chain_id="injective-777",
-            env="devnet"
+            env="devnet",
         )
 
         network = network_config.network()
