@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import Union
 
 import pandas as pd
 from pydantic import BaseModel, ConfigDict, field_validator
@@ -14,7 +13,7 @@ from hummingbot.strategy_v2.models.executors_info import ExecutorInfo
 
 
 class ExecutorSimulation(BaseModel):
-    config: Union[PositionExecutorConfig, DCAExecutorConfig, GridExecutorConfig, OrderExecutorConfig]
+    config: PositionExecutorConfig | DCAExecutorConfig | GridExecutorConfig | OrderExecutorConfig
     executor_simulation: pd.DataFrame
     close_type: CloseType
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -84,8 +83,10 @@ class ExecutorSimulation(BaseModel):
             last_entry["current_position_average_price"] if "current_position_average_price" in last_entry else None
         )
         is_trading = last_entry["filled_amount_quote"] > 0
+        # A simulated stop fill differs from the bar's close; report the price the position actually exited at.
+        close_price = last_entry["exit_price"] if not pd.isna(last_entry.get("exit_price")) else last_entry["close"]
         return {
-            "close_price": last_entry["close"],
+            "close_price": close_price,
             "level_id": self.config.level_id,
             "side": self.config.side,
             "current_position_average_price": current_position_average_price,
