@@ -287,8 +287,11 @@ class MexcUserStreamDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
         mock_ws.return_value = self.mocking_assistant.create_websocket_mock()
         self.mocking_assistant.add_websocket_aiohttp_message(mock_ws.return_value, "")
 
-        self.data_source._sleep = AsyncMock()
-        self.data_source._sleep.side_effect = asyncio.CancelledError()
+        # Block (instead of cancelling) so the listen-key loop cannot disconnect the ws before the message is consumed
+        async def block_forever(*_, **__):
+            await asyncio.Event().wait()
+
+        self.data_source._sleep = block_forever
         msg_queue = asyncio.Queue()
         self.listening_task = self.local_event_loop.create_task(
             self.data_source.listen_for_user_stream(msg_queue)
