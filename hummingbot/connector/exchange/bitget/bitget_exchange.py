@@ -1,15 +1,15 @@
 import asyncio
 from decimal import ROUND_UP, Decimal
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, Literal
 
 from bidict import bidict
 
-import hummingbot.connector.exchange.bitget.bitget_constants as CONSTANTS
 from hummingbot.connector.exchange.bitget import bitget_account, bitget_utils, bitget_web_utils as web_utils
 from hummingbot.connector.exchange.bitget.bitget_api_order_book_data_source import BitgetAPIOrderBookDataSource
 from hummingbot.connector.exchange.bitget.bitget_api_user_stream_data_source import BitgetAPIUserStreamDataSource
 from hummingbot.connector.exchange.bitget.bitget_auth import BitgetAuth
 from hummingbot.connector.exchange.bitget.bitget_classic import BitgetClassicAccountMixin
+import hummingbot.connector.exchange.bitget.bitget_constants as CONSTANTS
 from hummingbot.connector.exchange_py_base import ExchangePyBase
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.connector.utils import combine_to_hb_trading_pair
@@ -40,9 +40,9 @@ class BitgetExchange(BitgetClassicAccountMixin, ExchangePyBase):
         bitget_api_key: str = None,
         bitget_secret_key: str = None,
         bitget_passphrase: str = None,
-        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        balance_asset_limit: dict[str, dict[str, Decimal]] | None = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
-        trading_pairs: Optional[List[str]] = None,
+        trading_pairs: list[str] | None = None,
         trading_required: bool = True,
     ) -> None:
         self._api_key = bitget_api_key
@@ -51,8 +51,8 @@ class BitgetExchange(BitgetClassicAccountMixin, ExchangePyBase):
         self._trading_required = trading_required
         self._trading_pairs = trading_pairs
         # Quote amount of each Classic market buy, which the V2 API sizes in quote currency.
-        self._expected_market_amounts: Dict[str, Decimal] = {}
-        self._unified_account: Optional[bool] = None
+        self._expected_market_amounts: dict[str, Decimal] = {}
+        self._unified_account: bool | None = None
         self._account_mode_lock = asyncio.Lock()
 
         super().__init__(balance_asset_limit, rate_limits_share_pct)
@@ -62,7 +62,7 @@ class BitgetExchange(BitgetClassicAccountMixin, ExchangePyBase):
         return CONSTANTS.EXCHANGE_NAME
 
     @property
-    def account_group_id(self) -> Optional[str]:
+    def account_group_id(self) -> str | None:
         """
         Bitget's UTA is a single cross-margined wallet, and this connector is one of two views
         onto it - bitget_perpetual reads the same account. Both report the wallet in full,
@@ -121,11 +121,11 @@ class BitgetExchange(BitgetClassicAccountMixin, ExchangePyBase):
             api_key=self._api_key,
             secret_key=self._secret_key,
             passphrase=self._passphrase,
-            time_provider=self._time_synchronizer
+            time_provider=self._time_synchronizer,
         )
 
     @property
-    def rate_limits_rules(self) -> List[RateLimit]:
+    def rate_limits_rules(self) -> list[RateLimit]:
         return CONSTANTS.RATE_LIMITS
 
     @property
@@ -153,7 +153,7 @@ class BitgetExchange(BitgetClassicAccountMixin, ExchangePyBase):
         return CONSTANTS.PUBLIC_TIME_ENDPOINT
 
     @property
-    def trading_pairs(self) -> Optional[List[str]]:
+    def trading_pairs(self) -> list[str] | None:
         return self._trading_pairs
 
     @property
@@ -168,48 +168,33 @@ class BitgetExchange(BitgetClassicAccountMixin, ExchangePyBase):
     def _formatted_error(code: int, message: str) -> str:
         return f"Error: {code} - {message}"
 
-    def supported_order_types(self) -> List[OrderType]:
+    def supported_order_types(self) -> list[OrderType]:
         return [OrderType.LIMIT, OrderType.LIMIT_MAKER, OrderType.MARKET]
 
-    def _is_request_exception_related_to_time_synchronizer(
-        self,
-        request_exception: Exception
-    ) -> bool:
+    def _is_request_exception_related_to_time_synchronizer(self, request_exception: Exception) -> bool:
         error_description = str(request_exception)
         ts_error_target_str = "Request timestamp expired"
 
         return ts_error_target_str in error_description
 
-    def _is_order_not_found_during_status_update_error(
-        self,
-        status_update_exception: Exception
-    ) -> bool:
+    def _is_order_not_found_during_status_update_error(self, status_update_exception: Exception) -> bool:
         # Error example:
         # { "code": "00000", "msg": "success", "requestTime": 1710327684832, "data": [] }
 
         if isinstance(status_update_exception, IOError):
-            return any(
-                value in str(status_update_exception)
-                for value in CONSTANTS.RET_CODES_ORDER_NOT_EXISTS
-            )
+            return any(value in str(status_update_exception) for value in CONSTANTS.RET_CODES_ORDER_NOT_EXISTS)
 
         if isinstance(status_update_exception, ValueError):
             return True
 
         return False
 
-    def _is_order_not_found_during_cancelation_error(
-        self,
-        cancelation_exception: Exception
-    ) -> bool:
+    def _is_order_not_found_during_cancelation_error(self, cancelation_exception: Exception) -> bool:
         # Error example:
         # { "code": "43001", "msg": "订单不存在", "requestTime": 1710327684832, "data": null }
 
         if isinstance(cancelation_exception, IOError):
-            return any(
-                value in str(cancelation_exception)
-                for value in CONSTANTS.RET_CODES_ORDER_NOT_EXISTS
-            )
+            return any(value in str(cancelation_exception) for value in CONSTANTS.RET_CODES_ORDER_NOT_EXISTS)
 
         return False
 
@@ -220,18 +205,15 @@ class BitgetExchange(BitgetClassicAccountMixin, ExchangePyBase):
         # category/symbol are not required (CancelOrderRequestV3 = {orderId?, clientOid?}).
         cancel_order_response = await self._api_post(
             path_url=CONSTANTS.CANCEL_ORDER_ENDPOINT,
-            data={
-                "clientOid": tracked_order.client_order_id
-            },
+            data={"clientOid": tracked_order.client_order_id},
             is_auth_required=True,
         )
         response_code = cancel_order_response["code"]
 
         if response_code != CONSTANTS.RET_CODE_OK:
-            raise IOError(self._formatted_error(
-                response_code,
-                f"Can't cancel order {order_id}: {cancel_order_response}"
-            ))
+            raise IOError(
+                self._formatted_error(response_code, f"Can't cancel order {order_id}: {cancel_order_response}")
+            )
 
         return True
 
@@ -244,7 +226,7 @@ class BitgetExchange(BitgetClassicAccountMixin, ExchangePyBase):
         order_type: OrderType,
         price: Decimal,
         **kwargs,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         if not await self._is_unified_account():
             return await self._classic_place_order(order_id, trading_pair, amount, trade_type, order_type, price)
         if order_type is OrderType.MARKET and trade_type is TradeType.BUY:
@@ -275,36 +257,33 @@ class BitgetExchange(BitgetClassicAccountMixin, ExchangePyBase):
             is_auth_required=True,
             headers={
                 "X-CHANNEL-API-CODE": CONSTANTS.API_CODE,
-            }
+            },
         )
         response_code = create_order_response["code"]
 
         if response_code != CONSTANTS.RET_CODE_OK:
-            raise IOError(self._formatted_error(
-                response_code,
-                f"Error submitting order {order_id}: {create_order_response}"
-            ))
+            raise IOError(
+                self._formatted_error(response_code, f"Error submitting order {order_id}: {create_order_response}")
+            )
 
         return str(create_order_response["data"]["orderId"]), self.current_timestamp
 
-    def _get_fee(self,
-                 base_currency: str,
-                 quote_currency: str,
-                 order_type: OrderType,
-                 order_side: TradeType,
-                 amount: Decimal,
-                 price: Decimal = s_decimal_NaN,
-                 is_maker: Optional[bool] = None) -> TradeFeeBase:
+    def _get_fee(
+        self,
+        base_currency: str,
+        quote_currency: str,
+        order_type: OrderType,
+        order_side: TradeType,
+        amount: Decimal,
+        price: Decimal = s_decimal_NaN,
+        is_maker: bool | None = None,
+    ) -> TradeFeeBase:
         is_maker = is_maker or (order_type is OrderType.LIMIT_MAKER)
         trading_pair = combine_to_hb_trading_pair(base=base_currency, quote=quote_currency)
 
         if trading_pair in self._trading_fees:
             fee_schema: TradeFeeSchema = self._trading_fees[trading_pair]
-            fee_rate = (
-                fee_schema.maker_percent_fee_decimal
-                if is_maker
-                else fee_schema.taker_percent_fee_decimal
-            )
+            fee_rate = fee_schema.maker_percent_fee_decimal if is_maker else fee_schema.taker_percent_fee_decimal
             fee = TradeFeeBase.new_spot_fee(
                 fee_schema=fee_schema,
                 trade_type=order_side,
@@ -379,16 +358,12 @@ class BitgetExchange(BitgetClassicAccountMixin, ExchangePyBase):
 
     def _create_web_assistants_factory(self) -> WebAssistantsFactory:
         return web_utils.build_api_factory(
-            throttler=self._throttler,
-            time_synchronizer=self._time_synchronizer,
-            auth=self._auth
+            throttler=self._throttler, time_synchronizer=self._time_synchronizer, auth=self._auth
         )
 
     def _create_order_book_data_source(self) -> OrderBookTrackerDataSource:
         return BitgetAPIOrderBookDataSource(
-            trading_pairs=self._trading_pairs,
-            connector=self,
-            api_factory=self._web_assistants_factory
+            trading_pairs=self._trading_pairs, connector=self, api_factory=self._web_assistants_factory
         )
 
     def _create_user_stream_data_source(self) -> UserStreamTrackerDataSource:
@@ -407,17 +382,16 @@ class BitgetExchange(BitgetClassicAccountMixin, ExchangePyBase):
         local_asset_names = set(self._account_balances.keys())
         remote_asset_names = set()
 
-        wallet_balance_response: Dict[str, Union[str, List[Dict[str, Any]]]] = await self._api_get(
+        wallet_balance_response: dict[str, str | list[dict[str, Any]]] = await self._api_get(
             path_url=CONSTANTS.ASSETS_ENDPOINT,
             is_auth_required=True,
         )
         response_code = wallet_balance_response["code"]
 
         if response_code != CONSTANTS.RET_CODE_OK:
-            raise IOError(self._formatted_error(
-                response_code,
-                f"Error while balance update: {wallet_balance_response}"
-            ))
+            raise IOError(
+                self._formatted_error(response_code, f"Error while balance update: {wallet_balance_response}")
+            )
 
         # The V3 assets response wraps the per-coin list in data["assets"] (AccountAssetsV3).
         for balance_data in wallet_balance_response["data"]["assets"]:
@@ -429,7 +403,7 @@ class BitgetExchange(BitgetClassicAccountMixin, ExchangePyBase):
             del self._account_available_balances[asset_name]
             del self._account_balances[asset_name]
 
-    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         if not await self._is_unified_account():
             return await self._classic_all_trade_updates_for_order(order)
         trade_updates = []
@@ -445,27 +419,21 @@ class BitgetExchange(BitgetClassicAccountMixin, ExchangePyBase):
 
                 for fill_data in fills_data:
                     trade_update = self._parse_trade_update(
-                        trade_msg=fill_data,
-                        tracked_order=order,
-                        source_type="rest"
+                        trade_msg=fill_data, tracked_order=order, source_type="rest"
                     )
                     trade_updates.append(trade_update)
             except IOError as ex:
-                if not self._is_request_exception_related_to_time_synchronizer(
-                    request_exception=ex
-                ):
+                if not self._is_request_exception_related_to_time_synchronizer(request_exception=ex):
                     raise
         if len(trade_updates) > 0:
-            self.logger().info(
-                f"{len(trade_updates)} trades updated for order {order.client_order_id}"
-            )
+            self.logger().info(f"{len(trade_updates)} trades updated for order {order.client_order_id}")
 
         return trade_updates
 
-    async def _paginated_rows(self, path_url: str, params: Dict[str, Any]) -> List[Dict[str, Any]]:
+    async def _paginated_rows(self, path_url: str, params: dict[str, Any]) -> list[dict[str, Any]]:
         """Reads every page of a cursor-paginated V3 response (rows in data.list, next page via data.cursor)."""
-        rows: List[Dict[str, Any]] = []
-        cursor: Optional[str] = None
+        rows: list[dict[str, Any]] = []
+        cursor: str | None = None
 
         for _ in range(CONSTANTS.MAX_PAGINATION_PAGES):
             page_params = dict(params, limit=str(CONSTANTS.PAGINATION_LIMIT))
@@ -504,16 +472,11 @@ class BitgetExchange(BitgetClassicAccountMixin, ExchangePyBase):
             return await self._classic_request_order_status(tracked_order)
         order_info_response = await self._request_order_update(tracked_order=tracked_order)
 
-        order_update = self._create_order_update(
-            order=tracked_order,
-            order_update_response=order_info_response
-        )
+        order_update = self._create_order_update(order=tracked_order, order_update_response=order_info_response)
 
         return order_update
 
-    def _create_order_update(
-        self, order: InFlightOrder, order_update_response: Dict[str, Any]
-    ) -> OrderUpdate:
+    def _create_order_update(self, order: InFlightOrder, order_update_response: dict[str, Any]) -> OrderUpdate:
         updated_order_data = order_update_response["data"]
 
         if not updated_order_data:
@@ -544,12 +507,10 @@ class BitgetExchange(BitgetClassicAccountMixin, ExchangePyBase):
 
         return order_update
 
-    async def _request_order_update(self, tracked_order: InFlightOrder) -> Dict[str, Any]:
+    async def _request_order_update(self, tracked_order: InFlightOrder) -> dict[str, Any]:
         order_info_response = await self._api_get(
             path_url=CONSTANTS.ORDER_INFO_ENDPOINT,
-            params={
-                "clientOid": tracked_order.client_order_id
-            },
+            params={"clientOid": tracked_order.client_order_id},
             is_auth_required=True,
         )
 
@@ -560,7 +521,7 @@ class BitgetExchange(BitgetClassicAccountMixin, ExchangePyBase):
             path_url=CONSTANTS.PUBLIC_TICKERS_ENDPOINT,
             params={
                 "category": CONSTANTS.CATEGORY,
-                "symbol": await self.exchange_symbol_associated_to_pair(trading_pair)
+                "symbol": await self.exchange_symbol_associated_to_pair(trading_pair),
             },
         )
 
@@ -569,11 +530,8 @@ class BitgetExchange(BitgetClassicAccountMixin, ExchangePyBase):
         return float(ticker.get("lastPrice", ticker.get("lastPr")))
 
     def _parse_trade_update(
-        self,
-        trade_msg: Dict,
-        tracked_order: InFlightOrder,
-        source_type: Literal["websocket", "rest"]
-    ) -> Optional[TradeUpdate]:
+        self, trade_msg: Dict, tracked_order: InFlightOrder, source_type: Literal["websocket", "rest"]
+    ) -> TradeUpdate | None:
         self.logger().debug(f"Data for {source_type} trade update: {trade_msg}")
 
         # V3 UTA renames fill fields: tradeId->execId, priceAvg->execPrice, size->execQty,
@@ -612,8 +570,7 @@ class BitgetExchange(BitgetClassicAccountMixin, ExchangePyBase):
             # the fill actually executed at, never at the price estimated when the order was
             # placed, which would misstate the filled quantity whenever the two differ.
             base_amount = (quote_amount / fill_price).quantize(
-                Decimal(self.trading_rules[trading_pair].min_base_amount_increment),
-                rounding=ROUND_UP
+                Decimal(self.trading_rules[trading_pair].min_base_amount_increment), rounding=ROUND_UP
             )
 
         fill_ts = trade_msg.get("updatedTime", trade_msg.get("uTime", trade_msg.get("createdTime")))
@@ -626,7 +583,7 @@ class BitgetExchange(BitgetClassicAccountMixin, ExchangePyBase):
             fill_price=fill_price,
             fill_base_amount=base_amount,
             fill_quote_amount=quote_amount,
-            fee=fee
+            fee=fee,
         )
 
         return trade_update
@@ -676,7 +633,7 @@ class BitgetExchange(BitgetClassicAccountMixin, ExchangePyBase):
             except Exception:
                 self.logger().exception("Unexpected error in user stream listener loop.")
 
-    def _order_state_for(self, status: Optional[str]) -> Optional[OrderState]:
+    def _order_state_for(self, status: str | None) -> OrderState | None:
         """
         Maps an order status (V3, or V2 on a Classic account) onto an OrderState, or returns None
         when the exchange reports a status this connector does not know about.
@@ -698,7 +655,7 @@ class BitgetExchange(BitgetClassicAccountMixin, ExchangePyBase):
             )
         return state
 
-    def _process_order_event_message(self, order_msg: Dict[str, Any]) -> None:
+    def _process_order_event_message(self, order_msg: dict[str, Any]) -> None:
         """
         Updates the in-flight order state from the V3 UTA "order" channel (BitgetUaOrder).
 
@@ -723,7 +680,7 @@ class BitgetExchange(BitgetClassicAccountMixin, ExchangePyBase):
             )
             self._order_tracker.process_order_update(new_order_update)
 
-    def _process_fill_event_message(self, fill_msg: Dict[str, Any]) -> None:
+    def _process_fill_event_message(self, fill_msg: dict[str, Any]) -> None:
         try:
             order_id = str(fill_msg.get("orderId", ""))
             trade_id = str(fill_msg.get("tradeId", ""))
@@ -735,15 +692,11 @@ class BitgetExchange(BitgetClassicAccountMixin, ExchangePyBase):
             ) or self._order_tracker.all_fillable_orders_by_exchange_order_id.get(order_id)
 
             if not fillable_order:
-                self.logger().debug(
-                    f"Ignoring fill message for order {order_id}: not in in_flight_orders."
-                )
+                self.logger().debug(f"Ignoring fill message for order {order_id}: not in in_flight_orders.")
                 return
 
             trade_update = self._parse_trade_update(
-                trade_msg=fill_msg,
-                tracked_order=fillable_order,
-                source_type="websocket"
+                trade_msg=fill_msg, tracked_order=fillable_order, source_type="websocket"
             )
             if trade_update:
                 self._order_tracker.process_trade_update(trade_update)
@@ -755,7 +708,7 @@ class BitgetExchange(BitgetClassicAccountMixin, ExchangePyBase):
         except Exception as e:
             self.logger().error(f"Error processing fill event: {e}", exc_info=True)
 
-    def _set_account_balances(self, data: Dict[str, Any]) -> None:
+    def _set_account_balances(self, data: dict[str, Any]) -> None:
         # V3 UTA renames the held-balance field "frozen" -> "locked"; both spellings are tolerated
         # so the same helper can parse REST (account/assets) and websocket (account channel) payloads.
         symbol = data["coin"]
@@ -765,8 +718,7 @@ class BitgetExchange(BitgetClassicAccountMixin, ExchangePyBase):
         self._account_available_balances[symbol] = available
 
     def _initialize_trading_pair_symbols_from_exchange_info(
-        self,
-        exchange_info: Dict[str, List[Dict[str, Any]]]
+        self, exchange_info: dict[str, list[dict[str, Any]]]
     ) -> None:
         mapping = bidict()
         for symbol_data in exchange_info["data"]:
@@ -778,22 +730,15 @@ class BitgetExchange(BitgetClassicAccountMixin, ExchangePyBase):
                     trading_pair = combine_to_hb_trading_pair(base, quote)
                     mapping[exchange_symbol] = trading_pair
                 except Exception as exception:
-                    self.logger().error(
-                        f"There was an error parsing a trading pair information ({exception})"
-                    )
+                    self.logger().error(f"There was an error parsing a trading pair information ({exception})")
         self._set_trading_pair_symbol_map(mapping)
 
-    async def _format_trading_rules(
-        self,
-        exchange_info_dict: Dict[str, List[Dict[str, Any]]]
-    ) -> List[TradingRule]:
+    async def _format_trading_rules(self, exchange_info_dict: dict[str, list[dict[str, Any]]]) -> list[TradingRule]:
         trading_rules = []
         for rule in exchange_info_dict["data"]:
             if bitget_utils.is_instrument_tradable(exchange_info=rule):
                 try:
-                    trading_pair = await self.trading_pair_associated_to_exchange_symbol(
-                        symbol=rule["symbol"]
-                    )
+                    trading_pair = await self.trading_pair_associated_to_exchange_symbol(symbol=rule["symbol"])
                     # V3 instruments renames minTradeUSDT -> minOrderAmount; precision fields
                     # (pricePrecision/quantityPrecision/quotePrecision) keep their names.
                     min_notional = rule.get("minOrderAmount", rule.get("minTradeUSDT"))
@@ -825,7 +770,5 @@ class BitgetExchange(BitgetClassicAccountMixin, ExchangePyBase):
                         )
                     )
                 except Exception:
-                    self.logger().exception(
-                        f"Error parsing the trading pair rule: {rule}. Skipping."
-                    )
+                    self.logger().exception(f"Error parsing the trading pair rule: {rule}. Skipping.")
         return trading_rules

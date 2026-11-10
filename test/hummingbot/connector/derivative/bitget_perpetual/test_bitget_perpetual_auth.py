@@ -2,11 +2,11 @@ import base64
 import hashlib
 import hmac
 import json
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import MagicMock
 
 from hummingbot.connector.derivative.bitget_perpetual.bitget_perpetual_auth import BitgetPerpetualAuth
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest, WSJSONRequest
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class BitgetPerpetualAuthTests(IsolatedAsyncioWrapperTestCase):
@@ -22,12 +22,17 @@ class BitgetPerpetualAuthTests(IsolatedAsyncioWrapperTestCase):
             api_key=self.api_key,
             secret_key=self.secret_key,
             passphrase=self.passphrase,
-            time_provider=self._time_synchronizer_mock)
+            time_provider=self._time_synchronizer_mock,
+        )
 
     def _sign(self, payload: str) -> str:
-        return base64.b64encode(
-            hmac.new(self.secret_key.encode("utf-8"), payload.encode("utf-8"), hashlib.sha256).digest()
-        ).decode().strip()
+        return (
+            base64.b64encode(
+                hmac.new(self.secret_key.encode("utf-8"), payload.encode("utf-8"), hashlib.sha256).digest()
+            )
+            .decode()
+            .strip()
+        )
 
     async def test_add_auth_to_get_request(self) -> None:
         request = RESTRequest(

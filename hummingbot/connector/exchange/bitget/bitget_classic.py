@@ -1,6 +1,6 @@
 import asyncio
 from decimal import ROUND_UP, Decimal
-from typing import Any, Dict, List, Literal, Optional, Tuple, Union
+from typing import Any, Dict, Literal
 
 import hummingbot.connector.exchange.bitget.bitget_constants as CONSTANTS
 from hummingbot.core.data_type.common import OrderType, TradeType
@@ -20,17 +20,16 @@ class BitgetClassicAccountMixin:
             path_url=CONSTANTS.CLASSIC_CANCEL_ORDER_ENDPOINT,
             data={
                 "symbol": await self.exchange_symbol_associated_to_pair(tracked_order.trading_pair),
-                "clientOid": tracked_order.client_order_id
+                "clientOid": tracked_order.client_order_id,
             },
             is_auth_required=True,
         )
         response_code = cancel_order_response["code"]
 
         if response_code != CONSTANTS.RET_CODE_OK:
-            raise IOError(self._formatted_error(
-                response_code,
-                f"Can't cancel order {order_id}: {cancel_order_response}"
-            ))
+            raise IOError(
+                self._formatted_error(response_code, f"Can't cancel order {order_id}: {cancel_order_response}")
+            )
 
         self._expected_market_amounts.pop(tracked_order.client_order_id, None)
 
@@ -44,7 +43,7 @@ class BitgetClassicAccountMixin:
         trade_type: TradeType,
         order_type: OrderType,
         price: Decimal,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         if order_type is OrderType.MARKET and trade_type is TradeType.BUY:
             current_price: Decimal = self.get_price(trading_pair, True)
             step_size = Decimal(self.trading_rules[trading_pair].min_base_amount_increment)
@@ -73,15 +72,14 @@ class BitgetClassicAccountMixin:
             is_auth_required=True,
             headers={
                 "X-CHANNEL-API-CODE": CONSTANTS.API_CODE,
-            }
+            },
         )
         response_code = create_order_response["code"]
 
         if response_code != CONSTANTS.RET_CODE_OK:
-            raise IOError(self._formatted_error(
-                response_code,
-                f"Error submitting order {order_id}: {create_order_response}"
-            ))
+            raise IOError(
+                self._formatted_error(response_code, f"Error submitting order {order_id}: {create_order_response}")
+            )
 
         return str(create_order_response["data"]["orderId"]), self.current_timestamp
 
@@ -104,17 +102,16 @@ class BitgetClassicAccountMixin:
         local_asset_names = set(self._account_balances.keys())
         remote_asset_names = set()
 
-        wallet_balance_response: Dict[str, Union[str, List[Dict[str, Any]]]] = await self._api_get(
+        wallet_balance_response: dict[str, str | list[dict[str, Any]]] = await self._api_get(
             path_url=CONSTANTS.CLASSIC_ASSETS_ENDPOINT,
             is_auth_required=True,
         )
         response_code = wallet_balance_response["code"]
 
         if response_code != CONSTANTS.RET_CODE_OK:
-            raise IOError(self._formatted_error(
-                response_code,
-                f"Error while balance update: {wallet_balance_response}"
-            ))
+            raise IOError(
+                self._formatted_error(response_code, f"Error while balance update: {wallet_balance_response}")
+            )
 
         for balance_data in wallet_balance_response["data"]:
             self._classic_set_account_balances(balance_data)
@@ -125,7 +122,7 @@ class BitgetClassicAccountMixin:
             del self._account_available_balances[asset_name]
             del self._account_balances[asset_name]
 
-    async def _classic_all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _classic_all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         trade_updates = []
 
         if order.exchange_order_id is not None:
@@ -135,29 +132,21 @@ class BitgetClassicAccountMixin:
 
                 for fill_data in fills_data:
                     trade_update = self._classic_parse_trade_update(
-                        trade_msg=fill_data,
-                        tracked_order=order,
-                        source_type="rest"
+                        trade_msg=fill_data, tracked_order=order, source_type="rest"
                     )
                     trade_updates.append(trade_update)
             except IOError as ex:
-                if not self._is_request_exception_related_to_time_synchronizer(
-                    request_exception=ex
-                ):
+                if not self._is_request_exception_related_to_time_synchronizer(request_exception=ex):
                     raise
         if len(trade_updates) > 0:
-            self.logger().info(
-                f"{len(trade_updates)} trades updated for order {order.client_order_id}"
-            )
+            self.logger().info(f"{len(trade_updates)} trades updated for order {order.client_order_id}")
 
         return trade_updates
 
-    async def _classic_request_order_fills(self, order: InFlightOrder) -> Dict[str, Any]:
+    async def _classic_request_order_fills(self, order: InFlightOrder) -> dict[str, Any]:
         order_fills_response = await self._api_get(
             path_url=CONSTANTS.CLASSIC_USER_FILLS_ENDPOINT,
-            params={
-                "orderId": order.exchange_order_id
-            },
+            params={"orderId": order.exchange_order_id},
             is_auth_required=True,
         )
 
@@ -166,20 +155,13 @@ class BitgetClassicAccountMixin:
     async def _classic_request_order_status(self, tracked_order: InFlightOrder) -> OrderUpdate:
         order_info_response = await self._api_get(
             path_url=CONSTANTS.CLASSIC_ORDER_INFO_ENDPOINT,
-            params={
-                "clientOid": tracked_order.client_order_id
-            },
+            params={"clientOid": tracked_order.client_order_id},
             is_auth_required=True,
         )
 
-        return self._classic_create_order_update(
-            order=tracked_order,
-            order_update_response=order_info_response
-        )
+        return self._classic_create_order_update(order=tracked_order, order_update_response=order_info_response)
 
-    def _classic_create_order_update(
-        self, order: InFlightOrder, order_update_response: Dict[str, Any]
-    ) -> OrderUpdate:
+    def _classic_create_order_update(self, order: InFlightOrder, order_update_response: dict[str, Any]) -> OrderUpdate:
         updated_order_data = order_update_response["data"]
 
         if not updated_order_data:
@@ -210,11 +192,8 @@ class BitgetClassicAccountMixin:
         return order_update
 
     def _classic_parse_trade_update(
-        self,
-        trade_msg: Dict,
-        tracked_order: InFlightOrder,
-        source_type: Literal["websocket", "rest"]
-    ) -> Optional[TradeUpdate]:
+        self, trade_msg: Dict, tracked_order: InFlightOrder, source_type: Literal["websocket", "rest"]
+    ) -> TradeUpdate | None:
         self.logger().debug(f"Data for {source_type} trade update: {trade_msg}")
 
         fee_detail = trade_msg["feeDetail"]
@@ -235,16 +214,10 @@ class BitgetClassicAccountMixin:
         base_amount = Decimal(trade_msg["size"])
         quote_amount = Decimal(trade_msg["amount"])
 
-        if (
-            tracked_order.trade_type is TradeType.BUY
-            and tracked_order.order_type is OrderType.MARKET
-        ):
-            expected_price = (
-                self._expected_market_amounts[tracked_order.client_order_id] / tracked_order.amount
-            )
+        if tracked_order.trade_type is TradeType.BUY and tracked_order.order_type is OrderType.MARKET:
+            expected_price = self._expected_market_amounts[tracked_order.client_order_id] / tracked_order.amount
             base_amount = (quote_amount / expected_price).quantize(
-                Decimal(self.trading_rules[trading_pair].min_base_amount_increment),
-                rounding=ROUND_UP
+                Decimal(self.trading_rules[trading_pair].min_base_amount_increment), rounding=ROUND_UP
             )
 
         trade_update: TradeUpdate = TradeUpdate(
@@ -256,7 +229,7 @@ class BitgetClassicAccountMixin:
             fill_price=fill_price,
             fill_base_amount=base_amount,
             fill_quote_amount=quote_amount,
-            fee=fee
+            fee=fee,
         )
 
         return trade_update
@@ -283,7 +256,7 @@ class BitgetClassicAccountMixin:
             except Exception:
                 self.logger().exception("Unexpected error in user stream listener loop.")
 
-    def _classic_process_order_event_message(self, order_msg: Dict[str, Any]) -> None:
+    def _classic_process_order_event_message(self, order_msg: dict[str, Any]) -> None:
         """
         Updates in-flight order and triggers cancellation or failure event if needed.
         :param order_msg: The order event message payload
@@ -317,14 +290,10 @@ class BitgetClassicAccountMixin:
                 base_amount = Decimal(order_msg["baseVolume"])
                 quote_amount = base_amount * fill_price
 
-                if (
-                    updatable_order.trade_type is TradeType.BUY
-                    and updatable_order.order_type is OrderType.MARKET
-                ):
+                if updatable_order.trade_type is TradeType.BUY and updatable_order.order_type is OrderType.MARKET:
                     expected_price = Decimal(order_msg["notional"]) / updatable_order.amount
                     base_amount = (quote_amount / expected_price).quantize(
-                        Decimal(self.trading_rules[trading_pair].min_base_amount_increment),
-                        rounding=ROUND_UP
+                        Decimal(self.trading_rules[trading_pair].min_base_amount_increment), rounding=ROUND_UP
                     )
 
                 new_trade_update: TradeUpdate = TradeUpdate(
@@ -336,7 +305,7 @@ class BitgetClassicAccountMixin:
                     fill_price=fill_price,
                     fill_base_amount=base_amount,
                     fill_quote_amount=quote_amount,
-                    fee=fee
+                    fee=fee,
                 )
                 self._order_tracker.process_trade_update(new_trade_update)
 
@@ -349,7 +318,7 @@ class BitgetClassicAccountMixin:
             )
             self._order_tracker.process_order_update(new_order_update)
 
-    def _classic_process_fill_event_message(self, fill_msg: Dict[str, Any]) -> None:
+    def _classic_process_fill_event_message(self, fill_msg: dict[str, Any]) -> None:
         try:
             order_id = str(fill_msg.get("orderId", ""))
             trade_id = str(fill_msg.get("tradeId", ""))
@@ -362,15 +331,11 @@ class BitgetClassicAccountMixin:
             ) or self._order_tracker.all_fillable_orders_by_exchange_order_id.get(order_id)
 
             if not fillable_order:
-                self.logger().debug(
-                    f"Ignoring fill message for order {order_id}: not in in_flight_orders."
-                )
+                self.logger().debug(f"Ignoring fill message for order {order_id}: not in in_flight_orders.")
                 return
 
             trade_update = self._classic_parse_trade_update(
-                trade_msg=fill_msg,
-                tracked_order=fillable_order,
-                source_type="websocket"
+                trade_msg=fill_msg, tracked_order=fillable_order, source_type="websocket"
             )
             if trade_update:
                 self._order_tracker.process_trade_update(trade_update)
@@ -382,7 +347,7 @@ class BitgetClassicAccountMixin:
         except Exception as e:
             self.logger().error(f"Error processing fill event: {e}", exc_info=True)
 
-    def _classic_set_account_balances(self, data: Dict[str, Any]) -> None:
+    def _classic_set_account_balances(self, data: dict[str, Any]) -> None:
         symbol = data["coin"]
         available = Decimal(str(data["available"]))
         frozen = Decimal(str(data["frozen"]))

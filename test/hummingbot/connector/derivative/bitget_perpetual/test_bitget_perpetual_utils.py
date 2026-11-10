@@ -7,7 +7,6 @@ from hummingbot.connector.derivative.bitget_perpetual import (
 
 
 class BitgetPerpetualUtilsTests(TestCase):
-
     def test_is_exchange_information_valid(self):
         self.assertTrue(utils.is_exchange_information_valid({"symbol": "BTCUSDT"}))
         self.assertTrue(utils.is_exchange_information_valid({"symbol": "BTCUSDT", "deliveryPeriod": ""}))

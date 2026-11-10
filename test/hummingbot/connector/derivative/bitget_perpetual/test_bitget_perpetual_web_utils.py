@@ -1,7 +1,6 @@
 import json
 import time
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from typing import Any, Dict
+from typing import Any
 from unittest.mock import MagicMock
 
 from aioresponses import aioresponses
@@ -16,12 +15,12 @@ from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 from hummingbot.core.web_assistant.auth import AuthBase
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod
 from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class BitgetPerpetualWebUtilsTests(IsolatedAsyncioWrapperTestCase):
-
     @staticmethod
-    def _server_time_response(server_time_ms: int) -> Dict[str, Any]:
+    def _server_time_response(server_time_ms: int) -> dict[str, Any]:
         return {
             "code": "00000",
             "msg": "success",
