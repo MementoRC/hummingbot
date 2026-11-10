@@ -13,7 +13,7 @@ from hummingbot.logger import HummingbotLogger
 
 class UserBalances:
     __instance = None
-    _logger: HummingbotLogger | None = None
+    _logger: Optional[HummingbotLogger] = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
