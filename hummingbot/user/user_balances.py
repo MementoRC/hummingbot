@@ -14,7 +14,7 @@ from hummingbot.logger import HummingbotLogger
 
 class UserBalances:
     __instance = None
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
