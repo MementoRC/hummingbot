@@ -1,7 +1,7 @@
 import base64
 import hmac
-from typing import Any, Dict
-from urllib.parse import urlencode
+from typing import Any
+from urllib.parse import urlencode, urlparse
 
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
 from hummingbot.core.web_assistant.auth import AuthBase
@@ -41,7 +41,7 @@ class BitgetAuth(AuthBase):
             "ACCESS-TIMESTAMP": str(int(self._time_provider.time() * 1e3)),
             "ACCESS-PASSPHRASE": self._passphrase,
         }
-        path = request.throttler_limit_id
+        path = urlparse(request.url).path
         payload = str(request.data)
 
         if request.method is RESTMethod.GET and request.params:
@@ -58,7 +58,7 @@ class BitgetAuth(AuthBase):
     async def ws_authenticate(self, request: WSRequest) -> WSRequest:
         return request
 
-    def get_ws_auth_payload(self) -> Dict[str, Any]:
+    def get_ws_auth_payload(self) -> dict[str, Any]:
         """
         Generates a dictionary with all required information for the authentication process
 
