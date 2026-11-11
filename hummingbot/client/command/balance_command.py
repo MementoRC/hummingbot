@@ -1,7 +1,7 @@
 import asyncio
 from decimal import Decimal
 import threading
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING
 
 import pandas as pd
 
@@ -22,7 +22,7 @@ class BalanceCommand:
     def balance(
         self,  # type: HummingbotApplication
         option: str = None,
-        args: List[str] = None,
+        args: list[str] = None,
     ):
         if threading.current_thread() != threading.main_thread():
             self.ev_loop.call_soon_threadsafe(self.balance, option, args)
@@ -86,6 +86,9 @@ class BalanceCommand:
             self.notify("\nA network error prevented the balances to update. See logs for more details.")
             raise
         all_ex_avai_bals = UserBalances.instance().all_available_balances_all_exchanges()
+        # A unified-account venue reports one wallet through several connectors, each in full.
+        # Show every connector, but add each wallet to the total once.
+        duplicate_sources = UserBalances.instance().duplicate_account_sources(all_ex_bals.keys())
 
         exchanges_total = 0
 
@@ -108,15 +111,21 @@ class BalanceCommand:
                 if df[sum_not_for_show_name].sum() != Decimal("0"):
                     allocated_percentage = allocated_total / df[sum_not_for_show_name].sum()
                 self.notify(f"Allocated: {allocated_percentage:.2%}")
-                exchanges_total += df[total_col_name].sum()
+                if exchange in duplicate_sources:
+                    self.notify(
+                        f"This is the same exchange account as {duplicate_sources[exchange]}, "
+                        f"so it is not added to the total again."
+                    )
+                else:
+                    exchanges_total += df[total_col_name].sum()
 
         self.notify(f"\n\nExchanges Total: {global_token_symbol} {exchanges_total:.0f}    ")
 
     async def exchange_balances_extra_df(
         self,  # type: HummingbotApplication
         exchange: str,
-        ex_balances: Dict[str, Decimal],
-        ex_avai_balances: Dict[str, Decimal],
+        ex_balances: dict[str, Decimal],
+        ex_avai_balances: dict[str, Decimal],
     ):
         conn_setting = AllConnectorSettings.get_connector_settings()[exchange]
         global_token_symbol = self.client_config_map.global_token.global_token_symbol
@@ -155,7 +164,7 @@ class BalanceCommand:
         df.sort_values(by=["Asset"], inplace=True)
         return df, allocated_total
 
-    async def asset_limits_df(self, asset_limit_conf: Dict[str, str]):
+    async def asset_limits_df(self, asset_limit_conf: dict[str, str]):
         rows = []
         for token, amount in asset_limit_conf.items():
             rows.append({"Asset": token, "Limit": round(Decimal(amount), 4)})
@@ -190,7 +199,7 @@ class BalanceCommand:
         self.notify("\n")
         return
 
-    async def paper_acccount_balance_df(self, paper_balances: Dict[str, Decimal]):
+    async def paper_acccount_balance_df(self, paper_balances: dict[str, Decimal]):
         rows = []
         for asset, balance in paper_balances.items():
             rows.append({"Asset": asset, "Balance": round(Decimal(str(balance)), 4)})

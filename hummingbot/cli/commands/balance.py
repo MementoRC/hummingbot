@@ -8,7 +8,6 @@ Read-only — it never places orders.
 
 import asyncio
 from decimal import Decimal
-from typing import Dict, List, Optional, Tuple
 
 import typer
 
@@ -16,7 +15,7 @@ from hummingbot.cli.output import ExitCode, echo, emit, fail, json_option, rende
 from hummingbot.cli.password import login
 
 
-async def _all_prices() -> Tuple[Dict[str, Decimal], str]:
+async def _all_prices() -> tuple[dict[str, Decimal], str]:
     """Fetch the rate-oracle price list ONCE (not per token, which `get_rate` would do)."""
     from hummingbot.core.rate_oracle.rate_oracle import RateOracle
 
@@ -27,11 +26,11 @@ async def _all_prices() -> Tuple[Dict[str, Decimal], str]:
 
 def _exchange_assets(
     connector: str,
-    total: Dict[str, Decimal],
-    available: Dict[str, Decimal],
-    prices: Dict[str, Decimal],
+    total: dict[str, Decimal],
+    available: dict[str, Decimal],
+    prices: dict[str, Decimal],
     quote_token: str,
-) -> Tuple[List[dict], Decimal, Decimal]:
+) -> tuple[list[dict], Decimal, Decimal]:
     """Build per-asset rows (with global-token value + allocated %) for one connector.
 
     Mirrors ``HummingbotApplication.exchange_balances_extra_df``: CEX hides zero balances, gateway
@@ -43,7 +42,7 @@ def _exchange_assets(
 
     conn = AllConnectorSettings.get_connector_settings().get(connector)
     is_gateway = bool(conn and conn.uses_gateway_generic_connector())
-    assets: List[dict] = []
+    assets: list[dict] = []
     allocated_total = Decimal("0")
     usd_total = Decimal("0")
     for token, bal in total.items():
@@ -62,7 +61,7 @@ def _exchange_assets(
     return assets, allocated_total, usd_total
 
 
-async def _attach_positions(ub, result: Dict[str, dict], timeout: float) -> None:
+async def _attach_positions(ub, result: dict[str, dict], timeout: float) -> None:
     """For perpetual connectors, attach open positions + total unrealized PnL, reusing the connectors
     UserBalances already built for the balance fetch (no extra connection)."""
     from hummingbot.cli.commands._common import position_dict as _position_dict
@@ -80,7 +79,7 @@ async def _attach_positions(ub, result: Dict[str, dict], timeout: float) -> None
         result[ex]["pnl_total"] = sum((Decimal(str(r["unrealized_pnl"])) for r in rows), Decimal("0"))
 
 
-async def _fetch_all(ccm, timeout: float, with_prices: bool = True) -> Dict[str, dict]:
+async def _fetch_all(ccm, timeout: float, with_prices: bool = True) -> dict[str, dict]:
     from hummingbot.user.user_balances import UserBalances
 
     ub = UserBalances.instance()
@@ -97,6 +96,10 @@ async def _fetch_all(ccm, timeout: float, with_prices: bool = True) -> Dict[str,
         )
         for ex, total in all_total.items()
     }
+    # A unified-account venue reports one wallet through several connectors, each in full. Mark
+    # the repeats so the total counts each wallet once.
+    for ex, primary in ub.duplicate_account_sources(all_total.keys()).items():
+        result[ex]["duplicate_of"] = primary
     if with_prices:
         await _attach_positions(ub, result, timeout)
     return result
@@ -104,7 +107,7 @@ async def _fetch_all(ccm, timeout: float, with_prices: bool = True) -> Dict[str,
 
 async def _fetch_one(
     ccm, connector: str, timeout: float, with_prices: bool = True
-) -> Tuple[Optional[Dict[str, dict]], Optional[str]]:
+) -> tuple[dict[str, dict] | None, str | None]:
     from hummingbot.user.user_balances import UserBalances
 
     ub = UserBalances.instance()
@@ -121,7 +124,7 @@ async def _fetch_one(
     return result, None
 
 
-def _render(result: Dict[str, dict], sym: str, units_only: bool = False) -> str:
+def _render(result: dict[str, dict], sym: str, units_only: bool = False) -> str:
     """Render balances (+ positions on perps) as per-connector Markdown, with a net-value total.
 
     ``units_only`` hides the USD value column and all value totals (no prices were fetched).
@@ -129,7 +132,7 @@ def _render(result: Dict[str, dict], sym: str, units_only: bool = False) -> str:
     from hummingbot.client.performance import PerformanceMetrics
 
     rnd = PerformanceMetrics.smart_round
-    out: List[str] = []
+    out: list[str] = []
     exchanges_total = Decimal("0")
     for ex, data in result.items():
         positions = data.get("positions") or []
@@ -175,15 +178,23 @@ def _render(result: Dict[str, dict], sym: str, units_only: bool = False) -> str:
             ]
             section += "\n\npositions:\n" + render_table(pos_rows)
             section += f"\n\nnet value: {sym}{rnd(net)}  (balances {sym}{rnd(usd)} + uPnL {sym}{rnd(pnl)})"
+        duplicate_of = data.get("duplicate_of")
+        if duplicate_of is not None:
+            # Only the wallet is a repeat of what the primary already counted. Positions belong
+            # to this connector alone - a spot connector holds none - so their unrealized PnL is
+            # not duplicated and still has to be added.
+            section += f"\n\n_balances are the same exchange account as {duplicate_of}; counted once_"
+            exchanges_total += pnl
+        else:
+            exchanges_total += net
         out.append(section)
-        exchanges_total += net
     if units_only:
         return "\n\n".join(out)
     out.append(f"connectors total (net): {sym}{exchanges_total:.2f}")
     return "\n\n".join(out)
 
 
-def _json_payload(result: Dict[str, dict], quote: str, units_only: bool) -> dict:
+def _json_payload(result: dict[str, dict], quote: str, units_only: bool) -> dict:
     """The --json shape: raw numbers per connector (no Markdown, no rendering-only fields)."""
     payload: dict = {"quote": None if units_only else quote, "connectors": {}}
     total = Decimal("0")
@@ -207,7 +218,13 @@ def _json_payload(result: Dict[str, dict], quote: str, units_only: bool) -> dict
                 entry["positions"] = data["positions"]
                 entry["unrealized_pnl"] = float(pnl)
             entry["net_value"] = float(data["usd_total"] + pnl)
-            total += data["usd_total"] + pnl
+            duplicate_of = data.get("duplicate_of")
+            if duplicate_of is not None:
+                # Same reasoning as the rendered total: the wallet repeats, the positions do not.
+                entry["duplicate_of"] = duplicate_of
+                total += pnl
+            else:
+                total += data["usd_total"] + pnl
         payload["connectors"][ex] = entry
     if not units_only:
         payload["net_value_total"] = float(total)
@@ -215,7 +232,7 @@ def _json_payload(result: Dict[str, dict], quote: str, units_only: bool) -> dict
 
 
 def balance(
-    connector: Optional[str] = typer.Argument(None, help="Connector to fetch. Omit for all connected connectors."),
+    connector: str | None = typer.Argument(None, help="Connector to fetch. Omit for all connected connectors."),
     units_only: bool = typer.Option(
         False, "--units-only", help="Show only token amounts — skip the price fetch (faster) and USD values/positions."
     ),
