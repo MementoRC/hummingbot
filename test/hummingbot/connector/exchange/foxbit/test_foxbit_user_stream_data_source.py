@@ -1,6 +1,6 @@
 import asyncio
 import json
-from typing import Any, Awaitable
+from typing import Any, Awaitable, Dict, Optional
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -39,7 +39,7 @@ class FoxbitUserStreamDataSourceUnitTests(unittest.TestCase):
     def setUp(self) -> None:
         super().setUp()
         self.log_records = []
-        self.listening_task: asyncio.Task | None = None
+        self.listening_task: Optional[asyncio.Task] = None
         self.mocking_assistant = NetworkMockingAssistant()
 
         self.throttler = AsyncThrottler(rate_limits=CONSTANTS.RATE_LIMITS)
@@ -102,7 +102,7 @@ class FoxbitUserStreamDataSourceUnitTests(unittest.TestCase):
         ret = self.ev_loop.run_until_complete(asyncio.wait_for(coroutine, timeout))
         return ret
 
-    def _error_response(self) -> dict[str, Any]:
+    def _error_response(self) -> Dict[str, Any]:
         resp = {"code": "ERROR CODE", "msg": "ERROR MESSAGE"}
 
         return resp
@@ -130,7 +130,7 @@ class FoxbitUserStreamDataSourceUnitTests(unittest.TestCase):
         mock_ws.connect = AsyncMock()
         mock_ws.send = AsyncMock()
         # Simulate authenticated response
-        mock_ws.receive = AsyncMock(return_value=MagicMock(data={"o": '{"Authenticated": true}'}))
+        mock_ws.receive = AsyncMock(return_value=MagicMock(data={"o": '{"Authenticated": True}'}))
         mock_ws_assistant_cls.return_value = mock_ws
 
         mock_api_factory = MagicMock()
