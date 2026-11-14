@@ -1,8 +1,8 @@
 import asyncio
-import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Awaitable, Optional
+import unittest
 from unittest.mock import MagicMock, patch
 
 from pydantic import Field, SecretStr
@@ -79,7 +79,9 @@ strategy: pure_market_making
     def test_load_connector_config_map_from_file_with_secrets(self, get_connector_config_keys_mock: MagicMock):
         class DummyConnectorModel(BaseConnectorConfigMap):
             connector: str = "binance"
-            secret_attr: Optional[SecretStr] = Field(default=None, json_schema_extra={"is_secure": True, "is_connect_key": True})
+            secret_attr: Optional[SecretStr] = Field(
+                default=None, json_schema_extra={"is_secure": True, "is_connect_key": True}
+            )
 
         password = "some-pass"
         Security.secrets_manager = ETHKeyFileSecretManger(password)
@@ -121,7 +123,6 @@ strategy: pure_market_making
 
 
 class ReadOnlyClientAdapterTest(unittest.TestCase):
-
     def test_read_only_adapter_can_be_created(self):
         adapter = ClientConfigAdapter(ClientConfigMap())
         read_only_adapter = ReadOnlyClientConfigAdapter(adapter.hb_config)

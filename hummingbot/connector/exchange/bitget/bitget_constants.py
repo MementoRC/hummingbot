@@ -122,19 +122,13 @@ RET_CODE_INVALID_SIGNATURE = "30015"
 RET_CODE_PARAM_ERROR = "30016"
 
 # No bare HTTP 404 here: Bitget answers an unknown path with 404/40404, which says nothing about the order
-RET_CODES_ORDER_NOT_EXISTS = [
-    "25204",
-    "40768", "80011", "40819",
-    "43020", "43025", "43001",
-    "45057", "31007", "43033"
-]
+RET_CODES_ORDER_NOT_EXISTS = ["25204", "40768", "80011", "40819", "43020", "43025", "43001", "45057", "31007", "43033"]
 
 RATE_LIMITS = [
     RateLimit(limit_id=PUBLIC_ORDERBOOK_ENDPOINT, limit=20, time_interval=1),
     RateLimit(limit_id=PUBLIC_SYMBOLS_ENDPOINT, limit=20, time_interval=1),
     RateLimit(limit_id=PUBLIC_TICKERS_ENDPOINT, limit=20, time_interval=1),
     RateLimit(limit_id=PUBLIC_TIME_ENDPOINT, limit=10, time_interval=1),
-
     RateLimit(limit_id=ASSETS_ENDPOINT, limit=10, time_interval=1),
     RateLimit(limit_id=USER_INFO_ENDPOINT, limit=1, time_interval=1),
     RateLimit(limit_id=FEE_RATE_ENDPOINT, limit=10, time_interval=1),
@@ -142,7 +136,6 @@ RATE_LIMITS = [
     RateLimit(limit_id=ORDER_INFO_ENDPOINT, limit=20, time_interval=1),
     RateLimit(limit_id=PLACE_ORDER_ENDPOINT, limit=10, time_interval=1),
     RateLimit(limit_id=USER_FILLS_ENDPOINT, limit=10, time_interval=1),
-
     RateLimit(limit_id=CLASSIC_PUBLIC_SYMBOLS_ENDPOINT, limit=20, time_interval=1),
     RateLimit(limit_id=CLASSIC_ASSETS_ENDPOINT, limit=10, time_interval=1),
     RateLimit(limit_id=CLASSIC_CANCEL_ORDER_ENDPOINT, limit=10, time_interval=1),

@@ -14,12 +14,13 @@ The hashing scheme is pinned by the ``derive-ts`` golden vectors, which the unit
     typedDataHash = keccak256(0x1901 || DOMAIN_SEPARATOR || actionHash)
     signature     = ECDSA(signing_key, typedDataHash)   # r || s || v
 """
+
+from dataclasses import dataclass
+from decimal import ROUND_UP, Decimal
 import json
 import threading
 import time
-from dataclasses import dataclass
-from decimal import ROUND_UP, Decimal
-from typing import Any, Dict, Optional
+from typing import Any
 
 from eth_abi.abi import encode
 from hexbytes import HexBytes
@@ -37,8 +38,8 @@ EIP712_DOMAIN_TYPEHASH = Web3.keccak(
 # finer than 1e-12, and the signed values have to fit in an i128.
 SIGNED_DECIMALS = 18
 MAX_SIGNED_PRECISION = Decimal("1e-12")
-MAX_INT_128 = 2 ** 127 - 1
-MIN_INT_128 = -(2 ** 127)
+MAX_INT_128 = 2**127 - 1
+MIN_INT_128 = -(2**127)
 
 # signature_expiry_sec bounds: error 11011 outside this window. The API's own floor for an order is
 # 10 seconds (docs.derive.xyz/authentication/action-signing); 5 minutes is the more conservative
@@ -67,18 +68,21 @@ def compute_domain_separator(chain_id: int, verifying_contract: str) -> str:
     :param verifying_contract: the Matching contract address
     :return: the 0x-prefixed 32-byte domain separator
     """
-    return "0x" + Web3.keccak(
-        encode(
-            ["bytes32", "bytes32", "bytes32", "uint256", "address"],
-            [
-                EIP712_DOMAIN_TYPEHASH,
-                Web3.keccak(text=EIP712_DOMAIN_NAME),
-                Web3.keccak(text=EIP712_DOMAIN_VERSION),
-                int(chain_id),
-                Web3.to_checksum_address(verifying_contract),
-            ],
-        )
-    ).hex()
+    return (
+        "0x"
+        + Web3.keccak(
+            encode(
+                ["bytes32", "bytes32", "bytes32", "uint256", "address"],
+                [
+                    EIP712_DOMAIN_TYPEHASH,
+                    Web3.keccak(text=EIP712_DOMAIN_NAME),
+                    Web3.keccak(text=EIP712_DOMAIN_VERSION),
+                    int(chain_id),
+                    Web3.to_checksum_address(verifying_contract),
+                ],
+            )
+        ).hex()
+    )
 
 
 def decimal_to_big_int(value: Decimal) -> int:
@@ -170,7 +174,7 @@ def describe_error(error: Any) -> str:
     return text
 
 
-def parse_subaccount_id(value: Any) -> Optional[int]:
+def parse_subaccount_id(value: Any) -> int | None:
     """
     Normalises a configured subaccount id to the integer the API requires.
 
@@ -214,7 +218,7 @@ def get_signature_expiry_sec(valid_for_sec: int) -> int:
     return int(time.time()) + int(valid_for_sec)
 
 
-def get_order_signature_expiry_sec(valid_for_sec: int, session_key_expiry_sec: Optional[int] = None) -> int:
+def get_order_signature_expiry_sec(valid_for_sec: int, session_key_expiry_sec: int | None = None) -> int:
     """
     Builds the signature expiry for an order, held inside the session key's own lifetime.
 
@@ -248,7 +252,7 @@ def estimate_max_fee(
     index_price: Decimal,
     limit_price: Decimal,
     maker_fee_rate: Decimal = Decimal("0"),
-    amount_step: Optional[Decimal] = None,
+    amount_step: Decimal | None = None,
     can_take: bool = True,
 ) -> Decimal:
     """
@@ -328,7 +332,7 @@ class TradeModuleData(ModuleData):
             ],
         )
 
-    def to_json(self) -> Dict[str, Any]:
+    def to_json(self) -> dict[str, Any]:
         # Rendered from the signed e18 words so the wire values match the signature exactly.
         return {
             "limit_price": big_int_to_decimal_str(decimal_to_big_int(self.limit_price)),
@@ -374,7 +378,7 @@ class SignedAction:
             self.signature = "0x" + self.signature
         return self.signature
 
-    def to_json(self) -> Dict[str, Any]:
+    def to_json(self) -> dict[str, Any]:
         return {
             "subaccount_id": self.subaccount_id,
             # v3 requires the nanosecond nonce as a JSON string: as a number it would lose
@@ -417,9 +421,7 @@ class SignedAction:
             )
 
     def _to_typed_data_hash(self) -> HexBytes:
-        encoded_typed_data_hash = "".join(
-            ["0x1901", self.DOMAIN_SEPARATOR[2:], self._get_action_hash().hex()]
-        )
+        encoded_typed_data_hash = "".join(["0x1901", self.DOMAIN_SEPARATOR[2:], self._get_action_hash().hex()])
         return Web3.keccak(hexstr=encoded_typed_data_hash)
 
     def _get_action_hash(self) -> HexBytes:

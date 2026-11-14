@@ -136,8 +136,10 @@ class TestLPExecutorConfig(TestCase):
 
     def test_non_positive_position_refresh_interval_rejected(self):
         for value in (0, -1):
-            with self.subTest(value=value), self.assertRaisesRegex(
-                    ValidationError, "position_refresh_interval.*must be greater than 0"):
+            with (
+                self.subTest(value=value),
+                self.assertRaisesRegex(ValidationError, "position_refresh_interval.*must be greater than 0"),
+            ):
                 LPExecutorConfig(**self._minimal_kwargs(position_refresh_interval=value))
 
     def test_config_side_values(self):

@@ -6,14 +6,15 @@ budget exhausted after a partial fill, or an order stuck in an indeterminate sta
 shutdown, has to terminate `POSITION_HOLD` carrying those fills — the base
 FAILED-and-stop would drop real exposure out of the store silently.
 """
+
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import MagicMock, patch
 
 from hummingbot.core.data_type.common import PositionAction, TradeType
 from hummingbot.strategy_v2.executors.order_executor.data_types import ExecutionStrategy, OrderExecutorConfig
 from hummingbot.strategy_v2.executors.order_executor.order_executor import OrderExecutor
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 def a_config(**overrides) -> OrderExecutorConfig:

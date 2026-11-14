@@ -7,14 +7,14 @@ account match. The user id is learned once per API key and shared by both connec
 connector reads it first, the other one with the same key reports the same id, even if its own read
 failed. Keys are only ever held as SHA-256 fingerprints.
 """
+
 import hashlib
 import time
-from typing import Dict, Optional
 
 USER_ID_RETRY_INTERVAL_SECONDS = 60.0
 
-_user_ids: Dict[str, str] = {}
-_retry_after: Dict[str, float] = {}
+_user_ids: dict[str, str] = {}
+_retry_after: dict[str, float] = {}
 
 
 def _fingerprint(value: str) -> str:
@@ -25,11 +25,11 @@ def _time() -> float:
     return time.time()
 
 
-def known_user_id(api_key: str) -> Optional[str]:
+def known_user_id(api_key: str) -> str | None:
     return _user_ids.get(_fingerprint(api_key)) if api_key else None
 
 
-def account_group_id(api_key: Optional[str]) -> Optional[str]:
+def account_group_id(api_key: str | None) -> str | None:
     """Hash of the account's user id once known, of the API key until then; None without a key."""
     if not api_key:
         return None
@@ -37,7 +37,7 @@ def account_group_id(api_key: Optional[str]) -> Optional[str]:
     return f"bitget_uta:{_fingerprint(identity)[:16]}"
 
 
-def needs_user_id(api_key: Optional[str]) -> bool:
+def needs_user_id(api_key: str | None) -> bool:
     if not api_key:
         return False
     fingerprint = _fingerprint(api_key)
