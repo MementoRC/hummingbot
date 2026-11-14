@@ -14,13 +14,14 @@ live tolerance nor the transaction, so:
 The hash is also what a swap record has to be keyed on, which is why GW-42 could not be
 fixed before this.
 """
+
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import MagicMock
 
 from hummingbot.core.data_type.common import PositionAction, TradeType
 from hummingbot.strategy_v2.executors.order_executor.data_types import ExecutionStrategy, OrderExecutorConfig
 from hummingbot.strategy_v2.executors.order_executor.order_executor import OrderExecutor
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 SIGNATURE = "5xLmQ5s5xZ9jTqk3Y8bNvW2pR7cH4dF6gJ1kM3nP9qS8tU4vX6yZ2aB5cD7eF9gH1jK3lM5nP7qR9sT"
 
@@ -46,8 +47,9 @@ class TestCustomInfo(IsolatedAsyncioWrapperTestCase):
         self.strategy = MagicMock()
         self.strategy.current_timestamp = 1234567890
 
-    def an_executor(self, config=None, exchange_order_id=SIGNATURE,
-                    swap_provider="jupiter/router", wallet="82Sgg", with_order=True):
+    def an_executor(
+        self, config=None, exchange_order_id=SIGNATURE, swap_provider="jupiter/router", wallet="82Sgg", with_order=True
+    ):
         executor = OrderExecutor(self.strategy, config or a_config(), update_interval=1.0)
         connector = MagicMock(swap_provider=swap_provider, address=wallet)
         executor.connectors = {"solana-mainnet-beta": connector}

@@ -1,9 +1,9 @@
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any
 
-import hummingbot.connector.derivative.bitget_perpetual.bitget_perpetual_web_utils as web_utils
 from hummingbot.connector.derivative.bitget_perpetual import bitget_perpetual_constants as CONSTANTS
 from hummingbot.connector.derivative.bitget_perpetual.bitget_perpetual_auth import BitgetPerpetualAuth
+import hummingbot.connector.derivative.bitget_perpetual.bitget_perpetual_web_utils as web_utils
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest, WSPlainTextRequest, WSResponse
 from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
@@ -20,13 +20,13 @@ class BitgetPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
     the Bitget Perpetual exchange via WebSocket APIs.
     """
 
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     def __init__(
         self,
         auth: BitgetPerpetualAuth,
-        trading_pairs: List[str],
-        connector: 'BitgetPerpetualDerivative',
+        trading_pairs: list[str],
+        connector: "BitgetPerpetualDerivative",
         api_factory: WebAssistantsFactory,
     ) -> None:
         super().__init__()
@@ -34,7 +34,7 @@ class BitgetPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
         self._auth = auth
         self._trading_pairs = trading_pairs
         self._connector = connector
-        self._ping_task: Optional[asyncio.Task] = None
+        self._ping_task: asyncio.Task | None = None
 
     async def _authenticate(self, websocket_assistant: WSAssistant) -> None:
         """
@@ -50,12 +50,7 @@ class BitgetPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
         """
         await self._refresh_server_time_offset()
 
-        await websocket_assistant.send(
-            WSJSONRequest({
-                "op": "login",
-                "args": [self._auth.get_ws_auth_payload()]
-            })
-        )
+        await websocket_assistant.send(WSJSONRequest({"op": "login", "args": [self._auth.get_ws_auth_payload()]}))
         response: WSResponse = await websocket_assistant.receive()
         message = response.data
 
@@ -63,9 +58,7 @@ class BitgetPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
         # zero result code. Either one alone being wrong means the session was rejected, so the
         # listener must fail here and reconnect instead of subscribing on a rejected session.
         if message.get("event") != "login" or str(message.get("code")) != "0":
-            self.logger().error(
-                f"Error authenticating the private websocket connection. Response message {message}"
-            )
+            self.logger().error(f"Error authenticating the private websocket connection. Response message {message}")
             raise IOError("Private websocket connection authentication failed")
 
     async def _refresh_server_time_offset(self) -> None:
@@ -99,10 +92,7 @@ class BitgetPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
     async def _parse_pong_message(self) -> None:
         self.logger().debug("PING-PONG message for user stream completed")
 
-    async def _process_message_for_unknown_channel(
-        self,
-        event_message: Dict[str, Any]
-    ) -> None:
+    async def _process_message_for_unknown_channel(self, event_message: dict[str, Any]) -> None:
         if event_message == CONSTANTS.PUBLIC_WS_PONG_RESPONSE:
             await self._parse_pong_message()
         elif "event" in event_message:
@@ -126,17 +116,13 @@ class BitgetPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
         else:
             self.logger().warning(f"Message for unknown channel received: {event_message}")
 
-    async def _process_event_message(
-        self,
-        event_message: Dict[str, Any],
-        queue: asyncio.Queue
-    ) -> None:
+    async def _process_event_message(self, event_message: dict[str, Any], queue: asyncio.Queue) -> None:
         if "arg" in event_message and "action" in event_message:
             queue.put_nowait(event_message)
         else:
             await self._process_message_for_unknown_channel(event_message)
 
-    async def _subscription_topics(self) -> List[Dict[str, str]]:
+    async def _subscription_topics(self) -> list[dict[str, str]]:
         if not await self._connector._is_unified_account():
             # Classic (V2): every channel once per product type traded.
             product_types: set[str] = {
@@ -168,21 +154,14 @@ class BitgetPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
         try:
             subscription_topics = await self._subscription_topics()
 
-            await websocket_assistant.send(
-                WSJSONRequest({
-                    "op": "subscribe",
-                    "args": subscription_topics
-                })
-            )
+            await websocket_assistant.send(WSJSONRequest({"op": "subscribe", "args": subscription_topics}))
 
             self.logger().info("Subscribed to private channels...")
             self._ping_task = asyncio.create_task(self.send_interval_ping(websocket_assistant))
         except asyncio.CancelledError:
             raise
         except Exception:
-            self.logger().exception(
-                "Unexpected error occurred subscribing to private channels..."
-            )
+            self.logger().exception("Unexpected error occurred subscribing to private channels...")
             raise
 
     async def _connected_websocket_assistant(self) -> WSAssistant:
@@ -191,16 +170,14 @@ class BitgetPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
 
         await websocket_assistant.connect(
             ws_url=web_utils.private_ws_url() if unified_account else web_utils.classic_private_ws_url(),
-            message_timeout=CONSTANTS.SECONDS_TO_WAIT_TO_RECEIVE_MESSAGE
+            message_timeout=CONSTANTS.SECONDS_TO_WAIT_TO_RECEIVE_MESSAGE,
         )
         await self._authenticate(websocket_assistant)
 
         return websocket_assistant
 
     async def _send_ping(self, websocket_assistant: WSAssistant) -> None:
-        await websocket_assistant.send(
-            WSPlainTextRequest(CONSTANTS.PUBLIC_WS_PING_REQUEST)
-        )
+        await websocket_assistant.send(WSPlainTextRequest(CONSTANTS.PUBLIC_WS_PING_REQUEST))
 
     async def send_interval_ping(self, websocket_assistant: WSAssistant) -> None:
         """
@@ -219,7 +196,7 @@ class BitgetPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
         except Exception:
             self.logger().exception("Error sending interval PING")
 
-    async def _on_user_stream_interruption(self, websocket_assistant: Optional[WSAssistant]):
+    async def _on_user_stream_interruption(self, websocket_assistant: WSAssistant | None):
         if self._ping_task is not None:
             self._ping_task.cancel()
             try:

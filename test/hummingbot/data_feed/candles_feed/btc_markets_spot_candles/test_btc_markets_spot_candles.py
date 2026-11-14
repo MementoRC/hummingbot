@@ -1,12 +1,12 @@
 import asyncio
-import warnings
 from datetime import datetime, timezone
-from test.hummingbot.data_feed.candles_feed.test_candles_base import TestCandlesBase
 from unittest.mock import AsyncMock, MagicMock, patch
+import warnings
 
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.core.network_iterator import NetworkStatus
 from hummingbot.data_feed.candles_feed.btc_markets_spot_candles.btc_markets_spot_candles import BtcMarketsSpotCandles
+from test.hummingbot.data_feed.candles_feed.test_candles_base import TestCandlesBase
 
 
 class TestBtcMarketsSpotCandles(TestCandlesBase):
@@ -893,8 +893,8 @@ class TestBtcMarketsSpotCandles(TestCandlesBase):
         import json
         import re
 
-        import numpy as np
         from aioresponses import aioresponses
+        import numpy as np
 
         # Use reasonable timestamps instead of the huge ones from base class
         start_time = 1672531200  # Jan 1, 2023

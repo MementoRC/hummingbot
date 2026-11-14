@@ -1,6 +1,6 @@
 import asyncio
-import unittest
 from typing import Awaitable
+import unittest
 
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler
 from hummingbot.core.web_assistant.rest_assistant import RESTAssistant

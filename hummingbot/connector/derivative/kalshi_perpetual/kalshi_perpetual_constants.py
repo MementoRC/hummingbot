@@ -1,5 +1,4 @@
 from decimal import Decimal
-from typing import List
 
 from hummingbot.core.api_throttler.data_types import LinkedLimitWeightPair, RateLimit
 
@@ -92,15 +91,22 @@ def _endpoint_limit(limit_id: str, bucket_id: str, bucket_tokens: int, cost: int
     )
 
 
-RATE_LIMITS: List[RateLimit] = [
+RATE_LIMITS: list[RateLimit] = [
     RateLimit(limit_id=READ_BUCKET_LIMIT_ID, limit=READ_TOKENS_PER_SECOND, time_interval=1),
     RateLimit(limit_id=WRITE_BUCKET_LIMIT_ID, limit=WRITE_TOKENS_PER_SECOND, time_interval=1),
     *[
         _endpoint_limit(limit_id, READ_BUCKET_LIMIT_ID, READ_TOKENS_PER_SECOND)
         for limit_id in (
-            EXCHANGE_STATUS_PATH_URL, MARKETS_PATH_URL, MARKET_PATH_URL, ORDER_BOOK_PATH_URL,
-            FUNDING_RATE_ESTIMATE_PATH_URL, GET_ORDER_LIMIT_ID, FILLS_PATH_URL, POSITIONS_PATH_URL,
-            FUNDING_HISTORY_PATH_URL, FEE_TIERS_PATH_URL,
+            EXCHANGE_STATUS_PATH_URL,
+            MARKETS_PATH_URL,
+            MARKET_PATH_URL,
+            ORDER_BOOK_PATH_URL,
+            FUNDING_RATE_ESTIMATE_PATH_URL,
+            GET_ORDER_LIMIT_ID,
+            FILLS_PATH_URL,
+            POSITIONS_PATH_URL,
+            FUNDING_HISTORY_PATH_URL,
+            FEE_TIERS_PATH_URL,
         )
     ],
     _endpoint_limit(BALANCE_PATH_URL, READ_BUCKET_LIMIT_ID, READ_TOKENS_PER_SECOND, cost=BALANCE_REQUEST_COST),

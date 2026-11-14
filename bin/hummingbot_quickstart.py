@@ -4,7 +4,7 @@ import argparse
 import asyncio
 import logging
 import os
-from typing import Coroutine, List
+from typing import Coroutine
 
 import path_util  # noqa: F401
 
@@ -29,30 +29,37 @@ from hummingbot.core.utils.async_utils import safe_gather
 class CmdlineParser(argparse.ArgumentParser):
     def __init__(self):
         super().__init__()
-        self.add_argument("--config-file-name", "-f",
-                          type=str,
-                          required=False,
-                          help="Specify a file in `conf/` to load as the strategy config file.")
-        self.add_argument("--v2",
-                          type=str,
-                          required=False,
-                          dest="v2_conf",
-                          help="V2 strategy config file name (from conf/scripts/).")
-        self.add_argument("--config-password", "-p",
-                          type=str,
-                          required=False,
-                          help="Specify the password to unlock your encrypted files.")
-        self.add_argument("--auto-set-permissions",
-                          type=str,
-                          required=False,
-                          help="Try to automatically set config / logs / data dir permissions, "
-                               "useful for Docker containers.")
-        self.add_argument("--headless",
-                          type=bool,
-                          nargs='?',
-                          const=True,
-                          default=None,
-                          help="Run in headless mode without CLI interface.")
+        self.add_argument(
+            "--config-file-name",
+            "-f",
+            type=str,
+            required=False,
+            help="Specify a file in `conf/` to load as the strategy config file.",
+        )
+        self.add_argument(
+            "--v2", type=str, required=False, dest="v2_conf", help="V2 strategy config file name (from conf/scripts/)."
+        )
+        self.add_argument(
+            "--config-password",
+            "-p",
+            type=str,
+            required=False,
+            help="Specify the password to unlock your encrypted files.",
+        )
+        self.add_argument(
+            "--auto-set-permissions",
+            type=str,
+            required=False,
+            help="Try to automatically set config / logs / data dir permissions, useful for Docker containers.",
+        )
+        self.add_argument(
+            "--headless",
+            type=bool,
+            nargs="?",
+            const=True,
+            default=None,
+            help="Run in headless mode without CLI interface.",
+        )
 
 
 async def quick_start(args: argparse.Namespace, secrets_manager: BaseSecretsManager):
@@ -64,8 +71,9 @@ async def quick_start(args: argparse.Namespace, secrets_manager: BaseSecretsMana
 
     # Shared boot (login, yml, basic logging, system configs, paper-trade, build app). Logging is
     # re-initialized later in run_application with the strategy file name. MQTT autostarts only headless.
-    hb = await bootstrap_application(client_config_map, secrets_manager,
-                                     headless=args.headless, mqtt_autostart=args.headless)
+    hb = await bootstrap_application(
+        client_config_map, secrets_manager, headless=args.headless, mqtt_autostart=args.headless
+    )
     if hb is None:
         return
 
@@ -92,21 +100,21 @@ async def run_application(hb: HummingbotApplication, args: argparse.Namespace, c
     if args.headless:
         # Re-initialize logging with proper strategy file name for headless mode
         log_file_name = hb.strategy_file_name.split(".")[0] if hb.strategy_file_name else "hummingbot"
-        init_logging("hummingbot_logs.yml", hb.client_config_map,
-                     override_log_level=hb.client_config_map.log_level,
-                     strategy_file_path=log_file_name)
+        init_logging(
+            "hummingbot_logs.yml",
+            hb.client_config_map,
+            override_log_level=hb.client_config_map.log_level,
+            strategy_file_path=log_file_name,
+        )
         await hb.run()
     else:
         # Set up UI mode with start listener
         start_listener: UIStartListener = UIStartListener(
-            hb,
-            is_script=args.v2_conf is not None,
-            script_config=getattr(hb, 'script_config', None),
-            is_quickstart=True
+            hb, is_script=args.v2_conf is not None, script_config=getattr(hb, "script_config", None), is_quickstart=True
         )
         hb.app.add_listener(HummingbotUIEvent.Start, start_listener)
 
-        tasks: List[Coroutine] = [hb.run()]
+        tasks: list[Coroutine] = [hb.run()]
         if client_config_map.debug_console:
             management_port: int = detect_available_port(8211)
             tasks.append(start_management_console(locals(), host="localhost", port=management_port))

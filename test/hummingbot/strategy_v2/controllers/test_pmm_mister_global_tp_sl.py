@@ -39,9 +39,9 @@ class TestPMMisterGlobalCloseCooldown(TestCase):
         controller.processed_data = {}
         return controller
 
-    def _make_position(self, side: TradeType = TradeType.BUY,
-                       connector_name: str = "binance_perpetual",
-                       trading_pair: str = "ETH-USDT"):
+    def _make_position(
+        self, side: TradeType = TradeType.BUY, connector_name: str = "binance_perpetual", trading_pair: str = "ETH-USDT"
+    ):
         position = MagicMock()
         position.side = side
         position.connector_name = connector_name

@@ -1,8 +1,8 @@
 import asyncio
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, patch
 
 from hummingbot.notifier.notifier_base import NotifierBase
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class TestNotifierBase(IsolatedAsyncioWrapperTestCase):

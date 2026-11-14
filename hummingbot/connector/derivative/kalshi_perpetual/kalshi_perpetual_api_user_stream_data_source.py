@@ -1,10 +1,10 @@
 import asyncio
-from typing import Any, Dict
+from typing import Any
 from urllib.parse import urlparse
 
+from hummingbot.connector.derivative.kalshi_perpetual.kalshi_perpetual_auth import KalshiPerpetualAuth
 import hummingbot.connector.derivative.kalshi_perpetual.kalshi_perpetual_constants as CONSTANTS
 import hummingbot.connector.derivative.kalshi_perpetual.kalshi_perpetual_web_utils as web_utils
-from hummingbot.connector.derivative.kalshi_perpetual.kalshi_perpetual_auth import KalshiPerpetualAuth
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest
 from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
@@ -19,10 +19,10 @@ class KalshiPerpetualAPIUserStreamDataSource(UserStreamTrackerDataSource):
     """
 
     def __init__(
-            self,
-            auth: KalshiPerpetualAuth,
-            api_factory: WebAssistantsFactory,
-            domain: str = CONSTANTS.DEFAULT_DOMAIN,
+        self,
+        auth: KalshiPerpetualAuth,
+        api_factory: WebAssistantsFactory,
+        domain: str = CONSTANTS.DEFAULT_DOMAIN,
     ):
         super().__init__()
         self._auth = auth
@@ -55,7 +55,7 @@ class KalshiPerpetualAPIUserStreamDataSource(UserStreamTrackerDataSource):
             self.logger().exception("Unexpected error occurred subscribing to private channels...")
             raise
 
-    async def _process_event_message(self, event_message: Dict[str, Any], queue: asyncio.Queue):
+    async def _process_event_message(self, event_message: dict[str, Any], queue: asyncio.Queue):
         if not event_message:
             return
         message_type = event_message.get("type")
