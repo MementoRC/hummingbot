@@ -22,6 +22,7 @@ root_packages =
     market_connector
     market_data
     market_simulator
+    order_book
     rate_limit
     rate_oracle
     remote_iface
@@ -76,6 +77,14 @@ forbidden_modules =
 # (the boundary-exempt shim). allow_indirect_imports permits that hop while still catching
 # any DIRECT hummingbot import in live_market_data. (ADR 0001 Group A1)
 allow_indirect_imports = true
+
+[importlinter:contract:order-book-boundary]
+name = order_book must not import hummingbot
+type = forbidden
+source_modules =
+    order_book
+forbidden_modules =
+    hummingbot
 
 [importlinter:contract:rate-limit-boundary]
 name = rate_limit must not import hummingbot
@@ -217,7 +226,7 @@ forbidden_modules =
 name = ADR 0001 sub-package layering (downward-only)
 type = layers
 layers =
-    candles_feed | liquidations_feed | rate_oracle | market_data | market_connector | market_simulator | remote_iface | user_stream_tracker
+    candles_feed | liquidations_feed | rate_oracle | market_data | market_connector | market_simulator | remote_iface | user_stream_tracker | order_book
     web_assistant
     strategy_framework.primitives
     data_type_primitives | event_bus | logger | async_utils | connector_utils | rate_limit

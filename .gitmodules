@@ -62,3 +62,7 @@
 	path = sub-packages/user-stream-tracker
 	url = https://github.com/MementoRC/hb-user-stream-tracker.git
 	branch = development
+[submodule "sub-packages/order-book"]
+	path = sub-packages/order-book
+	url = https://github.com/MementoRC/hb-order-book.git
+	branch = development
