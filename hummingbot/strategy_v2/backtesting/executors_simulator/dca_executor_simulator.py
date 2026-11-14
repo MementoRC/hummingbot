@@ -1,4 +1,5 @@
 from decimal import Decimal
+from typing import List
 
 import pandas as pd
 
@@ -10,7 +11,7 @@ from hummingbot.strategy_v2.models.executors import CloseType
 
 class DCAExecutorSimulator(ExecutorSimulatorBase):
     @staticmethod
-    def break_even_price_at_index(prices: list[Decimal], amounts: list[Decimal], index: int) -> Decimal:
+    def break_even_price_at_index(prices: List[Decimal], amounts: List[Decimal], index: int) -> Decimal:
         total_amount = sum(amounts[: index + 1])
         total_quote = sum([amounts[i] * prices[i] for i in range(index + 1)])
         return total_quote / total_amount
@@ -97,17 +98,14 @@ class DCAExecutorSimulator(ExecutorSimulatorBase):
                 )
                 take_profit_timestamp = returns_df[take_profit_condition]["timestamp"].min()
 
-            if is_last_order:
-                if config.stop_loss:
-                    stop_loss_price = break_even_price * (1 - config.stop_loss * side_multiplier)
-                    stop_loss_condition = (
-                        returns_df["low"] <= stop_loss_price
-                        if config.side == TradeType.BUY
-                        else returns_df["high"] >= stop_loss_price
-                    )
-                    stop_loss_timestamp = returns_df[stop_loss_condition]["timestamp"].min()
-                # No next level to advance to and no stop_loss configured: the position
-                # can only close via take_profit, trailing_stop or time_limit above.
+            if is_last_order and config.stop_loss:
+                stop_loss_price = break_even_price * (1 - config.stop_loss * side_multiplier)
+                stop_loss_condition = (
+                    returns_df["low"] <= stop_loss_price
+                    if config.side == TradeType.BUY
+                    else returns_df["high"] >= stop_loss_price
+                )
+                stop_loss_timestamp = returns_df[stop_loss_condition]["timestamp"].min()
             else:
                 next_order_condition = (
                     returns_df["close"] <= config.prices[i + 1]

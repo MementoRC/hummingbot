@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any
+from typing import List, Optional
 
 from hummingbot.connector.derivative.okx_perpetual import (
     okx_perpetual_constants as CONSTANTS,
@@ -7,14 +7,14 @@ from hummingbot.connector.derivative.okx_perpetual import (
 )
 from hummingbot.connector.derivative.okx_perpetual.okx_perpetual_auth import OkxPerpetualAuth
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
-from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest, WSPlainTextRequest, WSResponse
+from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest, WSResponse
 from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
 from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.logger import HummingbotLogger
 
 
 class OkxPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
-    _logger: HummingbotLogger | None = None
+    _logger: Optional[HummingbotLogger] = None
 
     def __init__(
         self,
@@ -26,7 +26,7 @@ class OkxPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
         self._domain = domain
         self._api_factory = api_factory
         self._auth = auth
-        self._ws_assistants: list[WSAssistant] = []
+        self._ws_assistants: List[WSAssistant] = []
 
     @property
     def last_recv_time(self) -> float:
@@ -62,7 +62,7 @@ class OkxPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
             raise
 
     async def _listen_for_user_stream_on_url(self, url: str, output: asyncio.Queue):
-        ws: WSAssistant | None = None
+        ws: Optional[WSAssistant] = None
         while True:
             try:
                 ws = await self._get_connected_websocket_assistant(url)
@@ -91,7 +91,7 @@ class OkxPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
         """
         Authenticates user to websocket
         """
-        auth_args: list[str] = self._auth.get_ws_auth_args()
+        auth_args: List[str] = self._auth.get_ws_auth_args()
         payload = {"op": "login", "args": auth_args}
         login_request: WSJSONRequest = WSJSONRequest(payload=payload)
         await ws.send(login_request)
@@ -144,12 +144,8 @@ class OkxPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
             try:
                 await super()._process_websocket_messages(websocket_assistant=websocket_assistant, queue=queue)
             except asyncio.TimeoutError:
-                ping_request = WSPlainTextRequest(payload="ping")
+                ping_request = WSJSONRequest(payload={"ping"})
                 await websocket_assistant.send(ping_request)
-
-    async def _process_event_message(self, event_message: dict[str, Any], queue: asyncio.Queue):
-        if isinstance(event_message, dict) and len(event_message) > 0:
-            queue.put_nowait(event_message)
 
     async def _subscribe_channels(self, websocket_assistant: WSAssistant):
         pass  # unused
