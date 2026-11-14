@@ -1107,9 +1107,7 @@ class DydxV4PerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         pass
 
     async def test_set_position_mode_success(self):
-        success, msg = await self.exchange._trading_pair_position_mode_set(
-            PositionMode.ONEWAY, self.trading_pair
-        )
+        success, msg = await self.exchange._trading_pair_position_mode_set(PositionMode.ONEWAY, self.trading_pair)
 
         self.assertTrue(success)
         self.assertEqual("", msg)
@@ -1121,9 +1119,7 @@ class DydxV4PerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
         )
 
     async def test_set_position_mode_failure(self):
-        success, msg = await self.exchange._trading_pair_position_mode_set(
-            PositionMode.HEDGE, self.trading_pair
-        )
+        success, msg = await self.exchange._trading_pair_position_mode_set(PositionMode.HEDGE, self.trading_pair)
 
         self.assertFalse(success)
         self.assertEqual("dydx_v4 only supports the ONEWAY position mode.", msg)
@@ -1145,9 +1141,7 @@ class DydxV4PerpetualDerivativeTests(AbstractPerpetualDerivativeTests.PerpetualD
 
         await self.exchange._execute_set_position_mode(PositionMode.ONEWAY)
 
-        self.assertTrue(
-            self.is_logged("INFO", f"Position mode already set to {PositionMode.ONEWAY} on exchange.")
-        )
+        self.assertTrue(self.is_logged("INFO", f"Position mode already set to {PositionMode.ONEWAY} on exchange."))
         self.assertFalse(
             self.is_logged(
                 "DEBUG",

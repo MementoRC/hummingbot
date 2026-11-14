@@ -389,10 +389,10 @@ class FoxbitAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
 
     async def test_parse_trade_message_crafted_payload_is_not_executed(self):
         malicious_message = {
-            'm': 3,
-            'i': 10,
-            'n': CONSTANTS.WS_TRADE_RESPONSE,
-            'o': "__import__('os').system('echo pwned')",
+            "m": 3,
+            "i": 10,
+            "n": CONSTANTS.WS_TRADE_RESPONSE,
+            "o": "__import__('os').system('echo pwned')",
         }
         message_queue: asyncio.Queue = asyncio.Queue()
 
@@ -403,10 +403,10 @@ class FoxbitAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
 
     async def test_parse_trade_message_ignores_non_matching_message_type(self):
         non_matching_message = {
-            'm': 3,
-            'i': 10,
-            'n': 'SomeOtherEvent',
-            'o': "__import__('os').system('echo pwned')",
+            "m": 3,
+            "i": 10,
+            "n": "SomeOtherEvent",
+            "o": "__import__('os').system('echo pwned')",
         }
         message_queue: asyncio.Queue = asyncio.Queue()
 
@@ -416,10 +416,10 @@ class FoxbitAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
 
     async def test_parse_order_book_diff_message_crafted_payload_is_not_executed(self):
         malicious_message = {
-            'm': 3,
-            'i': 8,
-            'n': CONSTANTS.WS_ORDER_BOOK_RESPONSE,
-            'o': "__import__('os').system('echo pwned')",
+            "m": 3,
+            "i": 8,
+            "n": CONSTANTS.WS_ORDER_BOOK_RESPONSE,
+            "o": "__import__('os').system('echo pwned')",
         }
         message_queue: asyncio.Queue = asyncio.Queue()
 
@@ -430,10 +430,10 @@ class FoxbitAPIOrderBookDataSourceUnitTests(IsolatedAsyncioWrapperTestCase):
 
     async def test_parse_order_book_diff_message_ignores_non_matching_message_type(self):
         non_matching_message = {
-            'm': 3,
-            'i': 8,
-            'n': 'SomeOtherEvent',
-            'o': "__import__('os').system('echo pwned')",
+            "m": 3,
+            "i": 8,
+            "n": "SomeOtherEvent",
+            "o": "__import__('os').system('echo pwned')",
         }
         message_queue: asyncio.Queue = asyncio.Queue()
 

@@ -1,5 +1,5 @@
-import unittest
 from decimal import Decimal
+import unittest
 
 import pandas as pd
 
