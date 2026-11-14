@@ -1,7 +1,6 @@
 # distutils: language=c++
 
 import asyncio
-from enum import Enum
 import logging
 from typing import Optional
 
@@ -14,10 +13,7 @@ NaN = float("nan")
 ni_logger = None
 
 
-class NetworkStatus(Enum):
-    STOPPED = 0
-    NOT_CONNECTED = 1
-    CONNECTED = 2
+from data_type_primitives import NetworkStatus  # noqa: F401  # canonical in hb-data-type-primitives>=0.6.0
 
 
 cdef class NetworkIterator(TimeIterator):
