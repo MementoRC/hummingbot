@@ -217,21 +217,17 @@ forbidden_modules =
 # `forbidden` contracts above (hb_compat carve-outs).
 # Reclassified 2026-10-30: since hb-strategy-framework #56 (2c096b8) primitives re-exports
 # CandleData/OrderBook models from data_type_primitives v0.3.0, so it is no longer a zero-dep
-# leaf. It sits in its own layer directly above the L0 row (same pattern as user_stream_tracker):
-# it may import L0 leaves, no L0 leaf may import it, and it is out of the independence contract.
-
-# user_stream_tracker sits ABOVE the L2 row rather than inside it: it consumes
-# web_assistant (WSAssistant) plus the L0 leaves async_utils/logger, all strictly
-# downward. Modelled as its own layer instead of an ignore_imports carve-out so the
-# contract still ENFORCES the direction. If web_assistant later gains several more
-# consumers, promote web_assistant to its own lower layer instead (hb-user-stream-tracker#1).
+# leaf. Layer order, bottom to top: the L0 leaves; then strategy_framework.primitives (L0-level,
+# own layer because it imports L0 leaves, and no L0 leaf may import it); then web_assistant (L1,
+# shared infra, may import primitives and L0); then the independent L2 row (incl. user_stream_tracker).
+# L1 has a single member, so no L1 independence contract is needed; add one if a second appears.
 
 [importlinter:contract:adr-0001-layers]
 name = ADR 0001 sub-package layering (downward-only)
 type = layers
 layers =
-    user_stream_tracker
-    candles_feed | liquidations_feed | rate_oracle | market_data | market_connector | market_simulator | web_assistant | remote_iface | order_book
+    candles_feed | liquidations_feed | rate_oracle | market_data | market_connector | market_simulator | remote_iface | user_stream_tracker | order_book
+    web_assistant
     strategy_framework.primitives
     data_type_primitives | event_bus | logger | async_utils | connector_utils | rate_limit
 # Recipe-1 re-export shims: hummingbot/core/data_type/user_stream_tracker{,_data_source}.py
