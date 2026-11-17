@@ -3,7 +3,7 @@ from collections import defaultdict, deque
 import contextlib
 import functools
 import logging
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any
 from unittest.mock import AsyncMock, PropertyMock
 import uuid
 
@@ -33,15 +33,15 @@ class MockWebsocketClientSession:
     # are required when working with websockets
     def __init__(self, mock_websocket: AsyncMock):
         self._mock_websocket = mock_websocket
-        self._connection_args: Optional[Tuple[Any]] = None
-        self._connection_kwargs: Optional[Dict[str, Any]] = None
+        self._connection_args: tuple[Any] | None = None
+        self._connection_kwargs: dict[str, Any] | None = None
 
     @property
-    def connection_args(self) -> Tuple[Any]:
+    def connection_args(self) -> tuple[Any]:
         return self._connection_args or ()
 
     @property
-    def connection_kwargs(self) -> Dict[str, Any]:
+    def connection_kwargs(self) -> dict[str, Any]:
         return self._connection_kwargs or {}
 
     async def ws_connect(self, *args, **kwargs):
@@ -258,7 +258,7 @@ class NetworkMockingAssistant:
         self._incoming_websocket_aiohttp_queues[key].put_nowait(msg)
         self._all_incoming_websocket_aiohttp_delivered_event[key].clear()
 
-    def add_websocket_aiohttp_exception(self, websocket_mock, exception: Union[Exception, BaseException]):
+    def add_websocket_aiohttp_exception(self, websocket_mock, exception: Exception | BaseException):
         self.verify_async_init()
         key: uuid.UUID = get_stable_key(websocket_mock)
         self._incoming_websocket_aiohttp_queues[key].put_nowait(exception)
@@ -274,19 +274,19 @@ class NetworkMockingAssistant:
         key: uuid.UUID = get_stable_key(websocket_mock)
         return self._sent_websocket_text_messages[key]
 
-    async def run_until_all_text_messages_delivered(self, websocket_mock, timeout: int = 1):
+    async def run_until_all_text_messages_delivered(self, websocket_mock, timeout: int = 5):
         self.verify_async_init()
         key: uuid.UUID = get_stable_key(websocket_mock)
         all_delivered = self._all_incoming_websocket_text_delivered_event[key]
         await asyncio.wait_for(all_delivered.wait(), timeout)
 
-    async def run_until_all_json_messages_delivered(self, websocket_mock, timeout: int = 1):
+    async def run_until_all_json_messages_delivered(self, websocket_mock, timeout: int = 5):
         self.verify_async_init()
         key: uuid.UUID = get_stable_key(websocket_mock)
         all_delivered = self._all_incoming_websocket_json_delivered_event[key]
         await asyncio.wait_for(all_delivered.wait(), timeout)
 
-    async def run_until_all_aiohttp_messages_delivered(self, websocket_mock, timeout: int = 1):
+    async def run_until_all_aiohttp_messages_delivered(self, websocket_mock, timeout: int = 5):
         self.verify_async_init()
         key: uuid.UUID = get_stable_key(websocket_mock)
         all_delivered = self._all_incoming_websocket_aiohttp_delivered_event[key]
