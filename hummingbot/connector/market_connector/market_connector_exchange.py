@@ -1,12 +1,22 @@
 import asyncio
 import contextlib
 from decimal import Decimal
+import functools
 from typing import Any, Dict, List, Mapping, Optional
 
 from event_bus import EventBus
 
 from hummingbot.connector.exchange_base import ExchangeBase
+from hummingbot.connector.market_connector.events_converter import (
+    EVENT_CLASSES,
+    MARKET_EVENT_BY_ID,
+    TerminalEventDeduper,
+    to_parent_event,
+    to_parent_order_type,
+    to_parent_position_action,
+)
 from hummingbot.connector.market_connector.order_book_adapter import OrderBookCache
+from hummingbot.connector.market_connector.order_tracker_shim import CoreOrderTracker
 from hummingbot.connector.market_connector.rules_converter import to_parent_trading_rule
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.core.data_type.common import OrderType, PriceType, TradeType
@@ -26,6 +36,8 @@ PRE_START_STATUS_KEYS = (
     "user_stream_initialized",
 )
 DEFAULT_ORDER_TYPES = [OrderType.LIMIT, OrderType.MARKET, OrderType.LIMIT_MAKER]
+# Optional order extras forwarded to the core when the caller supplies them via **kwargs.
+CORE_ORDER_KWARGS = ("limit_price", "price_in_percent", "position_action", "expiration_ts")
 
 
 class MarketConnectorExchange(ExchangeBase):
@@ -33,7 +45,7 @@ class MarketConnectorExchange(ExchangeBase):
     Generic parent ConnectorBase over any market-connector exchange core.
 
     The constructor performs no I/O and never calls ``descriptor.create``; the core is built and started in
-    ``start_network``. Order entry (buy/sell/cancel) is not implemented yet.
+    ``start_network``. Orders are delegated to the core; its bus events are translated to parent events.
     """
 
     def __init__(
@@ -60,6 +72,9 @@ class MarketConnectorExchange(ExchangeBase):
         self._handle: Any = None
         self._event_bus: Optional[EventBus] = None
         self._refresh_task: Optional[asyncio.Task] = None
+        self._event_subscriptions: List[Any] = []
+        self._terminal_deduper = TerminalEventDeduper()
+        self._order_tracker = CoreOrderTracker(lambda: self._core)
         self._book_cache = OrderBookCache()
         self._rules_cache: Dict[str, Any] = {}
         self._fee_schema = TradeFeeSchema(
@@ -76,8 +91,10 @@ class MarketConnectorExchange(ExchangeBase):
         handle = await self._descriptor.create(self._config, event_bus=bus, **self._core_options)
         try:
             await handle.start()
+            self._subscribe_core_events(bus)
             handle.core.track_pairs(self._trading_pairs)
         except BaseException:
+            self._unsubscribe_core_events()
             await handle.close()
             raise
         self._event_bus = bus
@@ -88,6 +105,7 @@ class MarketConnectorExchange(ExchangeBase):
         task, handle = self._refresh_task, self._handle
         self._refresh_task = None
         self._handle = None
+        self._unsubscribe_core_events()
         if task is not None:
             task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
@@ -140,11 +158,11 @@ class MarketConnectorExchange(ExchangeBase):
 
     @property
     def in_flight_orders(self) -> Dict[str, Any]:
-        return {}
+        return self._order_tracker.active_orders
 
     @property
     def limit_orders(self) -> List[Any]:
-        return []
+        return [order.to_limit_order() for order in self._order_tracker.active_orders.values()]
 
     def tick(self, timestamp: float) -> None:
         pass
@@ -267,12 +285,64 @@ class MarketConnectorExchange(ExchangeBase):
     def buy(
         self, trading_pair: str, amount: Decimal, order_type=OrderType.MARKET, price: Decimal = s_decimal_NaN, **kwargs
     ) -> str:
-        raise NotImplementedError("P2")
+        return self._create_order(TradeType.BUY, trading_pair, amount, order_type, price, kwargs)
 
     def sell(
         self, trading_pair: str, amount: Decimal, order_type=OrderType.MARKET, price: Decimal = s_decimal_NaN, **kwargs
     ) -> str:
-        raise NotImplementedError("P2")
+        return self._create_order(TradeType.SELL, trading_pair, amount, order_type, price, kwargs)
 
-    def cancel(self, trading_pair: str, client_order_id: str):
-        raise NotImplementedError("P2")
+    def cancel(self, trading_pair: str, client_order_id: str) -> str:
+        core = self._require_core()
+        return core.cancel(trading_pair, client_order_id)
+
+    def _require_core(self) -> Any:
+        core = self._core
+        if core is None:
+            raise RuntimeError(f"{self._connector_name} is not started; call start_network first.")
+        return core
+
+    def _create_order(
+        self,
+        trade_type: TradeType,
+        trading_pair: str,
+        amount: Decimal,
+        order_type: OrderType,
+        price: Decimal,
+        kwargs: Mapping[str, Any],
+    ) -> str:
+        core = self._require_core()
+        if order_type not in self.supported_order_types():
+            raise ValueError(f"{self._connector_name} does not support {order_type.name} orders.")
+        # Only the core's documented extras pass through; other keys (e.g. executor bookkeeping) are dropped.
+        extras = {key: kwargs[key] for key in CORE_ORDER_KWARGS if kwargs.get(key) is not None}
+        if "position_action" in extras:
+            extras["position_action"] = to_parent_position_action(extras["position_action"])
+        method = core.buy if trade_type is TradeType.BUY else core.sell
+        return method(
+            trading_pair,
+            amount,
+            to_parent_order_type(order_type),
+            price,
+            **extras,
+        )
+
+    # --- core event bridge -----------------------------------------------------------------------------------
+
+    def _subscribe_core_events(self, bus: EventBus) -> None:
+        for event_id in EVENT_CLASSES:
+            self._event_subscriptions.append(bus.subscribe(event_id, functools.partial(self._on_core_event, event_id)))
+
+    def _unsubscribe_core_events(self) -> None:
+        subscriptions, self._event_subscriptions = self._event_subscriptions, []
+        for subscription in subscriptions:
+            subscription.bus.unsubscribe(subscription)
+        self._terminal_deduper.clear()
+
+    def _on_core_event(self, event_id: int, mc_event: Any) -> None:
+        try:
+            if self._terminal_deduper.is_duplicate(event_id, getattr(mc_event, "order_id", None)):
+                return
+            self.trigger_event(MARKET_EVENT_BY_ID[event_id], to_parent_event(event_id, mc_event))
+        except Exception:
+            self.logger().exception(f"Failed to forward core event {event_id}.")

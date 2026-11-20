@@ -1,13 +1,12 @@
 import asyncio
 from decimal import Decimal
-from types import SimpleNamespace
 import unittest
 
 import pytest
 
 pytest.importorskip("market_connector")
 
-from data_type_primitives import OrderBookEntry, OrderBookSnapshot, TradingRules  # noqa: E402
+from data_type_primitives import OrderBookEntry, OrderBookSnapshot  # noqa: E402
 
 from hummingbot.connector.market_connector.market_connector_exchange import (  # noqa: E402
     PRE_START_STATUS_KEYS,
@@ -16,94 +15,7 @@ from hummingbot.connector.market_connector.market_connector_exchange import (  #
 from hummingbot.core.data_type.common import OrderType, PriceType, TradeType  # noqa: E402
 from hummingbot.core.network_iterator import NetworkStatus  # noqa: E402
 
-PAIR = "ETH-USDC"
-NAN = Decimal("nan")
-
-
-class FakeCore:
-    def __init__(self):
-        self.status = {key: True for key in PRE_START_STATUS_KEYS}
-        self.tracked = []
-        self.updated = []
-        self.snapshot = None
-        self.prices = {}
-        self.trading_rules = {
-            PAIR: TradingRules(
-                trading_pair=PAIR,
-                min_order_size=Decimal("0.01"),
-                min_price_increment=Decimal("0.01"),
-                min_base_amount_increment=Decimal("0.001"),
-            )
-        }
-        self.fail_refresh = False
-
-    @property
-    def status_dict(self):
-        return dict(self.status)
-
-    @property
-    def ready(self):
-        return all(self.status.values())
-
-    def track_pairs(self, pairs):
-        self.tracked.extend(pairs)
-
-    async def update_order_book(self, pair):
-        self.updated.append(pair)
-        if self.fail_refresh:
-            raise RuntimeError("boom")
-
-    def get_order_book(self, pair):
-        return self.snapshot
-
-    def get_price_by_type(self, pair, price_type):
-        return self.prices.get(price_type, NAN)
-
-    def get_balance(self, asset):
-        return {"ETH": Decimal("2")}.get(asset, Decimal(0))
-
-    def get_available_balance(self, asset):
-        return {"ETH": Decimal("1.5")}.get(asset, Decimal(0))
-
-    def quantize_order_amount(self, pair, amount):
-        return amount.quantize(Decimal("0.001"))
-
-    def quantize_order_price(self, pair, price):
-        return price.quantize(Decimal("0.01"))
-
-    def get_order_price_quantum(self, pair, price):
-        return Decimal("0.01")
-
-    def get_order_size_quantum(self, pair, amount):
-        return Decimal("0.001")
-
-
-class FakeHandle:
-    def __init__(self, core):
-        self.core = core
-        self.started = 0
-        self.closed = 0
-
-    async def start(self):
-        self.started += 1
-
-    async def close(self):
-        self.closed += 1
-
-
-class FakeDescriptor:
-    default_maker_fee = Decimal("0.0025")
-    default_taker_fee = Decimal("0.004")
-    order_capabilities = SimpleNamespace(order_types=frozenset({OrderType.MARKET, OrderType.LIMIT}))
-
-    def __init__(self):
-        self.core = FakeCore()
-        self.handle = FakeHandle(self.core)
-        self.create_calls = []
-
-    async def create(self, config, *, event_bus, **core_options):
-        self.create_calls.append((dict(config), event_bus, core_options))
-        return self.handle
+from .fakes import PAIR, FakeDescriptor  # noqa: E402
 
 
 def _snapshot() -> OrderBookSnapshot:
@@ -225,10 +137,6 @@ class MarketConnectorExchangeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(Decimal("0.004"), taker.percent)
 
     async def test_supported_order_types_from_capabilities(self):
-        self.assertEqual({OrderType.MARKET, OrderType.LIMIT}, set(self.exchange.supported_order_types()))
-
-    async def test_order_entry_not_implemented_yet(self):
-        with self.assertRaises(NotImplementedError):
-            self.exchange.buy(PAIR, Decimal(1), OrderType.LIMIT, Decimal(100))
-        with self.assertRaises(NotImplementedError):
-            self.exchange.cancel(PAIR, "id")
+        self.assertEqual(
+            {OrderType.MARKET, OrderType.LIMIT, OrderType.STOP_LOSS_LIMIT}, set(self.exchange.supported_order_types())
+        )
