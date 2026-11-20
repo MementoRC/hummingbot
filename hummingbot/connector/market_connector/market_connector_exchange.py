@@ -1,6 +1,7 @@
 import asyncio
 import contextlib
 from decimal import Decimal
+from enum import Enum
 import functools
 from typing import Any, Dict, List, Mapping, Optional
 
@@ -19,7 +20,7 @@ from hummingbot.connector.market_connector.order_book_adapter import OrderBookCa
 from hummingbot.connector.market_connector.order_tracker_shim import CoreOrderTracker
 from hummingbot.connector.market_connector.rules_converter import to_parent_trading_rule
 from hummingbot.connector.trading_rule import TradingRule
-from hummingbot.core.data_type.common import OrderType, PriceType, TradeType
+from hummingbot.core.data_type.common import OrderType, PositionAction, PriceType, TradeType
 from hummingbot.core.data_type.order_book import OrderBook
 from hummingbot.core.data_type.trade_fee import TradeFeeBase, TradeFeeSchema
 from hummingbot.core.network_iterator import NetworkStatus
@@ -70,6 +71,7 @@ class MarketConnectorExchange(ExchangeBase):
         self._core_options: Dict[str, Any] = dict(core_options or {})
         self._order_book_refresh_interval = order_book_refresh_interval
         self._handle: Any = None
+        self._lifecycle_lock_obj: Optional[asyncio.Lock] = None
         self._event_bus: Optional[EventBus] = None
         self._refresh_task: Optional[asyncio.Task] = None
         self._event_subscriptions: List[Any] = []
@@ -84,39 +86,49 @@ class MarketConnectorExchange(ExchangeBase):
 
     # --- lifecycle -------------------------------------------------------------------------------------------
 
+    @property
+    def _lifecycle_lock(self) -> asyncio.Lock:
+        # Created lazily so __init__ needs no running loop.
+        if self._lifecycle_lock_obj is None:
+            self._lifecycle_lock_obj = asyncio.Lock()
+        return self._lifecycle_lock_obj
+
     async def start_network(self) -> None:
-        if self._handle is not None:
-            return
-        bus = EventBus(name=self._connector_name)
-        handle = await self._descriptor.create(self._config, event_bus=bus, **self._core_options)
-        try:
-            await handle.start()
-            self._subscribe_core_events(bus)
-            handle.core.track_pairs(self._trading_pairs)
-        except BaseException:
-            self._unsubscribe_core_events()
-            await handle.close()
-            raise
-        self._event_bus = bus
-        self._handle = handle
-        self._refresh_task = asyncio.ensure_future(self._refresh_order_books_loop())
+        async with self._lifecycle_lock:
+            if self._handle is not None:
+                return
+            bus = EventBus(name=self._connector_name)
+            handle = await self._descriptor.create(self._config, event_bus=bus, **self._core_options)
+            try:
+                await handle.start()
+                self._subscribe_core_events(bus)
+                handle.core.track_pairs(self._trading_pairs)
+            except BaseException:
+                self._unsubscribe_core_events()
+                await handle.close()
+                raise
+            self._event_bus = bus
+            self._handle = handle
+            self._refresh_task = asyncio.ensure_future(self._refresh_order_books_loop())
 
     async def stop_network(self) -> None:
-        task, handle = self._refresh_task, self._handle
-        self._refresh_task = None
-        self._handle = None
-        self._unsubscribe_core_events()
-        if task is not None:
-            task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await task
-        try:
-            if handle is not None:
-                await handle.close()
-        finally:
-            self._event_bus = None
-            self._book_cache.clear()
-            self._rules_cache.clear()
+        async with self._lifecycle_lock:
+            task, handle = self._refresh_task, self._handle
+            self._refresh_task = None
+            self._handle = None
+            try:
+                if task is not None:
+                    task.cancel()
+                    with contextlib.suppress(asyncio.CancelledError):
+                        await task
+                if handle is not None:
+                    # Close first: the core emits terminal events while draining, and those must still be delivered.
+                    await handle.close()
+            finally:
+                self._unsubscribe_core_events()
+                self._event_bus = None
+                self._book_cache.clear()
+                self._rules_cache.clear()
 
     async def check_network(self) -> NetworkStatus:
         return NetworkStatus.CONNECTED if self._handle is not None else NetworkStatus.NOT_CONNECTED
@@ -316,8 +328,14 @@ class MarketConnectorExchange(ExchangeBase):
             raise ValueError(f"{self._connector_name} does not support {order_type.name} orders.")
         # Only the core's documented extras pass through; other keys (e.g. executor bookkeeping) are dropped.
         extras = {key: kwargs[key] for key in CORE_ORDER_KWARGS if kwargs.get(key) is not None}
+        ignored = sorted(key for key in kwargs if key not in CORE_ORDER_KWARGS)
+        if ignored:
+            self.logger().debug(f"{self._connector_name}: ignoring unsupported order kwargs {ignored}.")
         if "position_action" in extras:
-            extras["position_action"] = to_parent_position_action(extras["position_action"])
+            action = extras["position_action"]
+            if not isinstance(action, Enum) or action.name not in PositionAction.__members__:
+                raise TypeError(f"position_action must be a PositionAction member, got {action!r}.")
+            extras["position_action"] = to_parent_position_action(action)
         method = core.buy if trade_type is TradeType.BUY else core.sell
         return method(
             trading_pair,

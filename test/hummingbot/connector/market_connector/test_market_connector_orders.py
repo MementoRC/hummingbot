@@ -1,3 +1,4 @@
+import asyncio
 from decimal import Decimal
 import unittest
 
@@ -148,6 +149,38 @@ class OrderPathTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(any(bus.get_subscribers(event_id) for event_id in EVENT_CLASSES))
         bus.publish(106, _cancelled())
         self.assertEqual([], self._seen(106))
+
+    async def test_terminal_event_emitted_during_close_is_delivered(self):
+        original_close = self.descriptor.handle.close
+
+        async def close_emitting():
+            self.core.emit(_cancelled())
+            await original_close()
+
+        self.descriptor.handle.close = close_emitting
+        await self.exchange.stop_network()
+        self.assertEqual(1, len(self._seen(106)))
+
+    async def test_concurrent_start_network_creates_one_handle(self):
+        await self.exchange.stop_network()
+        self.descriptor.create_calls.clear()
+        self.descriptor.handle.started = 0
+        await asyncio.gather(self.exchange.start_network(), self.exchange.start_network())
+        self.assertEqual(1, len(self.descriptor.create_calls))
+        self.assertEqual(1, self.descriptor.handle.started)
+        bus = self.descriptor.create_calls[0][1]
+        self.assertTrue(all(len(bus.get_subscribers(event_id)) == 1 for event_id in EVENT_CLASSES))
+
+    async def test_non_enum_position_action_raises_type_error(self):
+        with self.assertRaises(TypeError):
+            self.exchange.buy(PAIR, D("1"), OrderType.LIMIT, D("100"), position_action="OPEN")
+        self.assertEqual([], self.core.order_calls)
+
+    async def test_unknown_kwarg_is_ignored_and_logged(self):
+        with self.assertLogs(self.exchange.logger(), level="DEBUG") as logs:
+            self.exchange.buy(PAIR, D("1"), OrderType.LIMIT, D("100"), junk=1)
+        self.assertTrue(any("junk" in line for line in logs.output))
+        self.assertEqual({}, self.core.order_calls[0][5])
 
     async def test_listener_exception_does_not_block_others(self):
         def explode(_):
