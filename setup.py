@@ -4,12 +4,12 @@ import os
 import subprocess
 import sys
 
-from Cython.Build import cythonize
 import numpy as np
+from Cython.Build import cythonize
 from setuptools import find_packages, setup
 from setuptools.command.build_ext import build_ext
 
-is_posix = os.name == "posix"
+is_posix = (os.name == "posix")
 
 
 # Avoid a gcc warning below:
@@ -24,17 +24,22 @@ class BuildExt(build_ext):
 
 def main():
     cpu_count = os.cpu_count() or 8
-    version = "20260922"
-    all_packages = find_packages(
-        include=["hummingbot", "hummingbot.*"],
-    )
+    version = "20261118"
+    all_packages = find_packages(include=["hummingbot", "hummingbot.*"], )
     excluded_paths = [
         "hummingbot.connector.gateway.clob_spot.data_sources.injective",
-        "hummingbot.connector.gateway.clob_perp.data_sources.injective_perpetual",
+        "hummingbot.connector.gateway.clob_perp.data_sources.injective_perpetual"
     ]
-    packages = [pkg for pkg in all_packages if not any(fnmatch.fnmatch(pkg, pattern) for pattern in excluded_paths)]
+    packages = [
+        pkg for pkg in all_packages
+        if not any(fnmatch.fnmatch(pkg, pattern) for pattern in excluded_paths)
+    ]
     package_data = {
-        "hummingbot": ["core/cpp/*", "VERSION", "templates/*TEMPLATE.yml"],
+        "hummingbot": [
+            "core/cpp/*",
+            "VERSION",
+            "templates/*TEMPLATE.yml"
+        ],
     }
     install_requires = [
         "aiohttp>=3.8.5",
@@ -83,7 +88,7 @@ def main():
         "web3",
         "xrpl-py>=4.4.0",
         "PyYaml>=0.2.5",
-        "lighter-sdk==1.1.2",
+        "lighter-sdk==1.1.2"
     ]
 
     # --- 1. Define Flags (But don't pass them to Cython yet) ---
@@ -128,16 +133,16 @@ def main():
         "annotation_typing": False,
     }
     if os.environ.get("WITHOUT_CYTHON_OPTIMIZATIONS"):
-        compiler_directives.update(
-            {
-                "optimize.use_switch": False,
-                "optimize.unpack_method_calls": False,
-            }
-        )
+        compiler_directives.update({
+            "optimize.use_switch": False,
+            "optimize.unpack_method_calls": False,
+        })
 
     if "DEV_MODE" in os.environ:
         version += ".dev1"
-        package_data[""] = ["*.pxd", "*.pyx", "*.h"]
+        package_data[""] = [
+            "*.pxd", "*.pyx", "*.h"
+        ]
         package_data["hummingbot"].append("core/cpp/*.cpp")
 
     if len(sys.argv) > 1 and sys.argv[1] == "build_ext" and is_posix:
@@ -148,7 +153,7 @@ def main():
         cython_sources,
         exclude=augmented_sources + released_sources,
         compiler_directives=compiler_directives,
-        **cython_kwargs,
+        **cython_kwargs
     )
     if augmented_sources:
         extensions += cythonize(
@@ -176,8 +181,12 @@ def main():
         package_data=package_data,
         install_requires=install_requires,
         ext_modules=extensions,  # <--- Use the list we modified
-        include_dirs=[np.get_include()],
-        scripts=["bin/hummingbot_quickstart.py"],
+        include_dirs=[
+            np.get_include()
+        ],
+        scripts=[
+            "bin/hummingbot_quickstart.py"
+        ],
         cmdclass={"build_ext": BuildExt},
     )
 
