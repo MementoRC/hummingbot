@@ -6,6 +6,7 @@ Usage:
     conda run -n hummingbot python scripts/backtest_pmm_mister.py --days 3 --chart
     conda run -n hummingbot python scripts/backtest_pmm_mister.py --chart --output backtest.html
 """
+
 import argparse
 import asyncio
 import os
@@ -18,6 +19,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 # Patch broken optional dependency (injective proto mismatch)
 try:
     from pyinjective.proto.injective.stream.v2 import query_pb2
+
     if not hasattr(query_pb2, "OrderFailuresFilter"):
         query_pb2.OrderFailuresFilter = type("OrderFailuresFilter", (), {})
 except ImportError:
@@ -53,16 +55,20 @@ def build_config(connector: str, trading_pair: str, total_amount_quote: int):
         "price_distance_tolerance": 0.0002,
         "take_profit": "0.0002",
         "max_active_executors_by_level": 20,
-        "position_profit_protection": True
+        "position_profit_protection": True,
     }
-    return BacktestingEngineBase.get_controller_config_instance_from_dict(
-        config_data, controllers_module="controllers"
-    )
+    return BacktestingEngineBase.get_controller_config_instance_from_dict(config_data, controllers_module="controllers")
 
 
-async def main(days: float, show_chart: bool, output_path: str | None,
-               connector: str, trading_pair: str, total_amount_quote: int,
-               resolution: str):
+async def main(
+    days: float,
+    show_chart: bool,
+    output_path: str | None,
+    connector: str,
+    trading_pair: str,
+    total_amount_quote: int,
+    resolution: str,
+):
     end_ts = int(time.time())
     start_ts = end_ts - int(days * 24 * 3600)
 
@@ -72,7 +78,9 @@ async def main(days: float, show_chart: bool, output_path: str | None,
     print(f"Running backtest: pmm_mister | {connector} {trading_pair} | {days}d | {resolution} ...")
     t0 = time.perf_counter()
     result = await engine.run_backtesting(
-        config, start_ts, end_ts,
+        config,
+        start_ts,
+        end_ts,
         backtesting_resolution=resolution,
         trade_cost=0.0002,
     )
@@ -103,9 +111,11 @@ async def main(days: float, show_chart: bool, output_path: str | None,
     print(f"  Position Hold execs:    {len(ph_executors)}")
     print(f"  Position holds:         {len(position_holds)}")
     for ph in position_holds:
-        print(f"    {ph.connector_name} {ph.trading_pair}: "
-              f"buy={float(ph.buy_amount_base):.6f} sell={float(ph.sell_amount_base):.6f} "
-              f"net={float(ph.net_amount_base):.6f}")
+        print(
+            f"    {ph.connector_name} {ph.trading_pair}: "
+            f"buy={float(ph.buy_amount_base):.6f} sell={float(ph.sell_amount_base):.6f} "
+            f"net={float(ph.net_amount_base):.6f}"
+        )
 
     bt_result = BacktestingResult(result, config)
     print(f"\n{bt_result.get_results_summary()}")
@@ -133,4 +143,6 @@ if __name__ == "__main__":
     parser.add_argument("--output", type=str, default=None, help="Save chart to HTML file instead of showing")
     args = parser.parse_args()
 
-    asyncio.run(main(args.days, args.chart, args.output, args.connector, args.trading_pair, args.amount, args.resolution))
+    asyncio.run(
+        main(args.days, args.chart, args.output, args.connector, args.trading_pair, args.amount, args.resolution)
+    )

@@ -3,38 +3,16 @@ from decimal import Decimal
 from enum import Enum
 from typing import Dict, List, NamedTuple, Optional
 
+from event_bus import (  # noqa: F401  # canonical in hb-event-bus>=0.3.0 (identity shared with sub-packages)
+    MarketEvent,
+    OrderBookEvent,
+)
+
 from hummingbot.core.data_type.common import LPType, OrderType, PositionAction, PositionMode, PositionSide, TradeType
 from hummingbot.core.data_type.order_book_row import OrderBookRow
 from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee, TokenAmount, TradeFeeBase
 
 s_decimal_0 = Decimal("0")
-
-
-class MarketEvent(Enum):
-    ReceivedAsset = 101
-    BuyOrderCompleted = 102
-    SellOrderCompleted = 103
-    # Trade = 104  Deprecated
-    WithdrawAsset = 105  # Locally Deprecated, but still present in hummingsim
-    OrderCancelled = 106
-    OrderFilled = 107
-    OrderExpired = 108
-    OrderUpdate = 109
-    TradeUpdate = 110
-    OrderFailure = 198
-    TransactionFailure = 199
-    BuyOrderCreated = 200
-    SellOrderCreated = 201
-    FundingPaymentCompleted = 202
-    FundingInfo = 203
-    RangePositionLiquidityAdded = 300
-    RangePositionLiquidityRemoved = 301
-    RangePositionUpdateFailure = 303
-
-
-class OrderBookEvent(int, Enum):
-    TradeEvent = 901
-    OrderBookDataSourceUpdateEvent = 904
 
 
 class OrderBookDataSourceEvent(int, Enum):
