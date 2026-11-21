@@ -5,6 +5,7 @@ from enum import Enum
 import functools
 from typing import Any, Dict, List, Mapping, Optional
 
+from data_type_primitives.trigger_spec import TriggerKind, TriggerSpec
 from event_bus import EventBus
 
 from hummingbot.connector.exchange_base import ExchangeBase
@@ -38,7 +39,9 @@ PRE_START_STATUS_KEYS = (
 )
 DEFAULT_ORDER_TYPES = [OrderType.LIMIT, OrderType.MARKET, OrderType.LIMIT_MAKER]
 # Optional order extras forwarded to the core when the caller supplies them via **kwargs.
-CORE_ORDER_KWARGS = ("limit_price", "price_in_percent", "position_action", "expiration_ts")
+CORE_ORDER_KWARGS = ("limit_price", "price_in_percent", "position_action", "expiration_ts", "trigger")
+# Order types expressed through the core's ``trigger=TriggerSpec`` form.
+TRIGGER_ORDER_TYPES = (OrderType.STOP_LOSS, OrderType.TAKE_PROFIT)
 
 
 class MarketConnectorExchange(ExchangeBase):
@@ -337,6 +340,13 @@ class MarketConnectorExchange(ExchangeBase):
                 raise TypeError(f"position_action must be a PositionAction member, got {action!r}.")
             extras["position_action"] = to_parent_position_action(action)
         method = core.buy if trade_type is TradeType.BUY else core.sell
+        # *_LIMIT -> #85 P5 (limit-price source); trailing -> follow-up. Both keep the legacy call.
+        if order_type in TRIGGER_ORDER_TYPES:
+            if "trigger" not in extras:
+                extras["trigger"] = self._build_trigger(price, bool(extras.pop("price_in_percent", False)))
+            else:
+                extras.pop("price_in_percent", None)
+            return method(trading_pair, amount, to_parent_order_type(order_type), **extras)
         return method(
             trading_pair,
             amount,
@@ -344,6 +354,14 @@ class MarketConnectorExchange(ExchangeBase):
             price,
             **extras,
         )
+
+    @staticmethod
+    def _build_trigger(price: Decimal, in_percent: bool) -> TriggerSpec:
+        value = Decimal(str(price))
+        if in_percent:
+            # Legacy price_in_percent is in percent points; TriggerSpec PERCENT takes a fraction.
+            return TriggerSpec(kind=TriggerKind.PERCENT, value=value / 100)
+        return TriggerSpec(kind=TriggerKind.ABSOLUTE, value=value)
 
     # --- core event bridge -----------------------------------------------------------------------------------
 

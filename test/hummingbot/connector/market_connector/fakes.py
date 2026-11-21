@@ -135,7 +135,15 @@ class FakeDescriptor:
     default_maker_fee = Decimal("0.0025")
     default_taker_fee = Decimal("0.004")
     order_capabilities = SimpleNamespace(
-        order_types=frozenset({OrderType.MARKET, OrderType.LIMIT, OrderType.STOP_LOSS_LIMIT})
+        order_types=frozenset(
+            {
+                OrderType.MARKET,
+                OrderType.LIMIT,
+                OrderType.STOP_LOSS,
+                OrderType.TAKE_PROFIT,
+                OrderType.STOP_LOSS_LIMIT,
+            }
+        )
     )
 
     def __init__(self):
