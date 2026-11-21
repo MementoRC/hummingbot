@@ -27,8 +27,16 @@ class KrakenEmulationVenue:
     ``target`` is the trading-pair string and is passed to the gateway unchanged.
     """
 
-    def __init__(self, gateway: Any):
+    def __init__(self, gateway: Any, codec: Any):
         self._gateway = gateway
+        self._codec = codec
+
+    def _is_linked_leg(self, client_order_id: Any) -> bool:
+        # decode() returns None for foreign tags; treat a raise the same way.
+        try:
+            return self._codec.decode(client_order_id) is not None
+        except Exception:
+            return False
 
     def supports_leg(self, target: str, leg: LegSpec) -> bool:
         # Percent trailing-stop-limit needs MC #298 (130918a), which is not in the current pin: deferred.
@@ -80,6 +88,8 @@ class KrakenEmulationVenue:
 
     def subscribe(self, on_fill_cb: Callable[[LegFill], Union[Awaitable[None], None]]) -> Callable[[], None]:
         async def _deliver(fill: Any) -> None:
+            if not self._is_linked_leg(fill.client_order_id):
+                return
             result = on_fill_cb(
                 LegFill(
                     client_order_id=fill.client_order_id,

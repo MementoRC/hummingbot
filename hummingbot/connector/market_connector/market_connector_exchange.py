@@ -113,7 +113,7 @@ class MarketConnectorExchange(ExchangeBase):
                 handle.core.track_pairs(self._trading_pairs)
                 await self._start_linked_manager(handle)
             except BaseException:
-                self._release_linked_resources()
+                await self._release_linked_resources()
                 self._unsubscribe_core_events()
                 await handle.close()
                 raise
@@ -127,14 +127,20 @@ class MarketConnectorExchange(ExchangeBase):
             self._refresh_task = None
             self._handle = None
             try:
-                await self._stop_linked_manager()
-                if task is not None:
-                    task.cancel()
-                    with contextlib.suppress(asyncio.CancelledError):
-                        await task
-                if handle is not None:
-                    # Close first: the core emits terminal events while draining, and those must still be delivered.
-                    await handle.close()
+                try:
+                    await self._stop_linked_manager()
+                except Exception:
+                    self.logger().exception("Linked order manager shutdown failed.")
+                    raise
+                finally:
+                    # Cleanup must run even if the linked shutdown failed; the error is re-raised afterwards.
+                    if task is not None:
+                        task.cancel()
+                        with contextlib.suppress(asyncio.CancelledError):
+                            await task
+                    if handle is not None:
+                        # Close first: the core emits terminal events while draining, and those must still be delivered.
+                        await handle.close()
             finally:
                 self._unsubscribe_core_events()
                 self._event_bus = None
@@ -171,6 +177,8 @@ class MarketConnectorExchange(ExchangeBase):
             cancel_orphans=False,
             allow_volatile_store=True,
         )
+        # CAVEAT: P4a uses the SF legacy time-floor group ids. Per the design-doc caveat, the kraken_mc venue must
+        # not place linked orders live before the P4b allocator lands. P4a has no consumer of linked_order_manager.
         manager = EmulatedLinkedOrderManager(venue, codec, config, store=InMemoryLinkedGroupStore())
         self._linked_manager = manager
         # Order matters: subscribe, then recover, then tick.
@@ -188,14 +196,22 @@ class MarketConnectorExchange(ExchangeBase):
                 self.logger().exception("Linked order manager tick failed.")
             await asyncio.sleep(self.LINKED_TICK_INTERVAL_S)
 
-    def _release_linked_resources(self) -> None:
-        """Synchronous cleanup for a failed start: stop the tick task and unsubscribe, keep nothing."""
-        task, unsub = self._linked_tick_task, self._leg_fill_unsub
+    async def _release_linked_resources(self) -> None:
+        """Cleanup for a failed start: stop the tick task, unsubscribe, shut the manager down, keep nothing."""
+        task, unsub, manager = self._linked_tick_task, self._leg_fill_unsub, self._linked_manager
         self._linked_tick_task = self._leg_fill_unsub = self._linked_manager = None
         if task is not None:
             task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await task
         if unsub is not None:
             unsub()
+        if manager is not None:
+            # Best effort: the original start error is what the caller re-raises.
+            try:
+                await manager.shutdown()
+            except Exception:
+                self.logger().exception("Linked order manager shutdown failed during start cleanup.")
 
     async def _stop_linked_manager(self) -> None:
         task, unsub, manager = self._linked_tick_task, self._leg_fill_unsub, self._linked_manager

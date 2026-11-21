@@ -54,7 +54,8 @@ def _mc_snapshot(state, filled="0"):
 class KrakenEmulationVenueTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
         self.gateway = FakeGateway()
-        self.venue = KrakenEmulationVenue(self.gateway)
+        self.codec = KrakenClOrdIdLinkCodec()
+        self.venue = KrakenEmulationVenue(self.gateway, self.codec)
 
     async def test_place_leg_returns_link_tag_not_txid(self):
         leg = _stop_leg()
@@ -70,7 +71,8 @@ class KrakenEmulationVenueTests(unittest.IsolatedAsyncioTestCase):
             D("1"),
             None,
         )
-        assert kwargs == {"cl_ord_id": TAG, "trigger": TRIGGER}
+        assert kwargs["cl_ord_id"] == TAG
+        assert kwargs["trigger"] == TRIGGER
 
     async def test_place_leg_passes_limit_price(self):
         await self.venue.place_leg(PAIR, _limit_leg("110"), link_tag=TAG)
@@ -144,13 +146,37 @@ class KrakenEmulationVenueTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_subscribe_converts_fill_and_unsubscribes(self):
         received = []
+        linked_id = self.codec.encode(1, 0)
         unsubscribe = self.venue.subscribe(received.append)
-        await self.gateway.emit_fill(McLegFill(TAG, D("0.5"), D("100"), 12.0, "T1"))
+        await self.gateway.emit_fill(McLegFill(linked_id, D("0.5"), D("100"), 12.0, "T1"))
         assert received == [
-            LegFill(client_order_id=TAG, cumulative_filled=D("0.5"), last_price=D("100"), timestamp=12.0, fill_id="T1")
+            LegFill(
+                client_order_id=linked_id,
+                cumulative_filled=D("0.5"),
+                last_price=D("100"),
+                timestamp=12.0,
+                fill_id="T1",
+            )
         ]
         unsubscribe()
         assert self.gateway.unsubscribed == 1
+
+    async def test_subscribe_drops_foreign_fill(self):
+        received = []
+        self.venue.subscribe(received.append)
+        await self.gateway.emit_fill(McLegFill("hbot-buy-1", D("0.5"), D("100"), 12.0, "T1"))
+        assert received == []
+
+    async def test_subscribe_drops_fill_when_decode_raises(self):
+        class _RaisingCodec:
+            def decode(self, tag):
+                raise ValueError("bad tag")
+
+        venue = KrakenEmulationVenue(self.gateway, _RaisingCodec())
+        received = []
+        venue.subscribe(received.append)
+        await self.gateway.emit_fill(McLegFill(self.codec.encode(1, 0), D("1"), D("100"), 1.0, "T1"))
+        assert received == []
 
     async def test_fill_callback_reaches_on_fill_not_buffer(self):
         manager = EmulatedLinkedOrderManager(

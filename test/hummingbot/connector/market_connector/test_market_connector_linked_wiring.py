@@ -1,4 +1,5 @@
 import asyncio
+from types import SimpleNamespace
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import patch
 
@@ -14,7 +15,7 @@ from hummingbot.connector.exchange.kraken_mc.kraken_mc_exchange import KrakenMcE
 from hummingbot.connector.market_connector.kraken_emulation_venue import KrakenEmulationVenue  # noqa: E402
 from hummingbot.connector.market_connector.market_connector_exchange import MarketConnectorExchange  # noqa: E402
 
-from .fakes import PAIR, FakeDescriptor  # noqa: E402
+from .fakes import PAIR, FakeDescriptor, FakeGateway  # noqa: E402
 
 
 class _KrakenLikeExchange(MarketConnectorExchange):
@@ -23,7 +24,8 @@ class _KrakenLikeExchange(MarketConnectorExchange):
     LINKED_TICK_INTERVAL_S = 0.01
 
     def _build_linked_venue(self, handle):
-        return KrakenEmulationVenue(handle.gateway), KrakenClOrdIdLinkCodec()
+        codec = KrakenClOrdIdLinkCodec()
+        return KrakenEmulationVenue(handle.gateway, codec), codec
 
 
 def _make(cls):
@@ -60,6 +62,35 @@ class LinkedWiringTests(IsolatedAsyncioTestCase):
 
     def test_kraken_mc_overrides_hook(self):
         assert KrakenMcExchange._build_linked_venue is not MarketConnectorExchange._build_linked_venue
+        venue, codec = KrakenMcExchange._build_linked_venue(SimpleNamespace(), SimpleNamespace(gateway=FakeGateway()))
+        assert isinstance(venue, KrakenEmulationVenue)
+        assert isinstance(codec, KrakenClOrdIdLinkCodec)
+
+    async def test_stop_network_twice_is_noop(self):
+        await self.exchange.start_network()
+        await self.exchange.stop_network()
+        await self.exchange.stop_network()
+        assert self.descriptor.handle.closed == 1
+        assert self.gateway.unsubscribed == 1
+
+    async def test_stop_network_before_start_is_noop(self):
+        await self.exchange.stop_network()
+        assert self.descriptor.handle.closed == 0
+        assert self.exchange._handle is None
+
+    async def test_stop_network_shutdown_failure_still_closes_handle(self):
+        async def shutdown(manager):
+            raise RuntimeError("shutdown boom")
+
+        with patch.object(EmulatedLinkedOrderManager, "shutdown", shutdown):
+            await self.exchange.start_network()
+            refresh_task = self.exchange._refresh_task
+            with pytest.raises(RuntimeError, match="shutdown boom"):
+                await self.exchange.stop_network()
+        assert self.descriptor.handle.closed == 1
+        assert refresh_task.cancelled()
+        assert self.exchange._handle is None
+        assert self.exchange._refresh_task is None
 
     async def test_no_manager_for_non_kraken_descriptor(self):
         exchange, descriptor = _make(MarketConnectorExchange)

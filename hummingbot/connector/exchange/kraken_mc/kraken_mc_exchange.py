@@ -44,4 +44,5 @@ class KrakenMcExchange(MarketConnectorExchange):
         )
 
     def _build_linked_venue(self, handle: Any) -> Tuple[Any, Any]:
-        return KrakenEmulationVenue(handle.gateway), KrakenClOrdIdLinkCodec()
+        codec = KrakenClOrdIdLinkCodec()
+        return KrakenEmulationVenue(handle.gateway, codec), codec

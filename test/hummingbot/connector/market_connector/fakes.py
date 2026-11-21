@@ -133,7 +133,27 @@ class FakeGateway:
         self.callbacks = []
         self.unsubscribed = 0
 
-    async def place_order(self, trading_pair, order_type, side, amount, price, **kwargs):
+    async def place_order(
+        self,
+        trading_pair,
+        order_type,
+        side,
+        amount,
+        price=None,
+        *,
+        limit_price=None,
+        price_in_percent=False,
+        userref=None,
+        cl_ord_id=None,
+        trigger=None,
+    ):
+        kwargs = {
+            "limit_price": limit_price,
+            "price_in_percent": price_in_percent,
+            "userref": userref,
+            "cl_ord_id": cl_ord_id,
+            "trigger": trigger,
+        }
         self.calls.append(("place_order", trading_pair, order_type, side, amount, price, kwargs))
         if self.place_raises is not None:
             raise self.place_raises
