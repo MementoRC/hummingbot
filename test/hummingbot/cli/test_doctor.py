@@ -1,9 +1,9 @@
+from contextlib import redirect_stdout
 import io
 import json
-import unittest
-from contextlib import redirect_stdout
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import unittest
 from unittest.mock import patch
 
 import typer
@@ -22,6 +22,7 @@ class DoctorRowTest(unittest.TestCase):
 
     def test_clock_ok_warn_fail_thresholds(self):
         import time
+
         now = time.time()
         for skew, status in [(0.5, "ok"), (5.0, "warn"), (60.0, "fail")]:
             patch.object(doctor_mod, "_remote_unix_time", return_value=now - skew).start()
@@ -37,9 +38,9 @@ class DoctorRowTest(unittest.TestCase):
 
     def _disk(self, free):
         from collections import namedtuple
+
         Usage = namedtuple("usage", "total used free")
-        patch.object(doctor_mod.shutil, "disk_usage",
-                     return_value=Usage(100 << 30, 0, free)).start()
+        patch.object(doctor_mod.shutil, "disk_usage", return_value=Usage(100 << 30, 0, free)).start()
         return doctor_mod._disk_row()
 
     def test_disk_thresholds(self):
@@ -68,10 +69,8 @@ class DoctorRowTest(unittest.TestCase):
     def test_dangling_loaded_pointer_warns(self):
         d = TemporaryDirectory()
         self.addCleanup(d.cleanup)
-        patch("hummingbot.cli.bot.read_loaded",
-              return_value={"file": "conf_x.yml", "type": "v2-script"}).start()
-        patch.dict("hummingbot.cli.strategy_configs.TYPE_DIRS",
-                   {"v2-script": Path(d.name)}).start()
+        patch("hummingbot.cli.bot.read_loaded", return_value={"file": "conf_x.yml", "type": "v2-script"}).start()
+        patch.dict("hummingbot.cli.strategy_configs.TYPE_DIRS", {"v2-script": Path(d.name)}).start()
         row = doctor_mod._loaded_row()
         self.assertEqual(row["status"], "warn")
         self.assertIn("missing on disk", row["detail"])
@@ -82,16 +81,15 @@ class DoctorRowTest(unittest.TestCase):
 
     def test_keystore_without_password_skips(self):
         import os
-        patch("hummingbot.client.config.security.Security.new_password_required",
-              return_value=False).start()
+
+        patch("hummingbot.client.config.security.Security.new_password_required", return_value=False).start()
         env = {k: v for k, v in os.environ.items() if k not in ("HBOT_PASSWORD", "CONFIG_PASSWORD")}
         with patch.dict(os.environ, env, clear=True):
             row = doctor_mod._keystore_row()
         self.assertEqual(row["status"], "skip")
 
     def test_keystore_bad_password_fails(self):
-        patch("hummingbot.client.config.security.Security.new_password_required",
-              return_value=False).start()
+        patch("hummingbot.client.config.security.Security.new_password_required", return_value=False).start()
         patch("hummingbot.client.config.security.Security.login", return_value=False).start()
         with patch.dict("os.environ", {"HBOT_PASSWORD": "wrong"}):
             row = doctor_mod._keystore_row()
@@ -136,6 +134,7 @@ class DoctorRunTest(unittest.TestCase):
     def test_a_crashing_check_becomes_a_fail_row_not_a_crash(self):
         def boom():
             raise RuntimeError("kaput")
+
         boom.__name__ = "_clock_row"
         patch.object(doctor_mod, "CHECKS", [boom]).start()
         buf = io.StringIO()

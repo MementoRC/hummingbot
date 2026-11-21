@@ -6,8 +6,8 @@ request. A close that failed on slippage failed ten identical times, paying gas 
 attempt that reached the chain, and the operator's only lever was a per-connector YAML
 value applying to every operation that connector performed.
 """
+
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import MagicMock
 
 from hummingbot.core.data_type.common import TradeType
@@ -15,6 +15,7 @@ from hummingbot.core.gateway.gateway_error import GatewayError
 from hummingbot.strategy_v2.executors.gateway_utils import is_slippage_failure, next_slippage_pct
 from hummingbot.strategy_v2.executors.lp_executor.data_types import LPExecutorConfig, LPExecutorStates
 from hummingbot.strategy_v2.executors.lp_executor.lp_executor import LPExecutor
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 def a_config(**overrides) -> LPExecutorConfig:

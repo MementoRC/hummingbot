@@ -12,7 +12,6 @@ from hummingbot.connector.exchange.gemini.gemini_utils import (
 
 
 class GeminiUtilsTests(TestCase):
-
     def test_centralized_flag(self):
         self.assertTrue(CENTRALIZED)
 

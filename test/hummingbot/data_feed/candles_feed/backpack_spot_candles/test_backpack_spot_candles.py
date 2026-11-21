@@ -1,8 +1,8 @@
 import asyncio
-from test.hummingbot.data_feed.candles_feed.test_candles_base import TestCandlesBase
 
 from hummingbot.connector.test_support.network_mocking_assistant import NetworkMockingAssistant
 from hummingbot.data_feed.candles_feed.backpack_spot_candles import BackpackSpotCandles
+from test.hummingbot.data_feed.candles_feed.test_candles_base import TestCandlesBase
 
 
 class TestBackpackSpotCandles(TestCandlesBase):
@@ -34,27 +34,103 @@ class TestBackpackSpotCandles(TestCandlesBase):
 
     def get_fetch_candles_data_mock(self):
         return [
-            [1672974000.0, '16823.24', '16823.63', '16792.12', '16810.18', '6230.44034', '104737787.3657063', 162086.0, 0., 0.],
-            [1672977600.0, '16809.74', '16816.45', '16779.96', '16786.86', '6529.22759', '109693209.6428701', 175249.0, 0., 0.],
-            [1672981200.0, '16786.60', '16802.87', '16780.15', '16794.06', '5763.44917', '96775667.5626552', 160778.0, 0., 0.],
-            [1672984800.0, '16794.33', '16812.22', '16791.47', '16802.11', '5475.13940', '92000245.5434114', 164303.0, 0., 0.],
+            [
+                1672974000.0,
+                "16823.24",
+                "16823.63",
+                "16792.12",
+                "16810.18",
+                "6230.44034",
+                "104737787.3657063",
+                162086.0,
+                0.0,
+                0.0,
+            ],
+            [
+                1672977600.0,
+                "16809.74",
+                "16816.45",
+                "16779.96",
+                "16786.86",
+                "6529.22759",
+                "109693209.6428701",
+                175249.0,
+                0.0,
+                0.0,
+            ],
+            [
+                1672981200.0,
+                "16786.60",
+                "16802.87",
+                "16780.15",
+                "16794.06",
+                "5763.44917",
+                "96775667.5626552",
+                160778.0,
+                0.0,
+                0.0,
+            ],
+            [
+                1672984800.0,
+                "16794.33",
+                "16812.22",
+                "16791.47",
+                "16802.11",
+                "5475.13940",
+                "92000245.5434114",
+                164303.0,
+                0.0,
+                0.0,
+            ],
         ]
 
     def get_candles_rest_data_mock(self):
         # Backpack returns a list of objects with UTC ISO-8601 datetime strings for start/end.
         return [
-            {"start": "2023-01-06 03:00:00", "end": "2023-01-06 04:00:00", "open": "16823.24", "high": "16823.63",
-             "low": "16792.12", "close": "16810.18", "volume": "6230.44034", "quoteVolume": "104737787.3657063",
-             "trades": "162086"},
-            {"start": "2023-01-06 04:00:00", "end": "2023-01-06 05:00:00", "open": "16809.74", "high": "16816.45",
-             "low": "16779.96", "close": "16786.86", "volume": "6529.22759", "quoteVolume": "109693209.6428701",
-             "trades": "175249"},
-            {"start": "2023-01-06 05:00:00", "end": "2023-01-06 06:00:00", "open": "16786.60", "high": "16802.87",
-             "low": "16780.15", "close": "16794.06", "volume": "5763.44917", "quoteVolume": "96775667.5626552",
-             "trades": "160778"},
-            {"start": "2023-01-06 06:00:00", "end": "2023-01-06 07:00:00", "open": "16794.33", "high": "16812.22",
-             "low": "16791.47", "close": "16802.11", "volume": "5475.13940", "quoteVolume": "92000245.5434114",
-             "trades": "164303"},
+            {
+                "start": "2023-01-06 03:00:00",
+                "end": "2023-01-06 04:00:00",
+                "open": "16823.24",
+                "high": "16823.63",
+                "low": "16792.12",
+                "close": "16810.18",
+                "volume": "6230.44034",
+                "quoteVolume": "104737787.3657063",
+                "trades": "162086",
+            },
+            {
+                "start": "2023-01-06 04:00:00",
+                "end": "2023-01-06 05:00:00",
+                "open": "16809.74",
+                "high": "16816.45",
+                "low": "16779.96",
+                "close": "16786.86",
+                "volume": "6529.22759",
+                "quoteVolume": "109693209.6428701",
+                "trades": "175249",
+            },
+            {
+                "start": "2023-01-06 05:00:00",
+                "end": "2023-01-06 06:00:00",
+                "open": "16786.60",
+                "high": "16802.87",
+                "low": "16780.15",
+                "close": "16794.06",
+                "volume": "5763.44917",
+                "quoteVolume": "96775667.5626552",
+                "trades": "160778",
+            },
+            {
+                "start": "2023-01-06 06:00:00",
+                "end": "2023-01-06 07:00:00",
+                "open": "16794.33",
+                "high": "16812.22",
+                "low": "16791.47",
+                "close": "16802.11",
+                "volume": "5475.13940",
+                "quoteVolume": "92000245.5434114",
+                "trades": "164303",
+            },
         ]
 
     def get_candles_ws_data_mock_1(self):
@@ -101,8 +177,21 @@ class TestBackpackSpotCandles(TestCandlesBase):
 
     def test_empty_ws_candle_is_skipped(self):
         # Buckets with no trades arrive with null OHLC and must be ignored.
-        empty = {"data": {"e": "kline", "s": "BTC_USDC", "t": "2024-06-18T00:00:00", "T": "2024-06-18T01:00:00",
-                          "o": None, "c": None, "h": None, "l": None, "v": None, "n": 0, "X": True}}
+        empty = {
+            "data": {
+                "e": "kline",
+                "s": "BTC_USDC",
+                "t": "2024-06-18T00:00:00",
+                "T": "2024-06-18T01:00:00",
+                "o": None,
+                "c": None,
+                "h": None,
+                "l": None,
+                "v": None,
+                "n": 0,
+                "X": True,
+            }
+        }
         self.assertIsNone(self.data_feed._parse_websocket_message(empty))
 
     def test_ws_subscription_payload(self):
@@ -115,5 +204,5 @@ class TestBackpackSpotCandles(TestCandlesBase):
         parsed = self.data_feed._parse_websocket_message(msg)
         expected = float(msg["data"]["v"]) * float(msg["data"]["c"])
         self.assertAlmostEqual(parsed["quote_asset_volume"], expected)
-        self.assertEqual(parsed["taker_buy_base_volume"], 0.)
-        self.assertEqual(parsed["taker_buy_quote_volume"], 0.)
+        self.assertEqual(parsed["taker_buy_base_volume"], 0.0)
+        self.assertEqual(parsed["taker_buy_quote_volume"], 0.0)

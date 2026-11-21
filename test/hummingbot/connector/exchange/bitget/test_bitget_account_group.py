@@ -1,17 +1,17 @@
 import asyncio
 import json
 import re
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import patch
 
 from aioresponses import CallbackResult, aioresponses
 
 import hummingbot.connector.derivative.bitget_perpetual.bitget_perpetual_constants as PERP_CONSTANTS
-import hummingbot.connector.exchange.bitget.bitget_constants as CONSTANTS
-import hummingbot.connector.exchange.bitget.bitget_web_utils as web_utils
 from hummingbot.connector.derivative.bitget_perpetual.bitget_perpetual_derivative import BitgetPerpetualDerivative
 from hummingbot.connector.exchange.bitget import bitget_account
+import hummingbot.connector.exchange.bitget.bitget_constants as CONSTANTS
 from hummingbot.connector.exchange.bitget.bitget_exchange import BitgetExchange
+import hummingbot.connector.exchange.bitget.bitget_web_utils as web_utils
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 API_KEY = "test_api_key"
 SECRET_KEY = "test_secret_key"
@@ -71,15 +71,24 @@ class BitgetAccountGroupTests(IsolatedAsyncioWrapperTestCase):
 
     @staticmethod
     def _user_info_body(user_id: str = USER_ID) -> str:
-        return json.dumps({"code": "00000", "msg": "success", "requestTime": 1744617600000,
-                           "data": {"userId": user_id, "parentId": None, "permType": "read_and_write"}})
+        return json.dumps(
+            {
+                "code": "00000",
+                "msg": "success",
+                "requestTime": 1744617600000,
+                "data": {"userId": user_id, "parentId": None, "permType": "read_and_write"},
+            }
+        )
 
     def _mock_user_id(self, mock_api: aioresponses, user_id: str = USER_ID, status: int = 200):
         mock_api.get(self._user_info_regex(), status=status, body=self._user_info_body(user_id))
 
     def _user_info_requests(self, mock_api: aioresponses) -> int:
-        return sum(len(calls) for (method, url), calls in mock_api.requests.items()
-                   if str(url).startswith(self._user_info_url()))
+        return sum(
+            len(calls)
+            for (method, url), calls in mock_api.requests.items()
+            if str(url).startswith(self._user_info_url())
+        )
 
     def test_both_connectors_share_an_account_id_for_the_same_key(self):
         self.assertEqual(self._spot().account_group_id, self._perpetual().account_group_id)
@@ -212,12 +221,16 @@ class BitgetAccountGroupTests(IsolatedAsyncioWrapperTestCase):
     @aioresponses()
     async def test_balance_updates_read_the_user_id_on_both_connectors(self, mock_api):
         """The balance command reads account_group_id right after _update_balances."""
-        assets_body = json.dumps({"code": "00000", "msg": "success", "data": {"assets": [
-            {"coin": "USDT", "available": "10", "locked": "0", "balance": "10"}]}})
+        assets_body = json.dumps(
+            {
+                "code": "00000",
+                "msg": "success",
+                "data": {"assets": [{"coin": "USDT", "available": "10", "locked": "0", "balance": "10"}]},
+            }
+        )
         for api_key, connector, assets_endpoint in (
             ("key_for_spot", self._spot(api_key="key_for_spot"), CONSTANTS.ASSETS_ENDPOINT),
-            ("key_for_perpetual", self._perpetual(api_key="key_for_perpetual"),
-             PERP_CONSTANTS.ACCOUNTS_INFO_ENDPOINT),
+            ("key_for_perpetual", self._perpetual(api_key="key_for_perpetual"), PERP_CONSTANTS.ACCOUNTS_INFO_ENDPOINT),
         ):
             assets_url = web_utils.private_rest_url(path_url=assets_endpoint)
             mock_api.get(re.compile(f"^{assets_url}".replace(".", r"\.").replace("?", r"\?")), body=assets_body)

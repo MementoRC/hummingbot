@@ -1,12 +1,12 @@
+from collections import OrderedDict
 import json
 import time
-from collections import OrderedDict
 from typing import Any
 
 import eth_account
-import msgpack
 from eth_account.messages import encode_typed_data
 from eth_utils import is_hex_address, keccak, to_checksum_address, to_hex
+import msgpack
 
 from hummingbot.connector.derivative.hyperliquid_perpetual import hyperliquid_perpetual_constants as CONSTANTS
 from hummingbot.connector.derivative.hyperliquid_perpetual.hyperliquid_perpetual_web_utils import (
@@ -47,8 +47,7 @@ class HyperliquidPerpetualAuth(AuthBase):
 
         if not is_hex_address(api_address):
             raise ValueError(
-                f"Invalid Hyperliquid wallet/vault address {api_address!r}; "
-                "expected a 0x-prefixed 20-byte hex address."
+                f"Invalid Hyperliquid wallet/vault address {api_address!r}; expected a 0x-prefixed 20-byte hex address."
             )
 
         # In "api_wallet" mode the private key is a Hyperliquid API/agent wallet
@@ -137,12 +136,7 @@ class HyperliquidPerpetualAuth(AuthBase):
         return {"source": "a" if is_mainnet else "b", "connectionId": hash_iterable}
 
     def sign_l1_action(
-        self,
-        wallet,
-        action: dict[str, Any],
-        active_pool,
-        nonce: int,
-        is_mainnet: bool
+        self, wallet, action: dict[str, Any], active_pool, nonce: int, is_mainnet: bool
     ) -> dict[str, Any]:
         """
         Signs a L1 action.

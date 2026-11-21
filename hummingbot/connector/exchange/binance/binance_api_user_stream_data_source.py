@@ -1,5 +1,5 @@
-import uuid
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
+import uuid
 
 from hummingbot.connector.exchange.binance import binance_constants as CONSTANTS
 from hummingbot.connector.exchange.binance.binance_auth import BinanceAuth
@@ -14,15 +14,16 @@ if TYPE_CHECKING:
 
 
 class BinanceAPIUserStreamDataSource(UserStreamTrackerDataSource):
-
     _logger: Optional[HummingbotLogger] = None
 
-    def __init__(self,
-                 auth: BinanceAuth,
-                 trading_pairs: List[str],
-                 connector: 'BinanceExchange',
-                 api_factory: WebAssistantsFactory,
-                 domain: str = CONSTANTS.DEFAULT_DOMAIN):
+    def __init__(
+        self,
+        auth: BinanceAuth,
+        trading_pairs: List[str],
+        connector: "BinanceExchange",
+        api_factory: WebAssistantsFactory,
+        domain: str = CONSTANTS.DEFAULT_DOMAIN,
+    ):
         super().__init__()
         self._auth: BinanceAuth = auth
         self._domain = domain

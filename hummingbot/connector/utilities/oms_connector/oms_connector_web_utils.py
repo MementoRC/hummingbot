@@ -1,6 +1,6 @@
+from abc import ABC, abstractmethod
 import json
 import time
-from abc import ABC, abstractmethod
 from typing import Optional
 
 from hummingbot.connector.utilities.oms_connector import oms_connector_constants as CONSTANTS
@@ -69,9 +69,7 @@ def create_throttler() -> AsyncThrottler:
     return AsyncThrottler(CONSTANTS.RATE_LIMITS)
 
 
-async def get_current_server_time(
-    throttler: Optional[AsyncThrottler] = None, domain: str = ""
-) -> float:
+async def get_current_server_time(throttler: Optional[AsyncThrottler] = None, domain: str = "") -> float:
     return _time() * 1e3
 
 
