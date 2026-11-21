@@ -138,5 +138,12 @@ class MarketConnectorExchangeTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_supported_order_types_from_capabilities(self):
         self.assertEqual(
-            {OrderType.MARKET, OrderType.LIMIT, OrderType.STOP_LOSS_LIMIT}, set(self.exchange.supported_order_types())
+            {
+                OrderType.MARKET,
+                OrderType.LIMIT,
+                OrderType.STOP_LOSS,
+                OrderType.TAKE_PROFIT,
+                OrderType.STOP_LOSS_LIMIT,
+            },
+            set(self.exchange.supported_order_types()),
         )
