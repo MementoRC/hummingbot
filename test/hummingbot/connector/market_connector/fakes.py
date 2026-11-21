@@ -118,9 +118,61 @@ class FakeCore:
         self.bus.publish(MARKET_EVENT_IDS[type(event).__name__], event)
 
 
+class FakeGateway:
+    """Records calls; ``*_return`` / ``*_raises`` configure the outcome of each method."""
+
+    def __init__(self):
+        self.calls = []
+        self.place_return = "TXID-1"
+        self.place_raises = None
+        self.cancel_return = True
+        self.cancel_raises = None
+        self.get_leg_return = None
+        self.get_leg_raises = None
+        self.open_legs = []
+        self.callbacks = []
+        self.unsubscribed = 0
+
+    async def place_order(self, trading_pair, order_type, side, amount, price, **kwargs):
+        self.calls.append(("place_order", trading_pair, order_type, side, amount, price, kwargs))
+        if self.place_raises is not None:
+            raise self.place_raises
+        return self.place_return
+
+    async def cancel_order(self, trading_pair, txid=None, *, cl_ord_id=None):
+        self.calls.append(("cancel_order", trading_pair, txid, cl_ord_id))
+        if self.cancel_raises is not None:
+            raise self.cancel_raises
+        return self.cancel_return
+
+    async def get_leg(self, target, *, client_order_id=None, link_tag=None):
+        self.calls.append(("get_leg", target, client_order_id, link_tag))
+        if self.get_leg_raises is not None:
+            raise self.get_leg_raises
+        return self.get_leg_return
+
+    async def list_open_legs(self, target, *, group=None):
+        self.calls.append(("list_open_legs", target))
+        return list(self.open_legs)
+
+    def subscribe_leg_fills(self, callback):
+        self.calls.append(("subscribe_leg_fills",))
+        self.callbacks.append(callback)
+
+        def unsubscribe():
+            self.unsubscribed += 1
+
+        return unsubscribe
+
+    async def emit_fill(self, fill):
+        for callback in list(self.callbacks):
+            await callback(fill)
+
+
 class FakeHandle:
-    def __init__(self, core):
+    def __init__(self, core, gateway=None):
         self.core = core
+        self.gateway = gateway if gateway is not None else FakeGateway()
         self.started = 0
         self.closed = 0
 

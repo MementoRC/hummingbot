@@ -3,7 +3,7 @@ import contextlib
 from decimal import Decimal
 from enum import Enum
 import functools
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
 from data_type_primitives.trigger_spec import TriggerKind, TriggerSpec
 from event_bus import EventBus
@@ -52,6 +52,8 @@ class MarketConnectorExchange(ExchangeBase):
     ``start_network``. Orders are delegated to the core; its bus events are translated to parent events.
     """
 
+    LINKED_TICK_INTERVAL_S = 1.0
+
     def __init__(
         self,
         descriptor: Any,
@@ -77,6 +79,9 @@ class MarketConnectorExchange(ExchangeBase):
         self._lifecycle_lock_obj: Optional[asyncio.Lock] = None
         self._event_bus: Optional[EventBus] = None
         self._refresh_task: Optional[asyncio.Task] = None
+        self._linked_manager: Optional[Any] = None
+        self._leg_fill_unsub: Optional[Callable[[], None]] = None
+        self._linked_tick_task: Optional[asyncio.Task] = None
         self._event_subscriptions: List[Any] = []
         self._terminal_deduper = TerminalEventDeduper()
         self._order_tracker = CoreOrderTracker(lambda: self._core)
@@ -106,7 +111,9 @@ class MarketConnectorExchange(ExchangeBase):
                 await handle.start()
                 self._subscribe_core_events(bus)
                 handle.core.track_pairs(self._trading_pairs)
+                await self._start_linked_manager(handle)
             except BaseException:
+                self._release_linked_resources()
                 self._unsubscribe_core_events()
                 await handle.close()
                 raise
@@ -120,6 +127,7 @@ class MarketConnectorExchange(ExchangeBase):
             self._refresh_task = None
             self._handle = None
             try:
+                await self._stop_linked_manager()
                 if task is not None:
                     task.cancel()
                     with contextlib.suppress(asyncio.CancelledError):
@@ -132,6 +140,76 @@ class MarketConnectorExchange(ExchangeBase):
                 self._event_bus = None
                 self._book_cache.clear()
                 self._rules_cache.clear()
+
+    # --- linked-order emulation (P4a) ------------------------------------------------------------------------
+
+    @property
+    def linked_order_manager(self) -> Optional[Any]:
+        return self._linked_manager
+
+    def _build_linked_venue(self, handle: Any) -> Optional[Tuple[Any, Any]]:
+        """Return a ``(venue, codec)`` pair to enable emulated linked orders, or None (default)."""
+        return None
+
+    async def _start_linked_manager(self, handle: Any) -> None:
+        pair = self._build_linked_venue(handle)
+        if pair is None:
+            return
+        # Imported here so connectors without linked-order support never need strategy_framework.
+        from strategy_framework.linked_orders import (
+            EmulatedLinkedOrderManager,
+            InMemoryLinkedGroupStore,
+            LinkedOrderManagerConfig,
+        )
+
+        venue, codec = pair
+        # cancel_orphans must stay False: on a shared account another host's live legs look like orphans.
+        config = LinkedOrderManagerConfig(
+            enabled=True,
+            require_recover_before_place=True,
+            grace_period_s=30,
+            cancel_orphans=False,
+            allow_volatile_store=True,
+        )
+        manager = EmulatedLinkedOrderManager(venue, codec, config, store=InMemoryLinkedGroupStore())
+        self._linked_manager = manager
+        # Order matters: subscribe, then recover, then tick.
+        self._leg_fill_unsub = venue.subscribe(manager.on_fill)
+        await manager.recover(list(self._trading_pairs))
+        self._linked_tick_task = asyncio.ensure_future(self._linked_tick_loop())
+
+    async def _linked_tick_loop(self) -> None:
+        while True:
+            try:
+                await self._linked_manager.tick()
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                self.logger().exception("Linked order manager tick failed.")
+            await asyncio.sleep(self.LINKED_TICK_INTERVAL_S)
+
+    def _release_linked_resources(self) -> None:
+        """Synchronous cleanup for a failed start: stop the tick task and unsubscribe, keep nothing."""
+        task, unsub = self._linked_tick_task, self._leg_fill_unsub
+        self._linked_tick_task = self._leg_fill_unsub = self._linked_manager = None
+        if task is not None:
+            task.cancel()
+        if unsub is not None:
+            unsub()
+
+    async def _stop_linked_manager(self) -> None:
+        task, unsub, manager = self._linked_tick_task, self._leg_fill_unsub, self._linked_manager
+        try:
+            if task is not None:
+                task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await task
+            if unsub is not None:
+                unsub()
+            if manager is not None:
+                await manager.shutdown()
+        finally:
+            self._linked_tick_task = self._leg_fill_unsub = self._linked_manager = None
 
     async def check_network(self) -> NetworkStatus:
         return NetworkStatus.CONNECTED if self._handle is not None else NetworkStatus.NOT_CONNECTED
