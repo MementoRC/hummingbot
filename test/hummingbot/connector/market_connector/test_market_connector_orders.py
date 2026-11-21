@@ -7,6 +7,7 @@ import pytest
 pytest.importorskip("market_connector")
 
 from data_type_primitives import TradeFeeBase as PrimitiveFee, TradeFeeSchema  # noqa: E402
+from data_type_primitives.trigger_spec import TriggerKind, TriggerSpec  # noqa: E402
 from market_connector.hb_compat import order_events as mc  # noqa: E402
 
 from hummingbot.connector.market_connector.events_converter import EVENT_CLASSES  # noqa: E402
@@ -95,6 +96,35 @@ class OrderPathTests(unittest.IsolatedAsyncioTestCase):
         extras = self.core.order_calls[0][5]
         self.assertEqual(D("94"), extras["limit_price"])
         self.assertIs(OrderType.STOP_LOSS_LIMIT, self.core.order_calls[0][3])
+
+    async def test_stop_loss_absolute_uses_trigger_spec_without_price(self):
+        self.exchange.sell(PAIR, D("1"), OrderType.STOP_LOSS, D("95"), position_action=PositionAction.CLOSE)
+        _, _, _, order_type, price, extras = self.core.order_calls[0]
+        self.assertIs(OrderType.STOP_LOSS, order_type)
+        self.assertTrue(price.is_nan())
+        self.assertEqual(TriggerSpec(kind=TriggerKind.ABSOLUTE, value=D("95")), extras["trigger"])
+        self.assertNotIn("price_in_percent", extras)
+        self.assertIn("position_action", extras)
+
+    async def test_take_profit_percent_points_become_fraction(self):
+        self.exchange.sell(PAIR, D("1"), OrderType.TAKE_PROFIT, D("2"), price_in_percent=True)
+        _, _, _, order_type, price, extras = self.core.order_calls[0]
+        self.assertIs(OrderType.TAKE_PROFIT, order_type)
+        self.assertTrue(price.is_nan())
+        self.assertEqual(TriggerSpec(kind=TriggerKind.PERCENT, value=D("0.02")), extras["trigger"])
+        self.assertNotIn("price_in_percent", extras)
+
+    async def test_stop_loss_limit_keeps_legacy_call(self):
+        self.exchange.buy(PAIR, D("1"), OrderType.STOP_LOSS_LIMIT, D("95"), limit_price=D("94"))
+        _, _, _, order_type, price, extras = self.core.order_calls[0]
+        self.assertEqual(D("95"), price)
+        self.assertEqual({"limit_price": D("94")}, extras)
+
+    async def test_explicit_trigger_kwarg_passes_through(self):
+        trigger = TriggerSpec(kind=TriggerKind.ABSOLUTE, value=D("90"))
+        self.exchange.sell(PAIR, D("1"), OrderType.STOP_LOSS, D("95"), trigger=trigger)
+        extras = self.core.order_calls[0][5]
+        self.assertIs(trigger, extras["trigger"])
 
     async def test_position_action_and_expiration_pass_through_only_from_kwargs(self):
         self.exchange.sell(
