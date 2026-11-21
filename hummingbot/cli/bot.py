@@ -12,10 +12,11 @@ The trades sqlite DB and the structured log are Hummingbot's own (``data/<name>.
 ``logs/logs_<name>.log``); we record their location in meta.json so readers don't re-derive it. For
 multiple bots, use multiple installs/containers — the same way Hummingbot itself scales.
 """
+
 import json
 import os
-import tempfile
 from pathlib import Path
+import tempfile
 from typing import Any, Dict, List, Optional
 
 from hummingbot import data_path, prefix_path
@@ -82,6 +83,7 @@ def is_engine_pid(pid: int) -> bool:
         return False
     try:
         import psutil
+
         cmdline = psutil.Process(pid).cmdline()
     except Exception:
         # Alive but uninspectable (e.g. AccessDenied): assume it's ours — mis-reporting a live bot
@@ -237,5 +239,5 @@ def list_bots() -> List[str]:
         names |= {p.stem for p in dd.glob("*.sqlite")}
     ld = Path(prefix_path()) / "logs"
     if ld.exists():
-        names |= {p.name[len("logs_"):-len(".log")] for p in ld.glob("logs_*.log")}
+        names |= {p.name[len("logs_") : -len(".log")] for p in ld.glob("logs_*.log")}
     return sorted(names)

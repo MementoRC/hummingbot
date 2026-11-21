@@ -32,9 +32,7 @@ class UserBalancesAccountGroupTests(unittest.TestCase):
             "bitget_perpetual": self._connector("bitget_uta:abc123"),
         }
 
-        duplicates = self.user_balances.duplicate_account_sources(
-            ["bitget", "bitget_perpetual"]
-        )
+        duplicates = self.user_balances.duplicate_account_sources(["bitget", "bitget_perpetual"])
 
         # The first connector holds the account; the second merely repeats it.
         self.assertEqual({"bitget_perpetual": "bitget"}, duplicates)
@@ -48,9 +46,7 @@ class UserBalancesAccountGroupTests(unittest.TestCase):
 
         self.assertEqual(
             {},
-            self.user_balances.duplicate_account_sources(
-                ["bitget", "bitget_perpetual"]
-            ),
+            self.user_balances.duplicate_account_sources(["bitget", "bitget_perpetual"]),
         )
 
     def test_ordinary_connectors_are_untouched(self):
@@ -78,9 +74,7 @@ class UserBalancesAccountGroupTests(unittest.TestCase):
             "bitget_perpetual": self._connector("bitget_uta:abc123"),
         }
 
-        reversed_order = self.user_balances.duplicate_account_sources(
-            ["bitget_perpetual", "bitget"]
-        )
+        reversed_order = self.user_balances.duplicate_account_sources(["bitget_perpetual", "bitget"])
 
         self.assertEqual({"bitget": "bitget_perpetual"}, reversed_order)
 
@@ -109,18 +103,36 @@ class SharedAccountTotalsTests(unittest.TestCase):
     @staticmethod
     def _result():
         from decimal import Decimal
-        asset = {"asset": "USDT", "total": Decimal("88.93"), "available": Decimal("88.93"),
-                 "value": Decimal("88.93"), "allocated": "0%"}
+
+        asset = {
+            "asset": "USDT",
+            "total": Decimal("88.93"),
+            "available": Decimal("88.93"),
+            "value": Decimal("88.93"),
+            "allocated": "0%",
+        }
         return {
             "bitget": {
-                "assets": [asset], "allocated_total": Decimal("0"), "usd_total": Decimal("93.35"),
+                "assets": [asset],
+                "allocated_total": Decimal("0"),
+                "usd_total": Decimal("93.35"),
             },
             "bitget_perpetual": {
-                "assets": [asset], "allocated_total": Decimal("0"), "usd_total": Decimal("93.35"),
+                "assets": [asset],
+                "allocated_total": Decimal("0"),
+                "usd_total": Decimal("93.35"),
                 "pnl_total": Decimal("5"),
-                "positions": [{"trading_pair": "XRP-USDC", "side": "LONG", "amount": "10",
-                               "entry_price": "1.5", "notional": "15",
-                               "unrealized_pnl": "5", "leverage": "3"}],
+                "positions": [
+                    {
+                        "trading_pair": "XRP-USDC",
+                        "side": "LONG",
+                        "amount": "10",
+                        "entry_price": "1.5",
+                        "notional": "15",
+                        "unrealized_pnl": "5",
+                        "leverage": "3",
+                    }
+                ],
                 "duplicate_of": "bitget",
             },
         }

@@ -1,8 +1,8 @@
-import io
-import unittest
 from contextlib import redirect_stderr, redirect_stdout
+import io
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import unittest
 from unittest.mock import MagicMock, patch
 
 import typer
@@ -35,16 +35,18 @@ class ResolveStrategyTypeTest(unittest.TestCase):
     def test_not_found_lists_available_sources(self):
         many_scripts = [f"script_{i}.py" for i in range(9)]  # >8 → the hint gets an ellipsis
         avail = {"v1-strategy": [], "v2-script": many_scripts, "controller": ["pmm_simple"]}
-        with patch.object(sc, "matching_strategy_types", return_value=[]), \
-                patch.object(sc, "available_sources", side_effect=avail.__getitem__):
+        with (
+            patch.object(sc, "matching_strategy_types", return_value=[]),
+            patch.object(sc, "available_sources", side_effect=avail.__getitem__),
+        ):
             err = io.StringIO()
             with redirect_stderr(err), self.assertRaises(typer.Exit) as ctx:
                 _resolve_strategy_type("nope", False, False, False)
         self.assertEqual(ctx.exception.exit_code, int(ExitCode.NOT_FOUND))
         message = err.getvalue()
-        self.assertIn("pmm_simple", message)   # name discovery in the error
+        self.assertIn("pmm_simple", message)  # name discovery in the error
         self.assertIn("script_0.py", message)
-        self.assertIn("…", message)            # long lists are truncated
+        self.assertIn("…", message)  # long lists are truncated
         self.assertNotIn("script_8.py", message)
 
 
@@ -53,8 +55,7 @@ class CollectValuesTest(unittest.TestCase):
         self.assertEqual(_collect_values(None, False), {})
 
     def test_stdin_then_set_pairs_with_set_winning(self):
-        with patch("hummingbot.cli.commands.create.read_json_object_from_stdin",
-                   return_value={"a": 1, "b": 2}):
+        with patch("hummingbot.cli.commands.create.read_json_object_from_stdin", return_value={"a": 1, "b": 2}):
             values = _collect_values(["b=9"], True)
         self.assertEqual(values, {"a": 1, "b": "9"})  # --set overrides stdin
 
@@ -86,8 +87,9 @@ class CreateConfigTest(unittest.TestCase):
 
     def _describe(self, template: dict, required):
         # fresh template each call (create_config mutates it in place)
-        return patch.object(sc, "describe_strategy",
-                            side_effect=lambda *a, **k: (dict(template), list(required), set()))
+        return patch.object(
+            sc, "describe_strategy", side_effect=lambda *a, **k: (dict(template), list(required), set())
+        )
 
     def test_ready_to_run_with_all_required_set(self):
         with self._describe({"script_file_name": "s.py", "a": None, "b": 1}, ["a"]):
@@ -139,12 +141,11 @@ class CreateConfigTest(unittest.TestCase):
 
     def test_controller_id_is_scaffold_generated_not_user_supplied(self):
         template = {"controller_name": "s", "controller_type": "generic", "id": "scaffolded", "a": None}
-        with self._describe(template, ["a"]), \
-                patch.object(sc, "controller_config_class", return_value=MagicMock()):
+        with self._describe(template, ["a"]), patch.object(sc, "controller_config_class", return_value=MagicMock()):
             record = create_config(strategy="s", set_values=["id=mine", "a=1"], controller=True)
         data = yaml.safe_load((self.dirs["controller"] / "conf_s.yml").read_text())
-        self.assertEqual(data["id"], "scaffolded")   # user-supplied id ignored
-        self.assertEqual(record["applied"], "a")     # id not reported as applied
+        self.assertEqual(data["id"], "scaffolded")  # user-supplied id ignored
+        self.assertEqual(record["applied"], "a")  # id not reported as applied
         self.write_loaded.assert_called_once_with("conf_s.yml", "controller")
 
     def test_describe_failure_is_a_config_error(self):
@@ -162,8 +163,10 @@ class CreateConfigTest(unittest.TestCase):
         self.assertIn("invalid field value", err.getvalue())
 
     def test_write_race_file_exists_fails_cleanly(self):
-        with self._describe({"a": 1}, []), \
-                patch.object(sc, "create_config_file", side_effect=FileExistsError("already there")):
+        with (
+            self._describe({"a": 1}, []),
+            patch.object(sc, "create_config_file", side_effect=FileExistsError("already there")),
+        ):
             with redirect_stderr(io.StringIO()), self.assertRaises(typer.Exit) as ctx:
                 create_config(strategy="s", v2=True)
         self.assertEqual(ctx.exception.exit_code, int(ExitCode.CONFIG_ERROR))
@@ -176,10 +179,26 @@ class CreateCommandTest(unittest.TestCase):
         out = io.StringIO()
         with patch("hummingbot.cli.commands.create.create_config", return_value=record) as cc:
             with redirect_stdout(out):
-                create(strategy="s", set_values=["a=1"], values_stdin=False, with_defaults=False,
-                       name=None, v1=False, v2=True, controller=False)
-        cc.assert_called_once_with(strategy="s", set_values=["a=1"], values_stdin=False,
-                                   with_defaults=False, name=None, v1=False, v2=True, controller=False)
+                create(
+                    strategy="s",
+                    set_values=["a=1"],
+                    values_stdin=False,
+                    with_defaults=False,
+                    name=None,
+                    v1=False,
+                    v2=True,
+                    controller=False,
+                )
+        cc.assert_called_once_with(
+            strategy="s",
+            set_values=["a=1"],
+            values_stdin=False,
+            with_defaults=False,
+            name=None,
+            v1=False,
+            v2=True,
+            controller=False,
+        )
         text = out.getvalue()
         self.assertIn("created v2-script/conf_s.yml", text)
         self.assertIn("- next: hbot start", text)

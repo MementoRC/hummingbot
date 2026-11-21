@@ -1,9 +1,9 @@
 import asyncio
 from typing import TYPE_CHECKING, List, Optional
 
+from hummingbot.connector.derivative.bitmart_perpetual.bitmart_perpetual_auth import BitmartPerpetualAuth
 import hummingbot.connector.derivative.bitmart_perpetual.bitmart_perpetual_constants as CONSTANTS
 import hummingbot.connector.derivative.bitmart_perpetual.bitmart_perpetual_web_utils as web_utils
-from hummingbot.connector.derivative.bitmart_perpetual.bitmart_perpetual_auth import BitmartPerpetualAuth
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest, WSResponse
 from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
@@ -22,11 +22,11 @@ class BitmartPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
     _logger: Optional[HummingbotLogger] = None
 
     def __init__(
-            self,
-            auth: BitmartPerpetualAuth,
-            connector: 'BitmartPerpetualDerivative',
-            api_factory: WebAssistantsFactory,
-            domain: str = CONSTANTS.DOMAIN,
+        self,
+        auth: BitmartPerpetualAuth,
+        connector: "BitmartPerpetualDerivative",
+        api_factory: WebAssistantsFactory,
+        domain: str = CONSTANTS.DOMAIN,
     ):
 
         super().__init__()
@@ -96,23 +96,18 @@ class BitmartPerpetualUserStreamDataSource(UserStreamTrackerDataSource):
             channels_to_subscribe: List[str] = [
                 CONSTANTS.WS_POSITIONS_CHANNEL,
                 CONSTANTS.WS_ORDERS_CHANNEL,
-                CONSTANTS.WS_ACCOUNT_CHANNEL
+                CONSTANTS.WS_ACCOUNT_CHANNEL,
             ]
 
             tasks = []
             for channel in channels_to_subscribe:
-                payload = {
-                    "action": "subscribe",
-                    "args": [channel]
-                }
+                payload = {"action": "subscribe", "args": [channel]}
                 task = ws.send(WSJSONRequest(payload))
                 tasks.append(task)
 
             await asyncio.gather(*tasks)
 
-            self.logger().info(
-                f"Subscribed to private account and orders channels {url}..."
-            )
+            self.logger().info(f"Subscribed to private account and orders channels {url}...")
         except asyncio.CancelledError:
             raise
         except Exception:

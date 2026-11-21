@@ -1,18 +1,18 @@
+from decimal import Decimal
 import json
 import re
-from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from typing import Any, List
+from typing import Any
 from unittest.mock import AsyncMock
 
 from aioresponses import aioresponses
 from bidict import bidict
 
-import hummingbot.connector.exchange.bitget.bitget_constants as CONSTANTS
-import hummingbot.connector.exchange.bitget.bitget_web_utils as web_utils
 from hummingbot.connector.exchange.bitget import bitget_account
+import hummingbot.connector.exchange.bitget.bitget_constants as CONSTANTS
 from hummingbot.connector.exchange.bitget.bitget_exchange import BitgetExchange
+import hummingbot.connector.exchange.bitget.bitget_web_utils as web_utils
 from hummingbot.core.data_type.common import OrderType, TradeType
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class BitgetAccountModeTests(IsolatedAsyncioWrapperTestCase):
@@ -23,7 +23,7 @@ class BitgetAccountModeTests(IsolatedAsyncioWrapperTestCase):
     def setUp(self) -> None:
         super().setUp()
         bitget_account.forget_all()
-        self.log_records: List[Any] = []
+        self.log_records: list[Any] = []
         self.exchange = BitgetExchange(
             bitget_api_key="test_api_key",
             bitget_secret_key="test_secret_key",
@@ -53,14 +53,24 @@ class BitgetAccountModeTests(IsolatedAsyncioWrapperTestCase):
     @staticmethod
     def _requests_to(mock_api: aioresponses, endpoint: str) -> int:
         url = web_utils.private_rest_url(path_url=endpoint)
-        return sum(len(calls) for (_, request_url), calls in mock_api.requests.items()
-                   if str(request_url).startswith(url))
+        return sum(
+            len(calls) for (_, request_url), calls in mock_api.requests.items() if str(request_url).startswith(url)
+        )
 
     @aioresponses()
     async def test_a_classic_account_is_detected_from_the_v3_refusal(self, mock_api):
-        mock_api.get(self._assets_url(), status=400, body=json.dumps({
-            "code": "40084", "msg": "You are in Classic Account mode, and the Unified Account API is not supported",
-            "requestTime": 1746687063471, "data": None}))
+        mock_api.get(
+            self._assets_url(),
+            status=400,
+            body=json.dumps(
+                {
+                    "code": "40084",
+                    "msg": "You are in Classic Account mode, and the Unified Account API is not supported",
+                    "requestTime": 1746687063471,
+                    "data": None,
+                }
+            ),
+        )
 
         self.assertFalse(await self.exchange._is_unified_account())
         self.assertTrue(self._is_logged("INFO", "Bitget account mode: Classic."))
@@ -90,8 +100,11 @@ class BitgetAccountModeTests(IsolatedAsyncioWrapperTestCase):
     @aioresponses()
     async def test_any_other_failure_is_raised_and_retried_later(self, mock_api):
         # The requestTime contains 40084, which must not be mistaken for the Classic refusal.
-        mock_api.get(self._assets_url(), status=400, body=json.dumps({
-            "code": "40006", "msg": "Invalid ACCESS_KEY", "requestTime": 1740084000000, "data": None}))
+        mock_api.get(
+            self._assets_url(),
+            status=400,
+            body=json.dumps({"code": "40006", "msg": "Invalid ACCESS_KEY", "requestTime": 1740084000000, "data": None}),
+        )
         mock_api.get(self._assets_url(), body=json.dumps({"code": "00000", "msg": "success", "data": {"assets": []}}))
 
         with self.assertRaises(IOError):
@@ -120,12 +133,19 @@ class BitgetAccountModeTests(IsolatedAsyncioWrapperTestCase):
         self.exchange._unified_account = False
         self.exchange._set_trading_pair_symbol_map(bidict({"BTCUSDT": "BTC-USDT"}))
         url = web_utils.private_rest_url(path_url=CONSTANTS.CLASSIC_PLACE_ORDER_ENDPOINT)
-        mock_api.post(re.compile(f"^{url}".replace(".", r"\.")), body=json.dumps(
-            {"code": "00000", "msg": "success", "data": {"orderId": "1", "clientOid": "OID1"}}))
+        mock_api.post(
+            re.compile(f"^{url}".replace(".", r"\.")),
+            body=json.dumps({"code": "00000", "msg": "success", "data": {"orderId": "1", "clientOid": "OID1"}}),
+        )
 
         exchange_order_id, _ = await self.exchange._place_order(
-            order_id="OID1", trading_pair="BTC-USDT", amount=Decimal("1"), trade_type=TradeType.SELL,
-            order_type=OrderType.LIMIT, price=Decimal("100"))
+            order_id="OID1",
+            trading_pair="BTC-USDT",
+            amount=Decimal("1"),
+            trade_type=TradeType.SELL,
+            order_type=OrderType.LIMIT,
+            price=Decimal("100"),
+        )
 
         self.assertEqual("1", exchange_order_id)
         self.assertEqual(1, self._requests_to(mock_api, CONSTANTS.CLASSIC_PLACE_ORDER_ENDPOINT))
@@ -140,5 +160,6 @@ class BitgetAccountModeTests(IsolatedAsyncioWrapperTestCase):
 
         self.exchange._classic_user_stream_event_listener.assert_awaited_once()
         self.exchange._sleep.assert_awaited_once_with(CONSTANTS.ACCOUNT_MODE_RETRY_INTERVAL_SECONDS)
-        self.assertTrue(self._is_logged(
-            "WARNING", "Could not read the account mode; retrying before reading the user stream."))
+        self.assertTrue(
+            self._is_logged("WARNING", "Could not read the account mode; retrying before reading the user stream.")
+        )

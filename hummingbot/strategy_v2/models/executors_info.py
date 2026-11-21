@@ -15,7 +15,16 @@ from hummingbot.strategy_v2.executors.xemm_executor.data_types import XEMMExecut
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType
 
-AnyExecutorConfig = Union[PositionExecutorConfig, DCAExecutorConfig, GridExecutorConfig, XEMMExecutorConfig, ArbitrageExecutorConfig, OrderExecutorConfig, TWAPExecutorConfig, LPExecutorConfig]
+AnyExecutorConfig = Union[
+    PositionExecutorConfig,
+    DCAExecutorConfig,
+    GridExecutorConfig,
+    XEMMExecutorConfig,
+    ArbitrageExecutorConfig,
+    OrderExecutorConfig,
+    TWAPExecutorConfig,
+    LPExecutorConfig,
+]
 
 
 class ExecutorInfo(BaseModel):

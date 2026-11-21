@@ -20,9 +20,7 @@ class HyperliquidPerpetualAuthTests(TestCase):
         self.use_vault = False
         self.trading_required = True  # noqa: mock
         self.auth = HyperliquidPerpetualAuth(
-            api_address=self.api_address,
-            api_secret=self.api_secret,
-            use_vault=self.use_vault
+            api_address=self.api_address, api_secret=self.api_secret, use_vault=self.use_vault
         )
 
     def async_run_with_timeout(self, coroutine: Awaitable, timeout: int = 1):
@@ -33,7 +31,8 @@ class HyperliquidPerpetualAuthTests(TestCase):
         return 1678974447.926
 
     @patch(
-        "hummingbot.connector.derivative.hyperliquid_perpetual.hyperliquid_perpetual_auth.HyperliquidPerpetualAuth._get_timestamp")
+        "hummingbot.connector.derivative.hyperliquid_perpetual.hyperliquid_perpetual_auth.HyperliquidPerpetualAuth._get_timestamp"
+    )
     def test_sign_order_params_post_request(self, ts_mock: MagicMock):
         params = {
             "type": "order",
@@ -46,7 +45,7 @@ class HyperliquidPerpetualAuthTests(TestCase):
                 "reduceOnly": False,
                 "orderType": {"limit": {"tif": "Gtc"}},
                 "cloid": "0x000000000000000000000000000ee056",
-            }
+            },
         }
         request = RESTRequest(
             method=RESTMethod.POST,
@@ -144,27 +143,29 @@ class HyperliquidPerpetualAuthValidationTests(TestCase):
 
     def test_is_key_authorized_owner_key(self):
         # arb_wallet: the key's address IS the account -> authorised with no agent list.
-        self.assertTrue(
-            HyperliquidPerpetualAuth.is_key_authorized(self.DERIVED_ADDRESS, self.DERIVED_ADDRESS, []))
+        self.assertTrue(HyperliquidPerpetualAuth.is_key_authorized(self.DERIVED_ADDRESS, self.DERIVED_ADDRESS, []))
 
     def test_is_key_authorized_approved_agent(self):
         # api_wallet: the key's address is an approved agent of the (different) account.
         agents = [{"address": self.DERIVED_ADDRESS, "name": "hb", "validUntil": 0}]
         self.assertTrue(
-            HyperliquidPerpetualAuth.is_key_authorized(self.DERIVED_ADDRESS, self.UNRELATED_ADDRESS, agents))
+            HyperliquidPerpetualAuth.is_key_authorized(self.DERIVED_ADDRESS, self.UNRELATED_ADDRESS, agents)
+        )
 
     def test_is_key_authorized_unapproved_agent(self):
         agents = [{"address": self.OTHER_AGENT, "name": "someone-else", "validUntil": 0}]
         self.assertFalse(
-            HyperliquidPerpetualAuth.is_key_authorized(self.DERIVED_ADDRESS, self.UNRELATED_ADDRESS, agents))
+            HyperliquidPerpetualAuth.is_key_authorized(self.DERIVED_ADDRESS, self.UNRELATED_ADDRESS, agents)
+        )
 
     def test_is_key_authorized_empty_agents_non_owner(self):
         # account has no approved agents and the key is not the owner -> cannot trade.
-        self.assertFalse(
-            HyperliquidPerpetualAuth.is_key_authorized(self.DERIVED_ADDRESS, self.UNRELATED_ADDRESS, []))
+        self.assertFalse(HyperliquidPerpetualAuth.is_key_authorized(self.DERIVED_ADDRESS, self.UNRELATED_ADDRESS, []))
 
     def test_is_key_authorized_is_checksum_insensitive(self):
         agents = [{"address": self.DERIVED_ADDRESS.lower()}]
         self.assertTrue(
             HyperliquidPerpetualAuth.is_key_authorized(
-                self.DERIVED_ADDRESS.lower(), self.UNRELATED_ADDRESS.lower(), agents))
+                self.DERIVED_ADDRESS.lower(), self.UNRELATED_ADDRESS.lower(), agents
+            )
+        )
