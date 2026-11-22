@@ -17,7 +17,6 @@ import os
 from pathlib import Path
 import pwd
 import subprocess
-from typing import Optional
 
 import yaml
 
@@ -41,11 +40,25 @@ def autofix_permissions(user_group_spec: str) -> None:
     project_home: str = os.path.realpath(os.path.join(__file__, "../../../"))
 
     gateway_path: str = Path.home().joinpath(".hummingbot-gateway").as_posix()
-    subprocess.run(
-        f"cd '{project_home}' && sudo chown -R {user_group_spec} conf/ data/ logs/ scripts/ {gateway_path}",
-        capture_output=True,
-        shell=True,
-    )
+    try:
+        # fixed argv, no shell; sudo is resolved via PATH by design
+        subprocess.run(  # nosec B603 B607
+            [
+                "sudo",
+                "chown",
+                "-R",
+                user_group_spec,
+                "conf/",
+                "data/",
+                "logs/",
+                "scripts/",
+                gateway_path,
+            ],
+            cwd=project_home,
+            capture_output=True,
+        )
+    except OSError as e:
+        logging.getLogger().warning(f"Skipping chown of runtime directories (sudo or cwd unavailable): {e}")
     os.setgid(gid)
     os.setuid(uid)
 
@@ -60,7 +73,10 @@ async def wait_for_gateway_ready(hb: HummingbotApplication) -> None:
     if not uses_gateway:
         return
     try:
-        await asyncio.wait_for(hb.trading_core.gateway_monitor.ready_event.wait(), timeout=GATEWAY_READY_TIMEOUT)
+        await asyncio.wait_for(
+            hb.trading_core.gateway_monitor.ready_event.wait(),
+            timeout=GATEWAY_READY_TIMEOUT,
+        )
     except asyncio.TimeoutError:
         logging.getLogger().error(
             "TimeoutError waiting for gateway service to go online... Please ensure Gateway is configured correctly. "
@@ -72,8 +88,8 @@ async def wait_for_gateway_ready(hb: HummingbotApplication) -> None:
 async def load_and_start_strategy(
     hb: HummingbotApplication,
     *,
-    config_file_name: Optional[str] = None,
-    v2_conf: Optional[str] = None,
+    config_file_name: str | None = None,
+    v2_conf: str | None = None,
     headless: bool = False,
 ) -> bool:
     """Load a strategy/script config and (in headless mode) start it.
@@ -152,11 +168,11 @@ async def bootstrap_application(
     secrets_manager,
     *,
     strategy_file_name: str = "hummingbot",
-    override_log_level: Optional[str] = None,
+    override_log_level: str | None = None,
     headless: bool = False,
     mqtt_autostart: bool = False,
     silence_console: bool = False,
-) -> Optional[HummingbotApplication]:
+) -> HummingbotApplication | None:
     """Shared boot sequence for the legacy quickstart and the hbot engine: log in, decrypt, write the
     legacy yml files, init logging, read system configs, apply paper-trade settings, and build the
     ``HummingbotApplication``. Returns the app, or ``None`` on a bad password. The per-caller bits
