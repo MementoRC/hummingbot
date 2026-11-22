@@ -1,11 +1,11 @@
 import asyncio
 import io
 import logging
-import sys
-import unittest
 from pathlib import Path
+import sys
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
+import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from hummingbot.client import runner
@@ -100,28 +100,20 @@ class WaitForGatewayReadyTest(unittest.IsolatedAsyncioTestCase):
 
     async def test_no_gateway_connectors_returns_immediately(self):
         hb, settings = self._make_hb(uses_gateway=False)
-        with patch.object(
-            runner.AllConnectorSettings, "get_connector_settings", return_value=settings
-        ):
+        with patch.object(runner.AllConnectorSettings, "get_connector_settings", return_value=settings):
             await runner.wait_for_gateway_ready(hb)
         hb.trading_core.gateway_monitor.ready_event.wait.assert_not_awaited()
 
     async def test_waits_for_gateway_ready_event(self):
         hb, settings = self._make_hb(uses_gateway=True)
-        with patch.object(
-            runner.AllConnectorSettings, "get_connector_settings", return_value=settings
-        ):
+        with patch.object(runner.AllConnectorSettings, "get_connector_settings", return_value=settings):
             await runner.wait_for_gateway_ready(hb)
         hb.trading_core.gateway_monitor.ready_event.wait.assert_awaited_once()
 
     async def test_timeout_is_logged_and_reraised(self):
         hb, settings = self._make_hb(uses_gateway=True)
-        hb.trading_core.gateway_monitor.ready_event.wait = AsyncMock(
-            side_effect=asyncio.TimeoutError
-        )
-        with patch.object(
-            runner.AllConnectorSettings, "get_connector_settings", return_value=settings
-        ):
+        hb.trading_core.gateway_monitor.ready_event.wait = AsyncMock(side_effect=asyncio.TimeoutError)
+        with patch.object(runner.AllConnectorSettings, "get_connector_settings", return_value=settings):
             with self.assertRaises(asyncio.TimeoutError):
                 await runner.wait_for_gateway_ready(hb)
 
@@ -141,57 +133,31 @@ class LoadAndStartStrategyV2Test(unittest.IsolatedAsyncioTestCase):
         (self.conf_dir / name).write_text(text)
 
     async def test_missing_config_file_fails(self):
-        self.assertFalse(
-            await runner.load_and_start_strategy(
-                self.hb, v2_conf="nope.yml", headless=True
-            )
-        )
+        self.assertFalse(await runner.load_and_start_strategy(self.hb, v2_conf="nope.yml", headless=True))
 
     async def test_config_without_script_file_name_fails(self):
         self._write_conf("conf.yml", "other_field: 1\n")
-        self.assertFalse(
-            await runner.load_and_start_strategy(
-                self.hb, v2_conf="conf.yml", headless=True
-            )
-        )
+        self.assertFalse(await runner.load_and_start_strategy(self.hb, v2_conf="conf.yml", headless=True))
 
     async def test_empty_config_file_fails(self):
         self._write_conf("conf.yml", "")
-        self.assertFalse(
-            await runner.load_and_start_strategy(
-                self.hb, v2_conf="conf.yml", headless=True
-            )
-        )
+        self.assertFalse(await runner.load_and_start_strategy(self.hb, v2_conf="conf.yml", headless=True))
 
     async def test_headless_start_success(self):
         self._write_conf("conf.yml", "script_file_name: pmm_simple.py\n")
-        self.assertTrue(
-            await runner.load_and_start_strategy(
-                self.hb, v2_conf="conf.yml", headless=True
-            )
-        )
+        self.assertTrue(await runner.load_and_start_strategy(self.hb, v2_conf="conf.yml", headless=True))
         self.assertEqual(self.hb.strategy_file_name, "conf.yml")
         self.assertEqual(self.hb.trading_core.strategy_name, "pmm_simple")
-        self.hb.trading_core.start_strategy.assert_awaited_once_with(
-            "pmm_simple", "conf.yml", "conf.yml"
-        )
+        self.hb.trading_core.start_strategy.assert_awaited_once_with("pmm_simple", "conf.yml", "conf.yml")
 
     async def test_headless_start_failure(self):
         self._write_conf("conf.yml", "script_file_name: pmm_simple.py\n")
         self.hb.trading_core.start_strategy = AsyncMock(return_value=False)
-        self.assertFalse(
-            await runner.load_and_start_strategy(
-                self.hb, v2_conf="conf.yml", headless=True
-            )
-        )
+        self.assertFalse(await runner.load_and_start_strategy(self.hb, v2_conf="conf.yml", headless=True))
 
     async def test_ui_mode_defers_start_to_listener(self):
         self._write_conf("conf.yml", "script_file_name: pmm_simple.py\n")
-        self.assertTrue(
-            await runner.load_and_start_strategy(
-                self.hb, v2_conf="conf.yml", headless=False
-            )
-        )
+        self.assertTrue(await runner.load_and_start_strategy(self.hb, v2_conf="conf.yml", headless=False))
         self.assertEqual(self.hb.script_config, "conf.yml")
         self.hb.trading_core.start_strategy.assert_not_awaited()
 
@@ -202,61 +168,45 @@ class LoadAndStartStrategyV1Test(unittest.IsolatedAsyncioTestCase):
         self.hb.trading_core.start_strategy = AsyncMock(return_value=True)
 
     def _patch_loader(self, **kwargs):
-        return patch.object(
-            runner, "load_strategy_config_map_from_file", new=AsyncMock(**kwargs)
-        )
+        return patch.object(runner, "load_strategy_config_map_from_file", new=AsyncMock(**kwargs))
 
     async def test_config_file_not_found_fails(self):
         with self._patch_loader(side_effect=FileNotFoundError):
             self.assertFalse(
-                await runner.load_and_start_strategy(
-                    self.hb, config_file_name="conf_x.yml", headless=True
-                )
+                await runner.load_and_start_strategy(self.hb, config_file_name="conf_x.yml", headless=True)
             )
 
     async def test_config_load_error_fails(self):
         with self._patch_loader(side_effect=ValueError("bad yaml")):
             self.assertFalse(
-                await runner.load_and_start_strategy(
-                    self.hb, config_file_name="conf_x.yml", headless=True
-                )
+                await runner.load_and_start_strategy(self.hb, config_file_name="conf_x.yml", headless=True)
             )
 
     async def test_headless_adapter_config_starts_strategy(self):
         config = ClientConfigAdapter(SimpleNamespace(strategy="pure_market_making"))
         with self._patch_loader(return_value=config):
             self.assertTrue(
-                await runner.load_and_start_strategy(
-                    self.hb, config_file_name="conf_pmm.yml", headless=True
-                )
+                await runner.load_and_start_strategy(self.hb, config_file_name="conf_pmm.yml", headless=True)
             )
         self.assertEqual(self.hb.strategy_file_name, "conf_pmm")
         self.assertEqual(self.hb.trading_core.strategy_name, "pure_market_making")
         self.assertIs(self.hb.strategy_config_map, config)
-        self.hb.trading_core.start_strategy.assert_awaited_once_with(
-            "pure_market_making", config, "conf_pmm.yml"
-        )
+        self.hb.trading_core.start_strategy.assert_awaited_once_with("pure_market_making", config, "conf_pmm.yml")
 
     async def test_headless_legacy_map_config_starts_strategy(self):
         config = {"strategy": SimpleNamespace(value="cross_exchange_market_making")}
         with self._patch_loader(return_value=config):
             self.assertTrue(
-                await runner.load_and_start_strategy(
-                    self.hb, config_file_name="conf_xemm.yml", headless=True
-                )
+                await runner.load_and_start_strategy(self.hb, config_file_name="conf_xemm.yml", headless=True)
             )
-        self.assertEqual(
-            self.hb.trading_core.strategy_name, "cross_exchange_market_making"
-        )
+        self.assertEqual(self.hb.trading_core.strategy_name, "cross_exchange_market_making")
 
     async def test_headless_start_failure(self):
         config = {"strategy": SimpleNamespace(value="pmm")}
         self.hb.trading_core.start_strategy = AsyncMock(return_value=False)
         with self._patch_loader(return_value=config):
             self.assertFalse(
-                await runner.load_and_start_strategy(
-                    self.hb, config_file_name="conf_pmm.yml", headless=True
-                )
+                await runner.load_and_start_strategy(self.hb, config_file_name="conf_pmm.yml", headless=True)
             )
 
     async def test_ui_mode_incomplete_config_shows_status(self):
@@ -266,9 +216,7 @@ class LoadAndStartStrategyV1Test(unittest.IsolatedAsyncioTestCase):
             patch.object(runner, "all_configs_complete", return_value=False),
         ):
             self.assertTrue(
-                await runner.load_and_start_strategy(
-                    self.hb, config_file_name="conf_pmm.yml", headless=False
-                )
+                await runner.load_and_start_strategy(self.hb, config_file_name="conf_pmm.yml", headless=False)
             )
         self.hb.status.assert_called_once()
         self.hb.trading_core.start_strategy.assert_not_awaited()
@@ -280,9 +228,7 @@ class LoadAndStartStrategyV1Test(unittest.IsolatedAsyncioTestCase):
             patch.object(runner, "all_configs_complete", return_value=True),
         ):
             self.assertTrue(
-                await runner.load_and_start_strategy(
-                    self.hb, config_file_name="conf_pmm.yml", headless=False
-                )
+                await runner.load_and_start_strategy(self.hb, config_file_name="conf_pmm.yml", headless=False)
             )
         self.hb.status.assert_not_called()
 
@@ -311,9 +257,7 @@ class BootstrapApplicationTest(unittest.IsolatedAsyncioTestCase):
             ),
             patch("hummingbot.client.config.security.Security", security),
             patch.object(runner, "silence_console_handlers"),
-            patch.object(
-                runner.AllConnectorSettings, "initialize_paper_trade_settings"
-            ),
+            patch.object(runner.AllConnectorSettings, "initialize_paper_trade_settings"),
             patch.object(runner.HummingbotApplication, "main_application"),
         )
 
@@ -368,9 +312,7 @@ class BootstrapApplicationTest(unittest.IsolatedAsyncioTestCase):
         silence.assert_not_called()
         self.assertFalse(config_map.mqtt_bridge.mqtt_autostart)
         init_paper.assert_called_once_with(config_map.paper_trade.paper_trade_exchanges)
-        main_app.assert_called_once_with(
-            client_config_map=config_map, headless_mode=False
-        )
+        main_app.assert_called_once_with(client_config_map=config_map, headless_mode=False)
 
     async def test_headless_silenced_mqtt_boot(self):
         patches = self._patches()
@@ -394,9 +336,7 @@ class BootstrapApplicationTest(unittest.IsolatedAsyncioTestCase):
         self.assertIs(app, main_app.return_value)
         silence.assert_called_once()
         self.assertTrue(config_map.mqtt_bridge.mqtt_autostart)
-        main_app.assert_called_once_with(
-            client_config_map=config_map, headless_mode=True
-        )
+        main_app.assert_called_once_with(client_config_map=config_map, headless_mode=True)
 
 
 class SilenceConsoleHandlersTest(unittest.TestCase):
@@ -404,14 +344,10 @@ class SilenceConsoleHandlersTest(unittest.TestCase):
         logger = logging.getLogger("test_runner.silence.dummy")
         stdout_handler = logging.StreamHandler(sys.stdout)
         stderr_handler = logging.StreamHandler(sys.stderr)
-        cli_handler = CLIHandler(
-            io.StringIO()
-        )  # CLIHandler is dropped regardless of stream
+        cli_handler = CLIHandler(io.StringIO())  # CLIHandler is dropped regardless of stream
         kept_handler = logging.StreamHandler(io.StringIO())
         # snapshot every logger's handlers: the function walks the whole logger tree
-        all_loggers = [logging.getLogger()] + [
-            logging.getLogger(n) for n in list(logging.root.manager.loggerDict)
-        ]
+        all_loggers = [logging.getLogger()] + [logging.getLogger(n) for n in list(logging.root.manager.loggerDict)]
         saved = [(lg, list(getattr(lg, "handlers", []))) for lg in all_loggers]
         for h in (stdout_handler, stderr_handler, cli_handler, kept_handler):
             logger.addHandler(h)
