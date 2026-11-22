@@ -12,6 +12,7 @@ hummingbot's expected interfaces. Three check levels:
 import importlib
 from inspect import iscoroutinefunction
 import sys
+from typing import Any
 
 # All 15 sub-package directory names mapped to their top-level import names.
 # Every entry is gated: the script exits non-zero if any import fails.
@@ -91,12 +92,21 @@ def check_imports() -> list[str]:
     return failures
 
 
+def _import_or_fail(module_name: str, name: str, failures: list[str]) -> Any | None:
+    """Import ``name`` from ``module_name``; record a FAIL and return None on error."""
+    try:
+        return getattr(importlib.import_module(module_name), name)
+    except (ImportError, AttributeError) as e:
+        failures.append(f"FAIL: Cannot import {module_name}.{name} for contract check: {e}")
+        return None
+
+
 def check_contracts() -> list[str]:
     """Verify expected public API classes have required methods/attributes."""
     failures = []
 
     # --- CandlesFeed contract ---
-    from candles_feed.core.candles_feed import CandlesFeed
+    CandlesFeed = _import_or_fail("candles_feed.core.candles_feed", "CandlesFeed", failures)
 
     required_methods = {
         "start": {"async": True},
@@ -107,19 +117,20 @@ def check_contracts() -> list[str]:
     }
     required_attrs = ["trading_pair", "interval", "max_records", "ready", "first_timestamp", "last_timestamp"]
 
-    for method, props in required_methods.items():
-        if not hasattr(CandlesFeed, method):
-            failures.append(f"FAIL: CandlesFeed missing method '{method}'")
-        elif props.get("async") and not iscoroutinefunction(getattr(CandlesFeed, method)):
-            failures.append(f"FAIL: CandlesFeed.{method} should be async")
+    if CandlesFeed is not None:
+        for method, props in required_methods.items():
+            if not hasattr(CandlesFeed, method):
+                failures.append(f"FAIL: CandlesFeed missing method '{method}'")
+            elif props.get("async") and not iscoroutinefunction(getattr(CandlesFeed, method)):
+                failures.append(f"FAIL: CandlesFeed.{method} should be async")
 
-    for attr in required_attrs:
-        # Check class or instance-level (properties count)
-        if not hasattr(CandlesFeed, attr) and attr not in CandlesFeed.__init__.__code__.co_varnames:
-            failures.append(f"FAIL: CandlesFeed missing attribute '{attr}'")
+        for attr in required_attrs:
+            # Check class or instance-level (properties count)
+            if not hasattr(CandlesFeed, attr) and attr not in CandlesFeed.__init__.__code__.co_varnames:
+                failures.append(f"FAIL: CandlesFeed missing attribute '{attr}'")
 
     # --- CandleData contract ---
-    from candles_feed.core.candle_data import CandleData
+    CandleData = _import_or_fail("candles_feed.core.candle_data", "CandleData", failures)
 
     candle_fields = [
         "timestamp_raw",
@@ -133,29 +144,38 @@ def check_contracts() -> list[str]:
         "taker_buy_base_volume",
         "taker_buy_quote_volume",
     ]
-    for field in candle_fields:
-        if field not in CandleData.__dataclass_fields__:
-            failures.append(f"FAIL: CandleData missing field '{field}'")
+    if CandleData is not None:
+        for field in candle_fields:
+            if field not in CandleData.__dataclass_fields__:
+                failures.append(f"FAIL: CandleData missing field '{field}'")
 
     # --- ExchangeRegistry contract ---
-    from candles_feed.core.exchange_registry import ExchangeRegistry
+    ExchangeRegistry = _import_or_fail("candles_feed.core.exchange_registry", "ExchangeRegistry", failures)
 
-    for method in ["get_adapter_instance", "get_registered_exchanges", "discover_adapters"]:
-        if not hasattr(ExchangeRegistry, method):
-            failures.append(f"FAIL: ExchangeRegistry missing method '{method}'")
+    if ExchangeRegistry is not None:
+        for method in ["get_adapter_instance", "get_registered_exchanges", "discover_adapters"]:
+            if not hasattr(ExchangeRegistry, method):
+                failures.append(f"FAIL: ExchangeRegistry missing method '{method}'")
 
     # --- Integration helper contract ---
     import inspect
 
-    from candles_feed.integration import create_candles_feed_with_hummingbot
+    create_candles_feed_with_hummingbot = _import_or_fail(
+        "candles_feed.integration", "create_candles_feed_with_hummingbot", failures
+    )
 
-    sig = inspect.signature(create_candles_feed_with_hummingbot)
-    required_params = ["exchange", "trading_pair"]
-    for param in required_params:
-        if param not in sig.parameters:
-            failures.append(f"FAIL: create_candles_feed_with_hummingbot missing param '{param}'")
+    if create_candles_feed_with_hummingbot is not None:
+        sig = inspect.signature(create_candles_feed_with_hummingbot)
+        required_params = ["exchange", "trading_pair"]
+        for param in required_params:
+            if param not in sig.parameters:
+                failures.append(f"FAIL: create_candles_feed_with_hummingbot missing param '{param}'")
 
     # --- DataFrame output contract ---
+    # Needs CandlesFeed, CandleData and ExchangeRegistry; skipped (already reported) if any is missing.
+    if CandlesFeed is None or CandleData is None or ExchangeRegistry is None:
+        return failures
+
     from unittest.mock import MagicMock, patch
 
     mock_adapter = MagicMock()
