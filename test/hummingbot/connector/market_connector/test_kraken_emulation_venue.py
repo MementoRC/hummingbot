@@ -17,7 +17,7 @@ from data_type_primitives import (  # noqa: E402
     TradeType,
 )
 from data_type_primitives.common import OrderType  # noqa: E402
-from data_type_primitives.trigger_spec import TriggerKind, TriggerSpec  # noqa: E402
+from data_type_primitives.trigger_spec import TrailSpec, TriggerKind, TriggerSpec  # noqa: E402
 from market_connector.exchanges.kraken.linked_order_codec import KrakenClOrdIdLinkCodec  # noqa: E402
 from market_connector.protocols import LegFill as McLegFill, LegSnapshot as McLegSnapshot  # noqa: E402
 from strategy_framework.linked_orders import (  # noqa: E402
@@ -139,7 +139,11 @@ class KrakenEmulationVenueTests(unittest.IsolatedAsyncioTestCase):
             order_type=OrderType.TRAILING_STOP_LIMIT,
             trade_type=TradeType.SELL,
             amount=D("1"),
-            trigger=TriggerSpec(kind=TriggerKind.PERCENT, value=D("0.01")),
+            trigger=TriggerSpec(
+                kind=TriggerKind.PERCENT,
+                value=D("0.01"),
+                trail=TrailSpec(kind=TriggerKind.PERCENT, distance=D("0.01")),
+            ),
             limit_offset=D("-1"),
         )
         assert not self.venue.supports_leg(PAIR, trailing_limit)
