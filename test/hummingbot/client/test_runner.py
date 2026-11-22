@@ -43,8 +43,23 @@ class AutofixPermissionsTest(unittest.TestCase):
         os_mock.setgid.assert_called_once_with(20)
         os_mock.setuid.assert_called_once_with(501)
         cmd = subprocess_mock.run.call_args[0][0]
-        self.assertIn("chown -R 501:20", cmd)
-        self.assertTrue(subprocess_mock.run.call_args.kwargs["shell"])
+        self.assertIsInstance(cmd, list)
+        self.assertEqual(cmd[:4], ["sudo", "chown", "-R", "501:20"])
+        self.assertEqual(cmd[4:8], ["conf/", "data/", "logs/", "scripts/"])
+        self.assertEqual(len(cmd), 9)
+        kwargs = subprocess_mock.run.call_args.kwargs
+        self.assertEqual(kwargs["cwd"], "/opt/hummingbot")
+        self.assertNotIn("shell", kwargs)
+
+    def test_shell_metacharacters_stay_a_single_argv_element(self):
+        spec = "1000:1000; rm -rf /"
+        # the gid part is not numeric, so the (mocked) grp lookup resolves it
+        _, _, subprocess_mock, _ = self._run(spec)
+        cmd = subprocess_mock.run.call_args[0][0]
+        self.assertIsInstance(cmd, list)
+        self.assertEqual(cmd[3], spec)
+        self.assertEqual(cmd.count(spec), 1)
+        self.assertNotIn("shell", subprocess_mock.run.call_args.kwargs)
 
     def test_named_spec_resolves_uid_and_gid(self):
         pwd_mock, grp_mock, _, os_mock = self._run("hbot:staff")

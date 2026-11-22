@@ -41,10 +41,9 @@ def autofix_permissions(user_group_spec: str) -> None:
 
     gateway_path: str = Path.home().joinpath(".hummingbot-gateway").as_posix()
     subprocess.run(
-        f"cd '{project_home}' && "
-        f"sudo chown -R {user_group_spec} conf/ data/ logs/ scripts/ {gateway_path}",
+        ["sudo", "chown", "-R", user_group_spec, "conf/", "data/", "logs/", "scripts/", gateway_path],
+        cwd=project_home,
         capture_output=True,
-        shell=True
     )
     os.setgid(gid)
     os.setuid(uid)
