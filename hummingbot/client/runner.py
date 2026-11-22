@@ -14,9 +14,9 @@ import asyncio
 import grp
 import logging
 import os
-from pathlib import Path
 import pwd
 import subprocess
+from pathlib import Path
 from typing import Optional
 
 import yaml
@@ -41,11 +41,27 @@ def autofix_permissions(user_group_spec: str) -> None:
     project_home: str = os.path.realpath(os.path.join(__file__, "../../../"))
 
     gateway_path: str = Path.home().joinpath(".hummingbot-gateway").as_posix()
-    subprocess.run(
-        f"cd '{project_home}' && sudo chown -R {user_group_spec} conf/ data/ logs/ scripts/ {gateway_path}",
-        capture_output=True,
-        shell=True,
-    )
+    try:
+        # fixed argv, no shell; sudo is resolved via PATH by design
+        subprocess.run(  # nosec B603 B607
+            [
+                "sudo",
+                "chown",
+                "-R",
+                user_group_spec,
+                "conf/",
+                "data/",
+                "logs/",
+                "scripts/",
+                gateway_path,
+            ],
+            cwd=project_home,
+            capture_output=True,
+        )
+    except OSError as e:
+        logging.getLogger().warning(
+            f"Skipping chown of runtime directories (sudo or cwd unavailable): {e}"
+        )
     os.setgid(gid)
     os.setuid(uid)
 
@@ -60,7 +76,10 @@ async def wait_for_gateway_ready(hb: HummingbotApplication) -> None:
     if not uses_gateway:
         return
     try:
-        await asyncio.wait_for(hb.trading_core.gateway_monitor.ready_event.wait(), timeout=GATEWAY_READY_TIMEOUT)
+        await asyncio.wait_for(
+            hb.trading_core.gateway_monitor.ready_event.wait(),
+            timeout=GATEWAY_READY_TIMEOUT,
+        )
     except asyncio.TimeoutError:
         logging.getLogger().error(
             "TimeoutError waiting for gateway service to go online... Please ensure Gateway is configured correctly. "
@@ -91,7 +110,9 @@ async def load_and_start_strategy(
             config_data = yaml.safe_load(f) or {}
         script_file = config_data.get("script_file_name", "")
         if not script_file:
-            logging.getLogger().error("Config file is missing 'script_file_name' field.")
+            logging.getLogger().error(
+                "Config file is missing 'script_file_name' field."
+            )
             return False
 
         strategy_name = script_file.replace(".py", "")
@@ -100,7 +121,9 @@ async def load_and_start_strategy(
 
         if headless:
             logging.getLogger().info(f"Starting V2 script strategy: {strategy_name}")
-            success = await hb.trading_core.start_strategy(strategy_name, v2_conf, v2_conf)
+            success = await hb.trading_core.start_strategy(
+                strategy_name, v2_conf, v2_conf
+            )
             if not success:
                 logging.getLogger().error("Failed to start strategy")
                 return False
@@ -113,9 +136,13 @@ async def load_and_start_strategy(
         hb.strategy_file_name = config_file_name.split(".")[0]  # Remove .yml extension
 
         try:
-            strategy_config = await load_strategy_config_map_from_file(STRATEGIES_CONF_DIR_PATH / config_file_name)
+            strategy_config = await load_strategy_config_map_from_file(
+                STRATEGIES_CONF_DIR_PATH / config_file_name
+            )
         except FileNotFoundError:
-            logging.getLogger().error(f"Strategy config file not found: {STRATEGIES_CONF_DIR_PATH / config_file_name}")
+            logging.getLogger().error(
+                f"Strategy config file not found: {STRATEGIES_CONF_DIR_PATH / config_file_name}"
+            )
             return False
         except Exception as e:
             logging.getLogger().error(f"Error loading strategy config file: {e}")
@@ -134,7 +161,9 @@ async def load_and_start_strategy(
             # self.strategy_config_map in their start() — start_strategy() doesn't store the config map
             # object, so set it here (mirrors the UI path's setter -> trading_core.strategy_config_map).
             hb.strategy_config_map = strategy_config
-            success = await hb.trading_core.start_strategy(strategy_name, strategy_config, config_file_name)
+            success = await hb.trading_core.start_strategy(
+                strategy_name, strategy_config, config_file_name
+            )
             if not success:
                 logging.getLogger().error("Failed to start strategy")
                 return False
@@ -182,8 +211,12 @@ async def bootstrap_application(
     await read_system_configs_from_yml()
     if mqtt_autostart:
         client_config_map.mqtt_bridge.mqtt_autostart = True
-    AllConnectorSettings.initialize_paper_trade_settings(client_config_map.paper_trade.paper_trade_exchanges)
-    return HummingbotApplication.main_application(client_config_map=client_config_map, headless_mode=headless)
+    AllConnectorSettings.initialize_paper_trade_settings(
+        client_config_map.paper_trade.paper_trade_exchanges
+    )
+    return HummingbotApplication.main_application(
+        client_config_map=client_config_map, headless_mode=headless
+    )
 
 
 def silence_console_handlers() -> None:
@@ -194,7 +227,9 @@ def silence_console_handlers() -> None:
 
     from hummingbot.logger.cli_handler import CLIHandler
 
-    loggers = [logging.getLogger()] + [logging.getLogger(n) for n in list(logging.root.manager.loggerDict)]
+    loggers = [logging.getLogger()] + [
+        logging.getLogger(n) for n in list(logging.root.manager.loggerDict)
+    ]
     for lg in loggers:
         for handler in list(getattr(lg, "handlers", [])):
             if isinstance(handler, CLIHandler) or (
