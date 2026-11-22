@@ -1,8 +1,10 @@
 from decimal import Decimal
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
+from market_connector.exchanges.kraken.linked_order_codec import KrakenClOrdIdLinkCodec
 from market_connector.hb_compat.registry import get_exchange
 
+from hummingbot.connector.market_connector.kraken_emulation_venue import KrakenEmulationVenue
 from hummingbot.connector.market_connector.market_connector_exchange import MarketConnectorExchange
 
 CONNECTOR_NAME = "kraken_mc"
@@ -40,3 +42,7 @@ class KrakenMcExchange(MarketConnectorExchange):
             core_options={"unknown_order_grace": UNKNOWN_ORDER_GRACE_S, "own_trades_ws": True},
             order_book_refresh_interval=order_book_refresh_interval,
         )
+
+    def _build_linked_venue(self, handle: Any) -> Tuple[Any, Any]:
+        codec = KrakenClOrdIdLinkCodec()
+        return KrakenEmulationVenue(handle.gateway, codec), codec
