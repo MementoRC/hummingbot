@@ -350,7 +350,8 @@ class TestGateIoExchange(IsolatedAsyncioWrapperTestCase):
         mock_api.get(regex_url, body=json.dumps(resp))
 
         ret = self.async_run_with_timeout(
-            coroutine=self.exchange.get_last_traded_prices(trading_pairs=[self.trading_pair])
+            coroutine=self.exchange.get_last_traded_prices(trading_pairs=[self.trading_pair]),
+            timeout=5,
         )
 
         ticker_requests = [(key, value) for key, value in mock_api.requests.items()
