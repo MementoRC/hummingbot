@@ -53,7 +53,7 @@ class TestGateIoExchange(IsolatedAsyncioWrapperTestCase):
         super().setUp()
         self.log_records = []
         self.mocking_assistant = NetworkMockingAssistant()
-        self.async_tasks: List[asyncio.Task] = []
+        self.async_tasks: list[asyncio.Task] = []
         self.client_config_map = ClientConfigAdapter(ClientConfigMap())
 
         self.exchange = GateIoExchange(
@@ -236,7 +236,7 @@ class TestGateIoExchange(IsolatedAsyncioWrapperTestCase):
         ]
         return open_orders
 
-    def get_order_trade_response(self, order: InFlightOrder, is_completely_filled: bool = False) -> Dict[str, Any]:
+    def get_order_trade_response(self, order: InFlightOrder, is_completely_filled: bool = False) -> dict[str, Any]:
         order_amount = order.amount
         if not is_completely_filled:
             order_amount = float(Decimal("0.5") * order_amount)
@@ -324,7 +324,7 @@ class TestGateIoExchange(IsolatedAsyncioWrapperTestCase):
 
         mock_api.get(regex_url, exception=Exception)
 
-        result: Dict[str] = self.async_run_with_timeout(self.exchange.all_trading_pairs())
+        result: dict[str] = self.async_run_with_timeout(self.exchange.all_trading_pairs())
 
         self.assertEqual(0, len(result))
 
