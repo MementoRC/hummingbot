@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 from pydantic import ConfigDict, Field, SecretStr
 
@@ -18,7 +18,7 @@ CENTRALIZED = True
 EXAMPLE_PAIR = "BTC-USD"
 
 
-def is_exchange_information_valid(exchange_info: Dict[str, Any]) -> bool:
+def is_exchange_information_valid(exchange_info: dict[str, Any]) -> bool:
     """
     Verifies if a trading pair is enabled to operate with based on its exchange information
 
@@ -37,7 +37,7 @@ def is_exchange_information_valid(exchange_info: Dict[str, Any]) -> bool:
     return valid
 
 
-def get_linear_non_linear_split(trading_pairs: List[str]) -> Tuple[List[str], List[str]]:
+def get_linear_non_linear_split(trading_pairs: list[str]) -> tuple[list[str], list[str]]:
     linear_trading_pairs = []
     non_linear_trading_pairs = []
     for trading_pair in trading_pairs:
@@ -90,14 +90,21 @@ class BybitPerpetualConfigMap(BaseConnectorConfigMap):
 
 KEYS = BybitPerpetualConfigMap.model_construct()
 
-OTHER_DOMAINS = ["bybit_perpetual_testnet"]
-OTHER_DOMAINS_PARAMETER = {"bybit_perpetual_testnet": "bybit_perpetual_testnet"}
-OTHER_DOMAINS_EXAMPLE_PAIR = {"bybit_perpetual_testnet": "BTC-USDT"}
+OTHER_DOMAINS = ["bybit_perpetual_testnet", "bybit_perpetual_eu"]
+OTHER_DOMAINS_PARAMETER = {
+    "bybit_perpetual_testnet": "bybit_perpetual_testnet",
+    "bybit_perpetual_eu": "bybit_perpetual_eu",
+}
+OTHER_DOMAINS_EXAMPLE_PAIR = {"bybit_perpetual_testnet": "BTC-USDT", "bybit_perpetual_eu": "BTC-USDT"}
 OTHER_DOMAINS_DEFAULT_FEES = {
     "bybit_perpetual_testnet": TradeFeeSchema(
         maker_percent_fee_decimal=Decimal("-0.00025"),
         taker_percent_fee_decimal=Decimal("0.00075"),
-    )
+    ),
+    "bybit_perpetual_eu": TradeFeeSchema(
+        maker_percent_fee_decimal=Decimal("-0.00025"),
+        taker_percent_fee_decimal=Decimal("0.00075"),
+    ),
 }
 
 
@@ -124,4 +131,30 @@ class BybitPerpetualTestnetConfigMap(BaseConnectorConfigMap):
     model_config = ConfigDict(title="bybit_perpetual_testnet")
 
 
-OTHER_DOMAINS_KEYS = {"bybit_perpetual_testnet": BybitPerpetualTestnetConfigMap.model_construct()}
+class BybitPerpetualEuConfigMap(BaseConnectorConfigMap):
+    connector: str = "bybit_perpetual_eu"
+    bybit_perpetual_eu_api_key: SecretStr = Field(
+        default=...,
+        json_schema_extra={
+            "prompt": "Enter your Bybit Perpetual EU API key",
+            "is_secure": True,
+            "is_connect_key": True,
+            "prompt_on_new": True,
+        },
+    )
+    bybit_perpetual_eu_secret_key: SecretStr = Field(
+        default=...,
+        json_schema_extra={
+            "prompt": "Enter your Bybit Perpetual EU API secret",
+            "is_secure": True,
+            "is_connect_key": True,
+            "prompt_on_new": True,
+        },
+    )
+    model_config = ConfigDict(title="bybit_perpetual_eu")
+
+
+OTHER_DOMAINS_KEYS = {
+    "bybit_perpetual_testnet": BybitPerpetualTestnetConfigMap.model_construct(),
+    "bybit_perpetual_eu": BybitPerpetualEuConfigMap.model_construct(),
+}
