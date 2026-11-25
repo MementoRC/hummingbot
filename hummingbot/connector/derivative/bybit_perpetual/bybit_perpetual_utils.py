@@ -28,12 +28,8 @@ def is_exchange_information_valid(exchange_info: Dict[str, Any]) -> bool:
     """
     contract_type = exchange_info.get("contractType")
     status = exchange_info.get("status")
-    valid = (
-        status is not None
-        and contract_type is not None
-        and status in ["Trading", "Settling"]
-        and contract_type in ["LinearPerpetual", "InversePerpetual"]
-    )
+    valid = (status is not None and contract_type is not None
+             and status in ["Trading", "Settling"] and contract_type in ["LinearPerpetual", "InversePerpetual"])
     return valid
 
 
@@ -74,7 +70,7 @@ class BybitPerpetualConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        },
+        }
     )
     bybit_perpetual_secret_key: SecretStr = Field(
         default=...,
@@ -90,14 +86,21 @@ class BybitPerpetualConfigMap(BaseConnectorConfigMap):
 
 KEYS = BybitPerpetualConfigMap.model_construct()
 
-OTHER_DOMAINS = ["bybit_perpetual_testnet"]
-OTHER_DOMAINS_PARAMETER = {"bybit_perpetual_testnet": "bybit_perpetual_testnet"}
-OTHER_DOMAINS_EXAMPLE_PAIR = {"bybit_perpetual_testnet": "BTC-USDT"}
+OTHER_DOMAINS = ["bybit_perpetual_testnet", "bybit_perpetual_eu"]
+OTHER_DOMAINS_PARAMETER = {
+    "bybit_perpetual_testnet": "bybit_perpetual_testnet",
+    "bybit_perpetual_eu": "bybit_perpetual_eu",
+}
+OTHER_DOMAINS_EXAMPLE_PAIR = {"bybit_perpetual_testnet": "BTC-USDT", "bybit_perpetual_eu": "BTC-USDT"}
 OTHER_DOMAINS_DEFAULT_FEES = {
     "bybit_perpetual_testnet": TradeFeeSchema(
         maker_percent_fee_decimal=Decimal("-0.00025"),
         taker_percent_fee_decimal=Decimal("0.00075"),
-    )
+    ),
+    "bybit_perpetual_eu": TradeFeeSchema(
+        maker_percent_fee_decimal=Decimal("-0.00025"),
+        taker_percent_fee_decimal=Decimal("0.00075"),
+    ),
 }
 
 
@@ -110,7 +113,7 @@ class BybitPerpetualTestnetConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        },
+        }
     )
     bybit_perpetual_testnet_secret_key: SecretStr = Field(
         default=...,
@@ -119,9 +122,35 @@ class BybitPerpetualTestnetConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        },
+        }
     )
     model_config = ConfigDict(title="bybit_perpetual_testnet")
 
 
-OTHER_DOMAINS_KEYS = {"bybit_perpetual_testnet": BybitPerpetualTestnetConfigMap.model_construct()}
+class BybitPerpetualEuConfigMap(BaseConnectorConfigMap):
+    connector: str = "bybit_perpetual_eu"
+    bybit_perpetual_eu_api_key: SecretStr = Field(
+        default=...,
+        json_schema_extra={
+            "prompt": "Enter your Bybit Perpetual EU API key",
+            "is_secure": True,
+            "is_connect_key": True,
+            "prompt_on_new": True,
+        }
+    )
+    bybit_perpetual_eu_secret_key: SecretStr = Field(
+        default=...,
+        json_schema_extra={
+            "prompt": "Enter your Bybit Perpetual EU API secret",
+            "is_secure": True,
+            "is_connect_key": True,
+            "prompt_on_new": True,
+        }
+    )
+    model_config = ConfigDict(title="bybit_perpetual_eu")
+
+
+OTHER_DOMAINS_KEYS = {
+    "bybit_perpetual_testnet": BybitPerpetualTestnetConfigMap.model_construct(),
+    "bybit_perpetual_eu": BybitPerpetualEuConfigMap.model_construct(),
+}
