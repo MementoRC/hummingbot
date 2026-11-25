@@ -1,7 +1,7 @@
 import asyncio
 import threading
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Tuple
 
 from hummingbot.core.utils.async_utils import safe_ensure_future
 from hummingbot.remote_iface.mqtt import MQTTGateway
@@ -18,7 +18,7 @@ class MQTTCommand:
     _mqtt_sleep_rate_autostart_retry: float = 10.0
     _mqtt_autostart_retry_max_interval: float = 60.0
 
-    def _next_autostart_retry_delay(self, attempt: int) -> tuple[float, int]:
+    def _next_autostart_retry_delay(self, attempt: int) -> Tuple[float, int]:
         # Exponential backoff off the base retry rate, capped, so a sustained
         # outage logs with ever-widening gaps instead of once per cycle.
         delay = min(
