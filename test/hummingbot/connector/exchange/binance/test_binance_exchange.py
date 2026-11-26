@@ -2,7 +2,7 @@ import asyncio
 from decimal import Decimal
 import json
 import re
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable
 from unittest.mock import AsyncMock, patch
 
 from aioresponses import aioresponses
@@ -107,7 +107,7 @@ class BinanceExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         }
 
     @property
-    def all_symbols_including_invalid_pair_mock_response(self) -> Tuple[str, Any]:
+    def all_symbols_including_invalid_pair_mock_response(self) -> tuple[str, Any]:
         response = {
             "timezone": "UTC",
             "serverTime": 1639598493658,
@@ -381,7 +381,7 @@ class BinanceExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         self.assertEqual(order.exchange_order_id, str(request_params["orderId"]))
 
     def configure_successful_cancelation_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.ORDER_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -390,7 +390,7 @@ class BinanceExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return url
 
     def configure_erroneous_cancelation_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.ORDER_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -398,7 +398,7 @@ class BinanceExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return url
 
     def configure_order_not_found_error_cancelation_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.ORDER_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -408,7 +408,7 @@ class BinanceExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
 
     def configure_one_successful_one_erroneous_cancel_all_response(
         self, successful_order: InFlightOrder, erroneous_order: InFlightOrder, mock_api: aioresponses
-    ) -> List[str]:
+    ) -> list[str]:
         """
         :return: a list of all configured URLs for the cancelations
         """
@@ -420,7 +420,7 @@ class BinanceExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return all_urls
 
     def configure_completely_filled_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.ORDER_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -429,7 +429,7 @@ class BinanceExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return url
 
     def configure_canceled_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.ORDER_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -438,7 +438,7 @@ class BinanceExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return url
 
     def configure_erroneous_http_fill_trade_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(path_url=CONSTANTS.MY_TRADES_PATH_URL)
         regex_url = re.compile(url + r"\?.*")
@@ -446,7 +446,7 @@ class BinanceExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return url
 
     def configure_open_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         """
         :return: the URL configured
@@ -458,7 +458,7 @@ class BinanceExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return url
 
     def configure_http_error_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.ORDER_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -466,7 +466,7 @@ class BinanceExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return url
 
     def configure_partially_filled_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(CONSTANTS.ORDER_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
@@ -475,8 +475,8 @@ class BinanceExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return url
 
     def configure_order_not_found_error_order_status_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
-    ) -> List[str]:
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
+    ) -> list[str]:
         url = web_utils.private_rest_url(CONSTANTS.ORDER_PATH_URL)
         regex_url = re.compile(f"^{url}".replace(".", r"\.").replace("?", r"\?"))
         response = {"code": -2013, "msg": "Order does not exist."}
@@ -484,7 +484,7 @@ class BinanceExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return [url]
 
     def configure_partial_fill_trade_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(path_url=CONSTANTS.MY_TRADES_PATH_URL)
         regex_url = re.compile(url + r"\?.*")
@@ -493,7 +493,7 @@ class BinanceExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         return url
 
     def configure_full_fill_trade_response(
-        self, order: InFlightOrder, mock_api: aioresponses, callback: Optional[Callable] = lambda *args, **kwargs: None
+        self, order: InFlightOrder, mock_api: aioresponses, callback: Callable | None = lambda *args, **kwargs: None
     ) -> str:
         url = web_utils.private_rest_url(path_url=CONSTANTS.MY_TRADES_PATH_URL)
         regex_url = re.compile(url + r"\?.*")
@@ -1116,13 +1116,17 @@ class BinanceExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         )
 
     def test_is_post_only_rejection_error_recognizes_binance_2010(self):
-        rejection = IOError("Error executing request POST https://api.binance.com/api/v3/order. HTTP status is 400. "
-                            "Error: {'code':-2010,'msg':'Order would immediately match and take.'}")
+        rejection = IOError(
+            "Error executing request POST https://api.binance.com/api/v3/order. HTTP status is 400. "
+            "Error: {'code':-2010,'msg':'Order would immediately match and take.'}"
+        )
         self.assertTrue(self.exchange._is_post_only_rejection_error(OrderType.LIMIT_MAKER, rejection))
         self.assertFalse(self.exchange._is_post_only_rejection_error(OrderType.LIMIT, rejection))
 
-        other_error = IOError("Error executing request POST https://api.binance.com/api/v3/order. HTTP status is "
-                              "400. Error: {'code':-1013,'msg':'Invalid quantity.'}")
+        other_error = IOError(
+            "Error executing request POST https://api.binance.com/api/v3/order. HTTP status is "
+            "400. Error: {'code':-1013,'msg':'Invalid quantity.'}"
+        )
         self.assertFalse(self.exchange._is_post_only_rejection_error(OrderType.LIMIT_MAKER, other_error))
 
     @aioresponses()
@@ -1136,21 +1140,26 @@ class BinanceExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
 
         order_id = "OID-POST-ONLY"
         self.async_run_with_timeout(
-            self.exchange._create_order(trade_type=TradeType.BUY,
-                                        order_id=order_id,
-                                        trading_pair=self.trading_pair,
-                                        amount=Decimal("1"),
-                                        order_type=OrderType.LIMIT_MAKER,
-                                        price=Decimal("10000")))
+            self.exchange._create_order(
+                trade_type=TradeType.BUY,
+                order_id=order_id,
+                trading_pair=self.trading_pair,
+                amount=Decimal("1"),
+                order_type=OrderType.LIMIT_MAKER,
+                price=Decimal("10000"),
+            )
+        )
 
         self.assertNotIn(order_id, self.exchange.in_flight_orders)
         self.assertEqual(1, len(self.order_failure_logger.event_log))
         self.assertFalse(any(record.levelname == "NETWORK" for record in self.log_records))
-        self.assertTrue(any(
-            record.levelname == "WARNING"
-            and "was rejected because it would not have rested as a maker order" in record.getMessage()
-            for record in self.log_records
-        ))
+        self.assertTrue(
+            any(
+                record.levelname == "WARNING"
+                and "was rejected because it would not have rested as a maker order" in record.getMessage()
+                for record in self.log_records
+            )
+        )
 
     def test_format_trading_rules__min_notional_present(self):
         trading_rules = [
@@ -1224,7 +1233,7 @@ class BinanceExchangeTests(AbstractExchangeConnectorTests.ExchangeConnectorTests
         self.assertEqual(result[0].min_notional_size, Decimal("10"))
 
     def _validate_auth_credentials_taking_parameters_from_argument(
-        self, request_call_tuple: RequestCall, params: Dict[str, Any]
+        self, request_call_tuple: RequestCall, params: dict[str, Any]
     ):
         self.assertIn("timestamp", params)
         self.assertIn("signature", params)
