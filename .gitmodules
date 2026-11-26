@@ -66,3 +66,7 @@
 	path = sub-packages/order-book
 	url = https://github.com/MementoRC/hb-order-book.git
 	branch = development
+[submodule "sub-packages/state-store"]
+	path = sub-packages/state-store
+	url = https://github.com/MementoRC/hb-state-store.git
+	branch = development
