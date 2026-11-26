@@ -118,7 +118,7 @@ def update(
     if rebuilt:
         _rebuild_extensions()
 
-    env_changed = _git("diff", "--name-only", f"{local}..HEAD", "--", "setup/environment.yml")
+    env_changed = _git("diff", "--name-only", f"{local}..HEAD", "--", "pyproject.toml", "uv.lock")
     record: dict = {
         "version": f"{old_version} -> {_version()}",
         "branch": branch,
@@ -127,5 +127,5 @@ def update(
         "extensions_rebuilt": rebuilt,
     }
     if env_changed:
-        record["note"] = "setup/environment.yml changed — run `make install` to update the conda env"
+        record["note"] = "pyproject.toml/uv.lock changed — run `make install` to update the venv"
     emit(record, render_kv(record, title="update"), as_json)
