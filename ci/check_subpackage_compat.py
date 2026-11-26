@@ -14,7 +14,7 @@ from inspect import iscoroutinefunction
 import sys
 from typing import Any
 
-# All 17 sub-package directory names mapped to their top-level import names.
+# All 18 sub-package directory names mapped to their top-level import names.
 # Every entry is gated: the script exits non-zero if any import fails.
 SUBPACKAGE_IMPORTS = {
     "async-utils": "async_utils",
@@ -31,6 +31,7 @@ SUBPACKAGE_IMPORTS = {
     "rate-limit": "rate_limit",
     "rate-oracle": "rate_oracle",
     "remote-iface": "remote_iface",
+    "state-store": "state_store",
     "strategy-framework": "strategy_framework",
     "user-stream-tracker": "user_stream_tracker",
     "web-assistant": "web_assistant",
