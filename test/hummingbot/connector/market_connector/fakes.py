@@ -214,6 +214,7 @@ class FakeDescriptor:
                 OrderType.STOP_LOSS,
                 OrderType.TAKE_PROFIT,
                 OrderType.STOP_LOSS_LIMIT,
+                OrderType.TAKE_PROFIT_LIMIT,
             }
         )
     )

@@ -24,6 +24,15 @@ class KrakenMcUtilsTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             cfg(kraken_mc_api_key="a", kraken_mc_secret_key="b", kraken_mc_api_tier="Gold")
 
+    def test_host_slot_default_and_bounds(self):
+        cfg = utils.KrakenMcConfigMap
+        base = {"kraken_mc_api_key": "a", "kraken_mc_secret_key": "b"}
+        self.assertEqual(0, cfg(**base).kraken_mc_host_slot)
+        self.assertEqual(99, cfg(**base, kraken_mc_host_slot=99).kraken_mc_host_slot)
+        for bad in (-1, 100):
+            with self.assertRaises(ValueError):
+                cfg(**base, kraken_mc_host_slot=bad)
+
     def test_example_pair_matches_descriptor(self):
         registry = pytest.importorskip("market_connector.hb_compat.registry")
         self.assertEqual(registry.get_exchange("kraken").example_pair, utils.EXAMPLE_PAIR)
