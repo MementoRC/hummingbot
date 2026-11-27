@@ -14,6 +14,7 @@ from unittest.mock import MagicMock, PropertyMock, patch
 from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.core.data_type.common import OrderType, PositionAction, TradeType
+from hummingbot.core.time_iterator import TimeIterator
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.position_on_exchange_executor.data_types import (
     PositionOnExchangeExecutorConfig,
@@ -61,6 +62,8 @@ class TestStopLossLimitE2E(IsolatedAsyncioWrapperTestCase):
                 with patch("hummingbot.strategy.strategy_v2_base.ExecutorOrchestrator"):
                     with patch("hummingbot.strategy.strategy_v2_base.MarketDataProvider"):
                         self.strategy = StrategyV2Base({CONNECTOR_NAME: self.connector})
+        # Seed the strategy/order-tracker timestamp (NaN until first tick) without running StrategyV2Base.tick.
+        TimeIterator.tick(self.strategy, 1234567890.0)
 
     def _build_executor(self, side: TradeType, order_type: OrderType, offset: Decimal | None):
         config = PositionOnExchangeExecutorConfig(
