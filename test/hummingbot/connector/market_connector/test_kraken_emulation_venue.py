@@ -1,4 +1,5 @@
 from decimal import Decimal
+import tempfile
 import unittest
 
 import pytest
@@ -22,13 +23,16 @@ from market_connector.exchanges.kraken.linked_order_codec import KrakenClOrdIdLi
 from market_connector.protocols import LegFill as McLegFill, LegSnapshot as McLegSnapshot  # noqa: E402
 from strategy_framework.linked_orders import (  # noqa: E402
     EmulatedLinkedOrderManager,
-    InMemoryLinkedGroupStore,
     LegFill,
     LegSnapshot,
     LinkedOrderManagerConfig,
 )
 
 from hummingbot.connector.market_connector.kraken_emulation_venue import KrakenEmulationVenue  # noqa: E402
+from hummingbot.connector.market_connector.linked_group_persistence import (  # noqa: E402
+    FleetGroupIdAllocator,
+    open_linked_group_store,
+)
 
 from .fakes import PAIR, FakeGateway  # noqa: E402
 
@@ -183,11 +187,18 @@ class KrakenEmulationVenueTests(unittest.IsolatedAsyncioTestCase):
         assert received == []
 
     async def test_fill_callback_reaches_on_fill_not_buffer(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        state_store, group_store = open_linked_group_store(f"{tmp.name}/linked.sqlite")
+        self.addCleanup(state_store.close)
+        codec = KrakenClOrdIdLinkCodec()
+        allocator = FleetGroupIdAllocator(state_store, account_key="acct", host_slot=0, max_group_id=codec.max_group_id)
         manager = EmulatedLinkedOrderManager(
             self.venue,
-            KrakenClOrdIdLinkCodec(),
-            LinkedOrderManagerConfig(enabled=True, require_recover_before_place=True, allow_volatile_store=True),
-            store=InMemoryLinkedGroupStore(),
+            codec,
+            LinkedOrderManagerConfig(enabled=True, require_recover_before_place=True),
+            store=group_store,
+            allocator=allocator,
         )
         self.venue.subscribe(manager.on_fill)
         await manager.recover([PAIR])
