@@ -45,6 +45,12 @@ DEFAULT_ORDER_TYPES = [OrderType.LIMIT, OrderType.MARKET, OrderType.LIMIT_MAKER]
 CORE_ORDER_KWARGS = ("limit_price", "price_in_percent", "position_action", "expiration_ts", "trigger")
 # Order types expressed through the core's ``trigger=TriggerSpec`` form.
 TRIGGER_ORDER_TYPES = (OrderType.STOP_LOSS, OrderType.TAKE_PROFIT)
+# Trigger orders that also carry a limit price (passed to the core as ``price``).
+TRIGGER_LIMIT_ORDER_TYPES = (OrderType.STOP_LOSS_LIMIT, OrderType.TAKE_PROFIT_LIMIT)
+
+
+def _is_nan_price(price: Any) -> bool:
+    return price is None or Decimal(str(price)).is_nan()
 
 
 class MarketConnectorExchange(ExchangeBase):
@@ -471,13 +477,11 @@ class MarketConnectorExchange(ExchangeBase):
                 raise TypeError(f"position_action must be a PositionAction member, got {action!r}.")
             extras["position_action"] = to_parent_position_action(action)
         method = core.buy if trade_type is TradeType.BUY else core.sell
-        # *_LIMIT -> #85 P5 (limit-price source); trailing -> follow-up. Both keep the legacy call.
+        # trailing -> follow-up; it keeps the legacy call.
         if order_type in TRIGGER_ORDER_TYPES:
-            if "trigger" not in extras:
-                extras["trigger"] = self._build_trigger(price, bool(extras.pop("price_in_percent", False)))
-            else:
-                extras.pop("price_in_percent", None)
-            return method(trading_pair, amount, to_parent_order_type(order_type), **extras)
+            return self._create_trigger_order(method, trading_pair, amount, order_type, price, extras)
+        if order_type in TRIGGER_LIMIT_ORDER_TYPES:
+            return self._create_trigger_limit_order(method, trading_pair, amount, order_type, price, extras)
         return method(
             trading_pair,
             amount,
@@ -485,6 +489,44 @@ class MarketConnectorExchange(ExchangeBase):
             price,
             **extras,
         )
+
+    def _create_trigger_order(
+        self,
+        method: Any,
+        trading_pair: str,
+        amount: Decimal,
+        order_type: OrderType,
+        price: Decimal,
+        extras: Dict[str, Any],
+    ) -> str:
+        if "trigger" not in extras:
+            extras["trigger"] = self._build_trigger(price, bool(extras.pop("price_in_percent", False)))
+        else:
+            extras.pop("price_in_percent", None)
+        return method(trading_pair, amount, to_parent_order_type(order_type), **extras)
+
+    def _create_trigger_limit_order(
+        self,
+        method: Any,
+        trading_pair: str,
+        amount: Decimal,
+        order_type: OrderType,
+        price: Decimal,
+        extras: Dict[str, Any],
+    ) -> str:
+        # On the trigger path the core takes the limit price as ``price``; ``limit_price`` must be omitted.
+        limit_price = extras.pop("limit_price", None)
+        if "trigger" not in extras:
+            if limit_price is None:
+                raise ValueError(f"{order_type.name} orders require a limit_price kwarg (the limit price).")
+            extras["trigger"] = self._build_trigger(price, bool(extras.pop("price_in_percent", False)))
+        else:
+            extras.pop("price_in_percent", None)
+            if limit_price is None:
+                limit_price = None if _is_nan_price(price) else price
+            if limit_price is None:
+                raise ValueError(f"{order_type.name} orders require a limit_price kwarg (the limit price).")
+        return method(trading_pair, amount, to_parent_order_type(order_type), limit_price, **extras)
 
     @staticmethod
     def _build_trigger(price: Decimal, in_percent: bool) -> TriggerSpec:

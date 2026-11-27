@@ -1,6 +1,7 @@
 import asyncio
 from decimal import Decimal
 import unittest
+import warnings
 
 import pytest
 
@@ -114,11 +115,43 @@ class OrderPathTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(TriggerSpec(kind=TriggerKind.PERCENT, value=D("0.02")), extras["trigger"])
         self.assertNotIn("price_in_percent", extras)
 
-    async def test_stop_loss_limit_keeps_legacy_call(self):
-        self.exchange.buy(PAIR, D("1"), OrderType.STOP_LOSS_LIMIT, D("95"), limit_price=D("94"))
+    async def test_stop_loss_limit_absolute_trigger_with_limit_price(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            self.exchange.buy(PAIR, D("1"), OrderType.STOP_LOSS_LIMIT, D("95"), limit_price=D("94"))
         _, _, _, order_type, price, extras = self.core.order_calls[0]
-        self.assertEqual(D("95"), price)
-        self.assertEqual({"limit_price": D("94")}, extras)
+        self.assertIs(OrderType.STOP_LOSS_LIMIT, order_type)
+        self.assertEqual(D("94"), price)
+        self.assertEqual({"trigger": TriggerSpec(kind=TriggerKind.ABSOLUTE, value=D("95"))}, extras)
+
+    async def test_stop_loss_limit_percent_trigger(self):
+        self.exchange.sell(PAIR, D("1"), OrderType.STOP_LOSS_LIMIT, D("2"), limit_price=D("94"), price_in_percent=True)
+        price, extras = self.core.order_calls[0][4:6]
+        self.assertEqual(D("94"), price)
+        self.assertEqual({"trigger": TriggerSpec(kind=TriggerKind.PERCENT, value=D("0.02"))}, extras)
+
+    async def test_take_profit_limit_absolute_trigger_with_limit_price(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            self.exchange.sell(PAIR, D("1"), OrderType.TAKE_PROFIT_LIMIT, D("110"), limit_price=D("109"))
+        _, _, _, order_type, price, extras = self.core.order_calls[0]
+        self.assertIs(OrderType.TAKE_PROFIT_LIMIT, order_type)
+        self.assertEqual(D("109"), price)
+        self.assertEqual({"trigger": TriggerSpec(kind=TriggerKind.ABSOLUTE, value=D("110"))}, extras)
+
+    async def test_limit_type_without_limit_price_raises_and_nothing_sent(self):
+        for order_type in (OrderType.STOP_LOSS_LIMIT, OrderType.TAKE_PROFIT_LIMIT):
+            with self.subTest(order_type=order_type):
+                with self.assertRaisesRegex(ValueError, "limit_price"):
+                    self.exchange.buy(PAIR, D("1"), order_type, D("95"))
+        self.assertEqual([], self.core.order_calls)
+
+    async def test_limit_type_explicit_trigger_passes_through_with_limit_price(self):
+        trigger = TriggerSpec(kind=TriggerKind.ABSOLUTE, value=D("90"))
+        self.exchange.sell(PAIR, D("1"), OrderType.STOP_LOSS_LIMIT, D("89"), trigger=trigger, limit_price=D("89"))
+        price, extras = self.core.order_calls[0][4:6]
+        self.assertEqual(D("89"), price)
+        self.assertEqual({"trigger": trigger}, extras)
 
     async def test_explicit_trigger_kwarg_passes_through(self):
         trigger = TriggerSpec(kind=TriggerKind.ABSOLUTE, value=D("90"))
