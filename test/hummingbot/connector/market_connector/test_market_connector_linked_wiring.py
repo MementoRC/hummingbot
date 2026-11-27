@@ -1,4 +1,7 @@
 import asyncio
+from decimal import Decimal
+from pathlib import Path
+import tempfile
 from types import SimpleNamespace
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import patch
@@ -8,11 +11,16 @@ import pytest
 pytest.importorskip("market_connector")
 pytest.importorskip("strategy_framework")
 
+from data_type_primitives import OrderState  # noqa: E402
 from market_connector.exchanges.kraken.linked_order_codec import KrakenClOrdIdLinkCodec  # noqa: E402
 from strategy_framework.linked_orders import EmulatedLinkedOrderManager  # noqa: E402
 
 from hummingbot.connector.exchange.kraken_mc.kraken_mc_exchange import KrakenMcExchange  # noqa: E402
 from hummingbot.connector.market_connector.kraken_emulation_venue import KrakenEmulationVenue  # noqa: E402
+from hummingbot.connector.market_connector.linked_group_persistence import (  # noqa: E402
+    FleetGroupIdAllocator,
+    SlotConflictError,
+)
 from hummingbot.connector.market_connector.market_connector_exchange import MarketConnectorExchange  # noqa: E402
 
 from .fakes import PAIR, FakeDescriptor, FakeGateway  # noqa: E402
@@ -28,7 +36,7 @@ class _KrakenLikeExchange(MarketConnectorExchange):
         return KrakenEmulationVenue(handle.gateway, codec), codec
 
 
-def _make(cls):
+def _make(cls, state_path=None, host_slot=0):
     descriptor = FakeDescriptor()
     exchange = cls(
         descriptor=descriptor,
@@ -36,18 +44,66 @@ def _make(cls):
         connector_name="fake_mc",
         trading_pairs=[PAIR],
         order_book_refresh_interval=10,
+        linked_account_key="acct-key",
+        linked_host_slot=host_slot,
+        linked_state_path=state_path,
     )
     return exchange, descriptor
 
 
 class LinkedWiringTests(IsolatedAsyncioTestCase):
     async def asyncSetUp(self):
-        self.exchange, self.descriptor = _make(_KrakenLikeExchange)
+        self._tmp = tempfile.TemporaryDirectory()
+        self.state_path = Path(self._tmp.name) / "linked.sqlite"
+        self.exchange, self.descriptor = _make(_KrakenLikeExchange, self.state_path)
         self.gateway = self.descriptor.handle.gateway
         self.events = []
 
     async def asyncTearDown(self):
         await self.exchange.stop_network()
+        self._tmp.cleanup()
+
+    async def test_durable_store_and_allocator_wired(self):
+        await self.exchange.start_network()
+        manager = self.exchange.linked_order_manager
+        assert manager._store.durable is True
+        assert isinstance(manager._allocator, FleetGroupIdAllocator)
+        assert manager._config.allow_volatile_store is False
+        assert self.state_path.exists()
+
+    async def test_state_store_closed_on_stop(self):
+        await self.exchange.start_network()
+        assert self.exchange._linked_state_store is not None
+        await self.exchange.stop_network()
+        assert self.exchange._linked_state_store is None
+
+    async def test_missing_account_key_fails_closed(self):
+        exchange = _KrakenLikeExchange(
+            descriptor=FakeDescriptor(), config={}, connector_name="fake_mc", trading_pairs=[PAIR]
+        )
+        with pytest.raises(ValueError, match="linked_account_key"):
+            await exchange.start_network()
+        assert exchange._handle is None
+
+    async def test_slot_conflict_refuses_start_without_placing(self):
+        # Group 5 is in slot 0 but unknown to the (empty) store: another host shares our slot.
+        tag = KrakenClOrdIdLinkCodec().encode(5, 0)
+        self.gateway.open_legs = [
+            SimpleNamespace(client_order_id=tag, link_tag=tag, state=OrderState.OPEN, filled=Decimal(0))
+        ]
+        with pytest.raises(SlotConflictError):
+            await self.exchange.start_network()
+        assert [c for c in self.gateway.calls if c[0] == "place_order"] == []
+        assert self.descriptor.handle.closed == 1
+        assert self.exchange.linked_order_manager is None
+        assert self.exchange._linked_state_store is None
+
+    async def test_host_slot_beyond_codec_fails_startup(self):
+        exchange, descriptor = _make(_KrakenLikeExchange, self.state_path, host_slot=100)
+        with pytest.raises(ValueError, match="host_slot"):
+            await exchange.start_network()
+        assert descriptor.handle.closed == 1
+        assert exchange._linked_state_store is None
 
     def _record_tick(self):
         async def tick(manager):
