@@ -41,6 +41,10 @@ class RecordingConnector(ConnectorBase):
         self.calls: list[tuple[str, dict]] = []
         self.trading_rules = {TRADING_PAIR: TradingRule(trading_pair=TRADING_PAIR)}
 
+    @property
+    def ready(self) -> bool:
+        return True
+
     def buy(self, trading_pair, amount, order_type, price, **kwargs) -> str:
         self.calls.append(("buy", {"order_type": order_type, "price": price, "amount": amount, **kwargs}))
         return "OID-BUY"
