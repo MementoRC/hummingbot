@@ -146,6 +146,19 @@ class OrderPathTests(unittest.IsolatedAsyncioTestCase):
                     self.exchange.buy(PAIR, D("1"), order_type, D("95"))
         self.assertEqual([], self.core.order_calls)
 
+    async def test_limit_type_explicit_trigger_without_limit_price_uses_positional_price(self):
+        trigger = TriggerSpec(kind=TriggerKind.ABSOLUTE, value=D("90"))
+        self.exchange.sell(PAIR, D("1"), OrderType.STOP_LOSS_LIMIT, D("89"), trigger=trigger)
+        price, extras = self.core.order_calls[0][4:6]
+        self.assertEqual(D("89"), price)
+        self.assertEqual({"trigger": trigger}, extras)
+
+    async def test_limit_type_explicit_trigger_without_any_limit_price_raises(self):
+        trigger = TriggerSpec(kind=TriggerKind.ABSOLUTE, value=D("90"))
+        with self.assertRaisesRegex(ValueError, "limit_price"):
+            self.exchange.sell(PAIR, D("1"), OrderType.STOP_LOSS_LIMIT, D("nan"), trigger=trigger)
+        self.assertEqual([], self.core.order_calls)
+
     async def test_limit_type_explicit_trigger_passes_through_with_limit_price(self):
         trigger = TriggerSpec(kind=TriggerKind.ABSOLUTE, value=D("90"))
         self.exchange.sell(PAIR, D("1"), OrderType.STOP_LOSS_LIMIT, D("89"), trigger=trigger, limit_price=D("89"))
