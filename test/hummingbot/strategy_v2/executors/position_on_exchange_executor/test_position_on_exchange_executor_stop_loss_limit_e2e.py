@@ -11,7 +11,7 @@ the branch that carries the adapter.
 from decimal import Decimal
 from unittest.mock import MagicMock, PropertyMock, patch
 
-from hummingbot.connector.test_support.mock_paper_exchange import MockPaperExchange
+from hummingbot.connector.connector_base import ConnectorBase
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.core.data_type.common import OrderType, PositionAction, TradeType
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
@@ -28,8 +28,12 @@ CONNECTOR_NAME = "binance"
 TRADING_PAIR = "ETH-USDT"
 
 
-class RecordingConnector(MockPaperExchange):
-    """Connector stub recording the kwargs of every buy/sell it receives."""
+class RecordingConnector(ConnectorBase):
+    """Connector stub recording the kwargs of every buy/sell it receives.
+
+    Built on ConnectorBase (whose c_buy/c_sell delegate to the Python buy/sell) rather than a paper exchange, whose
+    Cython c_buy/c_sell bypass Python overrides.
+    """
 
     def __init__(self):
         super().__init__()
