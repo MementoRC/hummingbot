@@ -3,11 +3,13 @@ import contextlib
 from decimal import Decimal
 from enum import Enum
 import functools
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
 from data_type_primitives.trigger_spec import TriggerKind, TriggerSpec
 from event_bus import EventBus
 
+from hummingbot import data_path
 from hummingbot.connector.exchange_base import ExchangeBase
 from hummingbot.connector.market_connector.events_converter import (
     EVENT_CLASSES,
@@ -37,6 +39,7 @@ PRE_START_STATUS_KEYS = (
     "status_polling_initialized",
     "user_stream_initialized",
 )
+LINKED_STATE_FILE_NAME = "kraken_mc_linked_orders.sqlite"
 DEFAULT_ORDER_TYPES = [OrderType.LIMIT, OrderType.MARKET, OrderType.LIMIT_MAKER]
 # Optional order extras forwarded to the core when the caller supplies them via **kwargs.
 CORE_ORDER_KWARGS = ("limit_price", "price_in_percent", "position_action", "expiration_ts", "trigger")
@@ -65,6 +68,9 @@ class MarketConnectorExchange(ExchangeBase):
         rate_limits_share_pct: Decimal = Decimal("100"),
         core_options: Optional[Mapping[str, Any]] = None,
         order_book_refresh_interval: float = 5.0,
+        linked_account_key: Optional[str] = None,
+        linked_host_slot: int = 0,
+        linked_state_path: Optional[Path] = None,
     ):
         # ConnectorBase.__init__ reads display_name, so the name must exist first.
         self._connector_name = connector_name
@@ -80,6 +86,11 @@ class MarketConnectorExchange(ExchangeBase):
         self._event_bus: Optional[EventBus] = None
         self._refresh_task: Optional[asyncio.Task] = None
         self._linked_manager: Optional[Any] = None
+        # Durable linked-order group store + group-id allocator inputs (account_key is never persisted raw).
+        self._linked_account_key = linked_account_key
+        self._linked_host_slot = linked_host_slot
+        self._linked_state_path = linked_state_path
+        self._linked_state_store: Optional[Any] = None
         self._leg_fill_unsub: Optional[Callable[[], None]] = None
         self._linked_tick_task: Optional[asyncio.Task] = None
         self._event_subscriptions: List[Any] = []
@@ -161,29 +172,45 @@ class MarketConnectorExchange(ExchangeBase):
         pair = self._build_linked_venue(handle)
         if pair is None:
             return
-        # Imported here so connectors without linked-order support never need strategy_framework.
-        from strategy_framework.linked_orders import (
-            EmulatedLinkedOrderManager,
-            InMemoryLinkedGroupStore,
-            LinkedOrderManagerConfig,
+        # Imported here so connectors without linked-order support never need strategy_framework / state_store.
+        from strategy_framework.linked_orders import EmulatedLinkedOrderManager, LinkedOrderManagerConfig
+
+        from hummingbot.connector.market_connector.linked_group_persistence import (
+            FleetGroupIdAllocator,
+            open_linked_group_store,
+            recover_with_slot_check,
         )
 
+        if not self._linked_account_key:
+            raise ValueError("linked orders need linked_account_key: group ids are allocated per account")
         venue, codec = pair
+        # Fails at startup (before any I/O) on a bad slot or a slot that does not fit the codec.
+        state_path = self._linked_state_path or Path(data_path()) / LINKED_STATE_FILE_NAME
+        state_path.parent.mkdir(parents=True, exist_ok=True)
+        state_store, group_store = open_linked_group_store(state_path)
+        self._linked_state_store = state_store
+        allocator = FleetGroupIdAllocator(
+            state_store,
+            account_key=self._linked_account_key,
+            host_slot=self._linked_host_slot,
+            max_group_id=codec.max_group_id,
+        )
         # cancel_orphans must stay False: on a shared account another host's live legs look like orphans.
         config = LinkedOrderManagerConfig(
             enabled=True,
             require_recover_before_place=True,
             grace_period_s=30,
             cancel_orphans=False,
-            allow_volatile_store=True,
         )
-        # CAVEAT: P4a uses the SF legacy time-floor group ids. Per the design-doc caveat, the kraken_mc venue must
-        # not place linked orders live before the P4b allocator lands. P4a has no consumer of linked_order_manager.
-        manager = EmulatedLinkedOrderManager(venue, codec, config, store=InMemoryLinkedGroupStore())
+        # The durable store survives restarts; the allocator is the only group-id source (one-way cutover: legacy
+        # time-floor ids overlap the slot ranges, so there is no fallback to them).
+        manager = EmulatedLinkedOrderManager(venue, codec, config, store=group_store, allocator=allocator)
         self._linked_manager = manager
-        # Order matters: subscribe, then recover, then tick.
+        # Order matters: subscribe, then recover (slot-conflict check first), then tick.
         self._leg_fill_unsub = venue.subscribe(manager.on_fill)
-        await manager.recover(list(self._trading_pairs))
+        await recover_with_slot_check(
+            manager, venue, codec, group_store, list(self._trading_pairs), self._linked_host_slot
+        )
         self._linked_tick_task = asyncio.ensure_future(self._linked_tick_loop())
 
     async def _linked_tick_loop(self) -> None:
@@ -212,6 +239,15 @@ class MarketConnectorExchange(ExchangeBase):
                 await manager.shutdown()
             except Exception:
                 self.logger().exception("Linked order manager shutdown failed during start cleanup.")
+        self._close_linked_state_store()
+
+    def _close_linked_state_store(self) -> None:
+        state_store, self._linked_state_store = self._linked_state_store, None
+        if state_store is not None:
+            try:
+                state_store.close()
+            except Exception:
+                self.logger().exception("Closing the linked-order state store failed.")
 
     async def _stop_linked_manager(self) -> None:
         task, unsub, manager = self._linked_tick_task, self._leg_fill_unsub, self._linked_manager
@@ -226,6 +262,7 @@ class MarketConnectorExchange(ExchangeBase):
                 await manager.shutdown()
         finally:
             self._linked_tick_task = self._leg_fill_unsub = self._linked_manager = None
+            self._close_linked_state_store()
 
     async def check_network(self) -> NetworkStatus:
         return NetworkStatus.CONNECTED if self._handle is not None else NetworkStatus.NOT_CONNECTED

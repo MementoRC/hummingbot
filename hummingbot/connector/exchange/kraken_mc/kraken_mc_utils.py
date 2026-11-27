@@ -45,6 +45,15 @@ class KrakenMcConfigMap(BaseConnectorConfigMap):
             "prompt_on_new": True,
         },
     )
+    kraken_mc_host_slot: int = Field(
+        default=0,
+        ge=0,
+        le=99,
+        json_schema_extra={
+            "prompt": "Enter this host's linked-order slot (0-99, unique per host on the same Kraken account)",
+            "prompt_on_new": True,
+        },
+    )
     model_config = ConfigDict(title="kraken_mc")
 
     @field_validator("kraken_mc_api_tier", mode="before")

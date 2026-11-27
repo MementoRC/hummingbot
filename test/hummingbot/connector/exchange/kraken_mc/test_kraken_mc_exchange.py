@@ -28,6 +28,12 @@ class KrakenMcExchangeTests(unittest.TestCase):
             self.exchange._config,
         )
 
+    def test_linked_allocator_inputs(self):
+        self.assertEqual("key", self.exchange._linked_account_key)
+        self.assertEqual(0, self.exchange._linked_host_slot)
+        slotted = KrakenMcExchange(kraken_mc_api_key="key", kraken_mc_secret_key="secret", kraken_mc_host_slot=7)
+        self.assertEqual(7, slotted._linked_host_slot)
+
     def test_core_options(self):
         self.assertEqual(60.0, self.exchange._core_options["unknown_order_grace"])
         self.assertTrue(self.exchange._core_options["own_trades_ws"])

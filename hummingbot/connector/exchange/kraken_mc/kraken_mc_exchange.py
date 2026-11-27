@@ -20,6 +20,7 @@ class KrakenMcExchange(MarketConnectorExchange):
         kraken_mc_api_key: str,
         kraken_mc_secret_key: str,
         kraken_mc_api_tier: str = "Starter",
+        kraken_mc_host_slot: int = 0,
         balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
         rate_limits_share_pct: Decimal = Decimal("100"),
         trading_pairs: Optional[List[str]] = None,
@@ -41,6 +42,8 @@ class KrakenMcExchange(MarketConnectorExchange):
             rate_limits_share_pct=rate_limits_share_pct,
             core_options={"unknown_order_grace": UNKNOWN_ORDER_GRACE_S, "own_trades_ws": True},
             order_book_refresh_interval=order_book_refresh_interval,
+            linked_account_key=kraken_mc_api_key,
+            linked_host_slot=kraken_mc_host_slot,
         )
 
     def _build_linked_venue(self, handle: Any) -> Tuple[Any, Any]:
