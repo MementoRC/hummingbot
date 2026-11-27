@@ -41,6 +41,7 @@ class TestPositionOnExchangeExecutorBranches(IsolatedAsyncioWrapperTestCase):
             time_limit=60,
             take_profit_order_type=tp_type,
             stop_loss_order_type=sl_type,
+            stop_loss_limit_offset=Decimal("0.01") if sl_type == OrderType.STOP_LOSS_LIMIT else None,
         )
         return PositionOnExchangeExecutorConfig(
             id="test",
@@ -62,6 +63,33 @@ class TestPositionOnExchangeExecutorBranches(IsolatedAsyncioWrapperTestCase):
         config = self._config(sl_type=OrderType.STOP_LOSS_LIMIT)
         PositionOnExchangeExecutor(self.strategy, config)
         self.assertEqual(config.triple_barrier_config.stop_loss_order_type, OrderType.STOP_LOSS_LIMIT)
+
+    def test_stop_loss_limit_price_by_side(self):
+        with patch.object(PositionOnExchangeExecutor, "entry_price", new_callable=PropertyMock) as entry:
+            entry.return_value = Decimal("100")
+            long_exec = self._executor(side=TradeType.BUY, sl_type=OrderType.STOP_LOSS_LIMIT)
+            short_exec = self._executor(side=TradeType.SELL, sl_type=OrderType.STOP_LOSS_LIMIT)
+            # long: trigger 95, limit below trigger; short: trigger 105, limit above trigger
+            self.assertEqual(long_exec.stop_loss_limit_price, Decimal("95.00") * Decimal("0.99"))
+            self.assertEqual(short_exec.stop_loss_limit_price, Decimal("105.00") * Decimal("1.01"))
+
+    def test_place_stop_loss_order_passes_limit_price_for_stop_loss_limit(self):
+        with patch.object(PositionOnExchangeExecutor, "entry_price", new_callable=PropertyMock) as entry:
+            entry.return_value = Decimal("100")
+            executor = self._executor(side=TradeType.BUY, sl_type=OrderType.STOP_LOSS_LIMIT)
+            with patch.object(PositionOnExchangeExecutor, "place_order", return_value="OID-1") as place_order:
+                executor.place_stop_loss_order()
+        kwargs = place_order.call_args.kwargs
+        self.assertEqual(kwargs["price"], Decimal("95.00"))
+        self.assertEqual(kwargs["limit_price"], Decimal("95.00") * Decimal("0.99"))
+
+    def test_place_stop_loss_order_omits_limit_price_for_stop_loss(self):
+        with patch.object(PositionOnExchangeExecutor, "entry_price", new_callable=PropertyMock) as entry:
+            entry.return_value = Decimal("100")
+            executor = self._executor(side=TradeType.BUY, sl_type=OrderType.STOP_LOSS)
+            with patch.object(PositionOnExchangeExecutor, "place_order", return_value="OID-1") as place_order:
+                executor.place_stop_loss_order()
+        self.assertNotIn("limit_price", place_order.call_args.kwargs)
 
     def test_stop_loss_price_by_side(self):
         with patch.object(PositionOnExchangeExecutor, "entry_price", new_callable=PropertyMock) as entry:

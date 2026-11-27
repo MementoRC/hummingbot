@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Literal
 
 from pydantic import model_validator
@@ -18,7 +19,13 @@ class PositionOnExchangeTripleBarrierConfig(TripleBarrierConfig):
     exchange as a STOP_LOSS or STOP_LOSS_LIMIT order, so the exchange itself triggers the
     close at the stop price and the base MARKET-only requirement does not apply. Every
     other barrier check is unchanged.
+
+    ``stop_loss_limit_offset`` is the fraction below (long close) or above (short close) the
+    trigger price at which the STOP_LOSS_LIMIT limit order rests. It is required for
+    STOP_LOSS_LIMIT and must be None for STOP_LOSS.
     """
+
+    stop_loss_limit_offset: Decimal | None = None
 
     @model_validator(mode="after")
     def validate_barriers(self):
@@ -35,6 +42,17 @@ class PositionOnExchangeTripleBarrierConfig(TripleBarrierConfig):
             raise ValueError(
                 f"triple_barrier_config.stop_loss_order_type ({self.stop_loss_order_type.name}) "
                 f"must be STOP_LOSS or STOP_LOSS_LIMIT"
+            )
+        if self.stop_loss_order_type == OrderType.STOP_LOSS_LIMIT:
+            if self.stop_loss_limit_offset is None or not (Decimal("0") < self.stop_loss_limit_offset < Decimal("1")):
+                raise ValueError(
+                    "triple_barrier_config.stop_loss_limit_offset must be set and satisfy 0 < offset < 1 "
+                    f"when stop_loss_order_type is STOP_LOSS_LIMIT, got {self.stop_loss_limit_offset}"
+                )
+        elif self.stop_loss_limit_offset is not None:
+            raise ValueError(
+                "triple_barrier_config.stop_loss_limit_offset must be None unless stop_loss_order_type "
+                f"is STOP_LOSS_LIMIT, got order type {self.stop_loss_order_type.name}"
             )
         return self
 

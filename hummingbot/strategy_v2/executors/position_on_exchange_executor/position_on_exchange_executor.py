@@ -106,6 +106,20 @@ class PositionOnExchangeExecutor(PositionExecutor):
             stop_loss_price = self.entry_price * (1 + self.config.triple_barrier_config.stop_loss)
         return stop_loss_price
 
+    @property
+    def stop_loss_limit_price(self) -> Decimal:
+        """
+        Limit price of a STOP_LOSS_LIMIT order: the trigger price moved by
+        ``stop_loss_limit_offset`` to the fill-worse side (below the trigger for a long
+        close/sell, above it for a short close/buy).
+
+        :return: The stop loss limit price.
+        """
+        offset = self.config.triple_barrier_config.stop_loss_limit_offset
+        if self.config.side == TradeType.BUY:
+            return self.stop_loss_price * (1 - offset)
+        return self.stop_loss_price * (1 + offset)
+
     def control_stop_loss(self):
         """
         Override client-side stop loss monitoring: place an exchange-native stop-loss order
@@ -149,21 +163,24 @@ class PositionOnExchangeExecutor(PositionExecutor):
 
         Uses stop_loss_order_type from the triple barrier config (STOP_LOSS or
         STOP_LOSS_LIMIT).  For both variants the price passed to the connector is
-        stop_loss_price; STOP_LOSS treats it as the trigger price while
-        STOP_LOSS_LIMIT treats it as the limit price (the fill price cap at the
-        stop trigger level).
+        stop_loss_price, which is the trigger price.  STOP_LOSS_LIMIT additionally
+        passes ``limit_price=stop_loss_limit_price`` (trigger offset by
+        stop_loss_limit_offset to the fill-worse side) as the resting limit price.
 
         :return: None
         """
         if not self._stop_loss_order:
+            order_type = self.config.triple_barrier_config.stop_loss_order_type
+            extra = {"limit_price": self.stop_loss_limit_price} if order_type == OrderType.STOP_LOSS_LIMIT else {}
             order_id = self.place_order(
                 connector_name=self.config.connector_name,
                 trading_pair=self.config.trading_pair,
                 amount=self.amount_to_close,
                 price=self.stop_loss_price,
-                order_type=self.config.triple_barrier_config.stop_loss_order_type,
+                order_type=order_type,
                 position_action=PositionAction.CLOSE,
                 side=self.close_order_side,
+                **extra,
             )
             self._stop_loss_order = TrackedOrder(order_id=order_id)
             self.logger().debug(f"Executor ID: {self.config.id} - Placing stop loss order {order_id}")
