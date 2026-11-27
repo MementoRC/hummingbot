@@ -144,6 +144,7 @@ class MarketConnectorExchangeTests(unittest.IsolatedAsyncioTestCase):
                 OrderType.STOP_LOSS,
                 OrderType.TAKE_PROFIT,
                 OrderType.STOP_LOSS_LIMIT,
+                OrderType.TAKE_PROFIT_LIMIT,
             },
             set(self.exchange.supported_order_types()),
         )
