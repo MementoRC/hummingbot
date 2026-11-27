@@ -1,9 +1,12 @@
 # Set the base image
 FROM debian:bookworm-slim AS builder
 
-# Install system dependencies
+# Install system dependencies. The PyPI `ta-lib` wheel bundles the TA-Lib C library for Linux
+# (verified: it imports and computes correctly with no system libta-lib installed), unlike conda's
+# `libta-lib` conda-forge package which this used to need separately. gcc/g++/make/python3-dev are
+# a source-build safety net for whichever dependency doesn't ship a wheel for this interpreter/arch.
 RUN apt-get update && \
-    apt-get install -y sudo libusb-1.0 gcc g++ python3-dev curl && \
+    apt-get install -y sudo libusb-1.0-0 gcc g++ python3-dev make curl && \
     rm -rf /var/lib/apt/lists/*
 
 # Install pixi (from official installer)
@@ -45,9 +48,11 @@ ENV BUILD_DATE=${BUILD_DATE}
 
 ENV INSTALLATION_TYPE=docker
 
-# Install system dependencies
+# Install system dependencies (the TA-Lib C library ships bundled inside the `ta-lib` wheel).
+# libstdc++6 is what the compiled Cython/C++ extensions link against; the base image already has it
+# (apt depends on it), but it is listed so the image does not rely on that.
 RUN apt-get update && \
-    apt-get install -y sudo libusb-1.0 && \
+    apt-get install -y sudo libusb-1.0-0 libstdc++6 && \
     rm -rf /var/lib/apt/lists/*
 
 # Create mount points

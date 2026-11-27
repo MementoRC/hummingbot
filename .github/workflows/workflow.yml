@@ -28,6 +28,8 @@ jobs:
         with:
           PATTERNS: |
             **/*.+(py|pyx|pyd|yml|toml)
+            pixi.lock
+            .python-version
       - name: Check if client files are modified
         id: check_files
         if: github.event_name == 'push' || env.GIT_DIFF
