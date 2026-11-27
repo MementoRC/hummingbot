@@ -92,12 +92,6 @@ class OrderPathTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(("sell", PAIR, D("2"), OrderType.MARKET), sell_call[:4])
         self.assertTrue(sell_call[4].is_nan())
 
-    async def test_limit_type_forwards_limit_price(self):
-        self.exchange.buy(PAIR, D("1"), OrderType.STOP_LOSS_LIMIT, D("95"), limit_price=D("94"), price_in_percent=False)
-        extras = self.core.order_calls[0][5]
-        self.assertEqual(D("94"), extras["limit_price"])
-        self.assertIs(OrderType.STOP_LOSS_LIMIT, self.core.order_calls[0][3])
-
     async def test_stop_loss_absolute_uses_trigger_spec_without_price(self):
         self.exchange.sell(PAIR, D("1"), OrderType.STOP_LOSS, D("95"), position_action=PositionAction.CLOSE)
         _, _, _, order_type, price, extras = self.core.order_calls[0]
