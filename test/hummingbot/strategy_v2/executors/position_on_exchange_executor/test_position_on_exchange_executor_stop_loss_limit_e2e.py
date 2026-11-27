@@ -12,6 +12,7 @@ from decimal import Decimal
 from unittest.mock import MagicMock, PropertyMock, patch
 
 from hummingbot.connector.test_support.mock_paper_exchange import MockPaperExchange
+from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.core.data_type.common import OrderType, PositionAction, TradeType
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.position_on_exchange_executor.data_types import (
@@ -33,6 +34,7 @@ class RecordingConnector(MockPaperExchange):
     def __init__(self):
         super().__init__()
         self.calls: list[tuple[str, dict]] = []
+        self.trading_rules = {TRADING_PAIR: TradingRule(trading_pair=TRADING_PAIR)}
 
     def buy(self, trading_pair, amount, order_type, price, **kwargs) -> str:
         self.calls.append(("buy", {"order_type": order_type, "price": price, "amount": amount, **kwargs}))
