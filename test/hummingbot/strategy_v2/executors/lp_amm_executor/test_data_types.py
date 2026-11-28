@@ -57,10 +57,12 @@ class TestLPAmmExecutorConfig(TestCase):
         self.assertFalse(hasattr(config, "upper_price"))
 
     def test_config_with_exit_triggers(self):
-        config = LPAmmExecutorConfig(**self.get_kwargs(
-            min_fee_apr_pct=Decimal("5"),
-            max_duration_seconds=86400.0,
-        ))
+        config = LPAmmExecutorConfig(
+            **self.get_kwargs(
+                min_fee_apr_pct=Decimal("5"),
+                max_duration_seconds=86400.0,
+            )
+        )
         self.assertEqual(config.min_fee_apr_pct, Decimal("5"))
         self.assertEqual(config.max_duration_seconds, 86400.0)
 
@@ -119,8 +121,10 @@ class TestLPAmmExecutorStateMath(TestCase):
 
     def test_fees_earned_when_price_unchanged(self):
         state = LPAmmExecutorState(
-            initial_base_amount=Decimal("1"), initial_quote_amount=Decimal("100"),
-            base_amount=Decimal("1.01"), quote_amount=Decimal("101"),
+            initial_base_amount=Decimal("1"),
+            initial_quote_amount=Decimal("100"),
+            base_amount=Decimal("1.01"),
+            quote_amount=Decimal("101"),
         )
         # current_value = 1.01*100 + 101 = 202; no-fee curve at price 100 = 200
         self.assertEqual(state.current_value_quote(Decimal("100")), Decimal("202"))
@@ -133,8 +137,10 @@ class TestLPAmmExecutorStateMath(TestCase):
         # happened, so the frozen (pre-swap) figure wins regardless of what
         # base_amount/quote_amount or current_price say now.
         state = LPAmmExecutorState(
-            initial_base_amount=Decimal("1"), initial_quote_amount=Decimal("100"),
-            base_amount=Decimal("1.01"), quote_amount=Decimal("101"),
+            initial_base_amount=Decimal("1"),
+            initial_quote_amount=Decimal("100"),
+            base_amount=Decimal("1.01"),
+            quote_amount=Decimal("101"),
             realized_fees_earned_quote=Decimal("0"),
         )
         self.assertEqual(state.fees_earned_quote(Decimal("100")), Decimal("0"))
@@ -143,8 +149,10 @@ class TestLPAmmExecutorStateMath(TestCase):
         # Reserves rebalanced to exactly the no-fee curve at price=400 (4x):
         # base = sqrt(k/p) = sqrt(100/400) = 0.5, quote = sqrt(k*p) = sqrt(40000) = 200.
         state = LPAmmExecutorState(
-            initial_base_amount=Decimal("1"), initial_quote_amount=Decimal("100"),
-            base_amount=Decimal("0.5"), quote_amount=Decimal("200"),
+            initial_base_amount=Decimal("1"),
+            initial_quote_amount=Decimal("100"),
+            base_amount=Decimal("0.5"),
+            quote_amount=Decimal("200"),
         )
         self.assertEqual(state.current_value_quote(Decimal("400")), Decimal("400"))
         self.assertEqual(state.value_no_fee_quote(Decimal("400")), Decimal("400"))
@@ -155,9 +163,12 @@ class TestLPAmmExecutorStateMath(TestCase):
 
     def test_fee_apr_pct_one_percent_over_one_year(self):
         state = LPAmmExecutorState(
-            initial_base_amount=Decimal("1"), initial_quote_amount=Decimal("100"),
-            base_amount=Decimal("1.01"), quote_amount=Decimal("101"),
-            add_price=Decimal("100"), add_timestamp=0.0,
+            initial_base_amount=Decimal("1"),
+            initial_quote_amount=Decimal("100"),
+            base_amount=Decimal("1.01"),
+            quote_amount=Decimal("101"),
+            add_price=Decimal("100"),
+            add_timestamp=0.0,
         )
         # fees_earned=2 on an initial deposit of 200, over exactly one year -> 1%
         one_year_later = 365 * 86400.0
@@ -170,14 +181,17 @@ class TestLPAmmExecutorStateMath(TestCase):
 
     def test_fee_apr_pct_none_at_zero_elapsed(self):
         state = LPAmmExecutorState(
-            initial_base_amount=Decimal("1"), initial_quote_amount=Decimal("100"),
-            add_price=Decimal("100"), add_timestamp=1000.0,
+            initial_base_amount=Decimal("1"),
+            initial_quote_amount=Decimal("100"),
+            add_price=Decimal("100"),
+            add_timestamp=1000.0,
         )
         self.assertIsNone(state.fee_apr_pct(Decimal("100"), 1000.0))
 
     def test_fee_apr_pct_none_without_add_price(self):
         state = LPAmmExecutorState(
-            initial_base_amount=Decimal("1"), initial_quote_amount=Decimal("100"),
+            initial_base_amount=Decimal("1"),
+            initial_quote_amount=Decimal("100"),
             add_timestamp=0.0,
         )
         self.assertIsNone(state.fee_apr_pct(Decimal("100"), 1000.0))
@@ -205,7 +219,8 @@ class TestLPAmmExecutorStateTransitions(TestCase):
 
     def test_closing_while_close_order_active(self):
         state = LPAmmExecutorState(
-            state=LPAmmExecutorStates.ACTIVE, position_opened=True,
+            state=LPAmmExecutorStates.ACTIVE,
+            position_opened=True,
             active_close_order=TrackedOrder(order_id="o2"),
         )
         state.update_state()

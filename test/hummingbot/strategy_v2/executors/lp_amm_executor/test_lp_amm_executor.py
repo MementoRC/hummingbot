@@ -1,7 +1,5 @@
 import asyncio
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
-from test.logger_mixin_for_test import LoggerMixinForTest
 from types import SimpleNamespace
 from unittest import TestCase
 from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
@@ -12,6 +10,8 @@ from hummingbot.strategy_v2.executors.lp_amm_executor.data_types import LPAmmExe
 from hummingbot.strategy_v2.executors.lp_amm_executor.lp_amm_executor import LPAmmExecutor
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
+from test.logger_mixin_for_test import LoggerMixinForTest
 
 
 def make_position_detail(address: str, base: float, quote: float) -> SimpleNamespace:
@@ -22,11 +22,18 @@ def make_position_detail(address: str, base: float, quote: float) -> SimpleNames
 
 
 def make_position_info(
-    price: float, base: float, quote: float, positions=None, lp_token_amount: float = 0.0,
+    price: float,
+    base: float,
+    quote: float,
+    positions=None,
+    lp_token_amount: float = 0.0,
 ) -> SimpleNamespace:
     """A stand-in for connector.gateway.AMMPositionInfo."""
     return SimpleNamespace(
-        price=price, base_token_amount=base, quote_token_amount=quote, positions=positions,
+        price=price,
+        base_token_amount=base,
+        quote_token_amount=quote,
+        positions=positions,
         lp_token_amount=lp_token_amount,
     )
 
@@ -106,10 +113,14 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         connector = self.strategy.connectors["solana-mainnet-beta"]
         connector.get_user_positions = AsyncMock(return_value=[])
         connector._amm_add_liquidity = AsyncMock(return_value="sig123")
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=100.0, base=1.0, quote=100.0,
-            positions=[make_position_detail("nft1", 1.0, 100.0)],
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=100.0,
+                base=1.0,
+                quote=100.0,
+                positions=[make_position_detail("nft1", 1.0, 100.0)],
+            )
+        )
 
         await executor._create_position()
 
@@ -131,9 +142,14 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         connector = self.strategy.connectors["solana-mainnet-beta"]
         connector.get_user_positions = AsyncMock(return_value=[])
         connector._amm_add_liquidity = AsyncMock(return_value="sig123")
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=100.0, base=1.0, quote=100.0, positions=None,
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=100.0,
+                base=1.0,
+                quote=100.0,
+                positions=None,
+            )
+        )
 
         await executor._create_position()
 
@@ -153,10 +169,14 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         connector = self.strategy.connectors["solana-mainnet-beta"]
         connector.get_user_positions = AsyncMock(return_value=[])
         connector._amm_add_liquidity = AsyncMock(return_value="sig123")
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=100.0, base=2.0, quote=200.0,
-            positions=[make_position_detail("nft1", 1.0, 100.0), make_position_detail("nft2", 1.0, 100.0)],
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=100.0,
+                base=2.0,
+                quote=200.0,
+                positions=[make_position_detail("nft1", 1.0, 100.0), make_position_detail("nft2", 1.0, 100.0)],
+            )
+        )
 
         await executor._create_position()
 
@@ -172,9 +192,7 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
 
         connector = self.strategy.connectors["solana-mainnet-beta"]
         connector.get_user_positions = AsyncMock(return_value=[])
-        connector._amm_add_liquidity = AsyncMock(
-            side_effect=Exception("Gateway rejected: [code: SLIPPAGE_EXCEEDED]")
-        )
+        connector._amm_add_liquidity = AsyncMock(side_effect=Exception("Gateway rejected: [code: SLIPPAGE_EXCEEDED]"))
 
         await executor._create_position()
 
@@ -197,10 +215,14 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         executor.lp_position_state.position_nft_address = "nft1"
 
         connector = self.strategy.connectors["solana-mainnet-beta"]
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=110.0, base=0.95, quote=105.0,
-            positions=[make_position_detail("nft1", 0.95, 105.0)],
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=110.0,
+                base=0.95,
+                quote=105.0,
+                positions=[make_position_detail("nft1", 0.95, 105.0)],
+            )
+        )
 
         await executor._update_position_info()
 
@@ -222,10 +244,14 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         executor.close_type = CloseType.EARLY_STOP
 
         connector = self.strategy.connectors["solana-mainnet-beta"]
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=100.0, base=1.0, quote=100.0,
-            positions=[make_position_detail("nft1", 1.0, 100.0)],
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=100.0,
+                base=1.0,
+                quote=100.0,
+                positions=[make_position_detail("nft1", 1.0, 100.0)],
+            )
+        )
         connector._amm_remove_liquidity = AsyncMock(return_value="sig-close")
 
         await executor._close_position()
@@ -254,10 +280,14 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         executor._slippage_pct = Decimal("2.5")  # widened by a prior retry
 
         connector = self.strategy.connectors["solana-mainnet-beta"]
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=100.0, base=1.0, quote=100.0,
-            positions=[make_position_detail("nft1", 1.0, 100.0)],
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=100.0,
+                base=1.0,
+                quote=100.0,
+                positions=[make_position_detail("nft1", 1.0, 100.0)],
+            )
+        )
         connector._amm_remove_liquidity = AsyncMock(return_value="sig-close")
 
         await executor._close_position()
@@ -280,10 +310,14 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         executor.close_type = CloseType.POSITION_HOLD
 
         connector = self.strategy.connectors["solana-mainnet-beta"]
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=100.0, base=1.5, quote=100.0,
-            positions=[make_position_detail("nft1", 1.5, 100.0)],
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=100.0,
+                base=1.5,
+                quote=100.0,
+                positions=[make_position_detail("nft1", 1.5, 100.0)],
+            )
+        )
         connector._amm_remove_liquidity = AsyncMock(return_value="sig-close")
 
         await executor._close_position()
@@ -302,9 +336,14 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         executor.close_type = CloseType.EARLY_STOP
 
         connector = self.strategy.connectors["solana-mainnet-beta"]
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=100.0, base=0.0, quote=0.0, positions=[],  # nft1 no longer listed
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=100.0,
+                base=0.0,
+                quote=0.0,
+                positions=[],  # nft1 no longer listed
+            )
+        )
         connector._amm_remove_liquidity = AsyncMock()
 
         for _ in range(2):
@@ -349,9 +388,12 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         self.assertEqual(executor.lp_position_state.state, LPAmmExecutorStates.ACTIVE)
 
     def test_min_fee_apr_trigger_closes_when_no_fees_earned(self):
-        executor = self.get_executor(self.get_default_config(
-            min_fee_apr_pct=Decimal("5"), min_fee_apr_window_seconds=3600.0,
-        ))
+        executor = self.get_executor(
+            self.get_default_config(
+                min_fee_apr_pct=Decimal("5"),
+                min_fee_apr_window_seconds=3600.0,
+            )
+        )
         executor.lp_position_state.state = LPAmmExecutorStates.ACTIVE
         executor.lp_position_state.position_opened = True
         executor.lp_position_state.initial_base_amount = Decimal("1")
@@ -369,9 +411,12 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
 
     def test_min_fee_apr_trigger_ignored_within_window(self):
         """An APR extrapolated from a few minutes of fees is noise, not a measurement."""
-        executor = self.get_executor(self.get_default_config(
-            min_fee_apr_pct=Decimal("5"), min_fee_apr_window_seconds=3600.0,
-        ))
+        executor = self.get_executor(
+            self.get_default_config(
+                min_fee_apr_pct=Decimal("5"),
+                min_fee_apr_window_seconds=3600.0,
+            )
+        )
         executor.lp_position_state.state = LPAmmExecutorStates.ACTIVE
         executor.lp_position_state.position_opened = True
         executor.lp_position_state.initial_base_amount = Decimal("1")
@@ -387,9 +432,12 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         self.assertEqual(executor.lp_position_state.state, LPAmmExecutorStates.ACTIVE)
 
     def test_fee_apr_above_threshold_does_not_close(self):
-        executor = self.get_executor(self.get_default_config(
-            min_fee_apr_pct=Decimal("0.5"), min_fee_apr_window_seconds=3600.0,
-        ))
+        executor = self.get_executor(
+            self.get_default_config(
+                min_fee_apr_pct=Decimal("0.5"),
+                min_fee_apr_window_seconds=3600.0,
+            )
+        )
         executor.lp_position_state.state = LPAmmExecutorStates.ACTIVE
         executor.lp_position_state.position_opened = True
         executor.lp_position_state.initial_base_amount = Decimal("1")
@@ -407,9 +455,12 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         self.assertEqual(executor.lp_position_state.state, LPAmmExecutorStates.ACTIVE)
 
     def test_keep_position_config_drives_close_type(self):
-        executor = self.get_executor(self.get_default_config(
-            max_duration_seconds=3600.0, keep_position=True,
-        ))
+        executor = self.get_executor(
+            self.get_default_config(
+                max_duration_seconds=3600.0,
+                keep_position=True,
+            )
+        )
         executor.lp_position_state.state = LPAmmExecutorStates.ACTIVE
         executor.lp_position_state.position_opened = True
         executor.lp_position_state.add_timestamp = 1_000_000.0 - 3700.0
@@ -479,10 +530,14 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         connector.get_pool_address = AsyncMock(return_value="some-other-pool")
         connector.get_user_positions = AsyncMock(return_value=[])
         connector._amm_add_liquidity = AsyncMock(return_value="sig123")
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=100.0, base=1.0, quote=100.0,
-            positions=[make_position_detail("nft1", 1.0, 100.0)],
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=100.0,
+                base=1.0,
+                quote=100.0,
+                positions=[make_position_detail("nft1", 1.0, 100.0)],
+            )
+        )
 
         await executor._create_position()
 
@@ -500,10 +555,14 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
 
         connector = self.strategy.connectors["solana-mainnet-beta"]
         connector.get_pool_address = AsyncMock(return_value="some-other-pool")
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=100.0, base=1.0, quote=100.0,
-            positions=[make_position_detail("nft1", 1.0, 100.0)],
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=100.0,
+                base=1.0,
+                quote=100.0,
+                positions=[make_position_detail("nft1", 1.0, 100.0)],
+            )
+        )
         connector._amm_remove_liquidity = AsyncMock(return_value="sig-close")
 
         await executor._close_position()
@@ -561,10 +620,14 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         executor.close_type = CloseType.EARLY_STOP
 
         connector = self.strategy.connectors["solana-mainnet-beta"]
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=100.0, base=1.0, quote=100.0,
-            positions=[make_position_detail("nft1", 1.0, 100.0)],
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=100.0,
+                base=1.0,
+                quote=100.0,
+                positions=[make_position_detail("nft1", 1.0, 100.0)],
+            )
+        )
         connector._amm_remove_liquidity = AsyncMock(return_value=None)
 
         await executor._close_position()
@@ -588,10 +651,14 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         executor.close_type = CloseType.EARLY_STOP
 
         connector = self.strategy.connectors["solana-mainnet-beta"]
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=100.0, base=1.5, quote=100.0,
-            positions=[make_position_detail("nft1", 1.5, 100.0)],
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=100.0,
+                base=1.5,
+                quote=100.0,
+                positions=[make_position_detail("nft1", 1.5, 100.0)],
+            )
+        )
         connector._amm_remove_liquidity = AsyncMock(return_value="sig-close")
 
         await executor._close_position()
@@ -615,10 +682,14 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         executor.close_type = CloseType.EARLY_STOP
 
         connector = self.strategy.connectors["solana-mainnet-beta"]
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=100.0, base=1.0, quote=100.0,
-            positions=[make_position_detail("nft1", 1.0, 100.0)],
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=100.0,
+                base=1.0,
+                quote=100.0,
+                positions=[make_position_detail("nft1", 1.0, 100.0)],
+            )
+        )
         connector._amm_remove_liquidity = AsyncMock(return_value="sig-close")
         order_id = connector.create_market_order_id.return_value
         connector._amm_lp_data_unavailable[order_id] = True
@@ -758,10 +829,14 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         executor.close_type = CloseType.POSITION_HOLD
 
         connector = self.strategy.connectors["solana-mainnet-beta"]
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=100.0, base=1.5, quote=100.0,
-            positions=[make_position_detail("nft1", 1.5, 100.0)],
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=100.0,
+                base=1.5,
+                quote=100.0,
+                positions=[make_position_detail("nft1", 1.5, 100.0)],
+            )
+        )
         connector._amm_remove_liquidity = AsyncMock(return_value="sig-close")
         connector.place_order = MagicMock(side_effect=AssertionError("must not be called"))
 
@@ -784,12 +859,17 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         connector = self.strategy.connectors["solana-mainnet-beta"]
         connector.get_user_positions = AsyncMock(return_value=[])
         connector._amm_add_liquidity = AsyncMock(return_value="sig123")
-        connector.get_position_info_fresh = AsyncMock(side_effect=[
-            Exception("rpc hiccup"),
-            make_position_info(
-                price=100.0, base=1.0, quote=100.0, positions=[make_position_detail("nft1", 1.0, 100.0)],
-            ),
-        ])
+        connector.get_position_info_fresh = AsyncMock(
+            side_effect=[
+                Exception("rpc hiccup"),
+                make_position_info(
+                    price=100.0,
+                    base=1.0,
+                    quote=100.0,
+                    positions=[make_position_detail("nft1", 1.0, 100.0)],
+                ),
+            ]
+        )
 
         with patch("asyncio.sleep", new=AsyncMock()):
             await executor._create_position()
@@ -842,9 +922,14 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             return "sig123"
 
         connector._amm_add_liquidity = AsyncMock(side_effect=amm_add_liquidity)
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=100.0, base=1.0, quote=100.0, positions=None,
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=100.0,
+                base=1.0,
+                quote=100.0,
+                positions=None,
+            )
+        )
 
         create_task = asyncio.ensure_future(executor._create_position())
         await add_liquidity_started.wait()
@@ -956,13 +1041,21 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         executor.lp_position_state.state = LPAmmExecutorStates.OPENING
 
         connector = self.strategy.connectors["solana-mainnet-beta"]
-        connector.get_user_positions = AsyncMock(return_value=[
-            make_position_info(price=100.0, base=2.0, quote=200.0, positions=None, lp_token_amount=5.0),
-        ])
+        connector.get_user_positions = AsyncMock(
+            return_value=[
+                make_position_info(price=100.0, base=2.0, quote=200.0, positions=None, lp_token_amount=5.0),
+            ]
+        )
         connector._amm_add_liquidity = AsyncMock(return_value="sig123")
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=100.0, base=3.0, quote=300.0, positions=None, lp_token_amount=8.0,
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=100.0,
+                base=3.0,
+                quote=300.0,
+                positions=None,
+                lp_token_amount=8.0,
+            )
+        )
 
         await executor._create_position()
 
@@ -976,9 +1069,15 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         connector = self.strategy.connectors["solana-mainnet-beta"]
         connector.get_user_positions = AsyncMock(side_effect=Exception("rpc down"))
         connector._amm_add_liquidity = AsyncMock(return_value="sig123")
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=100.0, base=3.0, quote=300.0, positions=None, lp_token_amount=8.0,
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=100.0,
+                base=3.0,
+                quote=300.0,
+                positions=None,
+                lp_token_amount=8.0,
+            )
+        )
 
         await executor._create_position()
 
@@ -1000,9 +1099,15 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         executor.close_type = CloseType.EARLY_STOP
 
         connector = self.strategy.connectors["solana-mainnet-beta"]
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=100.0, base=3.0, quote=300.0, positions=None, lp_token_amount=6.0,
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=100.0,
+                base=3.0,
+                quote=300.0,
+                positions=None,
+                lp_token_amount=6.0,
+            )
+        )
         connector._amm_remove_liquidity = AsyncMock(return_value="sig-close")
 
         await executor._close_position()
@@ -1021,9 +1126,15 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         executor.close_type = CloseType.EARLY_STOP
 
         connector = self.strategy.connectors["solana-mainnet-beta"]
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=100.0, base=0.0, quote=0.0, positions=None, lp_token_amount=0.0,
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=100.0,
+                base=0.0,
+                quote=0.0,
+                positions=None,
+                lp_token_amount=0.0,
+            )
+        )
         connector._amm_remove_liquidity = AsyncMock()
 
         await executor._close_position()
@@ -1234,9 +1345,14 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         executor.lp_position_state.position_opened = True
         executor.lp_position_state.position_nft_address = "nft1"
         connector = self.strategy.connectors["solana-mainnet-beta"]
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=100.0, base=0.0, quote=0.0, positions=[],
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=100.0,
+                base=0.0,
+                quote=0.0,
+                positions=[],
+            )
+        )
         await executor._update_position_info()
         self.assertEqual(executor._position_not_found_count, 1)
 
@@ -1245,9 +1361,14 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         executor.lp_position_state.position_opened = True
         executor.lp_position_state.position_nft_address = None
         connector = self.strategy.connectors["solana-mainnet-beta"]
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=120.0, base=2.0, quote=200.0, positions=None,
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=120.0,
+                base=2.0,
+                quote=200.0,
+                positions=None,
+            )
+        )
         await executor._update_position_info()
         self.assertEqual(executor.lp_position_state.base_amount, Decimal("2.0"))
         self.assertEqual(executor.lp_position_state.quote_amount, Decimal("200.0"))
@@ -1439,7 +1560,9 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
     def test_get_cum_fees_quote_uses_tx_fee(self):
         executor = self.get_executor()
         executor.lp_position_state.tx_fee = Decimal("0.01")
-        self.assertEqual(executor.get_cum_fees_quote(), Decimal("0.01"))  # SOL == native, rate 1 when quote=USDC too? see below
+        self.assertEqual(
+            executor.get_cum_fees_quote(), Decimal("0.01")
+        )  # SOL == native, rate 1 when quote=USDC too? see below
 
     # ---- update_pool_info ---------------------------------------------------
 
@@ -1451,9 +1574,7 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
     async def test_update_pool_info_success(self):
         executor = self.get_executor()
         connector = self.strategy.connectors["solana-mainnet-beta"]
-        connector.get_pool_info_by_address = AsyncMock(
-            return_value=SimpleNamespace(price=150.0, fee_pct=0.3)
-        )
+        connector.get_pool_info_by_address = AsyncMock(return_value=SimpleNamespace(price=150.0, fee_pct=0.3))
         await executor.update_pool_info()
         self.assertEqual(executor._current_price, Decimal("150.0"))
         self.assertIsNotNone(executor._pool_info)
@@ -1490,14 +1611,22 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         executor.lp_position_state.state = LPAmmExecutorStates.OPENING
 
         connector = self.strategy.connectors["solana-mainnet-beta"]
-        connector.get_user_positions = AsyncMock(return_value=[
-            make_position_info(price=100.0, base=10.0, quote=1000.0, positions=None, lp_token_amount=8.0),
-        ])
+        connector.get_user_positions = AsyncMock(
+            return_value=[
+                make_position_info(price=100.0, base=10.0, quote=1000.0, positions=None, lp_token_amount=8.0),
+            ]
+        )
         connector._amm_add_liquidity = AsyncMock(return_value="sig123")
         # own_lp_token_amount = 10 - 8 = 2 out of 10 total -> this deposit owns 20%
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=100.0, base=11.0, quote=1100.0, positions=None, lp_token_amount=10.0,
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=100.0,
+                base=11.0,
+                quote=1100.0,
+                positions=None,
+                lp_token_amount=10.0,
+            )
+        )
 
         await executor._create_position()
 
@@ -1515,9 +1644,15 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         executor.lp_position_state.own_lp_token_amount = Decimal("1")  # owns 1 of 5 LP tokens
 
         connector = self.strategy.connectors["solana-mainnet-beta"]
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=120.0, base=10.0, quote=1000.0, positions=None, lp_token_amount=5.0,
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=120.0,
+                base=10.0,
+                quote=1000.0,
+                positions=None,
+                lp_token_amount=5.0,
+            )
+        )
 
         await executor._update_position_info()
 
@@ -1540,13 +1675,17 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         executor._pending_nft_recovery = ({"existing-nft"}, Decimal("0"))
 
         connector = self.strategy.connectors["solana-mainnet-beta"]
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=100.0, base=5.0, quote=500.0,
-            positions=[
-                make_position_detail("existing-nft", 4.0, 400.0),
-                make_position_detail("new-nft", 1.0, 100.0),
-            ],
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=100.0,
+                base=5.0,
+                quote=500.0,
+                positions=[
+                    make_position_detail("existing-nft", 4.0, 400.0),
+                    make_position_detail("new-nft", 1.0, 100.0),
+                ],
+            )
+        )
 
         await executor._update_position_info()
 
@@ -1567,9 +1706,15 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         executor._pending_nft_recovery = (set(), Decimal("8"))
 
         connector = self.strategy.connectors["solana-mainnet-beta"]
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=100.0, base=10.0, quote=1000.0, positions=None, lp_token_amount=10.0,
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=100.0,
+                base=10.0,
+                quote=1000.0,
+                positions=None,
+                lp_token_amount=10.0,
+            )
+        )
 
         await executor._update_position_info()
 
@@ -1654,8 +1799,8 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         executor.lp_position_state.base_amount = Decimal("2")
         executor.lp_position_state.quote_amount = Decimal("50")
         # As _close_position/_handle_position_gone do before entering SWAPPING.
-        executor.lp_position_state.realized_fees_earned_quote = (
-            executor.lp_position_state.fees_earned_quote(Decimal("25"))
+        executor.lp_position_state.realized_fees_earned_quote = executor.lp_position_state.fees_earned_quote(
+            Decimal("25")
         )
         self.assertEqual(executor.lp_position_state.realized_fees_earned_quote, Decimal("0"))
 
@@ -1727,9 +1872,15 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         connector = self.strategy.connectors["solana-mainnet-beta"]
         # First attempt: wallet reports 8 LP tokens (this executor owns 3 of them),
         # but the remove call returns no signature - an ambiguous failure.
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=100.0, base=8.0, quote=800.0, positions=None, lp_token_amount=8.0,
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=100.0,
+                base=8.0,
+                quote=800.0,
+                positions=None,
+                lp_token_amount=8.0,
+            )
+        )
         connector._amm_remove_liquidity = AsyncMock(return_value=None)
         connector.order_failure_reason = MagicMock(return_value="unresolved [code: TX_UNRESOLVED]")
 
@@ -1741,9 +1892,15 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         # Second attempt: the wallet balance already dropped from 8 to 5, proving the
         # first (ambiguously-failed) attempt actually removed this executor's 3 LP
         # tokens.
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=100.0, base=5.0, quote=500.0, positions=None, lp_token_amount=5.0,
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=100.0,
+                base=5.0,
+                quote=500.0,
+                positions=None,
+                lp_token_amount=5.0,
+            )
+        )
         connector._amm_remove_liquidity = AsyncMock(return_value="sig-close")
         executor._close_backoff_until = 0.0  # as if the backoff from attempt 1 had elapsed
 
@@ -1777,9 +1934,15 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         connector = self.strategy.connectors["solana-mainnet-beta"]
         # First attempt: wallet reports 8 LP tokens (this executor owns 3 of them),
         # and the remove call fails outright - a confirmed, non-ambiguous failure.
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=100.0, base=8.0, quote=800.0, positions=None, lp_token_amount=8.0,
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=100.0,
+                base=8.0,
+                quote=800.0,
+                positions=None,
+                lp_token_amount=8.0,
+            )
+        )
         connector._amm_remove_liquidity = AsyncMock(return_value=None)
         connector.order_failure_reason = MagicMock(return_value="slippage exceeded [code: SLIPPAGE_EXCEEDED]")
 
@@ -1792,9 +1955,15 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         # Second attempt: the wallet balance dropped from 8 to 5 - but another
         # executor withdrew its own 3 LP tokens in between, unrelated to the first
         # attempt's failure. own_lp_token_amount must not be reconciled against it.
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=100.0, base=5.0, quote=500.0, positions=None, lp_token_amount=5.0,
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=100.0,
+                base=5.0,
+                quote=500.0,
+                positions=None,
+                lp_token_amount=5.0,
+            )
+        )
         connector._amm_remove_liquidity = AsyncMock(return_value="sig-close")
         executor._close_backoff_until = 0.0  # as if the backoff from attempt 1 had elapsed
 
@@ -1804,9 +1973,7 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         # tokens, so the remove call fires for this executor's real 60% share
         # instead of the position being wrongly declared gone.
         connector._amm_remove_liquidity.assert_awaited_once()
-        self.assertAlmostEqual(
-            connector._amm_remove_liquidity.await_args.kwargs["percentage"], 60.0, places=6
-        )
+        self.assertAlmostEqual(connector._amm_remove_liquidity.await_args.kwargs["percentage"], 60.0, places=6)
         self.assertEqual(executor.lp_position_state.state, LPAmmExecutorStates.COMPLETE)
 
     # ---- tx_fee collected from the connector's AMM add/remove metadata ------
@@ -1823,10 +1990,14 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
             return "sig123"
 
         connector._amm_add_liquidity = AsyncMock(side_effect=fake_add_liquidity)
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=100.0, base=1.0, quote=100.0,
-            positions=[make_position_detail("nft1", 1.0, 100.0)],
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=100.0,
+                base=1.0,
+                quote=100.0,
+                positions=[make_position_detail("nft1", 1.0, 100.0)],
+            )
+        )
 
         await executor._create_position()
 
@@ -1845,10 +2016,14 @@ class TestLPAmmExecutor(IsolatedAsyncioWrapperTestCase, LoggerMixinForTest):
         executor.close_type = CloseType.EARLY_STOP
 
         connector = self.strategy.connectors["solana-mainnet-beta"]
-        connector.get_position_info_fresh = AsyncMock(return_value=make_position_info(
-            price=100.0, base=1.0, quote=100.0,
-            positions=[make_position_detail("nft1", 1.0, 100.0)],
-        ))
+        connector.get_position_info_fresh = AsyncMock(
+            return_value=make_position_info(
+                price=100.0,
+                base=1.0,
+                quote=100.0,
+                positions=[make_position_detail("nft1", 1.0, 100.0)],
+            )
+        )
 
         async def fake_remove_liquidity(*args, order_id, **kwargs):
             connector._amm_lp_tx_fees[order_id] = Decimal("0.0003")
@@ -1866,17 +2041,20 @@ class TestLPAmmExecutorOrchestratorRegistration(TestCase):
 
     def test_registered_in_executor_config_base_type(self):
         from hummingbot.strategy_v2.executors.data_types import ExecutorConfigBase
+
         type_args = ExecutorConfigBase.model_fields["type"].annotation.__args__
         self.assertIn("lp_amm_executor", type_args)
 
     def test_registered_in_executor_mapping(self):
         from hummingbot.strategy_v2.executors.executor_orchestrator import ExecutorOrchestrator
         from hummingbot.strategy_v2.executors.lp_amm_executor.lp_amm_executor import LPAmmExecutor
+
         self.assertIs(ExecutorOrchestrator._executor_mapping["lp_amm_executor"], LPAmmExecutor)
 
     def test_registered_in_any_executor_config_union(self):
         from hummingbot.strategy_v2.executors.lp_amm_executor.data_types import LPAmmExecutorConfig
         from hummingbot.strategy_v2.models.executors_info import AnyExecutorConfig
+
         self.assertIn(LPAmmExecutorConfig, AnyExecutorConfig.__args__)
 
     def test_volume_counted_for_position_hold_lp_amm_executor(self):
@@ -1891,16 +2069,31 @@ class TestLPAmmExecutorOrchestratorRegistration(TestCase):
         orchestrator.cached_performance = {}
 
         config = LPAmmExecutorConfig(
-            id="test-amm-1", timestamp=1234567890, connector_name="solana-mainnet-beta",
-            lp_provider="meteora/amm", trading_pair="SOL-USDC", pool_address="pool123",
-            base_amount=Decimal("1.0"), quote_amount=Decimal("100"),
+            id="test-amm-1",
+            timestamp=1234567890,
+            connector_name="solana-mainnet-beta",
+            lp_provider="meteora/amm",
+            trading_pair="SOL-USDC",
+            pool_address="pool123",
+            base_amount=Decimal("1.0"),
+            quote_amount=Decimal("100"),
         )
         executor_info = ExecutorInfo(
-            id=config.id, timestamp=config.timestamp, type="lp_amm_executor",
-            status=RunnableStatus.TERMINATED, close_type=CloseType.POSITION_HOLD,
-            close_timestamp=1.0, config=config, net_pnl_pct=Decimal("0"), net_pnl_quote=Decimal("0"),
-            cum_fees_quote=Decimal("0"), filled_amount_quote=Decimal("42"), is_active=False,
-            is_trading=False, custom_info={}, controller_id="main",
+            id=config.id,
+            timestamp=config.timestamp,
+            type="lp_amm_executor",
+            status=RunnableStatus.TERMINATED,
+            close_type=CloseType.POSITION_HOLD,
+            close_timestamp=1.0,
+            config=config,
+            net_pnl_pct=Decimal("0"),
+            net_pnl_quote=Decimal("0"),
+            cum_fees_quote=Decimal("0"),
+            filled_amount_quote=Decimal("42"),
+            is_active=False,
+            is_trading=False,
+            custom_info={},
+            controller_id="main",
         )
 
         orchestrator._update_cached_performance("main", executor_info)

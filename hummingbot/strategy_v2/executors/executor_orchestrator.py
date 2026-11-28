@@ -290,7 +290,10 @@ class ExecutorOrchestrator:
         if executor_info.close_type != CloseType.POSITION_HOLD:
             report.realized_pnl_quote += executor_info.net_pnl_quote
         # Held LP inventory does not carry the executor's accumulated swap volume.
-        if executor_info.close_type != CloseType.POSITION_HOLD or executor_info.type in ("lp_executor", "lp_amm_executor"):
+        if executor_info.close_type != CloseType.POSITION_HOLD or executor_info.type in (
+            "lp_executor",
+            "lp_amm_executor",
+        ):
             report.volume_traded += executor_info.filled_amount_quote
         if executor_info.close_type:
             report.close_type_counts[executor_info.close_type] = (
@@ -895,7 +898,10 @@ class ExecutorOrchestrator:
                 if executor_info.close_type != CloseType.POSITION_HOLD:
                     report.realized_pnl_quote += executor_info.net_pnl_quote
                 # Ordinary held fills are counted by positions; LP swap volume is not.
-                if executor_info.close_type != CloseType.POSITION_HOLD or executor_info.type in ("lp_executor", "lp_amm_executor"):
+                if executor_info.close_type != CloseType.POSITION_HOLD or executor_info.type in (
+                    "lp_executor",
+                    "lp_amm_executor",
+                ):
                     report.volume_traded += executor_info.filled_amount_quote
                 if executor_info.close_type:
                     report.close_type_counts[executor_info.close_type] = (

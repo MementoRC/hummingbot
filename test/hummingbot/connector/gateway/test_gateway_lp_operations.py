@@ -101,8 +101,14 @@ class GatewayLPRetryChokepointTest(unittest.IsolatedAsyncioTestCase):
         gateway_instance.amm_remove_liquidity = AsyncMock(return_value={"signature": "sig", "status": 1})
 
         await Gateway._amm_remove_liquidity(
-            fake, TradeType.RANGE, "oid", "SOL-USDC", 100.0, dex_name="meteora",
-            position_address="POS", slippage_pct=2.5,
+            fake,
+            TradeType.RANGE,
+            "oid",
+            "SOL-USDC",
+            100.0,
+            dex_name="meteora",
+            position_address="POS",
+            slippage_pct=2.5,
         )
 
         self.assertEqual(2.5, gateway_instance.amm_remove_liquidity.call_args.kwargs["slippage_pct"])
@@ -115,7 +121,14 @@ class GatewayLPRetryChokepointTest(unittest.IsolatedAsyncioTestCase):
         gateway_instance.amm_add_liquidity = AsyncMock(return_value={"signature": "sig", "status": 1})
 
         await Gateway._amm_add_liquidity(
-            fake, TradeType.RANGE, "oid", "SOL-USDC", 100.0, 1.0, 2.0, dex_name="meteora",
+            fake,
+            TradeType.RANGE,
+            "oid",
+            "SOL-USDC",
+            100.0,
+            1.0,
+            2.0,
+            dex_name="meteora",
             pool_address="EXPLICIT_POOL",
         )
 
@@ -127,8 +140,14 @@ class GatewayLPRetryChokepointTest(unittest.IsolatedAsyncioTestCase):
         gateway_instance.amm_remove_liquidity = AsyncMock(return_value={"signature": "sig", "status": 1})
 
         await Gateway._amm_remove_liquidity(
-            fake, TradeType.RANGE, "oid", "SOL-USDC", 100.0, dex_name="meteora",
-            position_address="POS", pool_address="EXPLICIT_POOL",
+            fake,
+            TradeType.RANGE,
+            "oid",
+            "SOL-USDC",
+            100.0,
+            dex_name="meteora",
+            position_address="POS",
+            pool_address="EXPLICIT_POOL",
         )
 
         fake.get_pool_address.assert_not_called()

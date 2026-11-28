@@ -2,7 +2,6 @@ from decimal import Decimal
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
-from typing import List
 import unittest
 from unittest.mock import patch
 
@@ -497,7 +496,7 @@ class YamlHelpersTest(unittest.TestCase):
 
     def test_template_config_data_uses_default_factory(self):
         class M(BaseModel):
-            items: List[str] = Field(default_factory=lambda: ["a"])
+            items: list[str] = Field(default_factory=lambda: ["a"])
 
         data, required = template_config_data(M, {})
         self.assertEqual(data["items"], ["a"])

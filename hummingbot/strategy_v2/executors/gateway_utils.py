@@ -17,14 +17,14 @@ Provider Format:
 
 from decimal import Decimal
 import logging
-from typing import Callable, List, Optional, Tuple
+from typing import Callable
 
 from hummingbot.client.settings import GATEWAY_DEXS
 
 logger = logging.getLogger(__name__)
 
 
-def parse_provider(provider: str) -> Tuple[str, str]:
+def parse_provider(provider: str) -> tuple[str, str]:
     """
     Parse provider string into (dex_name, trading_type) tuple.
 
@@ -100,7 +100,7 @@ def validate_and_normalize_connector(
     connector_name: str,
     required_type: str,
     on_error: Callable[[str], None],
-) -> Tuple[Optional[str], bool]:
+) -> tuple[str | None, bool]:
     """
     Validate and normalize connector name for Gateway executors.
 
@@ -191,7 +191,7 @@ def validate_and_normalize_connector(
     return None, False
 
 
-def get_connectors_by_type(connector_type: str) -> List[str]:
+def get_connectors_by_type(connector_type: str) -> list[str]:
     """
     Get all Gateway connectors of a specific type.
 
@@ -205,7 +205,7 @@ def get_connectors_by_type(connector_type: str) -> List[str]:
     return [c for c in GATEWAY_DEXS if type_suffix in c]
 
 
-def get_network_connectors() -> List[str]:
+def get_network_connectors() -> list[str]:
     """
     Get all network-style connectors (chain-network format).
 
@@ -261,7 +261,7 @@ def next_slippage_pct(
     current: Decimal,
     multiplier: Decimal,
     maximum: Decimal,
-) -> Optional[Decimal]:
+) -> Decimal | None:
     """The next tolerance to try after a slippage failure, or None at the ceiling.
 
     Multiplicative because impact and volatility are: a linear ramp from a tight start

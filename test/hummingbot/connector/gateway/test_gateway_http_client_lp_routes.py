@@ -286,9 +286,14 @@ class GatewayHttpClientLPRouteTest(IsolatedAsyncioWrapperTestCase):
         # effect on a withdrawal at all.
         with self._capture() as mock_req:
             await self.client.amm_remove_liquidity(
-                network="mainnet-beta", chain="solana", wallet_address="WALLET",
-                pool_address="POOL", percentage=100.0, dex="meteora",
-                position_address="POS", slippage_pct=2.5,
+                network="mainnet-beta",
+                chain="solana",
+                wallet_address="WALLET",
+                pool_address="POOL",
+                percentage=100.0,
+                dex="meteora",
+                position_address="POS",
+                slippage_pct=2.5,
             )
         _, _, payload = self._sent(mock_req)
         self.assertEqual(2.5, payload["slippagePct"])
