@@ -6,7 +6,7 @@ import functools
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
-from data_type_primitives.trigger_spec import TriggerKind, TriggerSpec
+from data_type_primitives.trigger_spec import TrailSpec, TriggerKind, TriggerSpec
 from event_bus import EventBus
 
 from hummingbot import data_path
@@ -47,6 +47,8 @@ CORE_ORDER_KWARGS = ("limit_price", "price_in_percent", "position_action", "expi
 TRIGGER_ORDER_TYPES = (OrderType.STOP_LOSS, OrderType.TAKE_PROFIT)
 # Trigger orders that also carry a limit price (passed to the core as ``price``).
 TRIGGER_LIMIT_ORDER_TYPES = (OrderType.STOP_LOSS_LIMIT, OrderType.TAKE_PROFIT_LIMIT)
+# Trailing orders carry a ``TriggerSpec.trail`` and no price (TRAILING_STOP_LIMIT keeps ``limit_price``).
+TRAILING_ORDER_TYPES = (OrderType.TRAILING_STOP, OrderType.TRAILING_STOP_LIMIT)
 
 
 def _is_nan_price(price: Any) -> bool:
@@ -477,7 +479,8 @@ class MarketConnectorExchange(ExchangeBase):
                 raise TypeError(f"position_action must be a PositionAction member, got {action!r}.")
             extras["position_action"] = to_parent_position_action(action)
         method = core.buy if trade_type is TradeType.BUY else core.sell
-        # trailing -> follow-up; it keeps the legacy call.
+        if order_type in TRAILING_ORDER_TYPES:
+            return self._create_trailing_order(method, trading_pair, amount, order_type, price, extras)
         if order_type in TRIGGER_ORDER_TYPES:
             return self._create_trigger_order(method, trading_pair, amount, order_type, price, extras)
         if order_type in TRIGGER_LIMIT_ORDER_TYPES:
@@ -527,6 +530,28 @@ class MarketConnectorExchange(ExchangeBase):
             if limit_price is None:
                 raise ValueError(f"{order_type.name} orders require a limit_price kwarg (the limit price).")
         return method(trading_pair, amount, to_parent_order_type(order_type), limit_price, **extras)
+
+    def _create_trailing_order(
+        self,
+        method: Any,
+        trading_pair: str,
+        amount: Decimal,
+        order_type: OrderType,
+        price: Decimal,
+        extras: Dict[str, Any],
+    ) -> str:
+        # The trail distance is the legacy ``price``; for TRAILING_STOP_LIMIT ``limit_price`` stays the signed
+        # limit offset (a fraction on a percent trail) and is forwarded as-is. The core takes no ``price`` here.
+        in_percent = bool(extras.pop("price_in_percent", False))
+        if "trigger" not in extras:
+            distance = Decimal(str(price))
+            if in_percent:
+                trail = TrailSpec(kind=TriggerKind.PERCENT, distance=distance / 100)
+            else:
+                trail = TrailSpec(kind=TriggerKind.RELATIVE_OFFSET, distance=distance)
+            # The trigger value is a placeholder: trailing types take the distance from ``trail``.
+            extras["trigger"] = TriggerSpec(kind=TriggerKind.ABSOLUTE, value=Decimal("1"), trail=trail)
+        return method(trading_pair, amount, to_parent_order_type(order_type), **extras)
 
     @staticmethod
     def _build_trigger(price: Decimal, in_percent: bool) -> TriggerSpec:

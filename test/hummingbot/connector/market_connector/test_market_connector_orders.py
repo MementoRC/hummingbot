@@ -8,7 +8,7 @@ import pytest
 pytest.importorskip("market_connector")
 
 from data_type_primitives import TradeFeeBase as PrimitiveFee, TradeFeeSchema  # noqa: E402
-from data_type_primitives.trigger_spec import TriggerKind, TriggerSpec  # noqa: E402
+from data_type_primitives.trigger_spec import TrailSpec, TriggerKind, TriggerSpec  # noqa: E402
 from market_connector.hb_compat import order_events as mc  # noqa: E402
 
 from hummingbot.connector.market_connector.events_converter import EVENT_CLASSES  # noqa: E402
@@ -165,6 +165,57 @@ class OrderPathTests(unittest.IsolatedAsyncioTestCase):
         self.exchange.sell(PAIR, D("1"), OrderType.STOP_LOSS, D("95"), trigger=trigger)
         extras = self.core.order_calls[0][5]
         self.assertIs(trigger, extras["trigger"])
+
+    @staticmethod
+    def _trail_trigger(kind, distance):
+        return TriggerSpec(kind=TriggerKind.ABSOLUTE, value=D("1"), trail=TrailSpec(kind=kind, distance=D(distance)))
+
+    async def test_trailing_stop_absolute_uses_relative_offset_trail(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            self.exchange.sell(PAIR, D("1"), OrderType.TRAILING_STOP, D("150"))
+        _, _, _, order_type, price, extras = self.core.order_calls[0]
+        self.assertIs(OrderType.TRAILING_STOP, order_type)
+        self.assertTrue(price.is_nan())
+        self.assertEqual({"trigger": self._trail_trigger(TriggerKind.RELATIVE_OFFSET, "150")}, extras)
+
+    async def test_trailing_stop_percent_points_become_fraction(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            self.exchange.buy(PAIR, D("1"), OrderType.TRAILING_STOP, D("2"), price_in_percent=True)
+        price, extras = self.core.order_calls[0][4:6]
+        self.assertTrue(price.is_nan())
+        self.assertEqual({"trigger": self._trail_trigger(TriggerKind.PERCENT, "0.02")}, extras)
+
+    async def test_trailing_stop_limit_absolute_keeps_limit_offset(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            self.exchange.buy(PAIR, D("1"), OrderType.TRAILING_STOP_LIMIT, D("150"), limit_price=D("-10"))
+        _, _, _, order_type, price, extras = self.core.order_calls[0]
+        self.assertIs(OrderType.TRAILING_STOP_LIMIT, order_type)
+        self.assertTrue(price.is_nan())
+        expected = {"limit_price": D("-10"), "trigger": self._trail_trigger(TriggerKind.RELATIVE_OFFSET, "150")}
+        self.assertEqual(expected, extras)
+
+    async def test_trailing_stop_limit_percent_keeps_fractional_limit_offset(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", DeprecationWarning)
+            self.exchange.sell(
+                PAIR, D("1"), OrderType.TRAILING_STOP_LIMIT, D("2"), limit_price=D("-0.005"), price_in_percent=True
+            )
+        price, extras = self.core.order_calls[0][4:6]
+        self.assertTrue(price.is_nan())
+        expected = {"limit_price": D("-0.005"), "trigger": self._trail_trigger(TriggerKind.PERCENT, "0.02")}
+        self.assertEqual(expected, extras)
+
+    async def test_trailing_explicit_trigger_kwarg_passes_through(self):
+        trigger = self._trail_trigger(TriggerKind.PERCENT, "0.03")
+        for order_type in (OrderType.TRAILING_STOP, OrderType.TRAILING_STOP_LIMIT):
+            with self.subTest(order_type=order_type):
+                self.exchange.sell(PAIR, D("1"), order_type, D("5"), trigger=trigger, price_in_percent=True)
+                extras = self.core.order_calls[-1][5]
+                self.assertIs(trigger, extras["trigger"])
+                self.assertNotIn("price_in_percent", extras)
 
     async def test_position_action_and_expiration_pass_through_only_from_kwargs(self):
         self.exchange.sell(
