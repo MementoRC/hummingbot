@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Any, Dict
+from typing import Any
 
 from pydantic import ConfigDict, Field, SecretStr
 
@@ -18,7 +18,7 @@ DEFAULT_FEES = TradeFeeSchema(
 )
 
 
-def is_exchange_information_valid(exchange_info: Dict[str, Any]) -> bool:
+def is_exchange_information_valid(exchange_info: dict[str, Any]) -> bool:
     """
     Verifies if a trading pair is enabled to operate with based on its exchange information
 
@@ -28,7 +28,7 @@ def is_exchange_information_valid(exchange_info: Dict[str, Any]) -> bool:
     return bool(exchange_info.get("symbol"))
 
 
-def is_instrument_tradable(exchange_info: Dict[str, Any]) -> bool:
+def is_instrument_tradable(exchange_info: dict[str, Any]) -> bool:
     """
     Verifies if new orders may be placed on a trading pair based on its exchange information.
 
@@ -57,7 +57,7 @@ class BitgetConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     bitget_secret_key: SecretStr = Field(
         default=...,
@@ -66,7 +66,7 @@ class BitgetConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     bitget_passphrase: SecretStr = Field(
         default=...,
@@ -75,7 +75,7 @@ class BitgetConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     model_config = ConfigDict(title="bitget")
 

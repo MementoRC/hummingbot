@@ -142,12 +142,7 @@ WS_SUBSCRIPTION_RETRY_INTERVAL_SECONDS = 10.0
 RET_CODE_AUTH_TIMESTAMP_ERROR = "40005"
 
 # No bare HTTP 404 here: Bitget answers an unknown path with 404/40404, which says nothing about the order
-RET_CODES_ORDER_NOT_EXISTS = [
-    "25204",
-    "40768", "80011", "40819",
-    "43020", "43025", "43001",
-    "45057", "31007", "43033"
-]
+RET_CODES_ORDER_NOT_EXISTS = ["25204", "40768", "80011", "40819", "43020", "43025", "43001", "45057", "31007", "43033"]
 RET_CODE_API_KEY_EXPIRED = "40014"
 
 
@@ -158,7 +153,6 @@ RATE_LIMITS = [
     RateLimit(limit_id=PUBLIC_TIME_ENDPOINT, limit=20, time_interval=1),
     RateLimit(limit_id=PUBLIC_FUNDING_RATE_ENDPOINT, limit=20, time_interval=1),
     RateLimit(limit_id=PUBLIC_SYMBOL_PRICE_ENDPOINT, limit=20, time_interval=1),
-
     RateLimit(limit_id=SET_LEVERAGE_ENDPOINT, limit=5, time_interval=1),
     RateLimit(limit_id=ALL_POSITIONS_ENDPOINT, limit=5, time_interval=1),
     RateLimit(limit_id=PLACE_ORDER_ENDPOINT, limit=10, time_interval=1),
@@ -172,7 +166,6 @@ RATE_LIMITS = [
     RateLimit(limit_id=ACCOUNT_BILLS_ENDPOINT, limit=10, time_interval=1),
     RateLimit(limit_id=SET_POSITION_MODE_ENDPOINT, limit=5, time_interval=1),
     RateLimit(limit_id=SET_MARGIN_MODE_ENDPOINT, limit=5, time_interval=1),
-
     RateLimit(limit_id=CLASSIC_PUBLIC_CONTRACTS_ENDPOINT, limit=20, time_interval=1),
     RateLimit(limit_id=CLASSIC_SET_LEVERAGE_ENDPOINT, limit=5, time_interval=1),
     RateLimit(limit_id=CLASSIC_ALL_POSITIONS_ENDPOINT, limit=5, time_interval=1),

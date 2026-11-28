@@ -1,43 +1,21 @@
 name: "Install environment and Hummingbot"
-description: "Installs the uv-managed venv, all libraries and compiles Hummingbot"
+description: "Installs pixi environment and compiles Hummingbot"
 inputs:
    program-cache-hit:
-     required: true
-     description: "Value of truth regarding the program cache being hit or not"
-   dependencies-cache-hit:
      required: true
      description: "Value of truth regarding the program cache being hit or not"
 runs:
   using: "composite"
   steps:
-    # uv reads .python-version and downloads a managed interpreter itself, so no
-    # actions/setup-python is needed. setup-uv's own cache is disabled because the
-    # workflow already caches ~/.cache/uv (the `uv-dependencies` step, whose
-    # cache-hit output gates the test steps); enabling both would cache it twice.
-    - name: Install uv
-      if: ${{inputs.program-cache-hit}} != 'true' || ${{inputs.dependencies-cache-hit}} != 'true'
-      uses: astral-sh/setup-uv@v7
+    - name: Set up pixi
+      if: ${{inputs.program-cache-hit}} != 'true'
+      uses: prefix-dev/setup-pixi@v0.9.6
       with:
-        version: "0.13.9"
-        enable-cache: false
+        environments: ci
+        cache: true
+        locked: false
 
-    # .venv is not cached (it embeds the absolute path of its interpreter, which a
-    # fresh runner does not have), so the environment is rebuilt on every run that
-    # reaches the tests. Only uv's download/build cache is restored, which makes
-    # `uv sync` a matter of re-linking wheels when the lockfile has not changed.
-    - name: Install Hummingbot
-      if: ${{inputs.program-cache-hit}} != 'true' || ${{inputs.dependencies-cache-hit}} != 'true'
+    - name: Build Hummingbot
       shell: bash
-      run: |
-        ./install
-
-    # Compile and run tests if code has changed
-    - name: Compile Hummingbot
-      shell: bash
-      if: ${{inputs.program-cache-hit}} != 'true' || ${{inputs.dependencies-cache-hit}} != 'true'
-      env:
-        WITHOUT_CYTHON_OPTIMIZATIONS: 'true'
-      run: |
-        source .venv/bin/activate
-        uv pip list
-        ./compile
+      if: ${{inputs.program-cache-hit}} != 'true'
+      run: pixi run -e ci build

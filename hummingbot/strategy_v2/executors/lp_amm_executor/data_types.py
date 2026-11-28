@@ -1,6 +1,6 @@
 from decimal import Decimal
 from enum import Enum
-from typing import Dict, Literal, Optional
+from typing import Dict, Literal
 
 from pydantic import BaseModel, ConfigDict, model_validator
 
@@ -26,13 +26,14 @@ class LPAmmExecutorStates(Enum):
     the entire time the position is open. Exiting is decided by min_fee_apr_pct
     and max_duration_seconds instead of a price range.
     """
-    NOT_ACTIVE = "NOT_ACTIVE"      # No position, no pending orders
-    OPENING = "OPENING"            # add_liquidity submitted, waiting
-    ACTIVE = "ACTIVE"              # Position open, earning/losing against the no-fee curve
-    CLOSING = "CLOSING"            # remove_liquidity submitted, waiting
-    SWAPPING = "SWAPPING"          # Close-out swap in progress (keep_position=False)
-    COMPLETE = "COMPLETE"          # Position closed permanently
-    FAILED = "FAILED"              # Max retries reached, manual intervention required
+
+    NOT_ACTIVE = "NOT_ACTIVE"  # No position, no pending orders
+    OPENING = "OPENING"  # add_liquidity submitted, waiting
+    ACTIVE = "ACTIVE"  # Position open, earning/losing against the no-fee curve
+    CLOSING = "CLOSING"  # remove_liquidity submitted, waiting
+    SWAPPING = "SWAPPING"  # Close-out swap in progress (keep_position=False)
+    COMPLETE = "COMPLETE"  # Position closed permanently
+    FAILED = "FAILED"  # Max retries reached, manual intervention required
 
 
 class LPAmmExecutorConfig(ExecutorConfigBase):
@@ -50,6 +51,7 @@ class LPAmmExecutorConfig(ExecutorConfigBase):
     - lp_provider: "dex/amm" (e.g. "meteora/amm"), used for pool info and the
       add/remove-liquidity routes.
     """
+
     type: Literal["lp_amm_executor"] = "lp_amm_executor"
 
     connector_name: str
@@ -59,7 +61,7 @@ class LPAmmExecutorConfig(ExecutorConfigBase):
     # Used for the close-out swap when keep_position=False, to swap any leftover
     # single-sided token balance back to the initial deposit's base/quote target
     # after withdrawal. If None, uses the network's default swap provider.
-    swap_provider: Optional[str] = None
+    swap_provider: str | None = None
 
     pool_address: str
     trading_pair: str
@@ -82,9 +84,9 @@ class LPAmmExecutorConfig(ExecutorConfigBase):
     # min_fee_apr_pct is ignored until the position has been open for at least
     # min_fee_apr_window_seconds: an APR annualized from a few seconds of fees
     # is noise, not a measurement.
-    min_fee_apr_pct: Optional[Decimal] = None
+    min_fee_apr_pct: Decimal | None = None
     min_fee_apr_window_seconds: float = 3600.0
-    max_duration_seconds: Optional[float] = None
+    max_duration_seconds: float | None = None
 
     # Slippage ramp, identical contract to LPExecutorConfig's: starts tight,
     # widens only on a failure Gateway attributed to slippage, never past
@@ -94,7 +96,7 @@ class LPAmmExecutorConfig(ExecutorConfigBase):
     max_slippage_pct: Decimal = Decimal("5")
 
     # Connector-specific params (e.g. strategy-specific knobs some DEXes take)
-    extra_params: Optional[Dict] = None
+    extra_params: Dict | None = None
 
     # What to do when the executor closes *itself* (an exit trigger fires). A
     # caller-initiated stop passes its own keep_position to early_stop(), which
@@ -118,8 +120,7 @@ class LPAmmExecutorConfig(ExecutorConfigBase):
         require_non_negative("quote_amount", self.quote_amount)
         if self.base_amount == 0 and self.quote_amount == 0:
             raise ValueError(
-                "base_amount and quote_amount cannot both be 0: "
-                "at least one side of the position has to be funded"
+                "base_amount and quote_amount cannot both be 0: at least one side of the position has to be funded"
             )
         require_positive("position_refresh_interval", self.position_refresh_interval)
         require_positive("min_fee_apr_pct", self.min_fee_apr_pct)
@@ -146,7 +147,7 @@ class LPAmmExecutorState(BaseModel):
     # the wallet's share. Set, it is the NFT position address for an
     # NFT-backed AMM (e.g. Meteora DAMM v2), where a wallet may hold several
     # positions in the same pool.
-    position_nft_address: Optional[str] = None
+    position_nft_address: str | None = None
 
     base_amount: Decimal = Decimal("0")
     quote_amount: Decimal = Decimal("0")
@@ -156,23 +157,23 @@ class LPAmmExecutorState(BaseModel):
     # the add_liquidity call. None when it could not be captured (the pre-deposit
     # snapshot read failed) - closing then falls back to removing the wallet's whole
     # balance, which is unsafe if the wallet holds other liquidity in the same pool.
-    own_lp_token_amount: Optional[Decimal] = None
+    own_lp_token_amount: Decimal | None = None
 
     # Amounts and price at ADD time, fixed for the life of the position -
     # used to compute fees earned / impermanent loss / fee APR against.
     initial_base_amount: Decimal = Decimal("0")
     initial_quote_amount: Decimal = Decimal("0")
     add_price: Decimal = Decimal("0")
-    add_timestamp: Optional[float] = None
+    add_timestamp: float | None = None
 
     tx_fee: Decimal = Decimal("0")
 
     # Fees earned as of the close confirmation, frozen before any close-out swap can
     # mutate base_amount/quote_amount - see fees_earned_quote below.
-    realized_fees_earned_quote: Optional[Decimal] = None
+    realized_fees_earned_quote: Decimal | None = None
 
-    open_tx_hash: Optional[str] = None
-    close_tx_hash: Optional[str] = None
+    open_tx_hash: str | None = None
+    close_tx_hash: str | None = None
 
     # Gateway's AMM remove-liquidity response carries neither the removed
     # amounts nor a close tx fee back to the executor (unlike the CLMM close),
@@ -180,9 +181,9 @@ class LPAmmExecutorState(BaseModel):
     open_data_unavailable: bool = False
     close_data_unavailable: bool = False
 
-    active_open_order: Optional[TrackedOrder] = None
-    active_close_order: Optional[TrackedOrder] = None
-    active_swap_order: Optional[TrackedOrder] = None  # Close-out swap order
+    active_open_order: TrackedOrder | None = None
+    active_close_order: TrackedOrder | None = None
+    active_swap_order: TrackedOrder | None = None  # Close-out swap order
 
     state: LPAmmExecutorStates = LPAmmExecutorStates.NOT_ACTIVE
 
@@ -249,7 +250,7 @@ class LPAmmExecutorState(BaseModel):
         il = self.held_value_quote(current_price) - self.value_no_fee_quote(current_price)
         return il if il > 0 else Decimal("0")
 
-    def fee_apr_pct(self, current_price: Decimal, current_time: float) -> Optional[Decimal]:
+    def fee_apr_pct(self, current_price: Decimal, current_time: float) -> Decimal | None:
         """Annualized realized fee rate on the initial deposit, or None.
 
         None before add_timestamp is known or at zero elapsed time - an APR
@@ -277,8 +278,10 @@ class LPAmmExecutorState(BaseModel):
         no range check here.
         """
         if self.state in (
-            LPAmmExecutorStates.COMPLETE, LPAmmExecutorStates.CLOSING,
-            LPAmmExecutorStates.SWAPPING, LPAmmExecutorStates.FAILED,
+            LPAmmExecutorStates.COMPLETE,
+            LPAmmExecutorStates.CLOSING,
+            LPAmmExecutorStates.SWAPPING,
+            LPAmmExecutorStates.FAILED,
         ):
             return
 

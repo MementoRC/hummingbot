@@ -1,6 +1,5 @@
-import logging
 from decimal import Decimal
-from typing import List, Optional
+import logging
 
 from pydantic import Field
 
@@ -27,9 +26,10 @@ class LPAmmRebalancerConfig(ControllerConfigBase):
     hand its config to a fresh LPAmmExecutor, and - if reopen_after_close is set -
     open the next one once the previous one terminates cleanly.
     """
+
     controller_type: str = "generic"
     controller_name: str = "lp_amm_rebalancer"
-    candles_config: List[CandlesConfig] = []
+    candles_config: list[CandlesConfig] = []
 
     # Network connector - e.g., "solana-mainnet-beta"
     connector_name: str = "solana-mainnet-beta"
@@ -39,7 +39,7 @@ class LPAmmRebalancerConfig(ControllerConfigBase):
 
     # Swap provider (optional) - format: "dex/trading_type", used for the close-out
     # swap when keep_position=False. None uses the network's default swap provider.
-    swap_provider: Optional[str] = None
+    swap_provider: str | None = None
 
     # Pool configuration (required)
     trading_pair: str
@@ -50,9 +50,9 @@ class LPAmmRebalancerConfig(ControllerConfigBase):
     quote_amount: Decimal = Field(default=Decimal("0"), json_schema_extra={"is_updatable": True})
 
     # Exit triggers, forwarded to LPAmmExecutorConfig as-is
-    min_fee_apr_pct: Optional[Decimal] = Field(default=None, json_schema_extra={"is_updatable": True})
+    min_fee_apr_pct: Decimal | None = Field(default=None, json_schema_extra={"is_updatable": True})
     min_fee_apr_window_seconds: float = Field(default=3600.0, json_schema_extra={"is_updatable": True})
-    max_duration_seconds: Optional[float] = Field(default=None, json_schema_extra={"is_updatable": True})
+    max_duration_seconds: float | None = Field(default=None, json_schema_extra={"is_updatable": True})
 
     # True: on a self-triggered exit, keep the net token change as a held position
     # instead of swapping back. Forwarded to LPAmmExecutorConfig as-is.
@@ -65,7 +65,7 @@ class LPAmmRebalancerConfig(ControllerConfigBase):
         gt=0,
         json_schema_extra={"is_updatable": False},
         description="Minimum seconds between on-chain position reads made by the LP executor. "
-                    "Captured when the executor is created; not live-updatable."
+        "Captured when the executor is created; not live-updatable.",
     )
 
     # Once the active executor terminates cleanly, open a new position with the same
@@ -90,7 +90,7 @@ class LPAmmRebalancer(ControllerBase):
     close_retries_exhausted) halts new creation until it is recovered manually.
     """
 
-    _logger: Optional[HummingbotLogger] = None
+    _logger: HummingbotLogger | None = None
 
     # A bare pre-flight failure (e.g. Gateway's INSUFFICIENT_BALANCE) terminates almost
     # instantly with nothing on-chain, so without a cap determine_executor_actions would
@@ -108,11 +108,11 @@ class LPAmmRebalancer(ControllerBase):
         super().__init__(config, *args, **kwargs)
         self.config: LPAmmRebalancerConfig = config
 
-        self._current_executor_id: Optional[str] = None
+        self._current_executor_id: str | None = None
         # Set when a terminated executor still has a live on-chain position (close
         # retries exhausted): halts new position creation until it is recovered
         # manually, same contract as LPRebalancer's _orphaned_position_address.
-        self._orphaned_position_address: Optional[str] = None
+        self._orphaned_position_address: str | None = None
 
         # Position hold: cumulative net position from closed LP executors.
         # Net = (returned + fee) - initial_deposited, same bookkeeping as LPRebalancer's.
@@ -133,13 +133,14 @@ class LPAmmRebalancer(ControllerBase):
         # has no record of that position and opens a fresh one on top of it.
         self._startup_position_check_done: bool = False
 
-    def active_executor(self) -> Optional[ExecutorInfo]:
+    def active_executor(self) -> ExecutorInfo | None:
         """Get the current active LP AMM executor (should be 0 or 1)."""
-        active = [e for e in self.executors_info
-                  if e.is_active and getattr(e.config, "type", None) == "lp_amm_executor"]
+        active = [
+            e for e in self.executors_info if e.is_active and getattr(e.config, "type", None) == "lp_amm_executor"
+        ]
         return active[0] if active else None
 
-    def get_tracked_executor(self) -> Optional[ExecutorInfo]:
+    def get_tracked_executor(self) -> ExecutorInfo | None:
         """Get the executor we're currently tracking (by ID)."""
         if not self._current_executor_id:
             return None
@@ -157,8 +158,8 @@ class LPAmmRebalancer(ControllerBase):
             return True
         return executor.status == RunnableStatus.TERMINATED
 
-    def determine_executor_actions(self) -> List[ExecutorAction]:
-        actions: List[ExecutorAction] = []
+    def determine_executor_actions(self) -> list[ExecutorAction]:
+        actions: list[ExecutorAction] = []
 
         # The startup check (update_processed_data) must have actually succeeded once
         # before any position is created - a pool read that keeps failing is not proof
@@ -224,10 +225,12 @@ class LPAmmRebalancer(ControllerBase):
                 return actions
 
         executor_config = self._create_executor_config()
-        actions.append(CreateExecutorAction(
-            controller_id=self.config.id,
-            executor_config=executor_config,
-        ))
+        actions.append(
+            CreateExecutorAction(
+                controller_id=self.config.id,
+                executor_config=executor_config,
+            )
+        )
         return actions
 
     def _process_terminated_executor(self, terminated_executor: ExecutorInfo) -> None:
@@ -278,9 +281,7 @@ class LPAmmRebalancer(ControllerBase):
         # transaction's outcome was unresolved. Either way, halt new creation rather than
         # stacking a second position on top of possibly-live exposure.
         if hold_reason or terminated_executor.close_type == CloseType.FAILED:
-            self._orphaned_position_address = (
-                custom.get("position_nft_address") or self.config.pool_address
-            )
+            self._orphaned_position_address = custom.get("position_nft_address") or self.config.pool_address
             self.logger().error(
                 f"Executor {terminated_executor.id} ended {terminated_executor.close_type} "
                 f"with a position still open (or unresolved) on-chain in pool "
@@ -351,7 +352,9 @@ class LPAmmRebalancer(ControllerBase):
             connector = self.market_data_provider.get_connector(self.config.connector_name)
             dex_name, trading_type = parse_provider(self.config.lp_provider)
             positions = await connector.get_user_positions(
-                dex_name=dex_name, trading_type=trading_type, pool_address=self.config.pool_address,
+                dex_name=dex_name,
+                trading_type=trading_type,
+                pool_address=self.config.pool_address,
             )
         except Exception as e:
             self.logger().warning(
@@ -360,8 +363,7 @@ class LPAmmRebalancer(ControllerBase):
             return
         self._startup_position_check_done = True
         has_existing_position = any(
-            info.positions or Decimal(str(getattr(info, "lp_token_amount", 0) or 0)) > 0
-            for info in positions
+            info.positions or Decimal(str(getattr(info, "lp_token_amount", 0) or 0)) > 0 for info in positions
         )
         if has_existing_position:
             self._orphaned_position_address = self.config.pool_address
@@ -371,7 +373,7 @@ class LPAmmRebalancer(ControllerBase):
                 "is closed or recovered manually."
             )
 
-    def to_format_status(self) -> List[str]:
+    def to_format_status(self) -> list[str]:
         status = []
         box_width = 100
 
@@ -383,10 +385,12 @@ class LPAmmRebalancer(ControllerBase):
         line = f"| Pool: {self.config.pool_address} | LP: {self.config.lp_provider}"
         status.append(line + " " * (box_width - len(line) + 1) + "|")
 
-        line = (f"| Config: base={self.config.base_amount}, quote={self.config.quote_amount}, "
-                f"min_fee_apr_pct={self.config.min_fee_apr_pct}, "
-                f"max_duration_seconds={self.config.max_duration_seconds}, "
-                f"reopen_after_close={self.config.reopen_after_close}")
+        line = (
+            f"| Config: base={self.config.base_amount}, quote={self.config.quote_amount}, "
+            f"min_fee_apr_pct={self.config.min_fee_apr_pct}, "
+            f"max_duration_seconds={self.config.max_duration_seconds}, "
+            f"reopen_after_close={self.config.reopen_after_close}"
+        )
         status.append(line + " " * (box_width - len(line) + 1) + "|")
 
         status.append("|" + " " * box_width + "|")
@@ -396,8 +400,10 @@ class LPAmmRebalancer(ControllerBase):
             status.append(line + " " * (box_width - len(line) + 1) + "|")
 
         if self._halted_preflight_failures:
-            line = (f"| HALTED: {self._consecutive_preflight_failures} consecutive position-creation "
-                    "failures - fix the issue and restart")
+            line = (
+                f"| HALTED: {self._consecutive_preflight_failures} consecutive position-creation "
+                "failures - fix the issue and restart"
+            )
             status.append(line + " " * (box_width - len(line) + 1) + "|")
 
         executor = self.active_executor() or self.get_tracked_executor()
@@ -424,10 +430,11 @@ class LPAmmRebalancer(ControllerBase):
             status.append(line + " " * (box_width - len(line) + 1) + "|")
 
         status.append("|" + " " * box_width + "|")
-        closed = [e for e in self.executors_info
-                  if e.is_done and getattr(e.config, "type", None) == "lp_amm_executor"]
-        line = (f"| Closed positions: {len(closed)} | "
-                f"Position hold: base={self._position_hold_base:+}, quote={self._position_hold_quote:+}")
+        closed = [e for e in self.executors_info if e.is_done and getattr(e.config, "type", None) == "lp_amm_executor"]
+        line = (
+            f"| Closed positions: {len(closed)} | "
+            f"Position hold: base={self._position_hold_base:+}, quote={self._position_hold_quote:+}"
+        )
         status.append(line + " " * (box_width - len(line) + 1) + "|")
 
         status.append("+" + "-" * box_width + "+")

@@ -1,6 +1,6 @@
-import os
 from decimal import Decimal
-from typing import List, Optional
+import os
+from typing import List
 
 from pydantic import Field
 
@@ -19,6 +19,7 @@ class LPAmmExecutorExampleConfig(StrategyV2ConfigBase):
     single-executor smoke test: the smallest way to exercise LPAmmExecutor end-to-end
     against a real Gateway connector and pool.
     """
+
     script_file_name: str = Field(default_factory=lambda: os.path.basename(__file__))
 
     connector_name: str = Field(
@@ -29,7 +30,7 @@ class LPAmmExecutorExampleConfig(StrategyV2ConfigBase):
         default="meteora/amm",
         json_schema_extra={"prompt": "LP provider as dex/trading_type (e.g. meteora/amm)", "prompt_on_new": True},
     )
-    swap_provider: Optional[str] = Field(
+    swap_provider: str | None = Field(
         default=None,
         json_schema_extra={
             "prompt": "Swap provider for the close-out swap, dex/trading_type (blank = network default)",
@@ -52,21 +53,33 @@ class LPAmmExecutorExampleConfig(StrategyV2ConfigBase):
         default=Decimal("0"),
         json_schema_extra={"prompt": "Quote token amount to deposit", "prompt_on_new": True},
     )
-    min_fee_apr_pct: Optional[Decimal] = Field(
+    min_fee_apr_pct: Decimal | None = Field(
         default=None,
-        json_schema_extra={"prompt": "Close once realized fee APR falls below this % (blank = disabled)", "prompt_on_new": True},
+        json_schema_extra={
+            "prompt": "Close once realized fee APR falls below this % (blank = disabled)",
+            "prompt_on_new": True,
+        },
     )
     min_fee_apr_window_seconds: float = Field(
         default=3600.0,
-        json_schema_extra={"prompt": "Seconds the position must be open before min_fee_apr_pct applies", "prompt_on_new": True},
+        json_schema_extra={
+            "prompt": "Seconds the position must be open before min_fee_apr_pct applies",
+            "prompt_on_new": True,
+        },
     )
-    max_duration_seconds: Optional[float] = Field(
+    max_duration_seconds: float | None = Field(
         default=None,
-        json_schema_extra={"prompt": "Close after this many seconds regardless of fee APR (blank = disabled)", "prompt_on_new": True},
+        json_schema_extra={
+            "prompt": "Close after this many seconds regardless of fee APR (blank = disabled)",
+            "prompt_on_new": True,
+        },
     )
     keep_position: bool = Field(
         default=False,
-        json_schema_extra={"prompt": "Keep the net token change as a held position on exit instead of swapping back", "prompt_on_new": True},
+        json_schema_extra={
+            "prompt": "Keep the net token change as a held position on exit instead of swapping back",
+            "prompt_on_new": True,
+        },
     )
     slippage_pct: Decimal = Field(
         default=Decimal("0.05"),
@@ -99,11 +112,11 @@ class LPAmmExecutorExample(StrategyV2Base):
         """
         self.update_executors_info()
         if self.market_data_provider.ready and not self._is_stop_triggered:
-            executor_actions: List[ExecutorAction] = self.determine_executor_actions()
+            executor_actions: list[ExecutorAction] = self.determine_executor_actions()
             for action in executor_actions:
                 self.executor_orchestrator.execute_action(action)
 
-    def create_actions_proposal(self) -> List[CreateExecutorAction]:
+    def create_actions_proposal(self) -> list[CreateExecutorAction]:
         if self._executor_created:
             return []
         self._executor_created = True

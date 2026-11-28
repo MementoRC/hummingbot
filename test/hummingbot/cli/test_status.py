@@ -1,8 +1,8 @@
 import json
+from pathlib import Path
 import signal
 import time
 import unittest
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from hummingbot.cli import bot
@@ -18,16 +18,20 @@ class RecentLogErrorsTest(unittest.TestCase):
             "2026-01-01 - 1 - x - CRITICAL - boom two",
             "2026-01-01 - 1 - x - ERROR - boom three",
         ]
-        with patch.object(bot, "tail_lines", return_value=lines), \
-                patch.object(bot, "structured_log_file", return_value=Path("/nonexistent.log")):
+        with (
+            patch.object(bot, "tail_lines", return_value=lines),
+            patch.object(bot, "structured_log_file", return_value=Path("/nonexistent.log")),
+        ):
             errs = _recent_log_errors()
         self.assertEqual(errs["count"], 3)
         self.assertEqual(errs["messages"], ["boom one", "boom two", "boom three"])
         self.assertEqual(errs["window"], status_mod.ERROR_SCAN_LINES)
 
     def test_no_errors(self):
-        with patch.object(bot, "tail_lines", return_value=["a - b - c - INFO - fine"]), \
-                patch.object(bot, "structured_log_file", return_value=Path("/nonexistent.log")):
+        with (
+            patch.object(bot, "tail_lines", return_value=["a - b - c - INFO - fine"]),
+            patch.object(bot, "structured_log_file", return_value=Path("/nonexistent.log")),
+        ):
             errs = _recent_log_errors()
         self.assertEqual(errs["count"], 0)
         self.assertEqual(errs["messages"], [])
@@ -35,23 +39,26 @@ class RecentLogErrorsTest(unittest.TestCase):
 
 class RequestFreshSnapshotTest(unittest.TestCase):
     def test_returns_when_no_pid(self):
-        with patch.object(bot, "read_pid", return_value=None), \
-                patch("hummingbot.cli.commands.status.os") as os_mock:
+        with patch.object(bot, "read_pid", return_value=None), patch("hummingbot.cli.commands.status.os") as os_mock:
             _request_fresh_snapshot()
         os_mock.kill.assert_not_called()
 
     def test_returns_when_pid_dead_or_reused(self):
-        with patch.object(bot, "read_pid", return_value=123), \
-                patch.object(bot, "is_engine_pid", return_value=False), \
-                patch("hummingbot.cli.commands.status.os") as os_mock:
+        with (
+            patch.object(bot, "read_pid", return_value=123),
+            patch.object(bot, "is_engine_pid", return_value=False),
+            patch("hummingbot.cli.commands.status.os") as os_mock,
+        ):
             _request_fresh_snapshot()
         os_mock.kill.assert_not_called()
 
     def test_returns_when_process_vanishes_on_kill(self):
-        with patch.object(bot, "read_pid", return_value=123), \
-                patch.object(bot, "is_engine_pid", return_value=True), \
-                patch.object(bot, "read_status", return_value={"updated_at": 1.0}), \
-                patch("hummingbot.cli.commands.status.os") as os_mock:
+        with (
+            patch.object(bot, "read_pid", return_value=123),
+            patch.object(bot, "is_engine_pid", return_value=True),
+            patch.object(bot, "read_status", return_value={"updated_at": 1.0}),
+            patch("hummingbot.cli.commands.status.os") as os_mock,
+        ):
             os_mock.kill.side_effect = ProcessLookupError
             _request_fresh_snapshot()
         os_mock.kill.assert_called_once_with(123, signal.SIGUSR1)
@@ -59,11 +66,13 @@ class RequestFreshSnapshotTest(unittest.TestCase):
     def test_waits_until_snapshot_refreshes(self):
         # prev read, one stale poll (sleeps), then a fresh snapshot appears
         reads = [{"updated_at": 1.0}, {"updated_at": 1.0}, {"updated_at": 2.0}]
-        with patch.object(bot, "read_pid", return_value=123), \
-                patch.object(bot, "is_engine_pid", return_value=True), \
-                patch.object(bot, "read_status", side_effect=reads) as read_status, \
-                patch("hummingbot.cli.commands.status.os") as os_mock, \
-                patch("hummingbot.cli.commands.status.time") as time_mock:
+        with (
+            patch.object(bot, "read_pid", return_value=123),
+            patch.object(bot, "is_engine_pid", return_value=True),
+            patch.object(bot, "read_status", side_effect=reads) as read_status,
+            patch("hummingbot.cli.commands.status.os") as os_mock,
+            patch("hummingbot.cli.commands.status.time") as time_mock,
+        ):
             time_mock.time.return_value = 0.0
             _request_fresh_snapshot(timeout=5.0)
         os_mock.kill.assert_called_once_with(123, signal.SIGUSR1)
@@ -71,11 +80,13 @@ class RequestFreshSnapshotTest(unittest.TestCase):
         self.assertEqual(read_status.call_count, 3)
 
     def test_gives_up_at_deadline(self):
-        with patch.object(bot, "read_pid", return_value=123), \
-                patch.object(bot, "is_engine_pid", return_value=True), \
-                patch.object(bot, "read_status", return_value=None), \
-                patch("hummingbot.cli.commands.status.os"), \
-                patch("hummingbot.cli.commands.status.time") as time_mock:
+        with (
+            patch.object(bot, "read_pid", return_value=123),
+            patch.object(bot, "is_engine_pid", return_value=True),
+            patch.object(bot, "read_status", return_value=None),
+            patch("hummingbot.cli.commands.status.os"),
+            patch("hummingbot.cli.commands.status.time") as time_mock,
+        ):
             time_mock.time.side_effect = [0.0, 1.0, 100.0]  # deadline calc, one loop pass, expiry
             _request_fresh_snapshot(timeout=5.0)
         time_mock.sleep.assert_called_once_with(0.1)
@@ -83,18 +94,22 @@ class RequestFreshSnapshotTest(unittest.TestCase):
 
 class StatusCommandTest(unittest.TestCase):
     def test_no_bot_and_nothing_loaded(self):
-        with patch.object(bot, "exists", return_value=False), \
-                patch.object(bot, "read_loaded", return_value=None), \
-                patch("hummingbot.cli.commands.status.emit") as emit_mock:
+        with (
+            patch.object(bot, "exists", return_value=False),
+            patch.object(bot, "read_loaded", return_value=None),
+            patch("hummingbot.cli.commands.status.emit") as emit_mock,
+        ):
             status(as_json=False)
         record = emit_mock.call_args.args[0]
         self.assertFalse(record["running"])
         self.assertEqual(record["note"], "no strategy config loaded")
 
     def test_no_bot_but_config_imported(self):
-        with patch.object(bot, "exists", return_value=False), \
-                patch.object(bot, "read_loaded", return_value={"file": "conf_x.yml", "type": "controller"}), \
-                patch("hummingbot.cli.commands.status.emit") as emit_mock:
+        with (
+            patch.object(bot, "exists", return_value=False),
+            patch.object(bot, "read_loaded", return_value={"file": "conf_x.yml", "type": "controller"}),
+            patch("hummingbot.cli.commands.status.emit") as emit_mock,
+        ):
             status(as_json=True)
         record = emit_mock.call_args.args[0]
         self.assertEqual(record["note"], "imported, not started")
@@ -115,14 +130,26 @@ class StatusCommandTest(unittest.TestCase):
 
     def test_running_markdown_with_uptime_snapshot_and_errors(self):
         now = time.time()
-        snapshot = {"updated_at": now - 3, "engine": {"strategy_name": "pmm"},
-                    "format_status": "live status text", "balances": {"binance": {"BTC": 1}}}
+        snapshot = {
+            "updated_at": now - 3,
+            "engine": {"strategy_name": "pmm"},
+            "format_status": "live status text",
+            "balances": {"binance": {"BTC": 1}},
+        }
         meta = {"name": "mybot", "file": "conf_x.yml", "type": "controller", "started_at": now - 60}
         errors = {"count": 2, "messages": ["first", "last err"], "window": 600}
         patches = self._running_patches(snapshot, meta, errors)
         echo_mock = MagicMock()
-        with patches[0], patches[1], patches[2], patches[3], patches[4], patches[5], patches[6], \
-                patch("hummingbot.cli.commands.status.echo", echo_mock):
+        with (
+            patches[0],
+            patches[1],
+            patches[2],
+            patches[3],
+            patches[4],
+            patches[5],
+            patches[6],
+            patch("hummingbot.cli.commands.status.echo", echo_mock),
+        ):
             status(as_json=False)
         rendered = echo_mock.call_args_list[0].args[0]
         self.assertIn("state: running", rendered)
@@ -137,14 +164,26 @@ class StatusCommandTest(unittest.TestCase):
 
     def test_running_json_output(self):
         now = time.time()
-        snapshot = {"updated_at": now - 3, "engine": {"strategy_name": "pmm"},
-                    "format_status": "txt", "balances": {"binance": {"BTC": 1}}}
+        snapshot = {
+            "updated_at": now - 3,
+            "engine": {"strategy_name": "pmm"},
+            "format_status": "txt",
+            "balances": {"binance": {"BTC": 1}},
+        }
         meta = {"name": "mybot", "file": "conf_x.yml", "type": "controller", "started_at": now - 60}
         errors = {"count": 0, "messages": [], "window": 600}
         patches = self._running_patches(snapshot, meta, errors)
         emit_mock = MagicMock()
-        with patches[0], patches[1], patches[2], patches[3], patches[4], patches[5], patches[6], \
-                patch("hummingbot.cli.commands.status.emit", emit_mock):
+        with (
+            patches[0],
+            patches[1],
+            patches[2],
+            patches[3],
+            patches[4],
+            patches[5],
+            patches[6],
+            patch("hummingbot.cli.commands.status.emit", emit_mock),
+        ):
             status(as_json=True)
         payload = emit_mock.call_args.args[0]
         self.assertTrue(payload["running"])
@@ -160,16 +199,20 @@ class StatusCommandTest(unittest.TestCase):
     def test_stopped_bot_minimal_fields(self):
         # exists but not running, no snapshot, no errors, no format_status
         echo_mock = MagicMock()
-        with patch.object(bot, "exists", return_value=True), \
-                patch.object(bot, "running", return_value=False), \
-                patch.object(bot, "read_loaded", return_value=None), \
-                patch.object(bot, "read_status", return_value=None), \
-                patch.object(bot, "read_meta", return_value={"name": "mybot"}), \
-                patch.object(bot, "read_pid", return_value=None), \
-                patch("hummingbot.cli.commands.status._request_fresh_snapshot"), \
-                patch("hummingbot.cli.commands.status._recent_log_errors",
-                      return_value={"count": 0, "messages": [], "window": 600}), \
-                patch("hummingbot.cli.commands.status.echo", echo_mock):
+        with (
+            patch.object(bot, "exists", return_value=True),
+            patch.object(bot, "running", return_value=False),
+            patch.object(bot, "read_loaded", return_value=None),
+            patch.object(bot, "read_status", return_value=None),
+            patch.object(bot, "read_meta", return_value={"name": "mybot"}),
+            patch.object(bot, "read_pid", return_value=None),
+            patch("hummingbot.cli.commands.status._request_fresh_snapshot"),
+            patch(
+                "hummingbot.cli.commands.status._recent_log_errors",
+                return_value={"count": 0, "messages": [], "window": 600},
+            ),
+            patch("hummingbot.cli.commands.status.echo", echo_mock),
+        ):
             status(as_json=False)
         rendered = echo_mock.call_args.args[0]
         self.assertIn("state: stopped", rendered)
@@ -182,21 +225,31 @@ class StatusCommandTest(unittest.TestCase):
         # Abrupt kill (kill -9 / container restart): bot.pid and status.json survive the dead run.
         # status must not render the dead run's snapshot or pid as if live.
         now = time.time()
-        snapshot = {"updated_at": now - 30, "engine": {"strategy_name": "pmm"},
-                    "format_status": "  Markets:\n  Orders:", "balances": {"binance": {"BTC": 1}}}
+        snapshot = {
+            "updated_at": now - 30,
+            "engine": {"strategy_name": "pmm"},
+            "format_status": "  Markets:\n  Orders:",
+            "balances": {"binance": {"BTC": 1}},
+        }
         echo_mock = MagicMock()
-        with patch.object(bot, "exists", return_value=True), \
-                patch.object(bot, "running", return_value=False), \
-                patch.object(bot, "read_loaded", return_value={"file": "test01.yml", "type": "v1-strategy"}), \
-                patch.object(bot, "read_status", return_value=snapshot), \
-                patch.object(bot, "read_meta",
-                             return_value={"name": "test01", "file": "test01.yml", "type": "v1-strategy",
-                                           "started_at": now - 600}), \
-                patch.object(bot, "read_pid", return_value=134), \
-                patch("hummingbot.cli.commands.status._request_fresh_snapshot") as refresh, \
-                patch("hummingbot.cli.commands.status._recent_log_errors",
-                      return_value={"count": 0, "messages": [], "window": 600}), \
-                patch("hummingbot.cli.commands.status.echo", echo_mock):
+        with (
+            patch.object(bot, "exists", return_value=True),
+            patch.object(bot, "running", return_value=False),
+            patch.object(bot, "read_loaded", return_value={"file": "test01.yml", "type": "v1-strategy"}),
+            patch.object(bot, "read_status", return_value=snapshot),
+            patch.object(
+                bot,
+                "read_meta",
+                return_value={"name": "test01", "file": "test01.yml", "type": "v1-strategy", "started_at": now - 600},
+            ),
+            patch.object(bot, "read_pid", return_value=134),
+            patch("hummingbot.cli.commands.status._request_fresh_snapshot") as refresh,
+            patch(
+                "hummingbot.cli.commands.status._recent_log_errors",
+                return_value={"count": 0, "messages": [], "window": 600},
+            ),
+            patch("hummingbot.cli.commands.status.echo", echo_mock),
+        ):
             status(as_json=False)
         refresh.assert_not_called()
         rendered = echo_mock.call_args.args[0]
@@ -209,17 +262,22 @@ class StatusCommandTest(unittest.TestCase):
     def test_stopped_bot_json_nulls_stale_snapshot_fields(self):
         now = time.time()
         snapshot = {"updated_at": now - 30, "format_status": "txt", "balances": {"b": 1}}
-        with patch.object(bot, "exists", return_value=True), \
-                patch.object(bot, "running", return_value=False), \
-                patch.object(bot, "read_loaded", return_value={"file": "test01.yml", "type": "v1-strategy"}), \
-                patch.object(bot, "read_status", return_value=snapshot), \
-                patch.object(bot, "read_meta",
-                             return_value={"name": "test01", "file": "test01.yml", "type": "v1-strategy"}), \
-                patch.object(bot, "read_pid", return_value=134), \
-                patch("hummingbot.cli.commands.status._request_fresh_snapshot"), \
-                patch("hummingbot.cli.commands.status._recent_log_errors",
-                      return_value={"count": 0, "messages": [], "window": 600}), \
-                patch("hummingbot.cli.commands.status.emit") as emit_mock:
+        with (
+            patch.object(bot, "exists", return_value=True),
+            patch.object(bot, "running", return_value=False),
+            patch.object(bot, "read_loaded", return_value={"file": "test01.yml", "type": "v1-strategy"}),
+            patch.object(bot, "read_status", return_value=snapshot),
+            patch.object(
+                bot, "read_meta", return_value={"name": "test01", "file": "test01.yml", "type": "v1-strategy"}
+            ),
+            patch.object(bot, "read_pid", return_value=134),
+            patch("hummingbot.cli.commands.status._request_fresh_snapshot"),
+            patch(
+                "hummingbot.cli.commands.status._recent_log_errors",
+                return_value={"count": 0, "messages": [], "window": 600},
+            ),
+            patch("hummingbot.cli.commands.status.emit") as emit_mock,
+        ):
             status(as_json=True)
         payload = emit_mock.call_args.args[0]
         self.assertFalse(payload["running"])
@@ -232,12 +290,15 @@ class StatusCommandTest(unittest.TestCase):
     def test_stopped_bot_with_newly_imported_config_surfaces_it(self):
         # QA: import test02.yml while the test01 record is stopped -> status must show test02, not
         # keep reporting the dead run's meta.
-        with patch.object(bot, "exists", return_value=True), \
-                patch.object(bot, "running", return_value=False), \
-                patch.object(bot, "read_loaded", return_value={"file": "test02.yml", "type": "v1-strategy"}), \
-                patch.object(bot, "read_meta",
-                             return_value={"name": "test01", "file": "test01.yml", "type": "v1-strategy"}), \
-                patch("hummingbot.cli.commands.status.emit") as emit_mock:
+        with (
+            patch.object(bot, "exists", return_value=True),
+            patch.object(bot, "running", return_value=False),
+            patch.object(bot, "read_loaded", return_value={"file": "test02.yml", "type": "v1-strategy"}),
+            patch.object(
+                bot, "read_meta", return_value={"name": "test01", "file": "test01.yml", "type": "v1-strategy"}
+            ),
+            patch("hummingbot.cli.commands.status.emit") as emit_mock,
+        ):
             status(as_json=True)
         record = emit_mock.call_args.args[0]
         self.assertFalse(record["running"])
@@ -256,9 +317,17 @@ class StatusCommandTest(unittest.TestCase):
         errors = {"count": 0, "messages": [], "window": 600}
         patches = self._running_patches(snapshot, meta, errors)
         emit_mock = MagicMock()
-        with patches[0], patches[1], patches[2], patches[3], patches[4], patches[5], patches[6], \
-                patch.object(bot, "read_loaded", return_value={"file": "test02.yml", "type": "v1-strategy"}), \
-                patch("hummingbot.cli.commands.status.emit", emit_mock):
+        with (
+            patches[0],
+            patches[1],
+            patches[2],
+            patches[3],
+            patches[4],
+            patches[5],
+            patches[6],
+            patch.object(bot, "read_loaded", return_value={"file": "test02.yml", "type": "v1-strategy"}),
+            patch("hummingbot.cli.commands.status.emit", emit_mock),
+        ):
             status(as_json=True)
         payload = emit_mock.call_args.args[0]
         self.assertTrue(payload["running"])

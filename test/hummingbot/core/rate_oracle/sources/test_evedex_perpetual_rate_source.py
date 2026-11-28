@@ -1,9 +1,9 @@
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import MagicMock
 
 from hummingbot.connector.utils import combine_to_hb_trading_pair
 from hummingbot.core.rate_oracle.sources.evedex_perpetual_rate_source import EvedexPerpetualRateSource
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class EvedexPerpetualRateSourceTest(IsolatedAsyncioWrapperTestCase):
@@ -39,6 +39,7 @@ class EvedexPerpetualRateSourceTest(IsolatedAsyncioWrapperTestCase):
     async def test_get_evedex_perpetual_prices(self):
         expected_rate = Decimal("0.5")
         rate_source = EvedexPerpetualRateSource()
+        rate_source.get_prices.cache_clear()
         rate_source._exchange = self._get_mock_exchange(expected_rate)
 
         prices = await rate_source.get_prices()
@@ -48,6 +49,7 @@ class EvedexPerpetualRateSourceTest(IsolatedAsyncioWrapperTestCase):
 
     async def test_get_evedex_perpetual_prices_handles_unknown_symbols(self):
         rate_source = EvedexPerpetualRateSource()
+        rate_source.get_prices.cache_clear()
         mock_exchange = MagicMock()
 
         async def mock_get_all_pairs_prices():
@@ -73,6 +75,7 @@ class EvedexPerpetualRateSourceTest(IsolatedAsyncioWrapperTestCase):
     async def test_get_evedex_perpetual_prices_with_quote_filter(self):
         expected_rate = Decimal("0.5")
         rate_source = EvedexPerpetualRateSource()
+        rate_source.get_prices.cache_clear()
         rate_source._exchange = self._get_mock_exchange(expected_rate)
 
         prices = await rate_source.get_prices(quote_token="USDT")
@@ -83,6 +86,7 @@ class EvedexPerpetualRateSourceTest(IsolatedAsyncioWrapperTestCase):
     async def test_get_evedex_perpetual_prices_with_non_matching_quote_filter(self):
         expected_rate = Decimal("0.5")
         rate_source = EvedexPerpetualRateSource()
+        rate_source.get_prices.cache_clear()
         rate_source._exchange = self._get_mock_exchange(expected_rate)
 
         prices = await rate_source.get_prices(quote_token="BTC")
@@ -91,6 +95,7 @@ class EvedexPerpetualRateSourceTest(IsolatedAsyncioWrapperTestCase):
 
     async def test_get_evedex_perpetual_prices_with_none_price(self):
         rate_source = EvedexPerpetualRateSource()
+        rate_source.get_prices.cache_clear()
         mock_exchange = MagicMock()
 
         async def mock_get_all_pairs_prices():

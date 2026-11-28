@@ -30,9 +30,7 @@ class LighterAPIOrderBookDataSource(OrderBookTrackerDataSource):
         self._domain = domain
         self._order_book_create_function = lambda: LighterOrderBook()
 
-    async def get_last_traded_prices(
-        self, trading_pairs: List[str], domain: Optional[str] = None
-    ) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, Any]:
@@ -160,24 +158,18 @@ class LighterAPIOrderBookDataSource(OrderBookTrackerDataSource):
     async def _parse_order_book_snapshot_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
         market_id = int(str(raw_message["channel"]).split(":")[1])
         trading_pair = self._connector.market_info_for_market_id(market_id).trading_pair
-        message_queue.put_nowait(
-            LighterOrderBook.snapshot_message_from_ws(raw_message, trading_pair=trading_pair)
-        )
+        message_queue.put_nowait(LighterOrderBook.snapshot_message_from_ws(raw_message, trading_pair=trading_pair))
 
     async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
         market_id = int(str(raw_message["channel"]).split(":")[1])
         trading_pair = self._connector.market_info_for_market_id(market_id).trading_pair
-        message_queue.put_nowait(
-            LighterOrderBook.diff_message_from_ws(raw_message, trading_pair=trading_pair)
-        )
+        message_queue.put_nowait(LighterOrderBook.diff_message_from_ws(raw_message, trading_pair=trading_pair))
 
     async def _parse_trade_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
         market_id = int(str(raw_message["channel"]).split(":")[1])
         trading_pair = self._connector.market_info_for_market_id(market_id).trading_pair
         for trade in raw_message.get("trades", []):
-            message_queue.put_nowait(
-                LighterOrderBook.trade_message_from_ws(trade, trading_pair=trading_pair)
-            )
+            message_queue.put_nowait(LighterOrderBook.trade_message_from_ws(trade, trading_pair=trading_pair))
 
     async def _process_message_for_unknown_channel(
         self, event_message: Dict[str, Any], websocket_assistant: WSAssistant

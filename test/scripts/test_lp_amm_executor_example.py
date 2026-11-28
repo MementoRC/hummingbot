@@ -1,11 +1,11 @@
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from hummingbot.connector.test_support.mock_paper_exchange import MockPaperExchange
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executor_actions import CreateExecutorAction
 from scripts.lp_amm_executor_example import LPAmmExecutorExample, LPAmmExecutorExampleConfig
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class TestLPAmmExecutorExample(IsolatedAsyncioWrapperTestCase):
@@ -20,13 +20,13 @@ class TestLPAmmExecutorExample(IsolatedAsyncioWrapperTestCase):
             base_amount=Decimal("1"),
             quote_amount=Decimal("100"),
         )
-        with patch('asyncio.create_task', return_value=MagicMock()):
+        with patch("asyncio.create_task", return_value=MagicMock()):
             with patch(
-                'hummingbot.strategy.strategy_v2_base.StrategyV2Base.listen_to_executor_actions',
+                "hummingbot.strategy.strategy_v2_base.StrategyV2Base.listen_to_executor_actions",
                 return_value=AsyncMock(),
             ):
-                with patch('hummingbot.strategy.strategy_v2_base.ExecutorOrchestrator') as MockExecutorOrchestrator:
-                    with patch('hummingbot.strategy.strategy_v2_base.MarketDataProvider') as MockMarketDataProvider:
+                with patch("hummingbot.strategy.strategy_v2_base.ExecutorOrchestrator") as MockExecutorOrchestrator:
+                    with patch("hummingbot.strategy.strategy_v2_base.MarketDataProvider") as MockMarketDataProvider:
                         self.strategy = LPAmmExecutorExample({self.connector_name: self.connector}, self.config)
                         self.strategy.executor_orchestrator = MockExecutorOrchestrator.return_value
                         self.strategy.market_data_provider = MockMarketDataProvider.return_value
@@ -72,7 +72,9 @@ class TestLPAmmExecutorExample(IsolatedAsyncioWrapperTestCase):
                 "fee_apr_pct": 12.3,
             },
         )
-        self.strategy.controller_reports = {"main": {"executors": [executor_info], "positions": [], "performance": None}}
+        self.strategy.controller_reports = {
+            "main": {"executors": [executor_info], "positions": [], "performance": None}
+        }
         with patch.object(LPAmmExecutorExample, "get_balance_df", return_value=MagicMock(to_string=lambda index: "")):
             with patch.object(LPAmmExecutorExample, "get_market_trading_pair_tuples", return_value=[]):
                 with patch.object(LPAmmExecutorExample, "active_orders_df", side_effect=ValueError):

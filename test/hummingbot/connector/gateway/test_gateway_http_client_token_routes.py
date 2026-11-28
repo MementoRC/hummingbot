@@ -1,11 +1,10 @@
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, patch
 
 from hummingbot.core.gateway.gateway_http_client import GatewayHttpClient
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 class GatewayHttpClientTokenRouteTest(IsolatedAsyncioWrapperTestCase):
-
     def setUp(self) -> None:
         super().setUp()
         self.client = GatewayHttpClient.get_instance()

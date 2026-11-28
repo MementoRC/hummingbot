@@ -1,6 +1,5 @@
 import base64
 import json
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import MagicMock
 
 from cryptography.exceptions import InvalidSignature
@@ -9,6 +8,7 @@ from cryptography.hazmat.primitives.asymmetric import ec, padding, rsa
 
 from hummingbot.connector.derivative.kalshi_perpetual.kalshi_perpetual_auth import KalshiPerpetualAuth
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest, WSJSONRequest
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 def _pem(key, private_format: serialization.PrivateFormat) -> str:
@@ -21,7 +21,6 @@ def _pem(key, private_format: serialization.PrivateFormat) -> str:
 
 
 class KalshiPerpetualAuthTests(IsolatedAsyncioWrapperTestCase):
-
     @classmethod
     def setUpClass(cls) -> None:
         super().setUpClass()
@@ -36,7 +35,9 @@ class KalshiPerpetualAuthTests(IsolatedAsyncioWrapperTestCase):
         self.expected_timestamp = "1703123456789"
         self.time_provider = MagicMock()
         self.time_provider.time.return_value = self.emulated_time
-        self.auth = KalshiPerpetualAuth(api_key=self.api_key, private_key=self.pkcs1_pem, time_provider=self.time_provider)
+        self.auth = KalshiPerpetualAuth(
+            api_key=self.api_key, private_key=self.pkcs1_pem, time_provider=self.time_provider
+        )
 
     def _assert_valid_signature(self, signature: str, message: str):
         try:

@@ -25,10 +25,7 @@ class GeminiAPIOrderBookDataSource(OrderBookTrackerDataSource):
     _logger: Optional[HummingbotLogger] = None
     _next_subscribe_id: int = _DYNAMIC_SUBSCRIBE_ID_START
 
-    def __init__(self,
-                 trading_pairs: List[str],
-                 connector: 'GeminiExchange',
-                 api_factory: WebAssistantsFactory):
+    def __init__(self, trading_pairs: List[str], connector: "GeminiExchange", api_factory: WebAssistantsFactory):
         super().__init__(trading_pairs)
         self._connector = connector
         self._trade_messages_queue_key = CONSTANTS.WS_EVENT_TRADE
@@ -40,9 +37,7 @@ class GeminiAPIOrderBookDataSource(OrderBookTrackerDataSource):
         self._dynamic_snapshot_futures: Dict[str, asyncio.Future] = {}
         self._pending_dynamic_snapshots: Dict[str, Dict[str, Any]] = {}
 
-    async def get_last_traded_prices(self,
-                                     trading_pairs: List[str],
-                                     domain: Optional[str] = None) -> Dict[str, float]:
+    async def get_last_traded_prices(self, trading_pairs: List[str], domain: Optional[str] = None) -> Dict[str, float]:
         return await self._connector.get_last_traded_prices(trading_pairs=trading_pairs)
 
     async def _request_order_book_snapshot(self, trading_pair: str) -> Dict[str, Any]:
@@ -85,16 +80,12 @@ class GeminiAPIOrderBookDataSource(OrderBookTrackerDataSource):
             payload = {
                 "id": str(self.TRADE_STREAM_ID),
                 "method": CONSTANTS.WS_METHOD_SUBSCRIBE,
-                "params": trade_streams
+                "params": trade_streams,
             }
             subscribe_trade_request: WSJSONRequest = WSJSONRequest(payload=payload)
 
             # Subscribe to depth streams
-            payload = {
-                "id": str(self.DIFF_STREAM_ID),
-                "method": CONSTANTS.WS_METHOD_SUBSCRIBE,
-                "params": depth_streams
-            }
+            payload = {"id": str(self.DIFF_STREAM_ID), "method": CONSTANTS.WS_METHOD_SUBSCRIBE, "params": depth_streams}
             subscribe_depth_request: WSJSONRequest = WSJSONRequest(payload=payload)
 
             await ws.send(subscribe_trade_request)
@@ -105,8 +96,7 @@ class GeminiAPIOrderBookDataSource(OrderBookTrackerDataSource):
             raise
         except Exception:
             self.logger().error(
-                "Unexpected error occurred subscribing to order book trading and delta streams...",
-                exc_info=True
+                "Unexpected error occurred subscribing to order book trading and delta streams...", exc_info=True
             )
             raise
 
@@ -114,8 +104,7 @@ class GeminiAPIOrderBookDataSource(OrderBookTrackerDataSource):
         ws: WSAssistant = await self._api_factory.get_ws_assistant()
         # snapshot=-1 makes the first depthUpdate for each subscribed symbol a
         # complete sequence-bearing book with U == u.
-        await ws.connect(ws_url=web_utils.wss_url(snapshot=-1),
-                         ping_timeout=CONSTANTS.WS_HEARTBEAT_TIME_INTERVAL)
+        await ws.connect(ws_url=web_utils.wss_url(snapshot=-1), ping_timeout=CONSTANTS.WS_HEARTBEAT_TIME_INTERVAL)
         return ws
 
     async def _order_book_snapshot(self, trading_pair: str) -> OrderBookMessage:
@@ -127,9 +116,7 @@ class GeminiAPIOrderBookDataSource(OrderBookTrackerDataSource):
         else:
             snapshot: Dict[str, Any] = await self._request_order_book_snapshot(trading_pair)
             snapshot_msg: OrderBookMessage = GeminiOrderBook.snapshot_message_from_exchange(
-                snapshot,
-                snapshot_timestamp,
-                metadata={"trading_pair": trading_pair}
+                snapshot, snapshot_timestamp, metadata={"trading_pair": trading_pair}
             )
         return snapshot_msg
 
@@ -157,10 +144,8 @@ class GeminiAPIOrderBookDataSource(OrderBookTrackerDataSource):
             return
         # Trade messages are identified by the "t" (trade ID) field, not by "e"
         if "t" in raw_message and "s" in raw_message:
-            trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(
-                symbol=raw_message["s"])
-            trade_message = GeminiOrderBook.trade_message_from_exchange(
-                raw_message, {"trading_pair": trading_pair})
+            trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(symbol=raw_message["s"])
+            trade_message = GeminiOrderBook.trade_message_from_exchange(raw_message, {"trading_pair": trading_pair})
             message_queue.put_nowait(trade_message)
 
     async def _parse_order_book_diff_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
@@ -168,10 +153,10 @@ class GeminiAPIOrderBookDataSource(OrderBookTrackerDataSource):
         if "result" in raw_message or "id" in raw_message and "e" not in raw_message:
             return
         if raw_message.get("e") == CONSTANTS.WS_EVENT_DEPTH_UPDATE:
-            trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(
-                symbol=raw_message["s"])
+            trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(symbol=raw_message["s"])
             order_book_message: OrderBookMessage = GeminiOrderBook.diff_message_from_exchange(
-                raw_message, time.time(), {"trading_pair": trading_pair})
+                raw_message, time.time(), {"trading_pair": trading_pair}
+            )
             message_queue.put_nowait(order_book_message)
 
     async def _parse_order_book_snapshot_message(self, raw_message: Dict[str, Any], message_queue: asyncio.Queue):
@@ -179,9 +164,8 @@ class GeminiAPIOrderBookDataSource(OrderBookTrackerDataSource):
         message_queue.put_nowait(snapshot_message)
 
     async def _snapshot_message_from_depth_update(
-            self,
-            raw_message: Dict[str, Any],
-            timestamp: Optional[float] = None) -> OrderBookMessage:
+        self, raw_message: Dict[str, Any], timestamp: Optional[float] = None
+    ) -> OrderBookMessage:
         symbol = raw_message["s"]
         trading_pair = await self._connector.trading_pair_associated_to_exchange_symbol(symbol=symbol)
         timestamp = timestamp or CONSTANTS.convert_timestamp_to_seconds(raw_message.get("E", 0)) or time.time()
@@ -225,7 +209,8 @@ class GeminiAPIOrderBookDataSource(OrderBookTrackerDataSource):
                         self._last_update_ids.pop(symbol, None)
                         raise ConnectionError(
                             f"Gemini order book sequence gap for {symbol}: "
-                            f"expected {previous_update_id + 1}, received {first_update_id}.")
+                            f"expected {previous_update_id + 1}, received {first_update_id}."
+                        )
                     self._last_update_ids[symbol] = last_update_id
                     channel = self._diff_messages_queue_key
             elif "t" in event_message:
@@ -275,7 +260,7 @@ class GeminiAPIOrderBookDataSource(OrderBookTrackerDataSource):
                 "params": [
                     CONSTANTS.WS_TRADE_STREAM.format(symbol),
                     CONSTANTS.WS_DEPTH_STREAM.format(symbol),
-                ]
+                ],
             }
             ack = await self._send_subscription_request_and_wait_for_ack(payload)
             if not self._is_successful_subscription_ack(ack or {}):
@@ -314,7 +299,7 @@ class GeminiAPIOrderBookDataSource(OrderBookTrackerDataSource):
                 "params": [
                     CONSTANTS.WS_TRADE_STREAM.format(symbol),
                     CONSTANTS.WS_DEPTH_STREAM.format(symbol),
-                ]
+                ],
             }
             ack = await self._send_subscription_request_and_wait_for_ack(payload)
             if not self._is_successful_subscription_ack(ack or {}):

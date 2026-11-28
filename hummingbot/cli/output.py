@@ -5,9 +5,10 @@ for single records — that serves both humans and agents. The run/observe comma
 status, logs, config, balance, deploy) also take ``--json`` for a machine-readable object with raw
 values. Either way, the machine contract for outcomes is the stable **exit code** (branch on it).
 """
+
+from enum import IntEnum
 import json
 import textwrap
-from enum import IntEnum
 from typing import Any, Dict, List, Optional, Sequence
 
 import typer
@@ -24,12 +25,13 @@ class SortedCommandsGroup(TyperGroup):
 
 class ExitCode(IntEnum):
     """Stable exit codes so an agentic harness can branch on outcomes."""
+
     SUCCESS = 0
-    ERROR = 1            # generic failure
-    NOT_FOUND = 2        # instance does not exist
-    NOT_RUNNING = 3      # instance exists but its process is not alive
-    CONFIG_ERROR = 4     # missing/invalid config or password
-    TIMEOUT = 5          # operation did not complete in time
+    ERROR = 1  # generic failure
+    NOT_FOUND = 2  # instance does not exist
+    NOT_RUNNING = 3  # instance exists but its process is not alive
+    CONFIG_ERROR = 4  # missing/invalid config or password
+    TIMEOUT = 5  # operation did not complete in time
 
 
 def cell(v: Any) -> str:
@@ -50,9 +52,12 @@ def _wrap_cell(value: str, width: Optional[int]) -> List[str]:
     return textwrap.wrap(value, width=width, break_long_words=True, break_on_hyphens=False) or [""]
 
 
-def render_table(rows: Sequence[dict], columns: Optional[List[str]] = None,
-                 title: Optional[str] = None,
-                 max_widths: Optional[Dict[str, int]] = None) -> str:
+def render_table(
+    rows: Sequence[dict],
+    columns: Optional[List[str]] = None,
+    title: Optional[str] = None,
+    max_widths: Optional[Dict[str, int]] = None,
+) -> str:
     """Render a list of records as an aligned Markdown table (token-economic format for tabular
     output).
 
@@ -70,8 +75,7 @@ def render_table(rows: Sequence[dict], columns: Optional[List[str]] = None,
     cols = columns or list(rows[0].keys())
     limits = max_widths or {}
     wrapped = [[_wrap_cell(cell(r.get(c)), limits.get(c)) for c in cols] for r in rows]
-    widths = [max(len(c), *(len(seg) for row in wrapped for seg in row[i]))
-              for i, c in enumerate(cols)]
+    widths = [max(len(c), *(len(seg) for row in wrapped for seg in row[i])) for i, c in enumerate(cols)]
 
     def line(values: List[str]) -> str:
         cells = [v.ljust(w) for v, w in zip(values, widths)]

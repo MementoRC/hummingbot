@@ -4,7 +4,6 @@ from hummingbot.connector.exchange.bitget import bitget_constants as CONSTANTS, 
 
 
 class BitgetUtilsTests(TestCase):
-
     def test_is_exchange_information_valid(self):
         self.assertTrue(utils.is_exchange_information_valid({"symbol": "BTCUSDT"}))
         self.assertFalse(utils.is_exchange_information_valid({"symbol": ""}))

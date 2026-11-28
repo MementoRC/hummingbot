@@ -5,6 +5,7 @@ Resolved on PATH inside the activated `.venv` (the install script symlinks this 
 bin directory). Uses `env python` so it runs against whichever environment is active; `path_util`
 puts the repo root on sys.path.
 """
+
 import sys
 
 import path_util  # noqa: F401  (puts the repo root ahead of bin/ on sys.path)

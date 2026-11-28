@@ -1,7 +1,7 @@
 import asyncio
-import logging
 from decimal import Decimal
-from typing import Dict, List, Optional, Set, Tuple
+import logging
+from typing import Dict
 
 from hummingbot.connector.gateway.gateway import AMMPoolInfo, AMMPositionInfo
 from hummingbot.connector.utils import split_hb_trading_pair
@@ -45,14 +45,15 @@ class LPAmmExecutor(ExecutorBase):
     AMMPositionDetail and add/remove-liquidity routes unchanged - no connector
     changes are needed for this executor.
     """
-    _logger: Optional[HummingbotLogger] = None
+
+    _logger: HummingbotLogger | None = None
     # Serializes a fungible-LP deposit's snapshot -> add-liquidity -> post-read
     # sequence per (connector_name, pool_address): two executors depositing into
     # the same wallet's share of the same pool concurrently would otherwise both
     # read the LP-token balance before either deposit lands, then each treat the
     # WHOLE post-deposit increase (including the other's minted tokens) as its
     # own share - see Greptile finding "Executors claim each other's tokens".
-    _pool_deposit_locks: Dict[Tuple[str, str], asyncio.Lock] = {}
+    _pool_deposit_locks: dict[tuple[str, str], asyncio.Lock] = {}
 
     @classmethod
     def logger(cls) -> HummingbotLogger:
@@ -81,11 +82,11 @@ class LPAmmExecutor(ExecutorBase):
         self.config: LPAmmExecutorConfig = config
         self._max_retries = max_retries
         self.lp_position_state = LPAmmExecutorState()
-        self._pool_info: Optional[AMMPoolInfo] = None
+        self._pool_info: AMMPoolInfo | None = None
         # One warning, not one per tick, when the pool reports no fee rate and the volume
         # this position generated therefore cannot be derived. See filled_amount_quote.
         self._warned_missing_fee_pct = False
-        self._current_price: Optional[Decimal] = None
+        self._current_price: Decimal | None = None
         self._max_retries_reached = False
         # Same slippage-ramp contract as LPExecutor's: starts at the configured value,
         # widens only on a failure Gateway attributed to slippage, resets at each phase.
@@ -93,13 +94,13 @@ class LPAmmExecutor(ExecutorBase):
         # Consecutive definitive "position does not exist" reads while monitoring;
         # guards against a single lagging RPC node being read as an external close.
         self._position_not_found_count: int = 0
-        self._last_position_refresh_timestamp: Optional[float] = None
+        self._last_position_refresh_timestamp: float | None = None
         # Backoff between close attempts so a burst of instant transport failures
         # cannot burn the whole retry budget in seconds.
         self._close_backoff_until: float = 0.0
         # Why a POSITION_HOLD terminal was involuntary (e.g. "close_retries_exhausted");
         # None for voluntary holds (keep_position=True stops).
-        self._hold_reason: Optional[str] = None
+        self._hold_reason: str | None = None
         # early_stop() arrived while the create was in flight: let the create resolve,
         # then route straight to CLOSING.
         self._close_after_open: bool = False
@@ -112,19 +113,17 @@ class LPAmmExecutor(ExecutorBase):
         # prior holdings, kept so a later _update_position_info call can retry the diff
         # instead of leaving the NFT address unresolved forever. See _create_position /
         # _update_position_info.
-        self._pending_nft_recovery: Optional[Tuple[Set[str], Optional[Decimal]]] = None
+        self._pending_nft_recovery: tuple[set[str], Decimal | None] | None = None
         # The wallet's fungible-LP token balance read just before the last remove-
         # liquidity attempt. Compared against the next attempt's fresh read so an
         # ambiguous (ignored-as-failed) prior attempt that actually landed is detected
         # before re-deriving remove_percentage from the now-reduced balance, which would
         # otherwise withdraw this executor's own share a second time. See _close_position.
-        self._last_close_attempt_wallet_lp_tokens: Optional[Decimal] = None
+        self._last_close_attempt_wallet_lp_tokens: Decimal | None = None
         self.lp_dex_name, self.lp_trading_type = parse_provider(config.lp_provider)
 
-    def _validate_and_normalize_connector(self, connector_name: str) -> Optional[str]:
-        normalized, success = validate_and_normalize_connector(
-            connector_name, "amm", self.logger().error
-        )
+    def _validate_and_normalize_connector(self, connector_name: str) -> str | None:
+        normalized, success = validate_and_normalize_connector(connector_name, "amm", self.logger().error)
         if not success:
             self.close_type = CloseType.FAILED
             self.stop()
@@ -134,8 +133,7 @@ class LPAmmExecutor(ExecutorBase):
     async def on_start(self):
         await super().on_start()
         self.logger().info(
-            f"Using LP provider: {self.config.lp_provider} "
-            f"(dex={self.lp_dex_name}, type={self.lp_trading_type})"
+            f"Using LP provider: {self.config.lp_provider} (dex={self.lp_dex_name}, type={self.lp_trading_type})"
         )
 
         # Resolve swap_provider up front when the config already expects to unwind,
@@ -168,13 +166,12 @@ class LPAmmExecutor(ExecutorBase):
                     "(e.g. 'jupiter/router'). Fix swapProvider in the Gateway network config."
                 )
                 return False
-            self.config = self.config.model_copy(update={'swap_provider': default_provider})
+            self.config = self.config.model_copy(update={"swap_provider": default_provider})
             self.logger().info(f"Using network default swap provider: {default_provider}")
             return True
 
         self.logger().warning(
-            f"No swap provider found for {self.config.connector_name}. "
-            "Close-out swaps will not be available."
+            f"No swap provider found for {self.config.connector_name}. Close-out swaps will not be available."
         )
         return False
 
@@ -237,8 +234,7 @@ class LPAmmExecutor(ExecutorBase):
 
         if self.config.max_duration_seconds is not None and elapsed >= self.config.max_duration_seconds:
             self.logger().info(
-                f"max_duration_seconds ({self.config.max_duration_seconds}) reached after "
-                f"{elapsed:.0f}s, closing"
+                f"max_duration_seconds ({self.config.max_duration_seconds}) reached after {elapsed:.0f}s, closing"
             )
             self._trigger_close()
             return
@@ -247,8 +243,7 @@ class LPAmmExecutor(ExecutorBase):
             fee_apr = self.lp_position_state.fee_apr_pct(self._current_price, current_time)
             if fee_apr is not None and fee_apr < self.config.min_fee_apr_pct:
                 self.logger().info(
-                    f"Fee APR {fee_apr:.4f}% fell below min_fee_apr_pct "
-                    f"({self.config.min_fee_apr_pct}%), closing"
+                    f"Fee APR {fee_apr:.4f}% fell below min_fee_apr_pct ({self.config.min_fee_apr_pct}%), closing"
                 )
                 self._trigger_close()
 
@@ -261,9 +256,7 @@ class LPAmmExecutor(ExecutorBase):
         if not is_slippage_failure(error):
             return False
 
-        widened = next_slippage_pct(
-            self._slippage_pct, self.config.slippage_multiplier, self.config.max_slippage_pct
-        )
+        widened = next_slippage_pct(self._slippage_pct, self.config.slippage_multiplier, self.config.max_slippage_pct)
         if widened is None:
             self.logger().warning(
                 f"Slippage failure at {self._slippage_pct}%, which is max_slippage_pct "
@@ -283,7 +276,7 @@ class LPAmmExecutor(ExecutorBase):
             self.logger().info(f"Resetting slippage to {self.config.slippage_pct}% for the next phase.")
         self._slippage_pct = self.config.slippage_pct
 
-    async def _snapshot_before_add(self, connector) -> Tuple[Set[str], Optional[Decimal]]:
+    async def _snapshot_before_add(self, connector) -> tuple[set[str], Decimal | None]:
         """Snapshot the wallet's position in this pool before depositing.
 
         Used to isolate what add_liquidity just created from whatever the wallet
@@ -323,7 +316,9 @@ class LPAmmExecutor(ExecutorBase):
         """
         try:
             discovered = await connector.get_pool_address(
-                self.config.trading_pair, dex_name=self.lp_dex_name, trading_type=self.lp_trading_type,
+                self.config.trading_pair,
+                dex_name=self.lp_dex_name,
+                trading_type=self.lp_trading_type,
             )
         except Exception as e:
             self.logger().warning(f"Could not verify pool address for {self.config.trading_pair}: {e}")
@@ -348,7 +343,9 @@ class LPAmmExecutor(ExecutorBase):
         """
         try:
             resolved = await connector.resolve_trading_pair_from_pool(
-                self.config.pool_address, dex_name=self.lp_dex_name, trading_type=self.lp_trading_type,
+                self.config.pool_address,
+                dex_name=self.lp_dex_name,
+                trading_type=self.lp_trading_type,
             )
         except Exception as e:
             self.logger().warning(f"Could not verify tokens for pool {self.config.pool_address}: {e}")
@@ -394,9 +391,9 @@ class LPAmmExecutor(ExecutorBase):
         await self._pool_address_matches_config(connector)
 
         if not await self._pool_matches_trading_pair(connector):
-            self._handle_create_failure(ValueError(
-                f"Pool {self.config.pool_address} does not hold {self.config.trading_pair}"
-            ))
+            self._handle_create_failure(
+                ValueError(f"Pool {self.config.pool_address} does not hold {self.config.trading_pair}")
+            )
             return
 
         price = self._current_price if self._current_price else Decimal("0")
@@ -442,10 +439,12 @@ class LPAmmExecutor(ExecutorBase):
                     # otherwise _widen_slippage never matches a real SLIPPAGE_EXCEEDED
                     # rejection and a retryable failure goes straight to FAILED.
                     reason = connector.order_failure_reason(order_id)
-                    self._handle_create_failure(ValueError(
-                        f"Add liquidity for {self.config.trading_pair} returned no transaction signature"
-                        + (f" ({reason})" if reason else "")
-                    ))
+                    self._handle_create_failure(
+                        ValueError(
+                            f"Add liquidity for {self.config.trading_pair} returned no transaction signature"
+                            + (f" ({reason})" if reason else "")
+                        )
+                    )
                     return
 
                 self.lp_position_state.active_open_order = None
@@ -652,7 +651,11 @@ class LPAmmExecutor(ExecutorBase):
             )
         except Exception as e:
             error_msg = str(e).lower()
-            if "position closed" in error_msg or "position not found" in error_msg or "position does not exist" in error_msg:
+            if (
+                "position closed" in error_msg
+                or "position not found" in error_msg
+                or "position does not exist" in error_msg
+            ):
                 self._register_position_miss()
             else:
                 self.logger().warning(f"Error fetching position info: {e}")
@@ -666,8 +669,11 @@ class LPAmmExecutor(ExecutorBase):
 
         if self.lp_position_state.position_nft_address:
             detail = next(
-                (d for d in (position_info.positions or [])
-                 if d.position_address == self.lp_position_state.position_nft_address),
+                (
+                    d
+                    for d in (position_info.positions or [])
+                    if d.position_address == self.lp_position_state.position_nft_address
+                ),
                 None,
             )
             if detail is None:
@@ -773,9 +779,7 @@ class LPAmmExecutor(ExecutorBase):
         if self.close_type == CloseType.EARLY_STOP:
             base_diff = self._calculate_net_base_difference()
             if abs(base_diff) > Decimal("0.000001"):
-                self.logger().info(
-                    f"Close-out swap needed after already-closed reconcile: base_diff={base_diff:.6f}"
-                )
+                self.logger().info(f"Close-out swap needed after already-closed reconcile: base_diff={base_diff:.6f}")
                 self._reset_slippage()
                 self.lp_position_state.state = LPAmmExecutorStates.SWAPPING
                 return
@@ -809,9 +813,11 @@ class LPAmmExecutor(ExecutorBase):
                 error_msg = str(e).lower()
                 position_info = None if ("position closed" in error_msg or "position not found" in error_msg) else False
             gone = position_info is None or (
-                position_info is not False and
-                not any(d.position_address == self.lp_position_state.position_nft_address
-                        for d in (position_info.positions or []))
+                position_info is not False
+                and not any(
+                    d.position_address == self.lp_position_state.position_nft_address
+                    for d in (position_info.positions or [])
+                )
             )
             if gone:
                 self._position_not_found_count += 1
@@ -921,10 +927,12 @@ class LPAmmExecutor(ExecutorBase):
                     # share already removed (Greptile finding "Other withdrawals hide live
                     # liquidity").
                     self._last_close_attempt_wallet_lp_tokens = None
-                self._handle_close_failure(ValueError(
-                    f"Remove liquidity for {self.config.trading_pair} returned no transaction signature"
-                    + (f" ({reason})" if reason else "")
-                ))
+                self._handle_close_failure(
+                    ValueError(
+                        f"Remove liquidity for {self.config.trading_pair} returned no transaction signature"
+                        + (f" ({reason})" if reason else "")
+                    )
+                )
                 return
 
             self.logger().info(f"Position close confirmed, signature={signature}")
@@ -959,9 +967,7 @@ class LPAmmExecutor(ExecutorBase):
             # Freeze LP fees earned now, before a close-out swap (below) can trade
             # base_amount/quote_amount and get its own price difference from
             # current_price booked as LP fees - see fees_earned_quote.
-            self.lp_position_state.realized_fees_earned_quote = self.lp_position_state.fees_earned_quote(
-                current_price
-            )
+            self.lp_position_state.realized_fees_earned_quote = self.lp_position_state.fees_earned_quote(current_price)
             if self.close_type == CloseType.POSITION_HOLD:
                 self._store_net_trade_from_withdrawal(current_price)
 
@@ -1010,7 +1016,7 @@ class LPAmmExecutor(ExecutorBase):
             self.logger().warning(f"Position close attempt failed: {error}. Retry budget exhausted.")
             return
 
-        backoff = min(30.0, 2.0 ** self._current_retries)
+        backoff = min(30.0, 2.0**self._current_retries)
         self._close_backoff_until = self._strategy.current_timestamp + backoff
         self.logger().warning(
             f"Position close attempt failed ({self._current_retries}/{self._max_retries} retries used): "
@@ -1066,6 +1072,7 @@ class LPAmmExecutor(ExecutorBase):
                 return
 
             from hummingbot.core.data_type.in_flight_order import OrderState
+
             if order.current_state == OrderState.FILLED:
                 self.logger().info(f"Close-out swap completed: {order.client_order_id}")
                 # Apply the swap's REALIZED fill to base_amount/quote_amount so the
@@ -1081,7 +1088,7 @@ class LPAmmExecutor(ExecutorBase):
                     self.lp_position_state.base_amount -= order.executed_amount_base
                     self.lp_position_state.quote_amount += order.executed_amount_quote
                 self.lp_position_state.tx_fee += order.cumulative_fee_paid(
-                    getattr(connector, '_native_currency', DEFAULT_NATIVE_CURRENCY) or DEFAULT_NATIVE_CURRENCY
+                    getattr(connector, "_native_currency", DEFAULT_NATIVE_CURRENCY) or DEFAULT_NATIVE_CURRENCY
                 )
                 self.lp_position_state.active_swap_order = None
                 self.lp_position_state.state = LPAmmExecutorStates.COMPLETE
@@ -1111,9 +1118,7 @@ class LPAmmExecutor(ExecutorBase):
         amount = abs(base_diff)
         side = TradeType.BUY if is_buy else TradeType.SELL
 
-        self.logger().info(
-            f"Executing close-out swap: {side.name} {amount:.6f} base (diff={base_diff:.6f})"
-        )
+        self.logger().info(f"Executing close-out swap: {side.name} {amount:.6f} base (diff={base_diff:.6f})")
 
         try:
             # The executor's own ramped tolerance, so the close-out swap starts as
@@ -1232,21 +1237,23 @@ class LPAmmExecutor(ExecutorBase):
         are in the pool, not the wallet - but an empty held_position_orders
         would make the POSITION_HOLD invisible to the hold store.
         """
-        self._held_position_orders.append({
-            "client_order_id": f"{self.config.id}-unclosed-lp",
-            "trading_pair": self.config.trading_pair,
-            "trade_type": "BUY",  # dummy; zero amounts never reach accounting
-            "price": float(self._current_price) if self._current_price else 0.0,
-            "executed_amount_base": 0.0,
-            "executed_amount_quote": 0.0,
-            "cumulative_fee_paid_quote": 0.0,
-            "lp_source": True,
-            "lp_unclosed_position": True,
-            "pool_address": self.config.pool_address,
-            "position_nft_address": self.lp_position_state.position_nft_address,
-        })
+        self._held_position_orders.append(
+            {
+                "client_order_id": f"{self.config.id}-unclosed-lp",
+                "trading_pair": self.config.trading_pair,
+                "trade_type": "BUY",  # dummy; zero amounts never reach accounting
+                "price": float(self._current_price) if self._current_price else 0.0,
+                "executed_amount_base": 0.0,
+                "executed_amount_quote": 0.0,
+                "cumulative_fee_paid_quote": 0.0,
+                "lp_source": True,
+                "lp_unclosed_position": True,
+                "pool_address": self.config.pool_address,
+                "position_nft_address": self.lp_position_state.position_nft_address,
+            }
+        )
 
-    def _collect_held_position_orders(self) -> List[Dict]:
+    def _collect_held_position_orders(self) -> list[Dict]:
         """Snapshot a still-open position as a held order before the orchestrator reads it.
 
         force_stop_with_position_hold() (the orchestrator shutdown-deadline path)
@@ -1305,9 +1312,7 @@ class LPAmmExecutor(ExecutorBase):
             # state here would strand a live, funded position behind a FAILED
             # terminal. Let the create resolve; its success tail routes to CLOSING.
             self._close_after_open = True
-            self.logger().info(
-                "early_stop during OPENING: waiting for the in-flight create to resolve, then closing."
-            )
+            self.logger().info("early_stop during OPENING: waiting for the in-flight create to resolve, then closing.")
         elif self.lp_position_state.state == LPAmmExecutorStates.NOT_ACTIVE:
             self.lp_position_state.state = LPAmmExecutorStates.COMPLETE
 
@@ -1315,7 +1320,7 @@ class LPAmmExecutor(ExecutorBase):
         """Conversion rate from native currency (e.g. SOL) to pool quote currency,
         used to convert transaction fees (paid in native currency) to quote."""
         connector = self.connectors.get(self.config.connector_name)
-        native_currency = getattr(connector, '_native_currency', DEFAULT_NATIVE_CURRENCY) or DEFAULT_NATIVE_CURRENCY
+        native_currency = getattr(connector, "_native_currency", DEFAULT_NATIVE_CURRENCY) or DEFAULT_NATIVE_CURRENCY
         _, quote_token = split_hb_trading_pair(self.config.trading_pair)
 
         if native_currency == quote_token:
@@ -1344,16 +1349,18 @@ class LPAmmExecutor(ExecutorBase):
         order_id = self.lp_position_state.close_tx_hash or f"{self.config.id}-close"
 
         if abs(net_base) < threshold and abs(net_quote) < threshold:
-            self._held_position_orders.append({
-                "client_order_id": order_id,
-                "trade_type": "BUY",  # dummy, won't affect P&L with 0 amounts
-                "price": float(mid_price),
-                "executed_amount_base": 0.0,
-                "executed_amount_quote": 0.0,
-                "cumulative_fee_paid_quote": float(tx_fee_quote),
-                "lp_source": True,
-                "lp_net_trade": True,
-            })
+            self._held_position_orders.append(
+                {
+                    "client_order_id": order_id,
+                    "trade_type": "BUY",  # dummy, won't affect P&L with 0 amounts
+                    "price": float(mid_price),
+                    "executed_amount_base": 0.0,
+                    "executed_amount_quote": 0.0,
+                    "cumulative_fee_paid_quote": float(tx_fee_quote),
+                    "lp_source": True,
+                    "lp_net_trade": True,
+                }
+            )
             return
 
         if net_base > 0 and net_quote > 0:
@@ -1363,17 +1370,19 @@ class LPAmmExecutor(ExecutorBase):
             # Record it as earned value instead, via a negative fee (there is no
             # other field in this schema for "earned", only "paid").
             gained_quote = net_base * mid_price + net_quote
-            self._held_position_orders.append({
-                "client_order_id": order_id,
-                "trading_pair": self.config.trading_pair,
-                "trade_type": "BUY",  # dummy; executed amounts are 0, only the fee field carries value
-                "price": float(mid_price),
-                "executed_amount_base": 0.0,
-                "executed_amount_quote": 0.0,
-                "cumulative_fee_paid_quote": float(tx_fee_quote - gained_quote),
-                "lp_source": True,
-                "lp_net_trade": True,
-            })
+            self._held_position_orders.append(
+                {
+                    "client_order_id": order_id,
+                    "trading_pair": self.config.trading_pair,
+                    "trade_type": "BUY",  # dummy; executed amounts are 0, only the fee field carries value
+                    "price": float(mid_price),
+                    "executed_amount_base": 0.0,
+                    "executed_amount_quote": 0.0,
+                    "cumulative_fee_paid_quote": float(tx_fee_quote - gained_quote),
+                    "lp_source": True,
+                    "lp_net_trade": True,
+                }
+            )
             return
 
         if net_base > 0:
@@ -1385,18 +1394,20 @@ class LPAmmExecutor(ExecutorBase):
         amount_quote = float(abs(net_quote)) if abs(net_quote) > threshold else amount_base * float(mid_price)
         price = amount_quote / amount_base if amount_base > 0 else float(mid_price)
 
-        self._held_position_orders.append({
-            "client_order_id": order_id,
-            "trading_pair": self.config.trading_pair,
-            "trade_type": trade_type,
-            "price": price,
-            "amount": amount_base,
-            "executed_amount_base": amount_base,
-            "executed_amount_quote": amount_quote,
-            "cumulative_fee_paid_quote": float(tx_fee_quote),
-            "lp_source": True,
-            "lp_net_trade": True,
-        })
+        self._held_position_orders.append(
+            {
+                "client_order_id": order_id,
+                "trading_pair": self.config.trading_pair,
+                "trade_type": trade_type,
+                "price": price,
+                "amount": amount_base,
+                "executed_amount_base": amount_base,
+                "executed_amount_quote": amount_quote,
+                "cumulative_fee_paid_quote": float(tx_fee_quote),
+                "lp_source": True,
+                "lp_net_trade": True,
+            }
+        )
 
     @property
     def filled_amount_base(self) -> Decimal:
