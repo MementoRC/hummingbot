@@ -17,14 +17,14 @@ Provider Format:
 
 from decimal import Decimal
 import logging
-from typing import Callable
+from typing import Callable, List, Optional, Tuple
 
 from hummingbot.client.settings import GATEWAY_DEXS
 
 logger = logging.getLogger(__name__)
 
 
-def parse_provider(provider: str) -> tuple[str, str]:
+def parse_provider(provider: str) -> Tuple[str, str]:
     """
     Parse provider string into (dex_name, trading_type) tuple.
 
@@ -100,7 +100,7 @@ def validate_and_normalize_connector(
     connector_name: str,
     required_type: str,
     on_error: Callable[[str], None],
-) -> tuple[str | None, bool]:
+) -> Tuple[Optional[str], bool]:
     """
     Validate and normalize connector name for Gateway executors.
 
@@ -191,7 +191,7 @@ def validate_and_normalize_connector(
     return None, False
 
 
-def get_connectors_by_type(connector_type: str) -> list[str]:
+def get_connectors_by_type(connector_type: str) -> List[str]:
     """
     Get all Gateway connectors of a specific type.
 
@@ -205,7 +205,7 @@ def get_connectors_by_type(connector_type: str) -> list[str]:
     return [c for c in GATEWAY_DEXS if type_suffix in c]
 
 
-def get_network_connectors() -> list[str]:
+def get_network_connectors() -> List[str]:
     """
     Get all network-style connectors (chain-network format).
 
@@ -237,31 +237,11 @@ def is_slippage_failure(error: BaseException) -> bool:
     return SLIPPAGE_ERROR_CODE in str(error)
 
 
-# Gateway's machine-readable code for a transaction whose outcome could not be
-# proven either way (broadcast, then still pending when the poll deadline hit).
-# Unlike a slippage rejection, this does NOT mean the operation failed - it may
-# still land. Retrying blind risks running the operation twice.
-UNRESOLVED_ERROR_CODE = "TX_UNRESOLVED"
-
-
-def is_unresolved_failure(error: BaseException) -> bool:
-    """True when Gateway could not prove this transaction failed.
-
-    A caller must not treat this like an ordinary failure and resubmit on a timer:
-    the first transaction may still confirm on-chain after this result was returned,
-    and a second submission then executes the same operation twice (e.g. withdrawing
-    or swapping the same funds again).
-    """
-    if getattr(error, "code", None) == UNRESOLVED_ERROR_CODE:
-        return True
-    return UNRESOLVED_ERROR_CODE in str(error)
-
-
 def next_slippage_pct(
     current: Decimal,
     multiplier: Decimal,
     maximum: Decimal,
-) -> Decimal | None:
+) -> Optional[Decimal]:
     """The next tolerance to try after a slippage failure, or None at the ceiling.
 
     Multiplicative because impact and volatility are: a linear ramp from a tight start

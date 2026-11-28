@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from decimal import Decimal
 import hashlib
 import random
@@ -21,8 +23,8 @@ class ExecutorConfigBase(BaseModel):
         "xemm_executor",
         "arbitrage_executor",
         "twap_executor",
+        "position_on_exchange_executor",
         "lp_executor",
-        "lp_amm_executor",
     ]
     timestamp: float | None = None
     controller_id: str = "main"
