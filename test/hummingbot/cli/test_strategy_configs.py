@@ -2,6 +2,7 @@ from decimal import Decimal
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from types import SimpleNamespace
+from typing import List
 import unittest
 from unittest.mock import patch
 
@@ -319,12 +320,6 @@ class SourceCatalogTest(unittest.TestCase):
             self.assertEqual(sc.available_controllers(), [])
             self.assertEqual(sc.available_scripts(), [])
 
-    def test_available_controllers_includes_package_style_controller(self):
-        """lp_amm_rebalancer (like lp_rebalancer) lives as controllers/generic/<name>/<name>.py,
-        not a flat controllers/generic/<name>.py - the scan must also look one level deeper."""
-        self.assertIn("lp_amm_rebalancer", sc.available_controllers())
-        self.assertIn("lp_rebalancer", sc.available_controllers())
-
 
 class DescribeStrategyTest(unittest.TestCase):
     def test_v2_script_uses_script_config_class(self):
@@ -383,17 +378,6 @@ class ResolverErrorsTest(unittest.TestCase):
     def test_resolve_controller_class_by_name_unknown_raises(self):
         with self.assertRaises(ValueError):
             sc.resolve_controller_class_by_name("definitely_not_a_controller_xyz")
-
-    def test_resolve_controller_class_by_name_finds_package_style_controller(self):
-        """CLI create/show must be able to resolve a package-style controller (one whose
-        __init__ re-exports the config class), not just a flat controllers/<type>/<name>.py."""
-        cls, ctype = sc.resolve_controller_class_by_name("lp_amm_rebalancer")
-        self.assertEqual(ctype, "generic")
-        self.assertEqual(cls.__name__, "LPAmmRebalancerConfig")
-
-        cls, ctype = sc.resolve_controller_class_by_name("lp_rebalancer")
-        self.assertEqual(ctype, "generic")
-        self.assertEqual(cls.__name__, "LPRebalancerConfig")
 
     def test_resolve_script_config_class_finds_class(self):
         cls = sc.resolve_script_config_class("simple_pmm.py")
@@ -496,7 +480,7 @@ class YamlHelpersTest(unittest.TestCase):
 
     def test_template_config_data_uses_default_factory(self):
         class M(BaseModel):
-            items: list[str] = Field(default_factory=lambda: ["a"])
+            items: List[str] = Field(default_factory=lambda: ["a"])
 
         data, required = template_config_data(M, {})
         self.assertEqual(data["items"], ["a"])

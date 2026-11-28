@@ -18,12 +18,18 @@ from hummingbot.core.event.events import (
 from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.executor_base import ExecutorBase
+from hummingbot.strategy_v2.executors.executor_factory import ExecutorFactory
+from hummingbot.strategy_v2.executors.mixins.activation_bounds import ActivationBoundsMixin
+from hummingbot.strategy_v2.executors.mixins.balance_validation import BalanceValidationMixin
+from hummingbot.strategy_v2.executors.mixins.retry import RetryMixin
+from hummingbot.strategy_v2.executors.mixins.trailing_stop import TrailingStopMixin
 from hummingbot.strategy_v2.executors.position_executor.data_types import PositionExecutorConfig
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 
 
-class PositionExecutor(ExecutorBase):
+@ExecutorFactory.register(PositionExecutorConfig)
+class PositionExecutor(TrailingStopMixin, ActivationBoundsMixin, RetryMixin, BalanceValidationMixin, ExecutorBase):
     _logger = None
 
     @classmethod
@@ -878,6 +884,29 @@ class PositionExecutor(ExecutorBase):
                     self._trailing_stop_trigger_pct = (
                         net_pnl_pct - self.config.triple_barrier_config.trailing_stop.trailing_delta
                     )
+
+    def _create_validation_order_candidate(self) -> Union[OrderCandidate, PerpetualOrderCandidate]:
+        """BalanceValidationMixin template method. Not called by validate_sufficient_balance
+        below (PositionExecutor overrides that directly with identical candidate-building
+        logic), provided for mixin API parity."""
+        if self.is_perpetual:
+            return PerpetualOrderCandidate(
+                trading_pair=self.config.trading_pair,
+                is_maker=self.config.triple_barrier_config.open_order_type.is_limit_type(),
+                order_type=self.config.triple_barrier_config.open_order_type,
+                order_side=self.config.side,
+                amount=self.config.amount,
+                price=self.entry_price,
+                leverage=Decimal(self.config.leverage),
+            )
+        return OrderCandidate(
+            trading_pair=self.config.trading_pair,
+            is_maker=self.config.triple_barrier_config.open_order_type.is_limit_type(),
+            order_type=self.config.triple_barrier_config.open_order_type,
+            order_side=self.config.side,
+            amount=self.config.amount,
+            price=self.entry_price,
+        )
 
     async def validate_sufficient_balance(self):
         if self.is_perpetual:

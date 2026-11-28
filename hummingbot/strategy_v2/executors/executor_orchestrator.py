@@ -16,11 +16,14 @@ if TYPE_CHECKING:
 from hummingbot.strategy_v2.executors.arbitrage_executor.arbitrage_executor import ArbitrageExecutor
 from hummingbot.strategy_v2.executors.data_types import PositionSummary
 from hummingbot.strategy_v2.executors.dca_executor.dca_executor import DCAExecutor
+from hummingbot.strategy_v2.executors.executor_factory import ExecutorFactory
 from hummingbot.strategy_v2.executors.grid_executor.grid_executor import GridExecutor
-from hummingbot.strategy_v2.executors.lp_amm_executor.lp_amm_executor import LPAmmExecutor
 from hummingbot.strategy_v2.executors.lp_executor.lp_executor import LPExecutor
 from hummingbot.strategy_v2.executors.order_executor.order_executor import OrderExecutor
 from hummingbot.strategy_v2.executors.position_executor.position_executor import PositionExecutor
+from hummingbot.strategy_v2.executors.position_on_exchange_executor.position_on_exchange_executor import (
+    PositionOnExchangeExecutor,
+)
 from hummingbot.strategy_v2.executors.twap_executor.twap_executor import TWAPExecutor
 from hummingbot.strategy_v2.executors.xemm_executor.xemm_executor import XEMMExecutor
 from hummingbot.strategy_v2.models.base import RunnableStatus
@@ -215,7 +218,7 @@ class ExecutorOrchestrator:
         "xemm_executor": XEMMExecutor,
         "order_executor": OrderExecutor,
         "lp_executor": LPExecutor,
-        "lp_amm_executor": LPAmmExecutor,
+        "position_on_exchange_executor": PositionOnExchangeExecutor,
     }
 
     @classmethod
@@ -290,10 +293,7 @@ class ExecutorOrchestrator:
         if executor_info.close_type != CloseType.POSITION_HOLD:
             report.realized_pnl_quote += executor_info.net_pnl_quote
         # Held LP inventory does not carry the executor's accumulated swap volume.
-        if executor_info.close_type != CloseType.POSITION_HOLD or executor_info.type in (
-            "lp_executor",
-            "lp_amm_executor",
-        ):
+        if executor_info.close_type != CloseType.POSITION_HOLD or executor_info.type == "lp_executor":
             report.volume_traded += executor_info.filled_amount_quote
         if executor_info.close_type:
             report.close_type_counts[executor_info.close_type] = (
@@ -337,8 +337,8 @@ class ExecutorOrchestrator:
         """
         if self._initial_positions_initialized:
             return
-        self._initial_positions_initialized = True
         self._create_initial_positions()
+        self._initial_positions_initialized = True
 
     def _create_initial_positions(self):
         """
@@ -581,16 +581,25 @@ class ExecutorOrchestrator:
         # compa
         executor_config.controller_id = controller_id
 
-        executor_class = self._executor_mapping.get(executor_config.type)
-        if executor_class is not None:
-            executor = executor_class(
+        try:
+            executor = ExecutorFactory.create(
                 strategy=self.strategy,
                 config=executor_config,
                 update_interval=self.executors_update_interval,
                 max_retries=self.executors_max_retries,
             )
-        else:
-            raise ValueError("Unsupported executor config type")
+        except ValueError as factory_error:
+            # Fallback to legacy string-keyed mapping
+            executor_class = self._executor_mapping.get(executor_config.type)
+            if executor_class is not None:
+                executor = executor_class(
+                    strategy=self.strategy,
+                    config=executor_config,
+                    update_interval=self.executors_update_interval,
+                    max_retries=self.executors_max_retries,
+                )
+            else:
+                raise factory_error
 
         executor.start()
         self.active_executors[controller_id].append(executor)
@@ -898,10 +907,7 @@ class ExecutorOrchestrator:
                 if executor_info.close_type != CloseType.POSITION_HOLD:
                     report.realized_pnl_quote += executor_info.net_pnl_quote
                 # Ordinary held fills are counted by positions; LP swap volume is not.
-                if executor_info.close_type != CloseType.POSITION_HOLD or executor_info.type in (
-                    "lp_executor",
-                    "lp_amm_executor",
-                ):
+                if executor_info.close_type != CloseType.POSITION_HOLD or executor_info.type == "lp_executor":
                     report.volume_traded += executor_info.filled_amount_quote
                 if executor_info.close_type:
                     report.close_type_counts[executor_info.close_type] = (

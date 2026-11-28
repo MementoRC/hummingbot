@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Dict, List
+from typing import Dict, List, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -7,7 +7,6 @@ from hummingbot.core.data_type.common import TradeType
 from hummingbot.strategy_v2.executors.arbitrage_executor.data_types import ArbitrageExecutorConfig
 from hummingbot.strategy_v2.executors.dca_executor.data_types import DCAExecutorConfig
 from hummingbot.strategy_v2.executors.grid_executor.data_types import GridExecutorConfig
-from hummingbot.strategy_v2.executors.lp_amm_executor.data_types import LPAmmExecutorConfig
 from hummingbot.strategy_v2.executors.lp_executor.data_types import LPExecutorConfig
 from hummingbot.strategy_v2.executors.order_executor.data_types import OrderExecutorConfig
 from hummingbot.strategy_v2.executors.position_executor.data_types import PositionExecutorConfig
@@ -16,17 +15,16 @@ from hummingbot.strategy_v2.executors.xemm_executor.data_types import XEMMExecut
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType
 
-AnyExecutorConfig = (
-    PositionExecutorConfig
-    | DCAExecutorConfig
-    | GridExecutorConfig
-    | XEMMExecutorConfig
-    | ArbitrageExecutorConfig
-    | OrderExecutorConfig
-    | TWAPExecutorConfig
-    | LPExecutorConfig
-    | LPAmmExecutorConfig
-)
+AnyExecutorConfig = Union[
+    PositionExecutorConfig,
+    DCAExecutorConfig,
+    GridExecutorConfig,
+    XEMMExecutorConfig,
+    ArbitrageExecutorConfig,
+    OrderExecutorConfig,
+    TWAPExecutorConfig,
+    LPExecutorConfig,
+]
 
 
 class ExecutorInfo(BaseModel):
@@ -45,9 +43,9 @@ class ExecutorInfo(BaseModel):
     is_active: bool
     is_trading: bool
     custom_info: Dict
-    close_timestamp: float | None = None
-    close_type: CloseType | None = None
-    controller_id: str | None = None
+    close_timestamp: Optional[float] = None
+    close_type: Optional[CloseType] = None
+    controller_id: Optional[str] = None
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     @property
@@ -55,15 +53,15 @@ class ExecutorInfo(BaseModel):
         return self.status == RunnableStatus.TERMINATED
 
     @property
-    def side(self) -> TradeType | None:
+    def side(self) -> Optional[TradeType]:
         return self.custom_info.get("side", None)
 
     @property
-    def trading_pair(self) -> str | None:
+    def trading_pair(self) -> Optional[str]:
         return self.config.trading_pair
 
     @property
-    def connector_name(self) -> str | None:
+    def connector_name(self) -> Optional[str]:
         return self.config.connector_name
 
     def to_dict(self):
@@ -81,4 +79,4 @@ class PerformanceReport(BaseModel):
     global_pnl_pct: Decimal = Decimal("0")
     volume_traded: Decimal = Decimal("0")
     positions_summary: List = []
-    close_type_counts: dict[CloseType, int] = {}
+    close_type_counts: Dict[CloseType, int] = {}

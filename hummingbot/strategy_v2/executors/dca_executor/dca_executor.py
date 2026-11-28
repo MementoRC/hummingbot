@@ -17,11 +17,17 @@ from hummingbot.logger import HummingbotLogger
 from hummingbot.strategy.strategy_v2_base import StrategyV2Base
 from hummingbot.strategy_v2.executors.dca_executor.data_types import DCAExecutorConfig, DCAMode
 from hummingbot.strategy_v2.executors.executor_base import ExecutorBase
+from hummingbot.strategy_v2.executors.executor_factory import ExecutorFactory
+from hummingbot.strategy_v2.executors.mixins.order_tracking import OrderTrackingMixin
+from hummingbot.strategy_v2.executors.mixins.pnl_calculator import PNLCalculatorMixin
+from hummingbot.strategy_v2.executors.mixins.retry import RetryMixin
+from hummingbot.strategy_v2.executors.mixins.trailing_stop import TrailingStopMixin
 from hummingbot.strategy_v2.models.base import RunnableStatus
 from hummingbot.strategy_v2.models.executors import CloseType, TrackedOrder
 
 
-class DCAExecutor(ExecutorBase):
+@ExecutorFactory.register(DCAExecutorConfig)
+class DCAExecutor(PNLCalculatorMixin, TrailingStopMixin, OrderTrackingMixin, RetryMixin, ExecutorBase):
     _logger = None
 
     @classmethod
@@ -534,6 +540,11 @@ class DCAExecutor(ExecutorBase):
             in_flight_order = self.get_in_flight_order(self.config.connector_name, order_id)
             if in_flight_order:
                 active_order.order = in_flight_order
+
+    def _get_trackable_orders(self) -> List[TrackedOrder]:
+        """OrderTrackingMixin template method. Not used by update_tracked_orders_with_order_id
+        above (DCAExecutor overrides that directly), provided for mixin API parity."""
+        return self._open_orders + self._close_orders
 
     def process_order_created_event(
         self, event_tag: int, market: ConnectorBase, event: Union[BuyOrderCreatedEvent, SellOrderCreatedEvent]
