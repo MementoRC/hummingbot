@@ -145,6 +145,29 @@ class PositionOnExchangeExecutorConfigTest(unittest.TestCase):
                 stop_loss_order_type=OrderType.LIMIT,
             )
 
+    def test_stop_loss_limit_requires_offset(self):
+        with self.assertRaises(ValidationError):
+            PositionOnExchangeTripleBarrierConfig(stop_loss_order_type=OrderType.STOP_LOSS_LIMIT)
+
+    def test_stop_loss_limit_accepts_valid_offset(self):
+        config = PositionOnExchangeTripleBarrierConfig(
+            stop_loss_order_type=OrderType.STOP_LOSS_LIMIT, stop_loss_limit_offset=Decimal("0.002")
+        )
+        self.assertEqual(config.stop_loss_limit_offset, Decimal("0.002"))
+
+    def test_stop_loss_rejects_offset(self):
+        with self.assertRaises(ValidationError):
+            PositionOnExchangeTripleBarrierConfig(
+                stop_loss_order_type=OrderType.STOP_LOSS, stop_loss_limit_offset=Decimal("0.002")
+            )
+
+    def test_stop_loss_limit_offset_bounds(self):
+        for bad in (Decimal("0"), Decimal("-0.1"), Decimal("1"), Decimal("1.5")):
+            with self.subTest(offset=bad), self.assertRaises(ValidationError):
+                PositionOnExchangeTripleBarrierConfig(
+                    stop_loss_order_type=OrderType.STOP_LOSS_LIMIT, stop_loss_limit_offset=bad
+                )
+
     def test_triple_barrier_config_invalid_stop_loss(self):
         with self.assertRaises(ValidationError):
             self.create_config_with_triple_barrier(stop_loss="invalid")
