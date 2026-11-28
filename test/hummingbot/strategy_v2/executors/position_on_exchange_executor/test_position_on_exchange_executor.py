@@ -895,6 +895,7 @@ class TestPositionOnExchangeExecutor(IsolatedAsyncioWrapperTestCase):
                 time_limit=60,
                 take_profit_order_type=OrderType.LIMIT,
                 stop_loss_order_type=OrderType.STOP_LOSS_LIMIT,
+                stop_loss_limit_offset=Decimal("0.01"),
             ),
         )
         position_on_exchange_executor = self.get_position_on_exchange_executor_running_from_config(position_config)
