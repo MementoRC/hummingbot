@@ -1,5 +1,5 @@
-import asyncio
 from abc import ABC, abstractmethod
+import asyncio
 from decimal import Decimal
 from typing import Dict, List, Optional, Tuple
 
@@ -25,9 +25,11 @@ from hummingbot.core.utils.async_utils import safe_ensure_future, safe_gather
 class PerpetualDerivativePyBase(ExchangePyBase, ABC):
     VALID_POSITION_ACTIONS = [PositionAction.OPEN, PositionAction.CLOSE]
 
-    def __init__(self,
-                 balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
-                 rate_limits_share_pct: Decimal = Decimal("100")):
+    def __init__(
+        self,
+        balance_asset_limit: Optional[Dict[str, Dict[str, Decimal]]] = None,
+        rate_limits_share_pct: Decimal = Decimal("100"),
+    ):
         super().__init__(balance_asset_limit, rate_limits_share_pct)
         self._last_funding_fee_payment_ts: Dict[str, float] = {}
 
@@ -213,9 +215,7 @@ class PerpetualDerivativePyBase(ExchangePyBase, ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def _trading_pair_position_mode_set(
-        self, mode: PositionMode, trading_pair: str
-    ) -> Tuple[bool, str]:
+    async def _trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> Tuple[bool, str]:
         """
         :return: A tuple of boolean (true if success) and error message if the exchange returns one on failure.
         """
@@ -266,9 +266,7 @@ class PerpetualDerivativePyBase(ExchangePyBase, ABC):
         """
 
         if position_action not in self.VALID_POSITION_ACTIONS:
-            raise ValueError(
-                f"Invalid position action {position_action}. Must be one of {self.VALID_POSITION_ACTIONS}"
-            )
+            raise ValueError(f"Invalid position action {position_action}. Must be one of {self.VALID_POSITION_ACTIONS}")
 
         await super()._create_order(
             trade_type,
@@ -343,8 +341,7 @@ class PerpetualDerivativePyBase(ExchangePyBase, ABC):
                 self.logger().warning(f"Could not fetch position mode from exchange: {e}")
                 exchange_mode = None
 
-            self.logger().info(
-                f"Setting position mode: requested={mode}, current_exchange={exchange_mode}")
+            self.logger().info(f"Setting position mode: requested={mode}, current_exchange={exchange_mode}")
 
             if exchange_mode == mode:
                 self._perpetual_trading.set_position_mode(mode)
@@ -364,14 +361,10 @@ class PerpetualDerivativePyBase(ExchangePyBase, ABC):
                 self.logger().info(f"Position mode switched to {mode}.")
             else:
                 self._fire_position_mode_events(mode, success=False, message=msg)
-                self.logger().error(
-                    f"Failed to set position mode to {mode}: {msg}")
+                self.logger().error(f"Failed to set position mode to {mode}: {msg}")
 
     def _fire_position_mode_events(self, mode: PositionMode, success: bool, message: str = ""):
-        event_tag = (
-            AccountEvent.PositionModeChangeSucceeded if success
-            else AccountEvent.PositionModeChangeFailed
-        )
+        event_tag = AccountEvent.PositionModeChangeSucceeded if success else AccountEvent.PositionModeChangeFailed
         for trading_pair in self.trading_pairs:
             self.trigger_event(
                 event_tag,
@@ -388,9 +381,7 @@ class PerpetualDerivativePyBase(ExchangePyBase, ABC):
 
     async def _listen_for_funding_info(self):
         await self._init_funding_info()
-        await self._orderbook_ds.listen_for_funding_info(
-            output=self._perpetual_trading.funding_info_stream
-        )
+        await self._orderbook_ds.listen_for_funding_info(output=self._perpetual_trading.funding_info_stream)
 
     async def _init_funding_info(self):
         for trading_pair in self.trading_pairs:
@@ -495,7 +486,7 @@ class PerpetualDerivativePyBase(ExchangePyBase, ABC):
             self.logger().network(
                 f"Unexpected error while fetching last fee payment for {trading_pair}.",
                 exc_info=True,
-                app_warning_msg=f"Could not fetch last fee payment for {trading_pair}. Check network connection."
+                app_warning_msg=f"Could not fetch last fee payment for {trading_pair}. Check network connection.",
             )
             fetch_success = False
         if fetch_success:

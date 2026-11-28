@@ -50,7 +50,7 @@ from hummingbot.core.data_type.trade_fee import TradeFeeSchema
 DEFAULT_FEES = TradeFeeSchema(
     maker_percent_fee_decimal=Decimal("0.0001"),
     taker_percent_fee_decimal=Decimal("0.0003"),
-    buy_percent_fee_deducted_from_returns=True
+    buy_percent_fee_deducted_from_returns=True,
 )
 
 CENTRALIZED = False
@@ -69,7 +69,7 @@ class DerivePerpetualConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     session_private_key: SecretStr = Field(
         default=...,
@@ -78,7 +78,7 @@ class DerivePerpetualConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     subacct_id: SecretStr = Field(
         default=...,
@@ -87,7 +87,7 @@ class DerivePerpetualConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     account_type: SecretStr = Field(
         default=...,
@@ -96,7 +96,7 @@ class DerivePerpetualConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
 
 
@@ -117,7 +117,7 @@ class DerivePerpetualTestnetConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     session_private_key: SecretStr = Field(
         default=...,
@@ -126,7 +126,7 @@ class DerivePerpetualTestnetConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     subacct_id: SecretStr = Field(
         default=...,
@@ -135,7 +135,7 @@ class DerivePerpetualTestnetConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     account_type: SecretStr = Field(
         default=...,
@@ -144,7 +144,7 @@ class DerivePerpetualTestnetConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     model_config = ConfigDict(title="derive_perpetual")
 

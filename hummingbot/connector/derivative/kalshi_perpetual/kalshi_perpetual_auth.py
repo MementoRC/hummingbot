@@ -1,7 +1,6 @@
 import base64
 import re
 import textwrap
-from typing import Dict
 from urllib.parse import urlparse
 
 from cryptography.hazmat.primitives import hashes, serialization
@@ -38,7 +37,7 @@ class KalshiPerpetualAuth(AuthBase):
         # Kalshi authenticates the WebSocket once, at handshake time, with header_for_authentication().
         return request  # pass-through
 
-    def header_for_authentication(self, method: str, path: str) -> Dict[str, str]:
+    def header_for_authentication(self, method: str, path: str) -> dict[str, str]:
         timestamp = str(int(self._time_provider.time() * 1e3))
         return {
             "KALSHI-ACCESS-KEY": self._api_key,

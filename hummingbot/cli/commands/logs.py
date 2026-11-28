@@ -1,6 +1,7 @@
 """``hbot logs`` — tail the bot's log (one bot per install)."""
-import time
+
 from pathlib import Path
+import time
 from typing import Optional
 
 import typer
@@ -13,12 +14,10 @@ def _resolve_log_file(name: Optional[str]) -> Optional[Path]:
     if name:
         log = bot.structured_log_for(name)
         if log is None:
-            fail(f"no log found for '{name}' (available: {', '.join(bot.list_bots()) or 'none'})",
-                 ExitCode.NOT_FOUND)
+            fail(f"no log found for '{name}' (available: {', '.join(bot.list_bots()) or 'none'})", ExitCode.NOT_FOUND)
         return log
     if not bot.exists():
-        fail("no bot has been started (pass a name to view a past bot)",
-             ExitCode.NOT_FOUND)
+        fail("no bot has been started (pass a name to view a past bot)", ExitCode.NOT_FOUND)
     if bot.structured_log_file().exists():
         return bot.structured_log_file()
     if bot.log_file().exists():

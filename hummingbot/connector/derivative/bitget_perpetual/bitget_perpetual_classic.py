@@ -1,6 +1,6 @@
 import asyncio
 from decimal import Decimal
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict
 
 import hummingbot.connector.derivative.bitget_perpetual.bitget_perpetual_constants as CONSTANTS
 from hummingbot.connector.derivative.bitget_perpetual.bitget_perpetual_constants import MarginMode
@@ -24,12 +24,12 @@ class BitgetPerpetualClassicAccountMixin:
     Classic; the market data and everything else is shared with the UTA path.
     """
 
-    async def _classic_fetch_account_position_mode(self) -> Optional[PositionMode]:
+    async def _classic_fetch_account_position_mode(self) -> PositionMode | None:
         if not self.trading_pairs:
             return None
         trading_pair = self.trading_pairs[0]
         product_type = await self.product_type_associated_to_trading_pair(trading_pair)
-        account_info_response: Dict[str, Any] = await self._api_get(
+        account_info_response: dict[str, Any] = await self._api_get(
             path_url=CONSTANTS.CLASSIC_ACCOUNT_INFO_ENDPOINT,
             params={
                 "symbol": await self.exchange_symbol_associated_to_pair(trading_pair=trading_pair),
@@ -39,10 +39,12 @@ class BitgetPerpetualClassicAccountMixin:
             is_auth_required=True,
         )
         if account_info_response["code"] != CONSTANTS.RET_CODE_OK:
-            self.logger().error(self._formatted_error(
-                account_info_response["code"],
-                f"Error getting position mode for {trading_pair}: {account_info_response['msg']}"
-            ))
+            self.logger().error(
+                self._formatted_error(
+                    account_info_response["code"],
+                    f"Error getting position mode for {trading_pair}: {account_info_response['msg']}",
+                )
+            )
             return None
 
         position_modes = {
@@ -84,12 +86,9 @@ class BitgetPerpetualClassicAccountMixin:
         order_type: OrderType,
         price: Decimal,
         position_action: PositionAction,
-    ) -> Tuple[str, float]:
+    ) -> tuple[str, float]:
         product_type = await self.product_type_associated_to_trading_pair(trading_pair)
-        margin_modes = {
-            MarginMode.CROSS: "crossed",
-            MarginMode.ISOLATED: "isolated"
-        }
+        margin_modes = {MarginMode.CROSS: "crossed", MarginMode.ISOLATED: "isolated"}
         # LIMIT_MAKER maps to a post-only limit order (orderType "limit" + force "post_only").
         force = (
             CONSTANTS.POST_ONLY_TIME_IN_FORCE
@@ -121,14 +120,11 @@ class BitgetPerpetualClassicAccountMixin:
             is_auth_required=True,
             headers={
                 "X-CHANNEL-API-CODE": CONSTANTS.API_CODE,
-            }
+            },
         )
 
         if resp["code"] != CONSTANTS.RET_CODE_OK:
-            raise IOError(self._formatted_error(
-                resp["code"],
-                f"Error submitting order {order_id}: {resp['msg']}"
-            ))
+            raise IOError(self._formatted_error(resp["code"], f"Error submitting order {order_id}: {resp['msg']}"))
 
         return str(resp["data"]["orderId"]), self.current_timestamp
 
@@ -154,26 +150,18 @@ class BitgetPerpetualClassicAccountMixin:
     async def _classic_update_balances(self) -> None:
         balances = []
         product_types: set[str] = {
-            await self.product_type_associated_to_trading_pair(trading_pair)
-            for trading_pair in self._trading_pairs
+            await self.product_type_associated_to_trading_pair(trading_pair) for trading_pair in self._trading_pairs
         } or CONSTANTS.ALL_PRODUCT_TYPES
 
         for product_type in product_types:
-            accounts_info_response: Dict[str, Any] = await self._api_get(
+            accounts_info_response: dict[str, Any] = await self._api_get(
                 path_url=CONSTANTS.CLASSIC_ACCOUNTS_INFO_ENDPOINT,
-                params={
-                    "productType": product_type
-                },
+                params={"productType": product_type},
                 is_auth_required=True,
             )
 
             if accounts_info_response["code"] != CONSTANTS.RET_CODE_OK:
-                raise IOError(
-                    self._formatted_error(
-                        accounts_info_response["code"],
-                        accounts_info_response["msg"]
-                    )
-                )
+                raise IOError(self._formatted_error(accounts_info_response["code"], accounts_info_response["msg"]))
 
             balances.extend(accounts_info_response["data"])
 
@@ -195,17 +183,14 @@ class BitgetPerpetualClassicAccountMixin:
 
     async def _classic_update_positions(self) -> None:
         product_types: set[str] = {
-            await self.product_type_associated_to_trading_pair(trading_pair)
-            for trading_pair in self._trading_pairs
+            await self.product_type_associated_to_trading_pair(trading_pair) for trading_pair in self._trading_pairs
         }
         symbol_map = await self.trading_pair_symbol_map()
 
         for product_type in product_types:
-            all_positions_response: Dict[str, Any] = await self._api_get(
+            all_positions_response: dict[str, Any] = await self._api_get(
                 path_url=CONSTANTS.CLASSIC_ALL_POSITIONS_ENDPOINT,
-                params={
-                    "productType": product_type
-                },
+                params={"productType": product_type},
                 is_auth_required=True,
             )
 
@@ -235,19 +220,22 @@ class BitgetPerpetualClassicAccountMixin:
         pos_key = self._perpetual_trading.position_key(trading_pair, position_side)
         if amount != s_decimal_0:
             signed_amount = amount * (Decimal("-1.0") if position_side == PositionSide.SHORT else Decimal("1.0"))
-            self._perpetual_trading.set_position(pos_key, Position(
-                trading_pair=trading_pair,
-                position_side=position_side,
-                unrealized_pnl=unrealized_pnl,
-                entry_price=entry_price,
-                amount=signed_amount,
-                leverage=leverage,
-            ))
+            self._perpetual_trading.set_position(
+                pos_key,
+                Position(
+                    trading_pair=trading_pair,
+                    position_side=position_side,
+                    unrealized_pnl=unrealized_pnl,
+                    entry_price=entry_price,
+                    amount=signed_amount,
+                    leverage=leverage,
+                ),
+            )
         else:
             self._perpetual_trading.remove_position(pos_key)
         return pos_key
 
-    async def _classic_all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+    async def _classic_all_trade_updates_for_order(self, order: InFlightOrder) -> list[TradeUpdate]:
         trade_updates = []
 
         if order.exchange_order_id is not None:
@@ -333,15 +321,14 @@ class BitgetPerpetualClassicAccountMixin:
             if response["code"] != CONSTANTS.RET_CODE_OK:
                 self.logger().error(
                     self._formatted_error(
-                        response["code"],
-                        f"There was an error changing the margin mode ({response['msg']})"
+                        response["code"], f"There was an error changing the margin mode ({response['msg']})"
                     )
                 )
                 return
 
             self.logger().info(f"Margin mode set to {margin_mode}")
 
-    async def _classic_trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> Tuple[bool, str]:
+    async def _classic_trading_pair_position_mode_set(self, mode: PositionMode, trading_pair: str) -> tuple[bool, str]:
         if len(self.account_positions) > 0:
             return False, "Cannot change position because active positions exist"
 
@@ -362,18 +349,18 @@ class BitgetPerpetualClassicAccountMixin:
 
         return True, ""
 
-    async def _classic_set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> Tuple[bool, str]:
+    async def _classic_set_trading_pair_leverage(self, trading_pair: str, leverage: int) -> tuple[bool, str]:
         if len(self.account_positions) > 0:
             return False, "cannot change leverage because active positions exist"
 
         try:
-            response: Dict[str, Any] = await self._api_post(
+            response: dict[str, Any] = await self._api_post(
                 path_url=CONSTANTS.CLASSIC_SET_LEVERAGE_ENDPOINT,
                 data={
                     "symbol": await self.exchange_symbol_associated_to_pair(trading_pair),
                     "productType": await self.product_type_associated_to_trading_pair(trading_pair),
                     "marginCoin": self.get_buy_collateral_token(trading_pair),
-                    "leverage": str(leverage)
+                    "leverage": str(leverage),
                 },
                 is_auth_required=True,
             )
@@ -385,10 +372,10 @@ class BitgetPerpetualClassicAccountMixin:
 
         return True, ""
 
-    async def _classic_fetch_last_fee_payment(self, trading_pair: str) -> Tuple[float, Decimal, Decimal]:
+    async def _classic_fetch_last_fee_payment(self, trading_pair: str) -> tuple[float, Decimal, Decimal]:
         timestamp, funding_rate, payment = 0, Decimal("-1"), Decimal("-1")
 
-        payment_response: Dict[str, Any] = await self._api_get(
+        payment_response: dict[str, Any] = await self._api_get(
             path_url=CONSTANTS.CLASSIC_ACCOUNT_BILLS_ENDPOINT,
             params={
                 "productType": await self.product_type_associated_to_trading_pair(trading_pair),
@@ -396,7 +383,7 @@ class BitgetPerpetualClassicAccountMixin:
             },
             is_auth_required=True,
         )
-        payment_data: Dict[str, Any] = payment_response["data"]["bills"]
+        payment_data: dict[str, Any] = payment_response["data"]["bills"]
 
         if payment_data:
             last_data = payment_data[0]
@@ -428,7 +415,7 @@ class BitgetPerpetualClassicAccountMixin:
             except Exception:
                 self.logger().exception("Unexpected error in user stream listener loop.")
 
-    async def _classic_process_account_position_event(self, position_entries: List[Dict[str, Any]]) -> None:
+    async def _classic_process_account_position_event(self, position_entries: list[dict[str, Any]]) -> None:
         all_position_keys = []
         symbol_map = await self.trading_pair_symbol_map()
 
@@ -437,21 +424,23 @@ class BitgetPerpetualClassicAccountMixin:
             if trading_pair is None:
                 # Dated futures share the account but are kept out of the symbol map.
                 continue
-            all_position_keys.append(self._classic_apply_position(
-                trading_pair=trading_pair,
-                position_side=POSITION_SIDES[position["holdSide"]],
-                unrealized_pnl=Decimal(position["unrealizedPL"]),
-                entry_price=Decimal(position["openPriceAvg"]),
-                amount=Decimal(position["total"]),
-                leverage=Decimal(position["leverage"]),
-            ))
+            all_position_keys.append(
+                self._classic_apply_position(
+                    trading_pair=trading_pair,
+                    position_side=POSITION_SIDES[position["holdSide"]],
+                    unrealized_pnl=Decimal(position["unrealizedPL"]),
+                    entry_price=Decimal(position["openPriceAvg"]),
+                    amount=Decimal(position["total"]),
+                    leverage=Decimal(position["leverage"]),
+                )
+            )
 
         # Bitget sends position events as snapshots: a closed position is simply not included.
         for position_key in list(self.account_positions.keys()):
             if position_key not in all_position_keys:
                 self._perpetual_trading.remove_position(position_key)
 
-    def _classic_process_order_event_message(self, order_msg: Dict[str, Any]) -> None:
+    def _classic_process_order_event_message(self, order_msg: dict[str, Any]) -> None:
         order_status = self._order_state_for(order_msg.get("status"))
         if order_status is None:
             return
@@ -459,15 +448,17 @@ class BitgetPerpetualClassicAccountMixin:
         updatable_order = self._order_tracker.all_updatable_orders.get(client_order_id)
 
         if updatable_order is not None:
-            self._order_tracker.process_order_update(OrderUpdate(
-                trading_pair=updatable_order.trading_pair,
-                update_timestamp=self.current_timestamp,
-                new_state=order_status,
-                client_order_id=client_order_id,
-                exchange_order_id=order_msg["orderId"],
-            ))
+            self._order_tracker.process_order_update(
+                OrderUpdate(
+                    trading_pair=updatable_order.trading_pair,
+                    update_timestamp=self.current_timestamp,
+                    new_state=order_status,
+                    client_order_id=client_order_id,
+                    exchange_order_id=order_msg["orderId"],
+                )
+            )
 
-    def _classic_process_balance_update_from_order_event(self, order_msg: Dict[str, Any]) -> None:
+    def _classic_process_balance_update_from_order_event(self, order_msg: dict[str, Any]) -> None:
         # As on a Unified Trading Account, this only adjusts the cached available balance for
         # opening orders; the REST balance poll is the source of truth, so bail out rather than
         # raise when the event does not apply or a numeric field is missing or empty.
@@ -495,7 +486,7 @@ class BitgetPerpetualClassicAccountMixin:
         multiplier = Decimal(-1) if order_status == OrderState.OPEN else Decimal(1)
         self._account_available_balances[symbol] += margin_amount * multiplier
 
-    def _classic_process_trade_event_message(self, trade_msg: Dict[str, Any]) -> None:
+    def _classic_process_trade_event_message(self, trade_msg: dict[str, Any]) -> None:
         fillable_order = self._order_tracker.all_fillable_orders.get(str(trade_msg["clientOid"]))
 
         if fillable_order and "tradeId" in trade_msg:
@@ -536,11 +527,11 @@ class BitgetPerpetualClassicAccountMixin:
     def _classic_parse_trade_update(self, trade_msg: Dict, tracked_order: InFlightOrder) -> TradeUpdate:
         fee_detail = trade_msg["feeDetail"][0]
         fee_asset = fee_detail["feeCoin"]
-        fee_amount = abs(Decimal((
-            fee_detail["totalDeductionFee"]
-            if fee_detail.get("deduction") == "yes"
-            else fee_detail["totalFee"]
-        )))
+        fee_amount = abs(
+            Decimal(
+                (fee_detail["totalDeductionFee"] if fee_detail.get("deduction") == "yes" else fee_detail["totalFee"])
+            )
+        )
         position_actions = {
             "open": PositionAction.OPEN,
             "close": PositionAction.CLOSE,
@@ -565,7 +556,7 @@ class BitgetPerpetualClassicAccountMixin:
             fee=fee,
         )
 
-    def _classic_process_wallet_event_message(self, wallet_msg: Dict[str, Any]) -> None:
+    def _classic_process_wallet_event_message(self, wallet_msg: dict[str, Any]) -> None:
         symbol = wallet_msg["marginCoin"]
         self._account_balances[symbol] = Decimal(wallet_msg["equity"])
         self._account_available_balances[symbol] = Decimal(wallet_msg["maxOpenPosAvailable"])

@@ -11,7 +11,7 @@ EXAMPLE_PAIR = "BTC-USD"
 DEFAULT_FEES = TradeFeeSchema(
     maker_percent_fee_decimal=Decimal("0.002"),
     taker_percent_fee_decimal=Decimal("0.004"),
-    buy_percent_fee_deducted_from_returns=True
+    buy_percent_fee_deducted_from_returns=True,
 )
 
 
@@ -24,7 +24,7 @@ class GeminiConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     gemini_api_secret: SecretStr = Field(
         default=...,
@@ -33,7 +33,7 @@ class GeminiConfigMap(BaseConnectorConfigMap):
             "is_secure": True,
             "is_connect_key": True,
             "prompt_on_new": True,
-        }
+        },
     )
     model_config = ConfigDict(title="gemini")
 

@@ -5,7 +5,6 @@ from hummingbot.core.data_type.order_book_message import OrderBookMessageType
 
 
 class GeminiOrderBookTests(TestCase):
-
     def test_snapshot_message_from_exchange(self):
         msg = {
             "bids": [["50000.00", "1.5"], ["49999.00", "2.0"]],
@@ -48,9 +47,7 @@ class GeminiOrderBookTests(TestCase):
             "q": "0.5",
             "m": True,  # maker side
         }
-        trade = GeminiOrderBook.trade_message_from_exchange(
-            msg, metadata={"trading_pair": "BTC-USD"}
-        )
+        trade = GeminiOrderBook.trade_message_from_exchange(msg, metadata={"trading_pair": "BTC-USD"})
         self.assertEqual(OrderBookMessageType.TRADE, trade.type)
         self.assertEqual("BTC-USD", trade.content["trading_pair"])
         self.assertEqual(12345, trade.content["trade_id"])

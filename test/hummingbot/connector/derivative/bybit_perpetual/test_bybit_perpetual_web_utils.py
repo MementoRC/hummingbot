@@ -8,8 +8,7 @@ from hummingbot.connector.derivative.bybit_perpetual import (
 
 class BybitPerpetualWebUtilsTest(unittest.TestCase):
     def test_get_rest_url_for_endpoint(self):
-        endpoint = {"linear": "testEndpoint/linear",
-                    "non_linear": "testEndpoint/non_linear"}
+        endpoint = {"linear": "testEndpoint/linear", "non_linear": "testEndpoint/non_linear"}
         linear_pair = "ETH-USDT"
         non_linear_pair = "ETH-BTC"
 
@@ -36,9 +35,7 @@ class BybitPerpetualWebUtilsTest(unittest.TestCase):
         url = web_utils.get_rest_url_for_endpoint(endpoint, domain="bybit_perpetual_eu")
         self.assertEqual("https://api.bybit.eu/testEndpoint/linear", url)
 
-        url = web_utils.get_rest_url_for_endpoint(
-            endpoint, trading_pair=non_linear_pair, domain="bybit_perpetual_eu"
-        )
+        url = web_utils.get_rest_url_for_endpoint(endpoint, trading_pair=non_linear_pair, domain="bybit_perpetual_eu")
         self.assertEqual("https://api.bybit.eu/testEndpoint/non_linear", url)
 
     def test_wss_linear_public_url(self):

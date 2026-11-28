@@ -5,13 +5,14 @@ answer is worse than none: adopting the wrong position address later closes some
 else's position, and a malformed swap provider becomes a 400 in the middle of a
 close-out swap rather than at startup.
 """
+
 from decimal import Decimal
-from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from hummingbot.core.data_type.common import TradeType
 from hummingbot.strategy_v2.executors.lp_executor.data_types import LPExecutorConfig
 from hummingbot.strategy_v2.executors.lp_executor.lp_executor import LPExecutor
+from test.isolated_asyncio_wrapper_test_case import IsolatedAsyncioWrapperTestCase
 
 
 def a_config(**overrides) -> LPExecutorConfig:
@@ -109,10 +110,12 @@ class TestPositionAddressRecovery(IsolatedAsyncioWrapperTestCase):
 
     async def test_the_configured_bounds_pick_one_out_of_several(self):
         executor = self.an_executor()
-        connector = self.a_connector([
-            self.a_position("other", lower="50", upper="60"),
-            self.a_position("mine", lower="95", upper="105"),
-        ])
+        connector = self.a_connector(
+            [
+                self.a_position("other", lower="50", upper="60"),
+                self.a_position("mine", lower="95", upper="105"),
+            ]
+        )
 
         self.assertEqual(await executor._recover_position_address(connector), "mine")
 
@@ -134,10 +137,12 @@ class TestPositionAddressRecovery(IsolatedAsyncioWrapperTestCase):
 
     async def test_several_positions_none_matching_the_bounds_is_ambiguous(self):
         executor = self.an_executor()
-        connector = self.a_connector([
-            self.a_position("far", lower="1", upper="2"),
-            self.a_position("further", lower="500", upper="600"),
-        ])
+        connector = self.a_connector(
+            [
+                self.a_position("far", lower="1", upper="2"),
+                self.a_position("further", lower="500", upper="600"),
+            ]
+        )
 
         self.assertEqual(await executor._recover_position_address(connector), "")
 
@@ -171,9 +176,7 @@ class TestBoundsMatching(IsolatedAsyncioWrapperTestCase):
         """Guards the division. LPExecutorConfig's validator rejects a zero bound, so this
         state is only reachable by a config that bypassed validation — model_construct
         here builds exactly that, which is the situation the guard is for."""
-        config = LPExecutorConfig.model_construct(
-            **{**a_config().model_dump(), "lower_price": Decimal("0")}
-        )
+        config = LPExecutorConfig.model_construct(**{**a_config().model_dump(), "lower_price": Decimal("0")})
         executor = LPExecutor(self.strategy, config, update_interval=1.0)
 
         self.assertFalse(executor._bounds_match(Decimal("0"), Decimal("105")))

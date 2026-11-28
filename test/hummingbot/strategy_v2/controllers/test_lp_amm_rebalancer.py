@@ -60,7 +60,6 @@ def make_executor_info(
 
 
 class TestLPAmmRebalancerConfig(TestCase):
-
     def test_position_refresh_interval_is_not_live_updatable(self):
         self.assertNotIn("position_refresh_interval", controller_updatable_fields(LPAmmRebalancerConfig))
 
@@ -71,7 +70,6 @@ class TestLPAmmRebalancerConfig(TestCase):
 
 
 class TestLPAmmRebalancer(TestCase):
-
     def setUp(self):
         self.config = make_config()
         self.market_data_provider = MagicMock(spec=MarketDataProvider)
@@ -108,8 +106,11 @@ class TestLPAmmRebalancer(TestCase):
             RunnableStatus.TERMINATED,
             close_type=CloseType.COMPLETED,
             custom_info={
-                "base_amount": "1.1", "quote_amount": "95", "tx_fee_quote": "0.01",
-                "initial_base_amount": "1", "initial_quote_amount": "100",
+                "base_amount": "1.1",
+                "quote_amount": "95",
+                "tx_fee_quote": "0.01",
+                "initial_base_amount": "1",
+                "initial_quote_amount": "100",
             },
         )
         self.controller._current_executor_id = "exec-1"
@@ -129,8 +130,11 @@ class TestLPAmmRebalancer(TestCase):
             RunnableStatus.TERMINATED,
             close_type=CloseType.COMPLETED,
             custom_info={
-                "base_amount": "1", "quote_amount": "100", "tx_fee_quote": "0",
-                "initial_base_amount": "1", "initial_quote_amount": "100",
+                "base_amount": "1",
+                "quote_amount": "100",
+                "tx_fee_quote": "0",
+                "initial_base_amount": "1",
+                "initial_quote_amount": "100",
             },
         )
         self.controller._current_executor_id = "exec-1"
@@ -169,8 +173,12 @@ class TestLPAmmRebalancer(TestCase):
             RunnableStatus.TERMINATED,
             close_type=CloseType.COMPLETED,
             custom_info={
-                "base_amount": "1", "quote_amount": "99", "tx_fee": "0.01", "tx_fee_quote": "2.0",
-                "initial_base_amount": "1", "initial_quote_amount": "100",
+                "base_amount": "1",
+                "quote_amount": "99",
+                "tx_fee": "0.01",
+                "tx_fee_quote": "2.0",
+                "initial_base_amount": "1",
+                "initial_quote_amount": "100",
             },
         )
         self.controller._current_executor_id = "exec-1"
@@ -251,8 +259,11 @@ class TestLPAmmRebalancer(TestCase):
             close_type=CloseType.POSITION_HOLD,
             custom_info={
                 "hold_reason": "closeout_swap_failed",
-                "base_amount": "1.1", "quote_amount": "95", "tx_fee_quote": "0.01",
-                "initial_base_amount": "1", "initial_quote_amount": "100",
+                "base_amount": "1.1",
+                "quote_amount": "95",
+                "tx_fee_quote": "0.01",
+                "initial_base_amount": "1",
+                "initial_quote_amount": "100",
             },
         )
         self.controller._current_executor_id = "exec-1"
@@ -329,7 +340,10 @@ class TestLPAmmRebalancer(TestCase):
 
     def test_preflight_failure_streak_resets_on_success(self):
         failed = make_executor_info(
-            "exec-1", RunnableStatus.TERMINATED, close_type=CloseType.FAILED, custom_info={},
+            "exec-1",
+            RunnableStatus.TERMINATED,
+            close_type=CloseType.FAILED,
+            custom_info={},
         )
         self.controller._current_executor_id = "exec-1"
         self.controller.executors_info = [failed]
@@ -341,8 +355,11 @@ class TestLPAmmRebalancer(TestCase):
             RunnableStatus.TERMINATED,
             close_type=CloseType.COMPLETED,
             custom_info={
-                "base_amount": "1", "quote_amount": "100", "tx_fee_quote": "0",
-                "initial_base_amount": "1", "initial_quote_amount": "100",
+                "base_amount": "1",
+                "quote_amount": "100",
+                "tx_fee_quote": "0",
+                "initial_base_amount": "1",
+                "initial_quote_amount": "100",
             },
         )
         self.controller._current_executor_id = "exec-2"

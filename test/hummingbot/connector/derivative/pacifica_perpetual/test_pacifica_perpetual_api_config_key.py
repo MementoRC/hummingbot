@@ -1,7 +1,8 @@
+from unittest.mock import AsyncMock
+
 from test.hummingbot.connector.derivative.pacifica_perpetual.test_pacifica_perpetual_derivative import (
     PacificaPerpetualDerivativeUnitTest,
 )
-from unittest.mock import AsyncMock
 
 
 class PacificaPerpetualAPIConfigKeyTest(PacificaPerpetualDerivativeUnitTest):
@@ -27,7 +28,7 @@ class PacificaPerpetualAPIConfigKeyTest(PacificaPerpetualDerivativeUnitTest):
 
         mock_rest_assistant.execute_request.return_value = {
             "success": True,
-            "data": {"active_api_keys": ["fetched_key"]}
+            "data": {"active_api_keys": ["fetched_key"]},
         }
 
         await self.exchange._fetch_or_create_api_config_key()
@@ -45,7 +46,7 @@ class PacificaPerpetualAPIConfigKeyTest(PacificaPerpetualDerivativeUnitTest):
         # Second call (create key) returns new key
         mock_rest_assistant.execute_request.side_effect = [
             {"success": True, "data": {"active_api_keys": []}},
-            {"success": True, "data": {"api_key": "created_key"}}
+            {"success": True, "data": {"api_key": "created_key"}},
         ]
 
         await self.exchange._fetch_or_create_api_config_key()
